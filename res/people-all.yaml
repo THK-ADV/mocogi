@@ -1,0 +1,25 @@
+all:
+  lastname: Alle
+  firstname: Alle
+  title: Alle
+  faculty: Alle
+nn:
+  lastname: N.N.
+  firstname: N.N.
+  title: N.N.
+  faculty: N.N.
+ald:
+  lastname: Dobrynin
+  firstname: Alexander
+  title: M.Sc.
+  faculty: F10
+abe:
+  lastname: Bertels
+  firstname: Anja
+  title: B.Sc.
+  faculty: F10
+ddu:
+  lastname: Dubbert
+  firstname: Dennis
+  title: M.Sc.
+  faculty: F10
