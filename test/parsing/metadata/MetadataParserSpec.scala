@@ -17,7 +17,7 @@ class MetadataParserSpec
     "parse module code" should {
       "return a valid uuid" in {
         val id = UUID.fromString("00895144-30e4-4bd2-b800-bb706686d950")
-        val (res, rest) = moduleCodeParser.run(
+        val (res, rest) = moduleCodeParser.parse(
           "module_code: 00895144-30e4-4bd2-b800-bb706686d950\n"
         )
         assert(res.value == id)
@@ -25,13 +25,13 @@ class MetadataParserSpec
       }
 
       "fail if the uuid is invalid" in {
-        val (res, rest) = moduleCodeParser.run("module_code: 123\n")
+        val (res, rest) = moduleCodeParser.parse("module_code: 123\n")
         res match {
           case Right(_) => fail()
           case Left(e) =>
             assert(e.expected == "uuid")
-            assert(e.remainingInput == "module_code: 123\n")
-            assert(rest == e.remainingInput)
+            assert(e.found == "module_code: 123\n")
+            assert(rest == e.found)
         }
       }
     }
@@ -39,43 +39,43 @@ class MetadataParserSpec
     "parse module title" should {
 
       "return the module title" in {
-        val (res1, rest1) = moduleTitleParser.run("module_title: Algorithmik\n")
+        val (res1, rest1) = moduleTitleParser.parse("module_title: Algorithmik\n")
         assert(res1.value == "Algorithmik")
         assert(rest1.isEmpty)
       }
 
       "return the module title even if there is whitespace" in {
         val (res2, rest2) =
-          moduleTitleParser.run("module_title:      Algorithmik   \n")
+          moduleTitleParser.parse("module_title:      Algorithmik   \n")
         assert(res2.value == "Algorithmik")
         assert(rest2.isEmpty)
       }
     }
 
     "parse module abbreviation" in {
-      val (res, rest) = moduleAbbrevParser.run("module_abbrev: ALG\n")
+      val (res, rest) = moduleAbbrevParser.parse("module_abbrev: ALG\n")
       assert(res.value == "ALG")
       assert(rest.isEmpty)
     }
 
     "parse credit points" in {
-      val (res1, rest1) = creditPointsParser.run("credit_points: 5")
+      val (res1, rest1) = creditPointsParser.parse("credit_points: 5")
       assert(res1.value == 5)
       assert(rest1.isEmpty)
-      val (res2, rest2) = creditPointsParser.run("credit_points: -5")
+      val (res2, rest2) = creditPointsParser.parse("credit_points: -5")
       assert(res2.value == -5)
       assert(rest2.isEmpty)
-      val (res3, rest3) = creditPointsParser.run("credit_points: 2.5")
+      val (res3, rest3) = creditPointsParser.parse("credit_points: 2.5")
       assert(res3.value == 2.5)
       assert(rest3.isEmpty)
     }
 
     "parse duration of module" in {
-      val (res1, rest1) = durationParser.run("duration_of_module: 1")
+      val (res1, rest1) = durationParser.parse("duration_of_module: 1")
       assert(res1.value == 1)
       assert(rest1.isEmpty)
 
-      val (res2, rest2) = durationParser.run("duration_of_module: -1")
+      val (res2, rest2) = durationParser.parse("duration_of_module: -1")
       assert(res2.value == -1)
       assert(rest2.isEmpty)
     }
@@ -83,7 +83,7 @@ class MetadataParserSpec
     "parse recommended semester" should {
 
       "return a valid semester if the input is an integer" in {
-        val (res, rest) = semesterParser.run("recommended_semester: 3")
+        val (res, rest) = semesterParser.parse("recommended_semester: 3")
         assert(res.value == 3)
         assert(rest.isEmpty)
       }
@@ -99,7 +99,7 @@ class MetadataParserSpec
 
     "parse different flavours of metadata" should {
       "a juicy one" in {
-        val (res, rest) = withTestFile("metadata1.yaml")(metadataV1Parser.run)
+        val (res, rest) = withTestFile("metadata1.yaml")(metadataV1Parser.parse)
         assert(rest.isEmpty)
         val metadata = res.value
         assert(
@@ -138,7 +138,7 @@ class MetadataParserSpec
       }
 
       "another juicy one" in {
-        val (res, rest) = withTestFile("metadata2.yaml")(metadataV1Parser.run)
+        val (res, rest) = withTestFile("metadata2.yaml")(metadataV1Parser.parse)
         val metadata = res.value
         assert(
           metadata.id == UUID.fromString("00895144-30e4-4bd2-b800-bb706686d950")

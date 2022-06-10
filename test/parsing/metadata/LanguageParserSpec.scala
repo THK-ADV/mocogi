@@ -17,7 +17,7 @@ class LanguageParserSpec
         val input =
           """de:
             |  de_label: Deutsch""".stripMargin
-        val (res, rest) = langFileParser.run(input)
+        val (res, rest) = langFileParser.parse(input)
         assert(
           res.value == List(Language("de", "Deutsch"))
         )
@@ -34,7 +34,7 @@ class LanguageParserSpec
             |
             |de_en:
             |  de_label: Deutsch und Englisch""".stripMargin
-        val (res, rest) = langFileParser.run(input)
+        val (res, rest) = langFileParser.parse(input)
         assert(
           res.value == List(
             Language("de", "Deutsch"),
@@ -46,7 +46,7 @@ class LanguageParserSpec
       }
 
       "parse all languages in lang.yaml" in {
-        val (res, rest) = withResFile("lang.yaml")(langFileParser.run)
+        val (res, rest) = withResFile("lang.yaml")(langFileParser.parse)
         assert(
           res.value == List(
             Language("de", "Deutsch"),
@@ -61,15 +61,15 @@ class LanguageParserSpec
 
   "parse language" should {
     "return a valid language" in {
-      val (res1, rest1) = languageParser.run("language: lang.de\n")
+      val (res1, rest1) = languageParser.parse("language: lang.de\n")
       assert(res1.value == Language("de", "Deutsch"))
       assert(rest1.isEmpty)
 
-      val (res2, rest2) = languageParser.run("language: lang.en\n")
+      val (res2, rest2) = languageParser.parse("language: lang.en\n")
       assert(res2.value == Language("en", "Englisch"))
       assert(rest2.isEmpty)
 
-      val (res3, rest3) = languageParser.run("language: lang.de_en\n")
+      val (res3, rest3) = languageParser.parse("language: lang.de_en\n")
       assert(res3.value == Language("de_en", "Deutsch und Englisch"))
       assert(rest3.isEmpty)
     }

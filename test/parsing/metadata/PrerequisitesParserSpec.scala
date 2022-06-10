@@ -17,21 +17,21 @@ class PrerequisitesParserSpec
     "parse recommended prerequisites" should {
       "return no recommended prerequisites when there is none" in {
         val input = "recommended-prerequisites: none\n"
-        val (res, rest) = recommendedPrerequisitesParser.run(input)
+        val (res, rest) = recommendedPrerequisitesParser.parse(input)
         assert(res.value == Nil)
         assert(rest.isEmpty)
       }
 
       "return a valid recommended prerequisite when there is one" in {
         val input = "recommended-prerequisites: module.ap1\n"
-        val (res, rest) = recommendedPrerequisitesParser.run(input)
+        val (res, rest) = recommendedPrerequisitesParser.parse(input)
         assert(res.value == List("ap1"))
         assert(rest.isEmpty)
       }
 
       "return a valid recommended prerequisite when there is one ignoring whitespaces" in {
         val input = "recommended-prerequisites:  module.ap1\n"
-        val (res, rest) = recommendedPrerequisitesParser.run(input)
+        val (res, rest) = recommendedPrerequisitesParser.parse(input)
         assert(res.value == List("ap1"))
         assert(rest.isEmpty)
       }
@@ -43,7 +43,7 @@ class PrerequisitesParserSpec
             |-module.ap2
             |-module.ma1
             |""".stripMargin
-        val (res, rest) = recommendedPrerequisitesParser.run(input)
+        val (res, rest) = recommendedPrerequisitesParser.parse(input)
         assert(res.value == List("ap1", "ap2", "ma1"))
         assert(rest.isEmpty)
       }
@@ -55,7 +55,7 @@ class PrerequisitesParserSpec
             | - module.ap2
             | - module.ma1
             |""".stripMargin
-        val (res, rest) = recommendedPrerequisitesParser.run(input)
+        val (res, rest) = recommendedPrerequisitesParser.parse(input)
         assert(res.value == List("ap1", "ap2", "ma1"))
         assert(rest.isEmpty)
       }
@@ -64,21 +64,21 @@ class PrerequisitesParserSpec
     "parse required prerequisites" should {
       "return no required prerequisites when there is none" in {
         val input = "required-prerequisites: none\n"
-        val (res, rest) = requiredPrerequisitesParser.run(input)
+        val (res, rest) = requiredPrerequisitesParser.parse(input)
         assert(res.value == Nil)
         assert(rest.isEmpty)
       }
 
       "return a valid required prerequisite when there is one" in {
         val input = "required-prerequisites: module.ap1\n"
-        val (res, rest) = requiredPrerequisitesParser.run(input)
+        val (res, rest) = requiredPrerequisitesParser.parse(input)
         assert(res.value == List("ap1"))
         assert(rest.isEmpty)
       }
 
       "return a valid required prerequisite when there is one ignoring whitespaces" in {
         val input = "required-prerequisites:  module.ap1\n"
-        val (res, rest) = requiredPrerequisitesParser.run(input)
+        val (res, rest) = requiredPrerequisitesParser.parse(input)
         assert(res.value == List("ap1"))
         assert(rest.isEmpty)
       }
@@ -90,7 +90,7 @@ class PrerequisitesParserSpec
             |-module.ap2
             |-module.ma1
             |""".stripMargin
-        val (res, rest) = requiredPrerequisitesParser.run(input)
+        val (res, rest) = requiredPrerequisitesParser.parse(input)
         assert(res.value == List("ap1", "ap2", "ma1"))
         assert(rest.isEmpty)
       }
@@ -102,7 +102,7 @@ class PrerequisitesParserSpec
             | - module.ap2
             | - module.ma1
             |""".stripMargin
-        val (res, rest) = requiredPrerequisitesParser.run(input)
+        val (res, rest) = requiredPrerequisitesParser.parse(input)
         assert(res.value == List("ap1", "ap2", "ma1"))
         assert(rest.isEmpty)
       }

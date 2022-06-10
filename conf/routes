@@ -6,6 +6,7 @@
 GET        /                    controllers.HomeController.index
 
 PUT        /parse               controllers.ModuleCompendiumParsingController.parseFile()
+PUT        /generate            controllers.ModuleCompendiumParsingController.generate()
 
 # Map static resources from the /public folder to the /assets URL path
 GET        /assets/*file        controllers.Assets.versioned(path="/public", file: Asset)

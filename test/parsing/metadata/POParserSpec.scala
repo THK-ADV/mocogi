@@ -10,7 +10,7 @@ class POParserSpec extends AnyWordSpec with ParserSpecHelper with EitherValues {
   "A PO Parser" should {
     "parse a single po" in {
       val input = "po: AI2\n"
-      val (res, rest) = poParser.run(input)
+      val (res, rest) = poParser.parse(input)
       assert(res.value == List("AI2"))
       assert(rest.isEmpty)
     }
@@ -22,7 +22,7 @@ class POParserSpec extends AnyWordSpec with ParserSpecHelper with EitherValues {
           |-MI4
           |-WI5
           |""".stripMargin
-      val (res, rest) = poParser.run(input)
+      val (res, rest) = poParser.parse(input)
       assert(res.value == List("AI2", "MI4", "WI5"))
       assert(rest.isEmpty)
     }
@@ -34,7 +34,7 @@ class POParserSpec extends AnyWordSpec with ParserSpecHelper with EitherValues {
           | - MI4
           | - WI5
           |""".stripMargin
-      val (res, rest) = poParser.run(input)
+      val (res, rest) = poParser.parse(input)
       assert(res.value == List("AI2", "MI4", "WI5"))
       assert(rest.isEmpty)
     }

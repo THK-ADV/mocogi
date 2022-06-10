@@ -17,7 +17,7 @@ class AssessmentMethodParserSpec
         val input =
           """written-exam:
             |  de_label: Klausurarbeiten""".stripMargin
-        val (res, rest) = assessmentMethodFileParser.run(input)
+        val (res, rest) = assessmentMethodFileParser.parse(input)
         assert(
           res.value == List(AssessmentMethod("written-exam", "Klausurarbeiten"))
         )
@@ -37,7 +37,7 @@ class AssessmentMethodParserSpec
             |
             |practical-report:
             |  de_label: Praktikumsbericht""".stripMargin
-        val (res, rest) = assessmentMethodFileParser.run(input)
+        val (res, rest) = assessmentMethodFileParser.parse(input)
         assert(
           res.value == List(
             AssessmentMethod("project", "Projektarbeit"),
@@ -51,7 +51,7 @@ class AssessmentMethodParserSpec
 
       "parse all assessment methods in assessment.yaml" in {
         val (res, rest) =
-          withResFile("assessment.yaml")(assessmentMethodFileParser.run)
+          withResFile("assessment.yaml")(assessmentMethodFileParser.parse)
         assert(
           res.value == List(
             AssessmentMethod("written-exam", "Klausurarbeiten"),
@@ -82,7 +82,7 @@ class AssessmentMethodParserSpec
     "parse assessment method" when {
       "return a single assessment method" in {
         val input = "assessment-methods:assessment.written-exam\n"
-        val (res, rest) = assessmentMethodParser.run(input)
+        val (res, rest) = assessmentMethodParser.parse(input)
         assert(
           res.value == List(
             AssessmentMethod("written-exam", "Klausurarbeiten")
@@ -93,7 +93,7 @@ class AssessmentMethodParserSpec
 
       "return a single assessment method ignoring random whitespaces" in {
         val input = "assessment-methods: assessment.written-exam\n"
-        val (res, rest) = assessmentMethodParser.run(input)
+        val (res, rest) = assessmentMethodParser.parse(input)
         assert(
           res.value == List(
             AssessmentMethod("written-exam", "Klausurarbeiten")
@@ -108,7 +108,7 @@ class AssessmentMethodParserSpec
               |-assessment.written-exam
               |-assessment.presentation
               |""".stripMargin
-        val (res, rest) = assessmentMethodParser.run(input)
+        val (res, rest) = assessmentMethodParser.parse(input)
         assert(
           res.value == List(
             AssessmentMethod("written-exam", "Klausurarbeiten"),
@@ -124,7 +124,7 @@ class AssessmentMethodParserSpec
               | - assessment.written-exam
               | - assessment.presentation
               |""".stripMargin
-        val (res, rest) = assessmentMethodParser.run(input)
+        val (res, rest) = assessmentMethodParser.parse(input)
         assert(
           res.value == List(
             AssessmentMethod("written-exam", "Klausurarbeiten"),
@@ -140,7 +140,7 @@ class AssessmentMethodParserSpec
               | - assessment.written-exam
               | - assessment.presentation
               | abc""".stripMargin
-        val (res, rest) = assessmentMethodParser.run(input)
+        val (res, rest) = assessmentMethodParser.parse(input)
         assert(
           res.value == List(
             AssessmentMethod("written-exam", "Klausurarbeiten"),

@@ -20,7 +20,7 @@ trait SimpleFileParser[A] {
       .map(_.map(makeType))
 
   protected def types: List[A] =
-    withResFile(filename)(s => fileParser.run(s)._1)
+    withResFile(filename)(s => fileParser.parse(s)._1)
       .fold(
         e => throw e,
         xs =>

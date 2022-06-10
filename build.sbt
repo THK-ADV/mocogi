@@ -33,4 +33,4 @@ lazy val test = Seq(
   "org.scalatest" %% "scalatest" % "3.2.12" % "test",
 )
 
-lazy val parser = "de.th-koeln.inf.adv" %% "nebulak" % "0.1"
+lazy val parser = "de.th-koeln.inf.adv" %% "nebulak" % "0.3"

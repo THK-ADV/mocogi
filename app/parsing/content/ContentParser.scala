@@ -1,62 +1,85 @@
 package parsing.content
 
-import parser.Parser
 import parser.Parser._
 import parser.ParserOps._
 import parsing.types.Content
 
 object ContentParser {
-  val contentParser: Parser[(Content, Content)] =
-    prefix("## (de) Angestrebte Lernergebnisse:")
+  val contentParser =
+    prefix("## (de)")
+      .skip(zeroOrMoreSpaces)
+      .take(literal("Angestrebte Lernergebnisse"))
+      .skip(prefix(":"))
       .skip(newline)
-      .take(prefixTo("## (en) Learning Outcome:"))
+      .zip(prefixTo("## (en)"))
+      .skip(zeroOrMoreSpaces)
+      .take(literal("Learning Outcome"))
+      .skip(prefix(":"))
       .skip(newline)
-      .zip(prefixTo("## (de) Modulinhalte:"))
-      .skip(newline)
-      .take(prefixTo("## (en) Module Content:"))
-      .skip(newline)
-      .take(prefixTo("## (de) Lehr- und Lernmethoden (Medienformen):"))
-      .skip(newline)
-      .take(prefixTo("## (en) Teaching and Learning Methods:"))
-      .skip(newline)
-      .take(prefixTo("## (de) Empfohlene Literatur:"))
-      .skip(newline)
-      .take(prefixTo("## (en) Recommended Reading:"))
-      .skip(newline)
-      .take(prefixTo("## (de) Besonderheiten:"))
-      .skip(newline)
-      .take(prefixTo("## (en) Particularities:"))
-      .skip(optional(newline))
-      .take(rest)
-      .skip(end)
+      .take(prefixTo("## (de)"))
+      .take(
+        zeroOrMoreSpaces
+          .take(literal("Modulinhalte"))
+          .skip(prefix(":"))
+          .skip(newline)
+          .zip(prefixTo("## (en)"))
+          .skip(zeroOrMoreSpaces)
+          .take(literal("Module Content"))
+          .skip(prefix(":"))
+          .skip(newline)
+          .take(prefixTo("## (de)"))
+      )
+      .take(
+        zeroOrMoreSpaces
+          .take(literal("Lehr- und Lernmethoden (Medienformen)"))
+          .skip(prefix(":"))
+          .skip(newline)
+          .zip(prefixTo("## (en)"))
+          .skip(zeroOrMoreSpaces)
+          .take(literal("Teaching and Learning Methods"))
+          .skip(prefix(":"))
+          .skip(newline)
+          .take(prefixTo("## (de)"))
+      )
+      .take(
+        zeroOrMoreSpaces
+          .take(literal("Empfohlene Literatur"))
+          .skip(prefix(":"))
+          .skip(newline)
+          .zip(prefixTo("## (en)"))
+          .skip(zeroOrMoreSpaces)
+          .take(literal("Recommended Reading"))
+          .skip(prefix(":"))
+          .skip(newline)
+          .take(prefixTo("## (de)"))
+      )
+      .take(
+        zeroOrMoreSpaces
+          .take(literal("Besonderheiten"))
+          .skip(prefix(":"))
+          .skip(newline)
+          .zip(prefixTo("## (en)"))
+          .skip(zeroOrMoreSpaces)
+          .take(literal("Particularities"))
+          .skip(prefix(":"))
+          .skip(optional(newline))
+          .take(rest)
+          .skip(end)
+      )
       .map {
         case (
-              deOutcome,
-              enOutcome,
-              deContent,
-              enContent,
-              deMethods,
-              enMethods,
-              deReading,
-              enReading,
-              deParticularities,
-              enParticularities
+              deH,
+              deC,
+              enH,
+              enC,
+              (deH2, deC2, enH2, enC2),
+              (deH3, deC3, enH3, enC3),
+              (deH4, deC4, enH4, enC4),
+              (deH5, deC5, enH5, enC5)
             ) =>
           (
-            Content(
-              deOutcome,
-              deContent,
-              deMethods,
-              deReading,
-              deParticularities
-            ),
-            Content(
-              enOutcome,
-              enContent,
-              enMethods,
-              enReading,
-              enParticularities
-            )
+            Content(deH, deC, deH2, deC2, deH3, deC3, deH4, deC4, deH5, deC5),
+            Content(enH, enC, enH2, enC2, enH3, enC3, enH4, enC4, enH5, enC5)
           )
       }
 }

@@ -17,7 +17,7 @@ class ModuleTypeParserSpec
         val input =
           """mandatory:
             |  de_label: Pflicht""".stripMargin
-        val (res, rest) = moduleTypesFileParser.run(input)
+        val (res, rest) = moduleTypesFileParser.parse(input)
         assert(
           res.value == List(ModuleType("mandatory", "Pflicht"))
         )
@@ -30,7 +30,7 @@ class ModuleTypeParserSpec
             |  de_label: Pflicht
             |wpf:
             |  de_label: Wahlpflichtfach""".stripMargin
-        val (res, rest) = moduleTypesFileParser.run(input)
+        val (res, rest) = moduleTypesFileParser.parse(input)
         assert(
           res.value == List(
             ModuleType("mandatory", "Pflicht"),
@@ -53,7 +53,7 @@ class ModuleTypeParserSpec
             |
             |supermodule:
             |  de_label: Obermodul""".stripMargin
-        val (res, rest) = moduleTypesFileParser.run(input)
+        val (res, rest) = moduleTypesFileParser.parse(input)
         assert(
           res.value == List(
             ModuleType("mandatory", "Pflicht"),
@@ -67,7 +67,7 @@ class ModuleTypeParserSpec
 
       "return all modules in module_type.yaml" in {
         val (res, rest) =
-          withResFile("module_type.yaml")(moduleTypesFileParser.run)
+          withResFile("module_type.yaml")(moduleTypesFileParser.parse)
         assert(
           res.value == List(
             ModuleType("mandatory", "Pflicht"),
@@ -83,12 +83,12 @@ class ModuleTypeParserSpec
     "parse module type" should {
       "return module types if they are valid" in {
         val (res1, rest1) =
-          moduleTypeParser.run("module_type: module_type.mandatory\n")
+          moduleTypeParser.parse("module_type: module_type.mandatory\n")
         assert(res1.value == ModuleType("mandatory", "Pflicht"))
         assert(rest1.isEmpty)
 
         val (res2, rest2) =
-          moduleTypeParser.run("module_type: module_type.wpf\n")
+          moduleTypeParser.parse("module_type: module_type.wpf\n")
         assert(res2.value == ModuleType("wpf", "Wahlpflichtfach"))
         assert(rest2.isEmpty)
       }

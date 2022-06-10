@@ -21,7 +21,7 @@ class WorkloadParserSpec
           |  exercise: 18
           |  self_study: 78
           |""".stripMargin
-      val (res, rest) = workloadParser.run(input)
+      val (res, rest) = workloadParser.parse(input)
       assert(res.value == Workload(150, 36, 0, 18, 18, 78))
       assert(rest.isEmpty)
     }
@@ -35,12 +35,12 @@ class WorkloadParserSpec
           |  exercise: 18
           |  self_study: 78
           |""".stripMargin
-      val (res, rest) = workloadParser.run(input)
+      val (res, rest) = workloadParser.parse(input)
       res match {
         case Right(_) => fail()
         case Left(e) =>
           assert(e.expected == s"total of workload to be 150, but was 160")
-          assert(e.remainingInput == input)
+          assert(e.found == input)
           assert(rest == input)
       }
     }
@@ -54,12 +54,12 @@ class WorkloadParserSpec
           |  exercise: 18
           |  self_study: 78
           |""".stripMargin
-      val (res, rest) = workloadParser.run(input)
+      val (res, rest) = workloadParser.parse(input)
       res match {
         case Right(_) => fail()
         case Left(e) =>
           assert(e.expected == "practical:")
-          assert(e.remainingInput == input)
+          assert(e.found == input)
           assert(rest == input)
       }
     }

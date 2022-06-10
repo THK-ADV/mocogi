@@ -17,7 +17,7 @@ class ResponsibilitiesParserSpec
           |coordinator:person.abe
           |lecturers:person.ald
           |""".stripMargin
-      val (res, rest) = responsibilitiesParser.run(resp)
+      val (res, rest) = responsibilitiesParser.parse(resp)
       assert(res.value.coordinators.map(_.abbrev) == List("abe"))
       assert(res.value.lecturers.map(_.abbrev) == List("ald"))
       assert(rest.isEmpty)
@@ -29,7 +29,7 @@ class ResponsibilitiesParserSpec
           | coordinator: person.abe
           | lecturers: person.ald
           |""".stripMargin
-      val (res, rest) = responsibilitiesParser.run(resp)
+      val (res, rest) = responsibilitiesParser.parse(resp)
       assert(res.value.coordinators.map(_.abbrev) == List("abe"))
       assert(res.value.lecturers.map(_.abbrev) == List("ald"))
       assert(rest.isEmpty)
@@ -43,7 +43,7 @@ class ResponsibilitiesParserSpec
           |-person.ddu
           |lecturers:person.ald
           |""".stripMargin
-      val (res, rest) = responsibilitiesParser.run(resp)
+      val (res, rest) = responsibilitiesParser.parse(resp)
       assert(res.value.coordinators.map(_.abbrev) == List("abe", "ddu"))
       assert(res.value.lecturers.map(_.abbrev) == List("ald"))
       assert(rest.isEmpty)
@@ -57,7 +57,7 @@ class ResponsibilitiesParserSpec
           | -person.ddu
           | lecturers: person.ald
           |""".stripMargin
-      val (res, rest) = responsibilitiesParser.run(resp)
+      val (res, rest) = responsibilitiesParser.parse(resp)
       assert(res.value.coordinators.map(_.abbrev) == List("abe", "ddu"))
       assert(res.value.lecturers.map(_.abbrev) == List("ald"))
       assert(rest.isEmpty)
@@ -71,7 +71,7 @@ class ResponsibilitiesParserSpec
           |-person.ald
           |-person.ddu
           |""".stripMargin
-      val (res, rest) = responsibilitiesParser.run(resp)
+      val (res, rest) = responsibilitiesParser.parse(resp)
       assert(res.value.coordinators.map(_.abbrev) == List("abe"))
       assert(res.value.lecturers.map(_.abbrev) == List("ald", "ddu"))
       assert(rest.isEmpty)
@@ -85,7 +85,7 @@ class ResponsibilitiesParserSpec
           | - person.ald
           | - person.ddu
           |""".stripMargin
-      val (res, rest) = responsibilitiesParser.run(resp)
+      val (res, rest) = responsibilitiesParser.parse(resp)
       assert(res.value.coordinators.map(_.abbrev) == List("abe"))
       assert(res.value.lecturers.map(_.abbrev) == List("ald", "ddu"))
       assert(rest.isEmpty)
@@ -101,7 +101,7 @@ class ResponsibilitiesParserSpec
           |  - person.ald
           |  - person.ddu
           |""".stripMargin
-      val (res, rest) = responsibilitiesParser.run(resp)
+      val (res, rest) = responsibilitiesParser.parse(resp)
       assert(res.value.coordinators.map(_.abbrev) == List("abe", "ald"))
       assert(res.value.lecturers.map(_.abbrev) == List("ald", "ddu"))
       assert(rest.isEmpty)
@@ -117,7 +117,7 @@ class ResponsibilitiesParserSpec
           |  - person.ald
           |  - person.ddu
           |""".stripMargin
-      val (res, rest) = responsibilitiesParser.run(resp)
+      val (res, rest) = responsibilitiesParser.parse(resp)
       assert(res.value.coordinators.map(_.abbrev) == List("abe", "ald"))
       assert(res.value.lecturers.map(_.abbrev) == List("ald", "ddu"))
       assert(rest.isEmpty)

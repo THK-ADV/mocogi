@@ -1,0 +1,162 @@
+---
+module_code: 00895144-30e4-4bd2-b800-bb706686d950
+module_title: Full Stack iOS Entwicklung mit Swift
+module_abbrev: FSIOS
+module_type: module_type.wpf
+credit_points: 5
+language: lang.de
+duration_of_module: 1
+recommended_semester: 4
+frequency: season.ss
+responsibilities:
+coordinator: person.ald
+lecturers: person.ald
+assessment-methods:
+  - assessment.project
+  - assessment.presentation
+workload: 150
+  lecture: 45
+  seminar: 0
+  practical: 0
+  exercise: 0
+  self_study: 105
+recommended-prerequisites:
+ - module.ap1
+ - module.ap2
+required-prerequisites: none
+status: status.active
+location: location.gm
+po:
+  - AI
+  - MI
+  - ITM
+  - WI
+---
+
+## (de) Angestrebte Lernergebnisse:
+
+- Probleme Analysieren und Dekonstruieren, Lösungen Konzipieren, Fertigen und Bewerten
+- Bestehende Konzepte der Informatik konsolidieren
+- Neue Programmiersprache, Konzepte und Sprachfeatures
+- Mobile (iOS-lastige) Patterns und Programmierstile
+- Funktionale Denkweise
+- Mobile Entwicklung im Allgemeinen
+- iOS Entwicklung im Speziellen
+- Zusammenspiel von Design und Implementierung
+
+## (en) Learning Outcome:
+
+## (de) Modulinhalte:
+
+Die Liste ist nur eine grobe Vorschau, vom Semester abhängig und daher nicht vollständig.
+
+### Mobile Computing
+
+- Mobile constraints
+    + Trafic
+    + Performance
+    + Single main thread
+    + 25 FPS / frame drops
+    + Secure connection (https only)
+- Users privacy
+    + Personal data
+    + Trust
+- Persistance
+    - UserDefaults (Key-Value Storage)
+    - Core Data (kinda object oriented SQLite)
+    - File System
+- Multithreading
+    + main thread
+    + background threads
+- Networking
+- Sensors
+- Gestures
+    + Touch
+    + Pan
+- Event driven programming
+    + Application lifecycle
+    + Background time / updates
+- UI and Interaction Design
+- Notifications
+    + User Notfications
+    + Silent Notifications
+- Permissions and Entitlements
+- Developer Programm
+- App signing
+
+### iOS Development
+- Platform architecture
+    + App <- Cocoa Touch <- Media <- Core Services <- Core OS
+- Cocoa Touch vs. Swift vs. Swift UI
+- Swift Programming Language
+- Objective-C
+- Swift is open source (swift evolution process)
+- Memory management (automatic reference counting - ARC)
+- Xcode
+- Swift Playgrounds
+
+### Architecture
+- MVVM (Model-View-ViewModel)
+- Declarative UI
+- Reactive UI
+
+### Swift Programming Language
+- Swift Language Features
+- Swift Type System
+- Escaping and non-escaping closures
+- Functional programming in Swift
+- Protocol oriented programming in Swift
+
+### UI Development
+- Layout System
+    - View Management
+    - View lifecycle
+    - Coordinate system
+    - Points vs. Pixels
+    - Geometry Reader
+    - SwiftUIs adaption
+- Navigation
+- Creating custom views
+- Drawing custom views
+    - Shape
+- Animations
+- Swift UI
+    - @ViewBuilder
+    - View modifier
+    - Property Observers
+    - Property Wrappers
+        + `@State`
+        + `@Published?`
+        + @ObservedObject
+- UIKit Integration
+
+## (en) Module Content:
+
+## (de) Lehr- und Lernmethoden (Medienformen):
+
+- slides
+- whiteboard
+- live coding
+
+## (en) Teaching and Learning Methods:
+
+## (de) Empfohlene Literatur:
+
+- [Developing Applications for iOS using SwiftUI (CS193p)](https://cs193p.sites.stanford.edu)
+- [Swift Programming Language Guide](https://docs.swift.org/swift-book/LanguageGuide/TheBasics.html)
+- [Swift Standard Library](https://developer.apple.com/documentation/swift/swift_standard_library)
+- [SwiftUI Documentation](https://developer.apple.com/documentation/swiftui/)
+- [Human Interface Guidelines](https://developer.apple.com/design/human-interface-guidelines/ios/overview/themes/)
+- [Introducing SwiftUI Tutorial von Apple](https://developer.apple.com/tutorials/swiftui)
+- [Discover SwiftUI by John Sundell](https://www.swiftbysundell.com/discover/swiftui/)
+- [Paul Hudsons YouTube Tutorials zu Swift, SwiftUI und co.](https://www.youtube.com/channel/UCmJi5RdDLgzvkl3Ly0DRMlQ)
+
+## (en) Recommended Reading:
+
+## (de) Besonderheiten:
+
+- Englisch, da Screencasts und Literatur auf Englisch sind
+- Fortgeschrittene Programmierkenntnisse, egal in welcher Sprache
+- Leider wird ein Mac vorausgesetzt, weil man nur auf einem Mac für iOS entwickeln kann
+
+## (en) Particularities:

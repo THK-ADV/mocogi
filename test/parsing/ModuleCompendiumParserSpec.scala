@@ -15,7 +15,7 @@ class ModuleCompendiumParserSpec
   "A Module Compendium Parser" should {
     "parse a module-compendium1.duda" in {
       val (res, rest) =
-        withTestFile("module-compendium1.duda")(moduleCompendiumParser.run)
+        withTestFile("module-compendium1.duda")(moduleCompendiumParser.parse)
       assert(rest.isEmpty)
       val (metadata, deContent, enContent) =
         ModuleCompendium.unapply(res.value).get
@@ -52,22 +52,22 @@ class ModuleCompendiumParserSpec
       assert(metadata.status == Status("active", "Aktiv"))
       assert(metadata.location == Location("gm", "Gummersbach"))
       assert(metadata.po == List("AI2"))
-      assert(deContent.learningOutcome == "\nProgrammieren lernen\n\n")
-      assert(enContent.learningOutcome == "\nLearn to code\n\n")
-      assert(deContent.content == "\n- Klassen\n- Vererbung\n- Polymorphie\n\n")
+      assert(deContent.learningOutcomeBody == "\nProgrammieren lernen\n\n")
+      assert(enContent.learningOutcomeBody == "\nLearn to code\n\n")
+      assert(deContent.contentBody == "\n- Klassen\n- Vererbung\n- Polymorphie\n\n")
       assert(
-        enContent.content == "\n- Classes\n- Inheritance\n- Polymorphism\n\n"
+        enContent.contentBody == "\n- Classes\n- Inheritance\n- Polymorphism\n\n"
       )
-      assert(deContent.teachingAndLearningMethods == "\nSlides, Whiteboard\n\n")
-      assert(enContent.teachingAndLearningMethods == "\n")
+      assert(deContent.teachingAndLearningMethodsBody == "\nSlides, Whiteboard\n\n")
+      assert(enContent.teachingAndLearningMethodsBody == "\n")
       assert(
-        deContent.recommendedReading == "\nProgrammieren lernen mit Kotlin. Kohls, Dobrynin, Leonhardt\n\n"
+        deContent.recommendedReadingBody == "\nProgrammieren lernen mit Kotlin. Kohls, Dobrynin, Leonhardt\n\n"
       )
       assert(
-        enContent.recommendedReading == "\nProgrammieren lernen mit Kotlin. Kohls, Dobrynin, Leonhardt\n\n"
+        enContent.recommendedReadingBody == "\nProgrammieren lernen mit Kotlin. Kohls, Dobrynin, Leonhardt\n\n"
       )
-      assert(deContent.particularities == "\nnichts\n\n")
-      assert(enContent.particularities == "\nnothing")
+      assert(deContent.particularitiesBody == "\nnichts\n\n")
+      assert(enContent.particularitiesBody == "\nnothing")
     }
   }
 }

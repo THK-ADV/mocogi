@@ -11,6 +11,7 @@ import parsing.ModuleCompendiumParser.moduleCompendiumParser
 import parsing.types.{Status => ModuleStatus, _}
 import play.api.libs.json.{Format, Json}
 import play.api.mvc.{AbstractController, ControllerComponents}
+import printing.ModuleCompendiumPrinter
 
 import javax.inject.{Inject, Singleton}
 
@@ -21,7 +22,7 @@ class ModuleCompendiumParsingController @Inject() (
 
   def parseFile() = Action(parse.temporaryFile) { r =>
     val input = Files.asCharSource(r.body.path.toFile, Charsets.UTF_8).read()
-    val (res, rest) = moduleCompendiumParser.run(input)
+    val (res, rest) = moduleCompendiumParser.parse(input)
     if (rest.nonEmpty)
       failure(s"remaining input should be fully consumed, but was $rest")
     else {
@@ -29,6 +30,14 @@ class ModuleCompendiumParsingController @Inject() (
         case Right(c) => success(Json.toJson(c))
         case Left(e)  => failure(Json.toJson(e))
       }
+    }
+  }
+
+  def generate() = Action(parse.temporaryFile) { r =>
+    val input = Files.asCharSource(r.body.path.toFile, Charsets.UTF_8).read()
+    ModuleCompendiumPrinter.generate(input) match {
+      case Right(html) => Ok(html)
+      case Left(e)     => InternalServerError(Json.obj("error" -> e.getMessage))
     }
   }
 

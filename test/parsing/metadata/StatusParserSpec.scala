@@ -17,7 +17,7 @@ class StatusParserSpec
         val input =
           """active:
             |  de_label: Aktiv""".stripMargin
-        val (res, rest) = statusFileParser.run(input)
+        val (res, rest) = statusFileParser.parse(input)
         assert(
           res.value == List(Status("active", "Aktiv"))
         )
@@ -31,7 +31,7 @@ class StatusParserSpec
             |
             |inactive:
             |  de_label: Inaktiv""".stripMargin
-        val (res, rest) = statusFileParser.run(input)
+        val (res, rest) = statusFileParser.parse(input)
         assert(
           res.value == List(
             Status("active", "Aktiv"),
@@ -42,7 +42,7 @@ class StatusParserSpec
       }
 
       "parse all status in status.yaml" in {
-        val (res, rest) = withResFile("status.yaml")(statusFileParser.run)
+        val (res, rest) = withResFile("status.yaml")(statusFileParser.parse)
         assert(
           res.value == List(
             Status("active", "Aktiv"),
@@ -55,11 +55,11 @@ class StatusParserSpec
 
     "parse status" should {
       "return a valid status" in {
-        val (res1, rest1) = statusParser.run("status: status.active\n")
+        val (res1, rest1) = statusParser.parse("status: status.active\n")
         assert(res1.value == Status("active", "Aktiv"))
         assert(rest1.isEmpty)
 
-        val (res2, rest2) = statusParser.run("status: status.inactive\n")
+        val (res2, rest2) = statusParser.parse("status: status.inactive\n")
         assert(res2.value == Status("inactive", "Inaktiv"))
         assert(rest2.isEmpty)
       }

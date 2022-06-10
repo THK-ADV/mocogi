@@ -17,7 +17,7 @@ class SeasonParserSpec
         val input =
           """ss:
             |  de_label: Sommersemester""".stripMargin
-        val (res, rest) = seasonFileParser.run(input)
+        val (res, rest) = seasonFileParser.parse(input)
         assert(
           res.value == List(Season("ss", "Sommersemester"))
         )
@@ -34,7 +34,7 @@ class SeasonParserSpec
             |
             |ws_ss:
             |  de_label: Winter- und Sommersemester""".stripMargin
-        val (res, rest) = seasonFileParser.run(input)
+        val (res, rest) = seasonFileParser.parse(input)
         assert(
           res.value == List(
             Season("ws", "Wintersemester"),
@@ -46,7 +46,7 @@ class SeasonParserSpec
       }
 
       "parse all seasons in season.yaml" in {
-        val (res, rest) = withResFile("season.yaml")(seasonFileParser.run)
+        val (res, rest) = withResFile("season.yaml")(seasonFileParser.parse)
         assert(
           res.value == List(
             Season("ws", "Wintersemester"),
@@ -58,15 +58,15 @@ class SeasonParserSpec
       }
     }
     "parse season" in {
-      val (res1, rest1) = seasonParser.run("frequency: season.ws\n")
+      val (res1, rest1) = seasonParser.parse("frequency: season.ws\n")
       assert(res1.value == Season("ws", "Wintersemester"))
       assert(rest1.isEmpty)
 
-      val (res2, rest2) = seasonParser.run("frequency: season.ss\n")
+      val (res2, rest2) = seasonParser.parse("frequency: season.ss\n")
       assert(res2.value == Season("ss", "Sommersemester"))
       assert(rest2.isEmpty)
 
-      val (res3, rest3) = seasonParser.run("frequency: season.ws_ss\n")
+      val (res3, rest3) = seasonParser.parse("frequency: season.ws_ss\n")
       assert(res3.value == Season("ws_ss", "Winter- und Sommersemester"))
       assert(rest3.isEmpty)
     }

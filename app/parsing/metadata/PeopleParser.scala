@@ -21,7 +21,7 @@ object PeopleParser {
       .map(_.map(People.tupled))
 
   val people: List[People] =
-    withResFile("people-all.yaml")(s => peopleFileParser.run(s)._1)
+    withResFile("people-all.yaml")(s => peopleFileParser.parse(s)._1)
       .fold(
         e => throw e,
         xs =>

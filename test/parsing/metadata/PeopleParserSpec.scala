@@ -20,7 +20,7 @@ class PeopleParserSpec
             |  firstname: bar
             |  title: bar. baz.
             |  faculty: b""".stripMargin
-        val (res1, rest1) = peopleFileParser.run(input)
+        val (res1, rest1) = peopleFileParser.parse(input)
         assert(
           res1.value == List(People("tbb", "foo", "bar", "bar. baz.", "b"))
         )
@@ -54,7 +54,7 @@ class PeopleParserSpec
             |  firstname: Dennis
             |  title: M.Sc.
             |  faculty: F10""".stripMargin
-        val (res1, rest1) = peopleFileParser.run(input)
+        val (res1, rest1) = peopleFileParser.parse(input)
         assert(
           res1.value.map(_.abbrev) == List(
             "all",
@@ -68,7 +68,7 @@ class PeopleParserSpec
       }
 
       "parse all people in people-all.yaml" in {
-        val (res1, rest1) = withResFile("people-all.yaml")(peopleFileParser.run)
+        val (res1, rest1) = withResFile("people-all.yaml")(peopleFileParser.parse)
         assert(res1.value.size == 5)
         assert(rest1.isEmpty)
       }
@@ -77,7 +77,7 @@ class PeopleParserSpec
     "parse single people" should {
       "return a person if the input is simple" in {
         val input = "person.ald\n"
-        val (res1, rest1) = personParser.run(input)
+        val (res1, rest1) = personParser.parse(input)
         assert(
           res1.value == List(
             People("ald", "Dobrynin", "Alexander", "M.Sc.", "F10")
@@ -88,7 +88,7 @@ class PeopleParserSpec
 
       "return a person and the remaining input if it's not a valid person" in {
         val input = "person.ald\n abc"
-        val (res3, rest3) = personParser.run(input)
+        val (res3, rest3) = personParser.parse(input)
         assert(
           res3.value == List(
             People("ald", "Dobrynin", "Alexander", "M.Sc.", "F10")
@@ -99,7 +99,7 @@ class PeopleParserSpec
 
       "not return a person if they are unknown" in {
         val input = "person.abc\n"
-        val (res4, rest4) = personParser.run(input)
+        val (res4, rest4) = personParser.parse(input)
         assert(res4.value.isEmpty)
         assert(rest4 == "person.abc\n")
       }
@@ -112,7 +112,7 @@ class PeopleParserSpec
           """-person.ald
             |-person.abe
             |""".stripMargin
-        val (res1, rest1) = personParser.run(input)
+        val (res1, rest1) = personParser.parse(input)
         assert(
           res1.value == List(
             People("ald", "Dobrynin", "Alexander", "M.Sc.", "F10"),
@@ -128,7 +128,7 @@ class PeopleParserSpec
             |  -  person.abe
             |""".stripMargin
         val (res2, rest2) =
-          personParser.run(input)
+          personParser.parse(input)
         assert(
           res2.value == List(
             People("ald", "Dobrynin", "Alexander", "M.Sc.", "F10"),
@@ -144,7 +144,7 @@ class PeopleParserSpec
             |  -  person.abe
             | abc""".stripMargin
         val (res3, rest3) =
-          personParser.run(input)
+          personParser.parse(input)
         assert(
           res3.value == List(
             People("ald", "Dobrynin", "Alexander", "M.Sc.", "F10"),
@@ -160,7 +160,7 @@ class PeopleParserSpec
             |  -  person.abe
             | -  person.abc
             |""".stripMargin
-        val (res4, rest4) = personParser.run(
+        val (res4, rest4) = personParser.parse(
           input
         )
         assert(
