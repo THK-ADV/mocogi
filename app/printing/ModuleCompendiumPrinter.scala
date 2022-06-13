@@ -134,7 +134,7 @@ object ModuleCompendiumPrinter {
       res
         .flatMap(moduleMetadataPrinter.print(_, ""))
         .map(s => new ByteArrayInputStream(s.getBytes))
-        .flatMap(input =>
+        .flatMap(input => // TODO pandoc must be required
           Try("pandoc -f markdown -t html" #< input !!).toEither
         )
   }
