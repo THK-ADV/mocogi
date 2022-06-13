@@ -2,7 +2,10 @@ package parsing.metadata
 
 import org.scalatest.EitherValues
 import org.scalatest.wordspec.AnyWordSpec
-import parsing.metadata.PeopleParser.{peopleFileParser, personParser}
+import parser.Parser
+import parser.Parser.{newline, oneOf, optional, prefix, prefixTo, rest, whitespace, zeroOrMoreSpaces}
+import parser.ParserOps.{P0, P2, P3, P4}
+import parsing.metadata.PeopleParser.{peopleFileParser, personParser, string}
 import parsing.types.People
 import parsing.{ParserSpecHelper, withResFile}
 

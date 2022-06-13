@@ -1,11 +1,18 @@
 package parsing.metadata
 
+import parser.Parser
 import parser.Parser._
 import parser.ParserOps._
 import parsing.types.People
 import parsing.{stringForKey, withResFile}
 
 object PeopleParser {
+  def string(key: String): Parser[String] =
+    prefix(s"$key:")
+      .skip(zeroOrMoreSpaces)
+      .take(prefix(_ != '\n').or(rest))
+      .map(_.trim)
+
   val peopleFileParser =
     prefixTo(":")
       .skip(newline)

@@ -52,6 +52,8 @@ class ModuleCompendiumParserSpec
       assert(metadata.status == Status("active", "Aktiv"))
       assert(metadata.location == Location("gm", "Gummersbach"))
       assert(metadata.po == List("AI2"))
+      assert(deContent.recommendedPrerequisitesBody == "\nProgrammieren\n\n")
+      assert(enContent.recommendedPrerequisitesBody == "\nProgramming\n\n")
       assert(deContent.learningOutcomeBody == "\nProgrammieren lernen\n\n")
       assert(enContent.learningOutcomeBody == "\nLearn to code\n\n")
       assert(deContent.contentBody == "\n- Klassen\n- Vererbung\n- Polymorphie\n\n")

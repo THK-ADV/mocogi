@@ -114,6 +114,7 @@ object ModuleCompendiumPrinter {
           )
         )
         .skip(contentBlock(c.recommendedReadingHeader, c.recommendedReadingBody))
+        .skip(contentBlock(c.recommendedPrerequisitesHeader, c.recommendedPrerequisitesBody))
         .skip(contentBlock(c.particularitiesHeader, c.particularitiesBody))
         .skip(prefix("---"))
         .skip(newline.repeat(2))
