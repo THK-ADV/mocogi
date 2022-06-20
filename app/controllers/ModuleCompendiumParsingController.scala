@@ -9,11 +9,14 @@ import controllers.ModuleCompendiumParsingController.{
 import parser.ParsingError
 import parsing.ModuleCompendiumParser.moduleCompendiumParser
 import parsing.types.{Status => ModuleStatus, _}
+import play.api.libs.Files.TemporaryFile
 import play.api.libs.json.{Format, Json}
-import play.api.mvc.{AbstractController, ControllerComponents}
+import play.api.mvc.{AbstractController, ControllerComponents, Request, Result}
 import printing.ModuleCompendiumPrinter
 
 import javax.inject.{Inject, Singleton}
+import scala.language.implicitConversions
+import scala.util.{Failure, Success, Try}
 
 @Singleton
 class ModuleCompendiumParsingController @Inject() (
@@ -21,31 +24,41 @@ class ModuleCompendiumParsingController @Inject() (
 ) extends AbstractController(cc) {
 
   def parseFile() = Action(parse.temporaryFile) { r =>
-    val input = Files.asCharSource(r.body.path.toFile, Charsets.UTF_8).read()
-    val (res, rest) = moduleCompendiumParser.parse(input)
-    if (rest.nonEmpty)
-      failure(s"remaining input should be fully consumed, but was $rest")
-    else {
-      res match {
-        case Right(c) => success(Json.toJson(c))
-        case Left(e)  => failure(Json.toJson(e))
-      }
+    extractFileContent(r).map { input =>
+      val (res, rest) = moduleCompendiumParser.parse(input)
+      if (rest.nonEmpty)
+        failure(s"remaining input should be fully consumed, but was $rest")
+      else
+        res match {
+          case Right(c) => success(Json.toJson(c))
+          case Left(e)  => failure(Json.toJson(e))
+        }
     }
   }
 
   def generate() = Action(parse.temporaryFile) { r =>
-    val input = Files.asCharSource(r.body.path.toFile, Charsets.UTF_8).read()
-    ModuleCompendiumPrinter.generate(input) match {
-      case Right(html) => Ok(html)
-      case Left(e)     => InternalServerError(Json.obj("error" -> e.getMessage))
+    extractFileContent(r).map { input =>
+      ModuleCompendiumPrinter.generate(input) match {
+        case Right(html) => Ok(html)
+        case Left(e) => InternalServerError(Json.obj("error" -> e.getMessage))
+      }
     }
   }
+
+  private def extractFileContent(r: Request[TemporaryFile]) =
+    Try(Files.asCharSource(r.body.path.toFile, Charsets.UTF_8).read())
 
   private def failure(e: Json.JsValueWrapper) =
     InternalServerError(Json.obj("parsing-error" -> e))
 
   private def success(e: Json.JsValueWrapper) =
     Ok(Json.obj("module-compendium" -> e))
+
+  private implicit def tryToResult(`try`: Try[Result]): Result =
+    `try` match {
+      case Success(value) => value
+      case Failure(e) => InternalServerError(Json.obj("error" -> e.getMessage))
+    }
 }
 
 object ModuleCompendiumParsingController {
