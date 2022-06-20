@@ -3,9 +3,3 @@ mandatory:
 
 wpf:
   de_label: Wahlpflichtfach
-
-submodule:
-  de_label: Untermodul
-
-supermodule:
-  de_label: Obermodul
