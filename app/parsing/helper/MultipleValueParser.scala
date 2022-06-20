@@ -5,13 +5,13 @@ import parser.Parser._
 import parser.ParserOps._
 
 trait MultipleValueParser[A] {
-  def multipleParser(key: String, singleParser: Parser[A]): Parser[List[A]] = {
+  def multipleParser(key: String, singleParser: Parser[A], minimum: Int = 0): Parser[List[A]] = {
     val dashes =
       zeroOrMoreSpaces
         .skip(prefix("-"))
         .skip(zeroOrMoreSpaces)
         .take(singleParser)
-        .zeroOrMore()
+        .many(minimum = minimum)
 
     prefix(s"$key:")
       .skip(zeroOrMoreSpaces)

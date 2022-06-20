@@ -24,7 +24,7 @@ object PeopleParser {
       .take(stringForKey("title"))
       .skip(zeroOrMoreSpaces)
       .take(stringForKey("faculty"))
-      .zeroOrMore()
+      .many()
       .map(_.map(People.tupled))
 
   val people: List[People] =
@@ -52,7 +52,7 @@ object PeopleParser {
         .skip(prefix("-"))
         .skip(zeroOrMoreSpaces)
         .take(single)
-        .zeroOrMore()
+        .many()
 
     single.map(a => List(a)) or dashes
   }
