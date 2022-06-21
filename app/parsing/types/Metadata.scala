@@ -7,6 +7,7 @@ case class Metadata(
     title: String,
     abbrev: String,
     kind: ModuleType,
+    relation: Option[ModuleRelation],
     credits: Double,
     language: Language,
     duration: Int,
