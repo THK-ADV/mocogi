@@ -10,7 +10,7 @@ object ModuleCompendiumParser {
 
   val moduleCompendiumParser: Parser[ModuleCompendium] =
     metadataV1Parser
-      .skip(newline.zeroOrMore())
+      .skip(newline.many())
       .zip(contentParser)
       .map(a => ModuleCompendium(a._1, a._2._1, a._2._2))
 }

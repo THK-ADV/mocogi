@@ -6,12 +6,10 @@ import parser.ParserOps._
 import parsing.metadata.AssessmentMethodParser.assessmentMethodParser
 import parsing.metadata.LanguageParser.languageParser
 import parsing.metadata.LocationParser.locationParser
+import parsing.metadata.ModuleRelationParser.moduleRelationParser
 import parsing.metadata.ModuleTypeParser.moduleTypeParser
 import parsing.metadata.POParser.poParser
-import parsing.metadata.PrerequisitesParser.{
-  recommendedPrerequisitesParser,
-  requiredPrerequisitesParser
-}
+import parsing.metadata.PrerequisitesParser.{recommendedPrerequisitesParser, requiredPrerequisitesParser}
 import parsing.metadata.ResponsibilitiesParser.responsibilitiesParser
 import parsing.metadata.SeasonParser.seasonParser
 import parsing.metadata.StatusParser.statusParser
@@ -45,6 +43,7 @@ object MetadataParser {
       .zip(moduleTitleParser)
       .take(moduleAbbrevParser)
       .take(moduleTypeParser)
+      .take(moduleRelationParser)
       .take(creditPointsParser)
       .skip(newline)
       .take(languageParser)

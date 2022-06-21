@@ -71,9 +71,7 @@ class ModuleTypeParserSpec
         assert(
           res.value == List(
             ModuleType("mandatory", "Pflicht"),
-            ModuleType("wpf", "Wahlpflichtfach"),
-            ModuleType("submodule", "Untermodul"),
-            ModuleType("supermodule", "Obermodul")
+            ModuleType("wpf", "Wahlpflichtfach")
           )
         )
         assert(rest.isEmpty)
@@ -97,7 +95,7 @@ class ModuleTypeParserSpec
         assertError(
           moduleTypeParser,
           "module_type: module_type.optional\n",
-          "module_type.mandatory or module_type.wpf or module_type.submodule or module_type.supermodule"
+          "module_type.mandatory or module_type.wpf"
         )
       }
     }

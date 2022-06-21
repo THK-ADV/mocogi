@@ -16,7 +16,7 @@ trait SimpleFileParser[A] {
       .skip(zeroOrMoreSpaces)
       .zip(stringForKey("de_label"))
       .skip(optional(newline))
-      .zeroOrMore()
+      .many()
       .map(_.map(makeType))
 
   protected def types: List[A] =

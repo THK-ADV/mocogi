@@ -30,6 +30,14 @@ object ModuleCompendiumPrinter {
     if (xs.isEmpty) "Keine"
     else xs.mkString(", ")
 
+  private def fmtModuleRelation(relation: ModuleRelation): String =
+    relation match {
+      case ModuleRelation.Parent(children) =>
+        s"Submodule: ${children.mkString(", ")}"
+      case ModuleRelation.Child(parent) =>
+        s"Supermodul: $parent"
+    }
+
   private val localDatePattern = DateTimeFormatter.ofPattern("dd.MM.yyyy")
 
   private def now: String = LocalDate.now().format(localDatePattern)
@@ -55,6 +63,9 @@ object ModuleCompendiumPrinter {
         .skip(row("Modulnummer", m.abbrev))
         .skip(row("Modulbezeichnung", m.title))
         .skip(row("Art des Moduls", m.kind.deLabel))
+        .skipOpt(
+          m.relation.map(i => row("Modulbeziehung", fmtModuleRelation(i)))
+        )
         .skip(row("ECTS credits", m.credits.toString))
         .skip(row("Sprache", m.language.de_label))
         .skip(row("Dauer des Moduls", s"${m.duration} Semester"))
@@ -113,8 +124,15 @@ object ModuleCompendiumPrinter {
             c.teachingAndLearningMethodsBody
           )
         )
-        .skip(contentBlock(c.recommendedReadingHeader, c.recommendedReadingBody))
-        .skip(contentBlock(c.recommendedPrerequisitesHeader, c.recommendedPrerequisitesBody))
+        .skip(
+          contentBlock(c.recommendedReadingHeader, c.recommendedReadingBody)
+        )
+        .skip(
+          contentBlock(
+            c.recommendedPrerequisitesHeader,
+            c.recommendedPrerequisitesBody
+          )
+        )
         .skip(contentBlock(c.particularitiesHeader, c.particularitiesBody))
         .skip(prefix("---"))
         .skip(newline.repeat(2))
