@@ -100,7 +100,7 @@ class MetadataParserSpec
 
     "parse different flavours of metadata" should {
       "a juicy one" in {
-        val (res, rest) = withTestFile("metadata1.yaml")(metadataV1Parser.parse)
+        val (res, rest) = withTestFile("metadata1.yaml")(metadataParser.parse)
         assert(rest.isEmpty)
         val metadata = res.value
         assert(
@@ -142,7 +142,7 @@ class MetadataParserSpec
       }
 
       "another juicy one" in {
-        val (res, rest) = withTestFile("metadata2.yaml")(metadataV1Parser.parse)
+        val (res, rest) = withTestFile("metadata2.yaml")(metadataParser.parse)
         val metadata = res.value
         assert(
           metadata.id == UUID.fromString("00895144-30e4-4bd2-b800-bb706686d950")
@@ -185,6 +185,24 @@ class MetadataParserSpec
         assert(metadata.po == List("AI2", "MI4", "ITM2"))
         assert(rest.isEmpty)
       }
+    }
+
+    "fail if the version scheme is not found" in {
+      val input = "---v1\n---"
+      val (res, rest) = metadataParser.parse(input)
+      val e = res.left.value
+      assert(e.expected == "unknown version scheme v1.0")
+      assert(e.found == input)
+      assert(rest == input)
+    }
+
+    "fail if version scheme is missing" in {
+      val input = "---\n---"
+      val (res, rest) = metadataParser.parse(input)
+      val e = res.left.value
+      assert(e.expected == "v")
+      assert(e.found == input)
+      assert(rest == input)
     }
   }
 }
