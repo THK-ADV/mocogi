@@ -1,5 +1,6 @@
 package printing
 
+import ops.EitherOps.EOps
 import parsing.ModuleCompendiumParser
 import parsing.types._
 import printer.Printer
@@ -9,11 +10,15 @@ import java.io.{ByteArrayInputStream, PrintWriter}
 import java.nio.charset.Charset
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
-import scala.language.postfixOps
+import scala.language.{implicitConversions, postfixOps}
 import scala.sys.process._
 import scala.util.Try
 
 object ModuleCompendiumPrinter {
+
+  private val localDatePattern = DateTimeFormatter.ofPattern("dd.MM.yyyy")
+
+  private def now: String = LocalDate.now().format(localDatePattern)
 
   private def row(key: String, value: String): Printer[Unit] =
     prefix(s"| $key | $value |")
@@ -38,9 +43,17 @@ object ModuleCompendiumPrinter {
         s"Supermodul: $parent"
     }
 
-  private val localDatePattern = DateTimeFormatter.ofPattern("dd.MM.yyyy")
+  private def fmtPercentage(d: Double): String = {
+    val percentage =
+      if (d % 1 == 0) d.toInt
+      else d.toString.replace('.', ',')
+    s"$percentage %"
+  }
 
-  private def now: String = LocalDate.now().format(localDatePattern)
+  private def fmtAssessmentMethod(am: AssessmentMethodPercentage): String =
+    am.percentage.fold(am.assessmentMethod.deLabel)(d =>
+      s"${am.assessmentMethod.deLabel} (${fmtPercentage(d)})"
+    )
 
   private def header(title: String) =
     prefix(s"## $title")
@@ -88,7 +101,7 @@ object ModuleCompendiumPrinter {
         .skip(
           row(
             "Prüfungsformen",
-            m.assessmentMethod.map(_.deLabel).mkString(", ")
+            m.assessmentMethods.map(fmtAssessmentMethod).mkString(", ")
           )
         )
         .skip(row("Workload", s"${m.workload.total} h"))
@@ -140,22 +153,21 @@ object ModuleCompendiumPrinter {
         .print((), input)
   }
 
-  def generate(input: String): Either[Throwable, String] = {
-    val (res, rest) = ModuleCompendiumParser.moduleCompendiumParser.parse(input)
-    if (rest.nonEmpty)
-      Left(
-        new Throwable(
-          s"remaining input should be fully consumed, but was $rest"
-        )
+  def generate(input: String): Either[ModuleCompendiumGenerationError, String] =
+    ModuleCompendiumParser.moduleCompendiumParser
+      .parse(input)
+      ._1
+      .biFlatMap(
+        ModuleCompendiumGenerationError.Parsing.apply,
+        ModuleCompendiumGenerationError.Printing.apply,
+        moduleMetadataPrinter.print(_, "")
       )
-    else
-      res
-        .flatMap(moduleMetadataPrinter.print(_, ""))
-        .map(s => new ByteArrayInputStream(s.getBytes))
-        .flatMap(input => // TODO pandoc must be required
-          Try("pandoc -f markdown -t html" #< input !!).toEither
-        )
-  }
+      .map(s => new ByteArrayInputStream(s.getBytes))
+      .biFlatMap(
+        identity,
+        ModuleCompendiumGenerationError.Other.apply,
+        input => Try("pandoc -f markdown -t html" #< input !!).toEither
+      )
 
   def main(args: Array[String]): Unit = {
     def parse(name: String) =

@@ -2,15 +2,21 @@ package controllers
 
 import com.google.common.base.Charsets
 import com.google.common.io.Files
-import controllers.ModuleCompendiumParsingController.{moduleCompendiumFormat, parsingErrorFormat}
+import controllers.ModuleCompendiumParsingController.{
+  mcgErrorWrites,
+  moduleCompendiumFormat,
+  parsingErrorWrites,
+  throwableWrites
+}
 import parser.ParsingError
 import parsing.ModuleCompendiumParser.moduleCompendiumParser
 import parsing.types.ModuleRelation.{Child, Parent}
 import parsing.types.{Status => ModuleStatus, _}
 import play.api.libs.Files.TemporaryFile
-import play.api.libs.json.{Format, JsError, Json, OFormat}
+import play.api.libs.json._
 import play.api.mvc.{AbstractController, ControllerComponents, Request, Result}
-import printing.ModuleCompendiumPrinter
+import printer.PrintingError
+import printing.{ModuleCompendiumGenerationError, ModuleCompendiumPrinter}
 
 import javax.inject.{Inject, Singleton}
 import scala.language.implicitConversions
@@ -23,14 +29,10 @@ class ModuleCompendiumParsingController @Inject() (
 
   def parseFile() = Action(parse.temporaryFile) { r =>
     extractFileContent(r).map { input =>
-      val (res, rest) = moduleCompendiumParser.parse(input)
-      if (rest.nonEmpty)
-        failure(s"remaining input should be fully consumed, but was $rest")
-      else
-        res match {
-          case Right(c) => success(Json.toJson(c))
-          case Left(e)  => failure(Json.toJson(e))
-        }
+      moduleCompendiumParser.parse(input)._1 match {
+        case Right(c) => Ok(Json.toJson(c))
+        case Left(e)  => InternalServerError(Json.toJson(e))
+      }
     }
   }
 
@@ -38,7 +40,7 @@ class ModuleCompendiumParsingController @Inject() (
     extractFileContent(r).map { input =>
       ModuleCompendiumPrinter.generate(input) match {
         case Right(html) => Ok(html)
-        case Left(e) => InternalServerError(Json.obj("error" -> e.getMessage))
+        case Left(e)     => InternalServerError(Json.toJson(e))
       }
     }
   }
@@ -46,22 +48,47 @@ class ModuleCompendiumParsingController @Inject() (
   private def extractFileContent(r: Request[TemporaryFile]) =
     Try(Files.asCharSource(r.body.path.toFile, Charsets.UTF_8).read())
 
-  private def failure(e: Json.JsValueWrapper) =
-    InternalServerError(Json.obj("parsing-error" -> e))
-
-  private def success(e: Json.JsValueWrapper) =
-    Ok(Json.obj("module-compendium" -> e))
-
   private implicit def tryToResult(`try`: Try[Result]): Result =
     `try` match {
       case Success(value) => value
-      case Failure(e) => InternalServerError(Json.obj("error" -> e.getMessage))
+      case Failure(e)     => InternalServerError(Json.toJson(e))
     }
 }
 
 object ModuleCompendiumParsingController extends JsonNullWritable {
-  implicit val parsingErrorFormat: Format[ParsingError] =
-    Json.format[ParsingError]
+
+  implicit val mcgErrorWrites: Writes[ModuleCompendiumGenerationError] =
+    Writes.apply {
+      case ModuleCompendiumGenerationError.Parsing(e)  => Json.toJson(e)
+      case ModuleCompendiumGenerationError.Printing(e) => Json.toJson(e)
+      case ModuleCompendiumGenerationError.Other(e)    => Json.toJson(e)
+    }
+
+  implicit val throwableWrites: Writes[Throwable] =
+    Writes.apply(e =>
+      Json.obj(
+        "type" -> "throwable",
+        "message" -> e.getMessage
+      )
+    )
+
+  implicit val parsingErrorWrites: Writes[ParsingError] =
+    Writes.apply(e =>
+      Json.obj(
+        "type" -> "parsing error",
+        "expected" -> e.expected,
+        "actual" -> e.found
+      )
+    )
+
+  implicit val printingErrorWrites: Writes[PrintingError] =
+    Writes.apply(e =>
+      Json.obj(
+        "type" -> "printing error",
+        "expected" -> e.expected,
+        "actual" -> e.actual
+      )
+    )
 
   implicit val moduleTypeFormat: Format[ModuleType] =
     Json.format[ModuleType]
@@ -123,6 +150,10 @@ object ModuleCompendiumParsingController extends JsonNullWritable {
           )
       }
     )
+
+  implicit val assessmentMethodPercentFormat
+      : Format[AssessmentMethodPercentage] =
+    Json.format[AssessmentMethodPercentage]
 
   implicit val metaDataFormat: Format[Metadata] =
     Json.format[Metadata]

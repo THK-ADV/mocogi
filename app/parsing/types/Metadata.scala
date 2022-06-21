@@ -14,7 +14,7 @@ case class Metadata(
     recommendedSemester: Int,
     frequency: Season,
     responsibilities: Responsibilities,
-    assessmentMethod: List[AssessmentMethod],
+    assessmentMethods: List[AssessmentMethodPercentage],
     workload: Workload,
     recommendedPrerequisites: List[String],
     requiredPrerequisites: List[String],

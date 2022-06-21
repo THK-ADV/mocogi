@@ -14,8 +14,8 @@ responsibilities:
 coordinator: person.ald
 lecturers: person.ald
 assessment-methods:
-  - assessment.project
-  - assessment.presentation
+  - assessment.project (70 %)
+  - assessment.presentation (30 %)
 workload: 150
   lecture: 45
   seminar: 0
