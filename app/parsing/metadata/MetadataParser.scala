@@ -59,8 +59,10 @@ object MetadataParser {
       .take(workloadParser)
       .take(recommendedPrerequisitesParser)
       .take(requiredPrerequisitesParser)
+      .skip(optional(newline))
       .take(statusParser)
       .take(locationParser)
+      .skip(optional(newline))
       .take(poParser)
       .map(Metadata.tupled)
 
