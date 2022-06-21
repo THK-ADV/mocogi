@@ -15,7 +15,7 @@ class ModuleRelationParserSpec extends AnyWordSpec
     "parse a super module with its children" in {
       val input1 =
         """module_relation:
-          | - children:
+          | children:
           |  - module.abc
           |  - module.def""".stripMargin
       val (res1, rest1) = moduleRelationParser.parse(input1)
@@ -24,7 +24,7 @@ class ModuleRelationParserSpec extends AnyWordSpec
 
       val input2 =
         """module_relation:
-          | - children:
+          | children:
           |  - module.abc""".stripMargin
       val (res2, rest2) = moduleRelationParser.parse(input2)
       assert(res2.value.value == ModuleRelation.Parent(List("abc")))
@@ -34,7 +34,7 @@ class ModuleRelationParserSpec extends AnyWordSpec
     "parse a sub module with its parent" in {
       val input =
         """module_relation:
-          | - parent: module.abc""".stripMargin
+          | parent: module.abc""".stripMargin
       val (res, rest) = moduleRelationParser.parse(input)
       assert(res.value.value == ModuleRelation.Child("abc"))
       assert(rest.isEmpty)

@@ -30,8 +30,6 @@ object ModuleRelationParser {
     prefix("module_relation:")
       .skip(newline)
       .skip(zeroOrMoreSpaces)
-      .skip(prefix("-"))
-      .skip(zeroOrMoreSpaces)
       .take(go)
       .option
   }
