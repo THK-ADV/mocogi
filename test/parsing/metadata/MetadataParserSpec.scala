@@ -39,7 +39,8 @@ class MetadataParserSpec
     "parse module title" should {
 
       "return the module title" in {
-        val (res1, rest1) = moduleTitleParser.parse("module_title: Algorithmik\n")
+        val (res1, rest1) =
+          moduleTitleParser.parse("module_title: Algorithmik\n")
         assert(res1.value == "Algorithmik")
         assert(rest1.isEmpty)
       }
@@ -125,8 +126,11 @@ class MetadataParserSpec
           )
         )
         assert(
-          metadata.assessmentMethod == List(
-            AssessmentMethod("written-exam", "Klausurarbeiten")
+          metadata.assessmentMethods == List(
+            AssessmentMethodPercentage(
+              AssessmentMethod("written-exam", "Klausurarbeiten"),
+              None
+            )
           )
         )
         assert(metadata.workload == Workload(150, 36, 0, 18, 18, 78))
@@ -162,9 +166,15 @@ class MetadataParserSpec
           )
         )
         assert(
-          metadata.assessmentMethod == List(
-            AssessmentMethod("written-exam", "Klausurarbeiten"),
-            AssessmentMethod("practical-report", "Praktikumsbericht")
+          metadata.assessmentMethods == List(
+            AssessmentMethodPercentage(
+              AssessmentMethod("written-exam", "Klausurarbeiten"),
+              Some(70)
+            ),
+            AssessmentMethodPercentage(
+              AssessmentMethod("practical-report", "Praktikumsbericht"),
+              Some(30)
+            )
           )
         )
         assert(metadata.workload == Workload(150, 30, 0, 10, 10, 100))

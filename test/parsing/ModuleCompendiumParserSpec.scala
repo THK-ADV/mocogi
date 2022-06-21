@@ -42,8 +42,11 @@ class ModuleCompendiumParserSpec
         )
       )
       assert(
-        metadata.assessmentMethod == List(
-          AssessmentMethod("written-exam", "Klausurarbeiten")
+        metadata.assessmentMethods == List(
+          AssessmentMethodPercentage(
+            AssessmentMethod("written-exam", "Klausurarbeiten"),
+            None
+          )
         )
       )
       assert(metadata.workload == Workload(150, 36, 0, 18, 18, 78))
@@ -56,11 +59,15 @@ class ModuleCompendiumParserSpec
       assert(enContent.recommendedPrerequisitesBody == "\nProgramming\n\n")
       assert(deContent.learningOutcomeBody == "\nProgrammieren lernen\n\n")
       assert(enContent.learningOutcomeBody == "\nLearn to code\n\n")
-      assert(deContent.contentBody == "\n- Klassen\n- Vererbung\n- Polymorphie\n\n")
+      assert(
+        deContent.contentBody == "\n- Klassen\n- Vererbung\n- Polymorphie\n\n"
+      )
       assert(
         enContent.contentBody == "\n- Classes\n- Inheritance\n- Polymorphism\n\n"
       )
-      assert(deContent.teachingAndLearningMethodsBody == "\nSlides, Whiteboard\n\n")
+      assert(
+        deContent.teachingAndLearningMethodsBody == "\nSlides, Whiteboard\n\n"
+      )
       assert(enContent.teachingAndLearningMethodsBody == "\n")
       assert(
         deContent.recommendedReadingBody == "\nProgrammieren lernen mit Kotlin. Kohls, Dobrynin, Leonhardt\n\n"

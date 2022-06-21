@@ -12,8 +12,8 @@ responsibilities:
   coordinator: person.ald
   lecturers: person.ald
 assessment-methods:
-  - assessment.written-exam
-  - assessment.practical-report
+  - assessment.written-exam (70%)
+  - assessment.practical-report (30%)
 workload: 150
   lecture: 30
   seminar: 0

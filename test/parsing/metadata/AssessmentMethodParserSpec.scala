@@ -2,8 +2,11 @@ package parsing.metadata
 
 import org.scalatest.EitherValues
 import org.scalatest.wordspec.AnyWordSpec
-import parsing.metadata.AssessmentMethodParser.{assessmentMethodFileParser, assessmentMethodParser}
-import parsing.types.AssessmentMethod
+import parsing.metadata.AssessmentMethodParser.{
+  assessmentMethodFileParser,
+  assessmentMethodParser
+}
+import parsing.types.{AssessmentMethod, AssessmentMethodPercentage}
 import parsing.{ParserSpecHelper, withResFile}
 
 class AssessmentMethodParserSpec
@@ -80,15 +83,85 @@ class AssessmentMethodParserSpec
     }
 
     "parse assessment method" when {
-      "return a single assessment method" in {
+      "return a single assessment method without percentage info" in {
         val input = "assessment-methods:assessment.written-exam\n"
         val (res, rest) = assessmentMethodParser.parse(input)
         assert(
           res.value == List(
-            AssessmentMethod("written-exam", "Klausurarbeiten")
+            AssessmentMethodPercentage(
+              AssessmentMethod("written-exam", "Klausurarbeiten"),
+              None
+            )
           )
         )
         assert(rest.isEmpty)
+      }
+
+      "return a single assessment method with percentage info without spaces but with percent sign" in {
+        val input = "assessment-methods:assessment.written-exam (100%)\n"
+        val (res, rest) = assessmentMethodParser.parse(input)
+        assert(
+          res.value == List(
+            AssessmentMethodPercentage(
+              AssessmentMethod("written-exam", "Klausurarbeiten"),
+              Some(100)
+            )
+          )
+        )
+        assert(rest.isEmpty)
+      }
+
+      "return a single assessment method with percentage info with spaces and percent sign" in {
+        val input = "assessment-methods:assessment.written-exam (100 %)\n"
+        val (res, rest) = assessmentMethodParser.parse(input)
+        assert(
+          res.value == List(
+            AssessmentMethodPercentage(
+              AssessmentMethod("written-exam", "Klausurarbeiten"),
+              Some(100)
+            )
+          )
+        )
+        assert(rest.isEmpty)
+      }
+
+      "return a single assessment method with percentage info without additional syntax" in {
+        val input = "assessment-methods:assessment.written-exam 100\n"
+        val (res, rest) = assessmentMethodParser.parse(input)
+        assert(
+          res.value == List(
+            AssessmentMethodPercentage(
+              AssessmentMethod("written-exam", "Klausurarbeiten"),
+              Some(100)
+            )
+          )
+        )
+        assert(rest.isEmpty)
+      }
+
+      "return a single assessment method with percentage info without spaces and percent sign" in {
+        val input = "assessment-methods:assessment.written-exam (100)\n"
+        val (res, rest) = assessmentMethodParser.parse(input)
+        assert(
+          res.value == List(
+            AssessmentMethodPercentage(
+              AssessmentMethod("written-exam", "Klausurarbeiten"),
+              Some(100)
+            )
+          )
+        )
+        assert(rest.isEmpty)
+      }
+
+      "fail if a single assessment method with percentage info is higher than 100 %" in {
+        val input = "assessment-methods:assessment.written-exam (110 %)\n"
+        val (res, rest) = assessmentMethodParser.parse(input)
+        val e = res.left.value
+        assert(
+          e.expected == "percentage of all assessment methods to be 100.0 %, but was 110.0 %"
+        )
+        assert(e.found == input)
+        assert(rest == input)
       }
 
       "return a single assessment method ignoring random whitespaces" in {
@@ -96,7 +169,10 @@ class AssessmentMethodParserSpec
         val (res, rest) = assessmentMethodParser.parse(input)
         assert(
           res.value == List(
-            AssessmentMethod("written-exam", "Klausurarbeiten")
+            AssessmentMethodPercentage(
+              AssessmentMethod("written-exam", "Klausurarbeiten"),
+              None
+            )
           )
         )
         assert(rest.isEmpty)
@@ -111,8 +187,14 @@ class AssessmentMethodParserSpec
         val (res, rest) = assessmentMethodParser.parse(input)
         assert(
           res.value == List(
-            AssessmentMethod("written-exam", "Klausurarbeiten"),
-            AssessmentMethod("presentation", "Präsentation")
+            AssessmentMethodPercentage(
+              AssessmentMethod("written-exam", "Klausurarbeiten"),
+              None
+            ),
+            AssessmentMethodPercentage(
+              AssessmentMethod("presentation", "Präsentation"),
+              None
+            )
           )
         )
         assert(rest.isEmpty)
@@ -127,11 +209,54 @@ class AssessmentMethodParserSpec
         val (res, rest) = assessmentMethodParser.parse(input)
         assert(
           res.value == List(
-            AssessmentMethod("written-exam", "Klausurarbeiten"),
-            AssessmentMethod("presentation", "Präsentation")
+            AssessmentMethodPercentage(
+              AssessmentMethod("written-exam", "Klausurarbeiten"),
+              None
+            ),
+            AssessmentMethodPercentage(
+              AssessmentMethod("presentation", "Präsentation"),
+              None
+            )
           )
         )
         assert(rest.isEmpty)
+      }
+
+      "return 2 assessment methods seperated by dashes ignoring random whitespace with percent info" in {
+        val input =
+          """assessment-methods:
+              | - assessment.written-exam (70%)
+              | - assessment.presentation (30%)
+              |""".stripMargin
+        val (res, rest) = assessmentMethodParser.parse(input)
+        assert(
+          res.value == List(
+            AssessmentMethodPercentage(
+              AssessmentMethod("written-exam", "Klausurarbeiten"),
+              Some(70)
+            ),
+            AssessmentMethodPercentage(
+              AssessmentMethod("presentation", "Präsentation"),
+              Some(30)
+            )
+          )
+        )
+        assert(rest.isEmpty)
+      }
+
+      "fail if 2 assessment methods with percentage info are higher than 100 %" in {
+        val input =
+          """assessment-methods:
+              | - assessment.written-exam (80%)
+              | - assessment.presentation (40%)
+              |""".stripMargin
+        val (res, rest) = assessmentMethodParser.parse(input)
+        val e = res.left.value
+        assert(
+          e.expected == "percentage of all assessment methods to be 100.0 %, but was 120.0 %"
+        )
+        assert(e.found == input)
+        assert(rest == input)
       }
 
       "return 2 assessment methods seperated by dashes ignoring random whitespace with a remaining inout" in {
@@ -143,8 +268,14 @@ class AssessmentMethodParserSpec
         val (res, rest) = assessmentMethodParser.parse(input)
         assert(
           res.value == List(
-            AssessmentMethod("written-exam", "Klausurarbeiten"),
-            AssessmentMethod("presentation", "Präsentation")
+            AssessmentMethodPercentage(
+              AssessmentMethod("written-exam", "Klausurarbeiten"),
+              None
+            ),
+            AssessmentMethodPercentage(
+              AssessmentMethod("presentation", "Präsentation"),
+              None
+            )
           )
         )
         assert(rest == " abc")
