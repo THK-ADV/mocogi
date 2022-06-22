@@ -1,0 +1,8 @@
+ws:
+  de_label: Wintersemester
+
+ss:
+  de_label: Sommersemester
+
+ws_ss:
+  de_label: Winter- und Sommersemester

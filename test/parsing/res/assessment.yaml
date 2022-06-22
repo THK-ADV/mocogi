@@ -36,15 +36,3 @@ test:
 
 thesis:
   de_label: Schriftliche Ausarbeitung
-
-abstract:
-  de_label: Abstract
-
-e-assessment:
-  de_label: Hausarbeit über Ilias E-Assessment
-
-multiple-choice:
-  de_label: Multiple-Choice-Tests mit Punnkten für die Klausur
-
-depends:
-  de_label: Legt die Dozent*in vor der Veranstaltung fest
