@@ -1,18 +1,23 @@
 package parsing.metadata
 
+import helper.FakeApplication
 import org.scalatest.EitherValues
 import org.scalatest.wordspec.AnyWordSpec
-import parsing.metadata.AssessmentMethodParser.{
-  assessmentMethodFileParser,
-  assessmentMethodParser
-}
+import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import parsing.types.{AssessmentMethod, AssessmentMethodPercentage}
-import parsing.{ParserSpecHelper, withResFile}
+import parsing.{ParserSpecHelper, withFile0}
 
 class AssessmentMethodParserSpec
     extends AnyWordSpec
     with ParserSpecHelper
-    with EitherValues {
+    with EitherValues
+    with GuiceOneAppPerSuite
+    with FakeApplication {
+
+  val parser = app.injector.instanceOf(classOf[AssessmentMethodParser])
+
+  val assessmentMethodFileParser = parser.fileParser
+  val assessmentMethodParser = parser.parser
 
   "A Assessment Method Parser" should {
     "parse assignment method file" when {
@@ -54,7 +59,7 @@ class AssessmentMethodParserSpec
 
       "parse all assessment methods in assessment.yaml" in {
         val (res, rest) =
-          withResFile("assessment.yaml")(assessmentMethodFileParser.parse)
+          withFile0("test/parsing/res/assessment.yaml")(assessmentMethodFileParser.parse)
         assert(
           res.value == List(
             AssessmentMethod("written-exam", "Klausurarbeiten"),
@@ -113,20 +118,6 @@ class AssessmentMethodParserSpec
 
       "return a single assessment method with percentage info with spaces and percent sign" in {
         val input = "assessment-methods:assessment.written-exam (100 %)\n"
-        val (res, rest) = assessmentMethodParser.parse(input)
-        assert(
-          res.value == List(
-            AssessmentMethodPercentage(
-              AssessmentMethod("written-exam", "Klausurarbeiten"),
-              Some(100)
-            )
-          )
-        )
-        assert(rest.isEmpty)
-      }
-
-      "return a single assessment method with percentage info without additional syntax" in {
-        val input = "assessment-methods:assessment.written-exam 100\n"
         val (res, rest) = assessmentMethodParser.parse(input)
         assert(
           res.value == List(

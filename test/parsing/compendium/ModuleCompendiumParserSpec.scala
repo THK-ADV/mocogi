@@ -1,21 +1,31 @@
-package parsing
+package parsing.compendium
 
+import helper.FakeApplication
 import org.scalatest.EitherValues
 import org.scalatest.wordspec.AnyWordSpec
-import parsing.ModuleCompendiumParser.moduleCompendiumParser
+import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import parsing.types._
+import parsing.{ModuleCompendiumParser, ParserSpecHelper, withFile0}
 
 import java.util.UUID
 
 class ModuleCompendiumParserSpec
     extends AnyWordSpec
     with ParserSpecHelper
-    with EitherValues {
+    with EitherValues
+    with GuiceOneAppPerSuite
+    with FakeApplication {
+
+  val parser = app.injector.instanceOf(classOf[ModuleCompendiumParser])
+
+  val moduleCompendiumParser = parser.parser
 
   "A Module Compendium Parser" should {
     "parse a module-compendium1.duda" in {
       val (res, rest) =
-        withTestFile("module-compendium1.duda")(moduleCompendiumParser.parse)
+        withFile0("test/parsing/res/module-compendium1.duda")(
+          moduleCompendiumParser.parse
+        )
       assert(rest.isEmpty)
       val (metadata, deContent, enContent) =
         ModuleCompendium.unapply(res.value).get

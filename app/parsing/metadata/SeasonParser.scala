@@ -4,16 +4,25 @@ import parser.Parser
 import parsing.helper.SimpleFileParser
 import parsing.types.Season
 
-object SeasonParser extends SimpleFileParser[Season] {
+import javax.inject.Singleton
+
+trait SeasonParser {
+  val fileParser: Parser[List[Season]]
+  val parser: Parser[Season]
+}
+
+@Singleton
+final class SeasonParserImpl(val path: String)
+    extends SeasonParser
+    with SimpleFileParser[Season] {
 
   override val makeType = Season.tupled
-  override val filename = "season.yaml"
   override val typename = "seasons"
 
-  val seasonFileParser: Parser[List[Season]] = fileParser
+  lazy val seasons: List[Season] = parseTypes
 
-  val seasons: List[Season] = types
+  val fileParser: Parser[List[Season]] = makeFileParser
 
-  val seasonParser: Parser[Season] =
-    typeParser("frequency")(t => s"season.${t.abbrev}")
+  val parser: Parser[Season] =
+    makeTypeParser("frequency")(t => s"season.${t.abbrev}")
 }

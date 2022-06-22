@@ -4,17 +4,25 @@ import parser.Parser
 import parsing.helper.SimpleFileParser
 import parsing.types.Location
 
-object LocationParser extends SimpleFileParser[Location] {
-  override protected val makeType = Location.tupled
+import javax.inject.Singleton
 
-  override protected val filename = "location.yaml"
+trait LocationParser {
+  val fileParser: Parser[List[Location]]
+  val parser: Parser[Location]
+}
+
+@Singleton
+final class LocationParserImpl(val path: String)
+    extends LocationParser
+    with SimpleFileParser[Location] {
+  override protected val makeType = Location.tupled
 
   override protected val typename = "locations"
 
-  val locationFileParser: Parser[List[Location]] = fileParser
+  val fileParser: Parser[List[Location]] = makeFileParser
 
-  val locations: List[Location] = types
+  val locations: List[Location] = parseTypes
 
-  val locationParser: Parser[Location] =
-    typeParser("location")(t => s"location.${t.abbrev}")
+  val parser: Parser[Location] =
+    makeTypeParser("location")(t => s"location.${t.abbrev}")
 }

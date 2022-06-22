@@ -4,17 +4,25 @@ import parser.Parser
 import parsing.helper.SimpleFileParser
 import parsing.types.Status
 
-object StatusParser extends SimpleFileParser[Status] {
+import javax.inject.Singleton
+
+trait StatusParser {
+  val fileParser: Parser[List[Status]]
+  val parser: Parser[Status]
+}
+
+@Singleton
+final class StatusParserImpl(val path: String)
+    extends StatusParser
+    with SimpleFileParser[Status] {
+
   override protected val makeType = Status.tupled
-
-  override protected val filename = "status.yaml"
-
   override protected val typename = "status"
 
-  val statusFileParser: Parser[List[Status]] = fileParser
+  val fileParser: Parser[List[Status]] = makeFileParser
 
-  val status: List[Status] = types
+  val status: List[Status] = parseTypes
 
-  val statusParser: Parser[Status] =
-    typeParser("status")(t => s"status.${t.abbrev}")
+  val parser: Parser[Status] =
+    makeTypeParser("status")(t => s"status.${t.abbrev}")
 }

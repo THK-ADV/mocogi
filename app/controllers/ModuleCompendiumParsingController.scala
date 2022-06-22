@@ -9,41 +9,57 @@ import controllers.ModuleCompendiumParsingController.{
   throwableWrites
 }
 import parser.ParsingError
-import parsing.ModuleCompendiumParser.moduleCompendiumParser
+import parsing.ModuleCompendiumParser
 import parsing.types.ModuleRelation.{Child, Parent}
 import parsing.types.{Status => ModuleStatus, _}
 import play.api.libs.Files.TemporaryFile
 import play.api.libs.json._
+import play.api.libs.ws.WSClient
 import play.api.mvc.{AbstractController, ControllerComponents, Request, Result}
 import printer.PrintingError
 import printing.{ModuleCompendiumGenerationError, ModuleCompendiumPrinter}
 
 import javax.inject.{Inject, Singleton}
+import scala.concurrent.{ExecutionContext, Future}
 import scala.language.implicitConversions
 import scala.util.{Failure, Success, Try}
 
 @Singleton
 class ModuleCompendiumParsingController @Inject() (
-    cc: ControllerComponents
+    cc: ControllerComponents,
+    ws: WSClient,
+    moduleCompendiumParser: ModuleCompendiumParser,
+    moduleCompendiumPrinter: ModuleCompendiumPrinter,
+    implicit val ctx: ExecutionContext
 ) extends AbstractController(cc) {
 
   def parseFile() = Action(parse.temporaryFile) { r =>
     extractFileContent(r).map { input =>
-      moduleCompendiumParser.parse(input)._1 match {
+      moduleCompendiumParser.parser.parse(input)._1 match {
         case Right(c) => Ok(Json.toJson(c))
         case Left(e)  => InternalServerError(Json.toJson(e))
       }
     }
   }
 
-  def generate() = Action(parse.temporaryFile) { r =>
-    extractFileContent(r).map { input =>
-      ModuleCompendiumPrinter.generate(input) match {
-        case Right(html) => Ok(html)
-        case Left(e)     => InternalServerError(Json.toJson(e))
-      }
+  def generateFromFile() = Action(parse.temporaryFile) { r =>
+    extractFileContent(r).map(generate0)
+  }
+
+  def generateFromUrl() = Action(parse.json).async { r =>
+    r.body.\("url").validate[String].asOpt match {
+      case Some(url) =>
+        ws.url(url).get().map(r => generate0(r.bodyAsBytes.utf8String))
+      case None =>
+        Future.successful(InternalServerError(JsString("no url found")))
     }
   }
+
+  private def generate0(input: String): Result =
+    moduleCompendiumPrinter.generate(input) match {
+      case Right(html) => Ok(html)
+      case Left(e)     => InternalServerError(Json.toJson(e))
+    }
 
   private def extractFileContent(r: Request[TemporaryFile]) =
     Try(Files.asCharSource(r.body.path.toFile, Charsets.UTF_8).read())

@@ -1,15 +1,23 @@
 package parsing.metadata
 
+import helper.FakeApplication
 import org.scalatest.EitherValues
 import org.scalatest.wordspec.AnyWordSpec
-import parsing.{ParserSpecHelper, withResFile}
-import parsing.metadata.ModuleTypeParser.{moduleTypeParser, moduleTypesFileParser}
+import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import parsing.types.ModuleType
+import parsing.{ParserSpecHelper, withFile0}
 
 class ModuleTypeParserSpec
     extends AnyWordSpec
     with ParserSpecHelper
-    with EitherValues {
+    with EitherValues
+    with GuiceOneAppPerSuite
+    with FakeApplication {
+
+  val parser = app.injector.instanceOf(classOf[ModuleTypeParser])
+
+  val moduleTypesFileParser = parser.fileParser
+  val moduleTypeParser = parser.parser
 
   "A Module Type Parser" should {
     "parse modules type file" when {
@@ -67,7 +75,7 @@ class ModuleTypeParserSpec
 
       "return all modules in module_type.yaml" in {
         val (res, rest) =
-          withResFile("module_type.yaml")(moduleTypesFileParser.parse)
+          withFile0("test/parsing/res/module_type.yaml")(moduleTypesFileParser.parse)
         assert(
           res.value == List(
             ModuleType("mandatory", "Pflicht"),

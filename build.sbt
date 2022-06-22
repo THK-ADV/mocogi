@@ -31,6 +31,7 @@ lazy val play = Seq(
 lazy val test = Seq(
   "org.scalactic" %% "scalactic" % "3.2.12",
   "org.scalatest" %% "scalatest" % "3.2.12" % "test",
+  "org.scalatestplus.play" %% "scalatestplus-play" % "5.1.0" % "test"
 )
 
-lazy val parser = "de.th-koeln.inf.adv" %% "nebulak" % "0.3"
+lazy val parser = "de.th-koeln.inf.adv" %% "nebulak" % "0.7"

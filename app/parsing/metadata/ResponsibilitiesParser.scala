@@ -3,11 +3,18 @@ package parsing.metadata
 import parser.Parser
 import parser.Parser._
 import parser.ParserOps._
-import parsing.metadata.PeopleParser.personParser
 import parsing.types.Responsibilities
 
-object ResponsibilitiesParser {
-  val responsibilitiesParser: Parser[Responsibilities] =
+import javax.inject.{Inject, Singleton}
+
+trait ResponsibilitiesParser {
+  val parser: Parser[Responsibilities]
+}
+
+@Singleton
+class ResponsibilitiesParserImpl @Inject() (peopleParser: PeopleParser)
+    extends ResponsibilitiesParser {
+  val parser: Parser[Responsibilities] =
     prefix("responsibilities:")
       .skip(zeroOrMoreSpaces)
       .skip(optional(newline))
@@ -16,12 +23,12 @@ object ResponsibilitiesParser {
       .skip(zeroOrMoreSpaces)
       .skip(optional(newline))
       .skip(zeroOrMoreSpaces)
-      .take(personParser)
+      .take(peopleParser.parser)
       .skip(zeroOrMoreSpaces)
       .skip(prefix("lecturers:"))
       .skip(zeroOrMoreSpaces)
       .skip(optional(newline))
       .skip(zeroOrMoreSpaces)
-      .zip(personParser)
+      .zip(peopleParser.parser)
       .map(Responsibilities.tupled)
 }

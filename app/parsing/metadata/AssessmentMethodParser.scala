@@ -6,27 +6,28 @@ import parser.ParserOps.P0
 import parsing.helper.{MultipleValueParser, SimpleFileParser}
 import parsing.types.{AssessmentMethod, AssessmentMethodPercentage}
 
-object AssessmentMethodParser
-    extends SimpleFileParser[AssessmentMethod]
+import javax.inject.Singleton
+
+trait AssessmentMethodParser {
+  val fileParser: Parser[List[AssessmentMethod]]
+  val parser: Parser[List[AssessmentMethodPercentage]]
+}
+
+@Singleton
+final class AssessmentMethodParserImpl(val path: String)
+    extends AssessmentMethodParser
+    with SimpleFileParser[AssessmentMethod]
     with MultipleValueParser[AssessmentMethodPercentage] {
 
   override val makeType = AssessmentMethod.tupled
-  override val filename = "assessment.yaml"
   override val typename = "assessment methods"
 
-  val assessmentMethodFileParser: Parser[List[AssessmentMethod]] = fileParser
+  val fileParser: Parser[List[AssessmentMethod]] =
+    makeFileParser
 
-  val assessmentMethods: List[AssessmentMethod] = types
+  val assessmentMethods: List[AssessmentMethod] = parseTypes
 
-  val assessmentMethodParser: Parser[List[AssessmentMethodPercentage]] = {
-    def sumPercentages(xs: List[AssessmentMethodPercentage]): Double =
-      xs.foldLeft(0.0) { case (acc, x) => acc + x.percentage.get }
-
-    def isValid(xs: List[AssessmentMethodPercentage]): Option[Double] = {
-      val sum = sumPercentages(xs)
-      Option.unless(sum == 100.0)(sum)
-    }
-
+  val parser: Parser[List[AssessmentMethodPercentage]] =
     multipleParser(
       "assessment-methods",
       oneOf(
@@ -43,7 +44,7 @@ object AssessmentMethodParser
                 .skip(optional(prefix(")")))
                 .option
             )
-            .skip(optional(newline))
+            .skip(newline)
             .map(res => AssessmentMethodPercentage(s, res._2))
         )
       ),
@@ -58,5 +59,12 @@ object AssessmentMethodParser
           )
         else always(xs)
       }
+
+  private def sumPercentages(xs: List[AssessmentMethodPercentage]): Double =
+    xs.foldLeft(0.0) { case (acc, x) => acc + x.percentage.get }
+
+  private def isValid(xs: List[AssessmentMethodPercentage]): Option[Double] = {
+    val sum = sumPercentages(xs)
+    Option.unless(sum == 100.0)(sum)
   }
 }

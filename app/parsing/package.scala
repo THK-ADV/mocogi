@@ -22,15 +22,12 @@ package object parsing {
       .skip(zeroOrMoreSpaces)
       .take(int)
 
-  def withFile[A](dir: String)(name: String)(input: String => A): A = {
-    val s = Source.fromFile(new File(s"$dir/$name"))
+  def withFile0[A](path: String)(input: String => A): A = {
+    val s = Source.fromFile(new File(path))
     val res = input(s.mkString)
     s.close()
     res
   }
-
-  def withResFile[A](name: String)(input: String => A): A =
-    withFile("res")(name)(input)
 
   def pprint(
       obj: Any,

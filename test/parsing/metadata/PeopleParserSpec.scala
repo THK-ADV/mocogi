@@ -1,18 +1,23 @@
 package parsing.metadata
 
+import helper.FakeApplication
 import org.scalatest.EitherValues
 import org.scalatest.wordspec.AnyWordSpec
-import parser.Parser
-import parser.Parser.{newline, oneOf, optional, prefix, prefixTo, rest, whitespace, zeroOrMoreSpaces}
-import parser.ParserOps.{P0, P2, P3, P4}
-import parsing.metadata.PeopleParser.{peopleFileParser, personParser, string}
+import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import parsing.types.People
-import parsing.{ParserSpecHelper, withResFile}
+import parsing.{ParserSpecHelper, withFile0}
 
 class PeopleParserSpec
     extends AnyWordSpec
     with ParserSpecHelper
-    with EitherValues {
+    with EitherValues
+    with GuiceOneAppPerSuite
+    with FakeApplication {
+
+  val parser = app.injector.instanceOf(classOf[PeopleParser])
+
+  val peopleFileParser = parser.fileParser
+  val personParser = parser.parser
 
   "A People Parser" when {
     "parse people file" should {
@@ -70,8 +75,9 @@ class PeopleParserSpec
         assert(rest1.isEmpty)
       }
 
-      "parse all people in people-all.yaml" in {
-        val (res1, rest1) = withResFile("people-all.yaml")(peopleFileParser.parse)
+      "parse all people in person.yaml" in {
+        val (res1, rest1) =
+          withFile0("test/parsing/res/person.yaml")(peopleFileParser.parse)
         assert(res1.value.size == 5)
         assert(rest1.isEmpty)
       }

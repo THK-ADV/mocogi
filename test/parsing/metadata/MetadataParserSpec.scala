@@ -1,17 +1,30 @@
 package parsing.metadata
 
+import helper.FakeApplication
 import org.scalatest.EitherValues
 import org.scalatest.wordspec.AnyWordSpec
-import parsing.ParserSpecHelper
-import parsing.metadata.MetadataParser._
+import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import parsing.types._
+import parsing.{ParserSpecHelper, withFile0}
 
 import java.util.UUID
 
 class MetadataParserSpec
     extends AnyWordSpec
     with ParserSpecHelper
-    with EitherValues {
+    with EitherValues
+    with GuiceOneAppPerSuite
+    with FakeApplication {
+
+  val parser = app.injector.instanceOf(classOf[MetadataParser])
+
+  val moduleCodeParser = parser.moduleCodeParser
+  val moduleTitleParser = parser.moduleTitleParser
+  val moduleAbbrevParser = parser.moduleAbbrevParser
+  val creditPointsParser = parser.creditPointsParser
+  val durationParser = parser.durationParser
+  val semesterParser = parser.semesterParser
+  val metadataParser = parser.parser
 
   "A Metadata Parser" when {
     "parse module code" should {
@@ -100,7 +113,8 @@ class MetadataParserSpec
 
     "parse different flavours of metadata" should {
       "a juicy one" in {
-        val (res, rest) = withTestFile("metadata1.yaml")(metadataParser.parse)
+        val (res, rest) =
+          withFile0("test/parsing/res/metadata1.yaml")(metadataParser.parse)
         assert(rest.isEmpty)
         val metadata = res.value
         assert(
@@ -143,7 +157,8 @@ class MetadataParserSpec
       }
 
       "another juicy one" in {
-        val (res, rest) = withTestFile("metadata2.yaml")(metadataParser.parse)
+        val (res, rest) =
+          withFile0("test/parsing/res/metadata2.yaml")(metadataParser.parse)
         val metadata = res.value
         assert(
           metadata.id == UUID.fromString("00895144-30e4-4bd2-b800-bb706686d950")

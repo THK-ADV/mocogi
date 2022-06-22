@@ -3,14 +3,14 @@ package parsing.helper
 import parser.Parser
 import parser.Parser._
 import parser.ParserOps._
-import parsing.{stringForKey, withResFile}
+import parsing.{stringForKey, withFile0}
 
 trait SimpleFileParser[A] {
   protected def makeType: ((String, String)) => A
-  protected def filename: String
+  protected def path: String
   protected def typename: String
 
-  protected def fileParser: Parser[List[A]] =
+  protected def makeFileParser: Parser[List[A]] =
     prefixTo(":")
       .skip(newline)
       .skip(zeroOrMoreSpaces)
@@ -19,8 +19,8 @@ trait SimpleFileParser[A] {
       .many()
       .map(_.map(makeType))
 
-  protected def types: List[A] =
-    withResFile(filename)(s => fileParser.parse(s)._1)
+  protected def parseTypes: List[A] =
+    withFile0(path)(s => makeFileParser.parse(s)._1)
       .fold(
         e => throw e,
         xs =>
@@ -29,12 +29,12 @@ trait SimpleFileParser[A] {
           else xs
       )
 
-  protected def typeParser(key: String)(lit: A => String): Parser[A] =
+  protected def makeTypeParser(key: String)(lit: A => String): Parser[A] =
     prefix(s"$key:")
       .skip(zeroOrMoreSpaces)
       .take(
         oneOf(
-          types.map(m =>
+          parseTypes.map(m =>
             literal(lit(m))
               .skip(newline)
               .map(_ => m)
