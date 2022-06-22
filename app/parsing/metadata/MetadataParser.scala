@@ -3,28 +3,41 @@ package parsing.metadata
 import parser.Parser
 import parser.Parser._
 import parser.ParserOps._
-import parsing.metadata.AssessmentMethodParser.assessmentMethodParser
 import parsing.metadata.LanguageParser.languageParser
-import parsing.metadata.LocationParser.locationParser
 import parsing.metadata.ModuleRelationParser.moduleRelationParser
-import parsing.metadata.ModuleTypeParser.moduleTypeParser
 import parsing.metadata.POParser.poParser
 import parsing.metadata.PrerequisitesParser.{
   recommendedPrerequisitesParser,
   requiredPrerequisitesParser
 }
-import parsing.metadata.ResponsibilitiesParser.responsibilitiesParser
-import parsing.metadata.SeasonParser.seasonParser
-import parsing.metadata.StatusParser.statusParser
 import parsing.metadata.WorkloadParser.workloadParser
 import parsing.types.Metadata
 import parsing.{doubleForKey, intForKey, stringForKey}
 import printer.Printer
 
 import java.util.UUID
+import javax.inject.{Inject, Singleton}
 import scala.util.Try
 
-object MetadataParser {
+trait MetadataParser {
+  val moduleCodeParser: Parser[UUID]
+  val moduleTitleParser: Parser[String]
+  val moduleAbbrevParser: Parser[String]
+  val creditPointsParser: Parser[Double]
+  val durationParser: Parser[Int]
+  val semesterParser: Parser[Int]
+  val parser: Parser[Metadata]
+}
+
+@Singleton
+class MetadataParserImpl @Inject() (
+    responsibilitiesParser: ResponsibilitiesParser,
+    seasonParser: SeasonParser,
+    assessmentMethodParser: AssessmentMethodParser,
+    statusParser: StatusParser,
+    moduleTypeParser: ModuleTypeParser,
+    locationParser: LocationParser
+) extends MetadataParser {
 
   val moduleCodeParser: Parser[UUID] =
     stringForKey("module_code")
@@ -44,7 +57,7 @@ object MetadataParser {
     moduleCodeParser
       .zip(moduleTitleParser)
       .take(moduleAbbrevParser)
-      .take(moduleTypeParser)
+      .take(moduleTypeParser.parser)
       .take(moduleRelationParser)
       .take(creditPointsParser)
       .skip(newline)
@@ -53,15 +66,15 @@ object MetadataParser {
       .skip(newline)
       .take(semesterParser)
       .skip(newline)
-      .take(seasonParser)
-      .take(responsibilitiesParser)
-      .take(assessmentMethodParser)
+      .take(seasonParser.parser)
+      .take(responsibilitiesParser.parser)
+      .take(assessmentMethodParser.parser)
       .take(workloadParser)
       .take(recommendedPrerequisitesParser)
       .take(requiredPrerequisitesParser)
       .skip(optional(newline))
-      .take(statusParser)
-      .take(locationParser)
+      .take(statusParser.parser)
+      .take(locationParser.parser)
       .skip(optional(newline))
       .take(poParser)
       .map(Metadata.tupled)
@@ -79,7 +92,7 @@ object MetadataParser {
       .zip(Printer.prefix(_ != '\n'))
   }
 
-  val metadataParser: Parser[Metadata] =
+  val parser: Parser[Metadata] =
     prefix("---")
       .take(versionSchemeParser)
       .skip(newline)

@@ -4,16 +4,25 @@ import parser.Parser
 import parsing.helper.SimpleFileParser
 import parsing.types.ModuleType
 
-object ModuleTypeParser extends SimpleFileParser[ModuleType] {
+import javax.inject.Singleton
+
+trait ModuleTypeParser {
+  val fileParser: Parser[List[ModuleType]]
+  val parser: Parser[ModuleType]
+}
+
+@Singleton
+final class ModuleTypeParserImpl(val path: String)
+    extends ModuleTypeParser
+    with SimpleFileParser[ModuleType] {
 
   override val makeType = ModuleType.tupled
-  override val filename = "module_type.yaml"
   override val typename = "module types"
 
-  val moduleTypesFileParser: Parser[List[ModuleType]] = fileParser
+  val fileParser: Parser[List[ModuleType]] = makeFileParser
 
-  val moduleTypes: List[ModuleType] = types
+  val moduleTypes: List[ModuleType] = parseTypes
 
-  val moduleTypeParser: Parser[ModuleType] =
-    typeParser("module_type")(t => s"module_type.${t.abbrev}")
+  val parser: Parser[ModuleType] =
+    makeTypeParser("module_type")(t => s"module_type.${t.abbrev}")
 }

@@ -1,15 +1,23 @@
 package parsing.metadata
 
+import helper.FakeApplication
 import org.scalatest.EitherValues
 import org.scalatest.wordspec.AnyWordSpec
-import parsing.metadata.SeasonParser.{seasonFileParser, seasonParser}
+import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import parsing.types.Season
-import parsing.{ParserSpecHelper, withResFile}
+import parsing.{ParserSpecHelper, withFile0}
 
 class SeasonParserSpec
     extends AnyWordSpec
     with ParserSpecHelper
-    with EitherValues {
+    with EitherValues
+    with GuiceOneAppPerSuite
+    with FakeApplication {
+
+  val parser = app.injector.instanceOf(classOf[SeasonParser])
+
+  val seasonFileParser = parser.fileParser
+  val seasonParser = parser.parser
 
   "A Season Parser" should {
     "parse season file" when {
@@ -46,7 +54,8 @@ class SeasonParserSpec
       }
 
       "parse all seasons in season.yaml" in {
-        val (res, rest) = withResFile("season.yaml")(seasonFileParser.parse)
+        val (res, rest) =
+          withFile0("test/parsing/res/season.yaml")(seasonFileParser.parse)
         assert(
           res.value == List(
             Season("ws", "Wintersemester"),

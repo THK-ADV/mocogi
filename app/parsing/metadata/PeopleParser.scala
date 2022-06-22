@@ -4,16 +4,25 @@ import parser.Parser
 import parser.Parser._
 import parser.ParserOps._
 import parsing.types.People
-import parsing.{stringForKey, withResFile}
+import parsing.{stringForKey, withFile0}
 
-object PeopleParser {
+import javax.inject.Singleton
+
+trait PeopleParser {
+  val fileParser: Parser[List[People]]
+  val parser: Parser[List[People]]
+}
+
+@Singleton
+final class PeopleParserImpl(path: String) extends PeopleParser {
+
   def string(key: String): Parser[String] =
     prefix(s"$key:")
       .skip(zeroOrMoreSpaces)
       .take(prefix(_ != '\n').or(rest))
       .map(_.trim)
 
-  val peopleFileParser =
+  val fileParser =
     prefixTo(":")
       .skip(newline)
       .skip(zeroOrMoreSpaces)
@@ -28,7 +37,7 @@ object PeopleParser {
       .map(_.map(People.tupled))
 
   val people: List[People] =
-    withResFile("people-all.yaml")(s => peopleFileParser.parse(s)._1)
+    withFile0(path)(s => fileParser.parse(s)._1)
       .fold(
         e => throw e,
         xs =>
@@ -37,7 +46,7 @@ object PeopleParser {
           else xs
       )
 
-  val personParser = {
+  val parser = {
     val single =
       oneOf(
         people.map(p =>

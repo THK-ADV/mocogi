@@ -4,7 +4,7 @@ import org.scalatest.EitherValues
 import org.scalatest.wordspec.AnyWordSpec
 import parsing.metadata.LanguageParser.{langFileParser, languageParser}
 import parsing.types.Language
-import parsing.{ParserSpecHelper, withResFile}
+import parsing.{ParserSpecHelper, withFile0}
 
 class LanguageParserSpec
     extends AnyWordSpec
@@ -46,7 +46,7 @@ class LanguageParserSpec
       }
 
       "parse all languages in lang.yaml" in {
-        val (res, rest) = withResFile("lang.yaml")(langFileParser.parse)
+        val (res, rest) = withFile0("test/parsing/res/lang.yaml")(langFileParser.parse)
         assert(
           res.value == List(
             Language("de", "Deutsch"),

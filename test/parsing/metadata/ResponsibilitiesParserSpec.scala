@@ -1,14 +1,21 @@
 package parsing.metadata
 
+import helper.FakeApplication
 import org.scalatest.EitherValues
 import org.scalatest.wordspec.AnyWordSpec
+import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import parsing.ParserSpecHelper
-import parsing.metadata.ResponsibilitiesParser.responsibilitiesParser
 
 class ResponsibilitiesParserSpec
     extends AnyWordSpec
     with ParserSpecHelper
-    with EitherValues {
+    with EitherValues
+    with GuiceOneAppPerSuite
+    with FakeApplication {
+
+  val parser = app.injector.instanceOf(classOf[ResponsibilitiesParser])
+
+  val responsibilitiesParser = parser.parser
 
   "A Responsibilities Parser" should {
     "return one coordinator and one lecturer" in {

@@ -5,9 +5,6 @@ import parser.Parser
 
 trait ParserSpecHelper { self: AnyWordSpec =>
 
-  def withTestFile[A](name: String)(input: String => A): A =
-    withFile("test/parsing/res")(name)(input)
-
   def assertError[A](
       p: Parser[A],
       input: String,

@@ -1,15 +1,23 @@
 package parsing.metadata
 
+import helper.FakeApplication
 import org.scalatest.EitherValues
 import org.scalatest.wordspec.AnyWordSpec
-import parsing.metadata.StatusParser.{statusFileParser, statusParser}
+import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import parsing.types.Status
-import parsing.{ParserSpecHelper, withResFile}
+import parsing.{ParserSpecHelper, withFile0}
 
 class StatusParserSpec
     extends AnyWordSpec
     with ParserSpecHelper
-    with EitherValues {
+    with EitherValues
+    with GuiceOneAppPerSuite
+    with FakeApplication {
+
+  val parser = app.injector.instanceOf(classOf[StatusParser])
+
+  val statusFileParser = parser.fileParser
+  val statusParser = parser.parser
 
   "A Status Parser" should {
     "parse status file" when {
@@ -42,7 +50,7 @@ class StatusParserSpec
       }
 
       "parse all status in status.yaml" in {
-        val (res, rest) = withResFile("status.yaml")(statusFileParser.parse)
+        val (res, rest) = withFile0("test/parsing/res/status.yaml")(statusFileParser.parse)
         assert(
           res.value == List(
             Status("active", "Aktiv"),

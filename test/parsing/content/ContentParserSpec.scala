@@ -2,8 +2,8 @@ package parsing.content
 
 import org.scalatest.EitherValues
 import org.scalatest.wordspec.AnyWordSpec
-import parsing.ParserSpecHelper
 import parsing.content.ContentParser.contentParser
+import parsing.{ParserSpecHelper, withFile0}
 
 class ContentParserSpec
     extends AnyWordSpec
@@ -13,14 +13,19 @@ class ContentParserSpec
   "A Content Parser" should {
 
     "parse content2.md" in {
-      val (res, rest) = withTestFile("content2.md")(contentParser.parse)
+      val (res, rest) =
+        withFile0("test/parsing/res/content2.md")(contentParser.parse)
       val (de, en) = res.value
 
       assert(rest.isEmpty)
 
-      assert(de.recommendedPrerequisitesHeader == "Sonstige empfohlene Voraussetzungen")
+      assert(
+        de.recommendedPrerequisitesHeader == "Sonstige empfohlene Voraussetzungen"
+      )
       assert(de.recommendedPrerequisitesBody == "\n")
-      assert(en.recommendedPrerequisitesHeader == "Other recommended prerequisites")
+      assert(
+        en.recommendedPrerequisitesHeader == "Other recommended prerequisites"
+      )
       assert(en.recommendedPrerequisitesBody == "\n")
 
       assert(de.learningOutcomeHeader == "Angestrebte Lernergebnisse")
@@ -54,14 +59,19 @@ class ContentParserSpec
     }
 
     "parse content1.md" in {
-      val (res, rest) = withTestFile("content1.md")(contentParser.parse)
+      val (res, rest) =
+        withFile0("test/parsing/res/content1.md")(contentParser.parse)
       val (de, en) = res.value
 
       assert(rest.isEmpty)
 
-      assert(de.recommendedPrerequisitesHeader == "Sonstige empfohlene Voraussetzungen")
+      assert(
+        de.recommendedPrerequisitesHeader == "Sonstige empfohlene Voraussetzungen"
+      )
       assert(de.recommendedPrerequisitesBody == "\nProgrammieren\n\n")
-      assert(en.recommendedPrerequisitesHeader == "Other recommended prerequisites")
+      assert(
+        en.recommendedPrerequisitesHeader == "Other recommended prerequisites"
+      )
       assert(en.recommendedPrerequisitesBody == "\nProgramming\n\n")
 
       assert(de.learningOutcomeHeader == "Angestrebte Lernergebnisse")

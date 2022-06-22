@@ -1,15 +1,23 @@
 package parsing.metadata
 
+import helper.FakeApplication
 import org.scalatest.EitherValues
 import org.scalatest.wordspec.AnyWordSpec
-import parsing.{ParserSpecHelper, withResFile}
-import parsing.metadata.LocationParser.{locationFileParser, locationParser}
+import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import parsing.types.Location
+import parsing.{ParserSpecHelper, withFile0}
 
 class LocationParserSpec
     extends AnyWordSpec
     with ParserSpecHelper
-    with EitherValues {
+    with EitherValues
+    with GuiceOneAppPerSuite
+    with FakeApplication {
+
+  val parser = app.injector.instanceOf(classOf[LocationParser])
+
+  val locationFileParser = parser.fileParser
+  val locationParser = parser.parser
 
   "A Location Parser" should {
     "parse location file" when {
@@ -50,7 +58,7 @@ class LocationParserSpec
       }
 
       "parse all locations in location.yaml" in {
-        val (res, rest) = withResFile("location.yaml")(locationFileParser.parse)
+        val (res, rest) = withFile0("test/parsing/res/location.yaml")(locationFileParser.parse)
         assert(
           res.value == List(
             Location("gm", "Gummersbach"),
