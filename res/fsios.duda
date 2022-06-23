@@ -4,15 +4,15 @@ module_title: Full Stack iOS Entwicklung mit Swift
 module_abbrev: FSIOS
 module_type: module_type.wpf
 module_relation:
- - parent: module.moco
+ parent: module.moco
 credit_points: 5
 language: lang.de
 duration_of_module: 1
 recommended_semester: 4
 frequency: season.ss
 responsibilities:
-coordinator: person.ald
-lecturers: person.ald
+coordinator: person.ado
+lecturers: person.ado
 assessment-methods:
   - assessment.project (70 %)
   - assessment.presentation (30 %)

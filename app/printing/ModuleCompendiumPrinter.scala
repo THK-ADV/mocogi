@@ -6,23 +6,22 @@ import parsing.types._
 import printer.Printer
 import printer.Printer._
 
-import java.io.ByteArrayInputStream
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import javax.inject.{Inject, Singleton}
-import scala.language.{implicitConversions, postfixOps}
-import scala.sys.process._
-import scala.util.Try
+import scala.language.implicitConversions
 
 trait ModuleCompendiumPrinter {
-  val printer: Printer[ModuleCompendium]
-
-  def generate(input: String): Either[ModuleCompendiumGenerationError, String]
+  def renderOutput(
+      input: String,
+      outputFormat: PrinterOutputFormat
+  ): Either[ModuleCompendiumGenerationError, PrinterOutput]
 }
 
 @Singleton
 class ModuleCompendiumPrinterImpl @Inject() (
-    moduleCompendiumParser: ModuleCompendiumParser
+    moduleCompendiumParser: ModuleCompendiumParser,
+    markdownConverter: MarkdownConverter
 ) extends ModuleCompendiumPrinter {
 
   private val localDatePattern = DateTimeFormatter.ofPattern("dd.MM.yyyy")
@@ -160,7 +159,10 @@ class ModuleCompendiumPrinterImpl @Inject() (
       .print((), input)
   }
 
-  def generate(input: String): Either[ModuleCompendiumGenerationError, String] =
+  def renderOutput(
+      input: String,
+      outputFormat: PrinterOutputFormat
+  ): Either[ModuleCompendiumGenerationError, PrinterOutput] =
     moduleCompendiumParser.parser
       .parse(input)
       ._1
@@ -169,10 +171,9 @@ class ModuleCompendiumPrinterImpl @Inject() (
         ModuleCompendiumGenerationError.Printing.apply,
         printer.print(_, "")
       )
-      .map(s => new ByteArrayInputStream(s.getBytes))
       .biFlatMap(
         identity,
         ModuleCompendiumGenerationError.Other.apply,
-        input => Try("pandoc -f markdown -t html" #< input !!).toEither
+        input => markdownConverter.convert(input, outputFormat)
       )
 }
