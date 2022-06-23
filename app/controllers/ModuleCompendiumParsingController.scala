@@ -15,9 +15,14 @@ import parsing.types.{Status => ModuleStatus, _}
 import play.api.libs.Files.TemporaryFile
 import play.api.libs.json._
 import play.api.libs.ws.WSClient
-import play.api.mvc.{AbstractController, ControllerComponents, Request, Result}
+import play.api.mvc._
 import printer.PrintingError
-import printing.{ModuleCompendiumGenerationError, ModuleCompendiumPrinter}
+import printing.{
+  ModuleCompendiumGenerationError,
+  ModuleCompendiumPrinter,
+  PrinterOutput,
+  PrinterOutputFormat
+}
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
@@ -33,8 +38,8 @@ class ModuleCompendiumParsingController @Inject() (
     implicit val ctx: ExecutionContext
 ) extends AbstractController(cc) {
 
-  def parseFile() = Action(parse.temporaryFile) { r =>
-    extractFileContent(r).map { input =>
+  def parseFile() = Action(parse.temporaryFile) { implicit r =>
+    extractFileContent.map { input =>
       moduleCompendiumParser.parser.parse(input)._1 match {
         case Right(c) => Ok(Json.toJson(c))
         case Left(e)  => InternalServerError(Json.toJson(e))
@@ -42,26 +47,56 @@ class ModuleCompendiumParsingController @Inject() (
     }
   }
 
-  def generateFromFile() = Action(parse.temporaryFile) { r =>
-    extractFileContent(r).map(generate0)
+  def generateFromFile() = Action(parse.temporaryFile) { implicit r =>
+    for {
+      input <- extractFileContent
+      outputFormat <- extractOutputFormat
+    } yield render(input, outputFormat)
   }
 
-  def generateFromUrl() = Action(parse.json).async { r =>
-    r.body.\("url").validate[String].asOpt match {
-      case Some(url) =>
-        ws.url(url).get().map(r => generate0(r.bodyAsBytes.utf8String))
-      case None =>
-        Future.successful(InternalServerError(JsString("no url found")))
-    }
+  def generateFromUrl() = Action.async { implicit r =>
+    for {
+      url <- Future.fromTry(getQueryString("input_url"))
+      outputFormat <- Future.fromTry(extractOutputFormat)
+      output <- ws
+        .url(url)
+        .get()
+        .map(r => render(r.bodyAsBytes.utf8String, outputFormat))
+    } yield output
   }
 
-  private def generate0(input: String): Result =
-    moduleCompendiumPrinter.generate(input) match {
-      case Right(html) => Ok(html)
-      case Left(e)     => InternalServerError(Json.toJson(e))
+  private def extractOutputFormat(implicit
+      r: Request[_]
+  ): Try[PrinterOutputFormat] =
+    getQueryString("output_format").flatMap(PrinterOutputFormat.apply)
+
+  private def getQueryString(key: String)(implicit r: Request[_]): Try[String] =
+    r.getQueryString(key) match {
+      case Some(value) => Success(value)
+      case None => Failure(new Throwable(s"expected query parameter $key"))
     }
 
-  private def extractFileContent(r: Request[TemporaryFile]) =
+  private def render(
+      input: String,
+      outputFormat: PrinterOutputFormat
+  ): Result =
+    moduleCompendiumPrinter.renderOutput(input, outputFormat) match {
+      case Right(output) =>
+        output match {
+          case PrinterOutput.PDF(file, filename) =>
+            Ok.sendFile(
+              content = file,
+              fileName = _ => Some(filename)
+            )
+          case PrinterOutput.HTML(content) =>
+            Ok(content)
+        }
+      case Left(e) => InternalServerError(Json.toJson(e))
+    }
+
+  private def extractFileContent(implicit
+      r: Request[TemporaryFile]
+  ): Try[String] =
     Try(Files.asCharSource(r.body.path.toFile, Charsets.UTF_8).read())
 
   private implicit def tryToResult(`try`: Try[Result]): Result =
