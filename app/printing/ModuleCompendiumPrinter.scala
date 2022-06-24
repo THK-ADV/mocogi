@@ -169,11 +169,11 @@ class ModuleCompendiumPrinterImpl @Inject() (
       .biFlatMap(
         ModuleCompendiumGenerationError.Parsing.apply,
         ModuleCompendiumGenerationError.Printing.apply,
-        printer.print(_, "")
+        mc => printer.print(mc, "").map(_ -> mc.metadata.id)
       )
       .biFlatMap(
         identity,
         ModuleCompendiumGenerationError.Other.apply,
-        input => markdownConverter.convert(input, outputFormat)
+        a => markdownConverter.convert(a._2, a._1, outputFormat)
       )
 }

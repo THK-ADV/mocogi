@@ -83,12 +83,12 @@ class ModuleCompendiumParsingController @Inject() (
     moduleCompendiumPrinter.renderOutput(input, outputFormat) match {
       case Right(output) =>
         output match {
-          case PrinterOutput.PDF(file, filename) =>
+          case PrinterOutput.File(file, filename) =>
             Ok.sendFile(
               content = file,
               fileName = _ => Some(filename)
             )
-          case PrinterOutput.HTML(content) =>
+          case PrinterOutput.Text(content) =>
             Ok(content)
         }
       case Left(e) => InternalServerError(Json.toJson(e))
