@@ -21,6 +21,10 @@ final class ConfigReader @Inject() (config: Configuration) {
 
   def assessmentMethods: String = string("filePaths.assessmentMethods")
 
+  def htmlCmd: String = string("pandoc.htmlCmd")
+
+  def pdfCmd: String = string("pandoc.pdfCmd")
+
   private def string(key: String): String =
     config.getOptional[String](key) match {
       case Some(value) if value.nonEmpty => value

@@ -1,7 +1,11 @@
 import com.google.inject.AbstractModule
 import parsing.metadata._
 import parsing.{ModuleCompendiumParser, ModuleCompendiumParserImpl}
-import printing.{ModuleCompendiumPrinter, ModuleCompendiumPrinterImpl}
+import printing.{
+  MarkdownConverter,
+  ModuleCompendiumPrinter,
+  ModuleCompendiumPrinterImpl
+}
 import providers._
 
 class Module extends AbstractModule {
@@ -37,6 +41,9 @@ class Module extends AbstractModule {
       .asEagerSingleton()
     bind(classOf[LocationParser])
       .toProvider(classOf[LocationParserProvider])
+      .asEagerSingleton()
+    bind(classOf[MarkdownConverter])
+      .toProvider(classOf[MarkdownConverterProvider])
       .asEagerSingleton()
   }
 }
