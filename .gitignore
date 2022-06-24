@@ -45,3 +45,4 @@ build
 *.class
 
 .env
+conf/application-prod.conf
