@@ -31,14 +31,14 @@ case "$1" in
     docker-compose up -d &&
      exit 0
   ;;
-"dockHub")
+"dockhub")
   clearDockerImages &&
     buildDockerImage &&
     uploadDockHub &&
      exit 0
   ;;
 *)
-  echo expected local or dockHub, but was $1
+  echo expected local or dockhub, but was $1
   exit 1
   ;;
 esac
