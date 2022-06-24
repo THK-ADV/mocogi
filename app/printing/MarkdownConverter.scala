@@ -28,9 +28,9 @@ final class MarkdownConverter(
         val filename = s"${input.hashCode}.pdf"
         val file = fileCreator.create(filename)
         val cmd = s"$pdfCmd -o ${file.getAbsolutePath}"
-        Try(cmd #< inputStream !!).map { _ =>
-          PrinterOutput.PDF(file, filename)
-        }.toEither
+        Try(cmd #< inputStream !!)
+          .map(_ => PrinterOutput.PDF(file, filename))
+          .toEither
     }
     inputStream.close()
     res
