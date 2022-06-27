@@ -4,15 +4,15 @@ module_title: Full Stack iOS Entwicklung mit Swift
 module_abbrev: FSIOS
 module_type: module_type.wpf
 module_relation:
- parent: module.moco
+  parent: module.moco
 credit_points: 5
 language: lang.de
 duration_of_module: 1
 recommended_semester: 4
 frequency: season.ss
 responsibilities:
-coordinator: person.ado
-lecturers: person.ado
+  coordinator: person.ado
+  lecturers: person.ado
 assessment-methods:
   - assessment.project (70 %)
   - assessment.presentation (30 %)
@@ -59,7 +59,7 @@ Die Liste ist nur eine grobe Vorschau, vom Semester abhängig und daher nicht vo
 ### Mobile Computing
 
 - Mobile constraints
-    + Trafic
+    + Traffic
     + Performance
     + Single main thread
     + 25 FPS / frame drops
@@ -67,7 +67,7 @@ Die Liste ist nur eine grobe Vorschau, vom Semester abhängig und daher nicht vo
 - Users privacy
     + Personal data
     + Trust
-- Persistance
+- Persistence
     - UserDefaults (Key-Value Storage)
     - Core Data (kinda object oriented SQLite)
     - File System
@@ -84,10 +84,10 @@ Die Liste ist nur eine grobe Vorschau, vom Semester abhängig und daher nicht vo
     + Background time / updates
 - UI and Interaction Design
 - Notifications
-    + User Notfications
+    + User Notifications
     + Silent Notifications
 - Permissions and Entitlements
-- Developer Programm
+- Developer Program
 - App signing
 
 ### iOS Development
