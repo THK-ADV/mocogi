@@ -69,6 +69,9 @@ class ModuleCompendiumPrinterImpl @Inject() (
   private def contentBlock(title: String, content: String) =
     header(title).skip(prefix(content))
 
+  private def makeLink(display: String, header: String): String =
+    s"[$display](#${header.toLowerCase.replace(' ', '-')})"
+
   val printer: Printer[ModuleCompendium] = Printer { case (mc, input) =>
     val m = mc.metadata
     val c = mc.deContent
@@ -126,6 +129,14 @@ class ModuleCompendiumPrinterImpl @Inject() (
         row(
           "Zwingende Voraussetzungen",
           fmtPrerequisites(m.requiredPrerequisites)
+        )
+      )
+      .skip(
+        row(
+          "Zusätzliche Voraussetzungen",
+          if (c.recommendedPrerequisitesBody.nonEmpty)
+            makeLink("Ja", c.recommendedPrerequisitesHeader)
+          else "Keine️"
         )
       )
       .skip(
