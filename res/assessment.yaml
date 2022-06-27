@@ -29,7 +29,10 @@ practical-semester-report:
   de_label: Praxissemesterbericht
 
 practical:
-  de_label: Praktikum
+  de_label: Praktikum als Teilnahmenachweis
+
+practical-preconditon:
+  de_label: Praktikum als Prüfungsvorleistung
 
 test:
   de_label: Schriftlicher Test
