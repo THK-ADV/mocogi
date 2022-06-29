@@ -1,5 +1,6 @@
 package printing
 
+import controllers.PrinterOutputFormat
 import ops.EitherOps.EOps
 import parsing.ModuleCompendiumParser
 import parsing.types._
@@ -14,6 +15,7 @@ import scala.language.implicitConversions
 trait ModuleCompendiumPrinter {
   def renderOutput(
       input: String,
+      outputType: PrinterOutputType,
       outputFormat: PrinterOutputFormat
   ): Either[ModuleCompendiumGenerationError, PrinterOutput]
 }
@@ -72,7 +74,7 @@ class ModuleCompendiumPrinterImpl @Inject() (
   private def linkToHeader(header: String): String =
     s"[Siehe $header](#${header.toLowerCase.replace(' ', '-')})"
 
-  val printer: Printer[ModuleCompendium] = Printer { case (mc, input) =>
+  val defaultPrinter: Printer[ModuleCompendium] = Printer { case (mc, input) =>
     val m = mc.metadata
     val c = mc.deContent
 
@@ -168,8 +170,16 @@ class ModuleCompendiumPrinterImpl @Inject() (
       .print((), input)
   }
 
+  private def printerForFormat(
+      outputFormat: PrinterOutputFormat
+  ): Printer[ModuleCompendium] =
+    outputFormat match {
+      case PrinterOutputFormat.DefaultPrinter => defaultPrinter
+    }
+
   def renderOutput(
       input: String,
+      outputType: PrinterOutputType,
       outputFormat: PrinterOutputFormat
   ): Either[ModuleCompendiumGenerationError, PrinterOutput] =
     moduleCompendiumParser.parser
@@ -178,11 +188,12 @@ class ModuleCompendiumPrinterImpl @Inject() (
       .biFlatMap(
         ModuleCompendiumGenerationError.Parsing.apply,
         ModuleCompendiumGenerationError.Printing.apply,
-        mc => printer.print(mc, "").map(_ -> mc.metadata.id)
+        mc =>
+          printerForFormat(outputFormat).print(mc, "").map(_ -> mc.metadata.id)
       )
       .biFlatMap(
         identity,
         ModuleCompendiumGenerationError.Other.apply,
-        a => markdownConverter.convert(a._2, a._1, outputFormat)
+        a => markdownConverter.convert(a._2, a._1, outputType)
       )
 }

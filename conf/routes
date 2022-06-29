@@ -5,7 +5,6 @@
 
 GET        /                        controllers.HomeController.index
 
-PUT        /parse                   controllers.ModuleCompendiumParsingController.parseFile()
 PUT        /generateFromFile        controllers.ModuleCompendiumParsingController.generateFromFile()
 GET        /generateFromUrl         controllers.ModuleCompendiumParsingController.generateFromUrl()
 

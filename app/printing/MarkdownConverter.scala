@@ -18,21 +18,21 @@ final class MarkdownConverter(
   def convert(
       id: UUID,
       input: String,
-      outputFormat: PrinterOutputFormat
+      outputType: PrinterOutputType
   ): Either[Throwable, PrinterOutput] = {
     val inputStream = new ByteArrayInputStream(input.getBytes)
-    val res = outputFormat match {
-      case PrinterOutputFormat.HTML =>
+    val res = outputType match {
+      case PrinterOutputType.HTML =>
         createText(htmlCmd, inputStream)
-      case PrinterOutputFormat.HTMLStandalone =>
+      case PrinterOutputType.HTMLStandalone =>
         createText(standalone(htmlCmd), inputStream)
-      case PrinterOutputFormat.HTMLFile =>
+      case PrinterOutputType.HTMLFile =>
         createFile(id, "html", htmlCmd, inputStream)
-      case PrinterOutputFormat.HTMLStandaloneFile =>
+      case PrinterOutputType.HTMLStandaloneFile =>
         createFile(id, "html", standalone(htmlCmd), inputStream)
-      case PrinterOutputFormat.PDFFile =>
+      case PrinterOutputType.PDFFile =>
         createFile(id, "pdf", pdfCmd, inputStream)
-      case PrinterOutputFormat.PDFStandaloneFile =>
+      case PrinterOutputType.PDFStandaloneFile =>
         createFile(id, "pdf", standalone(pdfCmd), inputStream)
     }
     inputStream.close()

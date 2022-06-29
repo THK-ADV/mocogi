@@ -2,12 +2,7 @@ package controllers
 
 import com.google.common.base.Charsets
 import com.google.common.io.Files
-import controllers.ModuleCompendiumParsingController.{
-  mcgErrorWrites,
-  moduleCompendiumFormat,
-  parsingErrorWrites,
-  throwableWrites
-}
+import controllers.ModuleCompendiumParsingController.{mcgErrorWrites, moduleCompendiumFormat, parsingErrorWrites, throwableWrites}
 import parser.ParsingError
 import parsing.ModuleCompendiumParser
 import parsing.types.ModuleRelation.{Child, Parent}
@@ -17,12 +12,7 @@ import play.api.libs.json._
 import play.api.libs.ws.WSClient
 import play.api.mvc._
 import printer.PrintingError
-import printing.{
-  ModuleCompendiumGenerationError,
-  ModuleCompendiumPrinter,
-  PrinterOutput,
-  PrinterOutputFormat
-}
+import printing.{ModuleCompendiumGenerationError, ModuleCompendiumPrinter, PrinterOutput}
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
@@ -38,37 +28,43 @@ class ModuleCompendiumParsingController @Inject() (
     implicit val ctx: ExecutionContext
 ) extends AbstractController(cc) {
 
-  def parseFile() = Action(parse.temporaryFile) { implicit r =>
-    extractFileContent.map { input =>
-      moduleCompendiumParser.parser.parse(input)._1 match {
-        case Right(c) => Ok(Json.toJson(c))
-        case Left(e)  => InternalServerError(Json.toJson(e))
-      }
+  def generateFromFile() =
+    Action(parse.temporaryFile) { implicit r =>
+      for {
+        input <- parseFileContent
+        outputType <- parseOutputType
+        outputFormat <- parsePrinterOutputFormat
+      } yield render(input, outputType, outputFormat)
     }
-  }
 
-  def generateFromFile() = Action(parse.temporaryFile) { implicit r =>
-    for {
-      input <- extractFileContent
-      outputFormat <- extractOutputFormat
-    } yield render(input, outputFormat)
-  }
+  def generateFromUrl() =
+    Action.async { implicit r =>
+      for {
+        url <- Future.fromTry(parseInputUrl)
+        outputType <- Future.fromTry(parseOutputType)
+        outputFormat <- Future.fromTry(parsePrinterOutputFormat)
+        output <- ws
+          .url(url)
+          .get()
+          .map(r => render(r.bodyAsBytes.utf8String, outputType, outputFormat))
+      } yield output
+    }
 
-  def generateFromUrl() = Action.async { implicit r =>
-    for {
-      url <- Future.fromTry(getQueryString("input_url"))
-      outputFormat <- Future.fromTry(extractOutputFormat)
-      output <- ws
-        .url(url)
-        .get()
-        .map(r => render(r.bodyAsBytes.utf8String, outputFormat))
-    } yield output
-  }
+  private def parseInputUrl(implicit r: Request[_]): Try[String] =
+    getQueryString("input-url")
 
-  private def extractOutputFormat(implicit
+  private def parseOutputType(implicit r: Request[_]): Try[OutputType] =
+    getQueryString("output-type").flatMap(OutputType.apply)
+
+  private def parsePrinterOutputFormat(implicit
       r: Request[_]
   ): Try[PrinterOutputFormat] =
-    getQueryString("output_format").flatMap(PrinterOutputFormat.apply)
+    getQueryString("printer-output-format").flatMap(PrinterOutputFormat.apply)
+
+  private def parseFileContent(implicit
+      r: Request[TemporaryFile]
+  ): Try[String] =
+    Try(Files.asCharSource(r.body.path.toFile, Charsets.UTF_8).read())
 
   private def getQueryString(key: String)(implicit r: Request[_]): Try[String] =
     r.getQueryString(key) match {
@@ -78,26 +74,37 @@ class ModuleCompendiumParsingController @Inject() (
 
   private def render(
       input: String,
-      outputFormat: PrinterOutputFormat
+      outputType: OutputType,
+      printerOutputFormat: PrinterOutputFormat
   ): Result =
-    moduleCompendiumPrinter.renderOutput(input, outputFormat) match {
-      case Right(output) =>
-        output match {
-          case PrinterOutput.File(file, filename) =>
-            Ok.sendFile(
-              content = file,
-              fileName = _ => Some(filename)
-            )
-          case PrinterOutput.Text(content) =>
-            Ok(content)
+    outputType match {
+      case OutputType.JSON =>
+        moduleCompendiumParser.parser.parse(input)._1 match {
+          case Right(c) =>
+            Ok(Json.toJson(c))
+          case Left(e) =>
+            InternalServerError(Json.toJson(e))
         }
-      case Left(e) => InternalServerError(Json.toJson(e))
+      case OutputType.Printer(printerOutputType) =>
+        moduleCompendiumPrinter.renderOutput(
+          input,
+          printerOutputType,
+          printerOutputFormat
+        ) match {
+          case Right(output) =>
+            output match {
+              case PrinterOutput.File(file, filename) =>
+                Ok.sendFile(
+                  content = file,
+                  fileName = _ => Some(filename)
+                )
+              case PrinterOutput.Text(content) =>
+                Ok(content)
+            }
+          case Left(e) =>
+            InternalServerError(Json.toJson(e))
+        }
     }
-
-  private def extractFileContent(implicit
-      r: Request[TemporaryFile]
-  ): Try[String] =
-    Try(Files.asCharSource(r.body.path.toFile, Charsets.UTF_8).read())
 
   private implicit def tryToResult(`try`: Try[Result]): Result =
     `try` match {
