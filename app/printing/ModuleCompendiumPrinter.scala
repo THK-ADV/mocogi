@@ -45,12 +45,12 @@ class ModuleCompendiumPrinterImpl @Inject() (
     if (xs.isEmpty) "Keine"
     else xs.mkString(", ")
 
-  private def fmtModuleRelation(relation: ModuleRelation): String =
+  private def moduleRelationRow(relation: ModuleRelation): Printer[Unit] =
     relation match {
       case ModuleRelation.Parent(children) =>
-        s"Submodule: ${children.mkString(", ")}"
+        row("Besteht aus den Teilmodulen", children.mkString(", "))
       case ModuleRelation.Child(parent) =>
-        s"Supermodul: $parent"
+        row("Gehört zum Modul", parent)
     }
 
   private def fmtDouble(d: Double): String =
@@ -85,9 +85,7 @@ class ModuleCompendiumPrinterImpl @Inject() (
       .skip(row("Modulnummer", m.abbrev))
       .skip(row("Modulbezeichnung", m.title))
       .skip(row("Art des Moduls", m.kind.deLabel))
-      .skipOpt(
-        m.relation.map(i => row("Modulbeziehung", fmtModuleRelation(i)))
-      )
+      .skipOpt(m.relation.map(moduleRelationRow))
       .skip(row("ECTS credits", fmtDouble(m.credits)))
       .skip(row("Sprache", m.language.de_label))
       .skip(row("Dauer des Moduls", s"${m.duration} Semester"))
