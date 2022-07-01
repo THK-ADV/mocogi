@@ -2,7 +2,12 @@ package controllers
 
 import com.google.common.base.Charsets
 import com.google.common.io.Files
-import controllers.ModuleCompendiumParsingController.{mcgErrorWrites, moduleCompendiumFormat, parsingErrorWrites, throwableWrites}
+import controllers.ModuleCompendiumParsingController.{
+  mcgErrorWrites,
+  moduleCompendiumFormat,
+  parsingErrorWrites,
+  throwableWrites
+}
 import parser.ParsingError
 import parsing.ModuleCompendiumParser
 import parsing.types.ModuleRelation.{Child, Parent}
@@ -12,7 +17,11 @@ import play.api.libs.json._
 import play.api.libs.ws.WSClient
 import play.api.mvc._
 import printer.PrintingError
-import printing.{ModuleCompendiumGenerationError, ModuleCompendiumPrinter, PrinterOutput}
+import printing.{
+  ModuleCompendiumGenerationError,
+  ModuleCompendiumPrinter,
+  PrinterOutput
+}
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
@@ -86,7 +95,7 @@ class ModuleCompendiumParsingController @Inject() (
             InternalServerError(Json.toJson(e))
         }
       case OutputType.Printer(printerOutputType) =>
-        moduleCompendiumPrinter.renderOutput(
+        moduleCompendiumPrinter.print(
           input,
           printerOutputType,
           printerOutputFormat
@@ -113,7 +122,9 @@ class ModuleCompendiumParsingController @Inject() (
     }
 }
 
-object ModuleCompendiumParsingController extends JsonNullWritable {
+object ModuleCompendiumParsingController
+    extends JsonNullWritable
+    with ThrowableWrites {
 
   implicit val mcgErrorWrites: Writes[ModuleCompendiumGenerationError] =
     Writes.apply {
@@ -121,14 +132,6 @@ object ModuleCompendiumParsingController extends JsonNullWritable {
       case ModuleCompendiumGenerationError.Printing(e) => Json.toJson(e)
       case ModuleCompendiumGenerationError.Other(e)    => Json.toJson(e)
     }
-
-  implicit val throwableWrites: Writes[Throwable] =
-    Writes.apply(e =>
-      Json.obj(
-        "type" -> "throwable",
-        "message" -> e.getMessage
-      )
-    )
 
   implicit val parsingErrorWrites: Writes[ParsingError] =
     Writes.apply(e =>

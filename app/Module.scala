@@ -1,8 +1,12 @@
 import com.google.inject.AbstractModule
-import git.GitToken
+import git.{
+  GitConfig,
+  ModuleCompendiumPublisher,
+  ModuleCompendiumPublisherImpl,
+  ModuleCompendiumSubscribers
+}
 import parsing.metadata._
 import parsing.{ModuleCompendiumParser, ModuleCompendiumParserImpl}
-import play.api.Configuration
 import printing.{
   MarkdownConverter,
   ModuleCompendiumPrinter,
@@ -10,10 +14,7 @@ import printing.{
 }
 import providers._
 
-import java.util.UUID
-import scala.util.Try
-
-class Module(config: Configuration) extends AbstractModule {
+class Module() extends AbstractModule {
 
   override def configure(): Unit = {
     super.configure()
@@ -29,6 +30,9 @@ class Module(config: Configuration) extends AbstractModule {
       .asEagerSingleton()
     bind(classOf[ResponsibilitiesParser])
       .to(classOf[ResponsibilitiesParserImpl])
+      .asEagerSingleton()
+    bind(classOf[ModuleCompendiumPublisher])
+      .to(classOf[ModuleCompendiumPublisherImpl])
       .asEagerSingleton()
 
     bind(classOf[SeasonParser])
@@ -52,13 +56,11 @@ class Module(config: Configuration) extends AbstractModule {
     bind(classOf[MarkdownConverter])
       .toProvider(classOf[MarkdownConverterProvider])
       .asEagerSingleton()
-
-    bind(classOf[GitToken])
-      .toInstance(GitToken(gitToken))
+    bind(classOf[GitConfig])
+      .toProvider(classOf[GitConfigProvider])
+      .asEagerSingleton()
+    bind(classOf[ModuleCompendiumSubscribers])
+      .toProvider(classOf[ModuleCompendiumSubscribersProvider])
+      .asEagerSingleton()
   }
-
-  def gitToken: Option[UUID] =
-    config
-      .getOptional[String]("git.token")
-      .flatMap(s => Try(UUID.fromString(s)).toOption)
 }
