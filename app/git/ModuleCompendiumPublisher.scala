@@ -2,6 +2,7 @@ package git
 
 import controllers.PrinterOutputFormat
 import git.ModuleCompendiumPublisher.Go
+import ops.EitherOps._
 import parser.ParsingError
 import parsing.ModuleCompendiumParser
 import parsing.types.ModuleCompendium
@@ -14,7 +15,7 @@ trait ModuleCompendiumPublisher {
   val subscribers: ModuleCompendiumSubscribers
 
   def notifyAllObservers(
-      changes: GitChanges[List[String]],
+      changes: GitChanges[List[(GitFilePath, GitFileContent)]],
       outputFormat: PrinterOutputFormat
   ): Unit
 }
@@ -33,7 +34,7 @@ final class ModuleCompendiumPublisherImpl @Inject() (
 ) extends ModuleCompendiumPublisher
     with Logging {
   override def notifyAllObservers(
-      changes: GitChanges[List[String]],
+      changes: GitChanges[List[(GitFilePath, GitFileContent)]],
       outputFormat: PrinterOutputFormat
   ): Unit = {
     val parsedChanges = parse(changes)
@@ -41,24 +42,36 @@ final class ModuleCompendiumPublisherImpl @Inject() (
   }
 
   private def parse(
-      changes: GitChanges[List[String]]
+      changes: GitChanges[List[(GitFilePath, GitFileContent)]]
   ): GitChanges[List[ModuleCompendium]] = {
-    val (addedErr, added) =
-      changes.added.partitionMap(s => parser.parser.parse(s)._1)
-    addedErr.foreach(logError)
-    val (modifiedErr, modified) =
-      changes.modified.partitionMap(s => parser.parser.parse(s)._1)
-    modifiedErr.foreach(logError)
-    val (removedErr, removed) =
-      changes.removed.partitionMap(s => parser.parser.parse(s)._1)
-    removedErr.foreach(logError)
-    GitChanges(
-      added,
-      modified,
-      removed
+    val logErr = logError(changes.commitId) _
+
+    def go(xs: List[(GitFilePath, GitFileContent)]) = {
+      val (errs, parserRes) =
+        xs.partitionMap(t =>
+          parser.parser.parse(t._2.value)._1.mapLeft(_ -> t._1)
+        )
+      errs.foreach(logErr)
+      parserRes
+    }
+
+    changes.copy(
+      go(changes.added),
+      go(changes.modified),
+      go(changes.removed)
     )
   }
 
-  private def logError(e: ParsingError): Unit =
-    logger.error(e.getMessage)
+  private def logError(
+      commitId: String
+  )(t: (ParsingError, GitFilePath)): Unit = {
+    val error = t._1
+    val filePath = t._2.value
+    val msg = s"""parsing error occurred
+       | - commit id: $commitId
+       | - file: $filePath
+       | - expected: ${error.expected}
+       | - found: ${error.found.take(100)}...""".stripMargin
+    logger.error(msg)
+  }
 }

@@ -1,9 +1,10 @@
 package git
 
-import akka.actor.{Actor, ActorLogging, Props}
+import akka.actor.{Actor, Props}
 import controllers.PrinterOutputFormat
 import git.ModuleCompendiumPublisher.Go
 import parsing.types.ModuleCompendium
+import play.api.Logging
 import printing.{ModuleCompendiumPrinter, PrinterOutput, PrinterOutputType}
 
 object ModuleCompendiumPrintingActor {
@@ -17,20 +18,20 @@ final class ModuleCompendiumPrintingActor(
     printer: ModuleCompendiumPrinter,
     outputType: PrinterOutputType
 ) extends Actor
-    with ActorLogging {
+    with Logging {
   override def receive = { case Go(changes, outputFormat) =>
     changes.added.foreach { mc =>
-      log.info(s"printing added module compendium with id ${mc.metadata.id}")
+      logger.info(s"printing added module compendium with id ${mc.metadata.id}")
       print(outputFormat, mc)
     }
     changes.modified.foreach { mc =>
-      log.info(
+      logger.info(
         s"printing modified module compendium with id ${mc.metadata.id}"
       )
       print(outputFormat, mc)
     }
     changes.removed.foreach { mc =>
-      log.info(s"need to delete module compendium with id ${mc.metadata.id}")
+      logger.info(s"need to delete module compendium with id ${mc.metadata.id}")
     }
   }
 
@@ -42,16 +43,16 @@ final class ModuleCompendiumPrintingActor(
       case Right(output) =>
         output match {
           case PrinterOutput.Text(_) =>
-            log.debug(
+            logger.info(
               s"successfully printed module compendium with id ${mc.metadata.id}"
             )
           case PrinterOutput.File(_, _) =>
-            log.debug(
+            logger.info(
               s"successfully printed module compendium with id ${mc.metadata.id}"
             )
         }
       case Left(e) =>
-        log.error(
+        logger.error(
           s"failed to print module compendium with id ${mc.metadata.id}. error: ${e.getMessage}"
         )
     }

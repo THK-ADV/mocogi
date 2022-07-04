@@ -1,6 +1,6 @@
 package controllers
 
-import git.{GitChanges, GitConfig, ModuleCompendiumPublisher}
+import git._
 import play.api.Logging
 import play.api.libs.json._
 import play.api.libs.ws.WSClient
@@ -39,19 +39,21 @@ class GitWebhookController @Inject() (
   }
 
   private def downloadFile(
-      changes: GitChanges[List[String]]
-  ): Future[GitChanges[List[String]]] = {
-    def go(url: String): Future[String] =
+      changes: GitChanges[List[(GitFilePath, GitFileURL)]]
+  ): Future[GitChanges[List[(GitFilePath, GitFileContent)]]] = {
+    def go(
+        t: (GitFilePath, GitFileURL)
+    ): Future[(GitFilePath, GitFileContent)] =
       ws
-        .url(url)
+        .url(t._2.value)
         .addHttpHeaders(accessTokenHeader())
         .get()
-        .map(_.bodyAsBytes.utf8String)
+        .map(r => t._1 -> GitFileContent(r.bodyAsBytes.utf8String))
     for {
       added <- Future.sequence(changes.added.map(go))
       modified <- Future.sequence(changes.modified.map(go))
       removed <- Future.sequence(changes.removed.map(go))
-    } yield GitChanges(added, modified, removed)
+    } yield changes.copy(added, modified, removed)
   }
 
   private def accessTokenHeader(): (String, String) =
@@ -59,14 +61,17 @@ class GitWebhookController @Inject() (
 
   private def stitchFileUrl(
       projectId: Int,
-      changes: GitChanges[List[String]]
-  ): GitChanges[List[String]] = {
-    def urlEncoded(s: String) = URLEncoder.encode(s, StandardCharsets.UTF_8)
-    def go(path: String) =
-      s"${gitConfig.baseUrl}/projects/$projectId/repository/files/${urlEncoded(path)}/raw?ref=master"
-    GitChanges(
-      changes.added.map(go),
-      changes.modified.map(go),
+      changes: GitChanges[List[GitFilePath]]
+  ): GitChanges[List[(GitFilePath, GitFileURL)]] = {
+    def urlEncoded(path: GitFilePath) =
+      URLEncoder.encode(path.value, StandardCharsets.UTF_8)
+    def go(path: GitFilePath): GitFileURL =
+      GitFileURL(
+        s"${gitConfig.baseUrl}/projects/$projectId/repository/files/${urlEncoded(path)}/raw?ref=master"
+      )
+    changes.copy(
+      changes.added.map(p => p -> go(p)),
+      changes.modified.map(p => p -> go(p)),
       Nil // TODO removed file can't be downloaded lol
     )
   }
@@ -76,15 +81,20 @@ class GitWebhookController @Inject() (
 
   private def parseChanges(implicit
       r: Request[JsValue]
-  ): JsResult[GitChanges[List[String]]] =
-    r.body.\("commits").validate[JsArray].map { xs =>
-      val last = xs.last
-      GitChanges(
-        last.\("added").validate[List[String]].getOrElse(Nil),
-        last.\("modified").validate[List[String]].getOrElse(Nil),
-        last.\("removed").validate[List[String]].getOrElse(Nil)
-      )
-    }
+  ): JsResult[GitChanges[List[GitFilePath]]] =
+    for {
+      commits <- r.body.\("commits").validate[JsArray]
+      last = commits.last
+      added <- last.\("added").validate[List[String]]
+      modified <- last.\("modified").validate[List[String]]
+      removed <- last.\("removed").validate[List[String]]
+      commitId <- last.\("id").validate[String]
+    } yield GitChanges(
+      added.map(GitFilePath.apply),
+      modified.map(GitFilePath.apply),
+      removed.map(GitFilePath.apply),
+      commitId
+    )
 
   private def isAuthenticated[A](action: Action[A]) = {
     def parseGitToken(implicit r: Request[_]): Try[UUID] =
