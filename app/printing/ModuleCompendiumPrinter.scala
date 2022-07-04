@@ -1,6 +1,6 @@
 package printing
 
-import controllers.PrinterOutputFormat
+import controllers.parameter.PrinterOutputFormat
 import ops.EitherOps.EOps
 import parsing.ModuleCompendiumParser
 import parsing.types._
@@ -13,8 +13,14 @@ import javax.inject.{Inject, Singleton}
 import scala.language.implicitConversions
 
 trait ModuleCompendiumPrinter {
-  def renderOutput(
+  def print(
       input: String,
+      outputType: PrinterOutputType,
+      outputFormat: PrinterOutputFormat
+  ): Either[ModuleCompendiumGenerationError, PrinterOutput]
+
+  def print(
+      mc: ModuleCompendium,
       outputType: PrinterOutputType,
       outputFormat: PrinterOutputFormat
   ): Either[ModuleCompendiumGenerationError, PrinterOutput]
@@ -177,7 +183,25 @@ class ModuleCompendiumPrinterImpl @Inject() (
       case PrinterOutputFormat.DefaultPrinter => defaultPrinter
     }
 
-  def renderOutput(
+  def print(
+      mc: ModuleCompendium,
+      outputType: PrinterOutputType,
+      outputFormat: PrinterOutputFormat
+  ): Either[ModuleCompendiumGenerationError, PrinterOutput] =
+    printerForFormat(outputFormat)
+      .print(mc, "")
+      .map(_ -> mc.metadata.id)
+      .biFlatMap[
+        ModuleCompendiumGenerationError,
+        Throwable,
+        PrinterOutput
+      ](
+        ModuleCompendiumGenerationError.Printing.apply,
+        ModuleCompendiumGenerationError.Other.apply,
+        a => markdownConverter.convert(a._2, a._1, outputType)
+      )
+
+  def print(
       input: String,
       outputType: PrinterOutputType,
       outputFormat: PrinterOutputFormat
@@ -185,15 +209,13 @@ class ModuleCompendiumPrinterImpl @Inject() (
     moduleCompendiumParser.parser
       .parse(input)
       ._1
-      .biFlatMap(
+      .biFlatMap[
+        ModuleCompendiumGenerationError,
+        ModuleCompendiumGenerationError,
+        PrinterOutput
+      ](
         ModuleCompendiumGenerationError.Parsing.apply,
-        ModuleCompendiumGenerationError.Printing.apply,
-        mc =>
-          printerForFormat(outputFormat).print(mc, "").map(_ -> mc.metadata.id)
-      )
-      .biFlatMap(
         identity,
-        ModuleCompendiumGenerationError.Other.apply,
-        a => markdownConverter.convert(a._2, a._1, outputType)
+        mc => print(mc, outputType, outputFormat)
       )
 }

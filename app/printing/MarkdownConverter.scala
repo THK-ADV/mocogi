@@ -15,6 +15,11 @@ final class MarkdownConverter(
     htmlCmd: String,
     pdfCmd: String
 ) {
+
+  private val htmlExtension = "html"
+
+  private val pdfExtension = "pdf"
+
   def convert(
       id: UUID,
       input: String,
@@ -23,17 +28,17 @@ final class MarkdownConverter(
     val inputStream = new ByteArrayInputStream(input.getBytes)
     val res = outputType match {
       case PrinterOutputType.HTML =>
-        createText(htmlCmd, inputStream)
+        createText(htmlCmd, htmlExtension, inputStream)
       case PrinterOutputType.HTMLStandalone =>
-        createText(standalone(htmlCmd), inputStream)
+        createText(standalone(htmlCmd), htmlExtension, inputStream)
       case PrinterOutputType.HTMLFile =>
-        createFile(id, "html", htmlCmd, inputStream)
+        createFile(id, htmlExtension, htmlCmd, inputStream)
       case PrinterOutputType.HTMLStandaloneFile =>
-        createFile(id, "html", standalone(htmlCmd), inputStream)
+        createFile(id, htmlExtension, standalone(htmlCmd), inputStream)
       case PrinterOutputType.PDFFile =>
-        createFile(id, "pdf", pdfCmd, inputStream)
+        createFile(id, pdfExtension, pdfCmd, inputStream)
       case PrinterOutputType.PDFStandaloneFile =>
-        createFile(id, "pdf", standalone(pdfCmd), inputStream)
+        createFile(id, pdfExtension, standalone(pdfCmd), inputStream)
     }
     inputStream.close()
     res
@@ -43,10 +48,11 @@ final class MarkdownConverter(
 
   private def createText(
       cmd: String,
+      extension: String,
       inputStream: ByteArrayInputStream
   ): Either[Throwable, PrinterOutput] =
     Try(cmd #< inputStream !!)
-      .map(PrinterOutput.Text.apply)
+      .map(c => PrinterOutput.Text.apply(c, extension))
       .toEither
 
   private def createFile(
@@ -55,10 +61,9 @@ final class MarkdownConverter(
       cmd: String,
       inputStream: ByteArrayInputStream
   ): Either[Throwable, PrinterOutput] = {
-    val filename = s"$id.$extension"
-    val file = fileCreator.create(filename)
+    val file = fileCreator.create(id.toString)
     Try(s"$cmd -o ${file.getAbsolutePath}" #< inputStream !!)
-      .map(_ => PrinterOutput.File(file, filename))
+      .map(_ => PrinterOutput.File(file, s"$id.$extension"))
       .toEither
   }
 }

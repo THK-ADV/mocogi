@@ -1,4 +1,7 @@
 import com.google.inject.AbstractModule
+import git.download.GitFilesDownloadActor
+import git.publisher.{ModuleCompendiumPublisher, ModuleCompendiumPublisherImpl}
+import git.{GitConfig, ModuleCompendiumSubscribers}
 import parsing.metadata._
 import parsing.{ModuleCompendiumParser, ModuleCompendiumParserImpl}
 import printing.{
@@ -8,9 +11,11 @@ import printing.{
 }
 import providers._
 
-class Module extends AbstractModule {
+class Module() extends AbstractModule {
 
   override def configure(): Unit = {
+    super.configure()
+
     bind(classOf[ModuleCompendiumParser])
       .to(classOf[ModuleCompendiumParserImpl])
       .asEagerSingleton()
@@ -22,6 +27,9 @@ class Module extends AbstractModule {
       .asEagerSingleton()
     bind(classOf[ResponsibilitiesParser])
       .to(classOf[ResponsibilitiesParserImpl])
+      .asEagerSingleton()
+    bind(classOf[ModuleCompendiumPublisher])
+      .to(classOf[ModuleCompendiumPublisherImpl])
       .asEagerSingleton()
 
     bind(classOf[SeasonParser])
@@ -44,6 +52,15 @@ class Module extends AbstractModule {
       .asEagerSingleton()
     bind(classOf[MarkdownConverter])
       .toProvider(classOf[MarkdownConverterProvider])
+      .asEagerSingleton()
+    bind(classOf[GitConfig])
+      .toProvider(classOf[GitConfigProvider])
+      .asEagerSingleton()
+    bind(classOf[ModuleCompendiumSubscribers])
+      .toProvider(classOf[ModuleCompendiumSubscribersProvider])
+      .asEagerSingleton()
+    bind(classOf[GitFilesDownloadActor])
+      .toProvider(classOf[GitFilesDownloadActorProvider])
       .asEagerSingleton()
   }
 }

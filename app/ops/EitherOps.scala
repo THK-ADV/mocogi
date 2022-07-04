@@ -14,5 +14,10 @@ object EitherOps {
           case Right(b1) => Right(b1)
         }
     }
+
+    def mapLeft[A1](f: A => A1): Either[A1, B] = e match {
+      case Right(b) => Right(b)
+      case Left(a)  => Left(f(a))
+    }
   }
 }

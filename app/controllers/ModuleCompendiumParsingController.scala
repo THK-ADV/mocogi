@@ -3,6 +3,8 @@ package controllers
 import com.google.common.base.Charsets
 import com.google.common.io.Files
 import controllers.ModuleCompendiumParsingController.{mcgErrorWrites, moduleCompendiumFormat, parsingErrorWrites, throwableWrites}
+import controllers.json.{JsonNullWritable, ThrowableWrites}
+import controllers.parameter.{OutputType, PrinterOutputFormat}
 import parser.ParsingError
 import parsing.ModuleCompendiumParser
 import parsing.types.ModuleRelation.{Child, Parent}
@@ -86,7 +88,7 @@ class ModuleCompendiumParsingController @Inject() (
             InternalServerError(Json.toJson(e))
         }
       case OutputType.Printer(printerOutputType) =>
-        moduleCompendiumPrinter.renderOutput(
+        moduleCompendiumPrinter.print(
           input,
           printerOutputType,
           printerOutputFormat
@@ -98,7 +100,7 @@ class ModuleCompendiumParsingController @Inject() (
                   content = file,
                   fileName = _ => Some(filename)
                 )
-              case PrinterOutput.Text(content) =>
+              case PrinterOutput.Text(content, _) =>
                 Ok(content)
             }
           case Left(e) =>
@@ -113,7 +115,9 @@ class ModuleCompendiumParsingController @Inject() (
     }
 }
 
-object ModuleCompendiumParsingController extends JsonNullWritable {
+object ModuleCompendiumParsingController
+    extends JsonNullWritable
+    with ThrowableWrites {
 
   implicit val mcgErrorWrites: Writes[ModuleCompendiumGenerationError] =
     Writes.apply {
@@ -121,14 +125,6 @@ object ModuleCompendiumParsingController extends JsonNullWritable {
       case ModuleCompendiumGenerationError.Printing(e) => Json.toJson(e)
       case ModuleCompendiumGenerationError.Other(e)    => Json.toJson(e)
     }
-
-  implicit val throwableWrites: Writes[Throwable] =
-    Writes.apply(e =>
-      Json.obj(
-        "type" -> "throwable",
-        "message" -> e.getMessage
-      )
-    )
 
   implicit val parsingErrorWrites: Writes[ParsingError] =
     Writes.apply(e =>
