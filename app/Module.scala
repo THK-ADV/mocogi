@@ -1,17 +1,9 @@
 import com.google.inject.AbstractModule
-import git.{
-  GitConfig,
-  ModuleCompendiumPublisher,
-  ModuleCompendiumPublisherImpl,
-  ModuleCompendiumSubscribers
-}
+import git.publisher.{ModuleCompendiumPublisher, ModuleCompendiumPublisherImpl}
+import git.{GitConfig, ModuleCompendiumSubscribers}
 import parsing.metadata._
 import parsing.{ModuleCompendiumParser, ModuleCompendiumParserImpl}
-import printing.{
-  MarkdownConverter,
-  ModuleCompendiumPrinter,
-  ModuleCompendiumPrinterImpl
-}
+import printing.{MarkdownConverter, ModuleCompendiumPrinter, ModuleCompendiumPrinterImpl}
 import providers._
 
 class Module() extends AbstractModule {

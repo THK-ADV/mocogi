@@ -1,6 +1,9 @@
 package controllers
 
+import controllers.json.ThrowableWrites
+import controllers.parameter.PrinterOutputFormat
 import git._
+import git.publisher.ModuleCompendiumPublisher
 import play.api.Logging
 import play.api.libs.json._
 import play.api.libs.ws.WSClient

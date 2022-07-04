@@ -1,4 +1,4 @@
-package controllers
+package controllers.json
 
 import play.api.libs.json.{Json, Writes}
 

@@ -2,12 +2,9 @@ package controllers
 
 import com.google.common.base.Charsets
 import com.google.common.io.Files
-import controllers.ModuleCompendiumParsingController.{
-  mcgErrorWrites,
-  moduleCompendiumFormat,
-  parsingErrorWrites,
-  throwableWrites
-}
+import controllers.ModuleCompendiumParsingController.{mcgErrorWrites, moduleCompendiumFormat, parsingErrorWrites, throwableWrites}
+import controllers.json.{JsonNullWritable, ThrowableWrites}
+import controllers.parameter.{OutputType, PrinterOutputFormat}
 import parser.ParsingError
 import parsing.ModuleCompendiumParser
 import parsing.types.ModuleRelation.{Child, Parent}
@@ -17,11 +14,7 @@ import play.api.libs.json._
 import play.api.libs.ws.WSClient
 import play.api.mvc._
 import printer.PrintingError
-import printing.{
-  ModuleCompendiumGenerationError,
-  ModuleCompendiumPrinter,
-  PrinterOutput
-}
+import printing.{ModuleCompendiumGenerationError, ModuleCompendiumPrinter, PrinterOutput}
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}

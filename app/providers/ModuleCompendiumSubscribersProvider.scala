@@ -1,7 +1,8 @@
 package providers
 
 import akka.actor.ActorSystem
-import git.{ModuleCompendiumPrintingActor, ModuleCompendiumSubscribers}
+import git.ModuleCompendiumSubscribers
+import git.subscriber.ModuleCompendiumPrintingActor
 import printing.{ModuleCompendiumPrinter, PrinterOutputType}
 
 import javax.inject.{Inject, Provider, Singleton}

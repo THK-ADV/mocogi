@@ -1,7 +1,8 @@
-package git
+package git.publisher
 
-import controllers.PrinterOutputFormat
-import git.ModuleCompendiumPublisher.OnUpdate
+import controllers.parameter.PrinterOutputFormat
+import git.publisher.ModuleCompendiumPublisher.OnUpdate
+import git.{GitChanges, GitFileContent, GitFilePath, ModuleCompendiumSubscribers}
 import ops.EitherOps._
 import parser.ParsingError
 import parsing.ModuleCompendiumParser
@@ -9,23 +10,6 @@ import parsing.types.ModuleCompendium
 import play.api.Logging
 
 import javax.inject.{Inject, Singleton}
-
-trait ModuleCompendiumPublisher {
-  def parser: ModuleCompendiumParser
-  val subscribers: ModuleCompendiumSubscribers
-
-  def notifyAllObservers(
-      changes: GitChanges[List[(GitFilePath, GitFileContent)]],
-      outputFormat: PrinterOutputFormat
-  ): Unit
-}
-
-object ModuleCompendiumPublisher {
-  case class OnUpdate(
-      changes: GitChanges[List[ModuleCompendium]],
-      outputFormat: PrinterOutputFormat
-  )
-}
 
 @Singleton
 final class ModuleCompendiumPublisherImpl @Inject() (

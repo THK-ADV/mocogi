@@ -1,6 +1,6 @@
 package printing
 
-import controllers.PrinterOutputFormat
+import controllers.parameter.PrinterOutputFormat
 import ops.EitherOps.EOps
 import parsing.ModuleCompendiumParser
 import parsing.types._

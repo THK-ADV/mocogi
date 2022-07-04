@@ -1,8 +1,8 @@
-package git
+package git.subscriber
 
 import akka.actor.{Actor, Props}
-import controllers.PrinterOutputFormat
-import git.ModuleCompendiumPublisher.OnUpdate
+import controllers.parameter.PrinterOutputFormat
+import git.publisher.ModuleCompendiumPublisher.OnUpdate
 import parsing.types.ModuleCompendium
 import play.api.Logging
 import printing.{ModuleCompendiumPrinter, PrinterOutput, PrinterOutputType}
