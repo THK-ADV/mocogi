@@ -2,7 +2,7 @@ package git
 
 import akka.actor.{Actor, Props}
 import controllers.PrinterOutputFormat
-import git.ModuleCompendiumPublisher.Go
+import git.ModuleCompendiumPublisher.OnUpdate
 import parsing.types.ModuleCompendium
 import play.api.Logging
 import printing.{ModuleCompendiumPrinter, PrinterOutput, PrinterOutputType}
@@ -19,7 +19,7 @@ final class ModuleCompendiumPrintingActor(
     outputType: PrinterOutputType
 ) extends Actor
     with Logging {
-  override def receive = { case Go(changes, outputFormat) =>
+  override def receive = { case OnUpdate(changes, outputFormat) =>
     changes.added.foreach { mc =>
       logger.info(s"printing added module compendium with id ${mc.metadata.id}")
       print(outputFormat, mc)

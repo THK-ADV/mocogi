@@ -1,7 +1,7 @@
 package git
 
 import controllers.PrinterOutputFormat
-import git.ModuleCompendiumPublisher.Go
+import git.ModuleCompendiumPublisher.OnUpdate
 import ops.EitherOps._
 import parser.ParsingError
 import parsing.ModuleCompendiumParser
@@ -21,7 +21,7 @@ trait ModuleCompendiumPublisher {
 }
 
 object ModuleCompendiumPublisher {
-  case class Go(
+  case class OnUpdate(
       changes: GitChanges[List[ModuleCompendium]],
       outputFormat: PrinterOutputFormat
   )
@@ -38,7 +38,7 @@ final class ModuleCompendiumPublisherImpl @Inject() (
       outputFormat: PrinterOutputFormat
   ): Unit = {
     val parsedChanges = parse(changes)
-    subscribers.value.foreach(s => s ! Go(parsedChanges, outputFormat))
+    subscribers.value.foreach(s => s ! OnUpdate(parsedChanges, outputFormat))
   }
 
   private def parse(
