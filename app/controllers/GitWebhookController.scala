@@ -75,7 +75,7 @@ class GitWebhookController @Inject() (
     changes.copy(
       changes.added.map(p => p -> go(p)),
       changes.modified.map(p => p -> go(p)),
-      Nil // TODO removed file can't be downloaded lol
+      Nil // TODO removed file can't be downloaded lol. find a better way. maybe a previous version?
     )
   }
 

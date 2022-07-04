@@ -1,8 +1,12 @@
 package providers
 
 import akka.actor.ActorSystem
+import controllers.ModuleCompendiumParsingController
 import git.ModuleCompendiumSubscribers
-import git.subscriber.ModuleCompendiumPrintingActor
+import git.subscriber.{
+  ModuleCompendiumJsonStreamActor,
+  ModuleCompendiumPrintingActor
+}
 import printing.{ModuleCompendiumPrinter, PrinterOutputType}
 
 import javax.inject.{Inject, Provider, Singleton}
@@ -19,6 +23,11 @@ class ModuleCompendiumSubscribersProvider @Inject() (
           ModuleCompendiumPrintingActor.props(
             printer,
             PrinterOutputType.HTML
+          )
+        ),
+        system.actorOf(
+          ModuleCompendiumJsonStreamActor.props(
+            ModuleCompendiumParsingController.moduleCompendiumFormat.writes
           )
         )
       )
