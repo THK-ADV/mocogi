@@ -22,7 +22,8 @@ class ModuleCompendiumSubscribersProvider @Inject() (
         system.actorOf(
           ModuleCompendiumPrintingActor.props(
             printer,
-            PrinterOutputType.HTML
+            PrinterOutputType.HTMLStandalone,
+            "output"
           )
         ),
         system.actorOf(

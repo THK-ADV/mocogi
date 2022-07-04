@@ -100,7 +100,7 @@ class ModuleCompendiumParsingController @Inject() (
                   content = file,
                   fileName = _ => Some(filename)
                 )
-              case PrinterOutput.Text(content) =>
+              case PrinterOutput.Text(content, _) =>
                 Ok(content)
             }
           case Left(e) =>

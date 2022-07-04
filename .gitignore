@@ -47,3 +47,4 @@ build
 .env
 conf/application-prod.conf
 tmp/
+output/

@@ -12,4 +12,5 @@ RUN wget https://github.com/jgm/pandoc/releases/download/2.18/pandoc-2.18-1-amd6
   && rm pandoc-2.18-1-amd64.deb
 RUN sbt clean stage
 RUN mkdir -p tmp
+RUN mkdir -p output
 CMD target/universal/stage/bin/mocogi -Dconfig.file=conf/application-prod.conf
