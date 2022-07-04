@@ -1,9 +1,14 @@
 import com.google.inject.AbstractModule
+import git.download.GitFilesDownloadActor
 import git.publisher.{ModuleCompendiumPublisher, ModuleCompendiumPublisherImpl}
 import git.{GitConfig, ModuleCompendiumSubscribers}
 import parsing.metadata._
 import parsing.{ModuleCompendiumParser, ModuleCompendiumParserImpl}
-import printing.{MarkdownConverter, ModuleCompendiumPrinter, ModuleCompendiumPrinterImpl}
+import printing.{
+  MarkdownConverter,
+  ModuleCompendiumPrinter,
+  ModuleCompendiumPrinterImpl
+}
 import providers._
 
 class Module() extends AbstractModule {
@@ -53,6 +58,9 @@ class Module() extends AbstractModule {
       .asEagerSingleton()
     bind(classOf[ModuleCompendiumSubscribers])
       .toProvider(classOf[ModuleCompendiumSubscribersProvider])
+      .asEagerSingleton()
+    bind(classOf[GitFilesDownloadActor])
+      .toProvider(classOf[GitFilesDownloadActorProvider])
       .asEagerSingleton()
   }
 }

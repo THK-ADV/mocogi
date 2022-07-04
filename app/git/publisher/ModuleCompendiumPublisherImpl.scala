@@ -2,7 +2,12 @@ package git.publisher
 
 import controllers.parameter.PrinterOutputFormat
 import git.publisher.ModuleCompendiumPublisher.OnUpdate
-import git.{GitChanges, GitFileContent, GitFilePath, ModuleCompendiumSubscribers}
+import git.{
+  GitChanges,
+  GitFileContent,
+  GitFilePath,
+  ModuleCompendiumSubscribers
+}
 import ops.EitherOps._
 import parser.ParsingError
 import parsing.ModuleCompendiumParser
@@ -23,7 +28,9 @@ final class ModuleCompendiumPublisherImpl @Inject() (
       outputFormat: PrinterOutputFormat
   ): Unit = {
     val parsedChanges = parse(changes)
-    subscribers.value.foreach(actor => actor ! OnUpdate(parsedChanges, outputFormat))
+    subscribers.value.foreach(actor =>
+      actor ! OnUpdate(parsedChanges, outputFormat)
+    )
   }
 
   private def parse(
