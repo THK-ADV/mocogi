@@ -17,12 +17,13 @@ final class ModuleCompendiumPublisherImpl @Inject() (
     val subscribers: ModuleCompendiumSubscribers
 ) extends ModuleCompendiumPublisher
     with Logging {
-  override def notifyAllObservers(
+
+  override def notifySubscribers(
       changes: GitChanges[List[(GitFilePath, GitFileContent)]],
       outputFormat: PrinterOutputFormat
   ): Unit = {
     val parsedChanges = parse(changes)
-    subscribers.value.foreach(s => s ! OnUpdate(parsedChanges, outputFormat))
+    subscribers.value.foreach(actor => actor ! OnUpdate(parsedChanges, outputFormat))
   }
 
   private def parse(

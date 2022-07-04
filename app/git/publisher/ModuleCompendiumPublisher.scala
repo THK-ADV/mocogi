@@ -9,7 +9,7 @@ trait ModuleCompendiumPublisher {
   def parser: ModuleCompendiumParser
   val subscribers: ModuleCompendiumSubscribers
 
-  def notifyAllObservers(
+  def notifySubscribers(
       changes: GitChanges[List[(GitFilePath, GitFileContent)]],
       outputFormat: PrinterOutputFormat
   ): Unit

@@ -33,10 +33,10 @@ class GitWebhookController @Inject() (
       projectId <- Future.fromTry(asTry(parseProjectId))
       changes <- Future.fromTry(asTry(parseChanges))
       urls = stitchFileUrl(projectId, changes)
-      files <- downloadFile(urls)
+      fileContent <- downloadFile(urls)
     } yield {
       val outputFormat = PrinterOutputFormat.DefaultPrinter
-      publisher.notifyAllObservers(files, outputFormat)
+      publisher.notifySubscribers(fileContent, outputFormat)
       Ok(JsString("Okay!"))
     }
   }
@@ -112,7 +112,7 @@ class GitWebhookController @Inject() (
           if (gitConfig.gitToken.fold(true)(_ == t)) action(r)
           else
             Future.successful(
-              BadRequest(Json.toJson(new Throwable("invalid Gitlab-Token")))
+              Unauthorized(Json.toJson(new Throwable("invalid Gitlab-Token")))
             )
         case Failure(e) =>
           Future.successful(BadRequest(Json.toJson(e)))
