@@ -24,10 +24,11 @@ class StatusParserSpec
       "parse a single status" in {
         val input =
           """active:
-            |  de_label: Aktiv""".stripMargin
+            |  de_label: Aktiv
+            |  en_label: active""".stripMargin
         val (res, rest) = statusFileParser.parse(input)
         assert(
-          res.value == List(Status("active", "Aktiv"))
+          res.value == List(Status("active", "Aktiv", "active"))
         )
         assert(rest.isEmpty)
       }
@@ -36,14 +37,16 @@ class StatusParserSpec
         val input =
           """active:
             |  de_label: Aktiv
+            |  en_label: active
             |
             |inactive:
-            |  de_label: Inaktiv""".stripMargin
+            |  de_label: Inaktiv
+            |  en_label: inactive""".stripMargin
         val (res, rest) = statusFileParser.parse(input)
         assert(
           res.value == List(
-            Status("active", "Aktiv"),
-            Status("inactive", "Inaktiv")
+            Status("active", "Aktiv", "active"),
+            Status("inactive", "Inaktiv", "inactive")
           )
         )
         assert(rest.isEmpty)
@@ -53,8 +56,8 @@ class StatusParserSpec
         val (res, rest) = withFile0("test/parsing/res/status.yaml")(statusFileParser.parse)
         assert(
           res.value == List(
-            Status("active", "Aktiv"),
-            Status("inactive", "Inaktiv")
+            Status("active", "Aktiv", "--"),
+            Status("inactive", "Inaktiv", "--")
           )
         )
         assert(rest.isEmpty)
@@ -64,11 +67,11 @@ class StatusParserSpec
     "parse status" should {
       "return a valid status" in {
         val (res1, rest1) = statusParser.parse("status: status.active\n")
-        assert(res1.value == Status("active", "Aktiv"))
+        assert(res1.value == Status("active", "Aktiv", "--"))
         assert(rest1.isEmpty)
 
         val (res2, rest2) = statusParser.parse("status: status.inactive\n")
-        assert(res2.value == Status("inactive", "Inaktiv"))
+        assert(res2.value == Status("inactive", "Inaktiv", "--"))
         assert(rest2.isEmpty)
       }
 

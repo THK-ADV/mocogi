@@ -1,38 +1,51 @@
 written-exam:
   de_label: Klausurarbeiten
+  en_label: --
 
 written-exam-answer-choice-method:
   de_label: Schriftliche Prüfungen im Antwortwahlverfahren
+  en_label: --
 
 oral-exams:
   de_label: Mündliche Prüfungen
+  en_label: --
 
 presentation:
   de_label: Präsentation
+  en_label: --
 
 home-assignment:
   de_label: Hausarbeit
+  en_label: --
 
 project:
   de_label: Projektarbeit
+  en_label: --
 
 project-documentation:
   de_label: Projektdokumentation
+  en_label: --
 
 portfolio:
   de_label: Lernportfolio
+  en_label: --
 
 practical-report:
   de_label: Praktikumsbericht
+  en_label: --
 
 practical-semester-report:
   de_label: Praxissemesterbericht
+  en_label: --
 
 practical:
   de_label: Praktikum
+  en_label: --
 
 test:
   de_label: Schriftlicher Test
+  en_label: --
 
 thesis:
   de_label: Schriftliche Ausarbeitung
+  en_label: --

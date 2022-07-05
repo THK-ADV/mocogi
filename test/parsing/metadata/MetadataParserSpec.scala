@@ -122,13 +122,13 @@ class MetadataParserSpec
         )
         assert(metadata.title == "Algorithmik")
         assert(metadata.abbrev == "ALG")
-        assert(metadata.kind == ModuleType("mandatory", "Pflicht"))
+        assert(metadata.kind == ModuleType("mandatory", "Pflicht", "--"))
         assert(metadata.relation.contains(ModuleRelation.Child("inf")))
         assert(metadata.credits == 5)
-        assert(metadata.language == Language("de", "Deutsch"))
+        assert(metadata.language == Language("de", "Deutsch", "--"))
         assert(metadata.duration == 1)
         assert(metadata.recommendedSemester == 3)
-        assert(metadata.frequency == Season("ws", "Wintersemester"))
+        assert(metadata.frequency == Season("ws", "Wintersemester", "--"))
         assert(
           metadata.responsibilities == Responsibilities(
             List(
@@ -143,7 +143,7 @@ class MetadataParserSpec
         assert(
           metadata.assessmentMethods == List(
             AssessmentMethodPercentage(
-              AssessmentMethod("written-exam", "Klausurarbeiten"),
+              AssessmentMethod("written-exam", "Klausurarbeiten", "--"),
               None
             )
           )
@@ -151,8 +151,8 @@ class MetadataParserSpec
         assert(metadata.workload == Workload(150, 36, 0, 18, 18, 78))
         assert(metadata.recommendedPrerequisites == List("ap1", "ap2", "ma1"))
         assert(metadata.requiredPrerequisites == List.empty)
-        assert(metadata.status == Status("active", "Aktiv"))
-        assert(metadata.location == Location("gm", "Gummersbach"))
+        assert(metadata.status == Status("active", "Aktiv", "--"))
+        assert(metadata.location == Location("gm", "Gummersbach", "--"))
         assert(metadata.po == List("AI2"))
       }
 
@@ -165,13 +165,13 @@ class MetadataParserSpec
         )
         assert(metadata.title == "IOS Stuff")
         assert(metadata.abbrev == "IOS")
-        assert(metadata.kind == ModuleType("wpf", "Wahlpflichtfach"))
+        assert(metadata.kind == ModuleType("wpf", "Wahlpflichtfach", "--"))
         assert(metadata.relation.isEmpty)
         assert(metadata.credits == 2.5)
-        assert(metadata.language == Language("en", "Englisch"))
+        assert(metadata.language == Language("en", "Englisch", "--"))
         assert(metadata.duration == 1)
         assert(metadata.recommendedSemester == 4)
-        assert(metadata.frequency == Season("ss", "Sommersemester"))
+        assert(metadata.frequency == Season("ss", "Sommersemester", "--"))
         assert(
           metadata.responsibilities == Responsibilities(
             List(
@@ -185,11 +185,11 @@ class MetadataParserSpec
         assert(
           metadata.assessmentMethods == List(
             AssessmentMethodPercentage(
-              AssessmentMethod("written-exam", "Klausurarbeiten"),
+              AssessmentMethod("written-exam", "Klausurarbeiten" ,"--"),
               Some(70)
             ),
             AssessmentMethodPercentage(
-              AssessmentMethod("practical-report", "Praktikumsbericht"),
+              AssessmentMethod("practical-report", "Praktikumsbericht", "--"),
               Some(30)
             )
           )
@@ -197,8 +197,8 @@ class MetadataParserSpec
         assert(metadata.workload == Workload(150, 30, 0, 10, 10, 100))
         assert(metadata.recommendedPrerequisites == List.empty)
         assert(metadata.requiredPrerequisites == List.empty)
-        assert(metadata.status == Status("active", "Aktiv"))
-        assert(metadata.location == Location("gm", "Gummersbach"))
+        assert(metadata.status == Status("active", "Aktiv", "--"))
+        assert(metadata.location == Location("gm", "Gummersbach", "--"))
         assert(metadata.po == List("AI2", "MI4", "ITM2"))
         assert(rest.isEmpty)
       }

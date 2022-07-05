@@ -1,3 +1,3 @@
 package parsing.types
 
-case class ModuleType(abbrev: String, deLabel: String)
+case class ModuleType(abbrev: String, deLabel: String, enLabel: String)

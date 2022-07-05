@@ -24,10 +24,13 @@ class AssessmentMethodParserSpec
       "parse a single assessment method" in {
         val input =
           """written-exam:
-            |  de_label: Klausurarbeiten""".stripMargin
+            |  de_label: Klausurarbeiten
+            |  en_label: written exam""".stripMargin
         val (res, rest) = assessmentMethodFileParser.parse(input)
         assert(
-          res.value == List(AssessmentMethod("written-exam", "Klausurarbeiten"))
+          res.value == List(
+            AssessmentMethod("written-exam", "Klausurarbeiten", "written exam")
+          )
         )
         assert(rest.isEmpty)
       }
@@ -36,22 +39,30 @@ class AssessmentMethodParserSpec
         val input =
           """project:
             |  de_label: Projektarbeit
+            |  en_label: project
             |
             |project-documentation:
             |  de_label: Projektdokumentation
+            |  en_label: project documentation
             |
             |portfolio:
             |  de_label: Lernportfolio
+            |  en_label: portfolio
             |
             |practical-report:
-            |  de_label: Praktikumsbericht""".stripMargin
+            |  de_label: Praktikumsbericht
+            |  en_label: labwork report""".stripMargin
         val (res, rest) = assessmentMethodFileParser.parse(input)
         assert(
           res.value == List(
-            AssessmentMethod("project", "Projektarbeit"),
-            AssessmentMethod("project-documentation", "Projektdokumentation"),
-            AssessmentMethod("portfolio", "Lernportfolio"),
-            AssessmentMethod("practical-report", "Praktikumsbericht")
+            AssessmentMethod("project", "Projektarbeit", "project"),
+            AssessmentMethod(
+              "project-documentation",
+              "Projektdokumentation",
+              "project documentation"
+            ),
+            AssessmentMethod("portfolio", "Lernportfolio", "portfolio"),
+            AssessmentMethod("practical-report", "Praktikumsbericht", "labwork report")
           )
         )
         assert(rest.isEmpty)
@@ -59,28 +70,36 @@ class AssessmentMethodParserSpec
 
       "parse all assessment methods in assessment.yaml" in {
         val (res, rest) =
-          withFile0("test/parsing/res/assessment.yaml")(assessmentMethodFileParser.parse)
+          withFile0("test/parsing/res/assessment.yaml")(
+            assessmentMethodFileParser.parse
+          )
         assert(
           res.value == List(
-            AssessmentMethod("written-exam", "Klausurarbeiten"),
+            AssessmentMethod("written-exam", "Klausurarbeiten", "--"),
             AssessmentMethod(
               "written-exam-answer-choice-method",
-              "Schriftliche Prüfungen im Antwortwahlverfahren"
+              "Schriftliche Prüfungen im Antwortwahlverfahren",
+              "--"
             ),
-            AssessmentMethod("oral-exams", "Mündliche Prüfungen"),
-            AssessmentMethod("presentation", "Präsentation"),
-            AssessmentMethod("home-assignment", "Hausarbeit"),
-            AssessmentMethod("project", "Projektarbeit"),
-            AssessmentMethod("project-documentation", "Projektdokumentation"),
-            AssessmentMethod("portfolio", "Lernportfolio"),
-            AssessmentMethod("practical-report", "Praktikumsbericht"),
+            AssessmentMethod("oral-exams", "Mündliche Prüfungen", "--"),
+            AssessmentMethod("presentation", "Präsentation", "--"),
+            AssessmentMethod("home-assignment", "Hausarbeit", "--"),
+            AssessmentMethod("project", "Projektarbeit", "--"),
+            AssessmentMethod(
+              "project-documentation",
+              "Projektdokumentation",
+              "--"
+            ),
+            AssessmentMethod("portfolio", "Lernportfolio", "--"),
+            AssessmentMethod("practical-report", "Praktikumsbericht", "--"),
             AssessmentMethod(
               "practical-semester-report",
-              "Praxissemesterbericht"
+              "Praxissemesterbericht",
+              "--"
             ),
-            AssessmentMethod("practical", "Praktikum"),
-            AssessmentMethod("test", "Schriftlicher Test"),
-            AssessmentMethod("thesis", "Schriftliche Ausarbeitung")
+            AssessmentMethod("practical", "Praktikum", "--"),
+            AssessmentMethod("test", "Schriftlicher Test", "--"),
+            AssessmentMethod("thesis", "Schriftliche Ausarbeitung", "--")
           )
         )
         assert(rest.isEmpty)
@@ -94,7 +113,7 @@ class AssessmentMethodParserSpec
         assert(
           res.value == List(
             AssessmentMethodPercentage(
-              AssessmentMethod("written-exam", "Klausurarbeiten"),
+              AssessmentMethod("written-exam", "Klausurarbeiten", "--"),
               None
             )
           )
@@ -108,7 +127,7 @@ class AssessmentMethodParserSpec
         assert(
           res.value == List(
             AssessmentMethodPercentage(
-              AssessmentMethod("written-exam", "Klausurarbeiten"),
+              AssessmentMethod("written-exam", "Klausurarbeiten", "--"),
               Some(100)
             )
           )
@@ -122,7 +141,7 @@ class AssessmentMethodParserSpec
         assert(
           res.value == List(
             AssessmentMethodPercentage(
-              AssessmentMethod("written-exam", "Klausurarbeiten"),
+              AssessmentMethod("written-exam", "Klausurarbeiten", "--"),
               Some(100)
             )
           )
@@ -136,7 +155,7 @@ class AssessmentMethodParserSpec
         assert(
           res.value == List(
             AssessmentMethodPercentage(
-              AssessmentMethod("written-exam", "Klausurarbeiten"),
+              AssessmentMethod("written-exam", "Klausurarbeiten", "--"),
               Some(100)
             )
           )
@@ -161,7 +180,7 @@ class AssessmentMethodParserSpec
         assert(
           res.value == List(
             AssessmentMethodPercentage(
-              AssessmentMethod("written-exam", "Klausurarbeiten"),
+              AssessmentMethod("written-exam", "Klausurarbeiten", "--"),
               None
             )
           )
@@ -179,11 +198,11 @@ class AssessmentMethodParserSpec
         assert(
           res.value == List(
             AssessmentMethodPercentage(
-              AssessmentMethod("written-exam", "Klausurarbeiten"),
+              AssessmentMethod("written-exam", "Klausurarbeiten", "--"),
               None
             ),
             AssessmentMethodPercentage(
-              AssessmentMethod("presentation", "Präsentation"),
+              AssessmentMethod("presentation", "Präsentation", "--"),
               None
             )
           )
@@ -201,11 +220,11 @@ class AssessmentMethodParserSpec
         assert(
           res.value == List(
             AssessmentMethodPercentage(
-              AssessmentMethod("written-exam", "Klausurarbeiten"),
+              AssessmentMethod("written-exam", "Klausurarbeiten", "--"),
               None
             ),
             AssessmentMethodPercentage(
-              AssessmentMethod("presentation", "Präsentation"),
+              AssessmentMethod("presentation", "Präsentation", "--"),
               None
             )
           )
@@ -223,11 +242,11 @@ class AssessmentMethodParserSpec
         assert(
           res.value == List(
             AssessmentMethodPercentage(
-              AssessmentMethod("written-exam", "Klausurarbeiten"),
+              AssessmentMethod("written-exam", "Klausurarbeiten", "--"),
               Some(70)
             ),
             AssessmentMethodPercentage(
-              AssessmentMethod("presentation", "Präsentation"),
+              AssessmentMethod("presentation", "Präsentation", "--"),
               Some(30)
             )
           )
@@ -260,11 +279,11 @@ class AssessmentMethodParserSpec
         assert(
           res.value == List(
             AssessmentMethodPercentage(
-              AssessmentMethod("written-exam", "Klausurarbeiten"),
+              AssessmentMethod("written-exam", "Klausurarbeiten", "--"),
               None
             ),
             AssessmentMethodPercentage(
-              AssessmentMethod("presentation", "Präsentation"),
+              AssessmentMethod("presentation", "Präsentation", "--"),
               None
             )
           )

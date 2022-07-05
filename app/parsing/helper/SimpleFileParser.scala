@@ -6,7 +6,7 @@ import parser.ParserOps._
 import parsing.{stringForKey, withFile0}
 
 trait SimpleFileParser[A] {
-  protected def makeType: ((String, String)) => A
+  protected def makeType: ((String, String, String)) => A
   protected def path: String
   protected def typename: String
 
@@ -15,6 +15,8 @@ trait SimpleFileParser[A] {
       .skip(newline)
       .skip(zeroOrMoreSpaces)
       .zip(stringForKey("de_label"))
+      .skip(zeroOrMoreSpaces)
+      .take(stringForKey("en_label"))
       .skip(optional(newline))
       .many()
       .map(_.map(makeType))

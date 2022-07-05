@@ -1,8 +1,11 @@
 de:
   de_label: Deutsch
+  en_label: --
 
 en:
   de_label: Englisch
+  en_label: --
 
 de_en:
   de_label: Deutsch und Englisch
+  en_label: --

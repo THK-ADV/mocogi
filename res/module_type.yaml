@@ -1,5 +1,7 @@
 mandatory:
   de_label: Pflicht
+  en_label: --
 
 wpf:
   de_label: Wahlpflichtfach
+  en_label: --

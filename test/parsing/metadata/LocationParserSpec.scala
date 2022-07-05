@@ -24,10 +24,11 @@ class LocationParserSpec
       "parse a single location" in {
         val input =
           """gm:
-            |  de_label: Gummersbach""".stripMargin
+            |  de_label: Gummersbach
+            |  en_label: Gummersbach""".stripMargin
         val (res, rest) = locationFileParser.parse(input)
         assert(
-          res.value == List(Location("gm", "Gummersbach"))
+          res.value == List(Location("gm", "Gummersbach", "Gummersbach"))
         )
         assert(rest.isEmpty)
       }
@@ -36,35 +37,40 @@ class LocationParserSpec
         val input =
           """gm:
             |  de_label: Gummersbach
+            |  en_label: Gummersbach
             |
             |dz:
             |  de_label: Deutz
+            |  en_label: Deutz
             |
             |remote:
             |  de_label: Remote / Online
+            |  en_label: remote / online
             |
             |other:
-            |  de_label: Sonstige / Variabel""".stripMargin
+            |  de_label: Sonstige / Variabel
+            |  en_label: other / variable""".stripMargin
         val (res, rest) = locationFileParser.parse(input)
         assert(
           res.value == List(
-            Location("gm", "Gummersbach"),
-            Location("dz", "Deutz"),
-            Location("remote", "Remote / Online"),
-            Location("other", "Sonstige / Variabel")
+            Location("gm", "Gummersbach", "Gummersbach"),
+            Location("dz", "Deutz", "Deutz"),
+            Location("remote", "Remote / Online", "remote / online"),
+            Location("other", "Sonstige / Variabel", "other / variable")
           )
         )
         assert(rest.isEmpty)
       }
 
       "parse all locations in location.yaml" in {
-        val (res, rest) = withFile0("test/parsing/res/location.yaml")(locationFileParser.parse)
+        val (res, rest) =
+          withFile0("test/parsing/res/location.yaml")(locationFileParser.parse)
         assert(
           res.value == List(
-            Location("gm", "Gummersbach"),
-            Location("dz", "Deutz"),
-            Location("remote", "Remote / Online"),
-            Location("other", "Sonstige / Variabel")
+            Location("gm", "Gummersbach", "--"),
+            Location("dz", "Deutz", "--"),
+            Location("remote", "Remote / Online", "--"),
+            Location("other", "Sonstige / Variabel", "--")
           )
         )
         assert(rest.isEmpty)
@@ -74,11 +80,11 @@ class LocationParserSpec
     "parse location" should {
       "return a valid location" in {
         val (res1, rest1) = locationParser.parse("location: location.gm\n")
-        assert(res1.value == Location("gm", "Gummersbach"))
+        assert(res1.value == Location("gm", "Gummersbach", "--"))
         assert(rest1.isEmpty)
 
         val (res2, rest2) = locationParser.parse("location: location.dz\n")
-        assert(res2.value == Location("dz", "Deutz"))
+        assert(res2.value == Location("dz", "Deutz", "--"))
         assert(rest2.isEmpty)
       }
 

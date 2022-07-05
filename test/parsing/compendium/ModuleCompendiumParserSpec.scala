@@ -34,12 +34,12 @@ class ModuleCompendiumParserSpec
       )
       assert(metadata.title == "Module A")
       assert(metadata.abbrev == "MA")
-      assert(metadata.kind == ModuleType("mandatory", "Pflicht"))
+      assert(metadata.kind == ModuleType("mandatory", "Pflicht", "--"))
       assert(metadata.credits == 5)
-      assert(metadata.language == Language("de", "Deutsch"))
+      assert(metadata.language == Language("de", "Deutsch", "--"))
       assert(metadata.duration == 1)
       assert(metadata.recommendedSemester == 3)
-      assert(metadata.frequency == Season("ws", "Wintersemester"))
+      assert(metadata.frequency == Season("ws", "Wintersemester", "--"))
       assert(
         metadata.responsibilities == Responsibilities(
           List(
@@ -54,7 +54,7 @@ class ModuleCompendiumParserSpec
       assert(
         metadata.assessmentMethods == List(
           AssessmentMethodPercentage(
-            AssessmentMethod("written-exam", "Klausurarbeiten"),
+            AssessmentMethod("written-exam", "Klausurarbeiten", "--"),
             None
           )
         )
@@ -62,8 +62,8 @@ class ModuleCompendiumParserSpec
       assert(metadata.workload == Workload(150, 36, 0, 18, 18, 78))
       assert(metadata.recommendedPrerequisites == List("ap1", "ap2", "ma1"))
       assert(metadata.requiredPrerequisites == List.empty)
-      assert(metadata.status == Status("active", "Aktiv"))
-      assert(metadata.location == Location("gm", "Gummersbach"))
+      assert(metadata.status == Status("active", "Aktiv", "--"))
+      assert(metadata.location == Location("gm", "Gummersbach", "--"))
       assert(metadata.po == List("AI2"))
       assert(deContent.recommendedPrerequisitesBody == "\nProgrammieren\n\n")
       assert(enContent.recommendedPrerequisitesBody == "\nProgramming\n\n")

@@ -24,10 +24,11 @@ class ModuleTypeParserSpec
       "parse a single module type" in {
         val input =
           """mandatory:
-            |  de_label: Pflicht""".stripMargin
+            |  de_label: Pflicht
+            |  en_label: mandatory""".stripMargin
         val (res, rest) = moduleTypesFileParser.parse(input)
         assert(
-          res.value == List(ModuleType("mandatory", "Pflicht"))
+          res.value == List(ModuleType("mandatory", "Pflicht", "mandatory"))
         )
         assert(rest.isEmpty)
       }
@@ -36,38 +37,15 @@ class ModuleTypeParserSpec
         val input =
           """mandatory:
             |  de_label: Pflicht
-            |wpf:
-            |  de_label: Wahlpflichtfach""".stripMargin
-        val (res, rest) = moduleTypesFileParser.parse(input)
-        assert(
-          res.value == List(
-            ModuleType("mandatory", "Pflicht"),
-            ModuleType("wpf", "Wahlpflichtfach")
-          )
-        )
-        assert(rest.isEmpty)
-      }
-
-      "parse all module types" in {
-        val input =
-          """mandatory:
-            |  de_label: Pflicht
-            |
+            |  en_label: mandatory
             |wpf:
             |  de_label: Wahlpflichtfach
-            |
-            |submodule:
-            |  de_label: Untermodul
-            |
-            |supermodule:
-            |  de_label: Obermodul""".stripMargin
+            |  en_label: choosable course""".stripMargin
         val (res, rest) = moduleTypesFileParser.parse(input)
         assert(
           res.value == List(
-            ModuleType("mandatory", "Pflicht"),
-            ModuleType("wpf", "Wahlpflichtfach"),
-            ModuleType("submodule", "Untermodul"),
-            ModuleType("supermodule", "Obermodul")
+            ModuleType("mandatory", "Pflicht", "mandatory"),
+            ModuleType("wpf", "Wahlpflichtfach", "choosable course")
           )
         )
         assert(rest.isEmpty)
@@ -78,8 +56,8 @@ class ModuleTypeParserSpec
           withFile0("test/parsing/res/module_type.yaml")(moduleTypesFileParser.parse)
         assert(
           res.value == List(
-            ModuleType("mandatory", "Pflicht"),
-            ModuleType("wpf", "Wahlpflichtfach")
+            ModuleType("mandatory", "Pflicht", "--"),
+            ModuleType("wpf", "Wahlpflichtfach", "--")
           )
         )
         assert(rest.isEmpty)
@@ -90,12 +68,12 @@ class ModuleTypeParserSpec
       "return module types if they are valid" in {
         val (res1, rest1) =
           moduleTypeParser.parse("module_type: module_type.mandatory\n")
-        assert(res1.value == ModuleType("mandatory", "Pflicht"))
+        assert(res1.value == ModuleType("mandatory", "Pflicht", "--"))
         assert(rest1.isEmpty)
 
         val (res2, rest2) =
           moduleTypeParser.parse("module_type: module_type.wpf\n")
-        assert(res2.value == ModuleType("wpf", "Wahlpflichtfach"))
+        assert(res2.value == ModuleType("wpf", "Wahlpflichtfach", "--"))
         assert(rest2.isEmpty)
       }
 

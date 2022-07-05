@@ -24,10 +24,11 @@ class SeasonParserSpec
       "parse a single season" in {
         val input =
           """ss:
-            |  de_label: Sommersemester""".stripMargin
+            |  de_label: Sommersemester
+            |  en_label: summer term""".stripMargin
         val (res, rest) = seasonFileParser.parse(input)
         assert(
-          res.value == List(Season("ss", "Sommersemester"))
+          res.value == List(Season("ss", "Sommersemester", "summer term"))
         )
         assert(rest.isEmpty)
       }
@@ -36,18 +37,21 @@ class SeasonParserSpec
         val input =
           """ws:
             |  de_label: Wintersemester
+            |  en_label: winter term
             |
             |ss:
             |  de_label: Sommersemester
+            |  en_label: summer term
             |
             |ws_ss:
-            |  de_label: Winter- und Sommersemester""".stripMargin
+            |  de_label: Winter- und Sommersemester
+            |  en_label: winter- and summer term""".stripMargin
         val (res, rest) = seasonFileParser.parse(input)
         assert(
           res.value == List(
-            Season("ws", "Wintersemester"),
-            Season("ss", "Sommersemester"),
-            Season("ws_ss", "Winter- und Sommersemester")
+            Season("ws", "Wintersemester", "winter term"),
+            Season("ss", "Sommersemester", "summer term"),
+            Season("ws_ss", "Winter- und Sommersemester", "winter- and summer term")
           )
         )
         assert(rest.isEmpty)
@@ -58,9 +62,9 @@ class SeasonParserSpec
           withFile0("test/parsing/res/season.yaml")(seasonFileParser.parse)
         assert(
           res.value == List(
-            Season("ws", "Wintersemester"),
-            Season("ss", "Sommersemester"),
-            Season("ws_ss", "Winter- und Sommersemester")
+            Season("ws", "Wintersemester", "--"),
+            Season("ss", "Sommersemester", "--"),
+            Season("ws_ss", "Winter- und Sommersemester", "--")
           )
         )
         assert(rest.isEmpty)
@@ -68,15 +72,15 @@ class SeasonParserSpec
     }
     "parse season" in {
       val (res1, rest1) = seasonParser.parse("frequency: season.ws\n")
-      assert(res1.value == Season("ws", "Wintersemester"))
+      assert(res1.value == Season("ws", "Wintersemester", "--"))
       assert(rest1.isEmpty)
 
       val (res2, rest2) = seasonParser.parse("frequency: season.ss\n")
-      assert(res2.value == Season("ss", "Sommersemester"))
+      assert(res2.value == Season("ss", "Sommersemester", "--"))
       assert(rest2.isEmpty)
 
       val (res3, rest3) = seasonParser.parse("frequency: season.ws_ss\n")
-      assert(res3.value == Season("ws_ss", "Winter- und Sommersemester"))
+      assert(res3.value == Season("ws_ss", "Winter- und Sommersemester", "--"))
       assert(rest3.isEmpty)
     }
   }
