@@ -4,7 +4,7 @@ import parser.Parser
 import parser.Parser._
 import parser.ParserOps.P0
 
-trait SimpleFileItemParser[A] {
+trait SingleValueParser[A] {
   def itemParser(
       key: String,
       types: Seq[A],

@@ -1,6 +1,5 @@
 package parsing.metadata.file
 
-import parsing.helper.SimpleFileParser
 import parsing.types.Location
 
 import javax.inject.Singleton

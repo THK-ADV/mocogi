@@ -1,9 +1,8 @@
-package parsing.helper
+package parsing.metadata.file
 
 import parser.Parser
 import parser.Parser.{newline, optional, prefixTo, zeroOrMoreSpaces}
 import parser.ParserOps.P2
-import parsing.metadata.file.FileParser
 import parsing.stringForKey
 
 trait SimpleFileParser[A] extends FileParser[A] {

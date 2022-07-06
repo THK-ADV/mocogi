@@ -9,20 +9,6 @@ import scala.util.Try
 @Singleton
 final class ConfigReader @Inject() (config: Configuration) {
 
-  def seasons: String = string("filePaths.seasons")
-
-  def persons: String = string("filePaths.persons")
-
-  def status: String = string("filePaths.status")
-
-  def moduleTypes: String = string("filePaths.moduleTypes")
-
-  def locations: String = string("filePaths.locations")
-
-  def languages: String = string("filePaths.languages")
-
-  def assessmentMethods: String = string("filePaths.assessmentMethods")
-
   def htmlCmd: String = string("pandoc.htmlCmd")
 
   def pdfCmd: String = string("pandoc.pdfCmd")

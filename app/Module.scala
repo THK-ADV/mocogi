@@ -1,7 +1,7 @@
 import com.google.inject.{AbstractModule, TypeLiteral}
 import git.publisher.{GitFilesDownloadActor, ModuleCompendiumPublisher}
 import git.{GitConfig, ModuleCompendiumSubscribers}
-import parsing.metadata._
+import parsing.metadata.{MetadataParser, _}
 import printing.{MarkdownConverter, ModuleCompendiumPrinter, ModuleCompendiumPrinterImpl}
 import providers._
 import service._
