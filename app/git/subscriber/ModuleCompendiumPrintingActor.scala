@@ -3,42 +3,48 @@ package git.subscriber
 import akka.actor.{Actor, Props}
 import controllers.parameter.PrinterOutputFormat
 import git.publisher.ModuleCompendiumPublisher.OnUpdate
+import parserprinter.ModuleCompendiumParserPrinter
 import parsing.types.ModuleCompendium
 import play.api.Logging
-import printing.{ModuleCompendiumPrinter, PrinterOutput, PrinterOutputType}
+import printing.{
+  ModuleCompendiumGenerationError,
+  PrinterOutput,
+  PrinterOutputType
+}
 
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path, Paths}
 
 object ModuleCompendiumPrintingActor {
   def props(
-      printer: ModuleCompendiumPrinter,
+      parserPrinter: ModuleCompendiumParserPrinter,
       outputType: PrinterOutputType,
       outputFolder: String
   ) =
     Props(
-      new ModuleCompendiumPrintingActor(printer, outputType, outputFolder)
+      new ModuleCompendiumPrintingActor(parserPrinter, outputType, outputFolder)
     )
 }
 
-final class ModuleCompendiumPrintingActor(
-    printer: ModuleCompendiumPrinter,
-    outputType: PrinterOutputType,
-    outputFolder: String
+private final class ModuleCompendiumPrintingActor(
+    private val parserPrinter: ModuleCompendiumParserPrinter,
+    private val outputType: PrinterOutputType,
+    private val outputFolder: String
 ) extends Actor
     with Logging {
+
   override def receive = { case OnUpdate(changes, outputFormat) =>
-    changes.added.foreach { mc =>
+    changes.added.foreach { case (_, mc) =>
       logger.info(s"printing added module compendium with id ${mc.metadata.id}")
       print(outputFormat, mc)
     }
-    changes.modified.foreach { mc =>
+    changes.modified.foreach { case (_, mc) =>
       logger.info(
         s"printing modified module compendium with id ${mc.metadata.id}"
       )
       print(outputFormat, mc)
     }
-    changes.removed.foreach { mc =>
+    changes.removed.foreach { case (_, mc) =>
       logger.info(s"need to delete module compendium with id ${mc.metadata.id}")
     }
   }
@@ -47,8 +53,8 @@ final class ModuleCompendiumPrintingActor(
       outputFormat: PrinterOutputFormat,
       mc: ModuleCompendium
   ): Unit = {
-    def go() =
-      printer.print(mc, outputType, outputFormat).map {
+    def go(): Either[ModuleCompendiumGenerationError, Unit] =
+      parserPrinter.print(mc, outputType, outputFormat).map {
         case PrinterOutput.Text(content, extension) =>
           val filename = s"${mc.metadata.id}.$extension"
           val newPath = Files.write(

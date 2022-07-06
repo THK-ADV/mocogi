@@ -2,8 +2,7 @@ package controllers
 
 import controllers.json.ThrowableWrites
 import git._
-import git.download.GitFilesDownloadActor
-import git.download.GitFilesDownloadActor.Download
+import git.publisher.GitFilesDownloadActor
 import play.api.Logging
 import play.api.libs.json._
 import play.api.mvc._
@@ -29,7 +28,7 @@ class GitWebhookController @Inject() (
         projectId <- parseProjectId
         changes <- parseChanges
       } yield {
-        downloadActor.value ! Download(changes, projectId)
+        downloadActor.download(changes, projectId)
         "Okay!"
       }
 

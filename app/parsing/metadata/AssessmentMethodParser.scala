@@ -3,31 +3,18 @@ package parsing.metadata
 import parser.Parser
 import parser.Parser._
 import parser.ParserOps.P0
-import parsing.helper.{MultipleValueParser, SimpleFileParser}
+import parsing.helper.MultipleValueParser
 import parsing.types.{AssessmentMethod, AssessmentMethodPercentage}
 
 import javax.inject.Singleton
 
-trait AssessmentMethodParser {
-  val fileParser: Parser[List[AssessmentMethod]]
-  val parser: Parser[List[AssessmentMethodPercentage]]
-}
-
 @Singleton
-final class AssessmentMethodParserImpl(val path: String)
-    extends AssessmentMethodParser
-    with SimpleFileParser[AssessmentMethod]
-    with MultipleValueParser[AssessmentMethodPercentage] {
+final class AssessmentMethodParser
+    extends MultipleValueParser[AssessmentMethodPercentage] {
 
-  override val makeType = AssessmentMethod.tupled
-  override val typename = "assessment methods"
-
-  val fileParser: Parser[List[AssessmentMethod]] =
-    makeFileParser
-
-  val assessmentMethods: List[AssessmentMethod] = parseTypes
-
-  val parser: Parser[List[AssessmentMethodPercentage]] =
+  def parser(
+    implicit assessmentMethods: Seq[AssessmentMethod]
+  ): Parser[List[AssessmentMethodPercentage]] =
     multipleParser(
       "assessment-methods",
       oneOf(
@@ -46,7 +33,7 @@ final class AssessmentMethodParserImpl(val path: String)
             )
             .skip(newline)
             .map(res => AssessmentMethodPercentage(s, res._2))
-        )
+        ): _*
       ),
       1
     )

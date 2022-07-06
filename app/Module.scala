@@ -1,55 +1,42 @@
-import com.google.inject.AbstractModule
-import git.download.GitFilesDownloadActor
-import git.publisher.{ModuleCompendiumPublisher, ModuleCompendiumPublisherImpl}
+import com.google.inject.{AbstractModule, TypeLiteral}
+import git.publisher.{GitFilesDownloadActor, ModuleCompendiumPublisher}
 import git.{GitConfig, ModuleCompendiumSubscribers}
 import parsing.metadata._
-import parsing.{ModuleCompendiumParser, ModuleCompendiumParserImpl}
-import printing.{
-  MarkdownConverter,
-  ModuleCompendiumPrinter,
-  ModuleCompendiumPrinterImpl
-}
+import printing.{MarkdownConverter, ModuleCompendiumPrinter, ModuleCompendiumPrinterImpl}
 import providers._
+import service._
 
 class Module() extends AbstractModule {
 
   override def configure(): Unit = {
     super.configure()
 
-    bind(classOf[ModuleCompendiumParser])
-      .to(classOf[ModuleCompendiumParserImpl])
-      .asEagerSingleton()
     bind(classOf[ModuleCompendiumPrinter])
       .to(classOf[ModuleCompendiumPrinterImpl])
       .asEagerSingleton()
-    bind(classOf[MetadataParser])
-      .to(classOf[MetadataParserImpl])
+
+    bind(classOf[LocationService])
+      .to(classOf[LocationServiceImpl])
       .asEagerSingleton()
-    bind(classOf[ResponsibilitiesParser])
-      .to(classOf[ResponsibilitiesParserImpl])
+    bind(classOf[LanguageService])
+      .to(classOf[LanguageServiceImpl])
       .asEagerSingleton()
-    bind(classOf[ModuleCompendiumPublisher])
-      .to(classOf[ModuleCompendiumPublisherImpl])
+    bind(classOf[StatusService])
+      .to(classOf[StatusServiceImpl])
+      .asEagerSingleton()
+    bind(classOf[AssessmentMethodService])
+      .to(classOf[AssessmentMethodServiceImpl])
+      .asEagerSingleton()
+    bind(classOf[ModuleTypeService])
+      .to(classOf[ModuleTypeServiceImpl])
+      .asEagerSingleton()
+    bind(classOf[SeasonService])
+      .to(classOf[SeasonServiceImpl])
+      .asEagerSingleton()
+    bind(classOf[PersonService])
+      .to(classOf[PersonServiceImpl])
       .asEagerSingleton()
 
-    bind(classOf[SeasonParser])
-      .toProvider(classOf[SeasonParserProvider])
-      .asEagerSingleton()
-    bind(classOf[PeopleParser])
-      .toProvider(classOf[PeopleParserProvider])
-      .asEagerSingleton()
-    bind(classOf[AssessmentMethodParser])
-      .toProvider(classOf[AssessmentMethodParserProvider])
-      .asEagerSingleton()
-    bind(classOf[StatusParser])
-      .toProvider(classOf[StatusParserProvider])
-      .asEagerSingleton()
-    bind(classOf[ModuleTypeParser])
-      .toProvider(classOf[ModuleTypeParserProvider])
-      .asEagerSingleton()
-    bind(classOf[LocationParser])
-      .toProvider(classOf[LocationParserProvider])
-      .asEagerSingleton()
     bind(classOf[MarkdownConverter])
       .toProvider(classOf[MarkdownConverterProvider])
       .asEagerSingleton()
@@ -61,6 +48,13 @@ class Module() extends AbstractModule {
       .asEagerSingleton()
     bind(classOf[GitFilesDownloadActor])
       .toProvider(classOf[GitFilesDownloadActorProvider])
+      .asEagerSingleton()
+    bind(classOf[ModuleCompendiumPublisher])
+      .toProvider(classOf[ModuleCompendiumPublisherProvider])
+      .asEagerSingleton()
+
+    bind(new TypeLiteral[Set[MetadataParser]] {})
+      .toProvider(classOf[MetadataParserProvider])
       .asEagerSingleton()
   }
 }

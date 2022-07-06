@@ -1,9 +1,8 @@
 package parsing.metadata
 
 import parser.Parser
-import parser.Parser._
+import parser.Parser.{always, never, newline, optional}
 import parser.ParserOps._
-import parsing.metadata.LanguageParser.languageParser
 import parsing.metadata.ModuleRelationParser.moduleRelationParser
 import parsing.metadata.POParser.poParser
 import parsing.metadata.PrerequisitesParser.{
@@ -11,33 +10,37 @@ import parsing.metadata.PrerequisitesParser.{
   requiredPrerequisitesParser
 }
 import parsing.metadata.WorkloadParser.workloadParser
-import parsing.types.Metadata
+import parsing.types._
 import parsing.{doubleForKey, intForKey, stringForKey}
-import printer.Printer
 
 import java.util.UUID
 import javax.inject.{Inject, Singleton}
 import scala.util.Try
 
 trait MetadataParser {
-  val moduleCodeParser: Parser[UUID]
-  val moduleTitleParser: Parser[String]
-  val moduleAbbrevParser: Parser[String]
-  val creditPointsParser: Parser[Double]
-  val durationParser: Parser[Int]
-  val semesterParser: Parser[Int]
-  val parser: Parser[Metadata]
+  val versionScheme: VersionScheme
+  def parser(implicit
+      locations: Seq[Location],
+      languages: Seq[Language],
+      status: Seq[Status],
+      assessmentMethods: Seq[AssessmentMethod],
+      moduleTypes: Seq[ModuleType],
+      seasons: Seq[Season],
+      persons: Seq[Person]
+  ): Parser[Metadata]
 }
 
 @Singleton
-class MetadataParserImpl @Inject() (
+final class THKV1Parser @Inject() (
     responsibilitiesParser: ResponsibilitiesParser,
     seasonParser: SeasonParser,
     assessmentMethodParser: AssessmentMethodParser,
     statusParser: StatusParser,
     moduleTypeParser: ModuleTypeParser,
-    locationParser: LocationParser
+    locationParser: LocationParser,
+    languageParser: LanguageParser
 ) extends MetadataParser {
+  override val versionScheme = VersionScheme(1, "s")
 
   val moduleCodeParser: Parser[UUID] =
     stringForKey("module_code")
@@ -53,7 +56,15 @@ class MetadataParserImpl @Inject() (
 
   val semesterParser = intForKey("recommended_semester")
 
-  val thkV1Parser: Parser[Metadata] =
+  def parser(implicit
+      locations: Seq[Location],
+      languages: Seq[Language],
+      status: Seq[Status],
+      assessmentMethods: Seq[AssessmentMethod],
+      moduleTypes: Seq[ModuleType],
+      seasons: Seq[Season],
+      persons: Seq[Person]
+  ): Parser[Metadata] =
     moduleCodeParser
       .zip(moduleTitleParser)
       .take(moduleAbbrevParser)
@@ -61,7 +72,7 @@ class MetadataParserImpl @Inject() (
       .take(moduleRelationParser)
       .take(creditPointsParser)
       .skip(newline)
-      .take(languageParser)
+      .take(languageParser.parser)
       .take(durationParser)
       .skip(newline)
       .take(semesterParser)
@@ -78,32 +89,4 @@ class MetadataParserImpl @Inject() (
       .skip(optional(newline))
       .take(poParser)
       .map(Metadata.tupled)
-
-  val versionSchemeParser: Parser[(Double, String)] =
-    prefix("v")
-      .take(double)
-      .zip(prefixUntil("\n"))
-
-  val versionSchemePrinter: Printer[(Double, String)] = {
-    import printer.PrinterOps.P0
-    Printer
-      .prefix("v")
-      .take(Printer.double)
-      .zip(Printer.prefix(_ != '\n'))
-  }
-
-  val parser: Parser[Metadata] =
-    prefix("---")
-      .take(versionSchemeParser)
-      .skip(newline)
-      .flatMap[Metadata] {
-        case (1, "s") => thkV1Parser
-        case other =>
-          never(
-            versionSchemePrinter
-              .print(other, "unknown version scheme ")
-              .getOrElse(s"unknown version scheme $other")
-          )
-      }
-      .skip(prefix("---"))
 }

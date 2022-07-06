@@ -1,7 +1,7 @@
 mandatory:
   de_label: Pflicht
-  en_label: --
+  en_label: mandatory
 
 wpf:
   de_label: Wahlpflichtfach
-  en_label: --
+  en_label: elective course

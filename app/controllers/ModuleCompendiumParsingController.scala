@@ -1,20 +1,22 @@
 package controllers
 
-import com.google.common.base.Charsets
-import com.google.common.io.Files
-import controllers.ModuleCompendiumParsingController.{mcgErrorWrites, moduleCompendiumFormat, parsingErrorWrites, throwableWrites}
-import controllers.json.{JsonNullWritable, ThrowableWrites}
+import controllers.ModuleCompendiumParsingController.{
+  mcgErrorWrites,
+  moduleCompendiumFormat,
+  parsingErrorWrites
+}
+import controllers.json._
 import controllers.parameter.{OutputType, PrinterOutputFormat}
 import parser.ParsingError
+import parserprinter.ModuleCompendiumParserPrinter
 import parsing.ModuleCompendiumParser
 import parsing.types.ModuleRelation.{Child, Parent}
-import parsing.types.{Status => ModuleStatus, _}
-import play.api.libs.Files.TemporaryFile
+import parsing.types._
 import play.api.libs.json._
 import play.api.libs.ws.WSClient
 import play.api.mvc._
 import printer.PrintingError
-import printing.{ModuleCompendiumGenerationError, ModuleCompendiumPrinter, PrinterOutput}
+import printing.{ModuleCompendiumGenerationError, PrinterOutput}
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
@@ -25,18 +27,20 @@ import scala.util.{Failure, Success, Try}
 class ModuleCompendiumParsingController @Inject() (
     cc: ControllerComponents,
     ws: WSClient,
-    moduleCompendiumParser: ModuleCompendiumParser,
-    moduleCompendiumPrinter: ModuleCompendiumPrinter,
+    parser: ModuleCompendiumParser,
+    parserPrinter: ModuleCompendiumParserPrinter,
     implicit val ctx: ExecutionContext
-) extends AbstractController(cc) {
+) extends AbstractController(cc)
+    with RequestBodyFileParser {
 
   def generateFromFile() =
-    Action(parse.temporaryFile) { implicit r =>
+    Action(parse.temporaryFile).async { implicit r =>
       for {
-        input <- parseFileContent
-        outputType <- parseOutputType
-        outputFormat <- parsePrinterOutputFormat
-      } yield render(input, outputType, outputFormat)
+        input <- Future.fromTry(parseFileContent)
+        outputType <- Future.fromTry(parseOutputType)
+        outputFormat <- Future.fromTry(parsePrinterOutputFormat)
+        result <- render(input, outputType, outputFormat)
+      } yield result
     }
 
   def generateFromUrl() =
@@ -48,7 +52,9 @@ class ModuleCompendiumParsingController @Inject() (
         output <- ws
           .url(url)
           .get()
-          .map(r => render(r.bodyAsBytes.utf8String, outputType, outputFormat))
+          .flatMap(r =>
+            render(r.bodyAsBytes.utf8String, outputType, outputFormat)
+          )
       } yield output
     }
 
@@ -63,11 +69,6 @@ class ModuleCompendiumParsingController @Inject() (
   ): Try[PrinterOutputFormat] =
     getQueryString("printer-output-format").flatMap(PrinterOutputFormat.apply)
 
-  private def parseFileContent(implicit
-      r: Request[TemporaryFile]
-  ): Try[String] =
-    Try(Files.asCharSource(r.body.path.toFile, Charsets.UTF_8).read())
-
   private def getQueryString(key: String)(implicit r: Request[_]): Try[String] =
     r.getQueryString(key) match {
       case Some(value) => Success(value)
@@ -78,46 +79,51 @@ class ModuleCompendiumParsingController @Inject() (
       input: String,
       outputType: OutputType,
       printerOutputFormat: PrinterOutputFormat
-  ): Result =
+  ): Future[Result] =
     outputType match {
       case OutputType.JSON =>
-        moduleCompendiumParser.parser.parse(input)._1 match {
-          case Right(c) =>
-            Ok(Json.toJson(c))
-          case Left(e) =>
-            InternalServerError(Json.toJson(e))
-        }
+        parser
+          .parser()
+          .map(_.parse(input)._1 match {
+            case Right(c) =>
+              Ok(Json.toJson(c))
+            case Left(e) =>
+              InternalServerError(Json.toJson(e))
+          })
       case OutputType.Printer(printerOutputType) =>
-        moduleCompendiumPrinter.print(
-          input,
-          printerOutputType,
-          printerOutputFormat
-        ) match {
-          case Right(output) =>
-            output match {
-              case PrinterOutput.File(file, filename) =>
-                Ok.sendFile(
-                  content = file,
-                  fileName = _ => Some(filename)
-                )
-              case PrinterOutput.Text(content, _) =>
-                Ok(content)
-            }
-          case Left(e) =>
-            InternalServerError(Json.toJson(e))
-        }
-    }
-
-  private implicit def tryToResult(`try`: Try[Result]): Result =
-    `try` match {
-      case Success(value) => value
-      case Failure(e)     => InternalServerError(Json.toJson(e))
+        parserPrinter
+          .print(
+            input,
+            printerOutputType,
+            printerOutputFormat
+          )
+          .map {
+            case Right(output) =>
+              output match {
+                case PrinterOutput.File(file, filename) =>
+                  Ok.sendFile(
+                    content = file,
+                    fileName = _ => Some(filename)
+                  )
+                case PrinterOutput.Text(content, _) =>
+                  Ok(content)
+              }
+            case Left(e) =>
+              InternalServerError(Json.toJson(e))
+          }
     }
 }
 
 object ModuleCompendiumParsingController
     extends JsonNullWritable
-    with ThrowableWrites {
+    with ThrowableWrites
+    with LocationFormat
+    with LanguageFormat
+    with StatusFormat
+    with AssessmentMethodFormat
+    with ModuleTypeFormat
+    with SeasonFormat
+    with PersonFormat {
 
   implicit val mcgErrorWrites: Writes[ModuleCompendiumGenerationError] =
     Writes.apply {
@@ -144,35 +150,14 @@ object ModuleCompendiumParsingController
       )
     )
 
-  implicit val moduleTypeFormat: Format[ModuleType] =
-    Json.format[ModuleType]
-
-  implicit val languageFormat: Format[Language] =
-    Json.format[Language]
-
-  implicit val seasonFormat: Format[Season] =
-    Json.format[Season]
-
-  implicit val statusFormat: Format[ModuleStatus] =
-    Json.format[ModuleStatus]
-
-  implicit val peopleFormat: Format[People] =
-    Json.format[People]
-
   implicit val responsibilitiesFormat: Format[Responsibilities] =
     Json.format[Responsibilities]
-
-  implicit val assessmentMethodFormat: Format[AssessmentMethod] =
-    Json.format[AssessmentMethod]
 
   implicit val workloadFormat: Format[Workload] =
     Json.format[Workload]
 
   implicit val contentFormat: Format[Content] =
     Json.format[Content]
-
-  implicit val locationFormat: Format[Location] =
-    Json.format[Location]
 
   implicit val parentFormat: Format[Parent] =
     Json.format[Parent]

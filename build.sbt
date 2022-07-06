@@ -1,3 +1,5 @@
+val playSlickVersion = "5.0.2"
+
 lazy val `mocogi` = (project in file("."))
   .enablePlugins(PlayScala)
   .settings(
@@ -8,6 +10,7 @@ lazy val `mocogi` = (project in file("."))
     resolvers += "Akka Snapshot Repository" at "https://repo.akka.io/snapshots/",
     libraryDependencies ++= play,
     libraryDependencies ++= test,
+    libraryDependencies ++= database,
     libraryDependencies += parser,
     externalResolvers ++= Seq(
       "GitHub <THK-ADV> Apache Maven Packages" at "https://maven.pkg.github.com/THK-ADV/nebulak"
@@ -35,3 +38,9 @@ lazy val test = Seq(
 )
 
 lazy val parser = "de.th-koeln.inf.adv" %% "nebulak" % "0.7"
+
+lazy val database = Seq(
+  "com.typesafe.play" %% "play-slick" % playSlickVersion,
+  "com.typesafe.play" %% "play-slick-evolutions" % playSlickVersion,
+  "org.postgresql" % "postgresql" % "42.4.0"
+)

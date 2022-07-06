@@ -10,6 +10,6 @@ object POParser extends MultipleValueParser[String] {
     multipleParser(
       "po",
       skipFirst(not(prefix("-")))
-        .take(prefixTo("\n"))
+        .take(prefixTo("\n") or rest)
     )
 }

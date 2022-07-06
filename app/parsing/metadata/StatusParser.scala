@@ -1,28 +1,13 @@
 package parsing.metadata
 
 import parser.Parser
-import parsing.helper.SimpleFileParser
+import parsing.helper.SimpleFileParser3
 import parsing.types.Status
 
 import javax.inject.Singleton
 
-trait StatusParser {
-  val fileParser: Parser[List[Status]]
-  val parser: Parser[Status]
-}
-
 @Singleton
-final class StatusParserImpl(val path: String)
-    extends StatusParser
-    with SimpleFileParser[Status] {
-
-  override protected val makeType = Status.tupled
-  override protected val typename = "status"
-
-  val fileParser: Parser[List[Status]] = makeFileParser
-
-  val status: List[Status] = parseTypes
-
-  val parser: Parser[Status] =
-    makeTypeParser("status")(t => s"status.${t.abbrev}")
+final class StatusParser extends SimpleFileParser3[Status] {
+  def parser(implicit status: Seq[Status]): Parser[Status] =
+    makeTypeParser("status", status, x => s"status.${x.abbrev}")
 }

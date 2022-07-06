@@ -7,21 +7,22 @@ import git.subscriber.{
   ModuleCompendiumJsonStreamActor,
   ModuleCompendiumPrintingActor
 }
-import printing.{ModuleCompendiumPrinter, PrinterOutputType}
+import parserprinter.ModuleCompendiumParserPrinter
+import printing.PrinterOutputType
 
 import javax.inject.{Inject, Provider, Singleton}
 
 @Singleton
 class ModuleCompendiumSubscribersProvider @Inject() (
     system: ActorSystem,
-    printer: ModuleCompendiumPrinter
+    parserPrinter: ModuleCompendiumParserPrinter
 ) extends Provider[ModuleCompendiumSubscribers] {
   override def get(): ModuleCompendiumSubscribers =
     ModuleCompendiumSubscribers(
       List(
         system.actorOf(
           ModuleCompendiumPrintingActor.props(
-            printer,
+            parserPrinter,
             PrinterOutputType.HTMLStandalone,
             "output"
           )

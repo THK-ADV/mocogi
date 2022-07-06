@@ -1,6 +1,6 @@
 package parsing.metadata
 
-import helper.FakeApplication
+import helper.{FakeApplication, FakePersons}
 import org.scalatest.EitherValues
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
@@ -11,11 +11,10 @@ class ResponsibilitiesParserSpec
     with ParserSpecHelper
     with EitherValues
     with GuiceOneAppPerSuite
-    with FakeApplication {
+    with FakeApplication
+    with FakePersons {
 
-  val parser = app.injector.instanceOf(classOf[ResponsibilitiesParser])
-
-  val responsibilitiesParser = parser.parser
+  val parser = app.injector.instanceOf(classOf[ResponsibilitiesParser]).parser
 
   "A Responsibilities Parser" should {
     "return one coordinator and one lecturer" in {
@@ -24,7 +23,7 @@ class ResponsibilitiesParserSpec
           |coordinator:person.abe
           |lecturers:person.ald
           |""".stripMargin
-      val (res, rest) = responsibilitiesParser.parse(resp)
+      val (res, rest) = parser.parse(resp)
       assert(res.value.coordinators.map(_.abbrev) == List("abe"))
       assert(res.value.lecturers.map(_.abbrev) == List("ald"))
       assert(rest.isEmpty)
@@ -36,7 +35,7 @@ class ResponsibilitiesParserSpec
           | coordinator: person.abe
           | lecturers: person.ald
           |""".stripMargin
-      val (res, rest) = responsibilitiesParser.parse(resp)
+      val (res, rest) = parser.parse(resp)
       assert(res.value.coordinators.map(_.abbrev) == List("abe"))
       assert(res.value.lecturers.map(_.abbrev) == List("ald"))
       assert(rest.isEmpty)
@@ -50,7 +49,7 @@ class ResponsibilitiesParserSpec
           |-person.ddu
           |lecturers:person.ald
           |""".stripMargin
-      val (res, rest) = responsibilitiesParser.parse(resp)
+      val (res, rest) = parser.parse(resp)
       assert(res.value.coordinators.map(_.abbrev) == List("abe", "ddu"))
       assert(res.value.lecturers.map(_.abbrev) == List("ald"))
       assert(rest.isEmpty)
@@ -64,7 +63,7 @@ class ResponsibilitiesParserSpec
           | -person.ddu
           | lecturers: person.ald
           |""".stripMargin
-      val (res, rest) = responsibilitiesParser.parse(resp)
+      val (res, rest) = parser.parse(resp)
       assert(res.value.coordinators.map(_.abbrev) == List("abe", "ddu"))
       assert(res.value.lecturers.map(_.abbrev) == List("ald"))
       assert(rest.isEmpty)
@@ -78,7 +77,7 @@ class ResponsibilitiesParserSpec
           |-person.ald
           |-person.ddu
           |""".stripMargin
-      val (res, rest) = responsibilitiesParser.parse(resp)
+      val (res, rest) = parser.parse(resp)
       assert(res.value.coordinators.map(_.abbrev) == List("abe"))
       assert(res.value.lecturers.map(_.abbrev) == List("ald", "ddu"))
       assert(rest.isEmpty)
@@ -92,7 +91,7 @@ class ResponsibilitiesParserSpec
           | - person.ald
           | - person.ddu
           |""".stripMargin
-      val (res, rest) = responsibilitiesParser.parse(resp)
+      val (res, rest) = parser.parse(resp)
       assert(res.value.coordinators.map(_.abbrev) == List("abe"))
       assert(res.value.lecturers.map(_.abbrev) == List("ald", "ddu"))
       assert(rest.isEmpty)
@@ -108,7 +107,7 @@ class ResponsibilitiesParserSpec
           |  - person.ald
           |  - person.ddu
           |""".stripMargin
-      val (res, rest) = responsibilitiesParser.parse(resp)
+      val (res, rest) = parser.parse(resp)
       assert(res.value.coordinators.map(_.abbrev) == List("abe", "ald"))
       assert(res.value.lecturers.map(_.abbrev) == List("ald", "ddu"))
       assert(rest.isEmpty)
@@ -124,7 +123,7 @@ class ResponsibilitiesParserSpec
           |  - person.ald
           |  - person.ddu
           |""".stripMargin
-      val (res, rest) = responsibilitiesParser.parse(resp)
+      val (res, rest) = parser.parse(resp)
       assert(res.value.coordinators.map(_.abbrev) == List("abe", "ald"))
       assert(res.value.lecturers.map(_.abbrev) == List("ald", "ddu"))
       assert(rest.isEmpty)
