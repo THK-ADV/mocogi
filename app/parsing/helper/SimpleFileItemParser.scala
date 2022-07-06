@@ -4,8 +4,8 @@ import parser.Parser
 import parser.Parser._
 import parser.ParserOps.P0
 
-trait SimpleFileParser3[A] {
-  protected def makeTypeParser(
+trait SimpleFileItemParser[A] {
+  def itemParser(
       key: String,
       types: Seq[A],
       lit: A => String

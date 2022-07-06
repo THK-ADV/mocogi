@@ -1,13 +1,13 @@
 package parsing.metadata
 
 import parser.Parser
-import parsing.helper.SimpleFileParser3
+import parsing.helper.SimpleFileItemParser
 import parsing.types.Location
 
 import javax.inject.Singleton
 
 @Singleton
-final class LocationParser extends SimpleFileParser3[Location] {
+final class LocationParser extends SimpleFileItemParser[Location] {
   def parser(implicit locations: Seq[Location]): Parser[Location] =
-    makeTypeParser("location", locations, m => s"location.${m.abbrev}")
+    itemParser("location", locations, m => s"location.${m.abbrev}")
 }

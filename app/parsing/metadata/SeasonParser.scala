@@ -1,13 +1,13 @@
 package parsing.metadata
 
 import parser.Parser
-import parsing.helper.SimpleFileParser3
+import parsing.helper.SimpleFileItemParser
 import parsing.types.Season
 
 import javax.inject.Singleton
 
 @Singleton
-final class SeasonParser extends SimpleFileParser3[Season] {
+final class SeasonParser extends SimpleFileItemParser[Season] {
   def parser(implicit seasons: Seq[Season]): Parser[Season] =
-    makeTypeParser("frequency", seasons, x => s"season.${x.abbrev}")
+    itemParser("frequency", seasons, x => s"season.${x.abbrev}")
 }
