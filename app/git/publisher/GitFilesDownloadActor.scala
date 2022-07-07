@@ -80,8 +80,7 @@ object GitFilesDownloadActor {
       for {
         added <- Future.sequence(changes.added.map(downloadFile))
         modified <- Future.sequence(changes.modified.map(downloadFile))
-        removed <- Future.sequence(changes.removed.map(downloadFile))
-      } yield changes.copy(added, modified, removed)
+      } yield changes.copy(added, modified)
 
     private def accessTokenHeader(): (String, String) =
       "PRIVATE-TOKEN" -> gitConfig.accessToken
@@ -98,8 +97,7 @@ object GitFilesDownloadActor {
         )
       changes.copy(
         changes.added.map(p => p -> go(p)),
-        changes.modified.map(p => p -> go(p)),
-        Nil // TODO removed file can't be downloaded lol. find a better way. maybe a previous version?
+        changes.modified.map(p => p -> go(p))
       )
     }
   }

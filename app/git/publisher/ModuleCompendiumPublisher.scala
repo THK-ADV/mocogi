@@ -68,8 +68,7 @@ object ModuleCompendiumPublisher {
 
         changes.copy(
           go(changes.added),
-          go(changes.modified),
-          go(changes.removed)
+          go(changes.modified)
         )
       }
 

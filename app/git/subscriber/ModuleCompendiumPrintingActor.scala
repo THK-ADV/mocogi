@@ -35,17 +35,13 @@ private final class ModuleCompendiumPrintingActor(
 
   override def receive = { case OnUpdate(changes, outputFormat) =>
     changes.added.foreach { case (_, mc) =>
-      logger.info(s"printing added module compendium with id ${mc.metadata.id}")
       print(outputFormat, mc)
     }
     changes.modified.foreach { case (_, mc) =>
-      logger.info(
-        s"printing modified module compendium with id ${mc.metadata.id}"
-      )
       print(outputFormat, mc)
     }
-    changes.removed.foreach { case (_, mc) =>
-      logger.info(s"need to delete module compendium with id ${mc.metadata.id}")
+    changes.removed.foreach { path =>
+      logger.info(s"need to delete module compendium with path ${path.value}")
     }
   }
 

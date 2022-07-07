@@ -30,9 +30,9 @@ private final class ModuleCompendiumJsonStreamActor(
         s"modified module compendium with id ${mc.metadata.id}: payload: $json"
       )
     }
-    changes.removed.foreach { case (_, mc) =>
+    changes.removed.foreach { path =>
       logger.info(
-        s"deleted module compendium with id ${mc.metadata.id}"
+        s"need to delete module compendium with path ${path.value}"
       )
     }
   }

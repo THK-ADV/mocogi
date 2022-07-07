@@ -31,6 +31,8 @@ PUT         /seasons/file                  controllers.SeasonController.createFr
 GET         /persons                       controllers.PersonController.all()
 PUT         /persons/file                  controllers.PersonController.createFromYamlFile()
 
+GET         /metadata                      controllers.MetadataController.all()
+
 # Map static resources from the /public folder to the /assets URL path
 GET         /assets/*file                  controllers.Assets.versioned(path="/public", file: Asset)
 

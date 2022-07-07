@@ -123,7 +123,8 @@ object ModuleCompendiumParsingController
     with AssessmentMethodFormat
     with ModuleTypeFormat
     with SeasonFormat
-    with PersonFormat {
+    with PersonFormat
+    with MetadataFormat {
 
   implicit val mcgErrorWrites: Writes[ModuleCompendiumGenerationError] =
     Writes.apply {
@@ -150,52 +151,8 @@ object ModuleCompendiumParsingController
       )
     )
 
-  implicit val responsibilitiesFormat: Format[Responsibilities] =
-    Json.format[Responsibilities]
-
-  implicit val workloadFormat: Format[Workload] =
-    Json.format[Workload]
-
   implicit val contentFormat: Format[Content] =
     Json.format[Content]
-
-  implicit val parentFormat: Format[Parent] =
-    Json.format[Parent]
-
-  implicit val childFormat: Format[Child] =
-    Json.format[Child]
-
-  implicit val moduleRelationFormat: Format[ModuleRelation] =
-    OFormat.apply(
-      js =>
-        js.\("type").validate[String].flatMap {
-          case "parent" =>
-            js.\("children").validate[List[String]].map(Parent.apply)
-          case "child" =>
-            js.\("parent").validate[String].map(Child.apply)
-          case other =>
-            JsError(s"expected type to be parent or child, but was $other")
-        },
-      {
-        case Parent(children) =>
-          Json.obj(
-            "type" -> "parent",
-            "children" -> Json.toJson(children)
-          )
-        case Child(parent) =>
-          Json.obj(
-            "type" -> "child",
-            "parent" -> Json.toJson(parent)
-          )
-      }
-    )
-
-  implicit val assessmentMethodPercentFormat
-      : Format[AssessmentMethodPercentage] =
-    Json.format[AssessmentMethodPercentage]
-
-  implicit val metaDataFormat: Format[Metadata] =
-    Json.format[Metadata]
 
   implicit val moduleCompendiumFormat: Format[ModuleCompendium] =
     Json.format[ModuleCompendium]
