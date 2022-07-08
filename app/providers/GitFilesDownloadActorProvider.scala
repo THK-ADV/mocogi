@@ -1,9 +1,8 @@
 package providers
 
 import akka.actor.ActorSystem
-import git.publisher.ModuleCompendiumPublisher
 import git.GitConfig
-import git.download.GitFilesDownloadActor
+import git.publisher.{GitFilesDownloadActor, ModuleCompendiumPublisher}
 import play.api.libs.ws.WSClient
 
 import javax.inject.{Inject, Provider, Singleton}

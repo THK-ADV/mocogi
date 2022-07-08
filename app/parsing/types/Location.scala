@@ -1,3 +1,3 @@
 package parsing.types
 
-case class Location(abbrev: String, deLabel: String)
+case class Location(abbrev: String, deLabel: String, enLabel: String)

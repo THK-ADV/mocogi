@@ -1,5 +1,7 @@
 active:
   de_label: Aktiv
+  en_label: active
 
 inactive:
   de_label: Inaktiv
+  en_label: inactive

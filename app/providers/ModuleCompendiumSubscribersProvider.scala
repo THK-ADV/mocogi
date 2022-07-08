@@ -4,24 +4,30 @@ import akka.actor.ActorSystem
 import controllers.ModuleCompendiumParsingController
 import git.ModuleCompendiumSubscribers
 import git.subscriber.{
+  MetadataDatabaseActor,
   ModuleCompendiumJsonStreamActor,
   ModuleCompendiumPrintingActor
 }
-import printing.{ModuleCompendiumPrinter, PrinterOutputType}
+import parserprinter.ModuleCompendiumParserPrinter
+import printing.PrinterOutputType
+import service.MetadataService
 
 import javax.inject.{Inject, Provider, Singleton}
+import scala.concurrent.ExecutionContext
 
 @Singleton
 class ModuleCompendiumSubscribersProvider @Inject() (
     system: ActorSystem,
-    printer: ModuleCompendiumPrinter
+    parserPrinter: ModuleCompendiumParserPrinter,
+    metadataService: MetadataService,
+    ctx: ExecutionContext
 ) extends Provider[ModuleCompendiumSubscribers] {
   override def get(): ModuleCompendiumSubscribers =
     ModuleCompendiumSubscribers(
       List(
         system.actorOf(
           ModuleCompendiumPrintingActor.props(
-            printer,
+            parserPrinter,
             PrinterOutputType.HTMLStandalone,
             "output"
           )
@@ -29,6 +35,12 @@ class ModuleCompendiumSubscribersProvider @Inject() (
         system.actorOf(
           ModuleCompendiumJsonStreamActor.props(
             ModuleCompendiumParsingController.moduleCompendiumFormat.writes
+          )
+        ),
+        system.actorOf(
+          MetadataDatabaseActor.props(
+            metadataService,
+            ctx
           )
         )
       )

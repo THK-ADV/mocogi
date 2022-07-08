@@ -1,0 +1,31 @@
+module_code: 00895144-30e4-4bd2-b800-bb706686d950
+module_title: Algorithmik
+module_abbrev: ALG
+module_type: module_type.mandatory
+module_relation:
+  parent: module.inf
+credit_points: 5
+language: lang.de
+duration_of_module: 1
+recommended_semester: 3
+frequency: season.ws
+responsibilities:
+  coordinator: person.ald
+  lecturers:
+    - person.ald
+    - person.abe
+assessment-methods: assessment.written-exam
+workload: 150
+  lecture: 36
+  seminar: 0
+  practical: 18
+  exercise: 18
+  self_study: 78
+recommended-prerequisites:
+  - module.ap1
+  - module.ap2
+  - module.ma1
+required-prerequisites: none
+status: status.active
+location: location.gm
+po: AI2

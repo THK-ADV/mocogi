@@ -16,6 +16,8 @@ trait FakeApplication {
     "filePaths.locations" -> "test/parsing/res/location.yaml",
     "filePaths.languages" -> "test/parsing/res/lang.yaml",
     "filePaths.assessmentMethods" -> "test/parsing/res/assessment.yaml",
+    "slick.dbs.default.db.connectionPool" -> "disabled",
+    "play.evolutions.db.default.autoApply" -> "false"
   )
 
   implicit lazy val materializer: Materializer = app.materializer

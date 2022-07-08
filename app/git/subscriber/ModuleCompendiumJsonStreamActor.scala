@@ -12,26 +12,27 @@ object ModuleCompendiumJsonStreamActor {
   )
 }
 
-final class ModuleCompendiumJsonStreamActor(toJson: ModuleCompendium => JsValue)
-    extends Actor
+private final class ModuleCompendiumJsonStreamActor(
+    toJson: ModuleCompendium => JsValue
+) extends Actor
     with Logging {
 
   override def receive = { case OnUpdate(changes, _) =>
-    changes.added.foreach { mc =>
+    changes.added.foreach { case (_, mc) =>
       val json = toJson(mc)
       logger.info(
         s"new module compendium with id ${mc.metadata.id}. payload: $json"
       )
     }
-    changes.modified.foreach { mc =>
+    changes.modified.foreach { case (_, mc) =>
       val json = toJson(mc)
       logger.info(
         s"modified module compendium with id ${mc.metadata.id}: payload: $json"
       )
     }
-    changes.removed.foreach { mc =>
+    changes.removed.foreach { path =>
       logger.info(
-        s"deleted module compendium with id ${mc.metadata.id}"
+        s"need to delete module compendium with path ${path.value}"
       )
     }
   }

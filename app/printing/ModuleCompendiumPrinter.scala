@@ -1,36 +1,23 @@
 package printing
 
 import controllers.parameter.PrinterOutputFormat
-import ops.EitherOps.EOps
-import parsing.ModuleCompendiumParser
 import parsing.types._
 import printer.Printer
 import printer.Printer._
 
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
-import javax.inject.{Inject, Singleton}
+import javax.inject.Singleton
 import scala.language.implicitConversions
 
 trait ModuleCompendiumPrinter {
-  def print(
-      input: String,
-      outputType: PrinterOutputType,
+  def printerForFormat(
       outputFormat: PrinterOutputFormat
-  ): Either[ModuleCompendiumGenerationError, PrinterOutput]
-
-  def print(
-      mc: ModuleCompendium,
-      outputType: PrinterOutputType,
-      outputFormat: PrinterOutputFormat
-  ): Either[ModuleCompendiumGenerationError, PrinterOutput]
+  ): Printer[ModuleCompendium]
 }
 
 @Singleton
-class ModuleCompendiumPrinterImpl @Inject() (
-    moduleCompendiumParser: ModuleCompendiumParser,
-    markdownConverter: MarkdownConverter
-) extends ModuleCompendiumPrinter {
+class ModuleCompendiumPrinterImpl extends ModuleCompendiumPrinter {
 
   private val localDatePattern = DateTimeFormatter.ofPattern("dd.MM.yyyy")
 
@@ -40,7 +27,7 @@ class ModuleCompendiumPrinterImpl @Inject() (
     prefix(s"| $key | $value |")
       .skip(newline)
 
-  private def fmtPeople(p: People): String = p.abbrev match {
+  private def fmtPeople(p: Person): String = p.abbrev match {
     case "all" | "nn" => p.lastname
     case _ => s"${p.title} ${p.firstname} ${p.lastname} (${p.faculty})"
   }
@@ -79,6 +66,13 @@ class ModuleCompendiumPrinterImpl @Inject() (
 
   private def linkToHeader(header: String): String =
     s"[Siehe $header](#${header.toLowerCase.replace(' ', '-')})"
+
+  override def printerForFormat(
+      outputFormat: PrinterOutputFormat
+  ): Printer[ModuleCompendium] =
+    outputFormat match {
+      case PrinterOutputFormat.DefaultPrinter => defaultPrinter
+    }
 
   val defaultPrinter: Printer[ModuleCompendium] = Printer { case (mc, input) =>
     val m = mc.metadata
@@ -176,46 +170,4 @@ class ModuleCompendiumPrinterImpl @Inject() (
       .print((), input)
   }
 
-  private def printerForFormat(
-      outputFormat: PrinterOutputFormat
-  ): Printer[ModuleCompendium] =
-    outputFormat match {
-      case PrinterOutputFormat.DefaultPrinter => defaultPrinter
-    }
-
-  def print(
-      mc: ModuleCompendium,
-      outputType: PrinterOutputType,
-      outputFormat: PrinterOutputFormat
-  ): Either[ModuleCompendiumGenerationError, PrinterOutput] =
-    printerForFormat(outputFormat)
-      .print(mc, "")
-      .map(_ -> mc.metadata.id)
-      .biFlatMap[
-        ModuleCompendiumGenerationError,
-        Throwable,
-        PrinterOutput
-      ](
-        ModuleCompendiumGenerationError.Printing.apply,
-        ModuleCompendiumGenerationError.Other.apply,
-        a => markdownConverter.convert(a._2, a._1, outputType)
-      )
-
-  def print(
-      input: String,
-      outputType: PrinterOutputType,
-      outputFormat: PrinterOutputFormat
-  ): Either[ModuleCompendiumGenerationError, PrinterOutput] =
-    moduleCompendiumParser.parser
-      .parse(input)
-      ._1
-      .biFlatMap[
-        ModuleCompendiumGenerationError,
-        ModuleCompendiumGenerationError,
-        PrinterOutput
-      ](
-        ModuleCompendiumGenerationError.Parsing.apply,
-        identity,
-        mc => print(mc, outputType, outputFormat)
-      )
 }
