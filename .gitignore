@@ -48,3 +48,4 @@ build
 conf/application-prod.conf
 tmp/
 output/
+logs/
