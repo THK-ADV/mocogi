@@ -30,26 +30,20 @@ private final class MetadataDatabaseActor(
 
   override def receive = { case OnUpdate(changes, _) =>
     changes.added.foreach { case (path, mc) =>
-      create(mc.metadata, path)
+      createOrUpdate(mc.metadata, path)
     }
     changes.modified.foreach { case (path, mc) =>
-      update(mc.metadata, path)
+      createOrUpdate(mc.metadata, path)
     }
     changes.removed.foreach { path =>
       delete(path)
     }
   }
 
-  private def create(metadata: Metadata, gitPath: GitFilePath): Unit =
-    metadataService.create(metadata, gitPath) onComplete {
-      case Success((a, b, c)) => logSuccess("created", a, b, c)
-      case Failure(e)         => logError("create", metadata, gitPath, e)
-    }
-
-  private def update(metadata: Metadata, gitPath: GitFilePath): Unit =
-    metadataService.update(metadata, gitPath) onComplete {
-      case Success((a, b, c)) => logSuccess("updated", a, b, c)
-      case Failure(e)         => logError("update", metadata, gitPath, e)
+  private def createOrUpdate(metadata: Metadata, gitPath: GitFilePath): Unit =
+    metadataService.createOrUpdate(metadata, gitPath) onComplete {
+      case Success((a, b, c)) => logSuccess(a, b, c)
+      case Failure(e)         => logError(metadata, gitPath, e)
     }
 
   private def delete(path: GitFilePath): Unit =
@@ -71,7 +65,6 @@ private final class MetadataDatabaseActor(
     }
 
   private def logSuccess(
-      action: String,
       metadata: MetadataDbEntry,
       responsibilities: List[ResponsibilityDbEntry],
       assessmentMethods: List[AssessmentMethodMetadataDbEntry]
@@ -101,7 +94,7 @@ private final class MetadataDatabaseActor(
       }
 
     logger.info(
-      s"""successfully $action metadata
+      s"""successfully created or updated metadata
          |  - id: ${metadata.id}
          |  - git path: ${metadata.gitPath}
          |  - title: ${metadata.title}
@@ -131,13 +124,12 @@ private final class MetadataDatabaseActor(
   }
 
   private def logError(
-      action: String,
       metadata: Metadata,
       gitPath: GitFilePath,
       t: Throwable
-  ): Unit = // TODO pull out
+  ): Unit =
     logger.error(
-      s"""failed to $action metadata
+      s"""failed to create or update metadata
          |  - id: ${metadata.id}
          |  - git path: ${gitPath.value}
          |  - message: ${t.getMessage}

@@ -10,16 +10,25 @@ import git.GitFilePath
 import parsing.types.Metadata
 
 import javax.inject.{Inject, Singleton}
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-final class MetadataService @Inject() (private val repo: MetadataRepository) {
+final class MetadataService @Inject() (
+    private val repo: MetadataRepository,
+    private implicit val ctx: ExecutionContext
+) {
 
   type MetadataResult = (
       MetadataDbEntry,
       List[ResponsibilityDbEntry],
       List[AssessmentMethodMetadataDbEntry]
   )
+
+  def createOrUpdate(m: Metadata, path: GitFilePath): Future[MetadataResult] =
+    for {
+      exists <- repo.exists(m)
+      res <- if (exists) update(m, path) else create(m, path)
+    } yield res
 
   def create(m: Metadata, path: GitFilePath): Future[MetadataResult] =
     repo.create(m, path)

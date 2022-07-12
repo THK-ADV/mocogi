@@ -210,6 +210,9 @@ final class MetadataRepository @Inject() (
     db.run(action.transactionally)
   }
 
+  def exists(m: Metadata): Future[Boolean] =
+    db.run(existsQuery(m).result.map(_.nonEmpty))
+
   private def existsQuery(
       m: Metadata
   ): Query[MetadataTable, MetadataDbEntry, Seq] =
