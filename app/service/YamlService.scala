@@ -12,6 +12,6 @@ trait YamlService[A] {
   def all(): Future[Seq[A]] =
     repo.all()
 
-  def createFromYamlFile(input: String): Future[Seq[A]] =
+  def create(input: String): Future[Seq[A]] =
     parser.fileParser.parse(input)._1.fold(Future.failed, repo.createMany)
 }

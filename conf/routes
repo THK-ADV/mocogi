@@ -3,37 +3,37 @@
 # This file defines all application routes (Higher priority routes first)
 # ~~~~
 
-GET         /                              controllers.HomeController.index
+GET         /                           controllers.HomeController.index
 
-PUT         /generateFromFile              controllers.ModuleCompendiumParsingController.generateFromFile()
-GET         /generateFromUrl               controllers.ModuleCompendiumParsingController.generateFromUrl()
+PUT         /generateFromFile           controllers.ModuleCompendiumParsingController.generateFromFile()
+GET         /generateFromUrl            controllers.ModuleCompendiumParsingController.generateFromUrl()
 
-POST        /webhook/onPushEvent           controllers.GitWebhookController.onPushEvent()
+POST        /webhook/onPushEvent        controllers.GitWebhookController.onPushEvent()
 
-GET         /locations                     controllers.LocationController.all()
-PUT         /locations/file                controllers.LocationController.createFromYamlFile()
+GET         /locations                  controllers.LocationController.all()
+POST        /locations                  controllers.LocationController.create()
 
-GET         /languages                     controllers.LanguageController.all()
-PUT         /languages/file                controllers.LanguageController.createFromYamlFile()
+GET         /languages                  controllers.LanguageController.all()
+POST        /languages                  controllers.LanguageController.create()
 
-GET         /status                        controllers.StatusController.all()
-PUT         /status/file                   controllers.StatusController.createFromYamlFile()
+GET         /status                     controllers.StatusController.all()
+POST        /status                     controllers.StatusController.create()
 
-GET         /assessmentMethods             controllers.AssessmentMethodController.all()
-PUT         /assessmentMethods/file        controllers.AssessmentMethodController.createFromYamlFile()
+GET         /assessmentMethods          controllers.AssessmentMethodController.all()
+POST        /assessmentMethods          controllers.AssessmentMethodController.create()
 
-GET         /moduleTypes                   controllers.ModuleTypeController.all()
-PUT         /moduleTypes/file              controllers.ModuleTypeController.createFromYamlFile()
+GET         /moduleTypes                controllers.ModuleTypeController.all()
+POST        /moduleTypes                controllers.ModuleTypeController.create()
 
-GET         /seasons                       controllers.SeasonController.all()
-PUT         /seasons/file                  controllers.SeasonController.createFromYamlFile()
+GET         /seasons                    controllers.SeasonController.all()
+POST        /seasons                    controllers.SeasonController.create()
 
-GET         /persons                       controllers.PersonController.all()
-PUT         /persons/file                  controllers.PersonController.createFromYamlFile()
+GET         /persons                    controllers.PersonController.all()
+POST        /persons                    controllers.PersonController.create()
 
-GET         /metadata                      controllers.MetadataController.all()
+GET         /metadata                   controllers.MetadataController.all()
 
 # Map static resources from the /public folder to the /assets URL path
-GET         /assets/*file                  controllers.Assets.versioned(path="/public", file: Asset)
+GET         /assets/*file               controllers.Assets.versioned(path="/public", file: Asset)
 
       

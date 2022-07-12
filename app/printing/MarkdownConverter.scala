@@ -52,7 +52,7 @@ final class MarkdownConverter(
       inputStream: ByteArrayInputStream
   ): Either[Throwable, PrinterOutput] =
     Try(cmd #< inputStream !!)
-      .map(c => PrinterOutput.Text.apply(c, extension))
+      .map(c => PrinterOutput.Text(c, extension))
       .toEither
 
   private def createFile(
@@ -61,9 +61,9 @@ final class MarkdownConverter(
       cmd: String,
       inputStream: ByteArrayInputStream
   ): Either[Throwable, PrinterOutput] = {
-    val file = fileCreator.create(id.toString)
-    Try(s"$cmd -o ${file.getAbsolutePath}" #< inputStream !!)
-      .map(_ => PrinterOutput.File(file, s"$id.$extension"))
+    val filename = s"output/$id.$extension" // TODO
+    Try(s"$cmd -o $filename" #< inputStream !!)
+      .map(_ => PrinterOutput.File(filename))
       .toEither
   }
 }

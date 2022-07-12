@@ -13,7 +13,7 @@ import printing.{
 }
 
 import java.nio.charset.StandardCharsets
-import java.nio.file.{Files, Path, Paths}
+import java.nio.file.{Files, Paths}
 
 object ModuleCompendiumPrintingActor {
   def props(
@@ -57,11 +57,9 @@ private final class ModuleCompendiumPrintingActor(
             createPath(filename),
             content.getBytes(StandardCharsets.UTF_8)
           )
-          logSuccess(mc, newPath)
-        case PrinterOutput.File(file, filename) =>
-          val newFile = createPath(filename)
-          val newPath = file.moveTo(newFile, replace = true)
-          logSuccess(mc, newPath)
+          logSuccess(mc, newPath.toString)
+        case PrinterOutput.File(path) =>
+          logSuccess(mc, path)
       }
 
     try go().fold(e => logError(mc, e), identity)
@@ -79,10 +77,10 @@ private final class ModuleCompendiumPrintingActor(
          |  - trace: ${t.getStackTrace.mkString("\n           ")}""".stripMargin
     )
 
-  private def logSuccess(mc: ModuleCompendium, newPath: Path): Unit =
+  private def logSuccess(mc: ModuleCompendium, path: String): Unit =
     logger.info(
       s"""successfully printed module compendium
          |  - id: ${mc.metadata.id}
-         |  - path: ${newPath.toString}""".stripMargin
+         |  - path: ${path}""".stripMargin
     )
 }

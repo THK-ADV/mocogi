@@ -10,7 +10,6 @@ import controllers.parameter.{OutputType, PrinterOutputFormat}
 import parser.ParsingError
 import parserprinter.ModuleCompendiumParserPrinter
 import parsing.ModuleCompendiumParser
-import parsing.types.ModuleRelation.{Child, Parent}
 import parsing.types._
 import play.api.libs.json._
 import play.api.libs.ws.WSClient
@@ -100,11 +99,12 @@ class ModuleCompendiumParsingController @Inject() (
           .map {
             case Right(output) =>
               output match {
-                case PrinterOutput.File(file, filename) =>
-                  Ok.sendFile(
+                case PrinterOutput.File(path) =>
+                  Ok(path)
+                /*                  Ok.sendFile(
                     content = file,
                     fileName = _ => Some(filename)
-                  )
+                  )*/
                 case PrinterOutput.Text(content, _) =>
                   Ok(content)
               }

@@ -4,9 +4,10 @@ import play.api.libs.json.{Json, Writes}
 import play.api.mvc.AbstractController
 import service.YamlService
 
-import scala.concurrent.{ExecutionContext, Future}
+import java.nio.charset.StandardCharsets
+import scala.concurrent.ExecutionContext
 
-trait YamlController[A] extends RequestBodyFileParser{ self: AbstractController =>
+trait YamlController[A] { self: AbstractController =>
 
   implicit val writes: Writes[A]
 
@@ -19,11 +20,9 @@ trait YamlController[A] extends RequestBodyFileParser{ self: AbstractController 
       service.all().map(xs => Ok(Json.toJson(xs)))
     }
 
-  def createFromYamlFile() =
-    Action(parse.temporaryFile).async { r =>
-      for {
-        input <- Future.fromTry(parseFileContent(r))
-        xs <- service.createFromYamlFile(input)
-      } yield Ok(Json.toJson(xs))
+  def create() =
+    Action(parse.byteString).async { r =>
+      val input = r.body.decodeString(StandardCharsets.UTF_8)
+      service.create(input).map(xs => Ok(Json.toJson(xs)))
     }
 }

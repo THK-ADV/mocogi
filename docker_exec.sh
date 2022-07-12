@@ -1,44 +1,71 @@
 #!/bin/sh
 
-img_name=mocogi-backend
+backend_img_name=mocogi-backend
+frontend_img_name=mocogi-frontend
+frontend_path=/Users/alex/Developer/mocogi-ui
 dock_hub_URL=dockhub.gm.fh-koeln.de
 dock_hub_username=dobrynin
-dock_hub_img_location=${dock_hub_URL}/${dock_hub_username}/${img_name}
+dock_hub_img_location=${dock_hub_URL}/${dock_hub_username}/${backend_img_name}
 
-buildDockerImage() {
-  docker image rm ${img_name}
-  docker build -t ${img_name} .
+buildBackend() {
+  docker build -t ${backend_img_name} .
+}
+
+buildFrontend() {
+  docker build -t $frontend_img_name $frontend_path
+}
+
+stop() {
+  docker-compose stop &&
+    docker-compose down
 }
 
 clearDockerImages() {
-  docker-compose stop &&
-  docker-compose down &&
-  docker image rm ${img_name}
+  docker image rm $1
   docker image prune -f
 }
 
 uploadDockHub() {
   docker login ${dock_hub_URL} &&
-  docker tag ${img_name} ${dock_hub_img_location} &&
-  docker push ${dock_hub_img_location} &&
-  echo "successfully uploaded image ${img_name} to ${dock_hub_URL}"
+    docker tag ${backend_img_name} ${dock_hub_img_location} &&
+    docker push ${dock_hub_img_location} &&
+    echo "successfully uploaded image ${backend_img_name} to ${dock_hub_URL}"
 }
 
 case "$1" in
-"local")
-  clearDockerImages &&
-    buildDockerImage &&
+"backend")
+  stop &&
+    clearDockerImages $backend_img_name &&
+    buildBackend &&
     docker-compose up -d &&
-     exit 0
+    exit 0
   ;;
 "dockhub")
-  clearDockerImages &&
-    buildDockerImage &&
+  stop &&
+    clearDockerImages $backend_img_name &&
+    buildBackend &&
     uploadDockHub &&
-     exit 0
+    exit 0
+  ;;
+"frontend")
+  stop &&
+    clearDockerImages $frontend_img_name &&
+    buildFrontend &&
+    docker run -d -p 8080:80 --name $frontend_img_name $frontend_img_name
+  exit 0
+  ;;
+
+"both")
+  stop &&
+    clearDockerImages $backend_img_name &&
+    clearDockerImages $frontend_img_name &&
+    buildBackend &&
+    buildFrontend &&
+    docker-compose up -d &&
+    exit 0
   ;;
 *)
-  echo expected local or dockhub, but was $1
+  echo expected backend, frontend, both or dockhub, but was $1
   exit 1
   ;;
 esac
