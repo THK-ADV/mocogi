@@ -98,7 +98,7 @@ create table assessment_method_metadata
     "metadata"          uuid not null,
     "assessment_method" text not null,
     "percentage"        numeric(5, 2) null,
-    PRIMARY KEY (metadata, assessment_method),
+    PRIMARY KEY (metadata, assessment_method, percentage),
     FOREIGN KEY (assessment_method) REFERENCES assessment_method (abbrev),
     FOREIGN KEY (metadata) REFERENCES metadata (id)
 );
