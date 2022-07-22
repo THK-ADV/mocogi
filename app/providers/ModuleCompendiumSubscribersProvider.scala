@@ -1,15 +1,16 @@
 package providers
 
 import akka.actor.ActorSystem
-import controllers.ModuleCompendiumParsingController
 import git.ModuleCompendiumSubscribers
 import git.subscriber.{
   MetadataDatabaseActor,
-  ModuleCompendiumJsonStreamActor,
-  ModuleCompendiumPrintingActor
+  ModuleCompendiumPrintingActor,
+  ModuleCompendiumPublishActor
 }
 import parserprinter.ModuleCompendiumParserPrinter
+import parsing.types.Metadata
 import printing.PrinterOutputType
+import publisher.KafkaPublisher
 import service.MetadataService
 
 import javax.inject.{Inject, Provider, Singleton}
@@ -20,6 +21,7 @@ class ModuleCompendiumSubscribersProvider @Inject() (
     system: ActorSystem,
     parserPrinter: ModuleCompendiumParserPrinter,
     metadataService: MetadataService,
+    publisher: KafkaPublisher[Metadata],
     ctx: ExecutionContext
 ) extends Provider[ModuleCompendiumSubscribers] {
   override def get(): ModuleCompendiumSubscribers =
@@ -32,17 +34,8 @@ class ModuleCompendiumSubscribersProvider @Inject() (
             "output"
           )
         ),
-        system.actorOf(
-          ModuleCompendiumJsonStreamActor.props(
-            ModuleCompendiumParsingController.moduleCompendiumFormat.writes
-          )
-        ),
-        system.actorOf(
-          MetadataDatabaseActor.props(
-            metadataService,
-            ctx
-          )
-        )
+        system.actorOf(ModuleCompendiumPublishActor.props(publisher)),
+        system.actorOf(MetadataDatabaseActor.props(metadataService, ctx))
       )
     )
 }

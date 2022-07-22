@@ -21,6 +21,10 @@ final class ConfigReader @Inject() (config: Configuration) {
 
   def baseUrl: String = string("git.baseUrl")
 
+  def kafkaServerUrl: String = string("kafka.serverUrl")
+
+  def kafkaApplicationId: String = string("kafka.applicationId")
+
   private def string(key: String): String =
     config.getOptional[String](key) match {
       case Some(value) if value.nonEmpty => value

@@ -12,6 +12,7 @@ lazy val `mocogi` = (project in file("."))
     libraryDependencies ++= test,
     libraryDependencies ++= database,
     libraryDependencies += parser,
+    libraryDependencies += kafka,
     externalResolvers ++= Seq(
       "GitHub <THK-ADV> Apache Maven Packages" at "https://maven.pkg.github.com/THK-ADV/nebulak"
     ),
@@ -28,7 +29,8 @@ lazy val play = Seq(
   guice,
   ws,
   ehcache,
-  "com.typesafe.play" %% "play-json" % "2.9.2"
+  "com.typesafe.play" %% "play-json" % "2.9.2",
+  "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.13.3"
 )
 
 lazy val test = Seq(
@@ -44,3 +46,5 @@ lazy val database = Seq(
   "com.typesafe.play" %% "play-slick-evolutions" % playSlickVersion,
   "org.postgresql" % "postgresql" % "42.4.0"
 )
+
+lazy val kafka = "de.th-koeln.inf.adv" %% "kafka-pubsub" % "0.3"

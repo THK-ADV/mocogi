@@ -1,7 +1,5 @@
 package printing
 
-import play.api.libs.Files.DefaultTemporaryFileCreator
-
 import java.io.ByteArrayInputStream
 import java.util.UUID
 import javax.inject.Singleton
@@ -11,7 +9,6 @@ import scala.util.Try
 
 @Singleton
 final class MarkdownConverter(
-    fileCreator: DefaultTemporaryFileCreator,
     htmlCmd: String,
     pdfCmd: String
 ) {
