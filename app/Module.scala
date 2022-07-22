@@ -1,9 +1,15 @@
 import com.google.inject.{AbstractModule, TypeLiteral}
 import git.publisher.{GitFilesDownloadActor, ModuleCompendiumPublisher}
 import git.{GitConfig, ModuleCompendiumSubscribers}
-import parsing.metadata.{MetadataParser, _}
-import printing.{MarkdownConverter, ModuleCompendiumPrinter, ModuleCompendiumPrinterImpl}
+import parsing.metadata.MetadataParser
+import parsing.types.Metadata
+import printing.{
+  MarkdownConverter,
+  ModuleCompendiumPrinter,
+  ModuleCompendiumPrinterImpl
+}
 import providers._
+import publisher.KafkaPublisher
 import service._
 
 class Module() extends AbstractModule {
@@ -55,6 +61,9 @@ class Module() extends AbstractModule {
 
     bind(new TypeLiteral[Set[MetadataParser]] {})
       .toProvider(classOf[MetadataParserProvider])
+      .asEagerSingleton()
+    bind(new TypeLiteral[KafkaPublisher[Metadata]] {})
+      .toProvider(classOf[KafkaPublisherProvider])
       .asEagerSingleton()
   }
 }
