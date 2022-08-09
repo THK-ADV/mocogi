@@ -23,6 +23,35 @@ package object parsing {
     keyParser(key)
       .take(int)
 
+  def multilineStringForKey(key: String): Parser[String] =
+    keyParser(key)
+      .take(
+        oneOf(
+          prefix(">")
+            .skip(newline)
+            .take(
+              zeroOrMoreSpaces
+                .take(prefix(_ != '\n'))
+                .many(newline)
+                .map(_.mkString(" ") + '\n')
+            ),
+          prefix("|")
+            .skip(newline)
+            .take(
+              zeroOrMoreSpaces
+                .take(prefix(_ != '\n'))
+                .many(newline)
+                .map(_.mkString("\n") + '\n')
+            )
+        )
+      )
+
+  def stringForKey(key: String): Parser[String] =
+    oneOf(
+      multilineStringForKey(key),
+      singleLineStringForKey(key)
+    )
+
   def withFile0[A](path: String)(input: String => A): A = {
     val s = Source.fromFile(new File(path))
     val res = input(s.mkString)
