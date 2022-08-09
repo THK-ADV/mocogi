@@ -11,7 +11,7 @@ import parsing.metadata.PrerequisitesParser.{
 }
 import parsing.metadata.WorkloadParser.workloadParser
 import parsing.types._
-import parsing.{doubleForKey, intForKey, stringForKey}
+import parsing.{doubleForKey, intForKey, singleLineStringForKey}
 
 import java.util.UUID
 import javax.inject.{Inject, Singleton}
@@ -30,12 +30,12 @@ final class THKV1Parser @Inject() (
   override val versionScheme = VersionScheme(1, "s")
 
   val moduleCodeParser: Parser[UUID] =
-    stringForKey("module_code")
+    singleLineStringForKey("module_code")
       .flatMap(s => Try(UUID.fromString(s)).fold(_ => never("uuid"), always))
 
-  val moduleTitleParser = stringForKey("module_title")
+  val moduleTitleParser = singleLineStringForKey("module_title")
 
-  val moduleAbbrevParser = stringForKey("module_abbrev")
+  val moduleAbbrevParser = singleLineStringForKey("module_abbrev")
 
   val creditPointsParser = doubleForKey("credit_points")
 

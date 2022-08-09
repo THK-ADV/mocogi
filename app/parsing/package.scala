@@ -6,20 +6,21 @@ package object parsing {
   import parser.Parser._
   import parser.ParserOps._
 
-  def stringForKey(key: String): Parser[String] =
+  def keyParser(key: String): Parser[Unit] =
     skipFirst(prefix(s"$key:"))
       .skip(zeroOrMoreSpaces)
+
+  def singleLineStringForKey(key: String): Parser[String] =
+    keyParser(key)
       .take(prefixTo("\n").or(rest))
       .map(_.trim)
 
   def doubleForKey(key: String): Parser[Double] =
-    skipFirst(prefix(s"$key:"))
-      .skip(zeroOrMoreSpaces)
+    keyParser(key)
       .take(double)
 
   def intForKey(key: String): Parser[Int] =
-    skipFirst(prefix(s"$key:"))
-      .skip(zeroOrMoreSpaces)
+    keyParser(key)
       .take(int)
 
   def withFile0[A](path: String)(input: String => A): A = {
