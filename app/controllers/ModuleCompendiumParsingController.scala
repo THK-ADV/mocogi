@@ -138,7 +138,7 @@ object ModuleCompendiumParsingController
       Json.obj(
         "type" -> "parsing error",
         "expected" -> e.expected,
-        "actual" -> e.found
+        "found" -> e.found
       )
     )
 
@@ -147,7 +147,7 @@ object ModuleCompendiumParsingController
       Json.obj(
         "type" -> "printing error",
         "expected" -> e.expected,
-        "actual" -> e.actual
+        "found" -> e.found
       )
     )
 

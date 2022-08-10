@@ -4,6 +4,7 @@ import helper._
 import org.scalatest.EitherValues
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
+import parser.ParsingError
 import parsing.compendium.FakeSeasons
 import parsing.types._
 import parsing.{ParserSpecHelper, withFile0}
@@ -46,10 +47,10 @@ final class MetadataCompositeParserSpec
     "fail parsing if the version scheme has no number" in {
       val input = "vs\n"
       val (res, rest) = versionSchemeParser.parse(input)
-      val e = res.left.value
+      val ParsingError(expected, found) = res.left.value
       assert(rest == input)
-      assert(e.expected == "a double")
-      assert(e.found == input)
+      assert(expected == "a double")
+      assert(found == "s\n")
     }
 
     "fail parsing if the version scheme has no label" in {
@@ -58,25 +59,25 @@ final class MetadataCompositeParserSpec
       val e = res.left.value
       assert(rest == input)
       assert(e.expected == "a given prefix")
-      assert(e.found == input)
+      assert(e.found == "\n")
     }
 
     "fail if the version scheme is not found" in {
       val input = "---v1x\n---"
       val (res, rest) = metadataParser.parse(input)
       val e = res.left.value
-      assert(e.expected == "unknown version scheme v1.0x")
-      assert(e.found == input)
       assert(rest == input)
+      assert(e.expected == "unknown version scheme v1.0x")
+      assert(e.found == "---")
     }
 
     "fail if version scheme is missing" in {
       val input = "---\n---"
       val (res, rest) = metadataParser.parse(input)
       val e = res.left.value
-      assert(e.expected == "v")
-      assert(e.found == input)
       assert(rest == input)
+      assert(e.expected == "v")
+      assert(e.found == "\n---")
     }
 
     "parse different flavours of metadata" should {

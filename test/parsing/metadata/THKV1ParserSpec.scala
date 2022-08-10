@@ -46,14 +46,12 @@ class THKV1ParserSpec
       }
 
       "fail if the uuid is invalid" in {
-        val (res, rest) = moduleCodeParser.parse("module_code: 123\n")
-        res match {
-          case Right(_) => fail()
-          case Left(e) =>
-            assert(e.expected == "uuid")
-            assert(e.found == "module_code: 123\n")
-            assert(rest == e.found)
-        }
+        assertError(
+          moduleCodeParser,
+          "module_code: 123\n",
+          "uuid",
+          Some("")
+        )
       }
     }
 
@@ -114,7 +112,8 @@ class THKV1ParserSpec
         assertError(
           semesterParser,
           "recommended_semester: Wintersemester",
-          "an integer"
+          "an integer",
+          Some("Wintersemester")
         )
       }
     }

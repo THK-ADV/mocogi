@@ -40,7 +40,7 @@ class WorkloadParserSpec
         case Right(_) => fail()
         case Left(e) =>
           assert(e.expected == s"total of workload to be 150, but was 160")
-          assert(e.found == input)
+          assert(e.found.isEmpty)
           assert(rest == input)
       }
     }
@@ -59,7 +59,11 @@ class WorkloadParserSpec
         case Right(_) => fail()
         case Left(e) =>
           assert(e.expected == "practical:")
-          assert(e.found == input)
+          assert(e.found ==
+            """labwork: 18
+              |  exercise: 18
+              |  self_study: 78
+              |""".stripMargin)
           assert(rest == input)
       }
     }

@@ -83,7 +83,7 @@ class AssessmentMethodParserSpec
       assert(
         e.expected == "percentage of all assessment methods to be 100.0 %, but was 110.0 %"
       )
-      assert(e.found == input)
+      assert(e.found.isEmpty)
       assert(rest == input)
     }
 
@@ -178,7 +178,7 @@ class AssessmentMethodParserSpec
       assert(
         e.expected == "percentage of all assessment methods to be 100.0 %, but was 120.0 %"
       )
-      assert(e.found == input)
+      assert(e.found.isEmpty)
       assert(rest == input)
     }
 

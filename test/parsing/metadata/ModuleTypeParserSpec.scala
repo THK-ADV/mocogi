@@ -34,7 +34,8 @@ class ModuleTypeParserSpec
       assertError(
         parser,
         "module_type: module_type.optional\n",
-        "module_type.mandatory or module_type.wpf"
+        "module_type.mandatory or module_type.wpf",
+        Some("module_type.optional\n")
       )
     }
   }
