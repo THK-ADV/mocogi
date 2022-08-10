@@ -1,0 +1,20 @@
+develop-visions:
+  de_label: Develop Visions
+  de_desc: |
+    Desc1
+    Desc2
+    Desc3
+  en_label: Develop Visions
+  en_desc: |
+    Desc1
+    Desc2
+
+analyze-domains:
+  de_label: Analyze Domains
+  de_desc: |
+    Desc1
+    Desc2
+  en_label: Analyze Domains
+  en_desc: |
+    Desc1
+    Desc2
