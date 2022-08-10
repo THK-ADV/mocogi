@@ -3,9 +3,10 @@ package parsing.metadata.file
 import parser.Parser
 import parser.Parser._
 import parser.ParserOps.{P0, P2, P3, P4}
+import parsing.types.LabelDescLike
 import parsing.{removeIndentation, singleLineStringForKey, stringForKey}
 
-trait LabelDescFileParser[A] extends FileParser[A] {
+trait LabelDescFileParser[A <: LabelDescLike] extends FileParser[A] {
   protected def makeType: ((String, String, String, String, String)) => A
 
   val fileParser: Parser[List[A]] = {
