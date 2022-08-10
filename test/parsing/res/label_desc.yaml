@@ -18,3 +18,17 @@ analyze-domains:
   en_desc: |
     Desc1
     Desc2
+
+digitization:
+  de_label: Digitalisierung
+  de_desc:
+    Desc1
+  en_label: Digitization
+  en_desc:
+
+internationalization:
+  de_label: Internationalisierung
+  de_desc:
+    Desc1
+  en_label: Internationalization
+  en_desc: Desc2
