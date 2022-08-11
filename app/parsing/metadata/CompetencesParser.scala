@@ -16,5 +16,4 @@ object CompetencesParser extends MultipleValueParser[Competence] {
         competences.map(c => literal(s"competence.${c.abbrev}").map(_ => c)): _*
       )
     )
-
 }
