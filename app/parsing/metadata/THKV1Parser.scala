@@ -4,7 +4,7 @@ import parser.Parser
 import parser.Parser.{always, never, newline, optional}
 import parser.ParserOps._
 import parsing.metadata.ModuleRelationParser.moduleRelationParser
-import parsing.metadata.POParser.poParser
+import parsing.metadata.POParser.mandatoryPOParser
 import parsing.metadata.PrerequisitesParser.{
   recommendedPrerequisitesParser,
   requiredPrerequisitesParser
@@ -68,12 +68,13 @@ final class THKV1Parser @Inject() (
       .take(responsibilitiesParser.parser)
       .take(assessmentMethodParser.parser)
       .take(workloadParser)
+      .skip(newline)
       .take(recommendedPrerequisitesParser)
       .take(requiredPrerequisitesParser)
       .skip(optional(newline))
       .take(statusParser.parser)
       .take(locationParser.parser)
       .skip(optional(newline))
-      .take(poParser)
+      .take(mandatoryPOParser)
       .map(Metadata.tupled)
 }

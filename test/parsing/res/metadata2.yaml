@@ -14,17 +14,18 @@ responsibilities:
 assessment-methods:
   - assessment.written-exam (70%)
   - assessment.practical-report (30%)
-workload: 150
+workload:
   lecture: 30
   seminar: 0
   practical: 10
   exercise: 10
-  self_study: 100
+  project_supervision: 0
+  project_work: 0
 recommended-prerequisites: none
 required-prerequisites: none
 status: status.active
 location: location.gm
-po:
+po_mandatory:
   - AI2
   - MI4
   - ITM2

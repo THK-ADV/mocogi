@@ -113,12 +113,13 @@ class ModuleCompendiumPrinterImpl extends ModuleCompendiumPrinter {
           m.assessmentMethods.map(fmtAssessmentMethod).mkString(", ")
         )
       )
-      .skip(row("Workload", s"${m.workload.total} h"))
-      .skip(row("  Vorlesung", s"${m.workload.lecture} h"))
-      .skip(row("  Seminar", s"${m.workload.seminar} h"))
-      .skip(row("  Praktikum", s"${m.workload.practical} h"))
-      .skip(row("  Übung", s"${m.workload.exercise} h"))
-      .skip(row("  Selbststudium", s"${m.workload.selfStudy} h"))
+      .skip(row("Workload", ""))
+      .skip(row("\tVorlesung", s"${m.workload.lecture} h"))
+      .skip(row("\tSeminar", s"${m.workload.seminar} h"))
+      .skip(row("\tPraktikum", s"${m.workload.practical} h"))
+      .skip(row("\tÜbung", s"${m.workload.exercise} h"))
+      .skip(row("\tProjektbetreuung", s"${m.workload.projectSupervision} h"))
+      .skip(row("\tProjektarbeit", s"${m.workload.projectWork} h"))
       .skip(
         row(
           "Empfohlene Voraussetzungen",

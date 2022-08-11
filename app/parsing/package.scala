@@ -42,6 +42,11 @@ package object parsing {
     keyParser(key)
       .take(int)
 
+  def posIntForKey(key: String): Parser[Int] =
+    intForKey(key).flatMap(i =>
+      if (i >= 0) always(i) else never("int to be positive")
+    )
+
   sealed trait MultilineStringStrategy
   case object > extends MultilineStringStrategy
   case object | extends MultilineStringStrategy

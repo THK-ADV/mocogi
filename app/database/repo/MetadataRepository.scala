@@ -138,7 +138,7 @@ final class MetadataRepository @Inject() (
 
       (
         for {
-          a <- metadataTable returning metadataTable += (mdb)
+          a <- metadataTable returning metadataTable += mdb
           b <- DBIO.sequence(
             rdb.map(responsibilityTable returning responsibilityTable += _)
           )
@@ -233,12 +233,12 @@ final class MetadataRepository @Inject() (
       m.duration,
       m.recommendedSemester,
       m.frequency.abbrev,
-      m.workload.total,
       m.workload.lecture,
       m.workload.seminar,
       m.workload.practical,
       m.workload.exercise,
-      m.workload.selfStudy,
+      m.workload.projectSupervision,
+      m.workload.projectWork,
       fromList(m.recommendedPrerequisites),
       fromList(m.requiredPrerequisites),
       m.status.abbrev,
@@ -304,12 +304,12 @@ final class MetadataRepository @Inject() (
       Responsibilities(coord.toList, lec.toList),
       amps.toList,
       Workload(
-        m.workloadTotal,
         m.workloadLecture,
         m.workloadSeminar,
         m.workloadPractical,
         m.workloadExercise,
-        m.workloadSelfStudy
+        m.workloadProjectSupervision,
+        m.workloadProjectWork
       ),
       toList(m.recommendedPrerequisites),
       toList(m.requiredPrerequisites),

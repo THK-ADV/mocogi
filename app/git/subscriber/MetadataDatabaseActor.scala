@@ -107,12 +107,12 @@ private final class MetadataDatabaseActor(
          |  - duration: ${metadata.duration}
          |  - recommended semester: ${metadata.recommendedSemester}
          |  - season: ${metadata.season}
-         |  - workload total: ${metadata.workloadTotal}
          |  - workload lecture: ${metadata.workloadLecture}
          |  - workload seminar: ${metadata.workloadSeminar}
          |  - workload practical: ${metadata.workloadPractical}
          |  - workload exercise: ${metadata.workloadExercise}
-         |  - workload self study: ${metadata.workloadSelfStudy}
+         |  - workload project supervision: ${metadata.workloadProjectSupervision}
+         |  - workload project work: ${metadata.workloadProjectWork}
          |  - recommended prerequisites: ${metadata.recommendedPrerequisites}
          |  - required prerequisites: ${metadata.requiredPrerequisites}
          |  - status: ${metadata.status}

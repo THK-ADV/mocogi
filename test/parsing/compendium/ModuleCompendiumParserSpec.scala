@@ -86,7 +86,7 @@ class ModuleCompendiumParserSpec
             )
           )
         )
-        assert(metadata.workload == Workload(150, 36, 0, 18, 18, 78))
+        assert(metadata.workload == Workload(36, 0, 18, 18, 0, 0))
         assert(metadata.recommendedPrerequisites == List("ap1", "ap2", "ma1"))
         assert(metadata.requiredPrerequisites == List.empty)
         assert(metadata.status == Status("active", "Aktiv", "--"))

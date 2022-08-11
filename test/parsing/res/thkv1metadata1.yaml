@@ -15,12 +15,13 @@ responsibilities:
     - person.ald
     - person.abe
 assessment-methods: assessment.written-exam
-workload: 150
+workload:
   lecture: 36
   seminar: 0
   practical: 18
   exercise: 18
-  self_study: 78
+  project_supervision: 0
+  project_work: 0
 recommended-prerequisites:
   - module.ap1
   - module.ap2
@@ -28,4 +29,4 @@ recommended-prerequisites:
 required-prerequisites: none
 status: status.active
 location: location.gm
-po: AI2
+po_mandatory: AI2
