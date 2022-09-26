@@ -1,6 +1,6 @@
 package parsing.types
 
 case class Responsibilities(
-    coordinators: List[Person],
+    moduleManagement: List[Person],
     lecturers: List[Person]
 )

@@ -98,7 +98,7 @@ class ModuleCompendiumPrinterImpl extends ModuleCompendiumPrinter {
       .skip(
         row(
           "Modulverantwortliche*r",
-          m.responsibilities.coordinators.map(fmtPeople).mkString(", ")
+          m.responsibilities.moduleManagement.map(fmtPeople).mkString(", ")
         )
       )
       .skip(

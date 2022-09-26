@@ -11,7 +11,7 @@ duration_of_module: 1
 recommended_semester: 3
 frequency: season.ws
 responsibilities:
-  coordinator: person.ald
+  module_management: person.ald
   lecturers:
     - person.ald
     - person.abe

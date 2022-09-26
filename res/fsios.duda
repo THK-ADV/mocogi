@@ -5,13 +5,13 @@ module_abbrev: FSIOS
 module_type: module_type.wpf
 module_relation:
   parent: module.moco
-credit_points: 5
+ects: 5
 language: lang.de
 duration_of_module: 1
 recommended_semester: 4
 frequency: season.ss
 responsibilities:
-  coordinator: person.ado
+  module_management: person.ado
   lecturers: person.ado
 assessment-methods:
   - assessment.project (70 %)

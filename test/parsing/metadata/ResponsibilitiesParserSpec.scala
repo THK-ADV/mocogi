@@ -20,11 +20,11 @@ class ResponsibilitiesParserSpec
     "return one coordinator and one lecturer" in {
       val resp =
         """responsibilities:
-          |coordinator:person.abe
+          |module_management:person.abe
           |lecturers:person.ald
           |""".stripMargin
       val (res, rest) = parser.parse(resp)
-      assert(res.value.coordinators.map(_.abbrev) == List("abe"))
+      assert(res.value.moduleManagement.map(_.abbrev) == List("abe"))
       assert(res.value.lecturers.map(_.abbrev) == List("ald"))
       assert(rest.isEmpty)
     }
@@ -32,11 +32,11 @@ class ResponsibilitiesParserSpec
     "return one coordinator and one lecturer ignoring random whitespaces" in {
       val resp =
         """responsibilities:
-          | coordinator: person.abe
+          | module_management: person.abe
           | lecturers: person.ald
           |""".stripMargin
       val (res, rest) = parser.parse(resp)
-      assert(res.value.coordinators.map(_.abbrev) == List("abe"))
+      assert(res.value.moduleManagement.map(_.abbrev) == List("abe"))
       assert(res.value.lecturers.map(_.abbrev) == List("ald"))
       assert(rest.isEmpty)
     }
@@ -44,13 +44,13 @@ class ResponsibilitiesParserSpec
     "return 2 coordinator which are seperated by dashes and 1 lecturer" in {
       val resp =
         """responsibilities:
-          |coordinator:
+          |module_management:
           |-person.abe
           |-person.ddu
           |lecturers:person.ald
           |""".stripMargin
       val (res, rest) = parser.parse(resp)
-      assert(res.value.coordinators.map(_.abbrev) == List("abe", "ddu"))
+      assert(res.value.moduleManagement.map(_.abbrev) == List("abe", "ddu"))
       assert(res.value.lecturers.map(_.abbrev) == List("ald"))
       assert(rest.isEmpty)
     }
@@ -58,13 +58,13 @@ class ResponsibilitiesParserSpec
     "return 2 coordinator which are seperated by dashes and 1 lecturer ignoring random whitespace" in {
       val resp =
         """responsibilities:
-          | coordinator:
+          | module_management:
           | - person.abe
           | -person.ddu
           | lecturers: person.ald
           |""".stripMargin
       val (res, rest) = parser.parse(resp)
-      assert(res.value.coordinators.map(_.abbrev) == List("abe", "ddu"))
+      assert(res.value.moduleManagement.map(_.abbrev) == List("abe", "ddu"))
       assert(res.value.lecturers.map(_.abbrev) == List("ald"))
       assert(rest.isEmpty)
     }
@@ -72,13 +72,13 @@ class ResponsibilitiesParserSpec
     "return 1 coordinator and 2 lecturer which are seperated by dashes" in {
       val resp =
         """responsibilities:
-          |coordinator:person.abe
+          |module_management:person.abe
           |lecturers:
           |-person.ald
           |-person.ddu
           |""".stripMargin
       val (res, rest) = parser.parse(resp)
-      assert(res.value.coordinators.map(_.abbrev) == List("abe"))
+      assert(res.value.moduleManagement.map(_.abbrev) == List("abe"))
       assert(res.value.lecturers.map(_.abbrev) == List("ald", "ddu"))
       assert(rest.isEmpty)
     }
@@ -86,13 +86,13 @@ class ResponsibilitiesParserSpec
     "return 1 coordinator and 2 lecturer which are seperated by dashes ignoring whitespace" in {
       val resp =
         """responsibilities:
-          | coordinator: person.abe
+          | module_management: person.abe
           | lecturers:
           | - person.ald
           | - person.ddu
           |""".stripMargin
       val (res, rest) = parser.parse(resp)
-      assert(res.value.coordinators.map(_.abbrev) == List("abe"))
+      assert(res.value.moduleManagement.map(_.abbrev) == List("abe"))
       assert(res.value.lecturers.map(_.abbrev) == List("ald", "ddu"))
       assert(rest.isEmpty)
     }
@@ -100,7 +100,7 @@ class ResponsibilitiesParserSpec
     "return 2 coordinator and 2 lecturer which are both seperated by dashes" in {
       val resp =
         """responsibilities:
-          |coordinator:
+          |module_management:
           |  - person.abe
           |  - person.ald
           |lecturers:
@@ -108,7 +108,7 @@ class ResponsibilitiesParserSpec
           |  - person.ddu
           |""".stripMargin
       val (res, rest) = parser.parse(resp)
-      assert(res.value.coordinators.map(_.abbrev) == List("abe", "ald"))
+      assert(res.value.moduleManagement.map(_.abbrev) == List("abe", "ald"))
       assert(res.value.lecturers.map(_.abbrev) == List("ald", "ddu"))
       assert(rest.isEmpty)
     }
@@ -116,7 +116,7 @@ class ResponsibilitiesParserSpec
     "return 2 coordinator and 2 lecturer which are both seperated by dashes ignoring random whitespace" in {
       val resp =
         """responsibilities:
-          | coordinator:
+          | module_management:
           |  - person.abe
           |  - person.ald
           | lecturers:
@@ -124,7 +124,7 @@ class ResponsibilitiesParserSpec
           |  - person.ddu
           |""".stripMargin
       val (res, rest) = parser.parse(resp)
-      assert(res.value.coordinators.map(_.abbrev) == List("abe", "ald"))
+      assert(res.value.moduleManagement.map(_.abbrev) == List("abe", "ald"))
       assert(res.value.lecturers.map(_.abbrev) == List("ald", "ddu"))
       assert(rest.isEmpty)
     }

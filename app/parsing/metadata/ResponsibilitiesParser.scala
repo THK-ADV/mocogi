@@ -16,7 +16,7 @@ class ResponsibilitiesParser @Inject() (personParser: PersonParser) {
       .skip(zeroOrMoreSpaces)
       .skip(optional(newline))
       .skip(zeroOrMoreSpaces)
-      .skip(prefix("coordinator:"))
+      .skip(prefix("module_management:"))
       .skip(zeroOrMoreSpaces)
       .skip(optional(newline))
       .skip(zeroOrMoreSpaces)

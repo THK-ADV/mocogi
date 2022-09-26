@@ -1,6 +1,6 @@
 package database.repo
 
-import database.table.ResponsibilityType.{Coordinator, Lecturer}
+import database.table.ResponsibilityType.{ModuleManagement, Lecturer}
 import database.table._
 import git.GitFilePath
 import parsing.types.ModuleRelation.{Child, Parent}
@@ -193,7 +193,7 @@ final class MetadataRepository @Inject() (
       val ps = xs.flatMap(_._3)
       val (coord, lec) = resp.zip(ps).partitionMap { case (r, p) =>
         assert(r.person == p.abbrev) // TODO
-        Either.cond(r.kind == Coordinator, p, p)
+        Either.cond(r.kind == ModuleManagement, p, p)
       }
       val aps = xs.flatMap(_._4)
       val ams = xs.flatMap(_._5)
@@ -271,8 +271,8 @@ final class MetadataRepository @Inject() (
     val lecturers = m.responsibilities.lecturers.map(p =>
       ResponsibilityDbEntry(m.id, p.abbrev, Lecturer)
     )
-    val coordinator = m.responsibilities.coordinators.map(p =>
-      ResponsibilityDbEntry(m.id, p.abbrev, Coordinator)
+    val coordinator = m.responsibilities.moduleManagement.map(p =>
+      ResponsibilityDbEntry(m.id, p.abbrev, ModuleManagement)
     )
     lecturers ::: coordinator
   }

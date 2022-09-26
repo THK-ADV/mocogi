@@ -1,7 +1,7 @@
 package git.subscriber
 
 import akka.actor.{Actor, Props}
-import database.table.ResponsibilityType.Coordinator
+import database.table.ResponsibilityType.ModuleManagement
 import database.table.{
   AssessmentMethodMetadataDbEntry,
   MetadataDbEntry,
@@ -76,10 +76,10 @@ private final class MetadataDatabaseActor(
     def responsibilitiesFmt(): String =
       fmtList(responsibilities) { responsibilities =>
         val (cord, lec) = responsibilities.partitionMap(e =>
-          if (e.kind == Coordinator) Left(e.person) else Right(e.person)
+          if (e.kind == ModuleManagement) Left(e.person) else Right(e.person)
         )
         s"""
-           |    - coordinator: ${fmtList(cord)(_.mkString(","))}
+           |    - module_management: ${fmtList(cord)(_.mkString(","))}
            |    - lecturer: ${fmtList(lec)(_.mkString(","))}""".stripMargin
       }
 

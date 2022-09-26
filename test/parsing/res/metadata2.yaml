@@ -9,7 +9,7 @@ duration_of_module: 1
 recommended_semester: 4
 frequency: season.ss
 responsibilities:
-  coordinator: person.ald
+  module_management: person.ald
   lecturers: person.ald
 assessment-methods:
   - assessment.written-exam (70%)
