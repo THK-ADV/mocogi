@@ -23,7 +23,8 @@ final class MetadataCompositeParserSpec
     with FakeAssessmentMethod
     with FakeModuleTypes
     with FakeSeasons
-    with FakePersons {
+    with FakePersons
+    with FakeFocusAreas {
 
   val parser = app.injector.instanceOf(classOf[MetadataCompositeParser])
 
@@ -95,7 +96,7 @@ final class MetadataCompositeParserSpec
         assert(metadata.abbrev == "ALG")
         assert(metadata.kind == ModuleType("mandatory", "Pflicht", "--"))
         assert(metadata.relation.contains(ModuleRelation.Child("inf")))
-        assert(metadata.credits == 5)
+        assert(metadata.credits.value == 5)
         assert(metadata.language == Language("de", "Deutsch", "--"))
         assert(metadata.duration == 1)
         assert(metadata.recommendedSemester == 3)
@@ -142,7 +143,7 @@ final class MetadataCompositeParserSpec
         assert(metadata.abbrev == "IOS")
         assert(metadata.kind == ModuleType("wpf", "Wahlpflichtfach", "--"))
         assert(metadata.relation.isEmpty)
-        assert(metadata.credits == 2.5)
+        assert(metadata.credits.value == 2.5)
         assert(metadata.language == Language("en", "Englisch", "--"))
         assert(metadata.duration == 1)
         assert(metadata.recommendedSemester == 4)

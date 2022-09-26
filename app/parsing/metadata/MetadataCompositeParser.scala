@@ -35,7 +35,8 @@ class MetadataCompositeParser @Inject() (
       assessmentMethods: Seq[AssessmentMethod],
       moduleTypes: Seq[ModuleType],
       seasons: Seq[Season],
-      persons: Seq[Person]
+      persons: Seq[Person],
+      focusAreas: Seq[FocusArea]
   ): Parser[Metadata] =
     prefix("---")
       .take(versionSchemeParser)

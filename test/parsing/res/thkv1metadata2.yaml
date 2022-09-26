@@ -2,7 +2,16 @@ module_code: 00895144-30e4-4bd2-b800-bb706686d950
 module_title: IOS Stuff
 module_abbrev: IOS
 module_type: module_type.wpf
-credit_points: 2.5
+ects:
+  contributions_to_focus_areas:
+    gak:
+      num: 3.5
+      desc:
+    acs:
+      num: 6
+      desc: |
+        Text1
+        Text2
 language: lang.en
 duration_of_module: 1
 recommended_semester: 4

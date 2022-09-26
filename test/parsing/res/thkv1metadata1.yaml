@@ -4,7 +4,7 @@ module_abbrev: ALG
 module_type: module_type.mandatory
 module_relation:
   parent: module.inf
-credit_points: 5
+ects: 5
 language: lang.de
 duration_of_module: 1
 recommended_semester: 3

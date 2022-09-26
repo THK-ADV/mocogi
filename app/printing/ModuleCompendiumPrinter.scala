@@ -88,7 +88,7 @@ class ModuleCompendiumPrinterImpl extends ModuleCompendiumPrinter {
       .skip(row("Modulbezeichnung", m.title))
       .skip(row("Art des Moduls", m.kind.deLabel))
       .skipOpt(m.relation.map(moduleRelationRow))
-      .skip(row("ECTS credits", fmtDouble(m.credits)))
+      .skip(row("ECTS credits", fmtDouble(m.credits.value)))
       .skip(row("Sprache", m.language.de_label))
       .skip(row("Dauer des Moduls", s"${m.duration} Semester"))
       .skip(

@@ -5,13 +5,10 @@ import parser.Parser.{always, never, newline, optional}
 import parser.ParserOps._
 import parsing.metadata.ModuleRelationParser.moduleRelationParser
 import parsing.metadata.POParser.mandatoryPOParser
-import parsing.metadata.PrerequisitesParser.{
-  recommendedPrerequisitesParser,
-  requiredPrerequisitesParser
-}
+import parsing.metadata.PrerequisitesParser.{recommendedPrerequisitesParser, requiredPrerequisitesParser}
 import parsing.metadata.WorkloadParser.workloadParser
 import parsing.types._
-import parsing.{doubleForKey, intForKey, singleLineStringForKey}
+import parsing.{intForKey, singleLineStringForKey}
 
 import java.util.UUID
 import javax.inject.{Inject, Singleton}
@@ -37,8 +34,6 @@ final class THKV1Parser @Inject() (
 
   val moduleAbbrevParser = singleLineStringForKey("module_abbrev")
 
-  val creditPointsParser = doubleForKey("credit_points")
-
   val durationParser = intForKey("duration_of_module")
 
   val semesterParser = intForKey("recommended_semester")
@@ -50,15 +45,16 @@ final class THKV1Parser @Inject() (
       assessmentMethods: Seq[AssessmentMethod],
       moduleTypes: Seq[ModuleType],
       seasons: Seq[Season],
-      persons: Seq[Person]
+      persons: Seq[Person],
+      focusAreas: Seq[FocusArea]
   ): Parser[Metadata] =
     moduleCodeParser
       .zip(moduleTitleParser)
       .take(moduleAbbrevParser)
       .take(moduleTypeParser.parser)
       .take(moduleRelationParser)
-      .take(creditPointsParser)
-      .skip(newline)
+      .take(ECTSParser.ectsParser)
+      .skip(optional(newline))
       .take(languageParser.parser)
       .take(durationParser)
       .skip(newline)

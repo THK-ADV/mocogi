@@ -22,14 +22,14 @@ class THKV1ParserSpec
     with FakeAssessmentMethod
     with FakeModuleTypes
     with FakeSeasons
-    with FakePersons {
+    with FakePersons
+    with FakeFocusAreas {
 
   val parser = app.injector.instanceOf(classOf[THKV1Parser])
 
   val moduleCodeParser = parser.moduleCodeParser
   val moduleTitleParser = parser.moduleTitleParser
   val moduleAbbrevParser = parser.moduleAbbrevParser
-  val creditPointsParser = parser.creditPointsParser
   val durationParser = parser.durationParser
   val semesterParser = parser.semesterParser
   val metadataParser = parser.parser
@@ -78,18 +78,6 @@ class THKV1ParserSpec
       assert(rest.isEmpty)
     }
 
-    "parse credit points" in {
-      val (res1, rest1) = creditPointsParser.parse("credit_points: 5")
-      assert(res1.value == 5)
-      assert(rest1.isEmpty)
-      val (res2, rest2) = creditPointsParser.parse("credit_points: -5")
-      assert(res2.value == -5)
-      assert(rest2.isEmpty)
-      val (res3, rest3) = creditPointsParser.parse("credit_points: 2.5")
-      assert(res3.value == 2.5)
-      assert(rest3.isEmpty)
-    }
-
     "parse duration of module" in {
       val (res1, rest1) = durationParser.parse("duration_of_module: 1")
       assert(res1.value == 1)
@@ -133,7 +121,7 @@ class THKV1ParserSpec
         assert(metadata.abbrev == "ALG")
         assert(metadata.kind == ModuleType("mandatory", "Pflicht", "--"))
         assert(metadata.relation.contains(ModuleRelation.Child("inf")))
-        assert(metadata.credits == 5)
+        assert(metadata.credits.value == 5)
         assert(metadata.language == Language("de", "Deutsch", "--"))
         assert(metadata.duration == 1)
         assert(metadata.recommendedSemester == 3)
@@ -178,7 +166,13 @@ class THKV1ParserSpec
         assert(metadata.abbrev == "IOS")
         assert(metadata.kind == ModuleType("wpf", "Wahlpflichtfach", "--"))
         assert(metadata.relation.isEmpty)
-        assert(metadata.credits == 2.5)
+        assert(metadata.credits == ECTS(
+          9.5,
+          List(
+            ECTSFocusAreaContribution(FocusArea("gak"), 3.5, ""),
+            ECTSFocusAreaContribution(FocusArea("acs"), 6, "Text1\nText2\n"),
+          )
+        ))
         assert(metadata.language == Language("en", "Englisch", "--"))
         assert(metadata.duration == 1)
         assert(metadata.recommendedSemester == 4)
