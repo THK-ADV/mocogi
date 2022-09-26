@@ -39,7 +39,7 @@ class THKV1ParserSpec
       "return a valid uuid" in {
         val id = UUID.fromString("00895144-30e4-4bd2-b800-bb706686d950")
         val (res, rest) = moduleCodeParser.parse(
-          "module_code: 00895144-30e4-4bd2-b800-bb706686d950\n"
+          "id: 00895144-30e4-4bd2-b800-bb706686d950\n"
         )
         assert(res.value == id)
         assert(rest.isEmpty)
@@ -48,7 +48,7 @@ class THKV1ParserSpec
       "fail if the uuid is invalid" in {
         assertError(
           moduleCodeParser,
-          "module_code: 123\n",
+          "id: 123\n",
           "uuid",
           Some("")
         )

@@ -27,7 +27,7 @@ final class THKV1Parser @Inject() (
   override val versionScheme = VersionScheme(1, "s")
 
   val moduleCodeParser: Parser[UUID] =
-    singleLineStringForKey("module_code")
+    singleLineStringForKey("id")
       .flatMap(s => Try(UUID.fromString(s)).fold(_ => never("uuid"), always))
 
   val moduleTitleParser = singleLineStringForKey("module_title")
