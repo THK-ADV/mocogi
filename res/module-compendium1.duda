@@ -1,11 +1,11 @@
 ---
 id: 00895144-30e4-4bd2-b800-bb706686d950
-module_title: Module A
-module_abbrev: MA
+title: Module A
+abbreviation: MA
 module_type: module_type.mandatory
 ects: 5
 language: lang.de
-duration_of_module: 1
+duration: 1
 recommended_semester: 3
 frequency: season.ws
 responsibilities:

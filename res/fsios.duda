@@ -1,13 +1,13 @@
 ---v1.0s
 id: 00895144-30e4-4bd2-b800-bb706686d950
-module_title: Full Stack iOS Entwicklung mit Swift
-module_abbrev: FSIOS
+title: Full Stack iOS Entwicklung mit Swift
+abbreviation: FSIOS
 module_type: module_type.wpf
-module_relation:
+relation:
   parent: module.moco
 ects: 5
 language: lang.de
-duration_of_module: 1
+duration: 1
 recommended_semester: 4
 frequency: season.ss
 responsibilities:

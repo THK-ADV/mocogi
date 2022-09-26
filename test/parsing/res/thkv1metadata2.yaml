@@ -1,6 +1,6 @@
 id: 00895144-30e4-4bd2-b800-bb706686d950
-module_title: IOS Stuff
-module_abbrev: IOS
+title: IOS Stuff
+abbreviation: IOS
 module_type: module_type.wpf
 ects:
   contributions_to_focus_areas:
@@ -13,7 +13,7 @@ ects:
         Text1
         Text2
 language: lang.en
-duration_of_module: 1
+duration: 1
 recommended_semester: 4
 frequency: season.ss
 responsibilities:

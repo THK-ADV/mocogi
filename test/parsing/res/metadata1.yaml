@@ -1,13 +1,13 @@
 ---v1s
 id: 00895144-30e4-4bd2-b800-bb706686d950
-module_title: Algorithmik
-module_abbrev: ALG
+title: Algorithmik
+abbreviation: ALG
 module_type: module_type.mandatory
-module_relation:
+relation:
   parent: module.inf
 ects: 5
 language: lang.de
-duration_of_module: 1
+duration: 1
 recommended_semester: 3
 frequency: season.ws
 responsibilities:

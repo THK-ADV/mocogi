@@ -27,9 +27,9 @@ class THKV1ParserSpec
 
   val parser = app.injector.instanceOf(classOf[THKV1Parser])
 
-  val moduleCodeParser = parser.moduleCodeParser
-  val moduleTitleParser = parser.moduleTitleParser
-  val moduleAbbrevParser = parser.moduleAbbrevParser
+  val moduleCodeParser = parser.idParser
+  val moduleTitleParser = parser.titleParser
+  val moduleAbbrevParser = parser.abbreviationParser
   val durationParser = parser.durationParser
   val semesterParser = parser.semesterParser
   val metadataParser = parser.parser
@@ -59,31 +59,31 @@ class THKV1ParserSpec
 
       "return the module title" in {
         val (res1, rest1) =
-          moduleTitleParser.parse("module_title: Algorithmik\n")
+          moduleTitleParser.parse("title: Algorithmik\n")
         assert(res1.value == "Algorithmik")
         assert(rest1.isEmpty)
       }
 
       "return the module title even if there is whitespace" in {
         val (res2, rest2) =
-          moduleTitleParser.parse("module_title:      Algorithmik   \n")
+          moduleTitleParser.parse("title:      Algorithmik   \n")
         assert(res2.value == "Algorithmik")
         assert(rest2.isEmpty)
       }
     }
 
     "parse module abbreviation" in {
-      val (res, rest) = moduleAbbrevParser.parse("module_abbrev: ALG\n")
+      val (res, rest) = moduleAbbrevParser.parse("abbreviation: ALG\n")
       assert(res.value == "ALG")
       assert(rest.isEmpty)
     }
 
     "parse duration of module" in {
-      val (res1, rest1) = durationParser.parse("duration_of_module: 1")
+      val (res1, rest1) = durationParser.parse("duration: 1")
       assert(res1.value == 1)
       assert(rest1.isEmpty)
 
-      val (res2, rest2) = durationParser.parse("duration_of_module: -1")
+      val (res2, rest2) = durationParser.parse("duration: -1")
       assert(res2.value == -1)
       assert(rest2.isEmpty)
     }

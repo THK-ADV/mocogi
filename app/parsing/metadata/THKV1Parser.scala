@@ -26,15 +26,15 @@ final class THKV1Parser @Inject() (
 ) extends MetadataParser {
   override val versionScheme = VersionScheme(1, "s")
 
-  val moduleCodeParser: Parser[UUID] =
+  val idParser: Parser[UUID] =
     singleLineStringForKey("id")
       .flatMap(s => Try(UUID.fromString(s)).fold(_ => never("uuid"), always))
 
-  val moduleTitleParser = singleLineStringForKey("module_title")
+  val titleParser = singleLineStringForKey("title")
 
-  val moduleAbbrevParser = singleLineStringForKey("module_abbrev")
+  val abbreviationParser = singleLineStringForKey("abbreviation")
 
-  val durationParser = intForKey("duration_of_module")
+  val durationParser = intForKey("duration")
 
   val semesterParser = intForKey("recommended_semester")
 
@@ -48,9 +48,9 @@ final class THKV1Parser @Inject() (
       persons: Seq[Person],
       focusAreas: Seq[FocusArea]
   ): Parser[Metadata] =
-    moduleCodeParser
-      .zip(moduleTitleParser)
-      .take(moduleAbbrevParser)
+    idParser
+      .zip(titleParser)
+      .take(abbreviationParser)
       .take(moduleTypeParser.parser)
       .take(moduleRelationParser)
       .take(ECTSParser.ectsParser)
