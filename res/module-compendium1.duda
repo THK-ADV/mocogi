@@ -20,11 +20,11 @@ workload: 150
   practical: 18
   exercise: 18
   self_study: 78
-recommended-prerequisites:
+recommended_prerequisites:
  - module.ap1
  - module.ap2
  - module.ma1
-required-prerequisites: none
+required_prerequisites: none
 status: status.active
 location: location.gm
 po: AI2

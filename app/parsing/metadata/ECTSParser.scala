@@ -4,7 +4,7 @@ import parser.Parser
 import parser.Parser._
 import parser.ParserOps.P0
 import parsing.types.{ECTS, ECTSFocusAreaContribution, FocusArea}
-import parsing.{doubleForKey, multilineStringForKey, removeIndentation}
+import parsing.{doubleForKey, removeIndentation, stringForKey}
 
 object ECTSParser {
 
@@ -24,7 +24,7 @@ object ECTSParser {
             .skip(zeroOrMoreSpaces)
             .take(double)
             .skip(zeroOrMoreSpaces)
-            .zip(multilineStringForKey("desc"))
+            .zip(stringForKey("desc"))
             .map { case (value, desc) =>
               ECTSFocusAreaContribution(f, value, desc)
             }

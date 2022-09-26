@@ -16,8 +16,8 @@ case class Metadata(
     responsibilities: Responsibilities,
     assessmentMethods: List[AssessmentMethodPercentage],
     workload: Workload,
-    recommendedPrerequisites: List[String],
-    requiredPrerequisites: List[String],
+    recommendedPrerequisites: Option[Prerequisites],
+    requiredPrerequisites: Option[Prerequisites],
     status: Status,
     location: Location,
     po: List[String]

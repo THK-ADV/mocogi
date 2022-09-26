@@ -22,10 +22,10 @@ workload: 150
   practical: 0
   exercise: 0
   self_study: 105
-recommended-prerequisites:
+recommended_prerequisites:
  - module.ap1
  - module.ap2
-required-prerequisites: none
+required_prerequisites: none
 status: status.active
 location: location.gm
 po:

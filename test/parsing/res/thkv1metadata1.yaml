@@ -22,11 +22,14 @@ workload:
   exercise: 18
   project_supervision: 0
   project_work: 0
-recommended-prerequisites:
-  - module.ap1
-  - module.ap2
-  - module.ma1
-required-prerequisites: none
+recommended_prerequisites:
+  text:
+  modules:
+    - module.ap1
+    - module.ap2
+    - module.ma1
+  study_programs:
+required_prerequisites: none
 status: status.active
 location: location.gm
 po_mandatory: AI2

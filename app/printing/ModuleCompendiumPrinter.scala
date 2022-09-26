@@ -32,9 +32,11 @@ class ModuleCompendiumPrinterImpl extends ModuleCompendiumPrinter {
     case _ => s"${p.title} ${p.firstname} ${p.lastname} (${p.faculty})"
   }
 
-  private def fmtPrerequisites(xs: List[String]): String =
-    if (xs.isEmpty) "Keine"
-    else xs.mkString(", ")
+  private def fmtPrerequisites(prerequisites: Option[Prerequisites]): String =
+    prerequisites match {
+      case None => "Keine"
+      case Some(p) => p.modules.mkString("\n") // TODO use all fields
+    }
 
   private def fmtStudyPrograms(xs: List[String]): String =
     if (xs.isEmpty) "Keine"

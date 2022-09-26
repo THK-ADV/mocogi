@@ -21,8 +21,8 @@ workload:
   exercise: 10
   project_supervision: 0
   project_work: 0
-recommended-prerequisites: none
-required-prerequisites: none
+recommended_prerequisites: none
+required_prerequisites: none
 status: status.active
 location: location.gm
 po_mandatory:

@@ -239,8 +239,8 @@ final class MetadataRepository @Inject() (
       m.workload.exercise,
       m.workload.projectSupervision,
       m.workload.projectWork,
-      fromList(m.recommendedPrerequisites),
-      fromList(m.requiredPrerequisites),
+      fromList(m.recommendedPrerequisites.map(_.modules) getOrElse Nil), // TODO use all fields
+      fromList(m.requiredPrerequisites.map(_.modules) getOrElse Nil), // TODO use all fields
       m.status.abbrev,
       m.location.abbrev,
       fromList(m.po)
@@ -311,8 +311,8 @@ final class MetadataRepository @Inject() (
         m.workloadProjectSupervision,
         m.workloadProjectWork
       ),
-      toList(m.recommendedPrerequisites),
-      toList(m.requiredPrerequisites),
+      Some(Prerequisites("", toList(m.recommendedPrerequisites), Nil)),
+      Some(Prerequisites("", toList(m.requiredPrerequisites), Nil)),
       st,
       loc,
       toList(m.po)

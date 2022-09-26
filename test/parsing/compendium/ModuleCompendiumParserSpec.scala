@@ -1,8 +1,8 @@
 package parsing.compendium
 
 import helper.FakeApplication
-import org.scalatest.EitherValues
 import org.scalatest.wordspec.AnyWordSpec
+import org.scalatest.{EitherValues, OptionValues}
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import parsing.types._
 import parsing.{ModuleCompendiumParser, ParserSpecHelper, withFile0}
@@ -17,6 +17,7 @@ class ModuleCompendiumParserSpec
     extends AnyWordSpec
     with ParserSpecHelper
     with EitherValues
+    with OptionValues
     with GuiceOneAppPerSuite
     with FakeApplication {
 
@@ -87,8 +88,12 @@ class ModuleCompendiumParserSpec
           )
         )
         assert(metadata.workload == Workload(36, 0, 18, 18, 0, 0))
-        assert(metadata.recommendedPrerequisites == List("ap1", "ap2", "ma1"))
-        assert(metadata.requiredPrerequisites == List.empty)
+        assert(metadata.recommendedPrerequisites.value == Prerequisites(
+          "programmieren können",
+          List("ap1", "ap2", "ma1"),
+          Nil
+        ))
+        assert(metadata.requiredPrerequisites.isEmpty)
         assert(metadata.status == Status("active", "Aktiv", "--"))
         assert(
           metadata.location == Location("gm", "Gummersbach", "--")

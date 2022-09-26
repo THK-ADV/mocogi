@@ -1,8 +1,8 @@
 package parsing.metadata
 
 import helper._
-import org.scalatest.EitherValues
 import org.scalatest.wordspec.AnyWordSpec
+import org.scalatest.{EitherValues, OptionValues}
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import parsing.compendium.FakeSeasons
 import parsing.types._
@@ -14,6 +14,7 @@ class THKV1ParserSpec
     extends AnyWordSpec
     with ParserSpecHelper
     with EitherValues
+    with OptionValues
     with GuiceOneAppPerSuite
     with FakeApplication
     with FakeLocations
@@ -146,8 +147,12 @@ class THKV1ParserSpec
           )
         )
         assert(metadata.workload == Workload(36, 0, 18, 18, 0, 0))
-        assert(metadata.recommendedPrerequisites == List("ap1", "ap2", "ma1"))
-        assert(metadata.requiredPrerequisites == List.empty)
+        assert(metadata.recommendedPrerequisites.value == Prerequisites(
+          "",
+          List("ap1", "ap2", "ma1"),
+          Nil
+        ))
+        assert(metadata.requiredPrerequisites.isEmpty)
         assert(metadata.status == Status("active", "Aktiv", "--"))
         assert(metadata.location == Location("gm", "Gummersbach", "--"))
         assert(metadata.po == List("AI2"))
@@ -166,13 +171,15 @@ class THKV1ParserSpec
         assert(metadata.abbrev == "IOS")
         assert(metadata.kind == ModuleType("wpf", "Wahlpflichtfach", "--"))
         assert(metadata.relation.isEmpty)
-        assert(metadata.credits == ECTS(
-          9.5,
-          List(
-            ECTSFocusAreaContribution(FocusArea("gak"), 3.5, ""),
-            ECTSFocusAreaContribution(FocusArea("acs"), 6, "Text1\nText2\n"),
+        assert(
+          metadata.credits == ECTS(
+            9.5,
+            List(
+              ECTSFocusAreaContribution(FocusArea("gak"), 3.5, ""),
+              ECTSFocusAreaContribution(FocusArea("acs"), 6, "Text1\nText2\n")
+            )
           )
-        ))
+        )
         assert(metadata.language == Language("en", "Englisch", "--"))
         assert(metadata.duration == 1)
         assert(metadata.recommendedSemester == 4)
@@ -200,8 +207,8 @@ class THKV1ParserSpec
           )
         )
         assert(metadata.workload == Workload(30, 0, 10, 10, 0, 0))
-        assert(metadata.recommendedPrerequisites == List.empty)
-        assert(metadata.requiredPrerequisites == List.empty)
+        assert(metadata.recommendedPrerequisites.isEmpty)
+        assert(metadata.requiredPrerequisites.isEmpty)
         assert(metadata.status == Status("active", "Aktiv", "--"))
         assert(metadata.location == Location("gm", "Gummersbach", "--"))
         assert(metadata.po == List("AI2", "MI4", "ITM2"))

@@ -12,7 +12,8 @@ trait MetadataFormat
     with PersonFormat
     with StatusFormat
     with LocationFormat
-    with ECTSFormat {
+    with ECTSFormat
+    with PrerequisitesFormat {
 
   implicit val workloadFormat: Format[Workload] =
     Json.format[Workload]
