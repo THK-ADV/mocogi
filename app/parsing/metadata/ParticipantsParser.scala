@@ -4,9 +4,9 @@ import parser.Parser
 import parser.Parser._
 import parser.ParserOps.P0
 import parsing.intForKey
+import parsing.types.Participants
 
 object ParticipantsParser {
-  case class Participants(min: Int, max: Int)
 
   val participantsParser: Parser[Participants] =
     skipFirst(prefix("participants:"))

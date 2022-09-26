@@ -1,10 +1,14 @@
 package parsing.metadata
 
 import parser.Parser
-import parser.Parser.{always, never, newline, optional}
+import parser.Parser._
 import parser.ParserOps._
+import parsing.metadata.CompetencesParser.competencesParser
+import parsing.metadata.ECTSParser.ectsParser
+import parsing.metadata.GlobalCriteriaParser.globalCriteriaParser
 import parsing.metadata.ModuleRelationParser.moduleRelationParser
-import parsing.metadata.POParser.mandatoryPOParser
+import parsing.metadata.POParser.{mandatoryPOParser, optionalPOParser}
+import parsing.metadata.ParticipantsParser.participantsParser
 import parsing.metadata.PrerequisitesParser.{recommendedPrerequisitesParser, requiredPrerequisitesParser}
 import parsing.metadata.WorkloadParser.workloadParser
 import parsing.types._
@@ -44,14 +48,16 @@ final class THKV1Parser @Inject() (
       moduleTypes: Seq[ModuleType],
       seasons: Seq[Season],
       persons: Seq[Person],
-      focusAreas: Seq[FocusArea]
+      focusAreas: Seq[FocusArea],
+      competences: Seq[Competence],
+      globalCriteria: Seq[GlobalCriteria]
   ): Parser[Metadata] =
     idParser
       .zip(titleParser)
       .take(abbreviationParser)
       .take(moduleTypeParser.parser)
       .take(moduleRelationParser)
-      .take(ECTSParser.ectsParser)
+      .take(ectsParser)
       .skip(optional(newline))
       .take(languageParser.parser)
       .take(durationParser)
@@ -61,12 +67,68 @@ final class THKV1Parser @Inject() (
       .take(assessmentMethodParser.parser)
       .take(workloadParser)
       .skip(newline)
-      .take(recommendedPrerequisitesParser)
-      .take(requiredPrerequisitesParser)
-      .skip(optional(newline))
+      .take(
+        recommendedPrerequisitesParser
+          .zip(requiredPrerequisitesParser)
+          .skip(optional(newline))
+      )
       .take(statusParser.parser)
       .take(locationParser.parser)
       .skip(optional(newline))
-      .take(mandatoryPOParser)
-      .map(Metadata.tupled)
+      .take(
+        mandatoryPOParser
+          .zip(optionalPOParser.option)
+      )
+      .take(
+        participantsParser.option
+          .skip(zeroOrMoreSpaces)
+          .zip(competencesParser.option)
+          .skip(zeroOrMoreSpaces)
+          .take(globalCriteriaParser.option)
+          .skip(zeroOrMoreSpaces)
+      )
+      .map {
+        case (
+              id,
+              title,
+              abbrev,
+              moduleType,
+              relation,
+              ects,
+              lang,
+              duration,
+              season,
+              resp,
+              assessments,
+              workload,
+              (recommendedPrerequisites, requiredPrerequisites),
+              status,
+              location,
+              (mandatoryPo, optionalPo),
+              (participants, competences, globalCriteria)
+            ) =>
+          Metadata(
+            id,
+            title,
+            abbrev,
+            moduleType,
+            relation,
+            ects,
+            lang,
+            duration,
+            season,
+            resp,
+            assessments,
+            workload,
+            recommendedPrerequisites,
+            requiredPrerequisites,
+            status,
+            location,
+            mandatoryPo,
+            optionalPo.getOrElse(Nil),
+            participants,
+            competences.getOrElse(Nil),
+            globalCriteria.getOrElse(Nil)
+          )
+      }
 }

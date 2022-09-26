@@ -40,6 +40,8 @@ final class ModuleCompendiumParser @Inject() (
         moduleTypes,
         seasons,
         persons,
+        Nil,
+        Nil,
         Nil
       )
       .skip(newline.many())

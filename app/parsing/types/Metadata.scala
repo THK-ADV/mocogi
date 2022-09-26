@@ -19,5 +19,9 @@ case class Metadata(
     requiredPrerequisites: Option[Prerequisites],
     status: Status,
     location: Location,
-    poMandatory: List[POMandatory]
+    poMandatory: List[POMandatory],
+    poOptional: List[POOptional],
+    participants: Option[Participants],
+    competences: List[Competence],
+    globalCriteria: List[GlobalCriteria]
 )

@@ -24,7 +24,9 @@ class THKV1ParserSpec
     with FakeModuleTypes
     with FakeSeasons
     with FakePersons
-    with FakeFocusAreas {
+    with FakeFocusAreas
+    with FakeGlobalCriteria
+    with FakeCompetences {
 
   val parser = app.injector.instanceOf(classOf[THKV1Parser])
 
@@ -138,6 +140,10 @@ class THKV1ParserSpec
         assert(metadata.poMandatory == List(
           POMandatory("ai2", List(3), Nil)
         ))
+        assert(metadata.poOptional.isEmpty)
+        assert(metadata.participants.isEmpty)
+        assert(metadata.competences.isEmpty)
+        assert(metadata.globalCriteria.isEmpty)
       }
 
       "another juicy one" in {
@@ -197,6 +203,10 @@ class THKV1ParserSpec
           POMandatory("mi4", List(4), Nil),
           POMandatory("itm2", List(4), Nil),
         ))
+        assert(metadata.poOptional.isEmpty)
+        assert(metadata.participants.isEmpty)
+        assert(metadata.competences.isEmpty)
+        assert(metadata.globalCriteria.isEmpty)
         assert(rest.isEmpty)
       }
     }

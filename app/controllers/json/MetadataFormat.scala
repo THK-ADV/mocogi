@@ -12,9 +12,27 @@ trait MetadataFormat
     with PersonFormat
     with StatusFormat
     with LocationFormat
-    with ECTSFormat
-    with PrerequisitesFormat
-    with POMandatoryFormat {
+    with CompetencesFormat
+    with GlobalCriteriaFormat
+    with FocusAreaFormat {
+
+  implicit val participantsFormat: Format[Participants] =
+    Json.format[Participants]
+
+  implicit val poOptionalFormat: Format[POOptional] =
+    Json.format[POOptional]
+
+  implicit val poMandatoryFormat: Format[POMandatory] =
+    Json.format[POMandatory]
+
+  implicit val prerequisitesFormat: Format[Prerequisites] =
+    Json.format[Prerequisites]
+
+  implicit val ectsFocusAreaContribution: Format[ECTSFocusAreaContribution] =
+    Json.format[ECTSFocusAreaContribution]
+
+  implicit val ectsFormat: Format[ECTS] =
+    Json.format[ECTS]
 
   implicit val workloadFormat: Format[Workload] =
     Json.format[Workload]

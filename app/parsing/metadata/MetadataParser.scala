@@ -13,6 +13,8 @@ trait MetadataParser {
       moduleTypes: Seq[ModuleType],
       seasons: Seq[Season],
       persons: Seq[Person],
-      focusAreas: Seq[FocusArea]
+      focusAreas: Seq[FocusArea],
+      competences: Seq[Competence],
+      globalCriteria: Seq[GlobalCriteria]
   ): Parser[Metadata]
 }

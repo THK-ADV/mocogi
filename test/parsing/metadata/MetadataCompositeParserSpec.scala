@@ -25,7 +25,9 @@ final class MetadataCompositeParserSpec
     with FakeModuleTypes
     with FakeSeasons
     with FakePersons
-    with FakeFocusAreas {
+    with FakeFocusAreas
+    with FakeCompetences
+    with FakeGlobalCriteria {
 
   val parser = app.injector.instanceOf(classOf[MetadataCompositeParser])
 
@@ -138,6 +140,50 @@ final class MetadataCompositeParserSpec
             POMandatory("ai2", List(3), Nil)
           )
         )
+        assert(
+          metadata.poOptional == List(
+            POOptional("wi4", "wpf", partOfCatalog = false, List(3))
+          )
+        )
+        assert(
+          metadata.participants.value == Participants(4, 20)
+        )
+        assert(
+          metadata.competences == List(
+            Competence(
+              "analyze-domains",
+              "Analyze Domains",
+              "...",
+              "Analyze Domains",
+              "..."
+            ),
+            Competence(
+              "model-systems",
+              "Model Systems",
+              "...",
+              "Model Systems",
+              "..."
+            )
+          )
+        )
+        assert(
+          metadata.globalCriteria == List(
+            GlobalCriteria(
+              "internationalization",
+              "Internationalisierung",
+              "...",
+              "Internationalization",
+              "..."
+            ),
+            GlobalCriteria(
+              "digitization",
+              "Digitalisierung",
+              "...",
+              "Digitization",
+              "..."
+            )
+          )
+        )
       }
 
       "another juicy one" in {
@@ -193,9 +239,12 @@ final class MetadataCompositeParserSpec
             POMandatory("itm2", List(4), Nil)
           )
         )
+        assert(metadata.poOptional.isEmpty)
+        assert(metadata.participants.value == Participants(4, 20))
+        assert(metadata.competences.isEmpty)
+        assert(metadata.globalCriteria.isEmpty)
         assert(rest.isEmpty)
       }
     }
   }
-
 }

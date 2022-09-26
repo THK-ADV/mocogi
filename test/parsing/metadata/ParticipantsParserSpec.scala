@@ -4,6 +4,7 @@ import org.scalatest.EitherValues
 import org.scalatest.wordspec.AnyWordSpec
 import parsing.ParserSpecHelper
 import parsing.metadata.ParticipantsParser._
+import parsing.types.Participants
 
 final class ParticipantsParserSpec
     extends AnyWordSpec
