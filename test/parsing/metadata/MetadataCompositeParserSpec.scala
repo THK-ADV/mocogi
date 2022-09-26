@@ -100,7 +100,6 @@ final class MetadataCompositeParserSpec
         assert(metadata.credits.value == 5)
         assert(metadata.language == Language("de", "Deutsch", "--"))
         assert(metadata.duration == 1)
-        assert(metadata.recommendedSemester == 3)
         assert(metadata.frequency == Season("ws", "Wintersemester", "--"))
         assert(
           metadata.responsibilities == Responsibilities(
@@ -122,17 +121,23 @@ final class MetadataCompositeParserSpec
           )
         )
         assert(metadata.workload == Workload(36, 0, 18, 18, 0, 0))
-        assert(metadata.recommendedPrerequisites.value == Prerequisites(
-          "",
-          List("ap1", "ap2", "ma1"),
-          Nil
-        ))
+        assert(
+          metadata.recommendedPrerequisites.value == Prerequisites(
+            "",
+            List("ap1", "ap2", "ma1"),
+            Nil
+          )
+        )
         assert(metadata.requiredPrerequisites.isEmpty)
         assert(metadata.status == Status("active", "Aktiv", "--"))
         assert(
           metadata.location == Location("gm", "Gummersbach", "--")
         )
-        assert(metadata.po == List("AI2"))
+        assert(
+          metadata.poMandatory == List(
+            POMandatory("ai2", List(3), Nil)
+          )
+        )
       }
 
       "another juicy one" in {
@@ -151,7 +156,6 @@ final class MetadataCompositeParserSpec
         assert(metadata.credits.value == 2.5)
         assert(metadata.language == Language("en", "Englisch", "--"))
         assert(metadata.duration == 1)
-        assert(metadata.recommendedSemester == 4)
         assert(metadata.frequency == Season("ss", "Sommersemester", "--"))
         assert(
           metadata.responsibilities == Responsibilities(
@@ -182,7 +186,13 @@ final class MetadataCompositeParserSpec
         assert(
           metadata.location == Location("gm", "Gummersbach", "--")
         )
-        assert(metadata.po == List("AI2", "MI4", "ITM2"))
+        assert(
+          metadata.poMandatory == List(
+            POMandatory("ai2", List(4), Nil),
+            POMandatory("mi4", List(4), Nil),
+            POMandatory("itm2", List(4), Nil)
+          )
+        )
         assert(rest.isEmpty)
       }
     }

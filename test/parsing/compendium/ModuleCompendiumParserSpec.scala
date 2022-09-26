@@ -66,7 +66,6 @@ class ModuleCompendiumParserSpec
         assert(metadata.credits.value == 5)
         assert(metadata.language == Language("de", "Deutsch", "--"))
         assert(metadata.duration == 1)
-        assert(metadata.recommendedSemester == 3)
         assert(metadata.frequency == Season("ws", "Wintersemester", "--"))
         assert(
           metadata.responsibilities == Responsibilities(
@@ -88,17 +87,23 @@ class ModuleCompendiumParserSpec
           )
         )
         assert(metadata.workload == Workload(36, 0, 18, 18, 0, 0))
-        assert(metadata.recommendedPrerequisites.value == Prerequisites(
-          "programmieren können",
-          List("ap1", "ap2", "ma1"),
-          Nil
-        ))
+        assert(
+          metadata.recommendedPrerequisites.value == Prerequisites(
+            "programmieren können",
+            List("ap1", "ap2", "ma1"),
+            Nil
+          )
+        )
         assert(metadata.requiredPrerequisites.isEmpty)
         assert(metadata.status == Status("active", "Aktiv", "--"))
         assert(
           metadata.location == Location("gm", "Gummersbach", "--")
         )
-        assert(metadata.po == List("AI2"))
+        assert(
+          metadata.poMandatory == List(
+            POMandatory("ai2", List(3), Nil)
+          )
+        )
         assert(deContent.recommendedPrerequisitesBody == "\nProgrammieren\n\n")
         assert(enContent.recommendedPrerequisitesBody == "\nProgramming\n\n")
         assert(deContent.learningOutcomeBody == "\nProgrammieren lernen\n\n")

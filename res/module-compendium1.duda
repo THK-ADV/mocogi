@@ -27,7 +27,7 @@ recommended_prerequisites:
 required_prerequisites: none
 status: status.active
 location: location.gm
-po: AI2
+po_mandatory: AI2
 ---
 
 ## (de) Angestrebte Lernergebnisse:

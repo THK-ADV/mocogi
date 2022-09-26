@@ -38,9 +38,9 @@ class ModuleCompendiumPrinterImpl extends ModuleCompendiumPrinter {
       case Some(p) => p.modules.mkString("\n") // TODO use all fields
     }
 
-  private def fmtStudyPrograms(xs: List[String]): String =
+  private def fmtPOMandatory(xs: List[POMandatory]): String =
     if (xs.isEmpty) "Keine"
-    else xs.mkString(", ")
+    else xs.map(_.studyProgram).mkString(", ") // TODO use all fields
 
   private def moduleRelationRow(relation: ModuleRelation): Printer[Unit] =
     relation match {
@@ -93,9 +93,6 @@ class ModuleCompendiumPrinterImpl extends ModuleCompendiumPrinter {
       .skip(row("ECTS credits", fmtDouble(m.credits.value)))
       .skip(row("Sprache", m.language.de_label))
       .skip(row("Dauer des Moduls", s"${m.duration} Semester"))
-      .skip(
-        row("Empfohlenes Studiensemester", m.recommendedSemester.toString)
-      )
       .skip(row("Häufigkeit des Angebots", s"Jedes ${m.frequency.deLabel}"))
       .skip(
         row(
@@ -145,7 +142,7 @@ class ModuleCompendiumPrinterImpl extends ModuleCompendiumPrinter {
       .skip(
         row(
           "Verwendung des Moduls in weiteren Studiengängen",
-          fmtStudyPrograms(m.po)
+          fmtPOMandatory(m.poMandatory)
         )
       )
       .skip(newline)

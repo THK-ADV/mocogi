@@ -42,11 +42,9 @@ object PrerequisitesParser extends MultipleValueParser[String] {
         )
       )
 
-  val recommendedPrerequisitesParser: Parser[Option[Prerequisites]] = parser(
-    "recommended_prerequisites"
-  )
+  val recommendedPrerequisitesParser: Parser[Option[Prerequisites]] =
+    parser("recommended_prerequisites")
 
-  val requiredPrerequisitesParser: Parser[Option[Prerequisites]] = parser(
-    "required_prerequisites"
-  )
+  val requiredPrerequisitesParser: Parser[Option[Prerequisites]] =
+    parser("required_prerequisites")
 }

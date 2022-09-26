@@ -19,7 +19,6 @@ final class MetadataTable(tag: Tag)
   def credits = column[Double]("credits")
   def language = column[String]("language")
   def duration = column[Int]("duration")
-  def recommendedSemester = column[Int]("recommended_semester")
   def season = column[String]("season")
 
   def workloadLecture = column[Int]("workload_lecture")
@@ -62,7 +61,6 @@ final class MetadataTable(tag: Tag)
     credits,
     language,
     duration,
-    recommendedSemester,
     season,
     (
       workloadLecture,
@@ -90,7 +88,6 @@ final class MetadataTable(tag: Tag)
           Double,
           String,
           Int,
-          Int,
           String,
           (Int, Int, Int, Int, Int, Int),
           String,
@@ -110,7 +107,6 @@ final class MetadataTable(tag: Tag)
           credits,
           language,
           duration,
-          recommendedSemester,
           season,
           (
             workloadLecture,
@@ -137,7 +133,6 @@ final class MetadataTable(tag: Tag)
         credits,
         language,
         duration,
-        recommendedSemester,
         season,
         workloadLecture,
         workloadSeminar,
@@ -164,7 +159,6 @@ final class MetadataTable(tag: Tag)
         Double,
         String,
         Int,
-        Int,
         String,
         (Int, Int, Int, Int, Int, Int),
         String,
@@ -186,7 +180,6 @@ final class MetadataTable(tag: Tag)
           a.credits,
           a.language,
           a.duration,
-          a.recommendedSemester,
           a.season,
           (
             a.workloadLecture,
@@ -200,7 +193,7 @@ final class MetadataTable(tag: Tag)
           a.requiredPrerequisites,
           a.status,
           a.location,
-          a.po
+          a.poMandatory
         )
       )
 }

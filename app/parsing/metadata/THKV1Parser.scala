@@ -36,8 +36,6 @@ final class THKV1Parser @Inject() (
 
   val durationParser = intForKey("duration")
 
-  val semesterParser = intForKey("recommended_semester")
-
   def parser(implicit
       locations: Seq[Location],
       languages: Seq[Language],
@@ -57,8 +55,6 @@ final class THKV1Parser @Inject() (
       .skip(optional(newline))
       .take(languageParser.parser)
       .take(durationParser)
-      .skip(newline)
-      .take(semesterParser)
       .skip(newline)
       .take(seasonParser.parser)
       .take(responsibilitiesParser.parser)

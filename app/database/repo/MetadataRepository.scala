@@ -1,6 +1,6 @@
 package database.repo
 
-import database.table.ResponsibilityType.{ModuleManagement, Lecturer}
+import database.table.ResponsibilityType.{Lecturer, ModuleManagement}
 import database.table._
 import git.GitFilePath
 import parsing.types.ModuleRelation.{Child, Parent}
@@ -231,7 +231,6 @@ final class MetadataRepository @Inject() (
       m.credits.value,
       m.language.abbrev,
       m.duration,
-      m.recommendedSemester,
       m.frequency.abbrev,
       m.workload.lecture,
       m.workload.seminar,
@@ -243,7 +242,7 @@ final class MetadataRepository @Inject() (
       fromList(m.requiredPrerequisites.map(_.modules) getOrElse Nil), // TODO use all fields
       m.status.abbrev,
       m.location.abbrev,
-      fromList(m.po)
+      fromList(m.poMandatory.map(_.studyProgram)) // TODO
     )
   }
 
@@ -299,7 +298,6 @@ final class MetadataRepository @Inject() (
       ECTS(m.credits, Nil),
       lang,
       m.duration,
-      m.recommendedSemester,
       se,
       Responsibilities(coord.toList, lec.toList),
       amps.toList,
@@ -315,7 +313,7 @@ final class MetadataRepository @Inject() (
       Some(Prerequisites("", toList(m.requiredPrerequisites), Nil)),
       st,
       loc,
-      toList(m.po)
+      toList(m.poMandatory).map(po => POMandatory(po, Nil, Nil)) // TODO
     )
   }
 

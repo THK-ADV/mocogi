@@ -28,7 +28,7 @@ recommended_prerequisites:
 required_prerequisites: none
 status: status.active
 location: location.gm
-po:
+po_mandatory:
   - AI
   - MI
   - ITM

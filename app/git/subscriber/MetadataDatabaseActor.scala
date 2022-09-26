@@ -105,7 +105,6 @@ private final class MetadataDatabaseActor(
          |  - credits: ${metadata.credits}
          |  - language: ${metadata.language}
          |  - duration: ${metadata.duration}
-         |  - recommended semester: ${metadata.recommendedSemester}
          |  - season: ${metadata.season}
          |  - workload lecture: ${metadata.workloadLecture}
          |  - workload seminar: ${metadata.workloadSeminar}
@@ -117,7 +116,7 @@ private final class MetadataDatabaseActor(
          |  - required prerequisites: ${metadata.requiredPrerequisites}
          |  - status: ${metadata.status}
          |  - location: ${metadata.location}
-         |  - po: ${metadata.po}
+         |  - po_mandatory: ${metadata.poMandatory}
          |  - responsibilities: ${responsibilitiesFmt()}
          |   -assessment methods: ${assessmentMethodsFmt()}""".stripMargin
     )

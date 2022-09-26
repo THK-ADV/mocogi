@@ -11,7 +11,6 @@ case class Metadata(
     credits: ECTS,
     language: Language,
     duration: Int,
-    recommendedSemester: Int,
     frequency: Season,
     responsibilities: Responsibilities,
     assessmentMethods: List[AssessmentMethodPercentage],
@@ -20,5 +19,5 @@ case class Metadata(
     requiredPrerequisites: Option[Prerequisites],
     status: Status,
     location: Location,
-    po: List[String]
+    poMandatory: List[POMandatory]
 )

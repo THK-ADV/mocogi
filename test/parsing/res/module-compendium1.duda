@@ -6,7 +6,6 @@ module_type: module_type.mandatory
 ects: 5
 language: lang.de
 duration: 1
-recommended_semester: 3
 frequency: season.ws
 responsibilities:
 module_management: person.ald
@@ -33,7 +32,9 @@ required_prerequisites: none
 status: status.active
 location: location.gm
 
-po_mandatory: AI2
+po_mandatory:
+  - study_program: study_program.ai2
+    recommended_semester: 3
 ---
 
 ## (de) Sonstige empfohlene Voraussetzungen:

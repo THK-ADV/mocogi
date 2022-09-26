@@ -32,7 +32,6 @@ class THKV1ParserSpec
   val moduleTitleParser = parser.titleParser
   val moduleAbbrevParser = parser.abbreviationParser
   val durationParser = parser.durationParser
-  val semesterParser = parser.semesterParser
   val metadataParser = parser.parser
 
   "A Metadata Parser" when {
@@ -89,24 +88,6 @@ class THKV1ParserSpec
       assert(rest2.isEmpty)
     }
 
-    "parse recommended semester" should {
-
-      "return a valid semester if the input is an integer" in {
-        val (res, rest) = semesterParser.parse("recommended_semester: 3")
-        assert(res.value == 3)
-        assert(rest.isEmpty)
-      }
-
-      "fail if the semester is a literal" in {
-        assertError(
-          semesterParser,
-          "recommended_semester: Wintersemester",
-          "an integer",
-          Some("Wintersemester")
-        )
-      }
-    }
-
     "parse different flavours of metadata" should {
       "a juicy one" in {
         val (res, rest) =
@@ -125,7 +106,6 @@ class THKV1ParserSpec
         assert(metadata.credits.value == 5)
         assert(metadata.language == Language("de", "Deutsch", "--"))
         assert(metadata.duration == 1)
-        assert(metadata.recommendedSemester == 3)
         assert(metadata.frequency == Season("ws", "Wintersemester", "--"))
         assert(
           metadata.responsibilities == Responsibilities(
@@ -155,7 +135,9 @@ class THKV1ParserSpec
         assert(metadata.requiredPrerequisites.isEmpty)
         assert(metadata.status == Status("active", "Aktiv", "--"))
         assert(metadata.location == Location("gm", "Gummersbach", "--"))
-        assert(metadata.po == List("AI2"))
+        assert(metadata.poMandatory == List(
+          POMandatory("ai2", List(3), Nil)
+        ))
       }
 
       "another juicy one" in {
@@ -182,7 +164,6 @@ class THKV1ParserSpec
         )
         assert(metadata.language == Language("en", "Englisch", "--"))
         assert(metadata.duration == 1)
-        assert(metadata.recommendedSemester == 4)
         assert(metadata.frequency == Season("ss", "Sommersemester", "--"))
         assert(
           metadata.responsibilities == Responsibilities(
@@ -211,7 +192,11 @@ class THKV1ParserSpec
         assert(metadata.requiredPrerequisites.isEmpty)
         assert(metadata.status == Status("active", "Aktiv", "--"))
         assert(metadata.location == Location("gm", "Gummersbach", "--"))
-        assert(metadata.po == List("AI2", "MI4", "ITM2"))
+        assert(metadata.poMandatory == List(
+          POMandatory("ai2", List(4), Nil),
+          POMandatory("mi4", List(4), Nil),
+          POMandatory("itm2", List(4), Nil),
+        ))
         assert(rest.isEmpty)
       }
     }

@@ -6,7 +6,6 @@ module_type: module_type.wpf
 ects: 2.5
 language: lang.en
 duration: 1
-recommended_semester: 4
 frequency: season.ss
 responsibilities:
   module_management: person.ald
@@ -26,7 +25,10 @@ required_prerequisites: none
 status: status.active
 location: location.gm
 po_mandatory:
-  - AI2
-  - MI4
-  - ITM2
+  - study_program: study_program.ai2
+    recommended_semester: 4
+  - study_program: study_program.mi4
+    recommended_semester: 4
+  - study_program: study_program.itm2
+    recommended_semester: 4
 ---
