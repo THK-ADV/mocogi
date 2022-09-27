@@ -2,7 +2,7 @@
 id: 00895144-30e4-4bd2-b800-bb706686d950
 title: Full Stack iOS Entwicklung mit Swift
 abbreviation: FSIOS
-module_type: module_type.wpf
+type: type.module
 relation:
   parent: module.moco
 ects: 5

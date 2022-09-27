@@ -103,7 +103,7 @@ class THKV1ParserSpec
         )
         assert(metadata.title == "Algorithmik")
         assert(metadata.abbrev == "ALG")
-        assert(metadata.kind == ModuleType("mandatory", "Pflicht", "--"))
+        assert(metadata.kind == ModuleType("module", "Modul", "--"))
         assert(metadata.relation.contains(ModuleRelation.Child("inf")))
         assert(metadata.credits.value == 5)
         assert(metadata.language == Language("de", "Deutsch", "--"))
@@ -157,7 +157,7 @@ class THKV1ParserSpec
         )
         assert(metadata.title == "IOS Stuff")
         assert(metadata.abbrev == "IOS")
-        assert(metadata.kind == ModuleType("wpf", "Wahlpflichtfach", "--"))
+        assert(metadata.kind == ModuleType("module", "Modul", "--"))
         assert(metadata.relation.isEmpty)
         assert(
           metadata.credits == ECTS(

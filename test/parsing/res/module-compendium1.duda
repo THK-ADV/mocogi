@@ -2,7 +2,7 @@
 id: 00895144-30e4-4bd2-b800-bb706686d950
 title: Module A
 abbreviation: MA
-module_type: module_type.mandatory
+type: type.module
 ects: 5
 language: lang.de
 duration: 1

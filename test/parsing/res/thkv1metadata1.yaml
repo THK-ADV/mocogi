@@ -1,7 +1,7 @@
 id: 00895144-30e4-4bd2-b800-bb706686d950
 title: Algorithmik
 abbreviation: ALG
-module_type: module_type.mandatory
+type: type.module
 relation:
   parent: module.inf
 ects: 5

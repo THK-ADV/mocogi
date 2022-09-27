@@ -1,7 +1,7 @@
 id: 00895144-30e4-4bd2-b800-bb706686d950
 title: IOS Stuff
 abbreviation: IOS
-module_type: module_type.wpf
+type: type.module
 ects:
   contributions_to_focus_areas:
     gak:

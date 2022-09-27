@@ -62,7 +62,7 @@ class ModuleCompendiumParserSpec
         )
         assert(metadata.title == "Module A")
         assert(metadata.abbrev == "MA")
-        assert(metadata.kind == ModuleType("mandatory", "Pflicht", "--"))
+        assert(metadata.kind == ModuleType("module", "Modul", "--"))
         assert(metadata.credits.value == 5)
         assert(metadata.language == Language("de", "Deutsch", "--"))
         assert(metadata.duration == 1)
