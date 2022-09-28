@@ -1,9 +1,7 @@
 package database.repo
 
-import database.table.ResponsibilityType.{Lecturer, ModuleManagement}
 import database.table._
 import git.GitFilePath
-import parsing.types.ModuleRelation.{Child, Parent}
 import parsing.types._
 import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfigProvider}
 import slick.jdbc.JdbcProfile
@@ -39,9 +37,11 @@ final class MetadataRepository @Inject() (
     TableQuery[AssessmentMethodTable]
 
   def all(): Future[Seq[GetResult]] =
-    fetchWithDependencies(metadataTable)
+    Future.successful(Nil)
+  // fetchWithDependencies(metadataTable)
 
-  def delete(path: GitFilePath): Future[Unit] = {
+  def delete(path: GitFilePath): Future[Unit] = Future.unit
+  /*{
     def go(
         query: Query[MetadataTable, MetadataDbEntry, Seq],
         m: MetadataDbEntry
@@ -73,9 +73,11 @@ final class MetadataRepository @Inject() (
           else go(query, exists.head)
       } yield ()
     )
-  }
+  }*/
 
-  def update(m: Metadata, path: GitFilePath): Future[AddResult] = {
+  def update(m: Metadata, path: GitFilePath): Future[AddResult] =
+    Future.failed(new Throwable("currently unsupported"))
+  /*
     def go(query: Query[MetadataTable, MetadataDbEntry, Seq]) = {
       val mdb = toMetadataDbEntry(m, path)
       val rdb = responsibilityDbEntries(m)
@@ -125,12 +127,12 @@ final class MetadataRepository @Inject() (
           else go(query)
       } yield res
     )
-  }
+  }*/
 
-  def create(
-      m: Metadata,
-      path: GitFilePath
-  ): Future[AddResult] = {
+  def create(m: Metadata, path: GitFilePath): Future[AddResult] =
+    Future.failed(new Throwable("currently unsupported"))
+
+  /*{
     def go() = {
       val mdb = toMetadataDbEntry(m, path)
       val rdb = responsibilityDbEntries(m)
@@ -162,9 +164,9 @@ final class MetadataRepository @Inject() (
           else alreadyExists()
       } yield res
     )
-  }
+  }*/
 
-  private def fetchWithDependencies(
+  /*private def fetchWithDependencies(
       query: Query[MetadataTable, MetadataDbEntry, Seq]
   ): Future[Seq[GetResult]] = {
     val baseQ = for {
@@ -208,17 +210,19 @@ final class MetadataRepository @Inject() (
     }.toSeq)
 
     db.run(action.transactionally)
-  }
+  }*/
 
   def exists(m: Metadata): Future[Boolean] =
-    db.run(existsQuery(m).result.map(_.nonEmpty))
+    Future.successful(true)
 
-  private def existsQuery(
+  // db.run(existsQuery(m).result.map(_.nonEmpty))
+
+  /*  private def existsQuery(
       m: Metadata
   ): Query[MetadataTable, MetadataDbEntry, Seq] =
-    metadataTable.filter(_.id === m.id)
+    metadataTable.filter(_.id === m.id)*/
 
-  private def toMetadataDbEntry(m: Metadata, path: GitFilePath) = {
+  /*private def toMetadataDbEntry(m: Metadata, path: GitFilePath) = {
     val (children, parent) = fromRelation(m.relation)
     MetadataDbEntry(
       m.id,
@@ -314,13 +318,14 @@ final class MetadataRepository @Inject() (
         m.workloadProjectSupervision,
         m.workloadProjectWork
       ),
-      Some(Prerequisites("", toList(m.recommendedPrerequisites), Nil)),
-      Some(Prerequisites("", toList(m.requiredPrerequisites), Nil)),
+      Some(PrerequisiteEntry("", toList(m.recommendedPrerequisites), Nil)),
+      Some(PrerequisiteEntry("", toList(m.requiredPrerequisites), Nil)),
       st,
       loc,
       toList(m.poMandatory).map(po => POMandatory(po, Nil, Nil)), // TODO
       Nil,
       None,
+      Nil,
       Nil,
       Nil
     )
@@ -340,4 +345,5 @@ final class MetadataRepository @Inject() (
       case None =>
         (Option.empty[String], Option.empty[String])
     }
+   */
 }
