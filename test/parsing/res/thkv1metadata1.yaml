@@ -23,13 +23,10 @@ workload:
   project_supervision: 0
   project_work: 0
 recommended_prerequisites:
-  text:
   modules:
     - module.ap1
     - module.ap2
     - module.ma1
-  study_programs:
-required_prerequisites: none
 status: status.active
 location: location.gm
 po_mandatory:

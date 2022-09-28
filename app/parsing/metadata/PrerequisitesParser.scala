@@ -4,43 +4,36 @@ import parser.Parser
 import parser.Parser._
 import parser.ParserOps._
 import parsing.helper.MultipleValueParser
-import parsing.{removeIndentation, stringForKey}
 import parsing.types.Prerequisites
+import parsing.{removeIndentation, stringForKey}
 
 object PrerequisitesParser extends MultipleValueParser[String] {
 
   private def textParser =
-    stringForKey("text")
+    stringForKey("text").option
+      .map(_.getOrElse(""))
 
   private def modulesParser =
     multipleParser(
       "modules",
-      skipFirst(prefix("module."))
-        .take(prefixTo("\n"))
-    )
+      skipFirst(prefix("module.")).take(prefixTo("\n"))
+    ).option.map(_.getOrElse(Nil))
 
   private def studyProgramsParser =
     multipleParser(
       "study_programs",
-      skipFirst(prefix("study_program."))
-        .take(prefixTo("\n"))
-    )
+      skipFirst(prefix("study_program.")).take(prefixTo("\n"))
+    ).option.map(_.getOrElse(Nil))
 
   private def parser(key: String): Parser[Option[Prerequisites]] =
     prefix(s"$key:")
       .skip(zeroOrMoreSpaces)
-      .take(
-        oneOf(
-          prefix("none")
-            .skip(newline)
-            .map(_ => None),
-          skipFirst(removeIndentation())
-            .take(textParser)
-            .zip(modulesParser)
-            .take(studyProgramsParser)
-            .map(a => Some(Prerequisites(a._1, a._2, a._3)))
-        )
-      )
+      .skip(removeIndentation())
+      .take(textParser)
+      .zip(modulesParser)
+      .take(studyProgramsParser)
+      .map(Prerequisites.tupled)
+      .option
 
   val recommendedPrerequisitesParser: Parser[Option[Prerequisites]] =
     parser("recommended_prerequisites")
