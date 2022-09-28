@@ -25,6 +25,12 @@ trait MetadataFormat
   implicit val poMandatoryFormat: Format[POMandatory] =
     Json.format[POMandatory]
 
+  implicit val posFormat: Format[POs] =
+    Json.format[POs]
+
+  implicit val prerequisiteFormat: Format[PrerequisiteEntry] =
+    Json.format[PrerequisiteEntry]
+
   implicit val prerequisitesFormat: Format[Prerequisites] =
     Json.format[Prerequisites]
 
@@ -39,6 +45,9 @@ trait MetadataFormat
 
   implicit val assessmentMethodEntry: Format[AssessmentMethodEntry] =
     Json.format[AssessmentMethodEntry]
+
+  implicit val assessmentMethods: Format[AssessmentMethods] =
+    Json.format[AssessmentMethods]
 
   implicit val responsibilitiesFormat: Format[Responsibilities] =
     Json.format[Responsibilities]

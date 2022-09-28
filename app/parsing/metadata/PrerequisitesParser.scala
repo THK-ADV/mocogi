@@ -4,7 +4,7 @@ import parser.Parser
 import parser.Parser._
 import parser.ParserOps._
 import parsing.helper.MultipleValueParser
-import parsing.types.Prerequisites
+import parsing.types.PrerequisiteEntry
 import parsing.{removeIndentation, stringForKey}
 
 object PrerequisitesParser extends MultipleValueParser[String] {
@@ -25,19 +25,18 @@ object PrerequisitesParser extends MultipleValueParser[String] {
       skipFirst(prefix("study_program.")).take(prefixTo("\n"))
     ).option.map(_.getOrElse(Nil))
 
-  private def parser(key: String): Parser[Option[Prerequisites]] =
+  private def parser(key: String): Parser[PrerequisiteEntry] =
     prefix(s"$key:")
       .skip(zeroOrMoreSpaces)
       .skip(removeIndentation())
       .take(textParser)
       .zip(modulesParser)
       .take(studyProgramsParser)
-      .map(Prerequisites.tupled)
-      .option
+      .map(PrerequisiteEntry.tupled)
 
-  val recommendedPrerequisitesParser: Parser[Option[Prerequisites]] =
+  val recommendedPrerequisitesParser: Parser[PrerequisiteEntry] =
     parser("recommended_prerequisites")
 
-  val requiredPrerequisitesParser: Parser[Option[Prerequisites]] =
+  val requiredPrerequisitesParser: Parser[PrerequisiteEntry] =
     parser("required_prerequisites")
 }

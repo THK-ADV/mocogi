@@ -57,6 +57,6 @@ object AssessmentMethodParser extends MultipleValueParser[AssessmentMethod] {
 
   def assessmentMethodsOptionalParser(implicit
       assessmentMethods: Seq[AssessmentMethod]
-  ): Parser[Option[List[AssessmentMethodEntry]]] =
-    parser("assessment_methods_optional").option
+  ): Parser[List[AssessmentMethodEntry]] =
+    parser("assessment_methods_optional")
 }

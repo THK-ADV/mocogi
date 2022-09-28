@@ -1,16 +1,15 @@
 package parsing.metadata
 
+import org.scalatest.EitherValues
 import org.scalatest.wordspec.AnyWordSpec
-import org.scalatest.{EitherValues, OptionValues}
 import parsing.ParserSpecHelper
 import parsing.metadata.PrerequisitesParser.recommendedPrerequisitesParser
-import parsing.types.Prerequisites
+import parsing.types.PrerequisiteEntry
 
 class PrerequisitesParserSpec
     extends AnyWordSpec
     with ParserSpecHelper
-    with EitherValues
-    with OptionValues {
+    with EitherValues {
 
   "A Prerequisites Parser" should {
     "parse prerequisites" in {
@@ -28,7 +27,7 @@ class PrerequisitesParserSpec
           |  """.stripMargin
       val (res, rest) = recommendedPrerequisitesParser.parse(input)
       assert(
-        res.value.value == Prerequisites(
+        res.value == PrerequisiteEntry(
           "benötigt werden kenntnisse in algebra und java\nund ein pc.\n",
           List("ap1", "ap2"),
           List("mi")
@@ -46,7 +45,7 @@ class PrerequisitesParserSpec
           |  """.stripMargin
       val (res, rest) = recommendedPrerequisitesParser.parse(input)
       assert(
-        res.value.value == Prerequisites(
+        res.value == PrerequisiteEntry(
           "",
           List("ap1", "ap2"),
           Nil
@@ -63,7 +62,7 @@ class PrerequisitesParserSpec
           |  """.stripMargin
       val (res, rest) = recommendedPrerequisitesParser.parse(input)
       assert(
-        res.value.value == Prerequisites(
+        res.value == PrerequisiteEntry(
           "",
           Nil,
           List("mi")

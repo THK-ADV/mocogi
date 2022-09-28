@@ -1,7 +1,6 @@
 package parsing.types
 
-case class Prerequisites(
-    text: String,
-    modules: List[String],
-    studyPrograms: List[String]
+case class Prerequisites (
+  recommended: Option[PrerequisiteEntry],
+  required: Option[PrerequisiteEntry],
 )

@@ -45,3 +45,5 @@ po_mandatory:
 participants:
   min: 4
   max: 20
+taught_with:
+  - module.pp-mi

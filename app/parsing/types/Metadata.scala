@@ -13,16 +13,14 @@ case class Metadata(
     duration: Int,
     frequency: Season,
     responsibilities: Responsibilities,
-    assessmentMethodsMandatory: List[AssessmentMethodEntry],
-    assessmentMethodsOptional: List[AssessmentMethodEntry],
+    assessmentMethods: AssessmentMethods,
     workload: Workload,
-    recommendedPrerequisites: Option[Prerequisites],
-    requiredPrerequisites: Option[Prerequisites],
+    prerequisites: Prerequisites,
     status: Status,
     location: Location,
-    poMandatory: List[POMandatory],
-    poOptional: List[POOptional],
+    pos: POs,
     participants: Option[Participants],
     competences: List[Competence],
-    globalCriteria: List[GlobalCriteria]
+    globalCriteria: List[GlobalCriteria],
+    taughtWith: List[String]
 )

@@ -120,34 +120,40 @@ class THKV1ParserSpec
           )
         )
         assert(
-          metadata.assessmentMethodsMandatory == List(
-            AssessmentMethodEntry(
-              AssessmentMethod("written-exam", "Klausurarbeiten", "--"),
-              None,
-              Nil
-            )
-          )
-        )
-        assert(metadata.assessmentMethodsOptional.isEmpty)
-        assert(metadata.workload == Workload(36, 0, 18, 18, 0, 0))
-        assert(
-          metadata.recommendedPrerequisites.value == Prerequisites(
-            "",
-            List("ap1", "ap2", "ma1"),
+          metadata.assessmentMethods == AssessmentMethods(
+            List(
+              AssessmentMethodEntry(
+                AssessmentMethod("written-exam", "Klausurarbeiten", "--"),
+                None,
+                Nil
+              )
+            ),
             Nil
           )
         )
-        assert(metadata.requiredPrerequisites.isEmpty)
+        assert(metadata.workload == Workload(36, 0, 18, 18, 0, 0))
+        assert(
+          metadata.prerequisites == Prerequisites(
+            Some(
+              PrerequisiteEntry(
+                "",
+                List("ap1", "ap2", "ma1"),
+                Nil
+              )
+            ),
+            None
+          )
+        )
         assert(metadata.status == Status("active", "Aktiv", "--"))
         assert(metadata.location == Location("gm", "Gummersbach", "--"))
         assert(
-          metadata.poMandatory == List(
-            POMandatory("ai2", List(3), Nil)
-          )
-        )
-        assert(
-          metadata.poOptional == List(
-            POOptional("wi4", "wpf", partOfCatalog = false, List(3))
+          metadata.pos == POs(
+            List(
+              POMandatory("ai2", List(3), Nil)
+            ),
+            List(
+              POOptional("wi4", "wpf", partOfCatalog = false, List(3))
+            )
           )
         )
         assert(
@@ -189,6 +195,7 @@ class THKV1ParserSpec
             )
           )
         )
+        assert(metadata.taughtWith.isEmpty)
       }
 
       "thkv1metadata2.yaml" in {
@@ -227,44 +234,46 @@ class THKV1ParserSpec
           )
         )
         assert(
-          metadata.assessmentMethodsMandatory == List(
-            AssessmentMethodEntry(
-              AssessmentMethod("written-exam", "Klausurarbeiten", "--"),
-              Some(70),
-              List(AssessmentMethod("practical", "Praktikum", "--"))
+          metadata.assessmentMethods == AssessmentMethods(
+            List(
+              AssessmentMethodEntry(
+                AssessmentMethod("written-exam", "Klausurarbeiten", "--"),
+                Some(70),
+                List(AssessmentMethod("practical", "Praktikum", "--"))
+              ),
+              AssessmentMethodEntry(
+                AssessmentMethod("practical-report", "Praktikumsbericht", "--"),
+                Some(30),
+                Nil
+              )
             ),
-            AssessmentMethodEntry(
-              AssessmentMethod("practical-report", "Praktikumsbericht", "--"),
-              Some(30),
-              Nil
-            )
-          )
-        )
-        assert(
-          metadata.assessmentMethodsOptional == List(
-            AssessmentMethodEntry(
-              AssessmentMethod("written-exam", "Klausurarbeiten", "--"),
-              None,
-              Nil
+            List(
+              AssessmentMethodEntry(
+                AssessmentMethod("written-exam", "Klausurarbeiten", "--"),
+                None,
+                Nil
+              )
             )
           )
         )
         assert(metadata.workload == Workload(30, 0, 10, 10, 0, 0))
-        assert(metadata.recommendedPrerequisites.isEmpty)
-        assert(metadata.requiredPrerequisites.isEmpty)
+        assert(metadata.prerequisites == Prerequisites(None, None))
         assert(metadata.status == Status("active", "Aktiv", "--"))
         assert(metadata.location == Location("gm", "Gummersbach", "--"))
         assert(
-          metadata.poMandatory == List(
-            POMandatory("ai2", List(4), Nil),
-            POMandatory("mi4", List(4), Nil),
-            POMandatory("itm2", List(4), Nil)
+          metadata.pos == POs(
+            List(
+              POMandatory("ai2", List(4), Nil),
+              POMandatory("mi4", List(4), Nil),
+              POMandatory("itm2", List(4), Nil)
+            ),
+            Nil
           )
         )
-        assert(metadata.poOptional.isEmpty)
         assert(metadata.participants.value == Participants(4, 20))
         assert(metadata.competences.isEmpty)
         assert(metadata.globalCriteria.isEmpty)
+        assert(metadata.taughtWith == List("pp-mi"))
         assert(rest.isEmpty)
       }
     }

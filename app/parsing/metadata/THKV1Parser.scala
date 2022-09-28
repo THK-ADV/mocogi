@@ -17,6 +17,7 @@ import parsing.metadata.PrerequisitesParser.{
   recommendedPrerequisitesParser,
   requiredPrerequisitesParser
 }
+import parsing.metadata.TaughtWithParser.taughtWithParser
 import parsing.metadata.WorkloadParser.workloadParser
 import parsing.types._
 import parsing.{intForKey, singleLineStringForKey}
@@ -72,21 +73,24 @@ final class THKV1Parser @Inject() (
       .take(responsibilitiesParser.parser)
       .take(
         assessmentMethodsMandatoryParser
-          .zip(assessmentMethodsOptionalParser)
+          .zip(assessmentMethodsOptionalParser.option.map(_.getOrElse(Nil)))
+          .map(AssessmentMethods.tupled)
       )
       .take(workloadParser)
       .skip(newline)
       .take(
-        recommendedPrerequisitesParser
-          .zip(requiredPrerequisitesParser)
+        recommendedPrerequisitesParser.option
+          .zip(requiredPrerequisitesParser.option)
           .skip(optional(newline))
+          .map(Prerequisites.tupled)
       )
       .take(statusParser.parser)
       .take(locationParser.parser)
       .skip(optional(newline))
       .take(
         mandatoryPOParser
-          .zip(optionalPOParser.option)
+          .zip(optionalPOParser.option.map(_.getOrElse(Nil)))
+          .map(POs.tupled)
       )
       .take(
         participantsParser.option
@@ -94,6 +98,8 @@ final class THKV1Parser @Inject() (
           .zip(competencesParser.option)
           .skip(zeroOrMoreSpaces)
           .take(globalCriteriaParser.option)
+          .skip(zeroOrMoreSpaces)
+          .take(taughtWithParser.option.map(_.getOrElse(Nil)))
           .skip(zeroOrMoreSpaces)
       )
       .map {
@@ -108,13 +114,13 @@ final class THKV1Parser @Inject() (
               duration,
               season,
               resp,
-              (assessmentMethodsMandatory, assessmentMethodsOptional),
+              assessmentMethods,
               workload,
-              (recommendedPrerequisites, requiredPrerequisites),
+              prerequisites,
               status,
               location,
-              (mandatoryPo, optionalPo),
-              (participants, competences, globalCriteria)
+              pos,
+              (participants, competences, globalCriteria, taughtWith)
             ) =>
           Metadata(
             id,
@@ -127,18 +133,16 @@ final class THKV1Parser @Inject() (
             duration,
             season,
             resp,
-            assessmentMethodsMandatory,
-            assessmentMethodsOptional.getOrElse(Nil),
+            assessmentMethods,
             workload,
-            recommendedPrerequisites,
-            requiredPrerequisites,
+            prerequisites,
             status,
             location,
-            mandatoryPo,
-            optionalPo.getOrElse(Nil),
+            pos,
             participants,
             competences.getOrElse(Nil),
-            globalCriteria.getOrElse(Nil)
+            globalCriteria.getOrElse(Nil),
+            taughtWith
           )
       }
 }
