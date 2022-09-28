@@ -142,14 +142,6 @@ class ModuleCompendiumPrinterImpl extends ModuleCompendiumPrinter {
       )
       .skip(
         row(
-          "Zusätzliche Voraussetzungen",
-          if (c.recommendedPrerequisitesBody.trim.nonEmpty)
-            linkToHeader(c.recommendedPrerequisitesHeader)
-          else "Keine️"
-        )
-      )
-      .skip(
-        row(
           "Verwendung des Moduls in weiteren Studiengängen",
           fmtPOMandatory(m.pos)
         )
@@ -165,12 +157,6 @@ class ModuleCompendiumPrinterImpl extends ModuleCompendiumPrinter {
       )
       .skip(
         contentBlock(c.recommendedReadingHeader, c.recommendedReadingBody)
-      )
-      .skip(
-        contentBlock(
-          c.recommendedPrerequisitesHeader,
-          c.recommendedPrerequisitesBody
-        )
       )
       .skip(contentBlock(c.particularitiesHeader, c.particularitiesBody))
       .skip(prefix("---"))
