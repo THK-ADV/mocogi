@@ -73,7 +73,7 @@ class POParserSpec
       val input =
         """po_optional:
           |  - study_program: study_program.wi5
-          |    instance_of: wpf
+          |    instance_of: module.wpf
           |    part_of_catalog: false
           |    recommended_semester: 3""".stripMargin
       val (res, rest) = optionalPOParser.parse(input)
@@ -89,11 +89,11 @@ class POParserSpec
       val input =
         """po_optional:
           |  - study_program: study_program.wi5
-          |    instance_of: wpf
+          |    instance_of: module.wpf
           |    part_of_catalog: false
           |    recommended_semester: 3
           |  - study_program: study_program.ai2
-          |    instance_of: wpf
+          |    instance_of: module.wpf
           |    part_of_catalog: true
           |    recommended_semester:
           |      - 3

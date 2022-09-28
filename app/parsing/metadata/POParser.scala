@@ -31,7 +31,7 @@ object POParser {
   private def instanceOfParser =
     prefix("instance_of:")
       .skip(zeroOrMoreSpaces)
-      .take(prefixTo("\n"))
+      .take(prefix("module.").take(prefixTo("\n").or(rest)))
 
   private def partOfCatalogParser =
     prefix("part_of_catalog:")

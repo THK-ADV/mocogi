@@ -34,7 +34,7 @@ po_mandatory:
     recommended_semester: 3
 po_optional:
   - study_program: study_program.wi5
-    instance_of: wpf
+    instance_of: module.wpf
     part_of_catalog: false
     recommended_semester: 3
 participants:
