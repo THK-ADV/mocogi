@@ -70,7 +70,7 @@ final class ECTSParserSpec
           |        Text1
           |        Text2""".stripMargin
       val (res2, rest2) = ectsParser.parse(complexInput)
-      assert(res2.value.value == 10)
+      assert(res2.value.value == 0)
       assert(
         res2.value.contributionsToFocusAreas == List(
           ECTSFocusAreaContribution(FocusArea("gak"), 4, "Text1\nText2\n"),

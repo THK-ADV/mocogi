@@ -7,4 +7,6 @@ case class Workload(
     exercise: Int,
     projectSupervision: Int,
     projectWork: Int,
+    selfStudy: Int,
+    total: Int
 )

@@ -41,12 +41,7 @@ object ECTSParser {
   def ectsParser(implicit focusAreas: Seq[FocusArea]): Parser[ECTS] = {
     oneOf(
       ectsValueParser.map(d => ECTS(d, Nil)),
-      ectsContributionsToFocusAreasParser.map { contribs =>
-        val ectsValue = contribs.foldLeft(0.0) { case (acc, n) =>
-          acc + n.ectsValue
-        }
-        ECTS(ectsValue, contribs)
-      }
+      ectsContributionsToFocusAreasParser.map { c => ECTS(0, c) }
     )
   }
 }

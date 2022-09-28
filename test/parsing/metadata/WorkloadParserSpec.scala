@@ -22,7 +22,7 @@ class WorkloadParserSpec
           |  project_supervision: 0
           |  project_work: 0""".stripMargin
       val (res, rest) = workloadParser.parse(input)
-      assert(res.value == Workload(36, 0, 18, 18, 0, 0))
+      assert(res.value == Workload(36, 0, 18, 18, 0, 0, 0, 0))
       assert(rest.isEmpty)
     }
 
