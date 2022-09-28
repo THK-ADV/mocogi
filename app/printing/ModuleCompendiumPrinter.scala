@@ -34,7 +34,7 @@ class ModuleCompendiumPrinterImpl extends ModuleCompendiumPrinter {
 
   private def fmtPrerequisites(prerequisites: Option[Prerequisites]): String =
     prerequisites match {
-      case None => "Keine"
+      case None    => "Keine"
       case Some(p) => p.modules.mkString("\n") // TODO use all fields
     }
 
@@ -54,9 +54,10 @@ class ModuleCompendiumPrinterImpl extends ModuleCompendiumPrinter {
     if (d % 1 == 0) d.toInt.toString
     else d.toString.replace('.', ',')
 
-  private def fmtAssessmentMethod(am: AssessmentMethodPercentage): String =
-    am.percentage.fold(am.assessmentMethod.deLabel)(d =>
-      s"${am.assessmentMethod.deLabel} (${fmtDouble(d)} %)"
+  // TODO use all fields
+  private def fmtAssessmentMethod(am: AssessmentMethodEntry): String =
+    am.percentage.fold(am.method.deLabel)(d =>
+      s"${am.method.deLabel} (${fmtDouble(d)} %)"
     )
 
   private def header(title: String) =
@@ -109,7 +110,7 @@ class ModuleCompendiumPrinterImpl extends ModuleCompendiumPrinter {
       .skip(
         row(
           "Prüfungsformen",
-          m.assessmentMethods.map(fmtAssessmentMethod).mkString(", ")
+          m.assessmentMethodsMandatory.map(fmtAssessmentMethod).mkString(", ")
         )
       )
       .skip(row("Workload", ""))

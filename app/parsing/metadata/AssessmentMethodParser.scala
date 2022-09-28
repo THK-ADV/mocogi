@@ -2,56 +2,61 @@ package parsing.metadata
 
 import parser.Parser
 import parser.Parser._
-import parser.ParserOps.P0
+import parser.ParserOps.{P0, P2}
 import parsing.helper.MultipleValueParser
-import parsing.types.{AssessmentMethod, AssessmentMethodPercentage}
+import parsing.types.{AssessmentMethod, AssessmentMethodEntry}
 
-import javax.inject.Singleton
+object AssessmentMethodParser extends MultipleValueParser[AssessmentMethod] {
 
-@Singleton
-final class AssessmentMethodParser
-    extends MultipleValueParser[AssessmentMethodPercentage] {
-
-  def parser(
-    implicit assessmentMethods: Seq[AssessmentMethod]
-  ): Parser[List[AssessmentMethodPercentage]] =
-    multipleParser(
-      "assessment-methods",
-      oneOf(
-        assessmentMethods.map(s =>
-          literal(s"assessment.${s.abbrev}")
-            .zip(
-              zeroOrMoreSpaces
-                .skip(optional(prefix("(")))
-                .skip(zeroOrMoreSpaces)
-                .take(double)
-                .skip(zeroOrMoreSpaces)
-                .skip(optional(prefix("%")))
-                .skip(zeroOrMoreSpaces)
-                .skip(optional(prefix(")")))
-                .option
-            )
-            .skip(newline)
-            .map(res => AssessmentMethodPercentage(s, res._2))
-        ): _*
-      ),
-      1
+  private def assessmentMethodParser(implicit
+      assessmentMethods: Seq[AssessmentMethod]
+  ): Parser[AssessmentMethod] =
+    oneOf(
+      assessmentMethods
+        .map(a => prefix(s"assessment.${a.abbrev}").map(_ => a)): _*
     )
-      .flatMap { xs =>
-        if (xs.forall(_.percentage.isDefined))
-          isValid(xs).fold(always(xs))(d =>
-            never(
-              s"percentage of all assessment methods to be 100.0 %, but was $d %"
-            )
-          )
-        else always(xs)
-      }
 
-  private def sumPercentages(xs: List[AssessmentMethodPercentage]): Double =
-    xs.foldLeft(0.0) { case (acc, x) => acc + x.percentage.get }
+  private def methodParser(implicit
+      assessmentMethods: Seq[AssessmentMethod]
+  ): Parser[AssessmentMethod] =
+    prefix("- method:")
+      .skip(zeroOrMoreSpaces)
+      .take(assessmentMethodParser)
 
-  private def isValid(xs: List[AssessmentMethodPercentage]): Option[Double] = {
-    val sum = sumPercentages(xs)
-    Option.unless(sum == 100.0)(sum)
-  }
+  private def percentageParser: Parser[Option[Double]] =
+    prefix("percentage:")
+      .skip(zeroOrMoreSpaces)
+      .take(double)
+      .option
+
+  private def preconditionParser(implicit
+      assessmentMethods: Seq[AssessmentMethod]
+  ): Parser[List[AssessmentMethod]] =
+    multipleParser("precondition", assessmentMethodParser, 1).option
+      .map(_.getOrElse(Nil))
+
+  private def parser(key: String)(implicit
+      assessmentMethods: Seq[AssessmentMethod]
+  ): Parser[List[AssessmentMethodEntry]] =
+    prefix(s"$key:")
+      .skip(zeroOrMoreSpaces)
+      .take(
+        methodParser
+          .skip(zeroOrMoreSpaces)
+          .zip(percentageParser)
+          .skip(zeroOrMoreSpaces)
+          .take(preconditionParser)
+          .many(zeroOrMoreSpaces)
+          .map(_.map(AssessmentMethodEntry.tupled))
+      )
+
+  def assessmentMethodsMandatoryParser(implicit
+      assessmentMethods: Seq[AssessmentMethod]
+  ): Parser[List[AssessmentMethodEntry]] =
+    parser("assessment_methods_mandatory")
+
+  def assessmentMethodsOptionalParser(implicit
+      assessmentMethods: Seq[AssessmentMethod]
+  ): Parser[Option[List[AssessmentMethodEntry]]] =
+    parser("assessment_methods_optional").option
 }

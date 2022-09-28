@@ -37,9 +37,8 @@ trait MetadataFormat
   implicit val workloadFormat: Format[Workload] =
     Json.format[Workload]
 
-  implicit val assessmentMethodPercentFormat
-      : Format[AssessmentMethodPercentage] =
-    Json.format[AssessmentMethodPercentage]
+  implicit val assessmentMethodEntry: Format[AssessmentMethodEntry] =
+    Json.format[AssessmentMethodEntry]
 
   implicit val responsibilitiesFormat: Format[Responsibilities] =
     Json.format[Responsibilities]

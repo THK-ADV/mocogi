@@ -121,7 +121,7 @@ class THKV1ParserSpec
           )
         )
         assert(
-          metadata.assessmentMethods == List(
+          metadata.assessmentMethodsMandatory == List(
             AssessmentMethodPercentage(
               AssessmentMethod("written-exam", "Klausurarbeiten", "--"),
               None
@@ -182,7 +182,7 @@ class THKV1ParserSpec
           )
         )
         assert(
-          metadata.assessmentMethods == List(
+          metadata.assessmentMethodsMandatory == List(
             AssessmentMethodPercentage(
               AssessmentMethod("written-exam", "Klausurarbeiten", "--"),
               Some(70)

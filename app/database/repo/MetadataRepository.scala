@@ -260,11 +260,11 @@ final class MetadataRepository @Inject() (
   private def assessmentMethodMetadataDbEntries(
       m: Metadata
   ): List[AssessmentMethodMetadataDbEntry] =
-    m.assessmentMethods.map(a =>
+    m.assessmentMethodsMandatory.map(a =>
       AssessmentMethodMetadataDbEntry(
         m.id,
-        a.assessmentMethod.abbrev,
-        a.percentage
+        a.method.abbrev,
+        a.percentage // TODO use all fields
       )
     )
 
@@ -304,7 +304,8 @@ final class MetadataRepository @Inject() (
       m.duration,
       se,
       Responsibilities(coord.toList, lec.toList),
-      amps.toList,
+      amps.toList.map(a => AssessmentMethodEntry(a.assessmentMethod, a.percentage, Nil)), // TODO use all fields
+      Nil, // TODO add support
       Workload(
         m.workloadLecture,
         m.workloadSeminar,

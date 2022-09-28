@@ -115,7 +115,7 @@ final class MetadataCompositeParserSpec
           )
         )
         assert(
-          metadata.assessmentMethods == List(
+          metadata.assessmentMethodsMandatory == List(
             AssessmentMethodPercentage(
               AssessmentMethod("written-exam", "Klausurarbeiten", "--"),
               None
@@ -214,7 +214,7 @@ final class MetadataCompositeParserSpec
           )
         )
         assert(
-          metadata.assessmentMethods == List(
+          metadata.assessmentMethodsMandatory == List(
             AssessmentMethodPercentage(
               AssessmentMethod("written-exam", "Klausurarbeiten", "--"),
               Some(70)

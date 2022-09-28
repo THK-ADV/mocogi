@@ -3,13 +3,20 @@ package parsing.metadata
 import parser.Parser
 import parser.Parser._
 import parser.ParserOps._
+import parsing.metadata.AssessmentMethodParser.{
+  assessmentMethodsMandatoryParser,
+  assessmentMethodsOptionalParser
+}
 import parsing.metadata.CompetencesParser.competencesParser
 import parsing.metadata.ECTSParser.ectsParser
 import parsing.metadata.GlobalCriteriaParser.globalCriteriaParser
 import parsing.metadata.ModuleRelationParser.moduleRelationParser
 import parsing.metadata.POParser.{mandatoryPOParser, optionalPOParser}
 import parsing.metadata.ParticipantsParser.participantsParser
-import parsing.metadata.PrerequisitesParser.{recommendedPrerequisitesParser, requiredPrerequisitesParser}
+import parsing.metadata.PrerequisitesParser.{
+  recommendedPrerequisitesParser,
+  requiredPrerequisitesParser
+}
 import parsing.metadata.WorkloadParser.workloadParser
 import parsing.types._
 import parsing.{intForKey, singleLineStringForKey}
@@ -22,7 +29,6 @@ import scala.util.Try
 final class THKV1Parser @Inject() (
     responsibilitiesParser: ResponsibilitiesParser,
     seasonParser: SeasonParser,
-    assessmentMethodParser: AssessmentMethodParser,
     statusParser: StatusParser,
     moduleTypeParser: ModuleTypeParser,
     locationParser: LocationParser,
@@ -64,7 +70,10 @@ final class THKV1Parser @Inject() (
       .skip(newline)
       .take(seasonParser.parser)
       .take(responsibilitiesParser.parser)
-      .take(assessmentMethodParser.parser)
+      .take(
+        assessmentMethodsMandatoryParser
+          .zip(assessmentMethodsOptionalParser)
+      )
       .take(workloadParser)
       .skip(newline)
       .take(
@@ -99,7 +108,7 @@ final class THKV1Parser @Inject() (
               duration,
               season,
               resp,
-              assessments,
+              (assessmentMethodsMandatory, assessmentMethodsOptional),
               workload,
               (recommendedPrerequisites, requiredPrerequisites),
               status,
@@ -118,7 +127,8 @@ final class THKV1Parser @Inject() (
             duration,
             season,
             resp,
-            assessments,
+            assessmentMethodsMandatory,
+            assessmentMethodsOptional.getOrElse(Nil),
             workload,
             recommendedPrerequisites,
             requiredPrerequisites,
