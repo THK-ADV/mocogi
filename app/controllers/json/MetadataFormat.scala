@@ -14,7 +14,8 @@ trait MetadataFormat
     with LocationFormat
     with CompetencesFormat
     with GlobalCriteriaFormat
-    with FocusAreaFormat {
+    with FocusAreaFormat
+    with StudyProgramFormat {
 
   implicit val participantsFormat: Format[Participants] =
     Json.format[Participants]

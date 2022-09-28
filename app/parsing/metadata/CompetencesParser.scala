@@ -2,10 +2,10 @@ package parsing.metadata
 
 import parser.Parser
 import parser.Parser.{literal, oneOf}
-import parsing.helper.MultipleValueParser
+import parsing.helper.MultipleValueParser.multipleParser
 import parsing.types.Competence
 
-object CompetencesParser extends MultipleValueParser[Competence] {
+object CompetencesParser {
 
   def competencesParser(implicit
       competences: Seq[Competence]

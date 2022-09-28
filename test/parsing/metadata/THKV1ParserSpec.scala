@@ -25,7 +25,8 @@ class THKV1ParserSpec
     with FakePersons
     with FakeFocusAreas
     with FakeGlobalCriteria
-    with FakeCompetences {
+    with FakeCompetences
+    with FakeStudyPrograms {
 
   val parser = app.injector.instanceOf(classOf[THKV1Parser])
 
@@ -149,10 +150,15 @@ class THKV1ParserSpec
         assert(
           metadata.pos == POs(
             List(
-              POMandatory("ai2", List(3), Nil)
+              POMandatory(StudyProgram("ai2"), List(3), Nil)
             ),
             List(
-              POOptional("wi4", "wpf", partOfCatalog = false, List(3))
+              POOptional(
+                StudyProgram("wi5"),
+                "wpf",
+                partOfCatalog = false,
+                List(3)
+              )
             )
           )
         )
@@ -263,9 +269,9 @@ class THKV1ParserSpec
         assert(
           metadata.pos == POs(
             List(
-              POMandatory("ai2", List(4), Nil),
-              POMandatory("mi4", List(4), Nil),
-              POMandatory("itm2", List(4), Nil)
+              POMandatory(StudyProgram("ai2"), List(4), Nil),
+              POMandatory(StudyProgram("mi4"), List(4), Nil),
+              POMandatory(StudyProgram("itm2"), List(4), Nil)
             ),
             Nil
           )

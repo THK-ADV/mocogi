@@ -4,8 +4,12 @@ import parser.Parser
 import parser.Parser._
 import parser.ParserOps._
 
-trait MultipleValueParser[A] {
-  def multipleParser(key: String, singleParser: Parser[A], minimum: Int = 0): Parser[List[A]] = {
+object MultipleValueParser {
+  def multipleParser[A](
+      key: String,
+      singleParser: Parser[A],
+      minimum: Int = 0
+  ): Parser[List[A]] = {
     val dashes =
       zeroOrMoreSpaces
         .skip(prefix("-"))

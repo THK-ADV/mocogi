@@ -15,6 +15,7 @@ trait MetadataParser {
       persons: Seq[Person],
       focusAreas: Seq[FocusArea],
       competences: Seq[Competence],
-      globalCriteria: Seq[GlobalCriteria]
+      globalCriteria: Seq[GlobalCriteria],
+      studyPrograms: Seq[StudyProgram]
   ): Parser[Metadata]
 }

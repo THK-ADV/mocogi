@@ -19,7 +19,8 @@ class FakeMetadataParser extends MetadataParser {
       persons: Seq[Person],
       focusAreas: Seq[FocusArea],
       competences: Seq[Competence],
-      globalCriteria: Seq[GlobalCriteria]
+      globalCriteria: Seq[GlobalCriteria],
+      studyPrograms: Seq[StudyProgram]
   ) = always(
     Metadata(
       UUID.randomUUID(),

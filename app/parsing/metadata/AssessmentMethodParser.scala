@@ -3,10 +3,10 @@ package parsing.metadata
 import parser.Parser
 import parser.Parser._
 import parser.ParserOps.{P0, P2}
-import parsing.helper.MultipleValueParser
+import parsing.helper.MultipleValueParser.multipleParser
 import parsing.types.{AssessmentMethod, AssessmentMethodEntry}
 
-object AssessmentMethodParser extends MultipleValueParser[AssessmentMethod] {
+object AssessmentMethodParser {
 
   private def assessmentMethodParser(implicit
       assessmentMethods: Seq[AssessmentMethod]

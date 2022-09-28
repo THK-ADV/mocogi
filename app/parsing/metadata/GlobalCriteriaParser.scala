@@ -2,10 +2,10 @@ package parsing.metadata
 
 import parser.Parser
 import parser.Parser.{literal, oneOf}
-import parsing.helper.MultipleValueParser
+import parsing.helper.MultipleValueParser.multipleParser
 import parsing.types.GlobalCriteria
 
-object GlobalCriteriaParser extends MultipleValueParser[GlobalCriteria] {
+object GlobalCriteriaParser {
   def globalCriteriaParser(implicit
       globalCriteria: Seq[GlobalCriteria]
   ): Parser[List[GlobalCriteria]] =

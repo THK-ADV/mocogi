@@ -1,7 +1,7 @@
 package parsing.types
 
 case class POOptional(
-    studyProgram: String,
+    studyProgram: StudyProgram,
     instanceOf: String,
     partOfCatalog: Boolean,
     recommendedSemester: List[Int]

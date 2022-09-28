@@ -40,6 +40,7 @@ final class ModuleCompendiumParser @Inject() (
         moduleTypes,
         seasons,
         persons,
+        Nil, // TODO
         Nil,
         Nil,
         Nil

@@ -3,24 +3,29 @@ package parsing.metadata
 import parser.Parser
 import parser.Parser._
 import parser.ParserOps._
-import parsing.helper.MultipleValueParser
-import parsing.types.{POMandatory, POOptional}
+import parsing.helper.MultipleValueParser.multipleParser
+import parsing.types.{POMandatory, POOptional, StudyProgram}
 
-object POParser extends MultipleValueParser[String] {
-
-  private def studyProgramParser =
+object POParser {
+  private def studyProgramParser(implicit
+      studyPrograms: Seq[StudyProgram]
+  ): Parser[StudyProgram] =
     prefix("- study_program:")
       .skip(zeroOrMoreSpaces)
-      .skip(prefix("study_program."))
-      .take(prefixTo("\n"))
+      .take(
+        oneOf(
+          studyPrograms.map(s =>
+            prefix(s"study_program.${s.abbrev}")
+              .map(_ => s)
+          ): _*
+        )
+      )
 
   private def recommendedSemesterParser =
-    new MultipleValueParser[Int] {}.multipleParser("recommended_semester", int)
+    multipleParser("recommended_semester", int)
 
   private def recommendedSemesterPartTimeParser =
-    new MultipleValueParser[Int] {}
-      .multipleParser("recommended_semester_part_time", int)
-      .option
+    multipleParser("recommended_semester_part_time", int).option
       .map(_.getOrElse(Nil))
 
   private def instanceOfParser =
@@ -33,7 +38,9 @@ object POParser extends MultipleValueParser[String] {
       .skip(zeroOrMoreSpaces)
       .take(boolean)
 
-  val mandatoryPOParser: Parser[List[POMandatory]] =
+  def mandatoryPOParser(implicit
+      studyPrograms: Seq[StudyProgram]
+  ): Parser[List[POMandatory]] =
     prefix("po_mandatory:")
       .skip(zeroOrMoreSpaces)
       .take(
@@ -46,7 +53,9 @@ object POParser extends MultipleValueParser[String] {
           .map(_.map(POMandatory.tupled))
       )
 
-  val optionalPOParser: Parser[List[POOptional]] =
+  def optionalPOParser(implicit
+      studyPrograms: Seq[StudyProgram]
+  ): Parser[List[POOptional]] =
     prefix("po_optional:")
       .skip(zeroOrMoreSpaces)
       .take(

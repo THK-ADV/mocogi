@@ -3,29 +3,38 @@ package parsing.metadata
 import parser.Parser
 import parser.Parser._
 import parser.ParserOps._
-import parsing.helper.MultipleValueParser
-import parsing.types.PrerequisiteEntry
+import parsing.helper.MultipleValueParser.multipleParser
+import parsing.types.{PrerequisiteEntry, StudyProgram}
 import parsing.{removeIndentation, stringForKey}
 
-object PrerequisitesParser extends MultipleValueParser[String] {
+object PrerequisitesParser {
 
-  private def textParser =
+  private def textParser: Parser[String] =
     stringForKey("text").option
       .map(_.getOrElse(""))
 
-  private def modulesParser =
+  private def modulesParser: Parser[List[String]] =
     multipleParser(
       "modules",
       skipFirst(prefix("module.")).take(prefixTo("\n"))
     ).option.map(_.getOrElse(Nil))
 
-  private def studyProgramsParser =
+  private def studyProgramsParser(implicit
+      studyPrograms: Seq[StudyProgram]
+  ): Parser[List[StudyProgram]] =
     multipleParser(
       "study_programs",
-      skipFirst(prefix("study_program.")).take(prefixTo("\n"))
+      oneOf(
+        studyPrograms.map(s =>
+          literal(s"study_program.${s.abbrev}")
+            .map(_ => s)
+        ): _*
+      )
     ).option.map(_.getOrElse(Nil))
 
-  private def parser(key: String): Parser[PrerequisiteEntry] =
+  private def parser(
+      key: String
+  )(implicit studyPrograms: Seq[StudyProgram]): Parser[PrerequisiteEntry] =
     prefix(s"$key:")
       .skip(zeroOrMoreSpaces)
       .skip(removeIndentation())
@@ -34,9 +43,13 @@ object PrerequisitesParser extends MultipleValueParser[String] {
       .take(studyProgramsParser)
       .map(PrerequisiteEntry.tupled)
 
-  val recommendedPrerequisitesParser: Parser[PrerequisiteEntry] =
+  def recommendedPrerequisitesParser(implicit
+      studyPrograms: Seq[StudyProgram]
+  ): Parser[PrerequisiteEntry] =
     parser("recommended_prerequisites")
 
-  val requiredPrerequisitesParser: Parser[PrerequisiteEntry] =
+  def requiredPrerequisitesParser(implicit
+      studyPrograms: Seq[StudyProgram]
+  ): Parser[PrerequisiteEntry] =
     parser("required_prerequisites")
 }

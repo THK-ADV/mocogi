@@ -14,7 +14,7 @@ final class MetadataCompositeParserSpec
   val parser = new MetadataCompositeParser(Set(new FakeMetadataParser()))
   val versionSchemeParser = parser.versionSchemeParser
   val metadataParser =
-    parser.parser(Nil, Nil, Nil, Nil, Nil, Nil, Nil, Nil, Nil, Nil)
+    parser.parser(Nil, Nil, Nil, Nil, Nil, Nil, Nil, Nil, Nil, Nil, Nil)
 
   "A Metadata Composite Parser" should {
 

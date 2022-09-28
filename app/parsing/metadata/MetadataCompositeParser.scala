@@ -37,8 +37,9 @@ class MetadataCompositeParser @Inject() (
       seasons: Seq[Season],
       persons: Seq[Person],
       focusAreas: Seq[FocusArea],
-    competences: Seq[Competence],
-    globalCriteria: Seq[GlobalCriteria]
+      competences: Seq[Competence],
+      globalCriteria: Seq[GlobalCriteria],
+      studyPrograms: Seq[StudyProgram]
   ): Parser[Metadata] =
     prefix("---")
       .take(versionSchemeParser)
