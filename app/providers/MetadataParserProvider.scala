@@ -8,7 +8,6 @@ import javax.inject.{Inject, Provider, Singleton}
 final class MetadataParserProvider @Inject() (
     responsibilitiesParser: ResponsibilitiesParser,
     seasonParser: SeasonParser,
-    assessmentMethodParser: AssessmentMethodParser,
     statusParser: StatusParser,
     moduleTypeParser: ModuleTypeParser,
     locationParser: LocationParser,
@@ -18,7 +17,6 @@ final class MetadataParserProvider @Inject() (
     new THKV1Parser(
       responsibilitiesParser,
       seasonParser,
-      assessmentMethodParser,
       statusParser,
       moduleTypeParser,
       locationParser,

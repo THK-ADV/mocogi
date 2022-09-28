@@ -3,7 +3,7 @@ package parsing.metadata.file
 import parser.Parser
 import parser.Parser.{newline, prefixTo, zeroOrMoreSpaces}
 import parser.ParserOps.{P2, P3, P4}
-import parsing.stringForKey
+import parsing.singleLineStringForKey
 import parsing.types.Person
 
 import javax.inject.Singleton
@@ -14,13 +14,13 @@ class PersonFileParser extends FileParser[Person] {
     prefixTo(":")
       .skip(newline)
       .skip(zeroOrMoreSpaces)
-      .zip(stringForKey("lastname"))
+      .zip(singleLineStringForKey("lastname"))
       .skip(zeroOrMoreSpaces)
-      .take(stringForKey("firstname"))
+      .take(singleLineStringForKey("firstname"))
       .skip(zeroOrMoreSpaces)
-      .take(stringForKey("title"))
+      .take(singleLineStringForKey("title"))
       .skip(zeroOrMoreSpaces)
-      .take(stringForKey("faculty"))
+      .take(singleLineStringForKey("faculty"))
       .many()
       .map(_.map(Person.tupled))
 }

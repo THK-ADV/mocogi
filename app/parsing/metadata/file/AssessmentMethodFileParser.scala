@@ -6,6 +6,6 @@ import javax.inject.Singleton
 
 @Singleton
 final class AssessmentMethodFileParser
-    extends SimpleFileParser[AssessmentMethod] {
+    extends LabelFileParser[AssessmentMethod] {
   override protected def makeType = AssessmentMethod.tupled
 }

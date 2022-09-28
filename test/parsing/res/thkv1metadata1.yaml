@@ -1,31 +1,48 @@
-module_code: 00895144-30e4-4bd2-b800-bb706686d950
-module_title: Algorithmik
-module_abbrev: ALG
-module_type: module_type.mandatory
-module_relation:
+id: 00895144-30e4-4bd2-b800-bb706686d950
+title: Algorithmik
+abbreviation: ALG
+type: type.module
+relation:
   parent: module.inf
-credit_points: 5
+ects: 5
 language: lang.de
-duration_of_module: 1
-recommended_semester: 3
+duration: 1
 frequency: season.ws
 responsibilities:
-  coordinator: person.ald
+  module_management: person.ald
   lecturers:
     - person.ald
     - person.abe
-assessment-methods: assessment.written-exam
-workload: 150
+assessment_methods_mandatory:
+  - method: assessment.written-exam
+workload:
   lecture: 36
   seminar: 0
   practical: 18
   exercise: 18
-  self_study: 78
-recommended-prerequisites:
-  - module.ap1
-  - module.ap2
-  - module.ma1
-required-prerequisites: none
+  project_supervision: 0
+  project_work: 0
+recommended_prerequisites:
+  modules:
+    - module.ap1
+    - module.ap2
+    - module.ma1
 status: status.active
 location: location.gm
-po: AI2
+po_mandatory:
+  - study_program: study_program.ai2
+    recommended_semester: 3
+po_optional:
+  - study_program: study_program.wi5
+    instance_of: module.wpf
+    part_of_catalog: false
+    recommended_semester: 3
+participants:
+  min: 4
+  max: 20
+competences:
+  - competence.analyze-domains
+  - competence.model-systems
+global_criteria:
+  - global_criteria.internationalization
+  - global_criteria.digitization

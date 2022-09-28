@@ -13,17 +13,16 @@ case class MetadataDbEntry(
     credits: Double,
     language: String,
     duration: Int,
-    recommendedSemester: Int,
     season: String,
-    workloadTotal: Int,
     workloadLecture: Int,
     workloadSeminar: Int,
     workloadPractical: Int,
     workloadExercise: Int,
-    workloadSelfStudy: Int,
+    workloadProjectSupervision: Int,
+    workloadProjectWork: Int,
     recommendedPrerequisites: String,
     requiredPrerequisites: String,
     status: String,
     location: String,
-    po: String
+    poMandatory: String
 )

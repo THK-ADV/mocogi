@@ -4,7 +4,7 @@ import parsing.types.ModuleType
 
 trait FakeModuleTypes {
   implicit def fakeModuleTypes: Seq[ModuleType] = Seq(
-    ModuleType("mandatory", "Pflicht", "--"),
-    ModuleType("wpf", "Wahlpflichtfach", "--")
+    ModuleType("module", "Modul", "--"),
+    ModuleType("generic_module", "Generisches Modul", "--")
   )
 }

@@ -32,13 +32,19 @@ class ModuleCompendiumPrinterImpl extends ModuleCompendiumPrinter {
     case _ => s"${p.title} ${p.firstname} ${p.lastname} (${p.faculty})"
   }
 
-  private def fmtPrerequisites(xs: List[String]): String =
-    if (xs.isEmpty) "Keine"
-    else xs.mkString(", ")
+  private def fmtPrerequisites(
+      prerequisites: Option[PrerequisiteEntry]
+  ): String =
+    prerequisites match {
+      case None    => "Keine"
+      case Some(p) => p.modules.mkString("\n") // TODO use all fields
+    }
 
-  private def fmtStudyPrograms(xs: List[String]): String =
+  private def fmtPOMandatory(pos: POs): String = {
+    val xs = pos.mandatory
     if (xs.isEmpty) "Keine"
-    else xs.mkString(", ")
+    else xs.map(_.studyProgram).mkString(", ") // TODO use all fields
+  }
 
   private def moduleRelationRow(relation: ModuleRelation): Printer[Unit] =
     relation match {
@@ -52,10 +58,15 @@ class ModuleCompendiumPrinterImpl extends ModuleCompendiumPrinter {
     if (d % 1 == 0) d.toInt.toString
     else d.toString.replace('.', ',')
 
-  private def fmtAssessmentMethod(am: AssessmentMethodPercentage): String =
-    am.percentage.fold(am.assessmentMethod.deLabel)(d =>
-      s"${am.assessmentMethod.deLabel} (${fmtDouble(d)} %)"
-    )
+  // TODO use all fields
+  private def fmtAssessmentMethod(ams: AssessmentMethods): String =
+    ams.mandatory
+      .map { am =>
+        am.percentage.fold(am.method.deLabel)(d =>
+          s"${am.method.deLabel} (${fmtDouble(d)} %)"
+        )
+      }
+      .mkString(", ")
 
   private def header(title: String) =
     prefix(s"## $title")
@@ -88,17 +99,14 @@ class ModuleCompendiumPrinterImpl extends ModuleCompendiumPrinter {
       .skip(row("Modulbezeichnung", m.title))
       .skip(row("Art des Moduls", m.kind.deLabel))
       .skipOpt(m.relation.map(moduleRelationRow))
-      .skip(row("ECTS credits", fmtDouble(m.credits)))
+      .skip(row("ECTS credits", fmtDouble(m.credits.value)))
       .skip(row("Sprache", m.language.de_label))
       .skip(row("Dauer des Moduls", s"${m.duration} Semester"))
-      .skip(
-        row("Empfohlenes Studiensemester", m.recommendedSemester.toString)
-      )
       .skip(row("Häufigkeit des Angebots", s"Jedes ${m.frequency.deLabel}"))
       .skip(
         row(
           "Modulverantwortliche*r",
-          m.responsibilities.coordinators.map(fmtPeople).mkString(", ")
+          m.responsibilities.moduleManagement.map(fmtPeople).mkString(", ")
         )
       )
       .skip(
@@ -110,39 +118,32 @@ class ModuleCompendiumPrinterImpl extends ModuleCompendiumPrinter {
       .skip(
         row(
           "Prüfungsformen",
-          m.assessmentMethods.map(fmtAssessmentMethod).mkString(", ")
+          fmtAssessmentMethod(m.assessmentMethods)
         )
       )
-      .skip(row("Workload", s"${m.workload.total} h"))
-      .skip(row("  Vorlesung", s"${m.workload.lecture} h"))
-      .skip(row("  Seminar", s"${m.workload.seminar} h"))
-      .skip(row("  Praktikum", s"${m.workload.practical} h"))
-      .skip(row("  Übung", s"${m.workload.exercise} h"))
-      .skip(row("  Selbststudium", s"${m.workload.selfStudy} h"))
+      .skip(row("Workload", ""))
+      .skip(row("\tVorlesung", s"${m.workload.lecture} h"))
+      .skip(row("\tSeminar", s"${m.workload.seminar} h"))
+      .skip(row("\tPraktikum", s"${m.workload.practical} h"))
+      .skip(row("\tÜbung", s"${m.workload.exercise} h"))
+      .skip(row("\tProjektbetreuung", s"${m.workload.projectSupervision} h"))
+      .skip(row("\tProjektarbeit", s"${m.workload.projectWork} h"))
       .skip(
         row(
           "Empfohlene Voraussetzungen",
-          fmtPrerequisites(m.recommendedPrerequisites)
+          fmtPrerequisites(m.prerequisites.recommended)
         )
       )
       .skip(
         row(
           "Zwingende Voraussetzungen",
-          fmtPrerequisites(m.requiredPrerequisites)
-        )
-      )
-      .skip(
-        row(
-          "Zusätzliche Voraussetzungen",
-          if (c.recommendedPrerequisitesBody.trim.nonEmpty)
-            linkToHeader(c.recommendedPrerequisitesHeader)
-          else "Keine️"
+          fmtPrerequisites(m.prerequisites.required)
         )
       )
       .skip(
         row(
           "Verwendung des Moduls in weiteren Studiengängen",
-          fmtStudyPrograms(m.po)
+          fmtPOMandatory(m.pos)
         )
       )
       .skip(newline)
@@ -156,12 +157,6 @@ class ModuleCompendiumPrinterImpl extends ModuleCompendiumPrinter {
       )
       .skip(
         contentBlock(c.recommendedReadingHeader, c.recommendedReadingBody)
-      )
-      .skip(
-        contentBlock(
-          c.recommendedPrerequisitesHeader,
-          c.recommendedPrerequisitesBody
-        )
       )
       .skip(contentBlock(c.particularitiesHeader, c.particularitiesBody))
       .skip(prefix("---"))

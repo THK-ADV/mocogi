@@ -1,7 +1,7 @@
 package git.subscriber
 
 import akka.actor.{Actor, Props}
-import database.table.ResponsibilityType.Coordinator
+import database.table.ResponsibilityType.ModuleManagement
 import database.table.{
   AssessmentMethodMetadataDbEntry,
   MetadataDbEntry,
@@ -76,10 +76,10 @@ private final class MetadataDatabaseActor(
     def responsibilitiesFmt(): String =
       fmtList(responsibilities) { responsibilities =>
         val (cord, lec) = responsibilities.partitionMap(e =>
-          if (e.kind == Coordinator) Left(e.person) else Right(e.person)
+          if (e.kind == ModuleManagement) Left(e.person) else Right(e.person)
         )
         s"""
-           |    - coordinator: ${fmtList(cord)(_.mkString(","))}
+           |    - module_management: ${fmtList(cord)(_.mkString(","))}
            |    - lecturer: ${fmtList(lec)(_.mkString(","))}""".stripMargin
       }
 
@@ -105,19 +105,18 @@ private final class MetadataDatabaseActor(
          |  - credits: ${metadata.credits}
          |  - language: ${metadata.language}
          |  - duration: ${metadata.duration}
-         |  - recommended semester: ${metadata.recommendedSemester}
          |  - season: ${metadata.season}
-         |  - workload total: ${metadata.workloadTotal}
          |  - workload lecture: ${metadata.workloadLecture}
          |  - workload seminar: ${metadata.workloadSeminar}
          |  - workload practical: ${metadata.workloadPractical}
          |  - workload exercise: ${metadata.workloadExercise}
-         |  - workload self study: ${metadata.workloadSelfStudy}
+         |  - workload project supervision: ${metadata.workloadProjectSupervision}
+         |  - workload project work: ${metadata.workloadProjectWork}
          |  - recommended prerequisites: ${metadata.recommendedPrerequisites}
          |  - required prerequisites: ${metadata.requiredPrerequisites}
          |  - status: ${metadata.status}
          |  - location: ${metadata.location}
-         |  - po: ${metadata.po}
+         |  - po_mandatory: ${metadata.poMandatory}
          |  - responsibilities: ${responsibilitiesFmt()}
          |   -assessment methods: ${assessmentMethodsFmt()}""".stripMargin
     )

@@ -5,6 +5,6 @@ import parsing.types.Status
 import javax.inject.Singleton
 
 @Singleton
-final class StatusFileParser extends SimpleFileParser[Status] {
+final class StatusFileParser extends LabelFileParser[Status] {
   override protected def makeType = Status.tupled
 }

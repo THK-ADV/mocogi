@@ -19,41 +19,41 @@ class ModuleTypeFileParserSpec
   "A Module Type Parser" should {
     "parse a single module type" in {
       val input =
-        """mandatory:
-          |  de_label: Pflicht
-          |  en_label: mandatory""".stripMargin
+        """module:
+          |  de_label: Modul
+          |  en_label: Module""".stripMargin
       val (res, rest) = parser.parse(input)
       assert(
-        res.value == List(ModuleType("mandatory", "Pflicht", "mandatory"))
+        res.value == List(ModuleType("module", "Modul", "Module"))
       )
       assert(rest.isEmpty)
     }
 
     "parse multiple module types" in {
       val input =
-        """mandatory:
-          |  de_label: Pflicht
-          |  en_label: mandatory
-          |wpf:
-          |  de_label: Wahlpflichtfach
-          |  en_label: choosable course""".stripMargin
+        """module:
+          |  de_label: Modul
+          |  en_label: Module
+          |generic_module:
+          |  de_label: Generisches Modul
+          |  en_label: generic module""".stripMargin
       val (res, rest) = parser.parse(input)
       assert(
         res.value == List(
-          ModuleType("mandatory", "Pflicht", "mandatory"),
-          ModuleType("wpf", "Wahlpflichtfach", "choosable course")
+          ModuleType("module", "Modul", "Module"),
+          ModuleType("generic_module", "Generisches Modul", "generic module")
         )
       )
       assert(rest.isEmpty)
     }
 
-    "return all modules in module_type.yaml" in {
+    "return all modules in types.yaml" in {
       val (res, rest) =
-        withFile0("test/parsing/res/module_type.yaml")(parser.parse)
+        withFile0("test/parsing/res/types.yaml")(parser.parse)
       assert(
         res.value == List(
-          ModuleType("mandatory", "Pflicht", "--"),
-          ModuleType("wpf", "Wahlpflichtfach", "--")
+          ModuleType("module", "Module", "--"),
+          ModuleType("generic_module", "Generisches Modul", "--")
         )
       )
       assert(rest.isEmpty)

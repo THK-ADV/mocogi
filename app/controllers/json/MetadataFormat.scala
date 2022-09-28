@@ -11,14 +11,44 @@ trait MetadataFormat
     with AssessmentMethodFormat
     with PersonFormat
     with StatusFormat
-    with LocationFormat {
+    with LocationFormat
+    with CompetencesFormat
+    with GlobalCriteriaFormat
+    with FocusAreaFormat
+    with StudyProgramFormat {
+
+  implicit val participantsFormat: Format[Participants] =
+    Json.format[Participants]
+
+  implicit val poOptionalFormat: Format[POOptional] =
+    Json.format[POOptional]
+
+  implicit val poMandatoryFormat: Format[POMandatory] =
+    Json.format[POMandatory]
+
+  implicit val posFormat: Format[POs] =
+    Json.format[POs]
+
+  implicit val prerequisiteFormat: Format[PrerequisiteEntry] =
+    Json.format[PrerequisiteEntry]
+
+  implicit val prerequisitesFormat: Format[Prerequisites] =
+    Json.format[Prerequisites]
+
+  implicit val ectsFocusAreaContribution: Format[ECTSFocusAreaContribution] =
+    Json.format[ECTSFocusAreaContribution]
+
+  implicit val ectsFormat: Format[ECTS] =
+    Json.format[ECTS]
 
   implicit val workloadFormat: Format[Workload] =
     Json.format[Workload]
 
-  implicit val assessmentMethodPercentFormat
-      : Format[AssessmentMethodPercentage] =
-    Json.format[AssessmentMethodPercentage]
+  implicit val assessmentMethodEntry: Format[AssessmentMethodEntry] =
+    Json.format[AssessmentMethodEntry]
+
+  implicit val assessmentMethods: Format[AssessmentMethods] =
+    Json.format[AssessmentMethods]
 
   implicit val responsibilitiesFormat: Format[Responsibilities] =
     Json.format[Responsibilities]

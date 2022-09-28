@@ -1,17 +1,17 @@
 ---v1.0s
-module_code: 00895144-30e4-4bd2-b800-bb706686d950
-module_title: Full Stack iOS Entwicklung mit Swift
-module_abbrev: FSIOS
-module_type: module_type.wpf
-module_relation:
+id: 00895144-30e4-4bd2-b800-bb706686d950
+title: Full Stack iOS Entwicklung mit Swift
+abbreviation: FSIOS
+type: type.module
+relation:
   parent: module.moco
-credit_points: 5
+ects: 5
 language: lang.de
-duration_of_module: 1
+duration: 1
 recommended_semester: 4
 frequency: season.ss
 responsibilities:
-  coordinator: person.ado
+  module_management: person.ado
   lecturers: person.ado
 assessment-methods:
   - assessment.project (70 %)
@@ -22,13 +22,13 @@ workload: 150
   practical: 0
   exercise: 0
   self_study: 105
-recommended-prerequisites:
+recommended_prerequisites:
  - module.ap1
  - module.ap2
-required-prerequisites: none
+required_prerequisites: none
 status: status.active
 location: location.gm
-po:
+po_mandatory:
   - AI
   - MI
   - ITM

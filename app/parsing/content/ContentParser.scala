@@ -7,16 +7,6 @@ import parsing.types.Content
 object ContentParser {
   val contentParser =
     prefix("## (de)")
-      .skip(zeroOrMoreSpaces)
-      .take(literal("Sonstige empfohlene Voraussetzungen"))
-      .skip(prefix(":"))
-      .skip(newline)
-      .zip(prefixTo("## (en)"))
-      .skip(zeroOrMoreSpaces)
-      .take(literal("Other recommended prerequisites"))
-      .skip(prefix(":"))
-      .skip(newline)
-      .take(prefixTo("## (de)"))
       .take(
         zeroOrMoreSpaces
           .take(literal("Angestrebte Lernergebnisse"))
@@ -87,8 +77,7 @@ object ContentParser {
               (deH2, deC2, enH2, enC2),
               (deH3, deC3, enH3, enC3),
               (deH4, deC4, enH4, enC4),
-              (deH5, deC5, enH5, enC5),
-              (deH6, deC6, enH6, enC6)
+              (deH5, deC5, enH5, enC5)
             ) =>
           (
             Content(
@@ -101,9 +90,7 @@ object ContentParser {
               deH4,
               deC4,
               deH5,
-              deC5,
-              deH6,
-              deC6
+              deC5
             ),
             Content(
               enH1,
@@ -115,9 +102,7 @@ object ContentParser {
               enH4,
               enC4,
               enH5,
-              enC5,
-              enH6,
-              enC6
+              enC5
             )
           )
       }

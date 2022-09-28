@@ -19,15 +19,14 @@ final class MetadataTable(tag: Tag)
   def credits = column[Double]("credits")
   def language = column[String]("language")
   def duration = column[Int]("duration")
-  def recommendedSemester = column[Int]("recommended_semester")
   def season = column[String]("season")
 
-  def workloadTotal = column[Int]("workload_total")
   def workloadLecture = column[Int]("workload_lecture")
   def workloadSeminar = column[Int]("workload_seminar")
   def workloadPractical = column[Int]("workload_practical")
   def workloadExercise = column[Int]("workload_exercise")
-  def workloadSelfStudy = column[Int]("workload_self_study")
+  def workloadProjectSupervision = column[Int]("workload_project_supervision")
+  def workloadProjectWork = column[Int]("workload_project_work")
 
   def recommendedPrerequisites = column[String]("recommended-prerequisites")
   def requiredPrerequisites = column[String]("required-prerequisites")
@@ -62,15 +61,14 @@ final class MetadataTable(tag: Tag)
     credits,
     language,
     duration,
-    recommendedSemester,
     season,
     (
-      workloadTotal,
       workloadLecture,
       workloadSeminar,
       workloadPractical,
       workloadExercise,
-      workloadSelfStudy
+      workloadProjectSupervision,
+      workloadProjectWork
     ),
     recommendedPrerequisites,
     requiredPrerequisites,
@@ -89,7 +87,6 @@ final class MetadataTable(tag: Tag)
           (Option[String], Option[String]),
           Double,
           String,
-          Int,
           Int,
           String,
           (Int, Int, Int, Int, Int, Int),
@@ -110,15 +107,14 @@ final class MetadataTable(tag: Tag)
           credits,
           language,
           duration,
-          recommendedSemester,
           season,
           (
-            workloadTotal,
             workloadLecture,
             workloadSeminar,
             workloadPractical,
             workloadExercise,
-            workloadSelfStudy
+            workloadProjectSupervision,
+            workloadProjectWork
           ),
           recommendedPrerequisites,
           requiredPrerequisites,
@@ -137,14 +133,13 @@ final class MetadataTable(tag: Tag)
         credits,
         language,
         duration,
-        recommendedSemester,
         season,
-        workloadTotal,
         workloadLecture,
         workloadSeminar,
         workloadPractical,
         workloadExercise,
-        workloadSelfStudy,
+        workloadProjectSupervision,
+        workloadProjectWork,
         recommendedPrerequisites,
         requiredPrerequisites,
         status,
@@ -163,7 +158,6 @@ final class MetadataTable(tag: Tag)
         (Option[String], Option[String]),
         Double,
         String,
-        Int,
         Int,
         String,
         (Int, Int, Int, Int, Int, Int),
@@ -186,21 +180,20 @@ final class MetadataTable(tag: Tag)
           a.credits,
           a.language,
           a.duration,
-          a.recommendedSemester,
           a.season,
           (
-            a.workloadTotal,
             a.workloadLecture,
             a.workloadSeminar,
             a.workloadPractical,
             a.workloadExercise,
-            a.workloadSelfStudy
+            a.workloadProjectSupervision,
+            a.workloadProjectWork
           ),
           a.recommendedPrerequisites,
           a.requiredPrerequisites,
           a.status,
           a.location,
-          a.po
+          a.poMandatory
         )
       )
 }

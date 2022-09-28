@@ -19,15 +19,6 @@ class ContentParserSpec
 
       assert(rest.isEmpty)
 
-      assert(
-        de.recommendedPrerequisitesHeader == "Sonstige empfohlene Voraussetzungen"
-      )
-      assert(de.recommendedPrerequisitesBody == "\n")
-      assert(
-        en.recommendedPrerequisitesHeader == "Other recommended prerequisites"
-      )
-      assert(en.recommendedPrerequisitesBody == "\n")
-
       assert(de.learningOutcomeHeader == "Angestrebte Lernergebnisse")
       assert(de.learningOutcomeBody == "\n")
       assert(en.learningOutcomeHeader == "Learning Outcome")
@@ -64,15 +55,6 @@ class ContentParserSpec
       val (de, en) = res.value
 
       assert(rest.isEmpty)
-
-      assert(
-        de.recommendedPrerequisitesHeader == "Sonstige empfohlene Voraussetzungen"
-      )
-      assert(de.recommendedPrerequisitesBody == "\nProgrammieren\n\n")
-      assert(
-        en.recommendedPrerequisitesHeader == "Other recommended prerequisites"
-      )
-      assert(en.recommendedPrerequisitesBody == "\nProgramming\n\n")
 
       assert(de.learningOutcomeHeader == "Angestrebte Lernergebnisse")
       assert(de.learningOutcomeBody == "\nProgrammieren lernen\n\n")

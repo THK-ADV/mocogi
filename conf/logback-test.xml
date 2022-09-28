@@ -11,6 +11,7 @@
   <logger name="application" level="INFO"/>
   <logger name="slick" level="INFO"/>
   <logger name="httpResponse" level="ERROR"/>
+  <logger name="org.apache.kafka" level="OFF"/>
 
   <root level="INFO">
     <appender-ref ref="STDOUT"/>

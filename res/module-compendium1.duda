@@ -1,15 +1,15 @@
 ---
-module_code: 00895144-30e4-4bd2-b800-bb706686d950
-module_title: Module A
-module_abbrev: MA
-module_type: module_type.mandatory
-credit_points: 5
+id: 00895144-30e4-4bd2-b800-bb706686d950
+title: Module A
+abbreviation: MA
+type: type.module
+ects: 5
 language: lang.de
-duration_of_module: 1
+duration: 1
 recommended_semester: 3
 frequency: season.ws
 responsibilities:
-coordinator: person.ald
+module_management: person.ald
 lecturers:
  - person.ald
  - person.abe
@@ -20,14 +20,14 @@ workload: 150
   practical: 18
   exercise: 18
   self_study: 78
-recommended-prerequisites:
+recommended_prerequisites:
  - module.ap1
  - module.ap2
  - module.ma1
-required-prerequisites: none
+required_prerequisites: none
 status: status.active
 location: location.gm
-po: AI2
+po_mandatory: AI2
 ---
 
 ## (de) Angestrebte Lernergebnisse:

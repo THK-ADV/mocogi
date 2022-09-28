@@ -39,7 +39,11 @@ final class ModuleCompendiumParser @Inject() (
         assessmentMethods,
         moduleTypes,
         seasons,
-        persons
+        persons,
+        Nil, // TODO
+        Nil,
+        Nil,
+        Nil
       )
       .skip(newline.many())
       .zip(contentParser)

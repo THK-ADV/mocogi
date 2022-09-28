@@ -1,111 +1,74 @@
 package parsing.metadata
 
+import helper.FakeStudyPrograms
 import org.scalatest.EitherValues
 import org.scalatest.wordspec.AnyWordSpec
 import parsing.ParserSpecHelper
-import parsing.metadata.PrerequisitesParser.{
-  recommendedPrerequisitesParser,
-  requiredPrerequisitesParser
-}
+import parsing.metadata.PrerequisitesParser.recommendedPrerequisitesParser
+import parsing.types.{PrerequisiteEntry, StudyProgram}
 
 class PrerequisitesParserSpec
     extends AnyWordSpec
     with ParserSpecHelper
-    with EitherValues {
+    with EitherValues
+    with FakeStudyPrograms {
 
-  "A Prerequisites Parser" when {
-    "parse recommended prerequisites" should {
-      "return no recommended prerequisites when there is none" in {
-        val input = "recommended-prerequisites: none\n"
-        val (res, rest) = recommendedPrerequisitesParser.parse(input)
-        assert(res.value == Nil)
-        assert(rest.isEmpty)
-      }
-
-      "return a valid recommended prerequisite when there is one" in {
-        val input = "recommended-prerequisites: module.ap1\n"
-        val (res, rest) = recommendedPrerequisitesParser.parse(input)
-        assert(res.value == List("ap1"))
-        assert(rest.isEmpty)
-      }
-
-      "return a valid recommended prerequisite when there is one ignoring whitespaces" in {
-        val input = "recommended-prerequisites:  module.ap1\n"
-        val (res, rest) = recommendedPrerequisitesParser.parse(input)
-        assert(res.value == List("ap1"))
-        assert(rest.isEmpty)
-      }
-
-      "return multiple recommended prerequisites seperated by dashes" in {
-        val input =
-          """recommended-prerequisites:
-            |-module.ap1
-            |-module.ap2
-            |-module.ma1
-            |""".stripMargin
-        val (res, rest) = recommendedPrerequisitesParser.parse(input)
-        assert(res.value == List("ap1", "ap2", "ma1"))
-        assert(rest.isEmpty)
-      }
-
-      "return multiple recommended prerequisites seperated by dashes ignoring whitespaces" in {
-        val input =
-          """recommended-prerequisites: 
-            | - module.ap1
-            | - module.ap2
-            | - module.ma1
-            |""".stripMargin
-        val (res, rest) = recommendedPrerequisitesParser.parse(input)
-        assert(res.value == List("ap1", "ap2", "ma1"))
-        assert(rest.isEmpty)
-      }
+  "A Prerequisites Parser" should {
+    "parse prerequisites" in {
+      val input =
+        """recommended_prerequisites:
+          |  text: >
+          |    benötigt werden kenntnisse in algebra und java
+          |
+          |    und ein pc.
+          |  modules:
+          |    - module.ap1
+          |    - module.ap2
+          |  study_programs:
+          |    - study_program.mi4""".stripMargin
+      val (res, rest) = recommendedPrerequisitesParser.parse(input)
+      assert(
+        res.value == PrerequisiteEntry(
+          "benötigt werden kenntnisse in algebra und java\nund ein pc.\n",
+          List("ap1", "ap2"),
+          List(StudyProgram("mi4"))
+        )
+      )
+      assert(rest.isEmpty)
     }
 
-    "parse required prerequisites" should {
-      "return no required prerequisites when there is none" in {
-        val input = "required-prerequisites: none\n"
-        val (res, rest) = requiredPrerequisitesParser.parse(input)
-        assert(res.value == Nil)
-        assert(rest.isEmpty)
-      }
+    "parse prerequisites with not text and no study programs" in {
+      val input =
+        """recommended_prerequisites:
+          |  modules:
+          |    - module.ap1
+          |    - module.ap2
+          |  """.stripMargin
+      val (res, rest) = recommendedPrerequisitesParser.parse(input)
+      assert(
+        res.value == PrerequisiteEntry(
+          "",
+          List("ap1", "ap2"),
+          Nil
+        )
+      )
+      assert(rest.isEmpty)
+    }
 
-      "return a valid required prerequisite when there is one" in {
-        val input = "required-prerequisites: module.ap1\n"
-        val (res, rest) = requiredPrerequisitesParser.parse(input)
-        assert(res.value == List("ap1"))
-        assert(rest.isEmpty)
-      }
-
-      "return a valid required prerequisite when there is one ignoring whitespaces" in {
-        val input = "required-prerequisites:  module.ap1\n"
-        val (res, rest) = requiredPrerequisitesParser.parse(input)
-        assert(res.value == List("ap1"))
-        assert(rest.isEmpty)
-      }
-
-      "return multiple required prerequisites seperated by dashes" in {
-        val input =
-          """required-prerequisites:
-            |-module.ap1
-            |-module.ap2
-            |-module.ma1
-            |""".stripMargin
-        val (res, rest) = requiredPrerequisitesParser.parse(input)
-        assert(res.value == List("ap1", "ap2", "ma1"))
-        assert(rest.isEmpty)
-      }
-
-      "return multiple required prerequisites seperated by dashes ignoring whitespaces" in {
-        val input =
-          """required-prerequisites: 
-            | - module.ap1
-            | - module.ap2
-            | - module.ma1
-            |""".stripMargin
-        val (res, rest) = requiredPrerequisitesParser.parse(input)
-        assert(res.value == List("ap1", "ap2", "ma1"))
-        assert(rest.isEmpty)
-      }
+    "parse prerequisites with not text and no modules" in {
+      val input =
+        """recommended_prerequisites:
+          |  study_programs:
+          |    - study_program.mi4""".stripMargin
+      val (res, rest) = recommendedPrerequisitesParser.parse(input)
+      assert(
+        res.value == PrerequisiteEntry(
+          "",
+          Nil,
+          List(StudyProgram("mi4"))
+        )
+      )
+      assert(rest.isEmpty)
     }
   }
 }

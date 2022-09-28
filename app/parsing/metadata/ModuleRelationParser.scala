@@ -27,7 +27,7 @@ object ModuleRelationParser {
         .map[ModuleRelation](ModuleRelation.Parent.apply)
     )
 
-    prefix("module_relation:")
+    prefix("relation:")
       .skip(newline)
       .skip(zeroOrMoreSpaces)
       .take(go)

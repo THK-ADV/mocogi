@@ -1,0 +1,42 @@
+internationalization:
+  de_label: Internationalisierung
+  de_desc:
+      Internationalisierung ist ein Prozess, der kontinuierlich neue Perspektiven fordert und ermöglicht.
+      Der konstruktive Umgang mit internationaler Vielfalt stellt eine wichtige Handlungskompetenz
+      in zunehmend komplexen und pluralistisch geprägten Gesellschaften dar. Dabei verstehen wir
+      Fremdheit als Möglichkeit des Erkenntnisgewinns und fördern Toleranz, Weltoffenheit und die
+      Sensibilität für kulturelle Differenz.
+  en_label: Internationalization
+  en_desc:
+
+interdisciplinarity:
+  de_label: Interdisziplinarität
+  de_desc:
+    Unter Interdisziplinarität verstehen wir die Bearbeitung komplexer Fragestellungen unter Einbeziehung
+    verschiedener Fachperspektiven in einem wissenschaftlichen Kooperationsprozess.
+  en_label: Interdisciplinarity
+  en_desc:
+
+digitization:
+  de_label:  Digitalisierung
+  de_desc:
+    Die zunehmende Digitalisierung aller Lebensbereiche erfordert eine digital unterstützte Bildung,
+    die unsere Studierenden zur gesellschaftlichen Teilhabe und verantwortungsvollen
+    Mitgestaltung digitaler Lebens- und Arbeitswelten befähigt. In der Lehre nutzen wir das Potenzial
+    der Digitalisierung, um Studierenden individualisierte Lernzugänge zu ermöglichen,
+    internationale Kooperationen in den Studiengängen zu fördern und Bildung insgesamt zugänglicher
+    und verstärkt inklusiv zu gestalten.
+  en_label: Digitization
+  en_desc:
+
+transfer:
+  de_label: Transfer
+  de_desc:
+      Transfer ist für uns gelebte Interaktion und Dialog zwischen Hochschule und Gesellschaft mit der
+      Zielsetzung, gemeinsam Herausforderungen unserer Zeit aufzunehmen, Frage- und Problemstellungen
+      zu definieren und Lösungswege zu entwickeln, zu realisieren und/oder zu evaluieren. In unseren
+      Studiengängen nutzen wir den Ideen-, Wissens- und Technologietransfer, um gesellschaftliche
+      Anforderungen, akademische Bildung und die Bedürfnisse der Berufs- und Arbeitswelt in Einklang zu
+      bringen.
+  en_label: Transfer
+  en_desc:

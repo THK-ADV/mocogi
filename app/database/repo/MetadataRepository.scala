@@ -1,9 +1,7 @@
 package database.repo
 
-import database.table.ResponsibilityType.{Coordinator, Lecturer}
 import database.table._
 import git.GitFilePath
-import parsing.types.ModuleRelation.{Child, Parent}
 import parsing.types._
 import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfigProvider}
 import slick.jdbc.JdbcProfile
@@ -39,9 +37,11 @@ final class MetadataRepository @Inject() (
     TableQuery[AssessmentMethodTable]
 
   def all(): Future[Seq[GetResult]] =
-    fetchWithDependencies(metadataTable)
+    Future.successful(Nil)
+  // fetchWithDependencies(metadataTable)
 
-  def delete(path: GitFilePath): Future[Unit] = {
+  def delete(path: GitFilePath): Future[Unit] = Future.unit
+  /*{
     def go(
         query: Query[MetadataTable, MetadataDbEntry, Seq],
         m: MetadataDbEntry
@@ -73,9 +73,11 @@ final class MetadataRepository @Inject() (
           else go(query, exists.head)
       } yield ()
     )
-  }
+  }*/
 
-  def update(m: Metadata, path: GitFilePath): Future[AddResult] = {
+  def update(m: Metadata, path: GitFilePath): Future[AddResult] =
+    Future.failed(new Throwable("currently unsupported"))
+  /*
     def go(query: Query[MetadataTable, MetadataDbEntry, Seq]) = {
       val mdb = toMetadataDbEntry(m, path)
       val rdb = responsibilityDbEntries(m)
@@ -125,12 +127,12 @@ final class MetadataRepository @Inject() (
           else go(query)
       } yield res
     )
-  }
+  }*/
 
-  def create(
-      m: Metadata,
-      path: GitFilePath
-  ): Future[AddResult] = {
+  def create(m: Metadata, path: GitFilePath): Future[AddResult] =
+    Future.failed(new Throwable("currently unsupported"))
+
+  /*{
     def go() = {
       val mdb = toMetadataDbEntry(m, path)
       val rdb = responsibilityDbEntries(m)
@@ -138,7 +140,7 @@ final class MetadataRepository @Inject() (
 
       (
         for {
-          a <- metadataTable returning metadataTable += (mdb)
+          a <- metadataTable returning metadataTable += mdb
           b <- DBIO.sequence(
             rdb.map(responsibilityTable returning responsibilityTable += _)
           )
@@ -162,9 +164,9 @@ final class MetadataRepository @Inject() (
           else alreadyExists()
       } yield res
     )
-  }
+  }*/
 
-  private def fetchWithDependencies(
+  /*private def fetchWithDependencies(
       query: Query[MetadataTable, MetadataDbEntry, Seq]
   ): Future[Seq[GetResult]] = {
     val baseQ = for {
@@ -193,7 +195,7 @@ final class MetadataRepository @Inject() (
       val ps = xs.flatMap(_._3)
       val (coord, lec) = resp.zip(ps).partitionMap { case (r, p) =>
         assert(r.person == p.abbrev) // TODO
-        Either.cond(r.kind == Coordinator, p, p)
+        Either.cond(r.kind == ModuleManagement, p, p)
       }
       val aps = xs.flatMap(_._4)
       val ams = xs.flatMap(_._5)
@@ -208,17 +210,19 @@ final class MetadataRepository @Inject() (
     }.toSeq)
 
     db.run(action.transactionally)
-  }
+  }*/
 
   def exists(m: Metadata): Future[Boolean] =
-    db.run(existsQuery(m).result.map(_.nonEmpty))
+    Future.successful(true)
 
-  private def existsQuery(
+  // db.run(existsQuery(m).result.map(_.nonEmpty))
+
+  /*  private def existsQuery(
       m: Metadata
   ): Query[MetadataTable, MetadataDbEntry, Seq] =
-    metadataTable.filter(_.id === m.id)
+    metadataTable.filter(_.id === m.id)*/
 
-  private def toMetadataDbEntry(m: Metadata, path: GitFilePath) = {
+  /*private def toMetadataDbEntry(m: Metadata, path: GitFilePath) = {
     val (children, parent) = fromRelation(m.relation)
     MetadataDbEntry(
       m.id,
@@ -228,22 +232,25 @@ final class MetadataRepository @Inject() (
       m.kind.abbrev,
       children,
       parent,
-      m.credits,
+      m.credits.value,
       m.language.abbrev,
       m.duration,
-      m.recommendedSemester,
       m.frequency.abbrev,
-      m.workload.total,
       m.workload.lecture,
       m.workload.seminar,
       m.workload.practical,
       m.workload.exercise,
-      m.workload.selfStudy,
-      fromList(m.recommendedPrerequisites),
-      fromList(m.requiredPrerequisites),
+      m.workload.projectSupervision,
+      m.workload.projectWork,
+      fromList(
+        m.recommendedPrerequisites.map(_.modules) getOrElse Nil
+      ), // TODO use all fields
+      fromList(
+        m.requiredPrerequisites.map(_.modules) getOrElse Nil
+      ), // TODO use all fields
       m.status.abbrev,
       m.location.abbrev,
-      fromList(m.po)
+      fromList(m.poMandatory.map(_.studyProgram)) // TODO
     )
   }
 
@@ -257,11 +264,11 @@ final class MetadataRepository @Inject() (
   private def assessmentMethodMetadataDbEntries(
       m: Metadata
   ): List[AssessmentMethodMetadataDbEntry] =
-    m.assessmentMethods.map(a =>
+    m.assessmentMethodsMandatory.map(a =>
       AssessmentMethodMetadataDbEntry(
         m.id,
-        a.assessmentMethod.abbrev,
-        a.percentage
+        a.method.abbrev,
+        a.percentage // TODO use all fields
       )
     )
 
@@ -271,8 +278,8 @@ final class MetadataRepository @Inject() (
     val lecturers = m.responsibilities.lecturers.map(p =>
       ResponsibilityDbEntry(m.id, p.abbrev, Lecturer)
     )
-    val coordinator = m.responsibilities.coordinators.map(p =>
-      ResponsibilityDbEntry(m.id, p.abbrev, Coordinator)
+    val coordinator = m.responsibilities.moduleManagement.map(p =>
+      ResponsibilityDbEntry(m.id, p.abbrev, ModuleManagement)
     )
     lecturers ::: coordinator
   }
@@ -296,26 +303,31 @@ final class MetadataRepository @Inject() (
       m.abbrev,
       mt,
       toRelation(m.children, m.parent),
-      m.credits,
+      ECTS(m.credits, Nil),
       lang,
       m.duration,
-      m.recommendedSemester,
       se,
       Responsibilities(coord.toList, lec.toList),
-      amps.toList,
+      amps.toList.map(a => AssessmentMethodEntry(a.assessmentMethod, a.percentage, Nil)), // TODO use all fields
+      Nil, // TODO add support
       Workload(
-        m.workloadTotal,
         m.workloadLecture,
         m.workloadSeminar,
         m.workloadPractical,
         m.workloadExercise,
-        m.workloadSelfStudy
+        m.workloadProjectSupervision,
+        m.workloadProjectWork
       ),
-      toList(m.recommendedPrerequisites),
-      toList(m.requiredPrerequisites),
+      Some(PrerequisiteEntry("", toList(m.recommendedPrerequisites), Nil)),
+      Some(PrerequisiteEntry("", toList(m.requiredPrerequisites), Nil)),
       st,
       loc,
-      toList(m.po)
+      toList(m.poMandatory).map(po => POMandatory(po, Nil, Nil)), // TODO
+      Nil,
+      None,
+      Nil,
+      Nil,
+      Nil
     )
   }
 
@@ -333,4 +345,5 @@ final class MetadataRepository @Inject() (
       case None =>
         (Option.empty[String], Option.empty[String])
     }
+   */
 }

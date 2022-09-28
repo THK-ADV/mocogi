@@ -1,4 +1,4 @@
-package parsing.compendium
+package helper
 
 import parsing.types.Season
 

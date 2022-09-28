@@ -5,6 +5,6 @@ import parsing.types.Language
 import javax.inject.Singleton
 
 @Singleton
-final class LanguageFileParser extends SimpleFileParser[Language] {
+final class LanguageFileParser extends LabelFileParser[Language] {
   override protected def makeType = Language.tupled
 }

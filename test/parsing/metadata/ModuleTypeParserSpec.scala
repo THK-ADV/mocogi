@@ -20,21 +20,22 @@ class ModuleTypeParserSpec
   "A Module Type Parser" should {
     "parse module types if they are valid" in {
       val (res1, rest1) =
-        parser.parse("module_type: module_type.mandatory\n")
-      assert(res1.value == ModuleType("mandatory", "Pflicht", "--"))
+        parser.parse("type: type.module\n")
+      assert(res1.value == ModuleType("module", "Modul", "--"))
       assert(rest1.isEmpty)
 
       val (res2, rest2) =
-        parser.parse("module_type: module_type.wpf\n")
-      assert(res2.value == ModuleType("wpf", "Wahlpflichtfach", "--"))
+        parser.parse("type: type.generic_module\n")
+      assert(res2.value == ModuleType("generic_module", "Generisches Modul", "--"))
       assert(rest2.isEmpty)
     }
 
     "fail if the module type is unknown" in {
       assertError(
         parser,
-        "module_type: module_type.optional\n",
-        "module_type.mandatory or module_type.wpf"
+        "type: type.optional\n",
+        "type.module or type.generic_module",
+        Some("type.optional\n")
       )
     }
   }

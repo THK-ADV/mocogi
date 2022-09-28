@@ -1,17 +1,26 @@
 package parsing.metadata
 
 import parser.Parser
-import parser.Parser.{always, never, newline, optional}
+import parser.Parser._
 import parser.ParserOps._
+import parsing.metadata.AssessmentMethodParser.{
+  assessmentMethodsMandatoryParser,
+  assessmentMethodsOptionalParser
+}
+import parsing.metadata.CompetencesParser.competencesParser
+import parsing.metadata.ECTSParser.ectsParser
+import parsing.metadata.GlobalCriteriaParser.globalCriteriaParser
 import parsing.metadata.ModuleRelationParser.moduleRelationParser
-import parsing.metadata.POParser.poParser
+import parsing.metadata.POParser.{mandatoryPOParser, optionalPOParser}
+import parsing.metadata.ParticipantsParser.participantsParser
 import parsing.metadata.PrerequisitesParser.{
   recommendedPrerequisitesParser,
   requiredPrerequisitesParser
 }
+import parsing.metadata.TaughtWithParser.taughtWithParser
 import parsing.metadata.WorkloadParser.workloadParser
 import parsing.types._
-import parsing.{doubleForKey, intForKey, stringForKey}
+import parsing.{intForKey, singleLineStringForKey}
 
 import java.util.UUID
 import javax.inject.{Inject, Singleton}
@@ -21,7 +30,6 @@ import scala.util.Try
 final class THKV1Parser @Inject() (
     responsibilitiesParser: ResponsibilitiesParser,
     seasonParser: SeasonParser,
-    assessmentMethodParser: AssessmentMethodParser,
     statusParser: StatusParser,
     moduleTypeParser: ModuleTypeParser,
     locationParser: LocationParser,
@@ -29,19 +37,15 @@ final class THKV1Parser @Inject() (
 ) extends MetadataParser {
   override val versionScheme = VersionScheme(1, "s")
 
-  val moduleCodeParser: Parser[UUID] =
-    stringForKey("module_code")
+  val idParser: Parser[UUID] =
+    singleLineStringForKey("id")
       .flatMap(s => Try(UUID.fromString(s)).fold(_ => never("uuid"), always))
 
-  val moduleTitleParser = stringForKey("module_title")
+  val titleParser = singleLineStringForKey("title")
 
-  val moduleAbbrevParser = stringForKey("module_abbrev")
+  val abbreviationParser = singleLineStringForKey("abbreviation")
 
-  val creditPointsParser = doubleForKey("credit_points")
-
-  val durationParser = intForKey("duration_of_module")
-
-  val semesterParser = intForKey("recommended_semester")
+  val durationParser = intForKey("duration")
 
   def parser(implicit
       locations: Seq[Location],
@@ -50,30 +54,96 @@ final class THKV1Parser @Inject() (
       assessmentMethods: Seq[AssessmentMethod],
       moduleTypes: Seq[ModuleType],
       seasons: Seq[Season],
-      persons: Seq[Person]
+      persons: Seq[Person],
+      focusAreas: Seq[FocusArea],
+      competences: Seq[Competence],
+      globalCriteria: Seq[GlobalCriteria],
+      studyPrograms: Seq[StudyProgram]
   ): Parser[Metadata] =
-    moduleCodeParser
-      .zip(moduleTitleParser)
-      .take(moduleAbbrevParser)
+    idParser
+      .zip(titleParser)
+      .take(abbreviationParser)
       .take(moduleTypeParser.parser)
       .take(moduleRelationParser)
-      .take(creditPointsParser)
-      .skip(newline)
+      .take(ectsParser)
+      .skip(optional(newline))
       .take(languageParser.parser)
       .take(durationParser)
       .skip(newline)
-      .take(semesterParser)
-      .skip(newline)
       .take(seasonParser.parser)
       .take(responsibilitiesParser.parser)
-      .take(assessmentMethodParser.parser)
+      .take(
+        assessmentMethodsMandatoryParser
+          .zip(assessmentMethodsOptionalParser.option.map(_.getOrElse(Nil)))
+          .map(AssessmentMethods.tupled)
+      )
       .take(workloadParser)
-      .take(recommendedPrerequisitesParser)
-      .take(requiredPrerequisitesParser)
-      .skip(optional(newline))
+      .skip(newline)
+      .take(
+        recommendedPrerequisitesParser.option
+          .zip(requiredPrerequisitesParser.option)
+          .skip(optional(newline))
+          .map(Prerequisites.tupled)
+      )
       .take(statusParser.parser)
       .take(locationParser.parser)
       .skip(optional(newline))
-      .take(poParser)
-      .map(Metadata.tupled)
+      .take(
+        mandatoryPOParser
+          .zip(optionalPOParser.option.map(_.getOrElse(Nil)))
+          .map(POs.tupled)
+      )
+      .take(
+        participantsParser.option
+          .skip(zeroOrMoreSpaces)
+          .zip(competencesParser.option)
+          .skip(zeroOrMoreSpaces)
+          .take(globalCriteriaParser.option)
+          .skip(zeroOrMoreSpaces)
+          .take(taughtWithParser.option.map(_.getOrElse(Nil)))
+          .skip(zeroOrMoreSpaces)
+      )
+      .map {
+        case (
+              id,
+              title,
+              abbrev,
+              moduleType,
+              relation,
+              ects,
+              lang,
+              duration,
+              season,
+              resp,
+              assessmentMethods,
+              workload,
+              prerequisites,
+              status,
+              location,
+              pos,
+              (participants, competences, globalCriteria, taughtWith)
+            ) =>
+          Metadata(
+            id,
+            title,
+            abbrev,
+            moduleType,
+            relation,
+            ects,
+            lang,
+            duration,
+            season,
+            resp,
+            assessmentMethods,
+            workload,
+            prerequisites,
+            status,
+            location,
+            pos,
+            participants,
+            competences.getOrElse(Nil),
+            globalCriteria.getOrElse(Nil),
+            taughtWith
+          )
+      }
 }
