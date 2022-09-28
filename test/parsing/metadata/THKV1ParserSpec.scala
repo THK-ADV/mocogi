@@ -4,7 +4,6 @@ import helper._
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatest.{EitherValues, OptionValues}
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
-import parsing.compendium.FakeSeasons
 import parsing.types._
 import parsing.{ParserSpecHelper, withFile0}
 
@@ -91,7 +90,7 @@ class THKV1ParserSpec
     }
 
     "parse different flavours of metadata" should {
-      "a juicy one" in {
+      "thkv1metadata1.yaml" in {
         val (res, rest) =
           withFile0("test/parsing/res/thkv1metadata1.yaml")(
             metadataParser.parse
@@ -122,31 +121,77 @@ class THKV1ParserSpec
         )
         assert(
           metadata.assessmentMethodsMandatory == List(
-            AssessmentMethodPercentage(
+            AssessmentMethodEntry(
               AssessmentMethod("written-exam", "Klausurarbeiten", "--"),
-              None
+              None,
+              Nil
             )
           )
         )
+        assert(metadata.assessmentMethodsOptional.isEmpty)
         assert(metadata.workload == Workload(36, 0, 18, 18, 0, 0))
-        assert(metadata.recommendedPrerequisites.value == Prerequisites(
-          "",
-          List("ap1", "ap2", "ma1"),
-          Nil
-        ))
+        assert(
+          metadata.recommendedPrerequisites.value == Prerequisites(
+            "",
+            List("ap1", "ap2", "ma1"),
+            Nil
+          )
+        )
         assert(metadata.requiredPrerequisites.isEmpty)
         assert(metadata.status == Status("active", "Aktiv", "--"))
         assert(metadata.location == Location("gm", "Gummersbach", "--"))
-        assert(metadata.poMandatory == List(
-          POMandatory("ai2", List(3), Nil)
-        ))
-        assert(metadata.poOptional.isEmpty)
-        assert(metadata.participants.isEmpty)
-        assert(metadata.competences.isEmpty)
-        assert(metadata.globalCriteria.isEmpty)
+        assert(
+          metadata.poMandatory == List(
+            POMandatory("ai2", List(3), Nil)
+          )
+        )
+        assert(
+          metadata.poOptional == List(
+            POOptional("wi4", "wpf", partOfCatalog = false, List(3))
+          )
+        )
+        assert(
+          metadata.participants.value == Participants(4, 20)
+        )
+        assert(
+          metadata.competences == List(
+            Competence(
+              "analyze-domains",
+              "Analyze Domains",
+              "...",
+              "Analyze Domains",
+              "..."
+            ),
+            Competence(
+              "model-systems",
+              "Model Systems",
+              "...",
+              "Model Systems",
+              "..."
+            )
+          )
+        )
+        assert(
+          metadata.globalCriteria == List(
+            GlobalCriteria(
+              "internationalization",
+              "Internationalisierung",
+              "...",
+              "Internationalization",
+              "..."
+            ),
+            GlobalCriteria(
+              "digitization",
+              "Digitalisierung",
+              "...",
+              "Digitization",
+              "..."
+            )
+          )
+        )
       }
 
-      "another juicy one" in {
+      "thkv1metadata2.yaml" in {
         val (res, rest) =
           withFile0("test/parsing/res/thkv1metadata2.yaml")(
             metadataParser.parse
@@ -183,13 +228,24 @@ class THKV1ParserSpec
         )
         assert(
           metadata.assessmentMethodsMandatory == List(
-            AssessmentMethodPercentage(
+            AssessmentMethodEntry(
               AssessmentMethod("written-exam", "Klausurarbeiten", "--"),
-              Some(70)
+              Some(70),
+              List(AssessmentMethod("practical", "Praktikum", "--"))
             ),
-            AssessmentMethodPercentage(
+            AssessmentMethodEntry(
               AssessmentMethod("practical-report", "Praktikumsbericht", "--"),
-              Some(30)
+              Some(30),
+              Nil
+            )
+          )
+        )
+        assert(
+          metadata.assessmentMethodsOptional == List(
+            AssessmentMethodEntry(
+              AssessmentMethod("written-exam", "Klausurarbeiten", "--"),
+              None,
+              Nil
             )
           )
         )
@@ -198,13 +254,15 @@ class THKV1ParserSpec
         assert(metadata.requiredPrerequisites.isEmpty)
         assert(metadata.status == Status("active", "Aktiv", "--"))
         assert(metadata.location == Location("gm", "Gummersbach", "--"))
-        assert(metadata.poMandatory == List(
-          POMandatory("ai2", List(4), Nil),
-          POMandatory("mi4", List(4), Nil),
-          POMandatory("itm2", List(4), Nil),
-        ))
+        assert(
+          metadata.poMandatory == List(
+            POMandatory("ai2", List(4), Nil),
+            POMandatory("mi4", List(4), Nil),
+            POMandatory("itm2", List(4), Nil)
+          )
+        )
         assert(metadata.poOptional.isEmpty)
-        assert(metadata.participants.isEmpty)
+        assert(metadata.participants.value == Participants(4, 20))
         assert(metadata.competences.isEmpty)
         assert(metadata.globalCriteria.isEmpty)
         assert(rest.isEmpty)

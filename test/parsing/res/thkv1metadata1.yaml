@@ -13,7 +13,8 @@ responsibilities:
   lecturers:
     - person.ald
     - person.abe
-assessment-methods: assessment.written-exam
+assessment_methods_mandatory:
+  - method: assessment.written-exam
 workload:
   lecture: 36
   seminar: 0
@@ -34,3 +35,17 @@ location: location.gm
 po_mandatory:
   - study_program: study_program.ai2
     recommended_semester: 3
+po_optional:
+  - study_program: study_program.wi4
+    instance_of: wpf
+    part_of_catalog: false
+    recommended_semester: 3
+participants:
+  min: 4
+  max: 20
+competences:
+  - competence.analyze-domains
+  - competence.model-systems
+global_criteria:
+  - global_criteria.internationalization
+  - global_criteria.digitization
