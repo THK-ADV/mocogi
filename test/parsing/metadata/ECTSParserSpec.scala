@@ -52,8 +52,7 @@ final class ECTSParserSpec
     "parse a simple or a complex ects value" in {
       val simpleInput = "ects: 5"
       val (res1, rest1) = ectsParser.parse(simpleInput)
-      assert(res1.value.value == 5)
-      assert(res1.value.contributionsToFocusAreas.isEmpty)
+      assert(res1.value.left.value == 5)
       assert(rest1.isEmpty)
 
       val complexInput =
@@ -70,9 +69,8 @@ final class ECTSParserSpec
           |        Text1
           |        Text2""".stripMargin
       val (res2, rest2) = ectsParser.parse(complexInput)
-      assert(res2.value.value == 0)
       assert(
-        res2.value.contributionsToFocusAreas == List(
+        res2.value.value == List(
           ECTSFocusAreaContribution(FocusArea("gak"), 4, "Text1\nText2\n"),
           ECTSFocusAreaContribution(FocusArea("acs"), 6, "Text1\nText2\n")
         )

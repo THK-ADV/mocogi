@@ -8,7 +8,7 @@ case class Metadata(
     abbrev: String,
     kind: ModuleType,
     relation: Option[ModuleRelation],
-    credits: ECTS,
+    credits: Either[Double, List[ECTSFocusAreaContribution]],
     language: Language,
     duration: Int,
     frequency: Season,

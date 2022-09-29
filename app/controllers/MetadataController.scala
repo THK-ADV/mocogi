@@ -6,9 +6,10 @@ import parsing.types.Metadata
 import play.api.libs.json.{Format, Json, OFormat}
 import play.api.mvc.{AbstractController, ControllerComponents}
 import service.MetadataService
+import validator.ValidMetadata
 
 import javax.inject.{Inject, Singleton}
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 final class MetadataController @Inject() (
@@ -18,15 +19,15 @@ final class MetadataController @Inject() (
 ) extends AbstractController(cc)
     with MetadataFormat {
 
-  implicit val fmt: Format[(Metadata, GitFilePath)] =
+  implicit val fmt: Format[(ValidMetadata, GitFilePath)] =
     OFormat.apply(
       js => {
         for {
-          m <- js.\("metadata").validate[Metadata]
+          m <- js.\("metadata").validate[ValidMetadata]
           p <- js.\("gitFilePath").validate[String]
         } yield (m, GitFilePath(p))
       },
-      (a: (Metadata, GitFilePath)) =>
+      (a: (ValidMetadata, GitFilePath)) =>
         Json.obj(
           "metadata" -> Json.toJson(a._1),
           "gitFilePath" -> Json.toJson(a._2.value)
@@ -35,6 +36,6 @@ final class MetadataController @Inject() (
 
   def all() =
     Action.async { _ =>
-      service.all().map(xs => Ok(Json.toJson(xs)))
+      Future.successful(Seq.empty[ValidMetadata]).map(xs => Ok(Json.toJson(xs)))
     }
 }

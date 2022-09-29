@@ -3,6 +3,7 @@ package controllers.json
 import parsing.types.ModuleRelation.{Child, Parent}
 import parsing.types._
 import play.api.libs.json.{Format, JsError, Json, OFormat}
+import validator.ValidMetadata
 
 trait MetadataFormat
     extends ModuleTypeFormat
@@ -78,6 +79,6 @@ trait MetadataFormat
       }
     )
 
-  implicit val metaDataFormat: Format[Metadata] =
-    Json.format[Metadata]
+  implicit val metaDataFormat: Format[ValidMetadata] =
+    Json.format[ValidMetadata]
 }

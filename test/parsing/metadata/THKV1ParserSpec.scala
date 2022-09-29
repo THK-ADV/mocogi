@@ -105,7 +105,7 @@ class THKV1ParserSpec
         assert(metadata.abbrev == "ALG")
         assert(metadata.kind == ModuleType("module", "Modul", "--"))
         assert(metadata.relation.contains(ModuleRelation.Child("inf")))
-        assert(metadata.credits.value == 5)
+        assert(metadata.credits == Left(5))
         assert(metadata.language == Language("de", "Deutsch", "--"))
         assert(metadata.duration == 1)
         assert(metadata.frequency == Season("ws", "Wintersemester", "--"))
@@ -132,7 +132,7 @@ class THKV1ParserSpec
             Nil
           )
         )
-        assert(metadata.workload == Workload(36, 0, 18, 18, 0, 0))
+        assert(metadata.workload == Workload(36, 0, 18, 18, 0, 0, 0, 0))
         assert(
           metadata.prerequisites == Prerequisites(
             Some(
@@ -218,8 +218,7 @@ class THKV1ParserSpec
         assert(metadata.kind == ModuleType("module", "Modul", "--"))
         assert(metadata.relation.isEmpty)
         assert(
-          metadata.credits == ECTS(
-            9.5,
+          metadata.credits == Right(
             List(
               ECTSFocusAreaContribution(FocusArea("gak"), 3.5, ""),
               ECTSFocusAreaContribution(FocusArea("acs"), 6, "Text1\nText2\n")
@@ -262,7 +261,7 @@ class THKV1ParserSpec
             )
           )
         )
-        assert(metadata.workload == Workload(30, 0, 10, 10, 0, 0))
+        assert(metadata.workload == Workload(30, 0, 10, 10, 0, 0, 0, 0))
         assert(metadata.prerequisites == Prerequisites(None, None))
         assert(metadata.status == Status("active", "Aktiv", "--"))
         assert(metadata.location == Location("gm", "Gummersbach", "--"))

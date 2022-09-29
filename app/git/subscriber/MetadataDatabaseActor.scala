@@ -29,7 +29,8 @@ private final class MetadataDatabaseActor(
     with Logging {
 
   override def receive = { case OnUpdate(changes, _) =>
-    changes.added.foreach { case (path, mc) =>
+    // TODO
+/*    changes.added.foreach { case (path, mc) =>
       createOrUpdate(mc.metadata, path)
     }
     changes.modified.foreach { case (path, mc) =>
@@ -37,7 +38,7 @@ private final class MetadataDatabaseActor(
     }
     changes.removed.foreach { path =>
       delete(path)
-    }
+    }*/
   }
 
   private def createOrUpdate(metadata: Metadata, gitPath: GitFilePath): Unit =

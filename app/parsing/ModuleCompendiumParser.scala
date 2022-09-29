@@ -1,8 +1,6 @@
 package parsing
 
 import parser.Parser
-import parser.Parser.newline
-import parsing.content.ContentParser.contentParser
 import parsing.metadata.MetadataCompositeParser
 import parsing.types.ModuleCompendium
 import service._
@@ -22,8 +20,9 @@ final class ModuleCompendiumParser @Inject() (
     private val personService: PersonService,
     private implicit val ctx: ExecutionContext
 ) {
-  def parser(): Future[Parser[ModuleCompendium]] = {
-    for {
+  def parser(): Future[Parser[ModuleCompendium]] =
+    Future.failed(new Throwable("TODO"))
+  /*    for {
       locations <- locationService.all()
       languages <- languageService.all()
       status <- statusService.all()
@@ -47,6 +46,5 @@ final class ModuleCompendiumParser @Inject() (
       )
       .skip(newline.many())
       .zip(contentParser)
-      .map(a => ModuleCompendium(a._1, a._2._1, a._2._2))
-  }
+      .map(a => ModuleCompendium(???, a._2._1, a._2._2)) // TODO*/
 }

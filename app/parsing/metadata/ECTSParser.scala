@@ -3,7 +3,7 @@ package parsing.metadata
 import parser.Parser
 import parser.Parser._
 import parser.ParserOps.P0
-import parsing.types.{ECTS, ECTSFocusAreaContribution, FocusArea}
+import parsing.types.{ECTSFocusAreaContribution, FocusArea}
 import parsing.{doubleForKey, removeIndentation, stringForKey}
 
 object ECTSParser {
@@ -38,10 +38,12 @@ object ECTSParser {
       .take(focusAreaParser.many())
   }
 
-  def ectsParser(implicit focusAreas: Seq[FocusArea]): Parser[ECTS] = {
+  def ectsParser(implicit
+      focusAreas: Seq[FocusArea]
+  ): Parser[Either[Double, List[ECTSFocusAreaContribution]]] = {
     oneOf(
-      ectsValueParser.map(d => ECTS(d, Nil)),
-      ectsContributionsToFocusAreasParser.map { c => ECTS(0, c) }
+      ectsValueParser.map(Left.apply),
+      ectsContributionsToFocusAreasParser.map(Right.apply)
     )
   }
 }
