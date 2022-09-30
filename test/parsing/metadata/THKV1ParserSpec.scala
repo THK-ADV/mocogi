@@ -84,10 +84,6 @@ class THKV1ParserSpec
       val (res1, rest1) = durationParser.parse("duration: 1")
       assert(res1.value == 1)
       assert(rest1.isEmpty)
-
-      val (res2, rest2) = durationParser.parse("duration: -1")
-      assert(res2.value == -1)
-      assert(rest2.isEmpty)
     }
 
     "parse different flavours of metadata" should {
@@ -105,10 +101,10 @@ class THKV1ParserSpec
         assert(metadata.abbrev == "ALG")
         assert(metadata.kind == ModuleType("module", "Modul", "--"))
         assert(metadata.relation.contains(ModuleRelation.Child("inf")))
-        assert(metadata.credits.value == 5)
+        assert(metadata.credits == Left(5))
         assert(metadata.language == Language("de", "Deutsch", "--"))
         assert(metadata.duration == 1)
-        assert(metadata.frequency == Season("ws", "Wintersemester", "--"))
+        assert(metadata.season == Season("ws", "Wintersemester", "--"))
         assert(
           metadata.responsibilities == Responsibilities(
             List(
@@ -218,8 +214,7 @@ class THKV1ParserSpec
         assert(metadata.kind == ModuleType("module", "Modul", "--"))
         assert(metadata.relation.isEmpty)
         assert(
-          metadata.credits == ECTS(
-            9.5,
+          metadata.credits == Right(
             List(
               ECTSFocusAreaContribution(FocusArea("gak"), 3.5, ""),
               ECTSFocusAreaContribution(FocusArea("acs"), 6, "Text1\nText2\n")
@@ -228,7 +223,7 @@ class THKV1ParserSpec
         )
         assert(metadata.language == Language("en", "Englisch", "--"))
         assert(metadata.duration == 1)
-        assert(metadata.frequency == Season("ss", "Sommersemester", "--"))
+        assert(metadata.season == Season("ss", "Sommersemester", "--"))
         assert(
           metadata.responsibilities == Responsibilities(
             List(

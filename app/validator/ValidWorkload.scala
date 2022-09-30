@@ -1,10 +1,12 @@
-package parsing.types
+package validator
 
-case class Workload(
+case class ValidWorkload(
     lecture: Int,
     seminar: Int,
     practical: Int,
     exercise: Int,
     projectSupervision: Int,
-    projectWork: Int
+    projectWork: Int,
+    selfStudy: Int,
+    total: Int
 )

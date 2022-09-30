@@ -1,26 +1,28 @@
-package parsing.types
+package validator
+
+import parsing.types._
 
 import java.util.UUID
 
-case class Metadata(
+case class ValidMetadata(
     id: UUID,
     title: String,
     abbrev: String,
     kind: ModuleType,
-    relation: Option[ModuleRelation],
-    credits: Either[Double, List[ECTSFocusAreaContribution]],
+    relation: Option[ValidModuleRelation],
+    ects: ECTS,
     language: Language,
     duration: Int,
     season: Season,
     responsibilities: Responsibilities,
     assessmentMethods: AssessmentMethods,
-    workload: Workload,
-    prerequisites: Prerequisites,
+    workload: ValidWorkload,
+    prerequisites: ValidPrerequisites,
     status: Status,
     location: Location,
-    pos: POs,
+    validPOs: ValidPOs,
     participants: Option[Participants],
     competences: List[Competence],
     globalCriteria: List[GlobalCriteria],
-    taughtWith: List[String]
+    taughtWith: List[Module]
 )

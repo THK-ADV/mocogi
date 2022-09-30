@@ -28,7 +28,7 @@ class FakeMetadataParser extends MetadataParser {
       "",
       ModuleType("", "", ""),
       None,
-      ECTS(0, Nil),
+      Left(0),
       Language("", "", ""),
       0,
       Season("", "", ""),

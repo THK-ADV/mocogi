@@ -6,17 +6,18 @@ import ops.PrettyPrinter
 import parsing.types.Metadata
 import play.api.Logging
 import publisher.{KafkaPublisher, Record}
+import validator.ValidMetadata
 
 import scala.util.{Failure, Success}
 
 object ModuleCompendiumPublishActor {
-  def props(publisher: KafkaPublisher[Metadata]) = Props(
+  def props(publisher: KafkaPublisher[ValidMetadata]) = Props(
     new ModuleCompendiumPublishActor(publisher)
   )
 }
 
 private final class ModuleCompendiumPublishActor(
-    publisher: KafkaPublisher[Metadata]
+    publisher: KafkaPublisher[ValidMetadata]
 ) extends Actor
     with Logging {
 
@@ -33,7 +34,8 @@ private final class ModuleCompendiumPublishActor(
       )
     }
 
-    publisher.publishComplete(addedRecords ::: updatedRecords) {
+    // TODO
+/*    publisher.publishComplete(addedRecords ::: updatedRecords) {
       case (record, res) =>
         res match {
           case Success(_) =>
@@ -51,6 +53,6 @@ private final class ModuleCompendiumPublishActor(
                 )}""".stripMargin
             )
         }
-    }
+    }*/
   }
 }

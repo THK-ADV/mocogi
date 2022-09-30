@@ -90,8 +90,8 @@ class ModuleCompendiumPrinterImpl extends ModuleCompendiumPrinter {
     val c = mc.deContent
 
     prefix("#")
-      .skip(whitespace)
-      .skip(prefix(m.title))
+      .skip(whitespace) // TODO
+/*      .skip(prefix(m.title))
       .skip(newline.repeat(2))
       .skip(row("", ""))
       .skip(row("---", "---"))
@@ -99,7 +99,7 @@ class ModuleCompendiumPrinterImpl extends ModuleCompendiumPrinter {
       .skip(row("Modulbezeichnung", m.title))
       .skip(row("Art des Moduls", m.kind.deLabel))
       .skipOpt(m.relation.map(moduleRelationRow))
-      .skip(row("ECTS credits", fmtDouble(m.credits.value)))
+      //.skip(row("ECTS credits", fmtDouble(m.credits.value)))
       .skip(row("Sprache", m.language.de_label))
       .skip(row("Dauer des Moduls", s"${m.duration} Semester"))
       .skip(row("Häufigkeit des Angebots", s"Jedes ${m.frequency.deLabel}"))
@@ -161,7 +161,7 @@ class ModuleCompendiumPrinterImpl extends ModuleCompendiumPrinter {
       .skip(contentBlock(c.particularitiesHeader, c.particularitiesBody))
       .skip(prefix("---"))
       .skip(newline.repeat(2))
-      .skip(prefix(s"Letzte Aktualisierung am $now"))
+      .skip(prefix(s"Letzte Aktualisierung am $now"))*/
       .print((), input)
   }
 

@@ -20,7 +20,7 @@ import parsing.metadata.PrerequisitesParser.{
 import parsing.metadata.TaughtWithParser.taughtWithParser
 import parsing.metadata.WorkloadParser.workloadParser
 import parsing.types._
-import parsing.{intForKey, singleLineStringForKey}
+import parsing.{posIntForKey, singleLineStringForKey}
 
 import java.util.UUID
 import javax.inject.{Inject, Singleton}
@@ -45,7 +45,7 @@ final class THKV1Parser @Inject() (
 
   val abbreviationParser = singleLineStringForKey("abbreviation")
 
-  val durationParser = intForKey("duration")
+  val durationParser = posIntForKey("duration")
 
   def parser(implicit
       locations: Seq[Location],
