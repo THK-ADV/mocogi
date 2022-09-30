@@ -7,6 +7,8 @@ import scala.concurrent.Future
 
 object MetadataValidator {
 
+  type Lookup = String => Option[Module]
+
   def assessmentMethodsValidator: SimpleValidator[AssessmentMethods] = {
     def sum(xs: List[AssessmentMethodEntry]): Double =
       xs.foldLeft(0.0) { case (acc, a) => acc + a.percentage.getOrElse(0.0) }
@@ -103,9 +105,7 @@ object MetadataValidator {
     }
   }
 
-  def moduleValidator(
-      lookup: String => Option[Module]
-  ): Validator[List[String], List[Module]] =
+  def moduleValidator(lookup: Lookup): Validator[List[String], List[Module]] =
     Validator { modules =>
       val (errs, res) =
         modules.partitionMap(m => lookup(m).toRight(s"module not found: $m"))
@@ -113,31 +113,45 @@ object MetadataValidator {
     }
 
   def taughtWithValidator(
-      lookup: String => Option[Module]
+      lookup: Lookup
   ): Validator[List[String], List[Module]] =
     moduleValidator(lookup)
 
   def prerequisitesEntryValidator(
-      lookup: String => Option[Module]
+      lookup: Lookup
   ): Validator[Option[PrerequisiteEntry], Option[ValidPrerequisiteEntry]] =
-    Validator {
-      case Some(e) =>
-        moduleValidator(lookup)
-          .validate(e.modules)
-          .map(modules =>
-            Some(ValidPrerequisiteEntry(e.text, modules, e.studyPrograms))
-          )
-      case None =>
-        Right(None)
-    }
+    moduleValidator(lookup)
+      .pullback[Option[PrerequisiteEntry]](_.map(_.modules).getOrElse(Nil))
+      .map((p, ms) =>
+        p.map(e => ValidPrerequisiteEntry(e.text, ms, e.studyPrograms))
+      )
 
   def prerequisitesValidator(
-      lookup: String => Option[Module]
+      lookup: Lookup
   ): Validator[Prerequisites, ValidPrerequisites] =
     prerequisitesEntryValidator(lookup)
       .pullback[Prerequisites](_.recommended)
       .zip(prerequisitesEntryValidator(lookup).pullback(_.required))
-      .map(ValidPrerequisites.tupled)
+      .map((_, p) => ValidPrerequisites.tupled(p))
+
+  def poOptionalValidator(
+      lookup: Lookup
+  ): Validator[List[POOptional], List[ValidPOOptional]] =
+    moduleValidator(lookup)
+      .pullback[List[POOptional]](_.map(_.instanceOf))
+      .map(_.zip(_).map { case (po, m) =>
+        ValidPOOptional(
+          po.studyProgram,
+          m,
+          po.partOfCatalog,
+          po.recommendedSemester
+        )
+      })
+
+  def posValidator(lookup: Lookup): Validator[POs, ValidPOs] =
+    poOptionalValidator(lookup)
+      .pullback[POs](_.optional)
+      .map((pos, poOpt) => ValidPOs(pos.mandatory, poOpt))
 
   def assessmentMethodsValidatorAdapter
       : Validator[Metadata, AssessmentMethods] =
@@ -150,38 +164,45 @@ object MetadataValidator {
     ectsValidator.pullback(_.credits)
 
   def prerequisitesValidatorAdapter(
-      lookup: String => Option[Module]
+      lookup: Lookup
   ): Validator[Metadata, ValidPrerequisites] =
     prerequisitesValidator(lookup).pullback(_.prerequisites)
 
   def taughtWithValidatorAdapter(
-      lookup: String => Option[Module]
+      lookup: Lookup
   ): Validator[Metadata, List[Module]] =
     taughtWithValidator(lookup).pullback(_.taughtWith)
 
   def workloadValidatorAdapter(
-      creditPointFactor: Int
+      creditPointFactor: Int,
+      ects: ECTS
   ): Validator[Metadata, ValidWorkload] =
-    workloadValidator(creditPointFactor).pullback(metadata =>
-      (
-        metadata.workload,
-        toECTS(metadata.credits) // assumes ECTS validator was run before
+    workloadValidator(creditPointFactor).pullback(a => (a.workload, ects))
+
+  def ectsWorkloadAdapter(
+      creditPointFactor: Int
+  ): Validator[Metadata, (ECTS, ValidWorkload)] =
+    ectsValidatorAdapter
+      .flatMap((_, ects) =>
+        workloadValidatorAdapter(creditPointFactor, ects)
+          .map((_, workload) => (ects, workload))
       )
-    )
+
+  def posValidatorAdapter(lookup: Lookup): Validator[Metadata, ValidPOs] =
+    posValidator(lookup).pullback(_.pos)
 
   def validations(
-      m: Metadata,
       creditPointFactor: Int,
-      lookup: String => Option[Module]
+      lookup: Lookup
   ): Validator[Metadata, ValidMetadata] =
     assessmentMethodsValidatorAdapter
       .zip(participantsValidatorAdapter)
-      .zip(ectsValidatorAdapter)
+      .zip(ectsWorkloadAdapter(creditPointFactor))
       .zip(taughtWithValidatorAdapter(lookup))
       .zip(prerequisitesValidatorAdapter(lookup))
-      .zip(workloadValidatorAdapter(creditPointFactor))
-      .map { case (((((a, b), c), d), e), f) =>
-        ValidMetadata(m.id, a, b, c, d, e, f)
+      .zip(posValidatorAdapter(lookup))
+      .map { case (m, (((((am, p), (ects, wl)), tw), pre), pos)) =>
+        ValidMetadata(m.id, am, p, ects, tw, pre, wl, pos)
       }
 
   def validate(
@@ -190,7 +211,7 @@ object MetadataValidator {
       lookup: String => Future[Metadata]
   ): Seq[Validation[ValidMetadata]] =
     metadata.map { m =>
-      validations(m, creditPointFactor, _ => Option.empty[Module]).validate(m)
+      validations(creditPointFactor, _ => Option.empty[Module]).validate(m)
     }
 
 }

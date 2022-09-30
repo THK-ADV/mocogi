@@ -12,8 +12,11 @@ final class MetadataValidatorSpec
     with EitherValues
     with OptionValues {
 
+  private case class PosInt(value: Int)
+
   private lazy val am = AssessmentMethod("", "", "")
   private lazy val fa = FocusArea("")
+  private lazy val sp = StudyProgram("")
   private lazy val creditPointFactor = 30
 
   private def method(percentage: Option[Double]) =
@@ -25,6 +28,9 @@ final class MetadataValidatorSpec
   private def prerequisiteEntry(modules: List[String]) =
     PrerequisiteEntry("", modules, Nil)
 
+  private def poOpt(module: String) =
+    POOptional(sp, module, partOfCatalog = false, Nil)
+
   val m1 = Module(UUID.randomUUID, "m1")
   val m2 = Module(UUID.randomUUID, "m2")
   val m3 = Module(UUID.randomUUID, "m3")
@@ -34,6 +40,25 @@ final class MetadataValidatorSpec
     modules.find(_.abbrev == module)
 
   "A Metadata Validator" when {
+    "flatMap a validator" in {
+      def posInt: Validator[Int, PosInt] =
+        Validator(int => Either.cond(int > 0, PosInt(int), List("must be pos")))
+      def grade(int: PosInt): Validator[Int, String] =
+        Validator { _ =>
+          int.value match {
+            case 1 => Right("good")
+            case 2 => Right("ok")
+            case 3 => Right("failed")
+            case _ => Left(List("wrong grade"))
+          }
+        }
+      val validator =
+        posInt.flatMap((_, int) => grade(int).map((_, string) => (int, string)))
+      assert(validator.validate(1).value == (PosInt(1), "good"))
+      assert(validator.validate(0).left.value == List("must be pos"))
+      assert(validator.validate(4).left.value == List("wrong grade"))
+    }
+
     "validating assessment methods" should {
       "pass if their percentage is 0" in {
         val am1 = AssessmentMethods(Nil, Nil)
@@ -335,6 +360,50 @@ final class MetadataValidatorSpec
             .validate((Workload(0, 0, 0, 0, 0, 0), ECTS(0, Nil)))
             .value == ValidWorkload(0, 0, 0, 0, 0, 0, 0, 0)
         )
+      }
+    }
+
+    "validating po optionals" should {
+      "pass if modules can be found" in {
+        assert(
+          poOptionalValidator(lookup).validate(List(poOpt("m1"))).value == List(
+            ValidPOOptional(sp, m1, partOfCatalog = false, Nil)
+          )
+        )
+        assert(
+          poOptionalValidator(lookup)
+            .validate(List(poOpt("m1"), poOpt("m2")))
+            .value == List(
+            ValidPOOptional(sp, m1, partOfCatalog = false, Nil),
+            ValidPOOptional(sp, m2, partOfCatalog = false, Nil)
+          )
+        )
+        assert(poOptionalValidator(lookup).validate(Nil).value == Nil)
+      }
+
+      "fail if modules cant be found" in {
+        assert(
+          poOptionalValidator(lookup)
+            .validate(List(poOpt("m1"), poOpt("abc")))
+            .left
+            .value == List("module not found: abc")
+        )
+      }
+
+      "handle pos validation" in {
+        posValidator(lookup)
+          .validate(POs(Nil, List(poOpt("m1"))))
+          .value == ValidPOs(
+          Nil,
+          List(ValidPOOptional(sp, m1, partOfCatalog = false, Nil))
+        )
+        posValidator(lookup)
+          .validate(POs(Nil, Nil))
+          .value == ValidPOs(Nil, Nil)
+        posValidator(lookup)
+          .validate(POs(Nil, List(poOpt("abc"))))
+          .left
+          .value == List("module not found: abc")
       }
     }
   }

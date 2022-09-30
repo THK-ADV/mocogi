@@ -6,6 +6,8 @@ import play.api.libs.json.{Format, JsError, Json, OFormat}
 import validator.{
   Module,
   ValidMetadata,
+  ValidPOOptional,
+  ValidPOs,
   ValidPrerequisiteEntry,
   ValidPrerequisites,
   ValidWorkload
@@ -71,6 +73,12 @@ trait MetadataFormat
 
   implicit val validWorkloadFormat: Format[ValidWorkload] =
     Json.format[ValidWorkload]
+
+  implicit val validPOOptFormat: Format[ValidPOOptional] =
+    Json.format[ValidPOOptional]
+
+  implicit val validPOsFormat: Format[ValidPOs] =
+    Json.format[ValidPOs]
 
   implicit val moduleRelationFormat: Format[ModuleRelation] =
     OFormat.apply(
