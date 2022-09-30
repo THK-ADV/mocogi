@@ -14,6 +14,7 @@ final class MetadataValidatorSpec
 
   private lazy val am = AssessmentMethod("", "", "")
   private lazy val fa = FocusArea("")
+  private lazy val creditPointFactor = 30
 
   private def method(percentage: Option[Double]) =
     AssessmentMethodEntry(am, percentage, Nil)
@@ -313,6 +314,26 @@ final class MetadataValidatorSpec
             "module not found: 123",
             "module not found: abc"
           )
+        )
+      }
+    }
+
+    "validating workload" should {
+      "pass by setting self study and total value" in {
+        assert(
+          workloadValidator(creditPointFactor)
+            .validate((Workload(10, 10, 0, 0, 10, 0), ECTS(2, Nil)))
+            .value == ValidWorkload(10, 10, 0, 0, 10, 0, 30, 60)
+        )
+        assert(
+          workloadValidator(creditPointFactor)
+            .validate((Workload(0, 0, 0, 0, 0, 0), ECTS(2, Nil)))
+            .value == ValidWorkload(0, 0, 0, 0, 0, 0, 60, 60)
+        )
+        assert(
+          workloadValidator(creditPointFactor)
+            .validate((Workload(0, 0, 0, 0, 0, 0), ECTS(0, Nil)))
+            .value == ValidWorkload(0, 0, 0, 0, 0, 0, 0, 0)
         )
       }
     }

@@ -3,7 +3,13 @@ package controllers.json
 import parsing.types.ModuleRelation.{Child, Parent}
 import parsing.types._
 import play.api.libs.json.{Format, JsError, Json, OFormat}
-import validator.{Module, ValidMetadata, ValidPrerequisiteEntry, ValidPrerequisites}
+import validator.{
+  Module,
+  ValidMetadata,
+  ValidPrerequisiteEntry,
+  ValidPrerequisites,
+  ValidWorkload
+}
 
 trait MetadataFormat
     extends ModuleTypeFormat
@@ -62,6 +68,9 @@ trait MetadataFormat
 
   implicit val validPrerequisitesFormat: Format[ValidPrerequisites] =
     Json.format[ValidPrerequisites]
+
+  implicit val validWorkloadFormat: Format[ValidWorkload] =
+    Json.format[ValidWorkload]
 
   implicit val moduleRelationFormat: Format[ModuleRelation] =
     OFormat.apply(

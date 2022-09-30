@@ -75,58 +75,71 @@ object MetadataValidator {
       case None => Right(None)
     }
 
+  private def toECTS(
+      either: Either[Double, List[ECTSFocusAreaContribution]]
+  ): ECTS =
+    either match {
+      case Left(ectsValue) =>
+        ECTS(ectsValue, Nil)
+      case Right(contributions) =>
+        val ectsValue = contributions.foldLeft(0.0) { case (acc, a) =>
+          acc + a.ectsValue
+        }
+        ECTS(ectsValue, contributions)
+    }
+
   def ectsValidator
       : Validator[Either[Double, List[ECTSFocusAreaContribution]], ECTS] =
     Validator {
       case Left(ectsValue) =>
         Either.cond(
           ectsValue != 0,
-          ECTS(ectsValue, Nil),
+          toECTS(Left(ectsValue)),
           List(
             "ects value must be set if contributions to focus areas are empty"
           )
         )
       case Right(contributions) =>
         Either.cond(
-          contributions.nonEmpty, {
-            val ectsValue = contributions.foldLeft(0.0) { case (acc, a) =>
-              acc + a.ectsValue
-            }
-            ECTS(ectsValue, contributions)
-          },
+          contributions.nonEmpty,
+          toECTS(Right(contributions)),
           List(
             "ects contributions to focus areas must be set if ects value is 0"
           )
         )
     }
 
-  /*
-  def workloadValidator: Validator = m => {
-    if (!(m.workload.selfStudy == 0) || !(m.workload.total == 0))
-      Left(List("workload: self study and total must be 0"))
-    else if (m.credits.value == 0)
-      Left(List("ects: value must be set"))
-    else {
-      def sumWorkload(w: Workload): Int =
-        w.lecture +
-          w.seminar +
-          w.practical +
-          w.exercise +
-          w.projectSupervision +
-          w.projectWork
+  def workloadValidator(
+      creditPointFactor: Int
+  ): Validator[(Workload, ECTS), ValidWorkload] = {
+    def sumWorkload(w: Workload): Int =
+      w.lecture +
+        w.seminar +
+        w.practical +
+        w.exercise +
+        w.projectSupervision +
+        w.projectWork
 
-      val total = (m.credits.value * 30).toInt // TODO
-      val selfStudy = total - sumWorkload(m.workload)
+    Validator { case (workload, ects) =>
+      val total = (ects.value * creditPointFactor).toInt
+      val selfStudy = total - sumWorkload(workload)
       if (selfStudy < 0)
-        Left(List("workload: self study must be positive"))
+        Left(List("workload's self study must be positive"))
       else
         Right(
-          m.copy(workload =
-            m.workload.copy(selfStudy = selfStudy, total = total)
+          ValidWorkload(
+            workload.lecture,
+            workload.seminar,
+            workload.practical,
+            workload.exercise,
+            workload.projectSupervision,
+            workload.projectWork,
+            selfStudy,
+            total
           )
         )
     }
-  }*/
+  }
 
   def resolveModules[Module](
       modules: List[String],
@@ -183,8 +196,16 @@ object MetadataValidator {
   ): Validator[Metadata, List[Module]] =
     taughtWithValidator(lookup).pullback(_.taughtWith)
 
+  def workloadValidatorAdapter(
+      creditPointFactor: Int
+  ): Validator[Metadata, ValidWorkload] =
+    workloadValidator(creditPointFactor).pullback(metadata =>
+      (metadata.workload, toECTS(metadata.credits)) // assumes ECTS validator was run before
+    )
+
   def validations(
       m: Metadata,
+      creditPointFactor: Int,
       lookup: String => Option[Module]
   ): Validator[Metadata, ValidMetadata] =
     assessmentMethodsValidatorAdapter
@@ -192,16 +213,18 @@ object MetadataValidator {
       .zip(ectsValidatorAdapter)
       .zip(taughtWithValidatorAdapter(lookup))
       .zip(prerequisitesValidatorAdapter(lookup))
-      .map { case ((((a, b), c), d), e) =>
-        ValidMetadata(m.id, a, b, c, d, e)
+      .zip(workloadValidatorAdapter(creditPointFactor))
+      .map { case (((((a, b), c), d), e), f) =>
+        ValidMetadata(m.id, a, b, c, d, e, f)
       }
 
   def validate(
       metadata: Seq[Metadata],
+      creditPointFactor: Int,
       lookup: String => Future[Metadata]
   ): Seq[Validation[ValidMetadata]] =
     metadata.map { m =>
-      validations(m, _ => Option.empty[Module]).validate(m)
+      validations(m, creditPointFactor, _ => Option.empty[Module]).validate(m)
     }
 
 }

@@ -132,7 +132,7 @@ class THKV1ParserSpec
             Nil
           )
         )
-        assert(metadata.workload == Workload(36, 0, 18, 18, 0, 0, 0, 0))
+        assert(metadata.workload == Workload(36, 0, 18, 18, 0, 0))
         assert(
           metadata.prerequisites == Prerequisites(
             Some(
@@ -261,7 +261,7 @@ class THKV1ParserSpec
             )
           )
         )
-        assert(metadata.workload == Workload(30, 0, 10, 10, 0, 0, 0, 0))
+        assert(metadata.workload == Workload(30, 0, 10, 10, 0, 0))
         assert(metadata.prerequisites == Prerequisites(None, None))
         assert(metadata.status == Status("active", "Aktiv", "--"))
         assert(metadata.location == Location("gm", "Gummersbach", "--"))

@@ -10,5 +10,6 @@ case class ValidMetadata(
     participants: Option[Participants],
     ects: ECTS,
     taughtWith: List[Module],
-    prerequisites: ValidPrerequisites
+    prerequisites: ValidPrerequisites,
+    workload: ValidWorkload
 )

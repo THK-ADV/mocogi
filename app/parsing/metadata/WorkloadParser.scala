@@ -22,5 +22,5 @@ object WorkloadParser {
       .take(posIntForKey("project_supervision"))
       .skip(zeroOrMoreSpaces)
       .take(posIntForKey("project_work"))
-      .map(a => Workload(a._1, a._2, a._3, a._4, a._5, a._6, 0, 0))
+      .map(a => Workload(a._1, a._2, a._3, a._4, a._5, a._6))
 }

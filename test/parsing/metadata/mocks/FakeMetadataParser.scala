@@ -34,7 +34,7 @@ class FakeMetadataParser extends MetadataParser {
       Season("", "", ""),
       Responsibilities(Nil, Nil),
       AssessmentMethods(Nil, Nil),
-      Workload(0, 0, 0, 0, 0, 0, 0, 0),
+      Workload(0, 0, 0, 0, 0, 0),
       Prerequisites(None, None),
       Status("", "", ""),
       Location("", "", ""),
