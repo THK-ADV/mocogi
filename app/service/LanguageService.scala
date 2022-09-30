@@ -2,7 +2,7 @@ package service
 
 import basedata.Language
 import database.repo.LanguageRepository
-import parsing.metadata.file.LanguageFileParser
+import parsing.base.LanguageFileParser
 
 import javax.inject.{Inject, Singleton}
 

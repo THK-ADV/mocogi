@@ -2,7 +2,7 @@ package service
 
 import basedata.ModuleType
 import database.repo.ModuleTypeRepository
-import parsing.metadata.file.ModuleTypeFileParser
+import parsing.base.ModuleTypeFileParser
 
 import javax.inject.{Inject, Singleton}
 

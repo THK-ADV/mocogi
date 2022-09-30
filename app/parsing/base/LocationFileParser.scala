@@ -1,4 +1,4 @@
-package parsing.metadata.file
+package parsing.base
 
 import basedata.Location
 import javax.inject.Singleton

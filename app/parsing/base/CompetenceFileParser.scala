@@ -1,4 +1,4 @@
-package parsing.metadata.file
+package parsing.base
 
 import basedata.Competence
 import javax.inject.Singleton

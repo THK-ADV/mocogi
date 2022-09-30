@@ -1,7 +1,8 @@
-package parsing.metadata.file
+package parsing.base
 
 import org.scalatest.EitherValues
 import org.scalatest.wordspec.AnyWordSpec
+import parsing.base.LabelDescFileParser
 import parsing.{ParserSpecHelper, withFile0}
 
 final class LabelDescFileParserSpec

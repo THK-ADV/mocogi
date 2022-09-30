@@ -1,7 +1,7 @@
 package service
 
 import database.repo.Repository
-import parsing.metadata.file.FileParser
+import parsing.base.FileParser
 
 import scala.concurrent.Future
 

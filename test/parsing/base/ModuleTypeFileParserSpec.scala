@@ -1,10 +1,11 @@
-package parsing.metadata.file
+package parsing.base
 
 import basedata.ModuleType
 import helper.FakeApplication
 import org.scalatest.EitherValues
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
+import parsing.base.ModuleTypeFileParser
 import parsing.{ParserSpecHelper, withFile0}
 
 class ModuleTypeFileParserSpec
