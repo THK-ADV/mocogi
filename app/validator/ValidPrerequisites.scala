@@ -1,6 +1,6 @@
 package validator
 
-import parsing.types.StudyProgram
+import basedata.StudyProgram
 
 case class ValidPrerequisites(
     recommended: Option[ValidPrerequisiteEntry],

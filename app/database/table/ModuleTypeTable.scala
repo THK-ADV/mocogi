@@ -1,6 +1,6 @@
 package database.table
 
-import parsing.types.ModuleType
+import basedata.ModuleType
 import slick.jdbc.PostgresProfile.api._
 
 final class ModuleTypeTable(tag: Tag)

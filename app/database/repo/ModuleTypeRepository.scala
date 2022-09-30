@@ -1,7 +1,7 @@
 package database.repo
 
+import basedata.ModuleType
 import database.table.ModuleTypeTable
-import parsing.types.ModuleType
 import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfigProvider}
 import slick.jdbc.JdbcProfile
 

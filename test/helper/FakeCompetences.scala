@@ -1,6 +1,6 @@
 package helper
 
-import parsing.types.Competence
+import basedata.Competence
 
 trait FakeCompetences {
   implicit def fakeCompetences: Seq[Competence] = Seq(

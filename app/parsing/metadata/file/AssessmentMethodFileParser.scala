@@ -1,7 +1,6 @@
 package parsing.metadata.file
 
-import parsing.types.AssessmentMethod
-
+import basedata.AssessmentMethod
 import javax.inject.Singleton
 
 @Singleton

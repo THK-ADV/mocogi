@@ -1,6 +1,6 @@
 package controllers.json
 
-import parsing.types.FocusArea
+import basedata.FocusArea
 import play.api.libs.json.{Format, Json}
 
 trait FocusAreaFormat {

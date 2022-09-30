@@ -1,7 +1,6 @@
 package parsing.metadata.file
 
-import parsing.types.Competence
-
+import basedata.Competence
 import javax.inject.Singleton
 
 @Singleton

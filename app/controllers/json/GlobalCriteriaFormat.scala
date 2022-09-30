@@ -1,6 +1,6 @@
 package controllers.json
 
-import parsing.types.GlobalCriteria
+import basedata.GlobalCriteria
 import play.api.libs.json.{Format, Json}
 
 trait GlobalCriteriaFormat {

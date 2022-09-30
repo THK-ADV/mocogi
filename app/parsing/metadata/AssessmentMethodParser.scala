@@ -1,10 +1,11 @@
 package parsing.metadata
 
+import basedata.AssessmentMethod
 import parser.Parser
 import parser.Parser._
 import parser.ParserOps.{P0, P2}
 import parsing.helper.MultipleValueParser.multipleParser
-import parsing.types.{AssessmentMethod, AssessmentMethodEntry}
+import parsing.types.AssessmentMethodEntry
 
 object AssessmentMethodParser {
 

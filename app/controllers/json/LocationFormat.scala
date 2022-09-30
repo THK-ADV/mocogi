@@ -1,6 +1,6 @@
 package controllers.json
 
-import parsing.types.Location
+import basedata.Location
 import play.api.libs.json.{Format, Json}
 
 trait LocationFormat {

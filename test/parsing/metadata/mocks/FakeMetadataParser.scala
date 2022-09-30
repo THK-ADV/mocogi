@@ -1,5 +1,6 @@
 package parsing.metadata.mocks
 
+import basedata.{AssessmentMethod, Competence, FocusArea, GlobalCriteria, Language, Location, ModuleType, Person, Season, Status, StudyProgram}
 import parser.Parser.always
 import parsing.metadata.{MetadataParser, VersionScheme}
 import parsing.types._

@@ -1,8 +1,8 @@
 package parsing.metadata
 
+import basedata.Season
 import parser.Parser
 import parsing.helper.SingleValueParser
-import parsing.types.Season
 
 import javax.inject.Singleton
 

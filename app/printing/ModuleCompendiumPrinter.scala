@@ -1,5 +1,6 @@
 package printing
 
+import basedata.Person
 import controllers.parameter.PrinterOutputFormat
 import parsing.types._
 import printer.Printer

@@ -1,10 +1,10 @@
 package parsing.metadata.file
 
+import basedata.Location
 import helper.FakeApplication
 import org.scalatest.EitherValues
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
-import parsing.types.Location
 import parsing.{ParserSpecHelper, withFile0}
 
 class LocationFileParserSpec

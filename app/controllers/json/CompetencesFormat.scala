@@ -1,6 +1,6 @@
 package controllers.json
 
-import parsing.types.Competence
+import basedata.Competence
 import play.api.libs.json.{Format, Json}
 
 trait CompetencesFormat {

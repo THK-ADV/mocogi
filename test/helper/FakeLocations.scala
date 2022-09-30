@@ -1,6 +1,6 @@
 package helper
 
-import parsing.types.Location
+import basedata.Location
 
 trait FakeLocations {
   implicit def fakeLocations: Seq[Location] = Seq(

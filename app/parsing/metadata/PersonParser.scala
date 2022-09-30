@@ -1,9 +1,9 @@
 package parsing.metadata
 
+import basedata.Person
 import parser.Parser
 import parser.Parser._
 import parser.ParserOps._
-import parsing.types.Person
 
 import javax.inject.Singleton
 

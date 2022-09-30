@@ -1,7 +1,7 @@
 package controllers
 
+import basedata.Location
 import controllers.json.LocationFormat
-import parsing.types.Location
 import play.api.libs.json.Writes
 import play.api.mvc.{AbstractController, ControllerComponents}
 import service.LocationService

@@ -1,6 +1,6 @@
 package parsing.metadata.file
 
-import parsing.types.LabelDescLike
+import basedata.LabelDescLike
 
 case class LabelDescImpl(
     abbrev: String,

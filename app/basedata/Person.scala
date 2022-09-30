@@ -1,4 +1,4 @@
-package parsing.types
+package basedata
 
 case class Person(
     abbrev: String,

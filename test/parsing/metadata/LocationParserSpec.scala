@@ -1,11 +1,11 @@
 package parsing.metadata
 
+import basedata.Location
 import helper.{FakeApplication, FakeLocations}
 import org.scalatest.EitherValues
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import parsing.ParserSpecHelper
-import parsing.types.Location
 
 class LocationParserSpec
     extends AnyWordSpec

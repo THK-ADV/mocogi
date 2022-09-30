@@ -1,11 +1,11 @@
 package parsing.metadata
 
+import basedata.Person
 import helper.{FakeApplication, FakePersons}
 import org.scalatest.EitherValues
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import parsing.ParserSpecHelper
-import parsing.types.Person
 
 class PersonParserSpec
     extends AnyWordSpec

@@ -1,7 +1,7 @@
 package database.repo
 
+import basedata.Language
 import database.table.LanguageTable
-import parsing.types.Language
 import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfigProvider}
 import slick.jdbc.JdbcProfile
 

@@ -1,7 +1,7 @@
 package controllers
 
+import basedata.ModuleType
 import controllers.json.ModuleTypeFormat
-import parsing.types.ModuleType
 import play.api.libs.json.Writes
 import play.api.mvc.{AbstractController, ControllerComponents}
 import service.ModuleTypeService

@@ -1,10 +1,10 @@
 package parsing.metadata.file
 
+import basedata.Person
 import helper.FakeApplication
 import org.scalatest.EitherValues
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
-import parsing.types.Person
 import parsing.{ParserSpecHelper, withFile0}
 
 final class PersonFileParserSpec

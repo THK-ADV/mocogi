@@ -1,11 +1,12 @@
 package parsing.metadata
 
+import basedata.AssessmentMethod
 import helper.FakeAssessmentMethod
 import org.scalatest.EitherValues
 import org.scalatest.wordspec.AnyWordSpec
 import parsing.ParserSpecHelper
 import parsing.metadata.AssessmentMethodParser._
-import parsing.types.{AssessmentMethod, AssessmentMethodEntry}
+import parsing.types.AssessmentMethodEntry
 
 class AssessmentMethodParserSpec
     extends AnyWordSpec

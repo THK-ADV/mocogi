@@ -1,7 +1,7 @@
 package controllers
 
+import basedata.Season
 import controllers.json.SeasonFormat
-import parsing.types.Season
 import play.api.libs.json.Writes
 import play.api.mvc.{AbstractController, ControllerComponents}
 import service.SeasonService

@@ -1,10 +1,11 @@
 package parsing.metadata
 
+import basedata.StudyProgram
 import parser.Parser
 import parser.Parser._
 import parser.ParserOps._
 import parsing.helper.MultipleValueParser.multipleParser
-import parsing.types.{POMandatory, POOptional, StudyProgram}
+import parsing.types.{POMandatory, POOptional}
 
 object POParser {
   private def studyProgramParser(implicit

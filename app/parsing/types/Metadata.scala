@@ -1,5 +1,7 @@
 package parsing.types
 
+import basedata.{Competence, GlobalCriteria, Language, Location, ModuleType, Season, Status}
+
 import java.util.UUID
 
 case class Metadata(

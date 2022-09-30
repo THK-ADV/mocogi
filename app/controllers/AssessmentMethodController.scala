@@ -1,7 +1,7 @@
 package controllers
 
+import basedata.AssessmentMethod
 import controllers.json.AssessmentMethodFormat
-import parsing.types.AssessmentMethod
 import play.api.libs.json.Writes
 import play.api.mvc.{AbstractController, ControllerComponents}
 import service.AssessmentMethodService

@@ -1,6 +1,6 @@
 package helper
 
-import parsing.types.Person
+import basedata.Person
 
 trait FakePersons {
   implicit def fakePersons: Seq[Person] = Seq(

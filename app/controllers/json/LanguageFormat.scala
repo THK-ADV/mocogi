@@ -1,6 +1,6 @@
 package controllers.json
 
-import parsing.types.Language
+import basedata.Language
 import play.api.libs.json.{Format, Json}
 
 trait LanguageFormat {

@@ -1,22 +1,17 @@
 package parsing.metadata
 
+import basedata.{AssessmentMethod, Competence, FocusArea, GlobalCriteria, Language, Location, ModuleType, Person, Season, Status, StudyProgram}
 import parser.Parser
 import parser.Parser._
 import parser.ParserOps._
-import parsing.metadata.AssessmentMethodParser.{
-  assessmentMethodsMandatoryParser,
-  assessmentMethodsOptionalParser
-}
+import parsing.metadata.AssessmentMethodParser.{assessmentMethodsMandatoryParser, assessmentMethodsOptionalParser}
 import parsing.metadata.CompetencesParser.competencesParser
 import parsing.metadata.ECTSParser.ectsParser
 import parsing.metadata.GlobalCriteriaParser.globalCriteriaParser
 import parsing.metadata.ModuleRelationParser.moduleRelationParser
 import parsing.metadata.POParser.{mandatoryPOParser, optionalPOParser}
 import parsing.metadata.ParticipantsParser.participantsParser
-import parsing.metadata.PrerequisitesParser.{
-  recommendedPrerequisitesParser,
-  requiredPrerequisitesParser
-}
+import parsing.metadata.PrerequisitesParser.{recommendedPrerequisitesParser, requiredPrerequisitesParser}
 import parsing.metadata.TaughtWithParser.taughtWithParser
 import parsing.metadata.WorkloadParser.workloadParser
 import parsing.types._

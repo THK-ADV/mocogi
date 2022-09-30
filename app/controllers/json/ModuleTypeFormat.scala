@@ -1,6 +1,6 @@
 package controllers.json
 
-import parsing.types.ModuleType
+import basedata.ModuleType
 import play.api.libs.json.{Format, Json}
 
 trait ModuleTypeFormat {

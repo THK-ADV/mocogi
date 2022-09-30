@@ -1,11 +1,12 @@
 package parsing.metadata
 
+import basedata.FocusArea
 import helper.FakeFocusAreas
 import org.scalatest.EitherValues
 import org.scalatest.wordspec.AnyWordSpec
 import parsing.ParserSpecHelper
 import parsing.metadata.ECTSParser._
-import parsing.types.{ECTSFocusAreaContribution, FocusArea}
+import parsing.types.ECTSFocusAreaContribution
 
 final class ECTSParserSpec
     extends AnyWordSpec

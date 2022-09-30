@@ -1,3 +1,3 @@
-package parsing.types
+package basedata
 
 case class FocusArea(abbrev: String)

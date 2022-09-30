@@ -1,4 +1,4 @@
-package parsing.types
+package basedata
 
 trait LabelDescLike {
   def abbrev: String

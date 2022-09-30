@@ -1,9 +1,10 @@
 package parsing.metadata
 
+import basedata.FocusArea
 import parser.Parser
 import parser.Parser._
 import parser.ParserOps.P0
-import parsing.types.{ECTSFocusAreaContribution, FocusArea}
+import parsing.types.ECTSFocusAreaContribution
 import parsing.{doubleForKey, removeIndentation, stringForKey}
 
 object ECTSParser {

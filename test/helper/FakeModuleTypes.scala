@@ -1,6 +1,6 @@
 package helper
 
-import parsing.types.ModuleType
+import basedata.ModuleType
 
 trait FakeModuleTypes {
   implicit def fakeModuleTypes: Seq[ModuleType] = Seq(

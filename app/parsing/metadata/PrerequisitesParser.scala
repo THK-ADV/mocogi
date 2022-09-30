@@ -1,10 +1,11 @@
 package parsing.metadata
 
+import basedata.StudyProgram
 import parser.Parser
 import parser.Parser._
 import parser.ParserOps._
 import parsing.helper.MultipleValueParser.multipleParser
-import parsing.types.{PrerequisiteEntry, StudyProgram}
+import parsing.types.PrerequisiteEntry
 import parsing.{removeIndentation, stringForKey}
 
 object PrerequisitesParser {

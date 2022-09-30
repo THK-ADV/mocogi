@@ -1,8 +1,8 @@
 package service
 
+import basedata.Status
 import database.repo.StatusRepository
 import parsing.metadata.file.StatusFileParser
-import parsing.types.Status
 
 import javax.inject.{Inject, Singleton}
 

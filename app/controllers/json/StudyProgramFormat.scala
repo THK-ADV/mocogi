@@ -1,6 +1,6 @@
 package controllers.json
 
-import parsing.types.StudyProgram
+import basedata.StudyProgram
 import play.api.libs.json.{Format, Json}
 
 trait StudyProgramFormat {

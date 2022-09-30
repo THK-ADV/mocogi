@@ -1,6 +1,6 @@
 package helper
 
-import parsing.types.FocusArea
+import basedata.FocusArea
 
 trait FakeFocusAreas {
   implicit def fakeFocusAreas: Seq[FocusArea] =

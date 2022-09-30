@@ -1,11 +1,12 @@
 package parsing.metadata
 
+import basedata.StudyProgram
 import helper.FakeStudyPrograms
 import org.scalatest.EitherValues
 import org.scalatest.wordspec.AnyWordSpec
 import parsing.ParserSpecHelper
 import parsing.metadata.POParser._
-import parsing.types.{POMandatory, POOptional, StudyProgram}
+import parsing.types.{POMandatory, POOptional}
 
 class POParserSpec
     extends AnyWordSpec

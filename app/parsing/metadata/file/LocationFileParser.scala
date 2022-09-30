@@ -1,7 +1,6 @@
 package parsing.metadata.file
 
-import parsing.types.Location
-
+import basedata.Location
 import javax.inject.Singleton
 
 @Singleton

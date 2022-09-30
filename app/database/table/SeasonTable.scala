@@ -1,6 +1,6 @@
 package database.table
 
-import parsing.types.Season
+import basedata.Season
 import slick.jdbc.PostgresProfile.api._
 
 final class SeasonTable(tag: Tag) extends Table[Season](tag, "season") {

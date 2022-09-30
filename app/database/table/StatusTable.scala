@@ -1,6 +1,6 @@
 package database.table
 
-import parsing.types.Status
+import basedata.Status
 import slick.jdbc.PostgresProfile.api._
 
 final class StatusTable(tag: Tag) extends Table[Status](tag, "status") {

@@ -1,7 +1,6 @@
 package parsing.metadata.file
 
-import parsing.types.Status
-
+import basedata.Status
 import javax.inject.Singleton
 
 @Singleton

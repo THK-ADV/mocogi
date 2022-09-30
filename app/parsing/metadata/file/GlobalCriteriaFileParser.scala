@@ -1,7 +1,6 @@
 package parsing.metadata.file
 
-import parsing.types.GlobalCriteria
-
+import basedata.GlobalCriteria
 import javax.inject.Singleton
 
 @Singleton

@@ -1,7 +1,7 @@
 package database.repo
 
+import basedata.Person
 import database.table.PersonTable
-import parsing.types.Person
 import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfigProvider}
 import slick.jdbc.JdbcProfile
 

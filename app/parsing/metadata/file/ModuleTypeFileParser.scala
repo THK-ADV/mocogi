@@ -1,7 +1,6 @@
 package parsing.metadata.file
 
-import parsing.types.ModuleType
-
+import basedata.ModuleType
 import javax.inject.Singleton
 
 @Singleton

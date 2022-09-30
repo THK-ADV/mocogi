@@ -1,6 +1,6 @@
 package controllers.json
 
-import parsing.types.Status
+import basedata.Status
 import play.api.libs.json.{Format, Json}
 
 trait StatusFormat {

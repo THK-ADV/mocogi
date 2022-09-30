@@ -1,7 +1,7 @@
 package controllers
 
+import basedata.Person
 import controllers.json.PersonFormat
-import parsing.types.Person
 import play.api.libs.json.Writes
 import play.api.mvc.{AbstractController, ControllerComponents}
 import service.PersonService

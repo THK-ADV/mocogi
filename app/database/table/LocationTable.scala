@@ -1,6 +1,6 @@
 package database.table
 
-import parsing.types.Location
+import basedata.Location
 import slick.jdbc.PostgresProfile.api._
 
 final class LocationTable(tag: Tag) extends Table[Location](tag, "location") {

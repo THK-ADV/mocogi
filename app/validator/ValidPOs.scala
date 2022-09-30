@@ -1,6 +1,7 @@
 package validator
 
-import parsing.types.{POMandatory, StudyProgram}
+import basedata.StudyProgram
+import parsing.types.POMandatory
 
 case class ValidPOs(
     mandatory: List[POMandatory],

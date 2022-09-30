@@ -1,6 +1,6 @@
-package parsing.types
+package basedata
 
-case class GlobalCriteria(
+case class Competence(
     abbrev: String,
     deLabel: String,
     deDesc: String,

@@ -1,11 +1,12 @@
 package parsing.metadata
 
+import basedata.StudyProgram
 import helper.FakeStudyPrograms
 import org.scalatest.EitherValues
 import org.scalatest.wordspec.AnyWordSpec
 import parsing.ParserSpecHelper
 import parsing.metadata.PrerequisitesParser.recommendedPrerequisitesParser
-import parsing.types.{PrerequisiteEntry, StudyProgram}
+import parsing.types.PrerequisiteEntry
 
 class PrerequisitesParserSpec
     extends AnyWordSpec

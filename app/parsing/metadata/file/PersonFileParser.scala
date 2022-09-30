@@ -1,10 +1,10 @@
 package parsing.metadata.file
 
+import basedata.Person
 import parser.Parser
 import parser.Parser.{newline, prefixTo, zeroOrMoreSpaces}
 import parser.ParserOps.{P2, P3, P4}
 import parsing.singleLineStringForKey
-import parsing.types.Person
 
 import javax.inject.Singleton
 
