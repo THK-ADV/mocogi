@@ -11,7 +11,7 @@ case class Metadata(
     credits: Either[Double, List[ECTSFocusAreaContribution]],
     language: Language,
     duration: Int,
-    frequency: Season,
+    season: Season,
     responsibilities: Responsibilities,
     assessmentMethods: AssessmentMethods,
     workload: Workload,

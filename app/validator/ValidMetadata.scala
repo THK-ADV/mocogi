@@ -1,17 +1,28 @@
 package validator
 
-import parsing.types.{AssessmentMethods, ECTS, Participants}
+import parsing.types._
 
 import java.util.UUID
 
 case class ValidMetadata(
     id: UUID,
-    assessmentMethods: AssessmentMethods,
-    participants: Option[Participants],
+    title: String,
+    abbrev: String,
+    kind: ModuleType,
+    relation: Option[ValidModuleRelation],
     ects: ECTS,
-    taughtWith: List[Module],
-    prerequisites: ValidPrerequisites,
+    language: Language,
+    duration: Int,
+    season: Season,
+    responsibilities: Responsibilities,
+    assessmentMethods: AssessmentMethods,
     workload: ValidWorkload,
+    prerequisites: ValidPrerequisites,
+    status: Status,
+    location: Location,
     validPOs: ValidPOs,
-    relation: Option[ValidModuleRelation]
+    participants: Option[Participants],
+    competences: List[Competence],
+    globalCriteria: List[GlobalCriteria],
+    taughtWith: List[Module]
 )

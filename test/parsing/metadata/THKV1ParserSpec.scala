@@ -84,10 +84,6 @@ class THKV1ParserSpec
       val (res1, rest1) = durationParser.parse("duration: 1")
       assert(res1.value == 1)
       assert(rest1.isEmpty)
-
-      val (res2, rest2) = durationParser.parse("duration: -1")
-      assert(res2.value == -1)
-      assert(rest2.isEmpty)
     }
 
     "parse different flavours of metadata" should {
@@ -108,7 +104,7 @@ class THKV1ParserSpec
         assert(metadata.credits == Left(5))
         assert(metadata.language == Language("de", "Deutsch", "--"))
         assert(metadata.duration == 1)
-        assert(metadata.frequency == Season("ws", "Wintersemester", "--"))
+        assert(metadata.season == Season("ws", "Wintersemester", "--"))
         assert(
           metadata.responsibilities == Responsibilities(
             List(
@@ -227,7 +223,7 @@ class THKV1ParserSpec
         )
         assert(metadata.language == Language("en", "Englisch", "--"))
         assert(metadata.duration == 1)
-        assert(metadata.frequency == Season("ss", "Sommersemester", "--"))
+        assert(metadata.season == Season("ss", "Sommersemester", "--"))
         assert(
           metadata.responsibilities == Responsibilities(
             List(

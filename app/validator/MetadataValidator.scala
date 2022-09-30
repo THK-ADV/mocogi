@@ -3,7 +3,6 @@ package validator
 import parsing.types._
 
 import scala.collection.mutable.ListBuffer
-import scala.concurrent.Future
 
 object MetadataValidator {
 
@@ -159,6 +158,17 @@ object MetadataValidator {
         }
       )
 
+  def nonEmptyStringValidator(label: String): SimpleValidator[String] =
+    SimpleValidator(s =>
+      Either.cond(s.nonEmpty, s, List(s"$label must be set, but was empty"))
+    )
+
+  def titleValidatorAdapter(): Validator[Metadata, String] =
+    nonEmptyStringValidator("title").pullback[Metadata](_.title)
+
+  def abbrevValidatorAdapter(): Validator[Metadata, String] =
+    nonEmptyStringValidator("abbrev").pullback[Metadata](_.abbrev)
+
   def assessmentMethodsValidatorAdapter
       : Validator[Metadata, AssessmentMethods] =
     assessmentMethodsValidator.pullback(_.assessmentMethods)
@@ -205,25 +215,54 @@ object MetadataValidator {
   def validations(
       creditPointFactor: Int,
       lookup: Lookup
-  ): Validator[Metadata, ValidMetadata] =
-    assessmentMethodsValidatorAdapter
+  ): Validator[Metadata, ValidMetadata] = {
+    titleValidatorAdapter()
+      .zip(abbrevValidatorAdapter())
+      .zip(assessmentMethodsValidatorAdapter)
       .zip(participantsValidatorAdapter)
       .zip(ectsWorkloadAdapter(creditPointFactor))
       .zip(taughtWithValidatorAdapter(lookup))
       .zip(prerequisitesValidatorAdapter(lookup))
       .zip(posValidatorAdapter(lookup))
       .zip(moduleRelationValidatorAdapter(lookup))
-      .map { case (m, ((((((am, p), (ects, wl)), tw), pre), pos), rel)) =>
-        ValidMetadata(m.id, am, p, ects, tw, pre, wl, pos, rel)
+      .map {
+        case (
+              m,
+              ((((((((t, abbrev), am), part), (ects, wl)), tw), pre), pos), rel)
+            ) =>
+          ValidMetadata(
+            m.id,
+            t,
+            abbrev,
+            m.kind,
+            rel,
+            ects,
+            m.language,
+            m.duration,
+            m.season,
+            m.responsibilities,
+            am,
+            wl,
+            pre,
+            m.status,
+            m.location,
+            pos,
+            part,
+            m.competences,
+            m.globalCriteria,
+            tw
+          )
       }
+  }
+
+  def toModule(m: Metadata): Module = Module(m.id, m.abbrev)
 
   def validate(
       metadata: Seq[Metadata],
       creditPointFactor: Int,
-      lookup: String => Future[Metadata]
-  ): Seq[Validation[ValidMetadata]] =
-    metadata.map { m =>
-      validations(creditPointFactor, _ => Option.empty[Module]).validate(m)
-    }
-
+      lookup: String => Option[Metadata]
+  ): Seq[Validation[ValidMetadata]] = {
+    val validator = validations(creditPointFactor, lookup(_).map(toModule))
+    metadata.map(m => validator.validate(m))
+  }
 }

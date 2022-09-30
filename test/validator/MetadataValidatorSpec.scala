@@ -59,6 +59,15 @@ final class MetadataValidatorSpec
       assert(validator.validate(4).left.value == List("wrong grade"))
     }
 
+    "validating non empty strings" in {
+      assert(nonEmptyStringValidator("value").validate("test").value == "test")
+      assert(
+        nonEmptyStringValidator("value").validate("").left.value == List(
+          "value must be set, but was empty"
+        )
+      )
+    }
+
     "validating assessment methods" should {
       "pass if their percentage is 0" in {
         val am1 = AssessmentMethods(Nil, Nil)

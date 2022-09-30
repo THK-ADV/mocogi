@@ -2,18 +2,8 @@ package parsing.yaml
 
 import org.scalatest.EitherValues
 import org.scalatest.wordspec.AnyWordSpec
-import parsing.{
-  >,
-  ParserSpecHelper,
-  Plain,
-  multilineStringForKey,
-  multilineStringStrategy,
-  removeIndentation,
-  shiftSpaces,
-  singleLineStringForKey,
-  stringForKey,
-  |
-}
+import parser.ParsingError
+import parsing._
 
 final class YamlParserSpec
     extends AnyWordSpec
@@ -21,6 +11,17 @@ final class YamlParserSpec
     with EitherValues {
 
   "A Yaml Parser Spec" when {
+    "parse positive int" in {
+      val (res1, rest1) = posIntForKey("key").parse("key: 5")
+      assert(rest1.isEmpty)
+      assert(res1.value == 5)
+
+      val (res2, rest2) = posIntForKey("key").parse("key: -1")
+      val expected = res2.left.value.expected
+      assert(rest2 == "key: -1")
+      assert(expected == "int to be positive")
+    }
+
     "parse a multiline string strategy" should {
       "return >" in {
         val (res1, rest1) = multilineStringStrategy.parse(">")
