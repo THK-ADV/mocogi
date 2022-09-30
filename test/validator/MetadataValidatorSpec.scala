@@ -196,25 +196,25 @@ final class MetadataValidatorSpec
       }
     }
 
-    "validating taught with" should {
+    "validating modules" should {
       "pass if all modules are found" in {
         assert(
-          taughtWithValidator(lookup).validate(List("m1", "m2")).value == List(
+          moduleValidator(lookup).validate(List("m1", "m2")).value == List(
             m1,
             m2
           )
         )
         assert(
-          taughtWithValidator(lookup).validate(List("m1")).value == List(m1)
+          moduleValidator(lookup).validate(List("m1")).value == List(m1)
         )
         assert(
-          taughtWithValidator(lookup).validate(Nil).value.isEmpty
+          moduleValidator(lookup).validate(Nil).value.isEmpty
         )
       }
 
       "fail if one module can't be found" in {
         assert(
-          taughtWithValidator(lookup)
+          moduleValidator(lookup)
             .validate(List("m1", "m4", "m5"))
             .left
             .value == List("module not found: m4", "module not found: m5")

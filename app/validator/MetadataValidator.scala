@@ -103,26 +103,27 @@ object MetadataValidator {
     }
   }
 
-  def resolveModules[Module](
-      modules: List[String],
-      lookup: String => Option[Module]
-  ): Either[List[String], List[Module]] = {
-    val (errs, res) =
-      modules.partitionMap(m => lookup(m).toRight(s"module not found: $m"))
-    Either.cond(errs.isEmpty, res, errs)
-  }
-
-  def taughtWithValidator[Module](
+  def moduleValidator(
       lookup: String => Option[Module]
   ): Validator[List[String], List[Module]] =
-    Validator(modules => resolveModules(modules, lookup))
+    Validator { modules =>
+      val (errs, res) =
+        modules.partitionMap(m => lookup(m).toRight(s"module not found: $m"))
+      Either.cond(errs.isEmpty, res, errs)
+    }
+
+  def taughtWithValidator(
+      lookup: String => Option[Module]
+  ): Validator[List[String], List[Module]] =
+    moduleValidator(lookup)
 
   def prerequisitesEntryValidator(
       lookup: String => Option[Module]
   ): Validator[Option[PrerequisiteEntry], Option[ValidPrerequisiteEntry]] =
     Validator {
       case Some(e) =>
-        resolveModules(e.modules, lookup)
+        moduleValidator(lookup)
+          .validate(e.modules)
           .map(modules =>
             Some(ValidPrerequisiteEntry(e.text, modules, e.studyPrograms))
           )
