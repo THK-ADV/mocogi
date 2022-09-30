@@ -5,6 +5,8 @@ import org.scalatest.{EitherValues, OptionValues}
 import parsing.types._
 import validator.MetadataValidator._
 
+import java.util.UUID
+
 final class MetadataValidatorSpec
     extends AnyWordSpec
     with EitherValues
@@ -18,6 +20,17 @@ final class MetadataValidatorSpec
 
   private def ectsContrib(value: Double) =
     ECTSFocusAreaContribution(fa, value, "")
+
+  private def prerequisiteEntry(modules: List[String]) =
+    PrerequisiteEntry("", modules, Nil)
+
+  val m1 = Module(UUID.randomUUID, "m1")
+  val m2 = Module(UUID.randomUUID, "m2")
+  val m3 = Module(UUID.randomUUID, "m3")
+  val modules = List(m1, m2, m3)
+
+  def lookup(module: String): Option[Module] =
+    modules.find(_.abbrev == module)
 
   "A Metadata Validator" when {
     "validating assessment methods" should {
@@ -184,38 +197,122 @@ final class MetadataValidatorSpec
 
     "validating taught with" should {
       "pass if all modules are found" in {
-        val modules = List[String]("m1", "m2", "m3")
-
-        def lookup(module: String): Option[String] =
-          modules.find(_ == module)
-
         assert(
           taughtWithValidator(lookup).validate(List("m1", "m2")).value == List(
-            "m1",
-            "m2"
+            m1,
+            m2
           )
         )
-
         assert(
-          taughtWithValidator(lookup).validate(List("m1")).value == List("m1")
+          taughtWithValidator(lookup).validate(List("m1")).value == List(m1)
         )
-
         assert(
           taughtWithValidator(lookup).validate(Nil).value.isEmpty
         )
       }
 
       "fail if one module can't be found" in {
-        val modules = List[String]("m1", "m2", "m3")
-
-        def lookup(module: String): Option[String] =
-          modules.find(_ == module)
-
         assert(
           taughtWithValidator(lookup)
             .validate(List("m1", "m4", "m5"))
             .left
-            .value == List("missing module: m4", "missing module: m5")
+            .value == List("module not found: m4", "module not found: m5")
+        )
+      }
+    }
+
+    "validating prerequisites" should {
+      "pass if prerequisites are empty" in {
+        assert(prerequisitesEntryValidator(lookup).validate(None).value.isEmpty)
+      }
+
+      "pass if modules defined in prerequisiteEntry are found" in {
+        assert(
+          prerequisitesEntryValidator(lookup)
+            .validate(Some(prerequisiteEntry(List("m1", "m2"))))
+            .value
+            .value == ValidPrerequisiteEntry("", List(m1, m2), Nil)
+        )
+        assert(
+          prerequisitesEntryValidator(lookup)
+            .validate(Some(prerequisiteEntry(List("m1"))))
+            .value
+            .value == ValidPrerequisiteEntry("", List(m1), Nil)
+        )
+        assert(
+          prerequisitesEntryValidator(lookup)
+            .validate(Some(prerequisiteEntry(Nil)))
+            .value
+            .value == ValidPrerequisiteEntry("", Nil, Nil)
+        )
+      }
+
+      "fail if modules defined in prerequisiteEntry are not found" in {
+        assert(
+          prerequisitesEntryValidator(lookup)
+            .validate(Some(prerequisiteEntry(List("abc"))))
+            .left
+            .value == List("module not found: abc")
+        )
+      }
+
+      "pass validating prerequisites" in {
+        assert(
+          prerequisitesValidator(lookup)
+            .validate(
+              Prerequisites(
+                Some(prerequisiteEntry(List("m1"))),
+                Some(prerequisiteEntry(List("m2")))
+              )
+            )
+            .value == ValidPrerequisites(
+            Some(ValidPrerequisiteEntry("", List(m1), Nil)),
+            Some(ValidPrerequisiteEntry("", List(m2), Nil))
+          )
+        )
+        assert(
+          prerequisitesValidator(lookup)
+            .validate(
+              Prerequisites(
+                Some(prerequisiteEntry(List("m1"))),
+                None
+              )
+            )
+            .value == ValidPrerequisites(
+            Some(ValidPrerequisiteEntry("", List(m1), Nil)),
+            None
+          )
+        )
+        assert(
+          prerequisitesValidator(lookup)
+            .validate(Prerequisites(None, None))
+            .value == ValidPrerequisites(None, None)
+        )
+        assert(
+          prerequisitesValidator(lookup)
+            .validate(
+              Prerequisites(
+                Some(prerequisiteEntry(List("m1"))),
+                Some(prerequisiteEntry(List("abc")))
+              )
+            )
+            .left
+            .value == List("module not found: abc")
+        )
+        assert(
+          prerequisitesValidator(lookup)
+            .validate(
+              Prerequisites(
+                Some(prerequisiteEntry(List("def", "123"))),
+                Some(prerequisiteEntry(List("abc")))
+              )
+            )
+            .left
+            .value == List(
+            "module not found: def",
+            "module not found: 123",
+            "module not found: abc"
+          )
         )
       }
     }

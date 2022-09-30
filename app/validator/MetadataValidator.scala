@@ -3,7 +3,6 @@ package validator
 import parsing.types._
 import validator.MetadataValidator.Validation
 
-import java.util.UUID
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.Future
 
@@ -29,14 +28,23 @@ case class Validator[A, B](validate: A => Validation[B]) {
 
   def map[C](f: B => C): Validator[A, C] =
     Validator(a => this.validate(a).map(f))
+
+  def pullback[C](toLocalValue: C => A): Validator[C, B] =
+    Validator { globalValue =>
+      this.validate(toLocalValue(globalValue))
+    }
 }
 
-case class SimpleValidator[A](validate: A => Validation[A])
+case class SimpleValidator[A](validate: A => Validation[A]) {
+  def pullback[B](toLocalValue: B => A): Validator[B, A] =
+    Validator { globalValue =>
+      this.validate(toLocalValue(globalValue))
+    }
+}
 
 object MetadataValidator {
 
   type Validation[A] = Either[List[String], A]
-  type Module = (UUID, String)
 
   def assessmentMethodsValidator: SimpleValidator[AssessmentMethods] =
     SimpleValidator { am =>
@@ -125,7 +133,7 @@ object MetadataValidator {
       lookup: String => Option[Module]
   ): Either[List[String], List[Module]] = {
     val (errs, res) =
-      modules.partitionMap(m => lookup(m).toRight(s"missing module: $m"))
+      modules.partitionMap(m => lookup(m).toRight(s"module not found: $m"))
     Either.cond(errs.isEmpty, res, errs)
   }
 
@@ -134,44 +142,46 @@ object MetadataValidator {
   ): Validator[List[String], List[Module]] =
     Validator(modules => resolveModules(modules, lookup))
 
-  def prerequisitesValidator[Module](
+  def prerequisitesEntryValidator(
       lookup: String => Option[Module]
-  ): Validator[Prerequisites, (List[Module], List[Module])] =
-    Validator { prerequisites =>
-      prerequisites.required.map(r => resolveModules(r.modules, lookup))
-      ???
+  ): Validator[Option[PrerequisiteEntry], Option[ValidPrerequisiteEntry]] =
+    Validator {
+      case Some(e) =>
+        resolveModules(e.modules, lookup)
+          .map(modules =>
+            Some(ValidPrerequisiteEntry(e.text, modules, e.studyPrograms))
+          )
+      case None =>
+        Right(None)
     }
 
-  def simplePullback[GlobalValue, LocalValue](
-      validator: SimpleValidator[LocalValue],
-      toLocalValue: GlobalValue => LocalValue
-  ): Validator[GlobalValue, LocalValue] =
-    Validator { globalValue =>
-      validator.validate(toLocalValue(globalValue))
-    }
-
-  def pullback[GlobalValue, LocalValue, NewLocalValue](
-      validator: Validator[LocalValue, NewLocalValue],
-      toLocalValue: GlobalValue => LocalValue
-  ): Validator[GlobalValue, NewLocalValue] =
-    Validator { globalValue =>
-      validator.validate(toLocalValue(globalValue))
-    }
+  def prerequisitesValidator(
+      lookup: String => Option[Module]
+  ): Validator[Prerequisites, ValidPrerequisites] =
+    prerequisitesEntryValidator(lookup)
+      .pullback[Prerequisites](_.recommended)
+      .zip(prerequisitesEntryValidator(lookup).pullback(_.required))
+      .map(ValidPrerequisites.tupled)
 
   def assessmentMethodsValidatorAdapter
       : Validator[Metadata, AssessmentMethods] =
-    simplePullback(assessmentMethodsValidator, _.assessmentMethods)
+    assessmentMethodsValidator.pullback(_.assessmentMethods)
 
   def participantsValidatorAdapter: Validator[Metadata, Option[Participants]] =
-    simplePullback(participantsValidator, _.participants)
+    participantsValidator.pullback(_.participants)
 
   def ectsValidatorAdapter: Validator[Metadata, ECTS] =
-    pullback(ectsValidator, _.credits)
+    ectsValidator.pullback(_.credits)
+
+  def prerequisitesValidatorAdapter(
+      lookup: String => Option[Module]
+  ): Validator[Metadata, ValidPrerequisites] =
+    prerequisitesValidator(lookup).pullback(_.prerequisites)
 
   def taughtWithValidatorAdapter(
       lookup: String => Option[Module]
   ): Validator[Metadata, List[Module]] =
-    pullback(taughtWithValidator(lookup), _.taughtWith)
+    taughtWithValidator(lookup).pullback(_.taughtWith)
 
   def validations(
       m: Metadata,
@@ -181,8 +191,9 @@ object MetadataValidator {
       .zip(participantsValidatorAdapter)
       .zip(ectsValidatorAdapter)
       .zip(taughtWithValidatorAdapter(lookup))
-      .map { case (((a, b), c), d) =>
-        ValidMetadata(m.id, a, b, c, d)
+      .zip(prerequisitesValidatorAdapter(lookup))
+      .map { case ((((a, b), c), d), e) =>
+        ValidMetadata(m.id, a, b, c, d, e)
       }
 
   def validate(
