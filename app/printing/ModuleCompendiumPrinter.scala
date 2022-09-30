@@ -34,24 +34,24 @@ class ModuleCompendiumPrinterImpl extends ModuleCompendiumPrinter {
   }
 
   private def fmtPrerequisites(
-      prerequisites: Option[PrerequisiteEntry]
+      prerequisites: Option[ParsedPrerequisiteEntry]
   ): String =
     prerequisites match {
       case None    => "Keine"
       case Some(p) => p.modules.mkString("\n") // TODO use all fields
     }
 
-  private def fmtPOMandatory(pos: POs): String = {
+  private def fmtPOMandatory(pos: ParsedPOs): String = {
     val xs = pos.mandatory
     if (xs.isEmpty) "Keine"
     else xs.map(_.studyProgram).mkString(", ") // TODO use all fields
   }
 
-  private def moduleRelationRow(relation: ModuleRelation): Printer[Unit] =
+  private def moduleRelationRow(relation: ParsedModuleRelation): Printer[Unit] =
     relation match {
-      case ModuleRelation.Parent(children) =>
+      case ParsedModuleRelation.Parent(children) =>
         row("Besteht aus den Teilmodulen", children.mkString(", "))
-      case ModuleRelation.Child(parent) =>
+      case ParsedModuleRelation.Child(parent) =>
         row("Gehört zum Modul", parent)
     }
 

@@ -2,16 +2,16 @@ package controllers.json
 
 import parsing.types._
 import play.api.libs.json.{Format, JsError, Json, OFormat}
-import validator.ValidModuleRelation.{Child, Parent}
+import validator.ModuleRelation.{Child, Parent}
 import validator.{
+  Metadata,
   Module,
-  ValidMetadata,
-  ValidModuleRelation,
-  ValidPOOptional,
-  ValidPOs,
-  ValidPrerequisiteEntry,
-  ValidPrerequisites,
-  ValidWorkload
+  ModuleRelation,
+  POOptional,
+  POs,
+  PrerequisiteEntry,
+  Prerequisites,
+  Workload
 }
 
 trait MetadataFormat
@@ -30,20 +30,8 @@ trait MetadataFormat
   implicit val participantsFormat: Format[Participants] =
     Json.format[Participants]
 
-  implicit val poOptionalFormat: Format[POOptional] =
-    Json.format[POOptional]
-
   implicit val poMandatoryFormat: Format[POMandatory] =
     Json.format[POMandatory]
-
-  implicit val posFormat: Format[POs] =
-    Json.format[POs]
-
-  implicit val prerequisiteFormat: Format[PrerequisiteEntry] =
-    Json.format[PrerequisiteEntry]
-
-  implicit val prerequisitesFormat: Format[Prerequisites] =
-    Json.format[Prerequisites]
 
   implicit val ectsFocusAreaContribution: Format[ECTSFocusAreaContribution] =
     Json.format[ECTSFocusAreaContribution]
@@ -66,22 +54,19 @@ trait MetadataFormat
   implicit val moduleFormat: Format[Module] =
     Json.format[Module]
 
-  implicit val validPrerequisitesEntryFormat: Format[ValidPrerequisiteEntry] =
-    Json.format[ValidPrerequisiteEntry]
+  implicit val prerequisitesEntryFormat: Format[PrerequisiteEntry] =
+    Json.format[PrerequisiteEntry]
 
-  implicit val validPrerequisitesFormat: Format[ValidPrerequisites] =
-    Json.format[ValidPrerequisites]
+  implicit val prerequisitesFormat: Format[Prerequisites] =
+    Json.format[Prerequisites]
 
-  implicit val validWorkloadFormat: Format[ValidWorkload] =
-    Json.format[ValidWorkload]
+  implicit val poOptFormat: Format[POOptional] =
+    Json.format[POOptional]
 
-  implicit val validPOOptFormat: Format[ValidPOOptional] =
-    Json.format[ValidPOOptional]
+  implicit val posFormat: Format[POs] =
+    Json.format[POs]
 
-  implicit val validPOsFormat: Format[ValidPOs] =
-    Json.format[ValidPOs]
-
-  implicit val moduleRelationFormat: Format[ValidModuleRelation] =
+  implicit val moduleRelationFormat: Format[ModuleRelation] =
     OFormat.apply(
       js =>
         js.\("type").validate[String].flatMap {
@@ -106,6 +91,6 @@ trait MetadataFormat
       }
     )
 
-  implicit val metaDataFormat: Format[ValidMetadata] =
-    Json.format[ValidMetadata]
+  implicit val metaDataFormat: Format[Metadata] =
+    Json.format[Metadata]
 }

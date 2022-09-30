@@ -3,19 +3,19 @@ package providers
 import config.KafkaConfig
 import controllers.json.MetadataFormat
 import org.apache.kafka.common.serialization.Serializer
-import parsing.types.Metadata
+import parsing.types.ParsedMetadata
 import play.api.inject.ApplicationLifecycle
 import play.api.libs.json.Json
 import publisher.KafkaPublisher
-import validator.ValidMetadata
+import validator.Metadata
 
 import javax.inject.{Inject, Provider, Singleton}
 import scala.util.control.NonFatal
 
 private class MetadataSerializer
-    extends Serializer[ValidMetadata]
+    extends Serializer[Metadata]
     with MetadataFormat {
-  override def serialize(topic: String, data: ValidMetadata) =
+  override def serialize(topic: String, data: Metadata) =
     topic match {
       case "metadata" =>
         try Json.toBytes(metaDataFormat.writes(data))
@@ -29,9 +29,9 @@ private class MetadataSerializer
 final class KafkaPublisherProvider @Inject() (
     config: ConfigReader,
     applicationLifecycle: ApplicationLifecycle
-) extends Provider[KafkaPublisher[ValidMetadata]] {
+) extends Provider[KafkaPublisher[Metadata]] {
 
-  override def get(): KafkaPublisher[ValidMetadata] =
+  override def get(): KafkaPublisher[Metadata] =
     new KafkaPublisher(
       KafkaConfig(config.kafkaServerUrl, config.kafkaApplicationId),
       "metadata",

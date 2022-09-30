@@ -1,6 +1,6 @@
 package parsing.types
 
-case class Workload(
+case class ParsedWorkload(
     lecture: Int,
     seminar: Int,
     practical: Int,

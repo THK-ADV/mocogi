@@ -6,7 +6,7 @@ import org.scalatest.EitherValues
 import org.scalatest.wordspec.AnyWordSpec
 import parsing.ParserSpecHelper
 import parsing.metadata.POParser._
-import parsing.types.{POMandatory, POOptional}
+import parsing.types.{POMandatory, ParsedPOOptional}
 
 class POParserSpec
     extends AnyWordSpec
@@ -80,7 +80,7 @@ class POParserSpec
       val (res, rest) = optionalPOParser.parse(input)
       assert(
         res.value == List(
-          POOptional(StudyProgram("wi5"), "wpf", partOfCatalog = false, List(3))
+          ParsedPOOptional(StudyProgram("wi5"), "wpf", partOfCatalog = false, List(3))
         )
       )
       assert(rest.isEmpty)
@@ -102,8 +102,8 @@ class POParserSpec
       val (res, rest) = optionalPOParser.parse(input)
       assert(
         res.value == List(
-          POOptional(StudyProgram("wi5"), "wpf", partOfCatalog = false, List(3)),
-          POOptional(StudyProgram("ai2"), "wpf", partOfCatalog = true, List(3, 1))
+          ParsedPOOptional(StudyProgram("wi5"), "wpf", partOfCatalog = false, List(3)),
+          ParsedPOOptional(StudyProgram("ai2"), "wpf", partOfCatalog = true, List(3, 1))
         )
       )
       assert(rest.isEmpty)

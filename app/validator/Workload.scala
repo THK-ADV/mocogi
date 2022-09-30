@@ -1,6 +1,6 @@
 package validator
 
-case class ValidWorkload(
+case class Workload(
     lecture: Int,
     seminar: Int,
     practical: Int,

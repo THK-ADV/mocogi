@@ -6,7 +6,7 @@ import org.scalatest.EitherValues
 import org.scalatest.wordspec.AnyWordSpec
 import parsing.ParserSpecHelper
 import parsing.metadata.PrerequisitesParser.recommendedPrerequisitesParser
-import parsing.types.PrerequisiteEntry
+import parsing.types.ParsedPrerequisiteEntry
 
 class PrerequisitesParserSpec
     extends AnyWordSpec
@@ -29,7 +29,7 @@ class PrerequisitesParserSpec
           |    - study_program.mi4""".stripMargin
       val (res, rest) = recommendedPrerequisitesParser.parse(input)
       assert(
-        res.value == PrerequisiteEntry(
+        res.value == ParsedPrerequisiteEntry(
           "benötigt werden kenntnisse in algebra und java\nund ein pc.\n",
           List("ap1", "ap2"),
           List(StudyProgram("mi4"))
@@ -47,7 +47,7 @@ class PrerequisitesParserSpec
           |  """.stripMargin
       val (res, rest) = recommendedPrerequisitesParser.parse(input)
       assert(
-        res.value == PrerequisiteEntry(
+        res.value == ParsedPrerequisiteEntry(
           "",
           List("ap1", "ap2"),
           Nil
@@ -63,7 +63,7 @@ class PrerequisitesParserSpec
           |    - study_program.mi4""".stripMargin
       val (res, rest) = recommendedPrerequisitesParser.parse(input)
       assert(
-        res.value == PrerequisiteEntry(
+        res.value == ParsedPrerequisiteEntry(
           "",
           Nil,
           List(StudyProgram("mi4"))

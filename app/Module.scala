@@ -10,7 +10,7 @@ import printing.{
 import providers._
 import publisher.KafkaPublisher
 import service._
-import validator.ValidMetadata
+import validator.Metadata
 
 class Module() extends AbstractModule {
 
@@ -62,7 +62,7 @@ class Module() extends AbstractModule {
     bind(new TypeLiteral[Set[MetadataParser]] {})
       .toProvider(classOf[MetadataParserProvider])
       .asEagerSingleton()
-    bind(new TypeLiteral[KafkaPublisher[ValidMetadata]] {})
+    bind(new TypeLiteral[KafkaPublisher[Metadata]] {})
       .toProvider(classOf[KafkaPublisherProvider])
       .asEagerSingleton()
   }

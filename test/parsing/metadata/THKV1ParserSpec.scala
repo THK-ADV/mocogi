@@ -101,7 +101,7 @@ class THKV1ParserSpec
         assert(metadata.title == "Algorithmik")
         assert(metadata.abbrev == "ALG")
         assert(metadata.kind == ModuleType("module", "Modul", "--"))
-        assert(metadata.relation.contains(ModuleRelation.Child("inf")))
+        assert(metadata.relation.contains(ParsedModuleRelation.Child("inf")))
         assert(metadata.credits == Left(5))
         assert(metadata.language == Language("de", "Deutsch", "--"))
         assert(metadata.duration == 1)
@@ -129,11 +129,11 @@ class THKV1ParserSpec
             Nil
           )
         )
-        assert(metadata.workload == Workload(36, 0, 18, 18, 0, 0))
+        assert(metadata.workload == ParsedWorkload(36, 0, 18, 18, 0, 0))
         assert(
-          metadata.prerequisites == Prerequisites(
+          metadata.prerequisites == ParsedPrerequisites(
             Some(
-              PrerequisiteEntry(
+              ParsedPrerequisiteEntry(
                 "",
                 List("ap1", "ap2", "ma1"),
                 Nil
@@ -145,12 +145,12 @@ class THKV1ParserSpec
         assert(metadata.status == Status("active", "Aktiv", "--"))
         assert(metadata.location == Location("gm", "Gummersbach", "--"))
         assert(
-          metadata.pos == POs(
+          metadata.pos == ParsedPOs(
             List(
               POMandatory(StudyProgram("ai2"), List(3), Nil)
             ),
             List(
-              POOptional(
+              ParsedPOOptional(
                 StudyProgram("wi5"),
                 "wpf",
                 partOfCatalog = false,
@@ -258,12 +258,12 @@ class THKV1ParserSpec
             )
           )
         )
-        assert(metadata.workload == Workload(30, 0, 10, 10, 0, 0))
-        assert(metadata.prerequisites == Prerequisites(None, None))
+        assert(metadata.workload == ParsedWorkload(30, 0, 10, 10, 0, 0))
+        assert(metadata.prerequisites == ParsedPrerequisites(None, None))
         assert(metadata.status == Status("active", "Aktiv", "--"))
         assert(metadata.location == Location("gm", "Gummersbach", "--"))
         assert(
-          metadata.pos == POs(
+          metadata.pos == ParsedPOs(
             List(
               POMandatory(StudyProgram("ai2"), List(4), Nil),
               POMandatory(StudyProgram("mi4"), List(4), Nil),

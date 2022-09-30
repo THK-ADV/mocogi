@@ -23,7 +23,7 @@ class FakeMetadataParser extends MetadataParser {
       globalCriteria: Seq[GlobalCriteria],
       studyPrograms: Seq[StudyProgram]
   ) = always(
-    Metadata(
+    ParsedMetadata(
       UUID.randomUUID(),
       "",
       "",
@@ -35,11 +35,11 @@ class FakeMetadataParser extends MetadataParser {
       Season("", "", ""),
       Responsibilities(Nil, Nil),
       AssessmentMethods(Nil, Nil),
-      Workload(0, 0, 0, 0, 0, 0),
-      Prerequisites(None, None),
+      ParsedWorkload(0, 0, 0, 0, 0, 0),
+      ParsedPrerequisites(None, None),
       Status("", "", ""),
       Location("", "", ""),
-      POs(Nil, Nil),
+      ParsedPOs(Nil, Nil),
       None,
       Nil,
       Nil,

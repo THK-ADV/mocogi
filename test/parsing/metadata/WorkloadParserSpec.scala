@@ -4,7 +4,7 @@ import org.scalatest.EitherValues
 import org.scalatest.wordspec.AnyWordSpec
 import parsing.ParserSpecHelper
 import parsing.metadata.WorkloadParser.workloadParser
-import parsing.types.Workload
+import parsing.types.ParsedWorkload
 
 class WorkloadParserSpec
     extends AnyWordSpec
@@ -22,7 +22,7 @@ class WorkloadParserSpec
           |  project_supervision: 0
           |  project_work: 0""".stripMargin
       val (res, rest) = workloadParser.parse(input)
-      assert(res.value == Workload(36, 0, 18, 18, 0, 0))
+      assert(res.value == ParsedWorkload(36, 0, 18, 18, 0, 0))
       assert(rest.isEmpty)
     }
 

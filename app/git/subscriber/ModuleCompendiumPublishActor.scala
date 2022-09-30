@@ -3,21 +3,21 @@ package git.subscriber
 import akka.actor.{Actor, Props}
 import git.publisher.ModuleCompendiumPublisher.OnUpdate
 import ops.PrettyPrinter
-import parsing.types.Metadata
+import parsing.types.ParsedMetadata
 import play.api.Logging
 import publisher.{KafkaPublisher, Record}
-import validator.ValidMetadata
+import validator.Metadata
 
 import scala.util.{Failure, Success}
 
 object ModuleCompendiumPublishActor {
-  def props(publisher: KafkaPublisher[ValidMetadata]) = Props(
+  def props(publisher: KafkaPublisher[Metadata]) = Props(
     new ModuleCompendiumPublishActor(publisher)
   )
 }
 
 private final class ModuleCompendiumPublishActor(
-    publisher: KafkaPublisher[ValidMetadata]
+    publisher: KafkaPublisher[Metadata]
 ) extends Actor
     with Logging {
 

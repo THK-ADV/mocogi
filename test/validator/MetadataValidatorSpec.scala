@@ -1,6 +1,6 @@
 package validator
 
-import basedata.{AssessmentMethod, FocusArea, Language, Location, ModuleType, Season, Status, StudyProgram}
+import basedata._
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatest.{EitherValues, OptionValues}
 import parsing.types._
@@ -27,10 +27,10 @@ final class MetadataValidatorSpec
     ECTSFocusAreaContribution(fa, value, "")
 
   private def prerequisiteEntry(modules: List[String]) =
-    PrerequisiteEntry("", modules, Nil)
+    ParsedPrerequisiteEntry("", modules, Nil)
 
   private def poOpt(module: String) =
-    POOptional(sp, module, partOfCatalog = false, Nil)
+    ParsedPOOptional(sp, module, partOfCatalog = false, Nil)
 
   val m1 = Module(UUID.randomUUID, "m1")
   val m2 = Module(UUID.randomUUID, "m2")
@@ -279,19 +279,19 @@ final class MetadataValidatorSpec
           prerequisitesEntryValidator("prerequisites", lookup)
             .validate(Some(prerequisiteEntry(List("m1", "m2"))))
             .value
-            .value == ValidPrerequisiteEntry("", List(m1, m2), Nil)
+            .value == PrerequisiteEntry("", List(m1, m2), Nil)
         )
         assert(
           prerequisitesEntryValidator("prerequisites", lookup)
             .validate(Some(prerequisiteEntry(List("m1"))))
             .value
-            .value == ValidPrerequisiteEntry("", List(m1), Nil)
+            .value == PrerequisiteEntry("", List(m1), Nil)
         )
         assert(
           prerequisitesEntryValidator("prerequisites", lookup)
             .validate(Some(prerequisiteEntry(Nil)))
             .value
-            .value == ValidPrerequisiteEntry("", Nil, Nil)
+            .value == PrerequisiteEntry("", Nil, Nil)
         )
       }
 
@@ -308,38 +308,38 @@ final class MetadataValidatorSpec
         assert(
           prerequisitesValidator(lookup)
             .validate(
-              Prerequisites(
+              ParsedPrerequisites(
                 Some(prerequisiteEntry(List("m1"))),
                 Some(prerequisiteEntry(List("m2")))
               )
             )
-            .value == ValidPrerequisites(
-            Some(ValidPrerequisiteEntry("", List(m1), Nil)),
-            Some(ValidPrerequisiteEntry("", List(m2), Nil))
+            .value == Prerequisites(
+            Some(PrerequisiteEntry("", List(m1), Nil)),
+            Some(PrerequisiteEntry("", List(m2), Nil))
           )
         )
         assert(
           prerequisitesValidator(lookup)
             .validate(
-              Prerequisites(
+              ParsedPrerequisites(
                 Some(prerequisiteEntry(List("m1"))),
                 None
               )
             )
-            .value == ValidPrerequisites(
-            Some(ValidPrerequisiteEntry("", List(m1), Nil)),
+            .value == Prerequisites(
+            Some(PrerequisiteEntry("", List(m1), Nil)),
             None
           )
         )
         assert(
           prerequisitesValidator(lookup)
-            .validate(Prerequisites(None, None))
-            .value == ValidPrerequisites(None, None)
+            .validate(ParsedPrerequisites(None, None))
+            .value == Prerequisites(None, None)
         )
         assert(
           prerequisitesValidator(lookup)
             .validate(
-              Prerequisites(
+              ParsedPrerequisites(
                 Some(prerequisiteEntry(List("m1"))),
                 Some(prerequisiteEntry(List("abc")))
               )
@@ -350,7 +350,7 @@ final class MetadataValidatorSpec
         assert(
           prerequisitesValidator(lookup)
             .validate(
-              Prerequisites(
+              ParsedPrerequisites(
                 Some(prerequisiteEntry(List("def", "123"))),
                 Some(prerequisiteEntry(List("abc")))
               )
@@ -369,18 +369,18 @@ final class MetadataValidatorSpec
       "pass by setting self study and total value" in {
         assert(
           workloadValidator(creditPointFactor)
-            .validate((Workload(10, 10, 0, 0, 10, 0), ECTS(2, Nil)))
-            .value == ValidWorkload(10, 10, 0, 0, 10, 0, 30, 60)
+            .validate((ParsedWorkload(10, 10, 0, 0, 10, 0), ECTS(2, Nil)))
+            .value == Workload(10, 10, 0, 0, 10, 0, 30, 60)
         )
         assert(
           workloadValidator(creditPointFactor)
-            .validate((Workload(0, 0, 0, 0, 0, 0), ECTS(2, Nil)))
-            .value == ValidWorkload(0, 0, 0, 0, 0, 0, 60, 60)
+            .validate((ParsedWorkload(0, 0, 0, 0, 0, 0), ECTS(2, Nil)))
+            .value == Workload(0, 0, 0, 0, 0, 0, 60, 60)
         )
         assert(
           workloadValidator(creditPointFactor)
-            .validate((Workload(0, 0, 0, 0, 0, 0), ECTS(0, Nil)))
-            .value == ValidWorkload(0, 0, 0, 0, 0, 0, 0, 0)
+            .validate((ParsedWorkload(0, 0, 0, 0, 0, 0), ECTS(0, Nil)))
+            .value == Workload(0, 0, 0, 0, 0, 0, 0, 0)
         )
       }
     }
@@ -389,15 +389,15 @@ final class MetadataValidatorSpec
       "pass if modules can be found" in {
         assert(
           poOptionalValidator(lookup).validate(List(poOpt("m1"))).value == List(
-            ValidPOOptional(sp, m1, partOfCatalog = false, Nil)
+            POOptional(sp, m1, partOfCatalog = false, Nil)
           )
         )
         assert(
           poOptionalValidator(lookup)
             .validate(List(poOpt("m1"), poOpt("m2")))
             .value == List(
-            ValidPOOptional(sp, m1, partOfCatalog = false, Nil),
-            ValidPOOptional(sp, m2, partOfCatalog = false, Nil)
+            POOptional(sp, m1, partOfCatalog = false, Nil),
+            POOptional(sp, m2, partOfCatalog = false, Nil)
           )
         )
         assert(poOptionalValidator(lookup).validate(Nil).value == Nil)
@@ -414,16 +414,16 @@ final class MetadataValidatorSpec
 
       "handle pos validation" in {
         posValidator(lookup)
-          .validate(POs(Nil, List(poOpt("m1"))))
-          .value == ValidPOs(
+          .validate(ParsedPOs(Nil, List(poOpt("m1"))))
+          .value == POs(
           Nil,
-          List(ValidPOOptional(sp, m1, partOfCatalog = false, Nil))
+          List(POOptional(sp, m1, partOfCatalog = false, Nil))
         )
         posValidator(lookup)
-          .validate(POs(Nil, Nil))
-          .value == ValidPOs(Nil, Nil)
+          .validate(ParsedPOs(Nil, Nil))
+          .value == POs(Nil, Nil)
         posValidator(lookup)
-          .validate(POs(Nil, List(poOpt("abc"))))
+          .validate(ParsedPOs(Nil, List(poOpt("abc"))))
           .left
           .value == List("module not found: abc")
       }
@@ -437,22 +437,22 @@ final class MetadataValidatorSpec
       "pass if parent is found" in {
         assert(
           moduleRelationValidator(lookup)
-            .validate(Some(ModuleRelation.Child("m1")))
+            .validate(Some(ParsedModuleRelation.Child("m1")))
             .value
-            .value == ValidModuleRelation.Child(m1)
+            .value == ModuleRelation.Child(m1)
         )
       }
 
       "fail if parent is not found" in {
         assert(
           moduleRelationValidator(lookup)
-            .validate(Some(ModuleRelation.Child("abc")))
+            .validate(Some(ParsedModuleRelation.Child("abc")))
             .left
             .value == List("module in 'module relation' not found: abc")
         )
         assert(
           moduleRelationValidator(lookup)
-            .validate(Some(ModuleRelation.Child("")))
+            .validate(Some(ParsedModuleRelation.Child("")))
             .left
             .value == List("module in 'module relation' not found: ")
         )
@@ -461,22 +461,22 @@ final class MetadataValidatorSpec
       "pass if children are found" in {
         assert(
           moduleRelationValidator(lookup)
-            .validate(Some(ModuleRelation.Parent(List("m1", "m2"))))
+            .validate(Some(ParsedModuleRelation.Parent(List("m1", "m2"))))
             .value
-            .value == ValidModuleRelation.Parent(List(m1, m2))
+            .value == ModuleRelation.Parent(List(m1, m2))
         )
         assert(
           moduleRelationValidator(lookup)
-            .validate(Some(ModuleRelation.Parent(Nil)))
+            .validate(Some(ParsedModuleRelation.Parent(Nil)))
             .value
-            .value == ValidModuleRelation.Parent(Nil)
+            .value == ModuleRelation.Parent(Nil)
         )
       }
 
       "fail if one child is not found" in {
         assert(
           moduleRelationValidator(lookup)
-            .validate(Some(ModuleRelation.Parent(List("m1", "abc"))))
+            .validate(Some(ParsedModuleRelation.Parent(List("m1", "abc"))))
             .left
             .value == List("module in 'module relation' not found: abc")
         )
@@ -485,12 +485,12 @@ final class MetadataValidatorSpec
 
     "validating metadata" should {
       "pass if everything is fine" in {
-        val ivm1: Metadata = Metadata(
+        val ivm1: ParsedMetadata = ParsedMetadata(
           UUID.randomUUID(),
           "title",
           "abbrev",
           ModuleType("", "", ""),
-          Some(ModuleRelation.Child("m1")),
+          Some(ParsedModuleRelation.Child("m1")),
           Left(1),
           Language("", "", ""),
           1,
@@ -500,38 +500,38 @@ final class MetadataValidatorSpec
             List(method(Some(50)), method(Some(50))),
             List(method(None))
           ),
-          Workload(5, 0, 0, 0, 0, 0),
-          Prerequisites(None, None),
+          ParsedWorkload(5, 0, 0, 0, 0, 0),
+          ParsedPrerequisites(None, None),
           Status("", "", ""),
           Location("", "", ""),
-          POs(
+          ParsedPOs(
             List(POMandatory(sp, List(1), Nil)),
-            List(POOptional(sp, "m2", partOfCatalog = false, List(2)))
+            List(ParsedPOOptional(sp, "m2", partOfCatalog = false, List(2)))
           ),
           Some(Participants(10, 20)),
           Nil,
           Nil,
           Nil
         )
-        val vm1 = ValidMetadata(
+        val vm1 = Metadata(
           ivm1.id,
           ivm1.title,
           ivm1.abbrev,
           ivm1.kind,
-          Some(ValidModuleRelation.Child(m1)),
+          Some(ModuleRelation.Child(m1)),
           ECTS(1, Nil),
           ivm1.language,
           ivm1.duration,
           ivm1.season,
           ivm1.responsibilities,
           ivm1.assessmentMethods,
-          ValidWorkload(5, 0, 0, 0, 0, 0, 5, 10),
-          ValidPrerequisites(None, None),
+          Workload(5, 0, 0, 0, 0, 0, 5, 10),
+          Prerequisites(None, None),
           ivm1.status,
           ivm1.location,
-          ValidPOs(
+          POs(
             List(POMandatory(sp, List(1), Nil)),
-            List(ValidPOOptional(sp, m2, partOfCatalog = false, List(2)))
+            List(POOptional(sp, m2, partOfCatalog = false, List(2)))
           ),
           Some(Participants(10, 20)),
           Nil,
@@ -563,12 +563,12 @@ final class MetadataValidatorSpec
       }
 
       "fail if something is invalid" in {
-        val ivm1: Metadata = Metadata(
+        val ivm1: ParsedMetadata = ParsedMetadata(
           UUID.randomUUID(),
           "",
           "abbrev",
           ModuleType("", "", ""),
-          Some(ModuleRelation.Child("abc")),
+          Some(ParsedModuleRelation.Child("abc")),
           Left(1),
           Language("", "", ""),
           1,
@@ -578,13 +578,13 @@ final class MetadataValidatorSpec
             List(method(Some(50)), method(Some(50))),
             List(method(None))
           ),
-          Workload(5, 0, 0, 0, 0, 0),
-          Prerequisites(None, None),
+          ParsedWorkload(5, 0, 0, 0, 0, 0),
+          ParsedPrerequisites(None, None),
           Status("", "", ""),
           Location("", "", ""),
-          POs(
+          ParsedPOs(
             List(POMandatory(sp, List(1), Nil)),
-            List(POOptional(sp, "m2", partOfCatalog = false, List(2)))
+            List(ParsedPOOptional(sp, "m2", partOfCatalog = false, List(2)))
           ),
           Some(Participants(20, 15)),
           Nil,

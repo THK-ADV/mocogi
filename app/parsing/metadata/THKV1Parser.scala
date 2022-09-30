@@ -54,7 +54,7 @@ final class THKV1Parser @Inject() (
       competences: Seq[Competence],
       globalCriteria: Seq[GlobalCriteria],
       studyPrograms: Seq[StudyProgram]
-  ): Parser[Metadata] =
+  ): Parser[ParsedMetadata] =
     idParser
       .zip(titleParser)
       .take(abbreviationParser)
@@ -78,7 +78,7 @@ final class THKV1Parser @Inject() (
         recommendedPrerequisitesParser.option
           .zip(requiredPrerequisitesParser.option)
           .skip(optional(newline))
-          .map(Prerequisites.tupled)
+          .map(ParsedPrerequisites.tupled)
       )
       .take(statusParser.parser)
       .take(locationParser.parser)
@@ -86,7 +86,7 @@ final class THKV1Parser @Inject() (
       .take(
         mandatoryPOParser
           .zip(optionalPOParser.option.map(_.getOrElse(Nil)))
-          .map(POs.tupled)
+          .map(ParsedPOs.tupled)
       )
       .take(
         participantsParser.option
@@ -118,7 +118,7 @@ final class THKV1Parser @Inject() (
               pos,
               (participants, competences, globalCriteria, taughtWith)
             ) =>
-          Metadata(
+          ParsedMetadata(
             id,
             title,
             abbrev,

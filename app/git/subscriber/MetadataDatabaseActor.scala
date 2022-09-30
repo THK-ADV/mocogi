@@ -9,7 +9,7 @@ import database.table.{
 }
 import git.GitFilePath
 import git.publisher.ModuleCompendiumPublisher.OnUpdate
-import parsing.types.Metadata
+import parsing.types.ParsedMetadata
 import play.api.Logging
 import service.MetadataService
 
@@ -41,7 +41,7 @@ private final class MetadataDatabaseActor(
     }*/
   }
 
-  private def createOrUpdate(metadata: Metadata, gitPath: GitFilePath): Unit =
+  private def createOrUpdate(metadata: ParsedMetadata, gitPath: GitFilePath): Unit =
     metadataService.createOrUpdate(metadata, gitPath) onComplete {
       case Success((a, b, c)) => logSuccess(a, b, c)
       case Failure(e)         => logError(metadata, gitPath, e)
@@ -124,7 +124,7 @@ private final class MetadataDatabaseActor(
   }
 
   private def logError(
-      metadata: Metadata,
+      metadata: ParsedMetadata,
       gitPath: GitFilePath,
       t: Throwable
   ): Unit =

@@ -1,6 +1,7 @@
-package parsing.types
+package validator
 
-import basedata.{Competence, GlobalCriteria, Language, Location, ModuleType, Season, Status}
+import basedata._
+import parsing.types._
 
 import java.util.UUID
 
@@ -10,7 +11,7 @@ case class Metadata(
     abbrev: String,
     kind: ModuleType,
     relation: Option[ModuleRelation],
-    credits: Either[Double, List[ECTSFocusAreaContribution]],
+    ects: ECTS,
     language: Language,
     duration: Int,
     season: Season,
@@ -20,9 +21,9 @@ case class Metadata(
     prerequisites: Prerequisites,
     status: Status,
     location: Location,
-    pos: POs,
+    validPOs: POs,
     participants: Option[Participants],
     competences: List[Competence],
     globalCriteria: List[GlobalCriteria],
-    taughtWith: List[String]
+    taughtWith: List[Module]
 )

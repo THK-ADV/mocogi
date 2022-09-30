@@ -1,4 +1,4 @@
-package parsing.types
+package validator
 
 import basedata.StudyProgram
 
@@ -9,6 +9,6 @@ case class Prerequisites(
 
 case class PrerequisiteEntry(
     text: String,
-    modules: List[String],
+    modules: List[Module],
     studyPrograms: List[StudyProgram]
 )

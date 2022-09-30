@@ -3,12 +3,12 @@ package validator
 import basedata.StudyProgram
 import parsing.types.POMandatory
 
-case class ValidPOs(
+case class POs(
     mandatory: List[POMandatory],
-    optional: List[ValidPOOptional]
+    optional: List[POOptional]
 )
 
-case class ValidPOOptional(
+case class POOptional(
     studyProgram: StudyProgram,
     instanceOf: Module,
     partOfCatalog: Boolean,

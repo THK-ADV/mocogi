@@ -65,8 +65,8 @@ object MetadataValidator {
 
   def workloadValidator(
       creditPointFactor: Int
-  ): Validator[(Workload, ECTS), ValidWorkload] = {
-    def sumWorkload(w: Workload): Int =
+  ): Validator[(ParsedWorkload, ECTS), Workload] = {
+    def sumWorkload(w: ParsedWorkload): Int =
       w.lecture +
         w.seminar +
         w.practical +
@@ -81,7 +81,7 @@ object MetadataValidator {
         Left(List("workload's self study must be positive"))
       else
         Right(
-          ValidWorkload(
+          Workload(
             workload.lecture,
             workload.seminar,
             workload.practical,
@@ -115,31 +115,33 @@ object MetadataValidator {
   def prerequisitesEntryValidator(
       label: String,
       lookup: Lookup
-  ): Validator[Option[PrerequisiteEntry], Option[ValidPrerequisiteEntry]] =
+  ): Validator[Option[ParsedPrerequisiteEntry], Option[PrerequisiteEntry]] =
     moduleValidator(label, lookup)
-      .pullback[Option[PrerequisiteEntry]](_.map(_.modules).getOrElse(Nil))
+      .pullback[Option[ParsedPrerequisiteEntry]](
+        _.map(_.modules).getOrElse(Nil)
+      )
       .map((p, ms) =>
-        p.map(e => ValidPrerequisiteEntry(e.text, ms, e.studyPrograms))
+        p.map(e => PrerequisiteEntry(e.text, ms, e.studyPrograms))
       )
 
   def prerequisitesValidator(
       lookup: Lookup
-  ): Validator[Prerequisites, ValidPrerequisites] =
+  ): Validator[ParsedPrerequisites, Prerequisites] =
     prerequisitesEntryValidator("recommended prerequisites", lookup)
-      .pullback[Prerequisites](_.recommended)
+      .pullback[ParsedPrerequisites](_.recommended)
       .zip(
         prerequisitesEntryValidator("required prerequisites", lookup)
           .pullback(_.required)
       )
-      .map((_, p) => ValidPrerequisites.tupled(p))
+      .map((_, p) => Prerequisites.tupled(p))
 
   def poOptionalValidator(
       lookup: Lookup
-  ): Validator[List[POOptional], List[ValidPOOptional]] =
+  ): Validator[List[ParsedPOOptional], List[POOptional]] =
     moduleValidator("po optional", lookup)
-      .pullback[List[POOptional]](_.map(_.instanceOf))
+      .pullback[List[ParsedPOOptional]](_.map(_.instanceOf))
       .map(_.zip(_).map { case (po, m) =>
-        ValidPOOptional(
+        POOptional(
           po.studyProgram,
           m,
           po.partOfCatalog,
@@ -147,23 +149,23 @@ object MetadataValidator {
         )
       })
 
-  def posValidator(lookup: Lookup): Validator[POs, ValidPOs] =
+  def posValidator(lookup: Lookup): Validator[ParsedPOs, POs] =
     poOptionalValidator(lookup)
-      .pullback[POs](_.optional)
-      .map((pos, poOpt) => ValidPOs(pos.mandatory, poOpt))
+      .pullback[ParsedPOs](_.optional)
+      .map((pos, poOpt) => POs(pos.mandatory, poOpt))
 
   def moduleRelationValidator(
       lookup: Lookup
-  ): Validator[Option[ModuleRelation], Option[ValidModuleRelation]] =
+  ): Validator[Option[ParsedModuleRelation], Option[ModuleRelation]] =
     moduleValidator("module relation", lookup)
-      .pullback[Option[ModuleRelation]](_.map {
-        case ModuleRelation.Parent(children) => children
-        case ModuleRelation.Child(parent)    => List(parent)
+      .pullback[Option[ParsedModuleRelation]](_.map {
+        case ParsedModuleRelation.Parent(children) => children
+        case ParsedModuleRelation.Child(parent)    => List(parent)
       }.getOrElse(Nil))
       .map((r, ms) =>
         r.map {
-          case ModuleRelation.Parent(_) => ValidModuleRelation.Parent(ms)
-          case ModuleRelation.Child(_)  => ValidModuleRelation.Child(ms.head)
+          case ParsedModuleRelation.Parent(_) => ModuleRelation.Parent(ms)
+          case ParsedModuleRelation.Child(_)  => ModuleRelation.Child(ms.head)
         }
       )
 
@@ -172,59 +174,60 @@ object MetadataValidator {
       Either.cond(s.nonEmpty, s, List(s"$label must be set, but was empty"))
     )
 
-  def titleValidatorAdapter(): Validator[Metadata, String] =
-    nonEmptyStringValidator("title").pullback[Metadata](_.title)
+  def titleValidatorAdapter(): Validator[ParsedMetadata, String] =
+    nonEmptyStringValidator("title").pullback[ParsedMetadata](_.title)
 
-  def abbrevValidatorAdapter(): Validator[Metadata, String] =
-    nonEmptyStringValidator("abbrev").pullback[Metadata](_.abbrev)
+  def abbrevValidatorAdapter(): Validator[ParsedMetadata, String] =
+    nonEmptyStringValidator("abbrev").pullback[ParsedMetadata](_.abbrev)
 
   def assessmentMethodsValidatorAdapter
-      : Validator[Metadata, AssessmentMethods] =
+      : Validator[ParsedMetadata, AssessmentMethods] =
     assessmentMethodsValidator.pullback(_.assessmentMethods)
 
-  def participantsValidatorAdapter: Validator[Metadata, Option[Participants]] =
+  def participantsValidatorAdapter
+      : Validator[ParsedMetadata, Option[Participants]] =
     participantsValidator.pullback(_.participants)
 
-  def ectsValidatorAdapter: Validator[Metadata, ECTS] =
+  def ectsValidatorAdapter: Validator[ParsedMetadata, ECTS] =
     ectsValidator.pullback(_.credits)
 
   def prerequisitesValidatorAdapter(
       lookup: Lookup
-  ): Validator[Metadata, ValidPrerequisites] =
+  ): Validator[ParsedMetadata, Prerequisites] =
     prerequisitesValidator(lookup).pullback(_.prerequisites)
 
   def taughtWithValidatorAdapter(
       lookup: Lookup
-  ): Validator[Metadata, List[Module]] =
+  ): Validator[ParsedMetadata, List[Module]] =
     taughtWithValidator(lookup).pullback(_.taughtWith)
 
   def workloadValidatorAdapter(
       creditPointFactor: Int,
       ects: ECTS
-  ): Validator[Metadata, ValidWorkload] =
+  ): Validator[ParsedMetadata, Workload] =
     workloadValidator(creditPointFactor).pullback(a => (a.workload, ects))
 
   def ectsWorkloadAdapter(
       creditPointFactor: Int
-  ): Validator[Metadata, (ECTS, ValidWorkload)] =
+  ): Validator[ParsedMetadata, (ECTS, Workload)] =
     ectsValidatorAdapter
       .flatMap((_, ects) =>
         workloadValidatorAdapter(creditPointFactor, ects)
           .map((_, workload) => (ects, workload))
       )
 
-  def posValidatorAdapter(lookup: Lookup): Validator[Metadata, ValidPOs] =
+  def posValidatorAdapter(lookup: Lookup): Validator[ParsedMetadata, POs] =
     posValidator(lookup).pullback(_.pos)
 
   def moduleRelationValidatorAdapter(
       lookup: Lookup
-  ): Validator[Metadata, Option[ValidModuleRelation]] =
+  ): Validator[ParsedMetadata, Option[ModuleRelation]] =
     moduleRelationValidator(lookup).pullback(_.relation)
 
   def validations(
       creditPointFactor: Int,
       lookup: Lookup
-  ): Validator[Metadata, ValidMetadata] = {
+  ): Validator[ParsedMetadata, Metadata] = {
     titleValidatorAdapter()
       .zip(abbrevValidatorAdapter())
       .zip(assessmentMethodsValidatorAdapter)
@@ -239,7 +242,7 @@ object MetadataValidator {
               m,
               ((((((((t, abbrev), am), part), (ects, wl)), tw), pre), pos), rel)
             ) =>
-          ValidMetadata(
+          Metadata(
             m.id,
             t,
             abbrev,
@@ -265,10 +268,10 @@ object MetadataValidator {
   }
 
   def validate(
-      metadata: Seq[Metadata],
+      metadata: Seq[ParsedMetadata],
       creditPointFactor: Int,
       lookup: String => Option[Module]
-  ): Seq[Validation[ValidMetadata]] = {
+  ): Seq[Validation[Metadata]] = {
     val validator = validations(creditPointFactor, lookup)
     metadata.map(m => validator.validate(m))
   }

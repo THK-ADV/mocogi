@@ -18,5 +18,5 @@ trait MetadataParser {
       competences: Seq[Competence],
       globalCriteria: Seq[GlobalCriteria],
       studyPrograms: Seq[StudyProgram]
-  ): Parser[Metadata]
+  ): Parser[ParsedMetadata]
 }

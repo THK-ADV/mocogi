@@ -1,29 +1,28 @@
-package validator
+package parsing.types
 
 import basedata.{Competence, GlobalCriteria, Language, Location, ModuleType, Season, Status}
-import parsing.types._
 
 import java.util.UUID
 
-case class ValidMetadata(
+case class ParsedMetadata(
     id: UUID,
     title: String,
     abbrev: String,
     kind: ModuleType,
-    relation: Option[ValidModuleRelation],
-    ects: ECTS,
+    relation: Option[ParsedModuleRelation],
+    credits: Either[Double, List[ECTSFocusAreaContribution]],
     language: Language,
     duration: Int,
     season: Season,
     responsibilities: Responsibilities,
     assessmentMethods: AssessmentMethods,
-    workload: ValidWorkload,
-    prerequisites: ValidPrerequisites,
+    workload: ParsedWorkload,
+    prerequisites: ParsedPrerequisites,
     status: Status,
     location: Location,
-    validPOs: ValidPOs,
+    pos: ParsedPOs,
     participants: Option[Participants],
     competences: List[Competence],
     globalCriteria: List[GlobalCriteria],
-    taughtWith: List[Module]
+    taughtWith: List[String]
 )
