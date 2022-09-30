@@ -1,65 +1,27 @@
 package validator
 
 import parsing.types._
-import validator.MetadataValidator.Validation
 
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.Future
 
-case class Validator[A, B](validate: A => Validation[B]) {
-  def zip[C](that: Validator[A, C]): Validator[A, (B, C)] =
-    Validator { a =>
-      var maybeB = Option.empty[B]
-      var maybeC = Option.empty[C]
-      val errs = ListBuffer[String]()
-      this.validate(a) match {
-        case Right(b)  => maybeB = Some(b)
-        case Left(err) => errs ++= err
-      }
-      that.validate(a) match {
-        case Right(c)  => maybeC = Some(c)
-        case Left(err) => errs ++= err
-      }
-      if (maybeC.isDefined && maybeB.isDefined)
-        Right((maybeB.get, maybeC.get))
-      else
-        Left(errs.toList)
-    }
-
-  def map[C](f: B => C): Validator[A, C] =
-    Validator(a => this.validate(a).map(f))
-
-  def pullback[C](toLocalValue: C => A): Validator[C, B] =
-    Validator { globalValue =>
-      this.validate(toLocalValue(globalValue))
-    }
-}
-
-case class SimpleValidator[A](validate: A => Validation[A]) {
-  def pullback[B](toLocalValue: B => A): Validator[B, A] =
-    Validator { globalValue =>
-      this.validate(toLocalValue(globalValue))
-    }
-}
-
 object MetadataValidator {
 
-  type Validation[A] = Either[List[String], A]
+  def assessmentMethodsValidator: SimpleValidator[AssessmentMethods] = {
+    def sum(xs: List[AssessmentMethodEntry]): Double =
+      xs.foldLeft(0.0) { case (acc, a) => acc + a.percentage.getOrElse(0.0) }
 
-  def assessmentMethodsValidator: SimpleValidator[AssessmentMethods] =
+    def go(xs: List[AssessmentMethodEntry], name: String): List[String] = {
+      val s = sum(xs)
+      if (s == 0 || s == 100.0) Nil
+      else List(s"$name sum must be null or 100, but was $s")
+    }
+
     SimpleValidator { am =>
-      def sum(xs: List[AssessmentMethodEntry]): Double =
-        xs.foldLeft(0.0) { case (acc, a) => acc + a.percentage.getOrElse(0.0) }
-
-      def go(xs: List[AssessmentMethodEntry], name: String): List[String] = {
-        val s = sum(xs)
-        if (s == 0 || s == 100.0) Nil
-        else List(s"$name sum must be null or 100, but was $s")
-      }
-
       val res = go(am.mandatory, "mandatory") ++ go(am.optional, "optional")
       Either.cond(res.isEmpty, am, res)
     }
+  }
 
   def participantsValidator: SimpleValidator[Option[Participants]] =
     SimpleValidator {
@@ -200,7 +162,10 @@ object MetadataValidator {
       creditPointFactor: Int
   ): Validator[Metadata, ValidWorkload] =
     workloadValidator(creditPointFactor).pullback(metadata =>
-      (metadata.workload, toECTS(metadata.credits)) // assumes ECTS validator was run before
+      (
+        metadata.workload,
+        toECTS(metadata.credits) // assumes ECTS validator was run before
+      )
     )
 
   def validations(
