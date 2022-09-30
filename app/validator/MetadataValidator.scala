@@ -95,22 +95,28 @@ object MetadataValidator {
     }
   }
 
-  def moduleValidator(lookup: Lookup): Validator[List[String], List[Module]] =
+  def moduleValidator(
+      label: String,
+      lookup: Lookup
+  ): Validator[List[String], List[Module]] =
     Validator { modules =>
       val (errs, res) =
-        modules.partitionMap(m => lookup(m).toRight(s"module not found: $m"))
+        modules.partitionMap(m =>
+          lookup(m).toRight(s"module in '$label' not found: $m")
+        )
       Either.cond(errs.isEmpty, res, errs)
     }
 
   def taughtWithValidator(
       lookup: Lookup
   ): Validator[List[String], List[Module]] =
-    moduleValidator(lookup)
+    moduleValidator("taught with", lookup)
 
   def prerequisitesEntryValidator(
+      label: String,
       lookup: Lookup
   ): Validator[Option[PrerequisiteEntry], Option[ValidPrerequisiteEntry]] =
-    moduleValidator(lookup)
+    moduleValidator(label, lookup)
       .pullback[Option[PrerequisiteEntry]](_.map(_.modules).getOrElse(Nil))
       .map((p, ms) =>
         p.map(e => ValidPrerequisiteEntry(e.text, ms, e.studyPrograms))
@@ -119,15 +125,18 @@ object MetadataValidator {
   def prerequisitesValidator(
       lookup: Lookup
   ): Validator[Prerequisites, ValidPrerequisites] =
-    prerequisitesEntryValidator(lookup)
+    prerequisitesEntryValidator("recommended prerequisites", lookup)
       .pullback[Prerequisites](_.recommended)
-      .zip(prerequisitesEntryValidator(lookup).pullback(_.required))
+      .zip(
+        prerequisitesEntryValidator("required prerequisites", lookup)
+          .pullback(_.required)
+      )
       .map((_, p) => ValidPrerequisites.tupled(p))
 
   def poOptionalValidator(
       lookup: Lookup
   ): Validator[List[POOptional], List[ValidPOOptional]] =
-    moduleValidator(lookup)
+    moduleValidator("po optional", lookup)
       .pullback[List[POOptional]](_.map(_.instanceOf))
       .map(_.zip(_).map { case (po, m) =>
         ValidPOOptional(
@@ -146,7 +155,7 @@ object MetadataValidator {
   def moduleRelationValidator(
       lookup: Lookup
   ): Validator[Option[ModuleRelation], Option[ValidModuleRelation]] =
-    moduleValidator(lookup)
+    moduleValidator("module relation", lookup)
       .pullback[Option[ModuleRelation]](_.map {
         case ModuleRelation.Parent(children) => children
         case ModuleRelation.Child(parent)    => List(parent)
@@ -255,14 +264,12 @@ object MetadataValidator {
       }
   }
 
-  def toModule(m: Metadata): Module = Module(m.id, m.abbrev)
-
   def validate(
       metadata: Seq[Metadata],
       creditPointFactor: Int,
-      lookup: String => Option[Metadata]
+      lookup: String => Option[Module]
   ): Seq[Validation[ValidMetadata]] = {
-    val validator = validations(creditPointFactor, lookup(_).map(toModule))
+    val validator = validations(creditPointFactor, lookup)
     metadata.map(m => validator.validate(m))
   }
 }

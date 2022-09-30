@@ -233,49 +233,61 @@ final class MetadataValidatorSpec
     "validating modules" should {
       "pass if all modules are found" in {
         assert(
-          moduleValidator(lookup).validate(List("m1", "m2")).value == List(
+          moduleValidator("module", lookup)
+            .validate(List("m1", "m2"))
+            .value == List(
             m1,
             m2
           )
         )
         assert(
-          moduleValidator(lookup).validate(List("m1")).value == List(m1)
+          moduleValidator("module", lookup).validate(List("m1")).value == List(
+            m1
+          )
         )
         assert(
-          moduleValidator(lookup).validate(Nil).value.isEmpty
+          moduleValidator("module", lookup).validate(Nil).value.isEmpty
         )
       }
 
       "fail if one module can't be found" in {
         assert(
-          moduleValidator(lookup)
+          moduleValidator("module", lookup)
             .validate(List("m1", "m4", "m5"))
             .left
-            .value == List("module not found: m4", "module not found: m5")
+            .value == List(
+            "module in 'module' not found: m4",
+            "module in 'module' not found: m5"
+          )
         )
       }
     }
 
     "validating prerequisites" should {
       "pass if prerequisites are empty" in {
-        assert(prerequisitesEntryValidator(lookup).validate(None).value.isEmpty)
+        assert(
+          prerequisitesEntryValidator("prerequisites", lookup)
+            .validate(None)
+            .value
+            .isEmpty
+        )
       }
 
       "pass if modules defined in prerequisiteEntry are found" in {
         assert(
-          prerequisitesEntryValidator(lookup)
+          prerequisitesEntryValidator("prerequisites", lookup)
             .validate(Some(prerequisiteEntry(List("m1", "m2"))))
             .value
             .value == ValidPrerequisiteEntry("", List(m1, m2), Nil)
         )
         assert(
-          prerequisitesEntryValidator(lookup)
+          prerequisitesEntryValidator("prerequisites", lookup)
             .validate(Some(prerequisiteEntry(List("m1"))))
             .value
             .value == ValidPrerequisiteEntry("", List(m1), Nil)
         )
         assert(
-          prerequisitesEntryValidator(lookup)
+          prerequisitesEntryValidator("prerequisites", lookup)
             .validate(Some(prerequisiteEntry(Nil)))
             .value
             .value == ValidPrerequisiteEntry("", Nil, Nil)
@@ -284,10 +296,10 @@ final class MetadataValidatorSpec
 
       "fail if modules defined in prerequisiteEntry are not found" in {
         assert(
-          prerequisitesEntryValidator(lookup)
+          prerequisitesEntryValidator("prerequisites", lookup)
             .validate(Some(prerequisiteEntry(List("abc"))))
             .left
-            .value == List("module not found: abc")
+            .value == List("module in 'prerequisites' not found: abc")
         )
       }
 
@@ -332,7 +344,7 @@ final class MetadataValidatorSpec
               )
             )
             .left
-            .value == List("module not found: abc")
+            .value == List("module in 'required prerequisites' not found: abc")
         )
         assert(
           prerequisitesValidator(lookup)
@@ -344,9 +356,9 @@ final class MetadataValidatorSpec
             )
             .left
             .value == List(
-            "module not found: def",
-            "module not found: 123",
-            "module not found: abc"
+            "module in 'recommended prerequisites' not found: def",
+            "module in 'recommended prerequisites' not found: 123",
+            "module in 'required prerequisites' not found: abc"
           )
         )
       }
@@ -395,7 +407,7 @@ final class MetadataValidatorSpec
           poOptionalValidator(lookup)
             .validate(List(poOpt("m1"), poOpt("abc")))
             .left
-            .value == List("module not found: abc")
+            .value == List("module in 'po optional' not found: abc")
         )
       }
 
@@ -435,13 +447,13 @@ final class MetadataValidatorSpec
           moduleRelationValidator(lookup)
             .validate(Some(ModuleRelation.Child("abc")))
             .left
-            .value == List("module not found: abc")
+            .value == List("module in 'module relation' not found: abc")
         )
         assert(
           moduleRelationValidator(lookup)
             .validate(Some(ModuleRelation.Child("")))
             .left
-            .value == List("module not found: ")
+            .value == List("module in 'module relation' not found: ")
         )
       }
 
@@ -465,7 +477,126 @@ final class MetadataValidatorSpec
           moduleRelationValidator(lookup)
             .validate(Some(ModuleRelation.Parent(List("m1", "abc"))))
             .left
-            .value == List("module not found: abc")
+            .value == List("module in 'module relation' not found: abc")
+        )
+      }
+    }
+
+    "validating metadata" should {
+      "pass if everything is fine" in {
+        val ivm1: Metadata = Metadata(
+          UUID.randomUUID(),
+          "title",
+          "abbrev",
+          ModuleType("", "", ""),
+          Some(ModuleRelation.Child("m1")),
+          Left(1),
+          Language("", "", ""),
+          1,
+          Season("", "", ""),
+          Responsibilities(Nil, Nil),
+          AssessmentMethods(
+            List(method(Some(50)), method(Some(50))),
+            List(method(None))
+          ),
+          Workload(5, 0, 0, 0, 0, 0),
+          Prerequisites(None, None),
+          Status("", "", ""),
+          Location("", "", ""),
+          POs(
+            List(POMandatory(sp, List(1), Nil)),
+            List(POOptional(sp, "m2", partOfCatalog = false, List(2)))
+          ),
+          Some(Participants(10, 20)),
+          Nil,
+          Nil,
+          Nil
+        )
+        val vm1 = ValidMetadata(
+          ivm1.id,
+          ivm1.title,
+          ivm1.abbrev,
+          ivm1.kind,
+          Some(ValidModuleRelation.Child(m1)),
+          ECTS(1, Nil),
+          ivm1.language,
+          ivm1.duration,
+          ivm1.season,
+          ivm1.responsibilities,
+          ivm1.assessmentMethods,
+          ValidWorkload(5, 0, 0, 0, 0, 0, 5, 10),
+          ValidPrerequisites(None, None),
+          ivm1.status,
+          ivm1.location,
+          ValidPOs(
+            List(POMandatory(sp, List(1), Nil)),
+            List(ValidPOOptional(sp, m2, partOfCatalog = false, List(2)))
+          ),
+          Some(Participants(10, 20)),
+          Nil,
+          Nil,
+          Nil
+        )
+
+        val res = validate(Seq(ivm1), 10, lookup).head.value
+        assert(res.id == vm1.id)
+        assert(res.title == vm1.title)
+        assert(res.abbrev == vm1.abbrev)
+        assert(res.kind == vm1.kind)
+        assert(res.relation == vm1.relation)
+        assert(res.ects == vm1.ects)
+        assert(res.language == vm1.language)
+        assert(res.duration == vm1.duration)
+        assert(res.season == vm1.season)
+        assert(res.responsibilities == vm1.responsibilities)
+        assert(res.assessmentMethods == vm1.assessmentMethods)
+        assert(res.workload == vm1.workload)
+        assert(res.prerequisites == vm1.prerequisites)
+        assert(res.status == vm1.status)
+        assert(res.location == vm1.location)
+        assert(res.validPOs == vm1.validPOs)
+        assert(res.participants == vm1.participants)
+        assert(res.competences == vm1.competences)
+        assert(res.globalCriteria == vm1.globalCriteria)
+        assert(res.taughtWith == vm1.taughtWith)
+      }
+
+      "fail if something is invalid" in {
+        val ivm1: Metadata = Metadata(
+          UUID.randomUUID(),
+          "",
+          "abbrev",
+          ModuleType("", "", ""),
+          Some(ModuleRelation.Child("abc")),
+          Left(1),
+          Language("", "", ""),
+          1,
+          Season("", "", ""),
+          Responsibilities(Nil, Nil),
+          AssessmentMethods(
+            List(method(Some(50)), method(Some(50))),
+            List(method(None))
+          ),
+          Workload(5, 0, 0, 0, 0, 0),
+          Prerequisites(None, None),
+          Status("", "", ""),
+          Location("", "", ""),
+          POs(
+            List(POMandatory(sp, List(1), Nil)),
+            List(POOptional(sp, "m2", partOfCatalog = false, List(2)))
+          ),
+          Some(Participants(20, 15)),
+          Nil,
+          Nil,
+          Nil
+        )
+
+        assert(
+          validate(Seq(ivm1), 10, lookup).head.left.value == List(
+            "title must be set, but was empty",
+            "participants min must be lower than max. min: 20, max: 15",
+            "module in 'module relation' not found: abc"
+          )
         )
       }
     }
