@@ -39,34 +39,25 @@ object MetadataValidator {
       case None => Right(None)
     }
 
-  private def toECTS(
-      either: Either[Double, List[ECTSFocusAreaContribution]]
-  ): ECTS =
-    either match {
-      case Left(ectsValue) =>
-        ECTS(ectsValue, Nil)
-      case Right(contributions) =>
-        val ectsValue = contributions.foldLeft(0.0) { case (acc, a) =>
-          acc + a.ectsValue
-        }
-        ECTS(ectsValue, contributions)
-    }
-
   def ectsValidator
       : Validator[Either[Double, List[ECTSFocusAreaContribution]], ECTS] =
     Validator {
       case Left(ectsValue) =>
         Either.cond(
           ectsValue != 0,
-          toECTS(Left(ectsValue)),
+          ECTS(ectsValue, Nil),
           List(
             "ects value must be set if contributions to focus areas are empty"
           )
         )
       case Right(contributions) =>
         Either.cond(
-          contributions.nonEmpty,
-          toECTS(Right(contributions)),
+          contributions.nonEmpty, {
+            val ectsValue = contributions.foldLeft(0.0) { case (acc, a) =>
+              acc + a.ectsValue
+            }
+            ECTS(ectsValue, contributions)
+          },
           List(
             "ects contributions to focus areas must be set if ects value is 0"
           )
@@ -153,6 +144,21 @@ object MetadataValidator {
       .pullback[POs](_.optional)
       .map((pos, poOpt) => ValidPOs(pos.mandatory, poOpt))
 
+  def moduleRelationValidator(
+      lookup: Lookup
+  ): Validator[Option[ModuleRelation], Option[ValidModuleRelation]] =
+    moduleValidator(lookup)
+      .pullback[Option[ModuleRelation]](_.map {
+        case ModuleRelation.Parent(children) => children
+        case ModuleRelation.Child(parent)    => List(parent)
+      }.getOrElse(Nil))
+      .map((r, ms) =>
+        r.map {
+          case ModuleRelation.Parent(_) => ValidModuleRelation.Parent(ms)
+          case ModuleRelation.Child(_)  => ValidModuleRelation.Child(ms.head)
+        }
+      )
+
   def assessmentMethodsValidatorAdapter
       : Validator[Metadata, AssessmentMethods] =
     assessmentMethodsValidator.pullback(_.assessmentMethods)
@@ -191,6 +197,11 @@ object MetadataValidator {
   def posValidatorAdapter(lookup: Lookup): Validator[Metadata, ValidPOs] =
     posValidator(lookup).pullback(_.pos)
 
+  def moduleRelationValidatorAdapter(
+      lookup: Lookup
+  ): Validator[Metadata, Option[ValidModuleRelation]] =
+    moduleRelationValidator(lookup).pullback(_.relation)
+
   def validations(
       creditPointFactor: Int,
       lookup: Lookup
@@ -201,8 +212,9 @@ object MetadataValidator {
       .zip(taughtWithValidatorAdapter(lookup))
       .zip(prerequisitesValidatorAdapter(lookup))
       .zip(posValidatorAdapter(lookup))
-      .map { case (m, (((((am, p), (ects, wl)), tw), pre), pos)) =>
-        ValidMetadata(m.id, am, p, ects, tw, pre, wl, pos)
+      .zip(moduleRelationValidatorAdapter(lookup))
+      .map { case (m, ((((((am, p), (ects, wl)), tw), pre), pos), rel)) =>
+        ValidMetadata(m.id, am, p, ects, tw, pre, wl, pos, rel)
       }
 
   def validate(

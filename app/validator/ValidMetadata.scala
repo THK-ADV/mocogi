@@ -12,5 +12,6 @@ case class ValidMetadata(
     taughtWith: List[Module],
     prerequisites: ValidPrerequisites,
     workload: ValidWorkload,
-    validPOs: ValidPOs
+    validPOs: ValidPOs,
+    relation: Option[ValidModuleRelation]
 )

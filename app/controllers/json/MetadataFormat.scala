@@ -1,11 +1,12 @@
 package controllers.json
 
-import parsing.types.ModuleRelation.{Child, Parent}
 import parsing.types._
 import play.api.libs.json.{Format, JsError, Json, OFormat}
+import validator.ValidModuleRelation.{Child, Parent}
 import validator.{
   Module,
   ValidMetadata,
+  ValidModuleRelation,
   ValidPOOptional,
   ValidPOs,
   ValidPrerequisiteEntry,
@@ -80,14 +81,14 @@ trait MetadataFormat
   implicit val validPOsFormat: Format[ValidPOs] =
     Json.format[ValidPOs]
 
-  implicit val moduleRelationFormat: Format[ModuleRelation] =
+  implicit val moduleRelationFormat: Format[ValidModuleRelation] =
     OFormat.apply(
       js =>
         js.\("type").validate[String].flatMap {
           case "parent" =>
-            js.\("children").validate[List[String]].map(Parent.apply)
+            js.\("children").validate[List[Module]].map(Parent.apply)
           case "child" =>
-            js.\("parent").validate[String].map(Child.apply)
+            js.\("parent").validate[Module].map(Child.apply)
           case other =>
             JsError(s"expected type to be parent or child, but was $other")
         },

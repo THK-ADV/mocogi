@@ -406,5 +406,59 @@ final class MetadataValidatorSpec
           .value == List("module not found: abc")
       }
     }
+
+    "validating module relations" should {
+      "skip if there is no module relation" in {
+        assert(moduleRelationValidator(lookup).validate(None).value.isEmpty)
+      }
+
+      "pass if parent is found" in {
+        assert(
+          moduleRelationValidator(lookup)
+            .validate(Some(ModuleRelation.Child("m1")))
+            .value
+            .value == ValidModuleRelation.Child(m1)
+        )
+      }
+
+      "fail if parent is not found" in {
+        assert(
+          moduleRelationValidator(lookup)
+            .validate(Some(ModuleRelation.Child("abc")))
+            .left
+            .value == List("module not found: abc")
+        )
+        assert(
+          moduleRelationValidator(lookup)
+            .validate(Some(ModuleRelation.Child("")))
+            .left
+            .value == List("module not found: ")
+        )
+      }
+
+      "pass if children are found" in {
+        assert(
+          moduleRelationValidator(lookup)
+            .validate(Some(ModuleRelation.Parent(List("m1", "m2"))))
+            .value
+            .value == ValidModuleRelation.Parent(List(m1, m2))
+        )
+        assert(
+          moduleRelationValidator(lookup)
+            .validate(Some(ModuleRelation.Parent(Nil)))
+            .value
+            .value == ValidModuleRelation.Parent(Nil)
+        )
+      }
+
+      "fail if one child is not found" in {
+        assert(
+          moduleRelationValidator(lookup)
+            .validate(Some(ModuleRelation.Parent(List("m1", "abc"))))
+            .left
+            .value == List("module not found: abc")
+        )
+      }
+    }
   }
 }
