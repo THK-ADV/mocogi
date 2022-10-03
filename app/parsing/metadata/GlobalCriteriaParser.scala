@@ -2,19 +2,15 @@ package parsing.metadata
 
 import basedata.GlobalCriteria
 import parser.Parser
-import parser.Parser.{literal, oneOf}
-import parsing.helper.MultipleValueParser.multipleParser
+import parsing.multipleValueParser
 
 object GlobalCriteriaParser {
   def globalCriteriaParser(implicit
       globalCriteria: Seq[GlobalCriteria]
   ): Parser[List[GlobalCriteria]] =
-    multipleParser(
+    multipleValueParser(
       "global_criteria",
-      oneOf(
-        globalCriteria.map(c =>
-          literal(s"global_criteria.${c.abbrev}").map(_ => c)
-        ): _*
-      )
+      c => s"global_criteria.${c.abbrev}",
+      0
     )
 }

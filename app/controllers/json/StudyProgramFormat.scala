@@ -1,9 +1,9 @@
 package controllers.json
 
-import basedata.StudyProgram
+import basedata.StudyProgramWithPO
 import play.api.libs.json.{Format, Json}
 
 trait StudyProgramFormat {
-  implicit val studyProgramFormat: Format[StudyProgram] =
-    Json.format[StudyProgram]
+  implicit val studyProgramFormat: Format[StudyProgramWithPO] =
+    Json.format[StudyProgramWithPO]
 }

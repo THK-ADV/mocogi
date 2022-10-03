@@ -4,7 +4,7 @@ import basedata.AssessmentMethod
 import parser.Parser
 import parser.Parser._
 import parser.ParserOps.{P0, P2}
-import parsing.helper.MultipleValueParser.multipleParser
+import parsing.multipleValueParser
 import parsing.types.AssessmentMethodEntry
 
 object AssessmentMethodParser {
@@ -33,7 +33,7 @@ object AssessmentMethodParser {
   private def preconditionParser(implicit
       assessmentMethods: Seq[AssessmentMethod]
   ): Parser[List[AssessmentMethod]] =
-    multipleParser("precondition", assessmentMethodParser, 1).option
+    multipleValueParser("precondition", assessmentMethodParser, 1).option
       .map(_.getOrElse(Nil))
 
   private def parser(key: String)(implicit

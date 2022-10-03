@@ -1,6 +1,6 @@
 package parsing.metadata
 
-import basedata.{AssessmentMethod, Competence, FocusArea, GlobalCriteria, Language, Location, ModuleType, Person, Season, Status, StudyProgram}
+import basedata.{AssessmentMethod, Competence, FocusArea, GlobalCriteria, Language, Location, ModuleType, Person, Season, Status, StudyProgramWithPO}
 import helper._
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatest.{EitherValues, OptionValues}
@@ -147,11 +147,11 @@ class THKV1ParserSpec
         assert(
           metadata.pos == ParsedPOs(
             List(
-              POMandatory(StudyProgram("ai2"), List(3), Nil)
+              POMandatory(StudyProgramWithPO("ai2"), List(3), Nil)
             ),
             List(
               ParsedPOOptional(
-                StudyProgram("wi5"),
+                StudyProgramWithPO("wi5"),
                 "wpf",
                 partOfCatalog = false,
                 List(3)
@@ -265,9 +265,9 @@ class THKV1ParserSpec
         assert(
           metadata.pos == ParsedPOs(
             List(
-              POMandatory(StudyProgram("ai2"), List(4), Nil),
-              POMandatory(StudyProgram("mi4"), List(4), Nil),
-              POMandatory(StudyProgram("itm2"), List(4), Nil)
+              POMandatory(StudyProgramWithPO("ai2"), List(4), Nil),
+              POMandatory(StudyProgramWithPO("mi4"), List(4), Nil),
+              POMandatory(StudyProgramWithPO("itm2"), List(4), Nil)
             ),
             Nil
           )

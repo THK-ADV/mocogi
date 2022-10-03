@@ -1,6 +1,6 @@
 package parsing.metadata
 
-import basedata.{AssessmentMethod, Competence, FocusArea, GlobalCriteria, Language, Location, ModuleType, Person, Season, Status, StudyProgram}
+import basedata.{AssessmentMethod, Competence, FocusArea, GlobalCriteria, Language, Location, ModuleType, Person, Season, Status, StudyProgramWithPO}
 import parser.Parser
 import parser.Parser._
 import parser.ParserOps._
@@ -53,7 +53,7 @@ final class THKV1Parser @Inject() (
       focusAreas: Seq[FocusArea],
       competences: Seq[Competence],
       globalCriteria: Seq[GlobalCriteria],
-      studyPrograms: Seq[StudyProgram]
+      studyPrograms: Seq[StudyProgramWithPO]
   ): Parser[ParsedMetadata] =
     idParser
       .zip(titleParser)

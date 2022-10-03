@@ -1,12 +1,12 @@
 package helper
 
-import basedata.StudyProgram
+import basedata.StudyProgramWithPO
 
 trait FakeStudyPrograms {
-  implicit def fakeStudyPrograms: Seq[StudyProgram] = Seq(
-    StudyProgram("ai2"),
-    StudyProgram("mi4"),
-    StudyProgram("wi5"),
-    StudyProgram("itm2"),
+  implicit def fakeStudyPrograms: Seq[StudyProgramWithPO] = Seq(
+    StudyProgramWithPO("ai2"),
+    StudyProgramWithPO("mi4"),
+    StudyProgramWithPO("wi5"),
+    StudyProgramWithPO("itm2"),
   )
 }

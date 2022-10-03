@@ -1,16 +1,16 @@
 package parsing.metadata
 
-import basedata.StudyProgram
+import basedata.StudyProgramWithPO
 import parser.Parser
 import parser.Parser._
 import parser.ParserOps._
-import parsing.helper.MultipleValueParser.multipleParser
+import parsing.multipleValueParser
 import parsing.types.{POMandatory, ParsedPOOptional}
 
 object POParser {
   private def studyProgramParser(implicit
-      studyPrograms: Seq[StudyProgram]
-  ): Parser[StudyProgram] =
+      studyPrograms: Seq[StudyProgramWithPO]
+  ): Parser[StudyProgramWithPO] =
     prefix("- study_program:")
       .skip(zeroOrMoreSpaces)
       .take(
@@ -23,10 +23,10 @@ object POParser {
       )
 
   private def recommendedSemesterParser =
-    multipleParser("recommended_semester", int)
+    multipleValueParser("recommended_semester", int)
 
   private def recommendedSemesterPartTimeParser =
-    multipleParser("recommended_semester_part_time", int).option
+    multipleValueParser("recommended_semester_part_time", int).option
       .map(_.getOrElse(Nil))
 
   private def instanceOfParser =
@@ -40,7 +40,7 @@ object POParser {
       .take(boolean)
 
   def mandatoryPOParser(implicit
-      studyPrograms: Seq[StudyProgram]
+      studyPrograms: Seq[StudyProgramWithPO]
   ): Parser[List[POMandatory]] =
     prefix("po_mandatory:")
       .skip(zeroOrMoreSpaces)
@@ -55,7 +55,7 @@ object POParser {
       )
 
   def optionalPOParser(implicit
-      studyPrograms: Seq[StudyProgram]
+      studyPrograms: Seq[StudyProgramWithPO]
   ): Parser[List[ParsedPOOptional]] =
     prefix("po_optional:")
       .skip(zeroOrMoreSpaces)
