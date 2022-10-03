@@ -1,8 +1,8 @@
 package parsing.metadata
 
+import basedata.Language
 import parser.Parser
 import parsing.helper.SingleValueParser
-import parsing.types.Language
 
 import javax.inject.Singleton
 

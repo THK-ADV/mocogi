@@ -1,8 +1,8 @@
 package parsing.metadata
 
+import basedata.Location
 import parser.Parser
 import parsing.helper.SingleValueParser
-import parsing.types.Location
 
 import javax.inject.Singleton
 

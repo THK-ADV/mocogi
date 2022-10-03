@@ -1,8 +1,8 @@
 package service
 
+import basedata.Person
 import database.repo.PersonRepository
-import parsing.metadata.file.PersonFileParser
-import parsing.types.Person
+import parsing.base.PersonFileParser
 
 import javax.inject.{Inject, Singleton}
 

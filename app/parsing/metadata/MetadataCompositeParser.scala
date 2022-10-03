@@ -1,5 +1,6 @@
 package parsing.metadata
 
+import basedata.{AssessmentMethod, Competence, FocusArea, GlobalCriteria, Language, Location, ModuleType, Person, Season, Status, StudyProgram}
 import parser.Parser
 import parser.Parser._
 import parser.ParserOps._
@@ -40,11 +41,11 @@ class MetadataCompositeParser @Inject() (
       competences: Seq[Competence],
       globalCriteria: Seq[GlobalCriteria],
       studyPrograms: Seq[StudyProgram]
-  ): Parser[Metadata] =
+  ): Parser[ParsedMetadata] =
     prefix("#---")
       .take(versionSchemeParser)
       .skip(newline)
-      .flatMap[Metadata] { scheme =>
+      .flatMap[ParsedMetadata] { scheme =>
         parsers.find(_.versionScheme == scheme) match {
           case Some(p) =>
             p.parser

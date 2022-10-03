@@ -4,7 +4,7 @@ import org.scalatest.wordspec.AnyWordSpec
 import org.scalatest.{EitherValues, OptionValues}
 import parsing.ParserSpecHelper
 import parsing.metadata.ModuleRelationParser.moduleRelationParser
-import parsing.types.ModuleRelation
+import parsing.types.ParsedModuleRelation
 
 class ModuleRelationParserSpec extends AnyWordSpec
   with ParserSpecHelper
@@ -19,7 +19,7 @@ class ModuleRelationParserSpec extends AnyWordSpec
           |  - module.abc
           |  - module.def""".stripMargin
       val (res1, rest1) = moduleRelationParser.parse(input1)
-      assert(res1.value.value == ModuleRelation.Parent(List("abc", "def")))
+      assert(res1.value.value == ParsedModuleRelation.Parent(List("abc", "def")))
       assert(rest1.isEmpty)
 
       val input2 =
@@ -27,7 +27,7 @@ class ModuleRelationParserSpec extends AnyWordSpec
           | children:
           |  - module.abc""".stripMargin
       val (res2, rest2) = moduleRelationParser.parse(input2)
-      assert(res2.value.value == ModuleRelation.Parent(List("abc")))
+      assert(res2.value.value == ParsedModuleRelation.Parent(List("abc")))
       assert(rest2.isEmpty)
     }
 
@@ -36,7 +36,7 @@ class ModuleRelationParserSpec extends AnyWordSpec
         """relation:
           | parent: module.abc""".stripMargin
       val (res, rest) = moduleRelationParser.parse(input)
-      assert(res.value.value == ModuleRelation.Child("abc"))
+      assert(res.value.value == ParsedModuleRelation.Child("abc"))
       assert(rest.isEmpty)
     }
 

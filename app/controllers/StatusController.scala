@@ -1,7 +1,7 @@
 package controllers
 
+import basedata.{Status => ModuleStatus}
 import controllers.json.StatusFormat
-import parsing.types.{Status => ModuleStatus}
 import play.api.libs.json.Writes
 import play.api.mvc.{AbstractController, ControllerComponents}
 import service.StatusService

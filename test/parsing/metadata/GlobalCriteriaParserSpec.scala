@@ -1,11 +1,11 @@
 package parsing.metadata
 
+import basedata.GlobalCriteria
 import helper.FakeGlobalCriteria
 import org.scalatest.EitherValues
 import org.scalatest.wordspec.AnyWordSpec
 import parsing.ParserSpecHelper
 import parsing.metadata.GlobalCriteriaParser.globalCriteriaParser
-import parsing.types.GlobalCriteria
 
 final class GlobalCriteriaParserSpec
     extends AnyWordSpec

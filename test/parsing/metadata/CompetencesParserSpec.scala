@@ -1,11 +1,11 @@
 package parsing.metadata
 
+import basedata.Competence
 import helper.FakeCompetences
 import org.scalatest.EitherValues
 import org.scalatest.wordspec.AnyWordSpec
 import parsing.ParserSpecHelper
 import parsing.metadata.CompetencesParser.competencesParser
-import parsing.types.Competence
 
 final class CompetencesParserSpec
     extends AnyWordSpec

@@ -7,7 +7,7 @@ import database.table.{
   ResponsibilityDbEntry
 }
 import git.GitFilePath
-import parsing.types.Metadata
+import parsing.types.ParsedMetadata
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
@@ -24,20 +24,20 @@ final class MetadataService @Inject() (
       List[AssessmentMethodMetadataDbEntry]
   )
 
-  def createOrUpdate(m: Metadata, path: GitFilePath): Future[MetadataResult] =
+  def createOrUpdate(m: ParsedMetadata, path: GitFilePath): Future[MetadataResult] =
     for {
       exists <- repo.exists(m)
       res <- if (exists) update(m, path) else create(m, path)
     } yield res
 
-  def create(m: Metadata, path: GitFilePath): Future[MetadataResult] =
+  def create(m: ParsedMetadata, path: GitFilePath): Future[MetadataResult] =
     repo.create(m, path)
 
-  def update(m: Metadata, path: GitFilePath): Future[MetadataResult] =
+  def update(m: ParsedMetadata, path: GitFilePath): Future[MetadataResult] =
     repo.update(m, path)
 
   def delete(path: GitFilePath): Future[Unit] =
     repo.delete(path)
 
-  def all(): Future[Seq[(Metadata, GitFilePath)]] = repo.all()
+  def all(): Future[Seq[(ParsedMetadata, GitFilePath)]] = repo.all()
 }

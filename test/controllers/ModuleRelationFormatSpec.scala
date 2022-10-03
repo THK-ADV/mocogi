@@ -2,7 +2,7 @@ package controllers
 
 import org.scalatest.wordspec.AnyWordSpec
 import play.api.libs.json.Json
-import validator.{Module, ValidModuleRelation}
+import validator.{Module, ModuleRelation}
 
 import java.util.UUID
 
@@ -15,8 +15,8 @@ class ModuleRelationFormatSpec extends AnyWordSpec {
 
   "A Module Relation Format Spec" should {
     "convert a parent object to json and parse it back to the original object" in {
-      val parent: ValidModuleRelation =
-        ValidModuleRelation.Parent(List(m1, m2, m3))
+      val parent: ModuleRelation =
+        ModuleRelation.Parent(List(m1, m2, m3))
       val json = moduleRelationFormat.writes(parent)
       assert(
         json == Json.obj(
@@ -28,7 +28,7 @@ class ModuleRelationFormatSpec extends AnyWordSpec {
     }
 
     "convert a child object to json and parse it back to the original object" in {
-      val child: ValidModuleRelation = ValidModuleRelation.Child(m1)
+      val child: ModuleRelation = ModuleRelation.Child(m1)
       val json = moduleRelationFormat.writes(child)
       assert(json == Json.obj("type" -> "child", "parent" -> Json.toJson(m1)))
       assert(moduleRelationFormat.reads(json).get == child)

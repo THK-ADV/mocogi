@@ -1,9 +1,10 @@
 package parsing.metadata
 
+import basedata.Person
 import parser.Parser
 import parser.Parser._
 import parser.ParserOps._
-import parsing.types.{Person, Responsibilities}
+import parsing.types.Responsibilities
 
 import javax.inject.{Inject, Singleton}
 

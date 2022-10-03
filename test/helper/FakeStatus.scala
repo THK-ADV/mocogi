@@ -1,6 +1,6 @@
 package helper
 
-import parsing.types.Status
+import basedata.Status
 
 trait FakeStatus {
   implicit def fakeStatus: Seq[Status] = Seq(

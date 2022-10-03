@@ -1,6 +1,6 @@
 package helper
 
-import parsing.types.Language
+import basedata.Language
 
 trait FakeLanguages {
   implicit def fakeLanguages: Seq[Language] = Seq(

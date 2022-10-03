@@ -1,7 +1,7 @@
 package database.repo
 
+import basedata.Status
 import database.table.StatusTable
-import parsing.types.Status
 import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfigProvider}
 import slick.jdbc.JdbcProfile
 

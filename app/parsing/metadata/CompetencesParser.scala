@@ -1,9 +1,9 @@
 package parsing.metadata
 
+import basedata.Competence
 import parser.Parser
 import parser.Parser.{literal, oneOf}
 import parsing.helper.MultipleValueParser.multipleParser
-import parsing.types.Competence
 
 object CompetencesParser {
 

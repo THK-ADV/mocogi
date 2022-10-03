@@ -1,5 +1,5 @@
 package parsing.types
 
-import validator.ValidMetadata
+import validator.Metadata
 
-case class ModuleCompendium(metadata: ValidMetadata, deContent: Content, enContent: Content)
+case class ModuleCompendium(metadata: Metadata, deContent: Content, enContent: Content)

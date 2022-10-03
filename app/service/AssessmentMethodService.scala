@@ -1,8 +1,8 @@
 package service
 
+import basedata.AssessmentMethod
 import database.repo.AssessmentMethodRepository
-import parsing.metadata.file.AssessmentMethodFileParser
-import parsing.types.AssessmentMethod
+import parsing.base.AssessmentMethodFileParser
 
 import javax.inject.{Inject, Singleton}
 

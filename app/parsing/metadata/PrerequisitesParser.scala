@@ -1,10 +1,11 @@
 package parsing.metadata
 
+import basedata.StudyProgram
 import parser.Parser
 import parser.Parser._
 import parser.ParserOps._
 import parsing.helper.MultipleValueParser.multipleParser
-import parsing.types.{PrerequisiteEntry, StudyProgram}
+import parsing.types.ParsedPrerequisiteEntry
 import parsing.{removeIndentation, stringForKey}
 
 object PrerequisitesParser {
@@ -34,22 +35,22 @@ object PrerequisitesParser {
 
   private def parser(
       key: String
-  )(implicit studyPrograms: Seq[StudyProgram]): Parser[PrerequisiteEntry] =
+  )(implicit studyPrograms: Seq[StudyProgram]): Parser[ParsedPrerequisiteEntry] =
     prefix(s"$key:")
       .skip(zeroOrMoreSpaces)
       .skip(removeIndentation())
       .take(textParser)
       .zip(modulesParser)
       .take(studyProgramsParser)
-      .map(PrerequisiteEntry.tupled)
+      .map(ParsedPrerequisiteEntry.tupled)
 
   def recommendedPrerequisitesParser(implicit
       studyPrograms: Seq[StudyProgram]
-  ): Parser[PrerequisiteEntry] =
+  ): Parser[ParsedPrerequisiteEntry] =
     parser("recommended_prerequisites")
 
   def requiredPrerequisitesParser(implicit
       studyPrograms: Seq[StudyProgram]
-  ): Parser[PrerequisiteEntry] =
+  ): Parser[ParsedPrerequisiteEntry] =
     parser("required_prerequisites")
 }

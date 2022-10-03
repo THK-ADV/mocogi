@@ -1,6 +1,6 @@
 package helper
 
-import parsing.types.GlobalCriteria
+import basedata.GlobalCriteria
 
 trait FakeGlobalCriteria {
   implicit def fakeGlobalCriteria: Seq[GlobalCriteria] = Seq(

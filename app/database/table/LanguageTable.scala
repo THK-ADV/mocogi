@@ -1,6 +1,6 @@
 package database.table
 
-import parsing.types.Language
+import basedata.Language
 import slick.jdbc.PostgresProfile.api._
 
 final class LanguageTable(tag: Tag) extends Table[Language](tag, "language") {

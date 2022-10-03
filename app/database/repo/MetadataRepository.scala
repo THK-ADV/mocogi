@@ -16,7 +16,7 @@ final class MetadataRepository @Inject() (
 ) extends HasDatabaseConfigProvider[JdbcProfile] {
   import profile.api._
 
-  type GetResult = (Metadata, GitFilePath)
+  type GetResult = (ParsedMetadata, GitFilePath)
 
   type AddResult = (
       MetadataDbEntry,
@@ -75,7 +75,7 @@ final class MetadataRepository @Inject() (
     )
   }*/
 
-  def update(m: Metadata, path: GitFilePath): Future[AddResult] =
+  def update(m: ParsedMetadata, path: GitFilePath): Future[AddResult] =
     Future.failed(new Throwable("currently unsupported"))
   /*
     def go(query: Query[MetadataTable, MetadataDbEntry, Seq]) = {
@@ -129,7 +129,7 @@ final class MetadataRepository @Inject() (
     )
   }*/
 
-  def create(m: Metadata, path: GitFilePath): Future[AddResult] =
+  def create(m: ParsedMetadata, path: GitFilePath): Future[AddResult] =
     Future.failed(new Throwable("currently unsupported"))
 
   /*{
@@ -212,7 +212,7 @@ final class MetadataRepository @Inject() (
     db.run(action.transactionally)
   }*/
 
-  def exists(m: Metadata): Future[Boolean] =
+  def exists(m: ParsedMetadata): Future[Boolean] =
     Future.successful(true)
 
   // db.run(existsQuery(m).result.map(_.nonEmpty))

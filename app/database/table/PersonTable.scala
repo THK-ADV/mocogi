@@ -1,6 +1,6 @@
 package database.table
 
-import parsing.types.Person
+import basedata.Person
 import slick.jdbc.PostgresProfile.api._
 
 final class PersonTable(tag: Tag) extends Table[Person](tag, "person") {

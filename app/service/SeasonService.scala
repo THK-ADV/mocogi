@@ -1,8 +1,8 @@
 package service
 
+import basedata.Season
 import database.repo.SeasonRepository
-import parsing.metadata.file.SeasonFileParser
-import parsing.types.Season
+import parsing.base.SeasonFileParser
 
 import javax.inject.{Inject, Singleton}
 

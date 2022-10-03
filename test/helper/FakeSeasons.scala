@@ -1,6 +1,6 @@
 package helper
 
-import parsing.types.Season
+import basedata.Season
 
 trait FakeSeasons {
   implicit def fakeSeasons: Seq[Season] = Seq(

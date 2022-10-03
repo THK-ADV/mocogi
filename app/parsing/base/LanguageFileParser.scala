@@ -1,0 +1,9 @@
+package parsing.base
+
+import basedata.Language
+import javax.inject.Singleton
+
+@Singleton
+final class LanguageFileParser extends LabelFileParser[Language] {
+  override protected def makeType = Language.tupled
+}

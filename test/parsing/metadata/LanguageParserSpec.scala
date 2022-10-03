@@ -1,11 +1,11 @@
 package parsing.metadata
 
+import basedata.Language
 import helper.{FakeApplication, FakeLanguages}
 import org.scalatest.EitherValues
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import parsing.ParserSpecHelper
-import parsing.types.Language
 
 class LanguageParserSpec
     extends AnyWordSpec

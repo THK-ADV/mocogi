@@ -1,22 +1,17 @@
 package parsing.metadata
 
+import basedata.{AssessmentMethod, Competence, FocusArea, GlobalCriteria, Language, Location, ModuleType, Person, Season, Status, StudyProgram}
 import parser.Parser
 import parser.Parser._
 import parser.ParserOps._
-import parsing.metadata.AssessmentMethodParser.{
-  assessmentMethodsMandatoryParser,
-  assessmentMethodsOptionalParser
-}
+import parsing.metadata.AssessmentMethodParser.{assessmentMethodsMandatoryParser, assessmentMethodsOptionalParser}
 import parsing.metadata.CompetencesParser.competencesParser
 import parsing.metadata.ECTSParser.ectsParser
 import parsing.metadata.GlobalCriteriaParser.globalCriteriaParser
 import parsing.metadata.ModuleRelationParser.moduleRelationParser
 import parsing.metadata.POParser.{mandatoryPOParser, optionalPOParser}
 import parsing.metadata.ParticipantsParser.participantsParser
-import parsing.metadata.PrerequisitesParser.{
-  recommendedPrerequisitesParser,
-  requiredPrerequisitesParser
-}
+import parsing.metadata.PrerequisitesParser.{recommendedPrerequisitesParser, requiredPrerequisitesParser}
 import parsing.metadata.TaughtWithParser.taughtWithParser
 import parsing.metadata.WorkloadParser.workloadParser
 import parsing.types._
@@ -59,7 +54,7 @@ final class THKV1Parser @Inject() (
       competences: Seq[Competence],
       globalCriteria: Seq[GlobalCriteria],
       studyPrograms: Seq[StudyProgram]
-  ): Parser[Metadata] =
+  ): Parser[ParsedMetadata] =
     idParser
       .zip(titleParser)
       .take(abbreviationParser)
@@ -83,7 +78,7 @@ final class THKV1Parser @Inject() (
         recommendedPrerequisitesParser.option
           .zip(requiredPrerequisitesParser.option)
           .skip(optional(newline))
-          .map(Prerequisites.tupled)
+          .map(ParsedPrerequisites.tupled)
       )
       .take(statusParser.parser)
       .take(locationParser.parser)
@@ -91,7 +86,7 @@ final class THKV1Parser @Inject() (
       .take(
         mandatoryPOParser
           .zip(optionalPOParser.option.map(_.getOrElse(Nil)))
-          .map(POs.tupled)
+          .map(ParsedPOs.tupled)
       )
       .take(
         participantsParser.option
@@ -123,7 +118,7 @@ final class THKV1Parser @Inject() (
               pos,
               (participants, competences, globalCriteria, taughtWith)
             ) =>
-          Metadata(
+          ParsedMetadata(
             id,
             title,
             abbrev,

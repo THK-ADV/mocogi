@@ -1,6 +1,6 @@
 package helper
 
-import parsing.types.AssessmentMethod
+import basedata.AssessmentMethod
 
 trait FakeAssessmentMethod {
   implicit def fakeAssessmentMethod: Seq[AssessmentMethod] = Seq(

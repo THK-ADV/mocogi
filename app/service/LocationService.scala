@@ -1,8 +1,8 @@
 package service
 
+import basedata.Location
 import database.repo.LocationRepository
-import parsing.metadata.file.LocationFileParser
-import parsing.types.Location
+import parsing.base.LocationFileParser
 
 import javax.inject.{Inject, Singleton}
 

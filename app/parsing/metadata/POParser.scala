@@ -1,10 +1,11 @@
 package parsing.metadata
 
+import basedata.StudyProgram
 import parser.Parser
 import parser.Parser._
 import parser.ParserOps._
 import parsing.helper.MultipleValueParser.multipleParser
-import parsing.types.{POMandatory, POOptional, StudyProgram}
+import parsing.types.{POMandatory, ParsedPOOptional}
 
 object POParser {
   private def studyProgramParser(implicit
@@ -55,7 +56,7 @@ object POParser {
 
   def optionalPOParser(implicit
       studyPrograms: Seq[StudyProgram]
-  ): Parser[List[POOptional]] =
+  ): Parser[List[ParsedPOOptional]] =
     prefix("po_optional:")
       .skip(zeroOrMoreSpaces)
       .take(
@@ -67,6 +68,6 @@ object POParser {
           .skip(zeroOrMoreSpaces)
           .take(recommendedSemesterParser)
           .many(zeroOrMoreSpaces)
-          .map(_.map(POOptional.tupled))
+          .map(_.map(ParsedPOOptional.tupled))
       )
 }
