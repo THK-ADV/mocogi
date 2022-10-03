@@ -31,6 +31,9 @@ POST        /seasons                    controllers.SeasonController.create()
 GET         /persons                    controllers.PersonController.all()
 POST        /persons                    controllers.PersonController.create()
 
+GET         /studyFormTypes             controllers.StudyFormTypeController.all()
+POST        /studyFormTypes             controllers.StudyFormTypeController.create()
+
 GET         /metadata                   controllers.MetadataController.all()
 
 # Map static resources from the /public folder to the /assets URL path
