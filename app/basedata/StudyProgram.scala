@@ -24,8 +24,6 @@ case class StudyProgram(
     enNote: String
 )
 
-case class StudyFormType(abbrev: String)
-
 case class StudyForm(
     kind: StudyFormType,
     workloadPerEcts: Int,
