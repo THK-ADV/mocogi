@@ -1,6 +1,6 @@
 package validator
 
-import basedata.StudyProgram
+import basedata.StudyProgramWithPO
 import parsing.types.POMandatory
 
 case class POs(
@@ -9,7 +9,7 @@ case class POs(
 )
 
 case class POOptional(
-    studyProgram: StudyProgram,
+    studyProgram: StudyProgramWithPO,
     instanceOf: Module,
     partOfCatalog: Boolean,
     recommendedSemester: List[Int]

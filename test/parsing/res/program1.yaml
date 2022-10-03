@@ -1,0 +1,157 @@
+inf_dsi:
+  de_label: Digital Sciences
+  en_label: Digital Sciences
+  abbreviation:
+    internal: dsc1
+    external: dsc
+  de_url: https://www.th-koeln.de/studium/digital-sciences-master_83002.php
+  en_url: https://www.th-koeln.de/en/academics/digital-sciences-masters-program_83005.php
+  grade: grade.msc
+  program_director: person.ald
+  accreditation_until: 30.09.2027
+  study_form:
+    - type: study_form.full
+      workload_per_ects: 30
+      scope:
+        - program_duration: 3
+          total_ECTS: 90
+        - program_duration: 4
+          total_ECTS: 120
+          de_reason: a
+          en_reason: b
+  language_of_instruction: lang.en
+  beginning_of_program:
+    - season.ws
+    - season.ss
+  campus:
+    - location.dz
+    - location.gm
+  restricted_admission:
+    value: true
+    de_reason: Orts-NC
+    en_reason: local nc
+  de_desc: >
+    a
+    b
+  de_note: a
+  en_desc: >
+    a
+  en_note: b
+
+inf_inf:
+  de_label: Informatik
+  en_label: Computer Science
+  abbreviation:
+    internal: inf1
+    external: inf1
+  de_url: https://www.th-koeln.de/studium/informatik-bachelor_3488.php
+  en_url: https://www.th-koeln.de/en/academics/computer-science-bachelors-program_7326.php
+  grade: grade.bsc
+  program_director: person.ald
+  accreditation_until: 30.09.2026
+  study_form:
+    - type: study_form.full
+      workload_per_ects: 30
+      scope:
+        - program_duration: 7
+          total_ECTS: 210
+          de_reason: Praxissemester
+          en_reason: Internship
+  language_of_instruction: lang.de
+  beginning_of_program: season.ws
+  campus: location.gm
+  restricted_admission:
+    value: true
+    de_reason: Orts-NC
+    en_reason: local nc
+  de_desc: >
+    a
+  de_note:
+  en_desc: >
+    b
+  en_note:
+
+ing_gme:
+  de_label: Allgemeiner Maschinenbau
+  en_label: General Mechanical Engineering
+  abbreviation:
+    internal: gme
+    external: gme
+  de_url: https://www.th-koeln.de/studium/allgemeiner-maschinenbau-bachelor_2709.php
+  en_url: https://www.th-koeln.de/en/academics/general-mechanical-engineering-bachelors-program_7323.php
+  grade: grade.beng
+  program_director: person.ald
+  accreditation_until: 30.09.2026
+  study_form:
+    - type: study_form.full
+      workload_per_ects: 30
+      scope:
+        - program_duration: 6
+          total_ECTS: 180
+        - program_duration: 7
+          total_ECTS: 210
+          de_reason: Im Falle eines integrierten fakultativen Praxissemester
+          en_reason: Internship
+    - type: study_form.part
+      workload_per_ects: 30
+      scope:
+        - program_duration: 9
+          total_ECTS: 180
+        - program_duration: 10
+          total_ECTS: 210
+          de_reason: Im Falle eines integrierten fakultativen Praxissemester
+          en_reason: Internship
+  language_of_instruction: lang.de
+  beginning_of_program:
+    - season.ws
+    - season.ss
+  campus:
+    - location.gm
+  restricted_admission:
+    value: false
+  de_desc: a
+  de_note: |
+    b
+    c
+    d
+  en_desc: e
+  en_note: |
+    f
+    g
+    h
+
+ing_ait:
+  de_label: Automation & IT
+  en_label: Automation & IT
+  abbreviation:
+    internal: ait
+    external: ait
+  de_url: https://www.th-koeln.de/studium/automation--it-master_3429.php
+  en_url: https://www.th-koeln.de/en/academics/automation--it-master_6815.php
+  grade: grade.meng
+  program_director: person.ald
+  accreditation_until: 30.09.2026
+  study_form:
+    - type: study_form.full
+      workload_per_ects: 30
+      scope:
+        - program_duration: 4
+          total_ECTS: 120
+    - type: study_form.part
+      workload_per_ects: 30
+      scope:
+        - program_duration: 6
+          total_ECTS: 120
+  language_of_instruction: lang.en
+  beginning_of_program: season.ws
+  campus: location.gm
+  restricted_admission:
+    value: false
+  de_desc: >
+    a
+  de_note: >
+    b
+  en_desc: >
+    c
+  en_note: >
+    d

@@ -1,4 +1,6 @@
 import java.io.File
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 import scala.annotation.tailrec
 import scala.io.Source
 
@@ -132,4 +134,70 @@ package object parsing {
     s.close()
     res
   }
+
+  // TODO use this
+  def singleValueParser[A](key: String, optionPrefix: A => String)(implicit
+      options: Seq[A]
+  ): Parser[A] =
+    prefix(s"$key:")
+      .skip(zeroOrMoreSpaces)
+      .take(
+        oneOf(
+          options.map(o =>
+            prefix(optionPrefix(o))
+              .map(_ => o)
+          ): _*
+        )
+      )
+
+  def multipleValueParser[A](
+      key: String,
+      singleParser: Parser[A],
+      minimum: Int = 0
+  ): Parser[List[A]] = {
+    val dashes =
+      zeroOrMoreSpaces
+        .skip(prefix("-"))
+        .skip(zeroOrMoreSpaces)
+        .take(singleParser)
+        .many(minimum = minimum)
+
+    prefix(s"$key:")
+      .skip(zeroOrMoreSpaces)
+      .skip(optional(newline))
+      .take(singleParser.map(a => List(a)) or dashes)
+  }
+
+  def multipleValueParser[A](
+      key: String,
+      optionPrefix: A => String,
+      minimum: Int
+  )(implicit
+      options: Seq[A]
+  ): Parser[List[A]] = multipleValueParser(
+    key,
+    oneOf(
+      options.map(o =>
+        prefix(optionPrefix(o))
+          .map(_ => o)
+      ): _*
+    ),
+    minimum
+  )
+
+  private val localDatePattern = DateTimeFormatter.ofPattern("dd.MM.yyyy")
+
+  def localDateParser(string: String): Parser[LocalDate] =
+    localDateParser(string, localDatePattern)
+
+  // TODO test
+  def localDateParser(
+      string: String,
+      pattern: DateTimeFormatter
+  ): Parser[LocalDate] =
+    try always(LocalDate.parse(string, pattern))
+    catch {
+      case t: Throwable =>
+        never(s"date with format $pattern. error: ${t.getMessage}")
+    }
 }

@@ -17,7 +17,7 @@ final class MetadataValidatorSpec
 
   private lazy val am = AssessmentMethod("", "", "")
   private lazy val fa = FocusArea("")
-  private lazy val sp = StudyProgram("")
+  private lazy val sp = StudyProgramWithPO("")
   private lazy val creditPointFactor = 30
 
   private def method(percentage: Option[Double]) =

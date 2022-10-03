@@ -1,12 +1,11 @@
 package parsing.metadata
 
-import basedata.StudyProgram
+import basedata.StudyProgramWithPO
 import parser.Parser
 import parser.Parser._
 import parser.ParserOps._
-import parsing.helper.MultipleValueParser.multipleParser
 import parsing.types.ParsedPrerequisiteEntry
-import parsing.{removeIndentation, stringForKey}
+import parsing.{multipleValueParser, removeIndentation, stringForKey}
 
 object PrerequisitesParser {
 
@@ -15,15 +14,15 @@ object PrerequisitesParser {
       .map(_.getOrElse(""))
 
   private def modulesParser: Parser[List[String]] =
-    multipleParser(
+    multipleValueParser(
       "modules",
       skipFirst(prefix("module.")).take(prefixTo("\n"))
     ).option.map(_.getOrElse(Nil))
 
   private def studyProgramsParser(implicit
-      studyPrograms: Seq[StudyProgram]
-  ): Parser[List[StudyProgram]] =
-    multipleParser(
+      studyPrograms: Seq[StudyProgramWithPO]
+  ): Parser[List[StudyProgramWithPO]] =
+    multipleValueParser(
       "study_programs",
       oneOf(
         studyPrograms.map(s =>
@@ -35,7 +34,9 @@ object PrerequisitesParser {
 
   private def parser(
       key: String
-  )(implicit studyPrograms: Seq[StudyProgram]): Parser[ParsedPrerequisiteEntry] =
+  )(implicit
+      studyPrograms: Seq[StudyProgramWithPO]
+  ): Parser[ParsedPrerequisiteEntry] =
     prefix(s"$key:")
       .skip(zeroOrMoreSpaces)
       .skip(removeIndentation())
@@ -45,12 +46,12 @@ object PrerequisitesParser {
       .map(ParsedPrerequisiteEntry.tupled)
 
   def recommendedPrerequisitesParser(implicit
-      studyPrograms: Seq[StudyProgram]
+      studyPrograms: Seq[StudyProgramWithPO]
   ): Parser[ParsedPrerequisiteEntry] =
     parser("recommended_prerequisites")
 
   def requiredPrerequisitesParser(implicit
-      studyPrograms: Seq[StudyProgram]
+      studyPrograms: Seq[StudyProgramWithPO]
   ): Parser[ParsedPrerequisiteEntry] =
     parser("required_prerequisites")
 }

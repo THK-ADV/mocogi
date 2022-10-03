@@ -2,18 +2,16 @@ package parsing.metadata
 
 import basedata.Competence
 import parser.Parser
-import parser.Parser.{literal, oneOf}
-import parsing.helper.MultipleValueParser.multipleParser
+import parsing.multipleValueParser
 
 object CompetencesParser {
 
   def competencesParser(implicit
       competences: Seq[Competence]
   ): Parser[List[Competence]] =
-    multipleParser(
+    multipleValueParser(
       "competences",
-      oneOf(
-        competences.map(c => literal(s"competence.${c.abbrev}").map(_ => c)): _*
-      )
+      c => s"competence.${c.abbrev}",
+      0
     )
 }

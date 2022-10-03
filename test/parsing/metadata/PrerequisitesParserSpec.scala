@@ -1,6 +1,6 @@
 package parsing.metadata
 
-import basedata.StudyProgram
+import basedata.StudyProgramWithPO
 import helper.FakeStudyPrograms
 import org.scalatest.EitherValues
 import org.scalatest.wordspec.AnyWordSpec
@@ -32,7 +32,7 @@ class PrerequisitesParserSpec
         res.value == ParsedPrerequisiteEntry(
           "benötigt werden kenntnisse in algebra und java\nund ein pc.\n",
           List("ap1", "ap2"),
-          List(StudyProgram("mi4"))
+          List(StudyProgramWithPO("mi4"))
         )
       )
       assert(rest.isEmpty)
@@ -66,7 +66,7 @@ class PrerequisitesParserSpec
         res.value == ParsedPrerequisiteEntry(
           "",
           Nil,
-          List(StudyProgram("mi4"))
+          List(StudyProgramWithPO("mi4"))
         )
       )
       assert(rest.isEmpty)

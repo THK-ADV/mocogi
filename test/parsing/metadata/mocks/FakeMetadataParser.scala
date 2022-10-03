@@ -1,6 +1,6 @@
 package parsing.metadata.mocks
 
-import basedata.{AssessmentMethod, Competence, FocusArea, GlobalCriteria, Language, Location, ModuleType, Person, Season, Status, StudyProgram}
+import basedata.{AssessmentMethod, Competence, FocusArea, GlobalCriteria, Language, Location, ModuleType, Person, Season, Status, StudyProgramWithPO}
 import parser.Parser.always
 import parsing.metadata.{MetadataParser, VersionScheme}
 import parsing.types._
@@ -21,7 +21,7 @@ class FakeMetadataParser extends MetadataParser {
       focusAreas: Seq[FocusArea],
       competences: Seq[Competence],
       globalCriteria: Seq[GlobalCriteria],
-      studyPrograms: Seq[StudyProgram]
+      studyPrograms: Seq[StudyProgramWithPO]
   ) = always(
     ParsedMetadata(
       UUID.randomUUID(),
