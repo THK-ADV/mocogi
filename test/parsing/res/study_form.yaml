@@ -1,0 +1,15 @@
+full:
+  de_label: Vollzeitstudium
+  en_label: Full time study
+part:
+  de_label: Teilzeitstudium
+  en_label: Part time study
+dual:
+  de_label: Duales Studium
+  en_label: dual study
+bbw:
+  de_label: Berufsbegleitendes Weiterbildungsstudium
+  en_label: --
+bbs:
+  de_label: Berufsbegleitender Studiengang
+  en_label: --

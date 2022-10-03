@@ -131,7 +131,7 @@ final class StudyProgramFileParserSpec
       val (res1, rest1) = studyFormEntryParser.parse(input1)
       assert(
         res1.value == StudyForm(
-          StudyFormType("full"),
+          StudyFormType("full", "", ""),
           30,
           List(StudyFormScope(4, 120, "", ""))
         )
@@ -151,7 +151,7 @@ final class StudyProgramFileParserSpec
       val (res2, rest2) = studyFormEntryParser.parse(input2)
       assert(
         res2.value == StudyForm(
-          StudyFormType("part"),
+          StudyFormType("part", "", ""),
           30,
           List(
             StudyFormScope(4, 120, "", ""),
@@ -183,14 +183,14 @@ final class StudyProgramFileParserSpec
       assert(
         res2.value == List(
           StudyForm(
-            StudyFormType("full"),
+            StudyFormType("full", "", ""),
             30,
             List(
               StudyFormScope(4, 120, "", "")
             )
           ),
           StudyForm(
-            StudyFormType("part"),
+            StudyFormType("part", "", ""),
             30,
             List(
               StudyFormScope(4, 120, "", ""),
@@ -313,7 +313,7 @@ final class StudyProgramFileParserSpec
         LocalDate.of(2027, 9, 30),
         List(
           StudyForm(
-            StudyFormType("full"),
+            StudyFormType("full", "", ""),
             30,
             List(
               StudyFormScope(3, 90, "", ""),
@@ -370,7 +370,7 @@ final class StudyProgramFileParserSpec
         LocalDate.of(2026, 9, 30),
         List(
           StudyForm(
-            StudyFormType("full"),
+            StudyFormType("full", "", ""),
             30,
             List(StudyFormScope(7, 210, "Praxissemester", "Internship"))
           )
@@ -418,7 +418,7 @@ final class StudyProgramFileParserSpec
         LocalDate.of(2026, 9, 30),
         List(
           StudyForm(
-            StudyFormType("full"),
+            StudyFormType("full", "", ""),
             30,
             List(
               StudyFormScope(6, 180, "", ""),
@@ -431,7 +431,7 @@ final class StudyProgramFileParserSpec
             )
           ),
           StudyForm(
-            StudyFormType("part"),
+            StudyFormType("part", "", ""),
             30,
             List(
               StudyFormScope(9, 180, "", ""),
@@ -491,12 +491,12 @@ final class StudyProgramFileParserSpec
         LocalDate.of(2026, 9, 30),
         List(
           StudyForm(
-            StudyFormType("full"),
+            StudyFormType("full", "", ""),
             30,
             List(StudyFormScope(4, 120, "", ""))
           ),
           StudyForm(
-            StudyFormType("part"),
+            StudyFormType("part", "", ""),
             30,
             List(StudyFormScope(6, 120, "", ""))
           )
