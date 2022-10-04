@@ -1,6 +1,6 @@
 package parsing.metadata
 
-import basedata.{AssessmentMethod, Competence, FocusArea, GlobalCriteria, Language, Location, ModuleType, Person, Season, Status, StudyProgramWithPO}
+import basedata._
 import parser.Parser
 import parsing.types._
 
@@ -17,6 +17,6 @@ trait MetadataParser {
       focusAreas: Seq[FocusArea],
       competences: Seq[Competence],
       globalCriteria: Seq[GlobalCriteria],
-      studyPrograms: Seq[StudyProgramWithPO]
+      pos: Seq[PO]
   ): Parser[ParsedMetadata]
 }

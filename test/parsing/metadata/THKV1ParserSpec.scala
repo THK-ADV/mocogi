@@ -1,6 +1,6 @@
 package parsing.metadata
 
-import basedata.{AssessmentMethod, Competence, FocusArea, GlobalCriteria, Language, Location, ModuleType, Person, Season, Status, StudyProgramWithPO}
+import basedata._
 import helper._
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatest.{EitherValues, OptionValues}
@@ -27,7 +27,7 @@ class THKV1ParserSpec
     with FakeFocusAreas
     with FakeGlobalCriteria
     with FakeCompetences
-    with FakeStudyPrograms {
+    with FakePOs {
 
   val parser = app.injector.instanceOf(classOf[THKV1Parser])
 
@@ -146,12 +146,10 @@ class THKV1ParserSpec
         assert(metadata.location == Location("gm", "Gummersbach", "--"))
         assert(
           metadata.pos == ParsedPOs(
-            List(
-              POMandatory(StudyProgramWithPO("ai2"), List(3), Nil)
-            ),
+            List(POMandatory(inf1, List(3), Nil)),
             List(
               ParsedPOOptional(
-                StudyProgramWithPO("wi5"),
+                wi1,
                 "wpf",
                 partOfCatalog = false,
                 List(3)
@@ -265,9 +263,9 @@ class THKV1ParserSpec
         assert(
           metadata.pos == ParsedPOs(
             List(
-              POMandatory(StudyProgramWithPO("ai2"), List(4), Nil),
-              POMandatory(StudyProgramWithPO("mi4"), List(4), Nil),
-              POMandatory(StudyProgramWithPO("itm2"), List(4), Nil)
+              POMandatory(inf1, List(4), Nil),
+              POMandatory(mi1, List(4), Nil),
+              POMandatory(itm1, List(4), Nil)
             ),
             Nil
           )

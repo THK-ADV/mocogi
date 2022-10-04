@@ -1,7 +1,6 @@
 package parsing.metadata
 
-import basedata.StudyProgramWithPO
-import helper.FakeStudyPrograms
+import helper.FakePOs
 import org.scalatest.EitherValues
 import org.scalatest.wordspec.AnyWordSpec
 import parsing.ParserSpecHelper
@@ -12,7 +11,7 @@ class PrerequisitesParserSpec
     extends AnyWordSpec
     with ParserSpecHelper
     with EitherValues
-    with FakeStudyPrograms {
+    with FakePOs {
 
   "A Prerequisites Parser" should {
     "parse prerequisites" in {
@@ -26,13 +25,13 @@ class PrerequisitesParserSpec
           |    - module.ap1
           |    - module.ap2
           |  study_programs:
-          |    - study_program.mi4""".stripMargin
+          |    - study_program.mi1""".stripMargin
       val (res, rest) = recommendedPrerequisitesParser.parse(input)
       assert(
         res.value == ParsedPrerequisiteEntry(
           "benötigt werden kenntnisse in algebra und java\nund ein pc.\n",
           List("ap1", "ap2"),
-          List(StudyProgramWithPO("mi4"))
+          List(mi1)
         )
       )
       assert(rest.isEmpty)
@@ -60,13 +59,13 @@ class PrerequisitesParserSpec
       val input =
         """recommended_prerequisites:
           |  study_programs:
-          |    - study_program.mi4""".stripMargin
+          |    - study_program.mi1""".stripMargin
       val (res, rest) = recommendedPrerequisitesParser.parse(input)
       assert(
         res.value == ParsedPrerequisiteEntry(
           "",
           Nil,
-          List(StudyProgramWithPO("mi4"))
+          List(mi1)
         )
       )
       assert(rest.isEmpty)

@@ -30,10 +30,10 @@ recommended_prerequisites:
 status: status.active
 location: location.gm
 po_mandatory:
-  - study_program: study_program.ai2
+  - study_program: study_program.inf1
     recommended_semester: 3
 po_optional:
-  - study_program: study_program.wi5
+  - study_program: study_program.wi1
     instance_of: module.wpf
     part_of_catalog: false
     recommended_semester: 3

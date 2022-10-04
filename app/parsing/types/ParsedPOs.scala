@@ -1,6 +1,6 @@
 package parsing.types
 
-import basedata.StudyProgramWithPO
+import basedata.PO
 
 case class ParsedPOs(
     mandatory: List[POMandatory],
@@ -8,14 +8,14 @@ case class ParsedPOs(
 )
 
 case class ParsedPOOptional(
-    studyProgram: StudyProgramWithPO,
+    studyProgram: PO,
     instanceOf: String,
     partOfCatalog: Boolean,
     recommendedSemester: List[Int]
 )
 
 case class POMandatory(
-    studyProgram: StudyProgramWithPO,
+    studyProgram: PO,
     recommendedSemester: List[Int],
     recommendedSemesterPartTime: List[Int]
 )

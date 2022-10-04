@@ -6,6 +6,7 @@ import org.scalatest.{EitherValues, OptionValues}
 import parsing.types._
 import validator.MetadataValidator._
 
+import java.time.LocalDate
 import java.util.UUID
 
 final class MetadataValidatorSpec
@@ -17,7 +18,8 @@ final class MetadataValidatorSpec
 
   private lazy val am = AssessmentMethod("", "", "")
   private lazy val fa = FocusArea("")
-  private lazy val sp = StudyProgramWithPO("")
+  private lazy val ld = LocalDate.of(1998, 5, 9)
+  private lazy val sp = PO("", 0, ld, ld, None, Nil, StudyProgramPreview(""))
   private lazy val creditPointFactor = 30
 
   private def method(percentage: Option[Double]) =
