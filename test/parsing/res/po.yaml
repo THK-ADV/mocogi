@@ -1,0 +1,349 @@
+ing_gme1:
+  version: 1
+  date: 10.03.2009
+  date_from: 01.09.2007
+  date_to: 28.02.2021
+  modification_dates:
+    - 15.03.2012
+    - 23.01.2015
+    - 07.06.2016
+  program: program.inf_inf
+
+ing_gme3:
+  version: 3
+  date: 28.06.2017
+  date_from: 01.03.2016
+  date_to: 31.08.2025
+  program: program.inf_inf
+
+ing_gme4:
+  version: 4
+  date: 05.01.2021
+  date_from: 01.03.2021
+  program: program.inf_inf
+
+ing_ait1:
+  version: 1
+  date: 27.05.2009
+  date_from: 01.09.2008
+  modification_dates:
+    - 01.06.2011
+  program: program.inf_inf
+
+ing_ait2:
+  version: 2
+  date: 23.01.2015
+  date_from: 01.09.2013
+  date_to: 31.08.2023
+  modification_dates:
+  program: program.inf_inf
+
+ing_ait3:
+  version: 3
+  date: 07.01.2021
+  date_from: 01.09.2020
+  program: program.inf_inf
+
+inf_coco1:
+  version: 1
+  date: 05.08.2019
+  date_from: 01.03.2019
+  program: program.inf_inf
+
+inf_dsi1:
+  version: 1
+  date: 22.11.2021
+  date_from: 01.09.2021
+  program: program.inf_inf
+
+ing_een1:
+  version: 1
+  date: 10.03.2009
+  date_from: 01.09.2007
+  date_to: 28.02.2019
+  program: program.inf_inf
+
+ing_een2:
+  version: 2
+  date: 23.01.2015
+  date_from: 01.09.2013
+  date_to: 28.02.2021
+  program: program.inf_inf
+
+ing_een3:
+  version: 3
+  date: 28.06.2017
+  date_from: 01.03.2016
+  date_to: 01.03.2021
+  modification_dates:
+    - 24.06.2019
+  program: program.inf_inf
+
+ing_een4:
+  version: 4
+  date: 04.01.2021
+  date_from: 01.03.2021
+  program: program.inf_inf
+
+inf_inf1:
+  version: 1
+  date: 15.11.2013
+  date_from: 01.09.2013
+  date_to: 31.08.2025
+  modification_dates:
+    - 23.06.2016
+    - 24.11.2019
+    - 25.09.2018
+    - 02.07.2021
+  program: program.inf_inf
+
+inf_inf1_flex:
+  version: 1
+  date: 15.11.2013
+  date_from: 01.09.2013
+  date_to: 31.08.2026
+  modification_dates:
+    - 23.06.2016
+    - 24.11.2019
+    - 05.06.2018
+  program: program.inf_inf
+
+inf_inf2:
+  version: 2
+  date: 04.01.2021
+  date_from: 01.09.2021
+  program: program.inf_inf
+
+inf_itm1:
+  version: 1
+  date: 24.11.2017
+  date_from: 01.09.2017
+  date_to: 31.08.2025
+  modification_dates:
+    - 05.06.2018
+    - 25.09.2018
+  program: program.inf_inf
+
+inf_itm2:
+  version: 2
+  date: 04.01.2021
+  date_from: 01.09.2021
+  program: program.inf_inf
+
+inf_mi2:
+  version: 2
+  date: 17.06.2009
+  date_from: 01.09.2004
+  date_to: 07.01.2011
+  program: program.inf_inf
+
+inf_mi3:
+  version: 3
+  date: 07.01.2011
+  date_from: 01.03.2011
+  date_to: 31.08.2017
+  program: program.inf_inf
+
+inf_mi4:
+  version: 4
+  date: 24.11.2017
+  date_from: 01.09.2017
+  modification_dates:
+    - 05.06.2018
+    - 25.09.2018
+  program: program.inf_inf
+
+inf_mim2:
+  version: 2
+  date: 05.04.2007
+  date_from: 01.09.2001
+  date_to: 29.02.2020
+  modification_dates:
+    - 16.06.2009
+  program: program.inf_inf
+
+inf_mim3:
+  version: 3
+  date: 07.01.2011
+  date_from: 01.03.2011
+  date_to: 29.02.2020
+  program: program.inf_inf
+
+inf_mim4:
+  version: 4
+  date: 13.07.2017
+  date_from: 01.09.2017
+  modification_dates:
+    - 10.06.2022
+  program: program.inf_inf
+
+ing_pdpd1:
+  version: 1
+  date: 27.05.2009
+  date_from: 01.09.2008
+  date_to: 19.02.2015
+  program: program.inf_inf
+
+ing_pdpd2:
+  version: 2
+  date: 19.02.2015
+  date_from: 01.09.2014
+  program: program.inf_inf
+
+ing_pdpd3:
+  version: 3
+  date: 11.10.2016
+  date_from: 01.09.2016
+  program: program.inf_inf
+
+ing_pdpd4:
+  version: 4
+  date: 08.08.2017
+  date_from: 01.09.2017
+  modification_dates:
+    - 18.12.2017
+  program: program.inf_inf
+
+ing_pdpd5:
+  version: 5
+  date: 07.01.2021
+  date_from: 01.09.2020
+  program: program.inf_inf
+
+inf_wsc1:
+  version: 1
+  date: 18.03.2011
+  date_from: 01.09.2011
+  modification_dates:
+    - 14.11.2011
+    - 26.07.2012
+    - 28.08.2013
+    - 20.11.2014
+    - 23.06.2017
+  program: program.inf_inf
+
+inf_wi1:
+  version: 1
+  date: 13.02.2008
+  date_from: 01.09.2007
+  program: program.inf_inf
+
+inf_wi2:
+  version: 2
+  date: 07.01.2011
+  date_from: 01.03.2011
+  date_to: 31.08.2017
+  program: program.inf_inf
+
+inf_wi3:
+  version: 3
+  date: 15.11.2013
+  date_from: 01.09.2013
+  date_to: 28.02.2021
+  modification_dates:
+    - 23.06.2016
+  program: program.inf_inf
+
+inf_wi4:
+  version: 4
+  date: 24.11.2017
+  date_from: 01.09.2017
+  date_to: 31.08.2025
+  modification_dates:
+    - 05.06.2018
+    - 25.09.2018
+  program: program.inf_inf
+
+inf_wi5:
+  version: 5
+  date: 04.01.2021
+  date_from: 01.09.2021
+  modification_dates:
+    - 22.07.2022
+  program: program.inf_inf
+
+inf_wiv1:
+  version: 1
+  date: 04.07.2007
+  date_from: 01.09.2007
+  date_to: 01.09.2018
+  modification_dates:
+    - 26.06.2008
+    - 30.07.2010
+    - 10.11.2010
+  program: program.inf_inf
+
+inf_wiv2:
+  version: 2
+  date: 17.08.2018
+  date_from: 01.09.2018
+  modification_dates:
+    - 13.01.2022
+  program: program.inf_inf
+
+inf_wivm1:
+  version: 1
+  date: 04.07.2007
+  date_from: 01.09.2007
+  date_to: 01.09.2018
+  modification_dates:
+    - 26.06.2008
+    - 30.07.2010
+  program: program.inf_inf
+
+inf_wivm2:
+  version: 2
+  date: 17.08.2018
+  date_from: 01.09.2018
+  modification_dates:
+    - 13.01.2022
+  program: program.inf_inf
+
+ing_wiw1:
+  version: 1
+  date: 10.03.2009
+  date_from: 01.09.2007
+  date_to: 28.02.2021
+  modification_dates:
+    - 15.03.2012
+  program: program.inf_inf
+
+ing_wiw2:
+  version: 2
+  date: 23.01.2015
+  date_from: 01.09.2013
+  date_to: 28.02.2021
+  modification_dates:
+    - 07.06.2016
+  program: program.inf_inf
+
+ing_wiw3:
+  version: 3
+  date: 28.06.2017
+  date_from: 01.03.2016
+  date_to: 31.08.2025
+  program: program.inf_inf
+
+ing_wiw4:
+  version: 4
+  date: 05.01.2021
+  date_from: 01.03.2021
+  program: program.inf_inf
+
+ing_wiwm1:
+  version: 1
+  date: 26.02.2018
+  date_from: 01.03.2018
+  date_to: 28.02.2025
+  modification_dates:
+    - 31.07.2018
+    - 05.06.2019
+    - 05.06.2020
+    - 17.12.2020
+  program: program.inf_inf
+
+ing_wiwm2:
+  version: 2
+  date: 31.01.2022
+  date_from: 01.09.2022
+  program: program.inf_inf

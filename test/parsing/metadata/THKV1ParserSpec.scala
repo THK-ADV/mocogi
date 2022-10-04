@@ -27,7 +27,7 @@ class THKV1ParserSpec
     with FakeFocusAreas
     with FakeGlobalCriteria
     with FakeCompetences
-    with FakeStudyPrograms {
+    with FakeStudyProgramsWithPO {
 
   val parser = app.injector.instanceOf(classOf[THKV1Parser])
 

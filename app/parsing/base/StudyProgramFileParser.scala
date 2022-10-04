@@ -50,8 +50,7 @@ object StudyProgramFileParser {
     singleValueParser("program_director", p => s"person.${p.abbrev}")
 
   def accreditationUntilParser: Parser[LocalDate] =
-    singleLineStringForKey("accreditation_until")
-      .flatMap(localDateParser)
+    dateForKey("accreditation_until")
 
   def studyFormScopeParser: Parser[StudyFormScope] =
     prefix("-")

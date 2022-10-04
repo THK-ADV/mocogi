@@ -49,6 +49,10 @@ package object parsing {
       if (i >= 0) always(i) else never("int to be positive")
     )
 
+  def dateForKey(key: String): Parser[LocalDate] =
+    singleLineStringForKey(key)
+      .flatMap(localDateParser)
+
   sealed trait MultilineStringStrategy
   case object > extends MultilineStringStrategy
   case object | extends MultilineStringStrategy

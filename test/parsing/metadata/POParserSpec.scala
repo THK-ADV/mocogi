@@ -1,7 +1,7 @@
 package parsing.metadata
 
 import basedata.StudyProgramWithPO
-import helper.FakeStudyPrograms
+import helper.FakeStudyProgramsWithPO
 import org.scalatest.EitherValues
 import org.scalatest.wordspec.AnyWordSpec
 import parsing.ParserSpecHelper
@@ -12,7 +12,7 @@ class POParserSpec
     extends AnyWordSpec
     with ParserSpecHelper
     with EitherValues
-    with FakeStudyPrograms {
+    with FakeStudyProgramsWithPO {
 
   "A PO Parser" should {
     "parse a single mandatory po" in {

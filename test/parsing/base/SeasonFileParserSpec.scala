@@ -5,7 +5,6 @@ import helper.FakeApplication
 import org.scalatest.EitherValues
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
-import parsing.base.SeasonFileParser
 import parsing.{ParserSpecHelper, withFile0}
 
 final class SeasonFileParserSpec
