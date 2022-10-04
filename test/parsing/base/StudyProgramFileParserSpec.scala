@@ -67,7 +67,7 @@ final class StudyProgramFileParserSpec
     "parse grade" in {
       val input = "grade: grade.msc"
       val (res, rest) = gradeParser.parse(input)
-      assert(res.value == Grade("msc"))
+      assert(res.value == msc)
       assert(rest.isEmpty)
     }
 
@@ -308,7 +308,7 @@ final class StudyProgramFileParserSpec
         "dsc",
         "https://www.th-koeln.de/studium/digital-sciences-master_83002.php",
         "https://www.th-koeln.de/en/academics/digital-sciences-masters-program_83005.php",
-        Grade("msc"),
+        msc,
         Person("ald", "Dobrynin", "Alexander", "M.Sc.", "F10"),
         LocalDate.of(2027, 9, 30),
         List(
@@ -365,7 +365,7 @@ final class StudyProgramFileParserSpec
         "inf1",
         "https://www.th-koeln.de/studium/informatik-bachelor_3488.php",
         "https://www.th-koeln.de/en/academics/computer-science-bachelors-program_7326.php",
-        Grade("bsc"),
+        bsc,
         Person("ald", "Dobrynin", "Alexander", "M.Sc.", "F10"),
         LocalDate.of(2026, 9, 30),
         List(
@@ -413,7 +413,7 @@ final class StudyProgramFileParserSpec
         "gme",
         "https://www.th-koeln.de/studium/allgemeiner-maschinenbau-bachelor_2709.php",
         "https://www.th-koeln.de/en/academics/general-mechanical-engineering-bachelors-program_7323.php",
-        Grade("beng"),
+        beng,
         Person("ald", "Dobrynin", "Alexander", "M.Sc.", "F10"),
         LocalDate.of(2026, 9, 30),
         List(
@@ -486,7 +486,7 @@ final class StudyProgramFileParserSpec
         "ait",
         "https://www.th-koeln.de/studium/automation--it-master_3429.php",
         "https://www.th-koeln.de/en/academics/automation--it-master_6815.php",
-        Grade("meng"),
+        meng,
         Person("ald", "Dobrynin", "Alexander", "M.Sc.", "F10"),
         LocalDate.of(2026, 9, 30),
         List(
