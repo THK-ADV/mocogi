@@ -1,0 +1,20 @@
+bsc:
+  de_label: B.Sc.
+  de_desc: Bachelor of Science
+  en_label: B.Sc.
+  en_desc: Bachelor of Science
+msc:
+  de_label: M.Sc.
+  de_desc: Master of Science
+  en_label: M.Sc.
+  en_desc: Master of Science
+beng:
+  de_label: B.Eng.
+  de_desc: Bachelor of Engineering
+  en_label: B.Eng.
+  en_desc: Bachelor of Engineering
+meng:
+  de_label: M.Eng.
+  de_desc: Master of Engineering
+  en_label: M.Eng.
+  en_desc: Master of Engineering
