@@ -1,15 +1,17 @@
 package parsing.base
 
 import basedata.{PO, StudyProgramPreview}
-import parser.Parser.{newline, prefixTo, zeroOrMoreSpaces}
-import parser.ParserOps.{P2, P3, P4, P5, P6}
+import parser.Parser.{newline, optional, prefixTo, zeroOrMoreSpaces}
+import parser.ParserOps.{P0, P2, P3, P4, P5, P6}
 import parsing._
 
 object POFileParser {
+
   def fileParser(implicit
       programs: Seq[StudyProgramPreview]
   ) =
-    prefixTo(":")
+    optional(singleLineCommentParser())
+      .take(prefixTo(":"))
       .skip(newline)
       .skip(zeroOrMoreSpaces)
       .zip(posIntForKey("version"))

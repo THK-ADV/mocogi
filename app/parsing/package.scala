@@ -204,4 +204,8 @@ package object parsing {
       case t: Throwable =>
         never(s"date with format $pattern. error: ${t.getMessage}")
     }
+
+  // TODO test
+  def singleLineCommentParser(): Parser[Unit] =
+    prefix("#").skip(prefix(_ != '\n').skip(newline))
 }
