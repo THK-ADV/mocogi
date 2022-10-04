@@ -37,6 +37,9 @@ POST        /studyFormTypes             controllers.StudyFormTypeController.crea
 GET         /pos                        controllers.POController.all()
 POST        /pos                        controllers.POController.create()
 
+GET         /grades                     controllers.GradeController.all()
+POST        /grades                     controllers.GradeController.create()
+
 GET         /metadata                   controllers.MetadataController.all()
 
 # Map static resources from the /public folder to the /assets URL path
