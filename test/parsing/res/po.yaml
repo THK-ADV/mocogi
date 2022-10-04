@@ -1,3 +1,4 @@
+# Allgemeiner Maschinenbau
 ing_gme1:
   version: 1
   date: 10.03.2009
@@ -22,6 +23,7 @@ ing_gme4:
   date_from: 01.03.2021
   program: program.inf_inf
 
+# Automation & IT (Master)
 ing_ait1:
   version: 1
   date: 27.05.2009
@@ -35,7 +37,6 @@ ing_ait2:
   date: 23.01.2015
   date_from: 01.09.2013
   date_to: 31.08.2023
-  modification_dates:
   program: program.inf_inf
 
 ing_ait3:
@@ -44,18 +45,21 @@ ing_ait3:
   date_from: 01.09.2020
   program: program.inf_inf
 
+# Code & Context
 inf_coco1:
   version: 1
   date: 05.08.2019
   date_from: 01.03.2019
   program: program.inf_inf
 
+# Digital Sciences
 inf_dsi1:
   version: 1
   date: 22.11.2021
   date_from: 01.09.2021
   program: program.inf_inf
 
+# Elektrotechnik
 ing_een1:
   version: 1
   date: 10.03.2009
@@ -85,6 +89,7 @@ ing_een4:
   date_from: 01.03.2021
   program: program.inf_inf
 
+# Informatik
 inf_inf1:
   version: 1
   date: 15.11.2013
@@ -114,6 +119,7 @@ inf_inf2:
   date_from: 01.09.2021
   program: program.inf_inf
 
+# IT-Management
 inf_itm1:
   version: 1
   date: 24.11.2017
@@ -130,6 +136,7 @@ inf_itm2:
   date_from: 01.09.2021
   program: program.inf_inf
 
+# Medieninformatik
 inf_mi2:
   version: 2
   date: 17.06.2009
@@ -153,6 +160,7 @@ inf_mi4:
     - 25.09.2018
   program: program.inf_inf
 
+# Medieninformatik (Master)
 inf_mim2:
   version: 2
   date: 05.04.2007
@@ -177,6 +185,7 @@ inf_mim4:
     - 10.06.2022
   program: program.inf_inf
 
+# Produktdesign und Prozessentwicklung
 ing_pdpd1:
   version: 1
   date: 27.05.2009
@@ -188,6 +197,7 @@ ing_pdpd2:
   version: 2
   date: 19.02.2015
   date_from: 01.09.2014
+  date_to: 31.08.2019
   program: program.inf_inf
 
 ing_pdpd3:
@@ -210,6 +220,7 @@ ing_pdpd5:
   date_from: 01.09.2020
   program: program.inf_inf
 
+# Web Science
 inf_wsc1:
   version: 1
   date: 18.03.2011
@@ -222,10 +233,12 @@ inf_wsc1:
     - 23.06.2017
   program: program.inf_inf
 
+# Wirtschaftsinformatik
 inf_wi1:
   version: 1
   date: 13.02.2008
   date_from: 01.09.2007
+  date_to: 31.08.2015
   program: program.inf_inf
 
 inf_wi2:
@@ -262,6 +275,7 @@ inf_wi5:
     - 22.07.2022
   program: program.inf_inf
 
+# Wirtschaftsinformatik (Verbundstudiengang)
 inf_wiv1:
   version: 1
   date: 04.07.2007
@@ -281,6 +295,7 @@ inf_wiv2:
     - 13.01.2022
   program: program.inf_inf
 
+# Wirtschaftsinformatik (Verbundstudiengang, Master)
 inf_wivm1:
   version: 1
   date: 04.07.2007
@@ -299,6 +314,7 @@ inf_wivm2:
     - 13.01.2022
   program: program.inf_inf
 
+# Wirtschaftsingenieurwesen
 ing_wiw1:
   version: 1
   date: 10.03.2009
@@ -330,6 +346,7 @@ ing_wiw4:
   date_from: 01.03.2021
   program: program.inf_inf
 
+# Wirtschaftsingenieurwesen (Master)
 ing_wiwm1:
   version: 1
   date: 26.02.2018

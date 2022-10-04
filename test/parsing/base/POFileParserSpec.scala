@@ -19,7 +19,8 @@ class POFileParserSpec
   "A PO File Parser" should {
     "parse a single po" in {
       val input =
-        """ing_inf1:
+        """# test
+          |ing_inf1:
           |  version: 1
           |  date: 10.03.2009
           |  date_from: 01.09.2007
@@ -60,6 +61,7 @@ class POFileParserSpec
           |    - 07.06.2016
           |  program: program.inf_inf
           |
+          |# test
           |ing_gme4:
           |  version: 4
           |  date: 05.01.2021

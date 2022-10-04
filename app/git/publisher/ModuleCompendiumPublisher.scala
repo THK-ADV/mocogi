@@ -19,6 +19,9 @@ import javax.inject.Singleton
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
+// ModuleCompendiumParser -> ModuleCompendiumValidator -> ModuleCompendiumPublisher
+//                                                     -> ModuleCompendiumPrinter
+
 object ModuleCompendiumPublisher {
   def props(
       parser: ModuleCompendiumParser,
