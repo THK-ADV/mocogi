@@ -1,6 +1,6 @@
 package validator
 
-import basedata.StudyProgramWithPO
+import basedata.PO
 
 case class Prerequisites(
     recommended: Option[PrerequisiteEntry],
@@ -10,5 +10,5 @@ case class Prerequisites(
 case class PrerequisiteEntry(
     text: String,
     modules: List[Module],
-    studyPrograms: List[StudyProgramWithPO]
+    studyPrograms: List[PO]
 )

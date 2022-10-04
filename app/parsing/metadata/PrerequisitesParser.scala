@@ -1,6 +1,6 @@
 package parsing.metadata
 
-import basedata.StudyProgramWithPO
+import basedata.PO
 import parser.Parser
 import parser.Parser._
 import parser.ParserOps._
@@ -19,13 +19,11 @@ object PrerequisitesParser {
       skipFirst(prefix("module.")).take(prefixTo("\n"))
     ).option.map(_.getOrElse(Nil))
 
-  private def studyProgramsParser(implicit
-      studyPrograms: Seq[StudyProgramWithPO]
-  ): Parser[List[StudyProgramWithPO]] =
+  private def studyProgramsParser(implicit pos: Seq[PO]): Parser[List[PO]] =
     multipleValueParser(
       "study_programs",
       oneOf(
-        studyPrograms.map(s =>
+        pos.map(s =>
           literal(s"study_program.${s.abbrev}")
             .map(_ => s)
         ): _*
@@ -34,9 +32,7 @@ object PrerequisitesParser {
 
   private def parser(
       key: String
-  )(implicit
-      studyPrograms: Seq[StudyProgramWithPO]
-  ): Parser[ParsedPrerequisiteEntry] =
+  )(implicit pos: Seq[PO]): Parser[ParsedPrerequisiteEntry] =
     prefix(s"$key:")
       .skip(zeroOrMoreSpaces)
       .skip(removeIndentation())
@@ -46,12 +42,12 @@ object PrerequisitesParser {
       .map(ParsedPrerequisiteEntry.tupled)
 
   def recommendedPrerequisitesParser(implicit
-      studyPrograms: Seq[StudyProgramWithPO]
+      pos: Seq[PO]
   ): Parser[ParsedPrerequisiteEntry] =
     parser("recommended_prerequisites")
 
   def requiredPrerequisitesParser(implicit
-      studyPrograms: Seq[StudyProgramWithPO]
+      pos: Seq[PO]
   ): Parser[ParsedPrerequisiteEntry] =
     parser("required_prerequisites")
 }

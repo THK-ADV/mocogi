@@ -1,6 +1,6 @@
 package parsing.metadata
 
-import basedata.{AssessmentMethod, Competence, FocusArea, GlobalCriteria, Language, Location, ModuleType, Person, Season, Status, StudyProgramWithPO}
+import basedata._
 import parser.Parser
 import parser.Parser._
 import parser.ParserOps._
@@ -40,7 +40,7 @@ class MetadataCompositeParser @Inject() (
       focusAreas: Seq[FocusArea],
       competences: Seq[Competence],
       globalCriteria: Seq[GlobalCriteria],
-      studyPrograms: Seq[StudyProgramWithPO]
+      pos: Seq[PO]
   ): Parser[ParsedMetadata] =
     prefix("#---")
       .take(versionSchemeParser)

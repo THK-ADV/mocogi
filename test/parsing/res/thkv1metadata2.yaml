@@ -36,11 +36,11 @@ workload:
 status: status.active
 location: location.gm
 po_mandatory:
-  - study_program: study_program.ai2
+  - study_program: study_program.inf1
     recommended_semester: 4
-  - study_program: study_program.mi4
+  - study_program: study_program.mi1
     recommended_semester: 4
-  - study_program: study_program.itm2
+  - study_program: study_program.itm1
     recommended_semester: 4
 participants:
   min: 4
