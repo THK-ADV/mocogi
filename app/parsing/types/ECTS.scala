@@ -1,6 +1,6 @@
 package parsing.types
 
-import basedata.FocusArea
+import basedata.FocusAreaPreview
 
 case class ECTS(
     value: Double,
@@ -8,7 +8,7 @@ case class ECTS(
 )
 
 case class ECTSFocusAreaContribution(
-    focusArea: FocusArea,
+    focusArea: FocusAreaPreview,
     ectsValue: Double,
     description: String
 )

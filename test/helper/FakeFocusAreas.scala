@@ -1,11 +1,11 @@
 package helper
 
-import basedata.FocusArea
+import basedata.FocusAreaPreview
 
 trait FakeFocusAreas {
-  implicit def fakeFocusAreas: Seq[FocusArea] =
+  implicit def fakeFocusAreas: Seq[FocusAreaPreview] =
     Seq(
-      FocusArea("gak"),
-      FocusArea("acs")
+      FocusAreaPreview("gak"),
+      FocusAreaPreview("acs")
     )
 }
