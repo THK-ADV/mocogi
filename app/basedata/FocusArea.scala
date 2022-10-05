@@ -1,3 +1,10 @@
 package basedata
 
-case class FocusArea(abbrev: String)
+case class FocusArea(
+    abbrev: String,
+    program: StudyProgramPreview,
+    deLabel: String,
+    enLabel: String,
+    deDesc: String,
+    enDesc: String
+)

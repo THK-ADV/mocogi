@@ -3,10 +3,14 @@ package helper
 import basedata.StudyProgramPreview
 
 trait FakeStudyProgramPreviews {
-  implicit def fakeStudyProgramPreviews: Seq[StudyProgramPreview] = Seq(
-    StudyProgramPreview("inf_inf"),
-    StudyProgramPreview("inf_itm"),
-    StudyProgramPreview("inf_mi"),
-    StudyProgramPreview("inf_wi"),
-  )
+  lazy val inf = StudyProgramPreview("inf_inf")
+
+  lazy val itm = StudyProgramPreview("inf_itm")
+
+  lazy val mi = StudyProgramPreview("inf_mi")
+
+  lazy val wi = StudyProgramPreview("inf_wi")
+
+  implicit def fakeStudyProgramPreviews: Seq[StudyProgramPreview] =
+    Seq(inf, itm, mi, wi)
 }

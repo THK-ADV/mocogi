@@ -1,9 +1,9 @@
 package controllers.json
 
-import basedata.FocusArea
+import basedata.FocusAreaPreview
 import play.api.libs.json.{Format, Json}
 
 trait FocusAreaFormat {
-  implicit val focusAreaFormat: Format[FocusArea] =
-    Json.format[FocusArea]
+  implicit val focusAreaFormat: Format[FocusAreaPreview] =
+    Json.format[FocusAreaPreview]
 }
