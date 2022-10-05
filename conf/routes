@@ -40,6 +40,9 @@ POST        /pos                        controllers.POController.create()
 GET         /grades                     controllers.GradeController.all()
 POST        /grades                     controllers.GradeController.create()
 
+GET         /focusAreas                 controllers.FocusAreaController.all()
+POST        /focusAreas                 controllers.FocusAreaController.create()
+
 GET         /metadata                   controllers.MetadataController.all()
 
 # Map static resources from the /public folder to the /assets URL path

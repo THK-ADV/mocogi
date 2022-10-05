@@ -1,5 +1,6 @@
 package controllers.json
 
+import basedata.FocusAreaPreview
 import parsing.types._
 import play.api.libs.json.{Format, JsError, Json, OFormat}
 import validator.ModuleRelation.{Child, Parent}
@@ -32,6 +33,9 @@ trait MetadataFormat
 
   implicit val poMandatoryFormat: Format[POMandatory] =
     Json.format[POMandatory]
+
+  implicit val focusAreaPreviewFormat: Format[FocusAreaPreview] =
+    Json.format[FocusAreaPreview]
 
   implicit val ectsFocusAreaContribution: Format[ECTSFocusAreaContribution] =
     Json.format[ECTSFocusAreaContribution]
