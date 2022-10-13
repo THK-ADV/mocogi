@@ -5,5 +5,5 @@ case class Person(
     lastname: String,
     firstname: String,
     title: String,
-    faculty: String
+    faculty: Faculty
 )
