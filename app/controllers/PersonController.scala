@@ -1,11 +1,11 @@
 package controllers
 
-import basedata.Person
 import controllers.json.PersonFormat
-import play.api.libs.json.Writes
+import play.api.libs.json.Json
 import play.api.mvc.{AbstractController, ControllerComponents}
 import service.PersonService
 
+import java.nio.charset.StandardCharsets
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 
@@ -15,7 +15,17 @@ final class PersonController @Inject() (
     val service: PersonService,
     implicit val ctx: ExecutionContext
 ) extends AbstractController(cc)
-    with PersonFormat
-    with YamlController[Person] {
-  override implicit val writes: Writes[Person] = personFormat
+    with PersonFormat {
+  // TODO no yaml controller anymore
+  
+  def all() =
+    Action.async { _ =>
+      service.all().map(xs => Ok(Json.toJson(xs)))
+    }
+
+  def create() =
+    Action(parse.byteString).async { r =>
+      val input = r.body.decodeString(StandardCharsets.UTF_8)
+      service.create(input).map(xs => Ok(Json.toJson(xs)))
+    }
 }
