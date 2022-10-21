@@ -12,9 +12,12 @@ import scala.concurrent.ExecutionContext
 class SeasonRepository @Inject() (
     val dbConfigProvider: DatabaseConfigProvider,
     implicit val ctx: ExecutionContext
-) extends Repository[Season, SeasonTable]
+) extends Repository[Season, Season, SeasonTable]
     with HasDatabaseConfigProvider[JdbcProfile] {
   import profile.api._
 
   protected val tableQuery = TableQuery[SeasonTable]
+
+  override protected def retrieve(query: Query[SeasonTable, Season, Seq]) =
+    db.run(query.result)
 }

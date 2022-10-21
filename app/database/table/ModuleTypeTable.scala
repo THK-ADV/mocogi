@@ -4,14 +4,8 @@ import basedata.ModuleType
 import slick.jdbc.PostgresProfile.api._
 
 final class ModuleTypeTable(tag: Tag)
-    extends Table[ModuleType](tag, "module_type") {
-
-  def abbrev = column[String]("abbrev", O.PrimaryKey)
-
-  def deLabel = column[String]("de_label")
-
-  def enLabel = column[String]("en_label")
-
+    extends Table[ModuleType](tag, "module_type")
+    with AbbrevLabelColumn[ModuleType] {
   override def * = (
     abbrev,
     deLabel,

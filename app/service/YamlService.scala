@@ -5,13 +5,18 @@ import parsing.base.FileParser
 
 import scala.concurrent.Future
 
-trait YamlService[A] {
-  def repo: Repository[A, _]
-  def parser: FileParser[A]
+trait YamlService[Input, Output] {
+  def repo: Repository[Input, Output, _]
+  def parser: FileParser[Output]
 
-  def all(): Future[Seq[A]] =
+  def all(): Future[Seq[Output]] =
     repo.all()
 
-  def create(input: String): Future[Seq[A]] =
-    parser.fileParser.parse(input)._1.fold(Future.failed, repo.createMany)
+  def toInput(output: Output): Input
+
+  def create(input: String): Future[List[Input]] =
+    parser.fileParser
+      .parse(input)
+      ._1
+      .fold(Future.failed, xs => repo.createMany(xs.map(toInput)))
 }

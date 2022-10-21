@@ -1,5 +1,7 @@
 package database.table
 
+import database.entities
+import database.entities.ResponsibilityDbEntry
 import slick.jdbc.PostgresProfile.api._
 
 import java.util.UUID
@@ -26,7 +28,7 @@ final class ResponsibilityTable(tag: Tag)
   ) <> (mapRow, unmapRow)
 
   def mapRow: ((UUID, String, String)) => ResponsibilityDbEntry = {
-    case (metadata, person, kind) => ResponsibilityDbEntry(metadata, person, ResponsibilityType(kind))
+    case (metadata, person, kind) => entities.ResponsibilityDbEntry(metadata, person, ResponsibilityType(kind))
   }
 
   def unmapRow: ResponsibilityDbEntry => Option[(UUID, String, String)] = { a =>

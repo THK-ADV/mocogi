@@ -1,10 +1,17 @@
 package service
 
 import basedata.StudyFormType
-import parsing.base.{FileParser, StudyFormTypeFileParser}
+import database.repo.StudyFormTypeRepository
+import parsing.base.StudyFormTypeFileParser
 
-object StudyFormTypeService extends YamlService[StudyFormType] {
-  override def repo = ???
+import javax.inject.{Inject, Singleton}
 
-  override def parser: FileParser[StudyFormType] = StudyFormTypeFileParser
+trait StudyFormTypeService extends YamlService[StudyFormType, StudyFormType]
+
+@Singleton
+final class StudyFormTypeServiceImpl @Inject() (
+    val repo: StudyFormTypeRepository
+) extends StudyFormTypeService {
+  override def parser = StudyFormTypeFileParser
+  override def toInput(output: StudyFormType) = output
 }

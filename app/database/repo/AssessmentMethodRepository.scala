@@ -12,9 +12,14 @@ import scala.concurrent.ExecutionContext
 class AssessmentMethodRepository @Inject() (
     val dbConfigProvider: DatabaseConfigProvider,
     implicit val ctx: ExecutionContext
-) extends Repository[AssessmentMethod, AssessmentMethodTable]
+) extends Repository[AssessmentMethod, AssessmentMethod, AssessmentMethodTable]
     with HasDatabaseConfigProvider[JdbcProfile] {
   import profile.api._
 
   protected val tableQuery = TableQuery[AssessmentMethodTable]
+
+  override protected def retrieve(
+      query: Query[AssessmentMethodTable, AssessmentMethod, Seq]
+  ) =
+    db.run(query.result)
 }

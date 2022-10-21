@@ -12,9 +12,12 @@ import scala.concurrent.ExecutionContext
 class StatusRepository @Inject() (
     val dbConfigProvider: DatabaseConfigProvider,
     implicit val ctx: ExecutionContext
-) extends Repository[Status, StatusTable]
+) extends Repository[Status, Status, StatusTable]
     with HasDatabaseConfigProvider[JdbcProfile] {
   import profile.api._
 
   protected val tableQuery = TableQuery[StatusTable]
+
+  override protected def retrieve(query: Query[StatusTable, Status, Seq]) =
+    db.run(query.result)
 }

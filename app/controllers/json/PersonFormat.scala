@@ -1,6 +1,6 @@
 package controllers.json
 
-import basedata.{FacultyFormat, Person}
+import basedata.Person
 import play.api.libs.json.{Format, Json}
 
 trait PersonFormat extends FacultyFormat {

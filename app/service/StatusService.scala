@@ -6,10 +6,12 @@ import parsing.base.StatusFileParser
 
 import javax.inject.{Inject, Singleton}
 
-trait StatusService extends YamlService[Status]
+trait StatusService extends YamlService[Status, Status]
 
 @Singleton
 final class StatusServiceImpl @Inject() (
     val repo: StatusRepository,
     val parser: StatusFileParser
-) extends StatusService
+) extends StatusService {
+  override def toInput(output: Status) = output
+}

@@ -1,5 +1,6 @@
 package database.table
 
+import database.entities.AssessmentMethodMetadataDbEntry
 import slick.jdbc.PostgresProfile.api._
 
 import java.util.UUID
@@ -16,6 +17,8 @@ final class AssessmentMethodMetadataTable(tag: Tag)
 
   def percentage = column[Option[Double]]("percentage")
 
+  def mandatory = column[Boolean]("mandatory")
+
   def metadataFk =
     foreignKey("metadata", metadata, TableQuery[MetadataTable])(_.id)
 
@@ -29,6 +32,7 @@ final class AssessmentMethodMetadataTable(tag: Tag)
   override def * = (
     metadata,
     assessmentMethod,
-    percentage
+    percentage,
+    mandatory
   ) <> (AssessmentMethodMetadataDbEntry.tupled, AssessmentMethodMetadataDbEntry.unapply)
 }

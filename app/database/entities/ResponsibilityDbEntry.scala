@@ -1,4 +1,6 @@
-package database.table
+package database.entities
+
+import database.table.ResponsibilityType
 
 import java.util.UUID
 

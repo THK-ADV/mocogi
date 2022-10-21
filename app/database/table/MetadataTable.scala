@@ -1,5 +1,6 @@
 package database.table
 
+import database.entities.MetadataDbEntry
 import slick.jdbc.PostgresProfile.api._
 
 import java.util.UUID
@@ -12,12 +13,12 @@ final class MetadataTable(tag: Tag)
   def title = column[String]("title")
   def abbrev = column[String]("abbrev")
   def moduleType = column[String]("module_type")
+  def language = column[String]("language")
 
-  def children = column[Option[String]]("children")
+  /*def children = column[Option[String]]("children")
   def parent = column[Option[String]]("parent")
 
   def credits = column[Double]("credits")
-  def language = column[String]("language")
   def duration = column[Int]("duration")
   def season = column[String]("season")
 
@@ -34,12 +35,12 @@ final class MetadataTable(tag: Tag)
   def status = column[String]("status")
   def location = column[String]("location")
 
-  def po = column[String]("po")
+  def po = column[String]("po")*/
 
   def moduleTypeFk =
     foreignKey("module_type", moduleType, TableQuery[ModuleTypeTable])(_.abbrev)
 
-  def languageFk =
+  /*def languageFk =
     foreignKey("language", language, TableQuery[LanguageTable])(_.abbrev)
 
   def seasonFk =
@@ -49,7 +50,7 @@ final class MetadataTable(tag: Tag)
     foreignKey("status", status, TableQuery[StatusTable])(_.abbrev)
 
   def locationFk =
-    foreignKey("location", location, TableQuery[LocationTable])(_.abbrev)
+    foreignKey("location", location, TableQuery[LocationTable])(_.abbrev)*/
 
   override def * = (
     id,
@@ -57,10 +58,10 @@ final class MetadataTable(tag: Tag)
     title,
     abbrev,
     moduleType,
-    (children, parent),
-    credits,
-    language,
-    duration,
+    // (children, parent),
+    // credits,
+    language
+    /*duration,
     season,
     (
       workloadLecture,
@@ -74,7 +75,7 @@ final class MetadataTable(tag: Tag)
     requiredPrerequisites,
     status,
     location,
-    po
+    po*/
   ) <> (mapRow, unmapRow)
 
   def mapRow: (
@@ -84,17 +85,17 @@ final class MetadataTable(tag: Tag)
           String,
           String,
           String,
-          (Option[String], Option[String]),
-          Double,
-          String,
-          Int,
+          // (Option[String], Option[String]),
+          // Double,
+          String
+          /*Int,
           String,
           (Int, Int, Int, Int, Int, Int),
           String,
           String,
           String,
           String,
-          String
+          String*/
       )
   ) => MetadataDbEntry = {
     case (
@@ -103,10 +104,10 @@ final class MetadataTable(tag: Tag)
           title,
           abbrev,
           moduleType,
-          (children, parent),
-          credits,
-          language,
-          duration,
+          // (children, parent),
+          // credits,
+          language
+          /*duration,
           season,
           (
             workloadLecture,
@@ -120,7 +121,7 @@ final class MetadataTable(tag: Tag)
           requiredPrerequisites,
           status,
           location,
-          po
+          po*/
         ) =>
       MetadataDbEntry(
         id,
@@ -128,11 +129,11 @@ final class MetadataTable(tag: Tag)
         title,
         abbrev,
         moduleType,
-        children,
+        /* children,
         parent,
-        credits,
-        language,
-        duration,
+        credits,*/
+        language
+        /*duration,
         season,
         workloadLecture,
         workloadSeminar,
@@ -144,7 +145,7 @@ final class MetadataTable(tag: Tag)
         requiredPrerequisites,
         status,
         location,
-        po
+        po*/
       )
   }
 
@@ -155,17 +156,17 @@ final class MetadataTable(tag: Tag)
         String,
         String,
         String,
-        (Option[String], Option[String]),
-        Double,
-        String,
-        Int,
+        /*        (Option[String], Option[String]),
+        Double,*/
+        String
+        /*Int,
         String,
         (Int, Int, Int, Int, Int, Int),
         String,
         String,
         String,
         String,
-        String
+        String*/
     )
   ] =
     a =>
@@ -176,24 +177,24 @@ final class MetadataTable(tag: Tag)
           a.title,
           a.abbrev,
           a.moduleType,
-          (a.children, a.parent),
-          a.credits,
-          a.language,
-          a.duration,
+          /*(a.children, a.parent),
+          a.credits,*/
+          a.language
+          /*a.duration,
           a.season,
           (
             a.workloadLecture,
             a.workloadSeminar,
             a.workloadPractical,
             a.workloadExercise,
-            a.workloadProjectSupervision,
+            a.workloadProjectSupervi@sion,
             a.workloadProjectWork
           ),
           a.recommendedPrerequisites,
           a.requiredPrerequisites,
           a.status,
           a.location,
-          a.poMandatory
+          a.poMandatory*/
         )
       )
 }

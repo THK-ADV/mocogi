@@ -14,8 +14,9 @@ final class POController @Inject() (
     cc: ControllerComponents,
     implicit val ctx: ExecutionContext
 ) extends AbstractController(cc)
-    with YamlController[PO]
+    with YamlController[PO, PO]
     with POFormat {
-  override implicit val writes: Writes[PO] = poFormat
   override val service = POService
+  override implicit val writesOut: Writes[PO] = poFormat
+  override implicit val writesIn: Writes[PO] = poFormat
 }

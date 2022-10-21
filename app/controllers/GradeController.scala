@@ -14,7 +14,8 @@ final class GradeController @Inject() (
     implicit val ctx: ExecutionContext
 ) extends AbstractController(cc)
     with GradesFormat
-    with YamlController[Grade] {
-  override implicit val writes: Writes[Grade] = gradesFormat
+    with YamlController[Grade, Grade] {
   override val service = ???
+  override implicit val writesOut: Writes[Grade] = gradesFormat
+  override implicit val writesIn: Writes[Grade] = gradesFormat
 }

@@ -2,9 +2,8 @@ package providers
 
 import akka.actor.ActorSystem
 import git.ModuleCompendiumSubscribers
-import git.subscriber.{MetadataDatabaseActor, ModuleCompendiumPrintingActor, ModuleCompendiumPublishActor}
+import git.subscriber.{ModuleCompendiumPrintingActor, ModuleCompendiumPublishActor}
 import parserprinter.ModuleCompendiumParserPrinter
-import parsing.types.ParsedMetadata
 import printing.PrinterOutputType
 import publisher.KafkaPublisher
 import service.MetadataService
@@ -32,7 +31,7 @@ class ModuleCompendiumSubscribersProvider @Inject() (
           )
         ),
         system.actorOf(ModuleCompendiumPublishActor.props(publisher)),
-        system.actorOf(MetadataDatabaseActor.props(metadataService, ctx))
+        //system.actorOf(MetadataDatabaseActor.props(metadataService, ctx))
       )
     )
 }

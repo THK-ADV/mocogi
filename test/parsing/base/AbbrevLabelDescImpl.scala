@@ -1,11 +1,11 @@
 package parsing.base
 
-import basedata.LabelDescLike
+import basedata.AbbrevLabelDescLike
 
-case class LabelDescImpl(
+case class AbbrevLabelDescImpl(
     abbrev: String,
     deLabel: String,
     deDesc: String,
     enLabel: String,
     enDesc: String
-) extends LabelDescLike
+) extends AbbrevLabelDescLike

@@ -10,8 +10,8 @@ final class LabelDescFileParserSpec
     with ParserSpecHelper
     with EitherValues {
 
-  val parser = new LabelDescFileParser[LabelDescImpl] {
-    override protected def makeType = LabelDescImpl.tupled
+  val parser = new LabelDescFileParser[AbbrevLabelDescImpl] {
+    override protected def makeType = AbbrevLabelDescImpl.tupled
   }.fileParser
 
   "A Label Desc File Parser" should {
@@ -29,7 +29,7 @@ final class LabelDescFileParserSpec
       val (res, rest) = parser.parse(input)
       assert(
         res.value == List(
-          LabelDescImpl(
+          AbbrevLabelDescImpl(
             "entry1",
             "Entry 1",
             "Text1\nText2\n",
@@ -56,7 +56,7 @@ final class LabelDescFileParserSpec
       val (res, rest) = parser.parse(input)
       assert(
         res.value == List(
-          LabelDescImpl(
+          AbbrevLabelDescImpl(
             "entry1",
             "Entry 1",
             "Text1\nText2\n",
@@ -91,14 +91,14 @@ final class LabelDescFileParserSpec
       val (res, rest) = parser.parse(input)
       assert(
         res.value == List(
-          LabelDescImpl(
+          AbbrevLabelDescImpl(
             "entry1",
             "Entry 1",
             "Text1\nText2\n",
             "Entry 1",
             "Text1 Text2\n"
           ),
-          LabelDescImpl(
+          AbbrevLabelDescImpl(
             "entry2",
             "Entry 2",
             "Text1 Text2",
@@ -115,28 +115,28 @@ final class LabelDescFileParserSpec
         withFile0("test/parsing/res/label_desc.yaml")(parser.parse)
       assert(
         res.value == List(
-          LabelDescImpl(
+          AbbrevLabelDescImpl(
             "develop-visions",
             "Develop Visions",
             "Desc1\nDesc2\nDesc3\n",
             "Develop Visions",
             "Desc1\nDesc2\n"
           ),
-          LabelDescImpl(
+          AbbrevLabelDescImpl(
             "analyze-domains",
             "Analyze Domains",
             "Desc1\nDesc2\n",
             "Analyze Domains",
             "Desc1\nDesc2\n"
           ),
-          LabelDescImpl(
+          AbbrevLabelDescImpl(
             "digitization",
             "Digitalisierung",
             "Desc1",
             "Digitization",
             ""
           ),
-          LabelDescImpl(
+          AbbrevLabelDescImpl(
             "internationalization",
             "Internationalisierung",
             "Desc1",

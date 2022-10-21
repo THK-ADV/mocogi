@@ -12,10 +12,12 @@ import scala.concurrent.ExecutionContext
 @Singleton
 final class StudyFormTypeController @Inject() (
     cc: ControllerComponents,
+    val service: StudyFormTypeService,
     implicit val ctx: ExecutionContext
 ) extends AbstractController(cc)
-    with YamlController[StudyFormType]
+    with YamlController[StudyFormType, StudyFormType]
     with StudyFormTypeFormat {
-  override implicit val writes: Writes[StudyFormType] = studyFormTypeFormat
-  override val service = StudyFormTypeService
+  override implicit val writesOut: Writes[StudyFormType] = studyFormTypeFormat
+
+  override implicit val writesIn: Writes[StudyFormType] = studyFormTypeFormat
 }

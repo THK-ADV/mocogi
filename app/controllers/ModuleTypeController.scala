@@ -16,6 +16,7 @@ final class ModuleTypeController @Inject() (
     implicit val ctx: ExecutionContext
 ) extends AbstractController(cc)
     with ModuleTypeFormat
-    with YamlController[ModuleType] {
-  override implicit val writes: Writes[ModuleType] = moduleTypeFormat
+    with YamlController[ModuleType, ModuleType] {
+  override implicit val writesOut: Writes[ModuleType] = moduleTypeFormat
+  override implicit val writesIn: Writes[ModuleType] = moduleTypeFormat
 }
