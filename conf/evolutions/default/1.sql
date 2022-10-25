@@ -85,11 +85,18 @@ create table global_criteria
 
 create table person
 (
-    "abbrev"    text PRIMARY KEY,
+    "id"        text PRIMARY KEY,
     "lastname"  text not null,
     "firstname" text not null,
-    "title"     text not null,
-    "faculty"   text not null,
+    "title"     text not null
+);
+
+create table persons_in_faculties
+(
+    "person"  text not null,
+    "faculty" text not null,
+    PRIMARY KEY (person, faculty),
+    FOREIGN KEY (person) REFERENCES person (id),
     FOREIGN KEY (faculty) REFERENCES faculty (abbrev)
 );
 
@@ -113,7 +120,7 @@ create table study_program
     "en_description"                 text    not null,
     "en_note"                        text    not null,
     FOREIGN KEY (grade) REFERENCES grade (abbrev),
-    FOREIGN KEY (program_director) REFERENCES person (abbrev),
+    FOREIGN KEY (program_director) REFERENCES person (id)
 );
 
 create table study_form
@@ -248,7 +255,7 @@ create table ects_focus_area_contribution
     "description" text          not null,
     PRIMARY KEY (focus_area, ects),
     FOREIGN KEY (focus_area) REFERENCES focus_area (abbrev),
-    FOREIGN KEY (ects) REFERENCES ects (id),
+    FOREIGN KEY (ects) REFERENCES ects (id)
 );
 
 create table responsibility
@@ -258,7 +265,7 @@ create table responsibility
     "kind"     text not null,
     PRIMARY KEY (metadata, person, kind),
     FOREIGN KEY (metadata) REFERENCES metadata (id),
-    FOREIGN KEY (person) REFERENCES person (abbrev)
+    FOREIGN KEY (person) REFERENCES person (id)
 );
 
 create table metadata_assessment_method
@@ -329,7 +336,7 @@ create table po_optional
     PRIMARY KEY (metadata, po),
     FOREIGN KEY (metadata) REFERENCES metadata (id),
     FOREIGN KEY (po) REFERENCES po (abbrev),
-    FOREIGN KEY (instance_of) REFERENCES metadata (id),
+    FOREIGN KEY (instance_of) REFERENCES metadata (id)
 );
 
 create table metadata_competence
@@ -384,6 +391,7 @@ drop table study_program_language if exists;
 drop table study_form_scope if exists;
 drop table study_form if exists;
 drop table study_program if exists;
+drop table persons_in_faculties if exists;
 drop table person if exists;
 drop table global_criteria if exists;
 drop table study_form_type if exists;
