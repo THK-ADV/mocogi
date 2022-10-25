@@ -1,5 +1,6 @@
 package database.repo
 
+import database.entities.{AssessmentMethodMetadataDbEntry, MetadataDbEntry, ResponsibilityDbEntry}
 import database.table._
 import git.GitFilePath
 import parsing.types._

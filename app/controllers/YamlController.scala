@@ -7,13 +7,15 @@ import service.YamlService
 import java.nio.charset.StandardCharsets
 import scala.concurrent.ExecutionContext
 
-trait YamlController[A] { self: AbstractController =>
+trait YamlController[Input, Output] { self: AbstractController =>
 
-  implicit val writes: Writes[A]
+  implicit val writesOut: Writes[Output]
+
+  implicit val writesIn: Writes[Input]
 
   implicit val ctx: ExecutionContext
 
-  val service: YamlService[A]
+  val service: YamlService[Input, Output]
 
   def all() =
     Action.async { _ =>

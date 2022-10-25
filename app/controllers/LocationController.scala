@@ -16,6 +16,7 @@ final class LocationController @Inject() (
     implicit val ctx: ExecutionContext
 ) extends AbstractController(cc)
     with LocationFormat
-    with YamlController[Location] {
-  override implicit val writes: Writes[Location] = locationFormat
+    with YamlController[Location, Location] {
+  override implicit val writesOut: Writes[Location] = locationFormat
+  override implicit val writesIn: Writes[Location] = locationFormat
 }

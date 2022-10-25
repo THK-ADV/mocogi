@@ -7,4 +7,4 @@ case class FocusArea(
     enLabel: String,
     deDesc: String,
     enDesc: String
-)
+) extends AbbrevLabelDescLike

@@ -1,9 +1,7 @@
 package basedata
 
-trait LabelDescLike {
+trait AbbrevLabelLike {
   def abbrev: String
   def deLabel: String
-  def deDesc: String
   def enLabel: String
-  def enDesc: String
 }

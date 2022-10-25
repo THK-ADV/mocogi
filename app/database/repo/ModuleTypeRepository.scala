@@ -12,9 +12,14 @@ import scala.concurrent.ExecutionContext
 class ModuleTypeRepository @Inject() (
     val dbConfigProvider: DatabaseConfigProvider,
     implicit val ctx: ExecutionContext
-) extends Repository[ModuleType, ModuleTypeTable]
+) extends Repository[ModuleType, ModuleType, ModuleTypeTable]
     with HasDatabaseConfigProvider[JdbcProfile] {
   import profile.api._
 
   protected val tableQuery = TableQuery[ModuleTypeTable]
+
+  override protected def retrieve(
+      query: Query[ModuleTypeTable, ModuleType, Seq]
+  ) =
+    db.run(query.result)
 }

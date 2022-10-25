@@ -16,7 +16,9 @@ final class AssessmentMethodController @Inject() (
     implicit val ctx: ExecutionContext
 ) extends AbstractController(cc)
     with AssessmentMethodFormat
-    with YamlController[AssessmentMethod] {
-  override implicit val writes: Writes[AssessmentMethod] =
+    with YamlController[AssessmentMethod, AssessmentMethod] {
+  override implicit val writesOut: Writes[AssessmentMethod] =
+    assessmentMethodFormat
+  override implicit val writesIn: Writes[AssessmentMethod] =
     assessmentMethodFormat
 }

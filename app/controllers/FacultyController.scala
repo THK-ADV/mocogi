@@ -1,6 +1,7 @@
 package controllers
 
-import basedata.{Faculty, FacultyFormat}
+import basedata.Faculty
+import controllers.json.FacultyFormat
 import play.api.libs.json.Writes
 import play.api.mvc.{AbstractController, ControllerComponents}
 
@@ -13,7 +14,8 @@ final class FacultyController @Inject() (
     implicit val ctx: ExecutionContext
 ) extends AbstractController(cc)
     with FacultyFormat
-    with YamlController[Faculty] {
-  override implicit val writes: Writes[Faculty] = facultyFormat
+    with YamlController[Faculty, Faculty] {
   override val service = ???
+  override implicit val writesOut: Writes[Faculty] = facultyFormat
+  override implicit val writesIn: Writes[Faculty] = facultyFormat
 }

@@ -12,9 +12,12 @@ import scala.concurrent.ExecutionContext
 class LocationRepository @Inject() (
     val dbConfigProvider: DatabaseConfigProvider,
     implicit val ctx: ExecutionContext
-) extends Repository[Location, LocationTable]
+) extends Repository[Location, Location, LocationTable]
     with HasDatabaseConfigProvider[JdbcProfile] {
   import profile.api._
 
   protected val tableQuery = TableQuery[LocationTable]
+
+  override protected def retrieve(query: Query[LocationTable, Location, Seq]) =
+    db.run(query.result)
 }

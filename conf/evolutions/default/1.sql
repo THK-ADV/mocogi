@@ -42,45 +42,220 @@ create table season
     "en_label" text not null
 );
 
+create table competence
+(
+    "abbrev"   text PRIMARY KEY,
+    "de_label" text not null,
+    "de_desc"  text not null,
+    "en_label" text not null,
+    "en_desc"  text not null
+);
+
+create table faculty
+(
+    "abbrev"   text PRIMARY KEY,
+    "de_label" text not null,
+    "en_label" text not null
+);
+
+create table grade
+(
+    "abbrev"   text PRIMARY KEY,
+    "de_label" text not null,
+    "de_desc"  text not null,
+    "en_label" text not null,
+    "en_desc"  text not null
+);
+
+create table study_form_type
+(
+    "abbrev"   text PRIMARY KEY,
+    "de_label" text not null,
+    "en_label" text not null
+);
+
+create table global_criteria
+(
+    "abbrev"   text PRIMARY KEY,
+    "de_label" text not null,
+    "de_desc"  text not null,
+    "en_label" text not null,
+    "en_desc"  text not null
+);
+
 create table person
 (
-    "abbrev"    text PRIMARY KEY,
+    "id"        text PRIMARY KEY,
     "lastname"  text not null,
     "firstname" text not null,
-    "title"     text not null,
-    "faculty"   text not null
+    "title"     text not null
+);
+
+create table persons_in_faculties
+(
+    "person"  text not null,
+    "faculty" text not null,
+    PRIMARY KEY (person, faculty),
+    FOREIGN KEY (person) REFERENCES person (id),
+    FOREIGN KEY (faculty) REFERENCES faculty (abbrev)
+);
+
+create table study_program
+(
+    "abbrev"                         text PRIMARY KEY,
+    "de_label"                       text    not null,
+    "en_label"                       text    not null,
+    "internal_abbreviation"          text    not null,
+    "external_abbreviation"          text    not null,
+    "de_url"                         text    not null,
+    "en_url"                         text    not null,
+    "grade"                          text    not null,
+    "program_director"               text    not null,
+    "accreditation_until"            date    not null,
+    "restricted_admission_value"     boolean not null,
+    "restricted_admission_de_reason" text    not null,
+    "restricted_admission_en_reason" text    not null,
+    "de_description"                 text    not null,
+    "de_note"                        text    not null,
+    "en_description"                 text    not null,
+    "en_note"                        text    not null,
+    FOREIGN KEY (grade) REFERENCES grade (abbrev),
+    FOREIGN KEY (program_director) REFERENCES person (id)
+);
+
+create table study_form
+(
+    "id"                uuid PRIMARY KEY,
+    "study_program"     text     not null,
+    "kind"              text     not null,
+    "workload_per_ects" smallint not null,
+    FOREIGN KEY (study_program) REFERENCES study_program (abbrev)
+);
+
+create table study_form_scope
+(
+    "id"         uuid PRIMARY KEY,
+    "study_form" uuid     not null,
+    "duration"   smallint not null,
+    "total_ects" smallint not null,
+    "de_reason"  text     not null,
+    "en_reason"  text     not null,
+    FOREIGN KEY (study_form) REFERENCES study_form (id)
+);
+
+create table study_program_language
+(
+    "language"      text not null,
+    "study_program" text not null,
+    PRIMARY KEY (language, study_program),
+    FOREIGN KEY (language) REFERENCES language (abbrev),
+    FOREIGN KEY (study_program) REFERENCES study_program (abbrev)
+);
+
+create table study_program_season
+(
+    "season"        text not null,
+    "study_program" text not null,
+    PRIMARY KEY (season, study_program),
+    FOREIGN KEY (season) REFERENCES season (abbrev),
+    FOREIGN KEY (study_program) REFERENCES study_program (abbrev)
+);
+
+create table study_program_location
+(
+    "location"      text not null,
+    "study_program" text not null,
+    PRIMARY KEY (location, study_program),
+    FOREIGN KEY (location) REFERENCES location (abbrev),
+    FOREIGN KEY (study_program) REFERENCES study_program (abbrev)
+);
+
+create table focus_area
+(
+    "abbrev"        text PRIMARY KEY,
+    "study_program" text not null,
+    "de_label"      text not null,
+    "de_desc"       text not null,
+    "en_label"      text not null,
+    "en_desc"       text not null,
+    FOREIGN KEY (study_program) REFERENCES study_program (abbrev)
+);
+
+create table po
+(
+    "abbrev"        text PRIMARY KEY,
+    "study_program" text     not null,
+    "version"       smallint not null,
+    "date"          date     not null,
+    "date_from"     date     not null,
+    "date_to"       date,
+    FOREIGN KEY (study_program) REFERENCES study_program (abbrev)
+);
+
+create table po_modification_date
+(
+    "po"   text not null,
+    "date" date not null,
+    PRIMARY KEY (po, date),
+    FOREIGN KEY (po) REFERENCES po (abbrev)
 );
 
 create table metadata
 (
-    "id"                        uuid PRIMARY KEY,
-    "git_path"                  text          not null,
-    "title"                     text          not null,
-    "abbrev"                    text          not null,
-    "module_type"               text          not null,
-    "children"                  text null,
-    "parent"                    text null,
-    "credits"                   numeric(4, 2) not null,
-    "language"                  text          not null,
-    "duration"                  smallint      not null,
-    "recommended_semester"      smallint      not null,
-    "season"                    text          not null,
-    "workload_total"            smallint      not null,
-    "workload_lecture"          smallint      not null,
-    "workload_seminar"          smallint      not null,
-    "workload_practical"        smallint      not null,
-    "workload_exercise"         smallint      not null,
-    "workload_self_study"       smallint      not null,
-    "recommended-prerequisites" text          not null,
-    "required-prerequisites"    text          not null,
-    "status"                    text          not null,
-    "location"                  text          not null,
-    "po"                        text          not null,
+    "id"                           uuid PRIMARY KEY,
+    "git_path"                     text     not null,
+    "title"                        text     not null,
+    "abbrev"                       text     not null,
+    "module_type"                  text     not null,
+    "ects"                         uuid     not null,
+    "language"                     text     not null,
+    "duration"                     smallint not null,
+    "season"                       text     not null,
+    "workload_lecture"             smallint not null,
+    "workload_seminar"             smallint not null,
+    "workload_practical"           smallint not null,
+    "workload_exercise"            smallint not null,
+    "workload_project_supervision" smallint not null,
+    "workload_project_work"        smallint not null,
+    "workload_self_study"          smallint not null,
+    "workload_total"               smallint not null,
+    "status"                       text     not null,
+    "location"                     text     not null,
+    "participants_min"             smallint null,
+    "participants_max"             smallint null,
     FOREIGN KEY (module_type) REFERENCES module_type (abbrev),
+    FOREIGN KEY (etcs) REFERENCES ects (id),
     FOREIGN KEY (language) REFERENCES language (abbrev),
     FOREIGN KEY (season) REFERENCES season (abbrev),
     FOREIGN KEY (status) REFERENCES status (abbrev),
     FOREIGN KEY (location) REFERENCES location (abbrev)
+);
+
+create table module_relation
+(
+    "module"          uuid not null,
+    "relation_type"   text not null,
+    "relation_module" uuid not null,
+    PRIMARY KEY (module, relation_type, relation_module),
+    FOREIGN KEY (module) REFERENCES metadata (id),
+    FOREIGN KEY (relation_module) REFERENCES metadata (id)
+);
+
+create table ects
+(
+    "id"    uuid PRIMARY KEY,
+    "value" numeric(4, 2) not null
+);
+
+create table ects_focus_area_contribution
+(
+    "focus_area"  text          not null,
+    "ects"        uuid          not null,
+    "ects_value"  numeric(4, 2) not null,
+    "description" text          not null,
+    PRIMARY KEY (focus_area, ects),
+    FOREIGN KEY (focus_area) REFERENCES focus_area (abbrev),
+    FOREIGN KEY (ects) REFERENCES ects (id)
 );
 
 create table responsibility
@@ -90,24 +265,139 @@ create table responsibility
     "kind"     text not null,
     PRIMARY KEY (metadata, person, kind),
     FOREIGN KEY (metadata) REFERENCES metadata (id),
-    FOREIGN KEY (person) REFERENCES person (abbrev)
+    FOREIGN KEY (person) REFERENCES person (id)
 );
 
-create table assessment_method_metadata
+create table metadata_assessment_method
 (
-    "metadata"          uuid not null,
-    "assessment_method" text not null,
-    "percentage"        numeric(5, 2) null,
+    "metadata"               uuid not null,
+    "assessment_method"      text not null,
+    "assessment_method_type" text not null,
+    "percentage"             numeric(5, 2) null,
     PRIMARY KEY (metadata, assessment_method),
     FOREIGN KEY (assessment_method) REFERENCES assessment_method (abbrev),
     FOREIGN KEY (metadata) REFERENCES metadata (id)
 );
 
+create table metadata_assessment_method_precondition
+(
+    "assessment_method"          text not null,
+    "metadata_assessment_method" text not null,
+    PRIMARY KEY (assessment_method, metadata_assessment_method),
+    FOREIGN KEY (assessment_method) REFERENCES assessment_method (abbrev),
+    FOREIGN KEY (metadata_assessment_method) REFERENCES metadata_assessment_method (metadata, assessment_method)
+);
+
+create table prerequisites
+(
+    "id"                 uuid PRIMARY KEY,
+    "metadata"           uuid not null,
+    "prerequisites_type" text not null,
+    "text"               text not null,
+    FOREIGN KEY (metadata) REFERENCES metadata (id)
+);
+
+create table prerequisites_module
+(
+    "prerequisites" uuid not null,
+    "module"        uuid not null,
+    PRIMARY KEY (prerequisites, module),
+    FOREIGN KEY (prerequisites) REFERENCES prerequisites (id),
+    FOREIGN KEY (module) REFERENCES metadata (id)
+);
+
+create table prerequisites_study_program
+(
+    "prerequisites" uuid not null,
+    "study_program" uuid not null,
+    PRIMARY KEY (prerequisites, study_program),
+    FOREIGN KEY (prerequisites) REFERENCES prerequisites (id),
+    FOREIGN KEY (study_program) REFERENCES study_program (abbrev)
+);
+
+create table po_mandatory
+(
+    "metadata"                       uuid not null,
+    "po"                             text not null,
+    "recommended_semester"           text not null,
+    "recommended_semester_part_time" text not null,
+    PRIMARY KEY (metadata, po),
+    FOREIGN KEY (metadata) REFERENCES metadata (id),
+    FOREIGN KEY (po) REFERENCES po (abbrev)
+);
+
+create table po_optional
+(
+    "metadata"             uuid    not null,
+    "po"                   text    not null,
+    "instance_of"          uuid    not null,
+    "part_of_catalog"      boolean not null,
+    "recommended_semester" text    not null,
+    PRIMARY KEY (metadata, po),
+    FOREIGN KEY (metadata) REFERENCES metadata (id),
+    FOREIGN KEY (po) REFERENCES po (abbrev),
+    FOREIGN KEY (instance_of) REFERENCES metadata (id)
+);
+
+create table metadata_competence
+(
+    "metadata"   uuid not null,
+    "competence" text not null,
+    PRIMARY KEY (metadata, competence),
+    FOREIGN KEY (metadata) REFERENCES metadata (id),
+    FOREIGN KEY (competence) REFERENCES competence (abbrev)
+);
+
+create table metadata_global_criteria
+(
+    "metadata"        uuid not null,
+    "global_criteria" text not null,
+    PRIMARY KEY (metadata, global_criteria),
+    FOREIGN KEY (metadata) REFERENCES metadata (id),
+    FOREIGN KEY (global_criteria) REFERENCES global_criteria (abbrev)
+);
+
+create table metadata_taught_with
+(
+    "metadata" uuid not null,
+    "module"   uuid not null,
+    PRIMARY KEY (metadata, module),
+    FOREIGN KEY (metadata) REFERENCES metadata (id),
+    FOREIGN KEY (module) REFERENCES metadata (id)
+);
+
 -- !Downs
-drop table assessment_method_metadata if exists;
+drop table metadata_taught_with if exists;
+drop table metadata_global_criteria if exists;
+drop table metadata_competence if exists;
+drop table po_optional if exists;
+drop table po_mandatory if exists;
+drop table prerequisites_study_program if exists;
+drop table prerequisites_module if exists;
+drop table prerequisites if exists;
+drop table metadata_assessment_method_precondition if exists;
+drop table metadata_assessment_method if exists;
 drop table responsibility if exists;
+drop table ects_focus_area_contribution if exists;
+drop table ects if exists;
+drop table module_relation if exists;
 drop table metadata if exists;
+drop table po_modification_date if exists;
+drop table po if exists;
+drop table focus_area if exists;
+drop table study_program_location if exists;
+drop table study_program_season if exists;
+drop table study_program_language if exists;
+drop table study_form_scope if exists;
+drop table study_form if exists;
+drop table study_program if exists;
+drop table persons_in_faculties if exists;
 drop table person if exists;
+drop table global_criteria if exists;
+drop table study_form_type if exists;
+drop table grade if exists;
+drop table faculty if exists;
+drop table competence if exists;
 drop table season if exists;
 drop table module_type if exists;
 drop table assessment_method if exists;

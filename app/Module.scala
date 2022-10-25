@@ -42,6 +42,9 @@ class Module() extends AbstractModule {
     bind(classOf[PersonService])
       .to(classOf[PersonServiceImpl])
       .asEagerSingleton()
+    bind(classOf[StudyFormTypeService])
+      .to(classOf[StudyFormTypeServiceImpl])
+      .asEagerSingleton()
 
     bind(classOf[MarkdownConverter])
       .toProvider(classOf[MarkdownConverterProvider])

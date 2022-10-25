@@ -6,4 +6,4 @@ case class GlobalCriteria(
     deDesc: String,
     enLabel: String,
     enDesc: String
-) extends LabelDescLike
+) extends AbbrevLabelDescLike

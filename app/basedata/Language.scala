@@ -1,3 +1,4 @@
 package basedata
 
-case class Language(abbrev: String, de_label: String, enLabel: String)
+case class Language(abbrev: String, deLabel: String, enLabel: String)
+    extends AbbrevLabelLike

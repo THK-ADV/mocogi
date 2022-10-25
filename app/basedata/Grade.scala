@@ -6,4 +6,4 @@ case class Grade(
     deDesc: String,
     enLabel: String,
     enDesc: String
-) extends LabelDescLike
+) extends AbbrevLabelDescLike

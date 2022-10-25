@@ -1,12 +1,9 @@
+/*
 package git.subscriber
 
 import akka.actor.{Actor, Props}
+import database.entities.{AssessmentMethodMetadataDbEntry, MetadataDbEntry, ResponsibilityDbEntry}
 import database.table.ResponsibilityType.ModuleManagement
-import database.table.{
-  AssessmentMethodMetadataDbEntry,
-  MetadataDbEntry,
-  ResponsibilityDbEntry
-}
 import git.GitFilePath
 import git.publisher.ModuleCompendiumPublisher.OnUpdate
 import parsing.types.ParsedMetadata
@@ -136,3 +133,4 @@ private final class MetadataDatabaseActor(
          |  - trace: ${t.getStackTrace.mkString("\n           ")}""".stripMargin
     )
 }
+*/

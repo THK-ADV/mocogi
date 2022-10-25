@@ -1,11 +1,7 @@
 package service
 
+import database.entities.{AssessmentMethodMetadataDbEntry, MetadataDbEntry, ResponsibilityDbEntry}
 import database.repo.MetadataRepository
-import database.table.{
-  AssessmentMethodMetadataDbEntry,
-  MetadataDbEntry,
-  ResponsibilityDbEntry
-}
 import git.GitFilePath
 import parsing.types.ParsedMetadata
 

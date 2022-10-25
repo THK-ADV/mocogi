@@ -6,4 +6,4 @@ case class Competence(
     deDesc: String,
     enLabel: String,
     enDesc: String
-) extends LabelDescLike
+) extends AbbrevLabelDescLike
