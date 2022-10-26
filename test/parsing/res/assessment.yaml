@@ -1,3 +1,7 @@
+tbd:
+  de_label: Format wird in der ersten Vorlesung festgelegt
+  en_label: --
+
 written-exam:
   de_label: Klausurarbeiten
   en_label: --
@@ -48,4 +52,36 @@ test:
 
 thesis:
   de_label: Schriftliche Ausarbeitung
+  en_label: --
+
+abstract:
+  de_label: Abstract
+  en_label: --
+
+e-assessment:
+  de_label: Hausarbeit über Ilias E-Assessment
+  en_label: --
+
+single-choice:
+  de_label: Single-Choice Klausur
+  en_label: --
+
+multiple-choice:
+  de_label: Multiple-Choice-Tests mit Punkten für die Klausur
+  en_label: --
+
+certificate:
+  de_label: Leistungsnachweis
+  en_label: --
+
+continous-report:
+  de_label: Berichte
+  en_label: --
+
+attendance:
+  de_label: Anwesenheit
+  en_label: --
+
+verbal-cooperation:
+  de_label: Mündliche Mitarbeit
   en_label: --
