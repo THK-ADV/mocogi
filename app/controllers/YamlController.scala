@@ -17,9 +17,14 @@ trait YamlController[Input, Output] { self: AbstractController =>
 
   val service: YamlService[Input, Output]
 
+  implicit def seqWrites[W](implicit w: Writes[W]): Writes[Seq[W]] =
+    Writes.seq[W](w)
+
   def all() =
     Action.async { _ =>
-      service.all().map(xs => Ok(Json.toJson(xs)))
+      service.all().map { xs =>
+        Ok(Json.toJson(xs))
+      }
     }
 
   def create() =

@@ -6,12 +6,10 @@ import parsing.base.LanguageFileParser
 
 import javax.inject.{Inject, Singleton}
 
-trait LanguageService extends YamlService[Language, Language]
+trait LanguageService extends SimpleYamlService[Language]
 
 @Singleton
 final class LanguageServiceImpl @Inject() (
     val repo: LanguageRepository,
     val parser: LanguageFileParser
-) extends LanguageService {
-  override def toInput(output: Language) = output
-}
+) extends LanguageService

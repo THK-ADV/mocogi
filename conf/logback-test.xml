@@ -7,10 +7,10 @@
     </encoder>
   </appender>
 
-  <logger name="play" level="INFO"/>
-  <logger name="application" level="INFO"/>
-  <logger name="slick" level="INFO"/>
-  <logger name="httpResponse" level="ERROR"/>
+  <logger name="play" level="OFF"/>
+  <logger name="application" level="OFF"/>
+  <logger name="slick" level="OFF"/>
+  <logger name="httpResponse" level="OFF"/>
   <logger name="org.apache.kafka" level="OFF"/>
 
   <root level="INFO">

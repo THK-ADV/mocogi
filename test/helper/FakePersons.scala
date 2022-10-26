@@ -1,11 +1,11 @@
 package helper
 
-import basedata.Person
+import basedata.{Person, PersonStatus}
 
-trait FakePersons {
+trait FakePersons extends FakeFaculties {
   implicit def fakePersons: Seq[Person] = Seq(
-    Person("ald", "Dobrynin", "Alexander", "M.Sc.", "F10"),
-    Person("abe", "Bertels", "Anja", "B.Sc.", "F10"),
-    Person("ddu", "Dubbert", "Dennis", "M.Sc.", "F10"),
+    Person.Single("ald", "Dobrynin", "Alexander", "M.Sc.", List(f10), "ad", PersonStatus.Active),
+    Person.Single("abe", "Bertels", "Anja", "B.Sc.", List(f10), "ab", PersonStatus.Active),
+    Person.Single("ddu", "Dubbert", "Dennis", "M.Sc.", List(f10), "dd", PersonStatus.Active),
   )
 }

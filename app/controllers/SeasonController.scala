@@ -16,7 +16,6 @@ final class SeasonController @Inject() (
     implicit val ctx: ExecutionContext
 ) extends AbstractController(cc)
     with SeasonFormat
-    with YamlController[Season, Season] {
-  override implicit val writesOut: Writes[Season] = seasonFormat
-  override implicit val writesIn: Writes[Season] = seasonFormat
+    with SimpleYamlController[Season] {
+  override implicit val writes: Writes[Season] = seasonFormat
 }

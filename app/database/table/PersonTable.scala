@@ -1,11 +1,12 @@
 package database.table
 
+import basedata.PersonStatus
 import database.entities.PersonDbEntry
 import slick.jdbc.PostgresProfile.api._
 
 final class PersonTable(tag: Tag) extends Table[PersonDbEntry](tag, "person") {
 
-  def abbrev = column[String]("abbrev", O.PrimaryKey)
+  def id = column[String]("id", O.PrimaryKey)
 
   def lastname = column[String]("lastname")
 
@@ -13,16 +14,59 @@ final class PersonTable(tag: Tag) extends Table[PersonDbEntry](tag, "person") {
 
   def title = column[String]("title")
 
-  def faculty = column[String]("faculty")
+  def abbreviation = column[String]("abbreviation")
 
-  def facultyFk =
-    foreignKey("faculty", faculty, TableQuery[FacultyTable])(_.abbrev)
+  def status = column[String]("status")
+
+  def kind = column[String]("kind")
 
   override def * = (
-    abbrev,
+    id,
     lastname,
     firstname,
     title,
-    faculty
-  ) <> (PersonDbEntry.tupled, PersonDbEntry.unapply)
+    abbreviation,
+    status,
+    kind
+  ) <> (mapRow, unmapRow)
+
+  def mapRow: (
+      (String, String, String, String, String, String, String)
+  ) => PersonDbEntry = {
+    case (
+          id,
+          lastname,
+          firstname,
+          title,
+          abbreviation,
+          status,
+          kind
+        ) =>
+      PersonDbEntry(
+        id,
+        lastname,
+        firstname,
+        title,
+        Nil,
+        abbreviation,
+        PersonStatus(status),
+        kind
+      )
+  }
+
+  def unmapRow: PersonDbEntry => Option[
+    (String, String, String, String, String, String, String)
+  ] = { a =>
+    Option(
+      (
+        a.id,
+        a.lastname,
+        a.firstname,
+        a.title,
+        a.abbreviation,
+        a.status.toString,
+        a.kind
+      )
+    )
+  }
 }

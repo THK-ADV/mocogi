@@ -1,6 +1,6 @@
 package parsing.metadata
 
-import basedata.Person
+import basedata.{Person, PersonStatus}
 import helper.{FakeApplication, FakePersons}
 import org.scalatest.EitherValues
 import org.scalatest.wordspec.AnyWordSpec
@@ -25,7 +25,15 @@ class PersonParserSpec
         val (res1, rest1) = parser.parse(input)
         assert(
           res1.value == List(
-            Person("ald", "Dobrynin", "Alexander", "M.Sc.", "F10")
+            Person.Single(
+              "ald",
+              "Dobrynin",
+              "Alexander",
+              "M.Sc.",
+              List(f10),
+              "ad",
+              PersonStatus.Active
+            )
           )
         )
         assert(rest1.isEmpty)
@@ -36,7 +44,15 @@ class PersonParserSpec
         val (res3, rest3) = parser.parse(input)
         assert(
           res3.value == List(
-            Person("ald", "Dobrynin", "Alexander", "M.Sc.", "F10")
+            Person.Single(
+              "ald",
+              "Dobrynin",
+              "Alexander",
+              "M.Sc.",
+              List(f10),
+              "ad",
+              PersonStatus.Active
+            )
           )
         )
         assert(rest3 == " abc")
@@ -60,8 +76,24 @@ class PersonParserSpec
         val (res1, rest1) = parser.parse(input)
         assert(
           res1.value == List(
-            Person("ald", "Dobrynin", "Alexander", "M.Sc.", "F10"),
-            Person("abe", "Bertels", "Anja", "B.Sc.", "F10")
+            Person.Single(
+              "ald",
+              "Dobrynin",
+              "Alexander",
+              "M.Sc.",
+              List(f10),
+              "ad",
+              PersonStatus.Active
+            ),
+            Person.Single(
+              "abe",
+              "Bertels",
+              "Anja",
+              "B.Sc.",
+              List(f10),
+              "ab",
+              PersonStatus.Active
+            )
           )
         )
         assert(rest1.isEmpty)
@@ -76,8 +108,24 @@ class PersonParserSpec
           parser.parse(input)
         assert(
           res2.value == List(
-            Person("ald", "Dobrynin", "Alexander", "M.Sc.", "F10"),
-            Person("abe", "Bertels", "Anja", "B.Sc.", "F10")
+            Person.Single(
+              "ald",
+              "Dobrynin",
+              "Alexander",
+              "M.Sc.",
+              List(f10),
+              "ad",
+              PersonStatus.Active
+            ),
+            Person.Single(
+              "abe",
+              "Bertels",
+              "Anja",
+              "B.Sc.",
+              List(f10),
+              "ab",
+              PersonStatus.Active
+            )
           )
         )
         assert(rest2.isEmpty)
@@ -92,8 +140,24 @@ class PersonParserSpec
           parser.parse(input)
         assert(
           res3.value == List(
-            Person("ald", "Dobrynin", "Alexander", "M.Sc.", "F10"),
-            Person("abe", "Bertels", "Anja", "B.Sc.", "F10")
+            Person.Single(
+              "ald",
+              "Dobrynin",
+              "Alexander",
+              "M.Sc.",
+              List(f10),
+              "ad",
+              PersonStatus.Active
+            ),
+            Person.Single(
+              "abe",
+              "Bertels",
+              "Anja",
+              "B.Sc.",
+              List(f10),
+              "ab",
+              PersonStatus.Active
+            )
           )
         )
         assert(rest3 == " abc")
@@ -110,8 +174,24 @@ class PersonParserSpec
         )
         assert(
           res4.value == List(
-            Person("ald", "Dobrynin", "Alexander", "M.Sc.", "F10"),
-            Person("abe", "Bertels", "Anja", "B.Sc.", "F10")
+            Person.Single(
+              "ald",
+              "Dobrynin",
+              "Alexander",
+              "M.Sc.",
+              List(f10),
+              "ad",
+              PersonStatus.Active
+            ),
+            Person.Single(
+              "abe",
+              "Bertels",
+              "Anja",
+              "B.Sc.",
+              List(f10),
+              "ab",
+              PersonStatus.Active
+            )
           )
         )
         assert(rest4 == " -  person.abc\n")

@@ -28,10 +28,11 @@ class ModuleCompendiumPrinterImpl extends ModuleCompendiumPrinter {
     prefix(s"| $key | $value |")
       .skip(newline)
 
-  private def fmtPeople(p: Person): String = p.abbrev match {
-    case "all" | "nn" => p.lastname
-    case _ => s"${p.title} ${p.firstname} ${p.lastname} (${p.faculty})"
-  }
+  private def fmtPeople(p: Person): String = "TODO" // TODO
+    /*p.id match {
+      case "all" | "nn" => p.lastname
+      case _ => s"${p.title} ${p.firstname} ${p.lastname} (${p.faculty})"
+    }*/
 
   private def fmtPrerequisites(
       prerequisites: Option[ParsedPrerequisiteEntry]
@@ -92,7 +93,7 @@ class ModuleCompendiumPrinterImpl extends ModuleCompendiumPrinter {
 
     prefix("#")
       .skip(whitespace) // TODO
-/*      .skip(prefix(m.title))
+      /*      .skip(prefix(m.title))
       .skip(newline.repeat(2))
       .skip(row("", ""))
       .skip(row("---", "---"))

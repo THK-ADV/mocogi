@@ -16,7 +16,6 @@ final class StatusController @Inject() (
     implicit val ctx: ExecutionContext
 ) extends AbstractController(cc)
     with StatusFormat
-    with YamlController[ModuleStatus, ModuleStatus] {
-  override implicit val writesOut: Writes[ModuleStatus] = statusFormat
-  override implicit val writesIn: Writes[ModuleStatus] = statusFormat
+    with SimpleYamlController[ModuleStatus] {
+  override implicit val writes: Writes[ModuleStatus] = statusFormat
 }

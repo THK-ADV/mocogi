@@ -1,11 +1,10 @@
 package parsing.base
 
-import basedata.Person
-import helper.FakeApplication
+import basedata.{Person, PersonStatus}
+import helper.{FakeApplication, FakeFaculties}
 import org.scalatest.EitherValues
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
-import parsing.base.PersonFileParser
 import parsing.{ParserSpecHelper, withFile0}
 
 final class PersonFileParserSpec
@@ -13,60 +12,211 @@ final class PersonFileParserSpec
     with ParserSpecHelper
     with EitherValues
     with GuiceOneAppPerSuite
-    with FakeApplication {
+    with FakeApplication
+    with FakeFaculties {
 
-  val parser = app.injector.instanceOf(classOf[PersonFileParser]).fileParser
+  val personParser = app.injector.instanceOf(classOf[PersonFileParser])
 
   "A Person File Parser" should {
-    "parse a single person" in {
+    "parse a unknown person" in {
       val input =
-        """tbb:
-          |  lastname: foo
-          |  firstname: bar
-          |  title: bar. baz.
-          |  faculty: b""".stripMargin
-      val (res1, rest1) = parser.parse(input)
+        """nn:
+          |  title: N.N.""".stripMargin
+      val (res1, rest1) = personParser.unknownParser.parse(input)
+      assert(res1.value == Person.Unknown("nn", "N.N."))
+      assert(rest1.isEmpty)
+    }
+
+    "parse a group" in {
+      val input =
+        """all:
+          |  title: alle aktiven Lehrenden der Hochschule""".stripMargin
+      val (res1, rest1) = personParser.parser.parse(input)
       assert(
-        res1.value == List(Person("tbb", "foo", "bar", "bar. baz.", "b"))
+        res1.value == List(
+          Person.Group("all", "alle aktiven Lehrenden der Hochschule")
+        )
       )
       assert(rest1.isEmpty)
     }
 
-    "parse all people" in {
+    "parse multiple groups" in {
       val input =
         """all:
-          |  lastname: Alle
-          |  firstname: Alle
-          |  title: Alle
-          |  faculty: Alle
-          |nn:
-          |  lastname: N.N.
-          |  firstname: N.N.
-          |  title: N.N.
-          |  faculty: N.N.
-          |ald:
-          |  lastname: Dobrynin
-          |  firstname: Alexander
-          |  title: M.Sc.
-          |  faculty: F10
-          |abe:
-          |  lastname: Bertels
-          |  firstname: Anja
-          |  title: B.Sc.
-          |  faculty: F10
-          |ddu:
-          |  lastname: Dubbert
-          |  firstname: Dennis
-          |  title: M.Sc.
-          |  faculty: F10""".stripMargin
-      val (res1, rest1) = parser.parse(input)
+          |  title: alle aktiven Lehrenden der Hochschule
+          |all-f10:
+          |  title: alle Lehrenden der F10
+          |all-f10-prof:
+          |  title: alle Professor:innen der F10
+          |all-inf:
+          |  title: alle Lehrenden der Lehreinheit Informatik
+          |all-inf-prof:
+          |  title: alle Professor:innen der Lehreinheit Informatik
+          |all-ing:
+          |  title: alle Lehrenden der Lehreinheit Ingenieurswesen
+          |all-ing-prof:
+          |  title: alle Professor:innen der Lehreinheit Ingenieurswesen""".stripMargin
+      val (res1, rest1) = personParser.parser.parse(input)
       assert(
-        res1.value.map(_.abbrev) == List(
-          "all",
-          "nn",
-          "ald",
-          "abe",
-          "ddu"
+        res1.value == List(
+          Person.Group("all", "alle aktiven Lehrenden der Hochschule"),
+          Person.Group("all-f10", "alle Lehrenden der F10"),
+          Person.Group("all-f10-prof", "alle Professor:innen der F10"),
+          Person.Group("all-inf", "alle Lehrenden der Lehreinheit Informatik"),
+          Person.Group(
+            "all-inf-prof",
+            "alle Professor:innen der Lehreinheit Informatik"
+          ),
+          Person
+            .Group("all-ing", "alle Lehrenden der Lehreinheit Ingenieurswesen"),
+          Person.Group(
+            "all-ing-prof",
+            "alle Professor:innen der Lehreinheit Ingenieurswesen"
+          )
+        )
+      )
+      assert(rest1.isEmpty)
+    }
+
+    "parse person status" in {
+      val input1 = "status: active"
+      val (res1, rest1) = personParser.statusParser.parse(input1)
+      assert(res1.value == PersonStatus.Active)
+      assert(rest1.isEmpty)
+
+      val input2 = "status: inactive"
+      val (res2, rest2) = personParser.statusParser.parse(input2)
+      assert(res2.value == PersonStatus.Inactive)
+      assert(rest2.isEmpty)
+
+      val input3 = "status: other"
+      val (res3, rest3) = personParser.statusParser.parse(input3)
+      assert(res3.value == PersonStatus.Unknown)
+      assert(rest3.isEmpty)
+    }
+
+    "parse a single person" in {
+      val input =
+        """abc:
+          |  lastname: foo
+          |  firstname: bar
+          |  title: bar. baz.
+          |  faculty:
+          |    - faculty.f10
+          |    - faculty.f03
+          |  abbreviation: ab
+          |  status: active""".stripMargin
+      val (res1, rest1) = personParser.parser.parse(input)
+      assert(
+        res1.value == List(
+          Person.Single(
+            "abc",
+            "foo",
+            "bar",
+            "bar. baz.",
+            List(f10, f03),
+            "ab",
+            PersonStatus.Active
+          )
+        )
+      )
+      assert(rest1.isEmpty)
+    }
+
+    "parse multiple persons" in {
+      val input =
+        """abc:
+          |  lastname: foo
+          |  firstname: bar
+          |  title: bar. baz.
+          |  faculty:
+          |    - faculty.f10
+          |    - faculty.f03
+          |  abbreviation: ab
+          |  status: active
+          |def:
+          |  lastname: foo
+          |  firstname: bar
+          |  title: bar. baz.
+          |  faculty: faculty.f10
+          |  abbreviation: ab
+          |  status: inactive""".stripMargin
+      val (res1, rest1) = personParser.parser.parse(input)
+      assert(
+        res1.value == List(
+          Person.Single(
+            "abc",
+            "foo",
+            "bar",
+            "bar. baz.",
+            List(f10, f03),
+            "ab",
+            PersonStatus.Active
+          ),
+          Person.Single(
+            "def",
+            "foo",
+            "bar",
+            "bar. baz.",
+            List(f10),
+            "ab",
+            PersonStatus.Inactive
+          )
+        )
+      )
+      assert(rest1.isEmpty)
+    }
+
+    "parse mixed persons" in {
+      val input =
+        """nn:
+          |  title: N.N.
+          |
+          |all:
+          |  title: alle aktiven Lehrenden der Hochschule
+          |all-f10:
+          |  title: alle Lehrenden der F10
+          |
+          |abc:
+          |  lastname: foo
+          |  firstname: bar
+          |  title: bar. baz.
+          |  faculty:
+          |    - faculty.f10
+          |    - faculty.f03
+          |  abbreviation: ab
+          |  status: active
+          |def:
+          |  lastname: foo
+          |  firstname: bar
+          |  title: bar. baz.
+          |  faculty: faculty.f10
+          |  abbreviation: ab
+          |  status: inactive""".stripMargin
+      val (res1, rest1) = personParser.parser.parse(input)
+      assert(
+        res1.value == List(
+          Person.Unknown("nn", "N.N."),
+          Person.Group("all", "alle aktiven Lehrenden der Hochschule"),
+          Person.Group("all-f10", "alle Lehrenden der F10"),
+          Person.Single(
+            "abc",
+            "foo",
+            "bar",
+            "bar. baz.",
+            List(f10, f03),
+            "ab",
+            PersonStatus.Active
+          ),
+          Person.Single(
+            "def",
+            "foo",
+            "bar",
+            "bar. baz.",
+            List(f10),
+            "ab",
+            PersonStatus.Inactive
+          )
         )
       )
       assert(rest1.isEmpty)
@@ -74,8 +224,11 @@ final class PersonFileParserSpec
 
     "parse all people in person.yaml" in {
       val (res1, rest1) =
-        withFile0("test/parsing/res/person.yaml")(parser.parse)
-      assert(res1.value.size == 5)
+        withFile0("test/parsing/res/person.yaml")(personParser.parser.parse)
+      assert(res1.value.size == 12)
+      assert(res1.value.count(_.kind == Person.UnknownKind) == 1)
+      assert(res1.value.count(_.kind == Person.GroupKind) == 7)
+      assert(res1.value.count(_.kind == Person.SingleKind) == 4)
       assert(rest1.isEmpty)
     }
   }

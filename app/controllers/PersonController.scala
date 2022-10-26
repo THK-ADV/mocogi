@@ -16,8 +16,6 @@ final class PersonController @Inject() (
     implicit val ctx: ExecutionContext
 ) extends AbstractController(cc)
     with PersonFormat {
-  // TODO no yaml controller anymore
-  
   def all() =
     Action.async { _ =>
       service.all().map(xs => Ok(Json.toJson(xs)))
