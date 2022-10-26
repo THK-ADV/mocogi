@@ -6,13 +6,11 @@ import parsing.base.AssessmentMethodFileParser
 
 import javax.inject.{Inject, Singleton}
 
-trait AssessmentMethodService
-    extends YamlService[AssessmentMethod, AssessmentMethod]
+trait AssessmentMethodService extends SimpleYamlService[AssessmentMethod]
 
 @Singleton
 final class AssessmentMethodServiceImpl @Inject() (
-    val repo: AssessmentMethodRepository,
-    val parser: AssessmentMethodFileParser
+    val repo: AssessmentMethodRepository
 ) extends AssessmentMethodService {
-  override def toInput(output: AssessmentMethod) = output
+  override def parser = AssessmentMethodFileParser
 }
