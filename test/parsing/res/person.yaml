@@ -1,25 +1,48 @@
-all:
-  lastname: Alle
-  firstname: Alle
-  title: Alle
-  faculty: Alle
 nn:
-  lastname: N.N.
-  firstname: N.N.
   title: N.N.
-  faculty: N.N.
-ald:
-  lastname: Dobrynin
-  firstname: Alexander
-  title: M.Sc.
-  faculty: F10
-abe:
-  lastname: Bertels
-  firstname: Anja
-  title: B.Sc.
-  faculty: F10
-ddu:
-  lastname: Dubbert
-  firstname: Dennis
-  title: M.Sc.
-  faculty: F10
+
+all:
+  title: alle aktiven Lehrenden der Hochschule
+all-f10:
+  title: alle Lehrenden der F10
+all-f10-prof:
+  title: alle Professor:innen der F10
+all-inf:
+  title: alle Lehrenden der Lehreinheit Informatik
+all-inf-prof:
+  title: alle Professor:innen der Lehreinheit Informatik
+all-ing:
+  title: alle Lehrenden der Lehreinheit Ingenieurswesen
+all-ing-prof:
+  title: alle Professor:innen der Lehreinheit Ingenieurswesen
+
+abc:
+  lastname: foo
+  firstname: bar
+  title: bar. baz.
+  faculty: faculty.f10
+  abbreviation: abc
+  status: active
+def:
+  lastname: foo
+  firstname: bar
+  title: bar. baz.
+  faculty: faculty.f10
+  abbreviation: abc
+  status: active
+ghi:
+  lastname: foo
+  firstname: bar
+  title: bar. baz.
+  faculty: faculty.f10
+  abbreviation: abc
+  status: active
+jkl:
+  lastname: foo
+  firstname: bar
+  title: bar. baz.
+  faculty:
+    - faculty.f10
+    - faculty.f03
+  abbreviation: abc
+  status: active

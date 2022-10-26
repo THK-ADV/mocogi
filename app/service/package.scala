@@ -1,7 +1,50 @@
-import basedata.Person
+import basedata.Person._
+import basedata.{Person, PersonStatus}
 import database.entities.PersonDbEntry
 
 package object service {
   def makePersonDbEntry(p: Person): PersonDbEntry =
-    PersonDbEntry(p.abbrev, p.lastname, p.firstname, p.title, p.faculty.abbrev)
+    p match {
+      case Single(
+            id,
+            lastname,
+            firstname,
+            title,
+            faculties,
+            abbreviation,
+            status
+          ) =>
+        PersonDbEntry(
+          id,
+          lastname,
+          firstname,
+          title,
+          faculties.map(_.abbrev),
+          abbreviation,
+          status,
+          Person.SingleKind
+        )
+      case Group(id, title) =>
+        PersonDbEntry(
+          id,
+          "",
+          "",
+          title,
+          Nil,
+          "",
+          PersonStatus.Active,
+          Person.GroupKind
+        )
+      case Unknown(id, title) =>
+        PersonDbEntry(
+          id,
+          "",
+          "",
+          title,
+          Nil,
+          "",
+          PersonStatus.Active,
+          Person.UnknownKind
+        )
+    }
 }

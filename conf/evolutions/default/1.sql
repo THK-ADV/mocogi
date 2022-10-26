@@ -85,13 +85,16 @@ create table global_criteria
 
 create table person
 (
-    "id"        text PRIMARY KEY,
-    "lastname"  text not null,
-    "firstname" text not null,
-    "title"     text not null
+    "id"           text PRIMARY KEY,
+    "lastname"     text not null,
+    "firstname"    text not null,
+    "title"        text not null,
+    "abbreviation" text not null,
+    "status"       text not null,
+    "kind"         text not null
 );
 
-create table persons_in_faculties
+create table person_in_faculty
 (
     "person"  text not null,
     "faculty" text not null,
@@ -391,7 +394,7 @@ drop table study_program_language if exists;
 drop table study_form_scope if exists;
 drop table study_form if exists;
 drop table study_program if exists;
-drop table persons_in_faculties if exists;
+drop table person_in_faculty if exists;
 drop table person if exists;
 drop table global_criteria if exists;
 drop table study_form_type if exists;

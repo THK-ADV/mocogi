@@ -14,7 +14,7 @@ final class PersonParser {
     val single =
       oneOf(
         person.map(p =>
-          literal(s"person.${p.abbrev}")
+          literal(s"person.${p.id}")
             .skip(newline)
             .map(_ => p)
         ): _*

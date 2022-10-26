@@ -1,9 +1,14 @@
 package database.entities
 
+import basedata.PersonStatus
+
 case class PersonDbEntry(
-    abbrev: String,
+    id: String,
     lastname: String,
     firstname: String,
     title: String,
-    faculty: String
+    faculties: List[String],
+    abbreviation: String,
+    status: PersonStatus,
+    kind: String,
 )

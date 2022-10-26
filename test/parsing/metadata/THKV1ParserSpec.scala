@@ -109,11 +109,35 @@ class THKV1ParserSpec
         assert(
           metadata.responsibilities == Responsibilities(
             List(
-              Person("ald", "Dobrynin", "Alexander", "M.Sc.", "F10")
+              Person.Single(
+                "ald",
+                "Dobrynin",
+                "Alexander",
+                "M.Sc.",
+                List(f10),
+                "ad",
+                PersonStatus.Active
+              )
             ),
             List(
-              Person("ald", "Dobrynin", "Alexander", "M.Sc.", "F10"),
-              Person("abe", "Bertels", "Anja", "B.Sc.", "F10")
+              Person.Single(
+                "ald",
+                "Dobrynin",
+                "Alexander",
+                "M.Sc.",
+                List(f10),
+                "ad",
+                PersonStatus.Active
+              ),
+              Person.Single(
+                "abe",
+                "Bertels",
+                "Anja",
+                "B.Sc.",
+                List(f10),
+                "ab",
+                PersonStatus.Active
+              )
             )
           )
         )
@@ -216,7 +240,11 @@ class THKV1ParserSpec
           metadata.credits == Right(
             List(
               ECTSFocusAreaContribution(FocusAreaPreview("gak"), 3.5, ""),
-              ECTSFocusAreaContribution(FocusAreaPreview("acs"), 6, "Text1\nText2\n")
+              ECTSFocusAreaContribution(
+                FocusAreaPreview("acs"),
+                6,
+                "Text1\nText2\n"
+              )
             )
           )
         )
@@ -226,10 +254,26 @@ class THKV1ParserSpec
         assert(
           metadata.responsibilities == Responsibilities(
             List(
-              Person("ald", "Dobrynin", "Alexander", "M.Sc.", "F10")
+              Person.Single(
+                "ald",
+                "Dobrynin",
+                "Alexander",
+                "M.Sc.",
+                List(f10),
+                "ad",
+                PersonStatus.Active
+              )
             ),
             List(
-              Person("ald", "Dobrynin", "Alexander", "M.Sc.", "F10")
+              Person.Single(
+                "ald",
+                "Dobrynin",
+                "Alexander",
+                "M.Sc.",
+                List(f10),
+                "ad",
+                PersonStatus.Active
+              )
             )
           )
         )

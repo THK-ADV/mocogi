@@ -16,7 +16,6 @@ final class LanguageController @Inject() (
     implicit val ctx: ExecutionContext
 ) extends AbstractController(cc)
     with LanguageFormat
-    with YamlController[Language, Language] {
-  override implicit val writesOut: Writes[Language] = languageFormat
-  override implicit val writesIn: Writes[Language] = languageFormat
+    with SimpleYamlController[Language] {
+  override implicit val writes: Writes[Language] = languageFormat
 }

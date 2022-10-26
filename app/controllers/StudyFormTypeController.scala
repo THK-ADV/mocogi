@@ -15,9 +15,7 @@ final class StudyFormTypeController @Inject() (
     val service: StudyFormTypeService,
     implicit val ctx: ExecutionContext
 ) extends AbstractController(cc)
-    with YamlController[StudyFormType, StudyFormType]
+    with SimpleYamlController[StudyFormType]
     with StudyFormTypeFormat {
-  override implicit val writesOut: Writes[StudyFormType] = studyFormTypeFormat
-
-  override implicit val writesIn: Writes[StudyFormType] = studyFormTypeFormat
+  override implicit val writes: Writes[StudyFormType] = studyFormTypeFormat
 }
