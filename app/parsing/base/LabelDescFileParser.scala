@@ -26,6 +26,5 @@ trait LabelDescFileParser[A <: AbbrevLabelDescLike] extends FileParser[A] {
           .many()
           .map(_.map(makeType))
       )
-
   }
 }
