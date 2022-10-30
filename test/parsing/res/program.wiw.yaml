@@ -1,0 +1,52 @@
+ing_wiw:
+  de_label: Wirtschaftsingenieurwesen
+  en_label: Business Administration and Engineering
+  de_url: https://www.th-koeln.de/studium/wirtschaftsingenieurwesen-bachelor_2917.php
+  en_url: https://www.th-koeln.de/en/academics/business-administration-and-engineering-bachelors-program_7331.php
+  grade: grade.beng
+  program_director: person.nn
+  accreditation_until: 30.09.2026
+  study_form:
+    - type: study_form.full
+      workload_per_ects: 30
+      scope:
+        - program_duration: 6
+          total_ECTS: 180
+        - program_duration: 7
+          total_ECTS: 210
+          de_reason: Praxissemester
+          en_reason: Internship
+    - type: study_form.part
+      workload_per_ects: 30
+      scope:
+        - program_duration: 9
+          total_ECTS: 180
+        - program_duration: 10
+          total_ECTS: 210
+          de_reason: Praxissemester
+          en_reason: Internship
+  language_of_instruction: lang.de
+  beginning_of_program:
+    - season.ws
+    - season.ss
+  campus: location.gm
+  restricted_admission:
+    value: false
+  de_desc: >
+    Wirtschaftsingenieurinnen und –ingenieure werden an der Schnittstelle zwischen Technik und Wirtschaft ausgebildet
+    und finden ihre beruflichen Handlungsfelder in Bereichen, in denen sich technischen Strukturen und Abläufe in
+    einem Unternehmen als auch wirtschaftliche und organisatorische Aspekte verbinden. Wählbare Schwerpunkte im
+    Hauptstudium sind Maschinenbau und Elektrotechnik.
+  de_note: |
+    Vollzeitstudiengang: Dieser Studiengang trägt im ersten Studienjahr die Bezeichnung Ingenieurwissenschaften.
+    Die Studierenden müssen sich erst am Ende des ersten gemeinsamen Studienjahrs für einen der drei Studiengänge Allgemeiner Maschinenbau, Elektrotechnik oder Wirtschaftsingenieurwesen entscheiden.
+    Teilzeitstudiengang: Bitte beachten Sie, dass bei einem Teilzeitstudium kein BAföG-Anspruch besteht.
+  en_desc: >
+    Being experts in both fields, engineering managers act as a link between the engineers and management staff of a
+    company. In the second half of the program students can specialize in either mechanical or electrical engineering.
+    Gummersbach Campus maintains close relationships with industry representatives, thus providing students ample
+    opportunity to meet potential future employers.
+  en_note: |
+    This Bachelor’s program bears the title Engineering during the first year of the program.
+    At the end of the first year, students can opt for either one of the following three programs: General Mechanical Engineering, Electrical Engineering or Business Administration and Engineering.
+    Part-time program: Please note that students enrolled in part-time programs are not eligible for BAföG.

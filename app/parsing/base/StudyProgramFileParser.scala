@@ -37,17 +37,19 @@ object StudyProgramFileParser {
       .take(singleLineStringForKey("internal").option.map(_.getOrElse("")))
       .skip(zeroOrMoreSpaces)
       .zip(singleLineStringForKey("external").option.map(_.getOrElse("")))
+      .option
+      .map(_.getOrElse(("", "")))
 
   def urlParser: Parser[(String, String)] =
     singleLineStringForKey("de_url")
       .skip(zeroOrMoreSpaces)
-      .zip(singleLineStringForKey("en_url"))
+      .zip(singleLineStringForKey("en_url").option.map(_.getOrElse("")))
 
   def gradeParser(implicit grades: Seq[Grade]): Parser[Grade] =
     singleValueParser("grade", g => s"grade.${g.abbrev}")
 
   def programDirectorParser(implicit persons: Seq[Person]): Parser[Person] =
-    singleValueParser("program_director", p => s"person.${p.abbrev}")
+    singleValueParser("program_director", p => s"person.${p.id}")
 
   def accreditationUntilParser: Parser[LocalDate] =
     dateForKey("accreditation_until")
@@ -193,7 +195,6 @@ object StudyProgramFileParser {
                 enNote
               )
           }
-          .many(zeroOrMoreSpaces)
+          .all(zeroOrMoreSpaces)
       )
-
 }

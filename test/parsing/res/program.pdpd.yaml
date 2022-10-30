@@ -1,0 +1,34 @@
+ing_pdpd:
+  de_label: Produktdesign und Prozessentwicklung
+  en_label: Product Design and Process Development
+  de_url: https://www.th-koeln.de/studium/produktdesign-und-prozessentwicklung-master_3674.php
+  en_url: https://www.th-koeln.de/en/academics/product-design-and-process-development-masters-program_7782.php
+  grade: grade.msc
+  program_director: person.nn
+  accreditation_until: 30.09.2026
+  study_form:
+    - type: study_form.full
+      workload_per_ects: 30
+      scope:
+        - program_duration: 3
+          total_ECTS: 90
+        - program_duration: 4
+          total_ECTS: 120
+          de_reason: Praxissemester
+          en_reason: Internship
+  language_of_instruction: lang.de
+  beginning_of_program: season.ws
+  campus:
+    - location.gm
+    - location.su
+  restricted_admission:
+    value: false
+  de_desc: >
+    In diesem innovativen, interdisziplinären Masterstudiengang arbeiten Expert*innen aus den Bereichen Technik,
+    Design und Betriebswirtschaft in Industrieprojekten zusammen und entwickeln marktreife Produkte.
+  de_note:
+  en_desc: >
+    The Master's program in Product Design and Process Development is an innovative and interdisciplinary program:
+    Experts from various fields - mechanical engineering, design and business administration - tackle industry projects
+    together and develop market-ready products.
+  en_note:

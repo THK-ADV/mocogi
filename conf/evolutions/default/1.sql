@@ -130,9 +130,10 @@ create table study_form
 (
     "id"                uuid PRIMARY KEY,
     "study_program"     text     not null,
-    "kind"              text     not null,
+    "study_form_type"   text     not null,
     "workload_per_ects" smallint not null,
-    FOREIGN KEY (study_program) REFERENCES study_program (abbrev)
+    FOREIGN KEY (study_program) REFERENCES study_program (abbrev),
+    FOREIGN KEY (study_form_type) REFERENCES study_form_type (abbrev)
 );
 
 create table study_form_scope

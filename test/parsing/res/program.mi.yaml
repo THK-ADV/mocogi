@@ -1,0 +1,33 @@
+inf_mi:
+  de_label: Medieninformatik
+  en_label: Media Informatics
+  de_url: https://www.th-koeln.de/studium/medieninformatik-bachelor_2379.php
+  en_url: https://www.th-koeln.de/en/academics/media-informatics-bachelors-program_7327.php
+  grade: grade.bsc
+  program_director: person.nn
+  accreditation_until: 30.09.2024
+  study_form:
+    - type: study_form.full
+      workload_per_ects: 30
+      scope:
+        - program_duration: 6
+          total_ECTS: 180
+  language_of_instruction: lang.de
+  beginning_of_program: season.ws
+  campus: location.gm
+  restricted_admission:
+    value: true
+    de_reason: Orts-NC
+    en_reason: local nc
+  de_desc: >
+    MedieninformatikerInnen sind Fachleute für IT-Prozesse und Systeme, mit denen man medienbasierte Informationen
+    gestalten, produzieren, bearbeiten, verteilen und nutzen kann. Wer Medieninformatik studieren will, sollte
+    möglichst kommunikationsfreudig und kreativ sein, gerne im Team arbeiten und Freude an analytischem und logischem
+    Denken und Handeln haben.
+  de_note:
+  en_desc: >
+    Graduates of the Bachelor's program in Media Informatics are IT experts whose task is to develop processes and
+    systems to design, produce, edit, distribute and use media-based information. Are you creative and outgoing?
+    Do you enjoy being part of a team? Is logical and analytical thinking one of your strengths?
+    Then the Bachelor's program in Media Informatics might just be what you are looking for.
+  en_note:

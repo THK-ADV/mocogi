@@ -1,0 +1,54 @@
+ing_een:
+  de_label: Elektrotechnik
+  en_label: Electrical Engineering
+  de_url: https://www.th-koeln.de/studium/elektrotechnik-bachelor-campus-gummersbach_3476.php
+  en_url: https://www.th-koeln.de/en/academics/electrical-engineering-bachelors-program-gummersbach-campus_7325.php
+  grade: grade.beng
+  program_director: person.nn
+  accreditation_until: 30.09.2026
+  study_form:
+    - type: study_form.full
+      workload_per_ects: 30
+      scope:
+        - program_duration: 6
+          total_ECTS: 180
+        - program_duration: 7
+          total_ECTS: 210
+          de_reason: Praxissemester
+          en_reason: Internship
+    - type: study_form.part
+      workload_per_ects: 30
+      scope:
+        - program_duration: 9
+          total_ECTS: 180
+        - program_duration: 10
+          total_ECTS: 210
+          de_reason: Praxissemester
+          en_reason: Internship
+  language_of_instruction: lang.de
+  beginning_of_program:
+    - season.ws
+    - season.ss
+  campus: location.gm
+  restricted_admission:
+    value: false
+  de_desc: >
+    Der Studiengang Elektrotechnik hat den Studienschwerpunkt Automatisierung. Der bisherige Studienschwerpunkt
+    Elektronik wird ab dem Wintersemester 2018/19 nicht mehr angeboten. Im Studienschwerpunkt Automatisierung
+    lernen Sie nicht nur aktuelle Ausprägungen der Digitalisierung, sondern u.a. auch die Anwendung von Webtechnologien
+    in der Produktion kennen sowie Robotertechnik und Industrie 4.0.
+  de_note: |
+    Vollzeitstudiengang:
+    Dieser Studiengang trägt im ersten Studienjahr die Bezeichnung: Ingenieurwissenschaften.
+    Die Studierenden müssen sich erst am Ende des ersten gemeinsamen Studienjahrs für einen der drei Studiengänge
+    entscheiden: Allgemeiner Maschinenbau, Elektrotechnik oder Wirtschaftsingenieurwesen.
+    Teilzeitstudiengang:
+    Bitte beachten Sie, dass bei einem Teilzeitstudium kein BAföG-Anspruch besteht.
+  en_desc:
+  en_note: |
+    Full-time program:
+    This Bachelor’s program bears the title Engineering during the first year of the program.
+    At the end of the first year, students can opt for either one of the following three programs:
+    General Mechanical Engineering, Electrical Engineering or Business Administration and Engineering.
+    Part-time program:
+    Please note that students enrolled in part-time programs are not eligible for BAföG.

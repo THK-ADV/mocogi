@@ -1,0 +1,33 @@
+inf_coco:
+  de_label: Code & Context
+  en_label: Code & Context
+  de_url: https://www.th-koeln.de/studium/code--context-bachelor_62103.php
+  grade: grade.bsc
+  program_director: person.ald
+  accreditation_until: 30.09.2025
+  study_form:
+    - type: study_form.full
+      workload_per_ects: 30
+      scope:
+        - program_duration: 6
+          total_ECTS: 180
+        - program_duration: 7
+          total_ECTS: 210
+          de_reason: Praxissemester
+          en_reason: Internship
+  language_of_instruction:
+    - lang.de
+    - lang.en
+  beginning_of_program: season.ws
+  campus: location.km
+  restricted_admission:
+    value: false
+  de_desc: >
+    Unser Lernkonzept ist bunt, innovativ, kreativ, interdisziplinär und kritisch. In einer offenen Lernumgebung
+    finden Lernende und Lehrende Möglichkeiten für exploratives Denken, Gestalten und Ausprobieren.
+    Im explorativen Bachelorstudium mit digitaler Praxiswerkstatt werden digitale Systeme ganzheitlich und über
+    Fachgrenzen hinweg konzipiert und gestaltet. Im Fokus stehen hierbei Kompetenzen der Handlungsfelder:
+    Coding Software, Developing Things, Designing Futures, Creating Impact
+  de_note:
+  en_desc:
+  en_note:

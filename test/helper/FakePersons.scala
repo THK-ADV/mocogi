@@ -7,5 +7,6 @@ trait FakePersons extends FakeFaculties {
     Person.Single("ald", "Dobrynin", "Alexander", "M.Sc.", List(f10), "ad", PersonStatus.Active),
     Person.Single("abe", "Bertels", "Anja", "B.Sc.", List(f10), "ab", PersonStatus.Active),
     Person.Single("ddu", "Dubbert", "Dennis", "M.Sc.", List(f10), "dd", PersonStatus.Active),
+    Person.Unknown("nn", "N.N")
   )
 }

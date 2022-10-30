@@ -33,19 +33,22 @@ final class StudyProgramFileParserSpec
     "parse abbreviation" in {
       val input1 =
         """abbreviation:
-          |  internal: a
-          |  external:""".stripMargin
+          |  internal: a""".stripMargin
       val (res1, rest1) = abbreviationParser.parse(input1)
       assert(res1.value == ("a", ""))
       assert(rest1.isEmpty)
 
       val input2 =
         """abbreviation:
-          |  internal:
-          |  external:""".stripMargin
+          |  external: b""".stripMargin
       val (res2, rest2) = abbreviationParser.parse(input2)
-      assert(res2.value == ("", ""))
+      assert(res2.value == ("", "b"))
       assert(rest2.isEmpty)
+
+      val input3 = "abbreviation:"
+      val (res3, rest3) = abbreviationParser.parse(input3)
+      assert(res3.value == ("", ""))
+      assert(rest3.isEmpty)
     }
 
     "parse urls" in {
@@ -75,7 +78,15 @@ final class StudyProgramFileParserSpec
       val input = "program_director: person.ald"
       val (res, rest) = programDirectorParser.parse(input)
       assert(
-        res.value == Person("ald", "Dobrynin", "Alexander", "M.Sc.", "F10")
+        res.value == Person.Single(
+          "ald",
+          "Dobrynin",
+          "Alexander",
+          "M.Sc.",
+          List(f10),
+          "ad",
+          PersonStatus.Active
+        )
       )
       assert(rest.isEmpty)
     }
@@ -309,7 +320,15 @@ final class StudyProgramFileParserSpec
         "https://www.th-koeln.de/studium/digital-sciences-master_83002.php",
         "https://www.th-koeln.de/en/academics/digital-sciences-masters-program_83005.php",
         msc,
-        Person("ald", "Dobrynin", "Alexander", "M.Sc.", "F10"),
+        Person.Single(
+          "ald",
+          "Dobrynin",
+          "Alexander",
+          "M.Sc.",
+          List(f10),
+          "ad",
+          PersonStatus.Active
+        ),
         LocalDate.of(2027, 9, 30),
         List(
           StudyForm(
@@ -366,7 +385,15 @@ final class StudyProgramFileParserSpec
         "https://www.th-koeln.de/studium/informatik-bachelor_3488.php",
         "https://www.th-koeln.de/en/academics/computer-science-bachelors-program_7326.php",
         bsc,
-        Person("ald", "Dobrynin", "Alexander", "M.Sc.", "F10"),
+        Person.Single(
+          "ald",
+          "Dobrynin",
+          "Alexander",
+          "M.Sc.",
+          List(f10),
+          "ad",
+          PersonStatus.Active
+        ),
         LocalDate.of(2026, 9, 30),
         List(
           StudyForm(
@@ -414,7 +441,15 @@ final class StudyProgramFileParserSpec
         "https://www.th-koeln.de/studium/allgemeiner-maschinenbau-bachelor_2709.php",
         "https://www.th-koeln.de/en/academics/general-mechanical-engineering-bachelors-program_7323.php",
         beng,
-        Person("ald", "Dobrynin", "Alexander", "M.Sc.", "F10"),
+        Person.Single(
+          "ald",
+          "Dobrynin",
+          "Alexander",
+          "M.Sc.",
+          List(f10),
+          "ad",
+          PersonStatus.Active
+        ),
         LocalDate.of(2026, 9, 30),
         List(
           StudyForm(
@@ -487,7 +522,15 @@ final class StudyProgramFileParserSpec
         "https://www.th-koeln.de/studium/automation--it-master_3429.php",
         "https://www.th-koeln.de/en/academics/automation--it-master_6815.php",
         meng,
-        Person("ald", "Dobrynin", "Alexander", "M.Sc.", "F10"),
+        Person.Single(
+          "ald",
+          "Dobrynin",
+          "Alexander",
+          "M.Sc.",
+          List(f10),
+          "ad",
+          PersonStatus.Active
+        ),
         LocalDate.of(2026, 9, 30),
         List(
           StudyForm(
@@ -529,6 +572,455 @@ final class StudyProgramFileParserSpec
       assert(sp4.deNote == esp4.deNote)
       assert(sp4.enDescription == esp4.enDescription)
       assert(sp4.enNote == esp4.enNote)
+      assert(rest.isEmpty)
+    }
+
+    "parse dsi" in {
+      val (res, rest) = withFile0("test/parsing/res/program.dsi.yaml")(
+        fileParser.parse
+      )
+      val sp = res.value.head
+      assert(sp.abbrev.nonEmpty)
+      assert(sp.deLabel.nonEmpty)
+      assert(sp.enLabel.nonEmpty)
+      assert(sp.internalAbbreviation.isEmpty)
+      assert(sp.externalAbbreviation.nonEmpty)
+      assert(sp.deUrl.nonEmpty)
+      assert(sp.enUrl.nonEmpty)
+      assert(sp.grade.abbrev.nonEmpty)
+      assert(sp.programDirector.id.nonEmpty)
+      assert(sp.studyForm.size == 1)
+      assert(sp.studyForm.head.scope.size == 2)
+      assert(sp.language.size == 1)
+      assert(sp.seasons.size == 2)
+      assert(sp.campus.size == 2)
+      assert(sp.restrictedAdmission.deReason.nonEmpty)
+      assert(sp.restrictedAdmission.enReason.nonEmpty)
+      assert(sp.deDescription.nonEmpty)
+      assert(sp.deNote.isEmpty)
+      assert(sp.enDescription.nonEmpty)
+      assert(sp.enNote.isEmpty)
+      assert(rest.isEmpty)
+    }
+
+    "parse inf" in {
+      val (res, rest) = withFile0("test/parsing/res/program.inf.yaml")(
+        fileParser.parse
+      )
+      val sp = res.value.head
+      assert(sp.abbrev.nonEmpty)
+      assert(sp.deLabel.nonEmpty)
+      assert(sp.enLabel.nonEmpty)
+      assert(sp.internalAbbreviation.isEmpty)
+      assert(sp.externalAbbreviation.isEmpty)
+      assert(sp.deUrl.nonEmpty)
+      assert(sp.enUrl.nonEmpty)
+      assert(sp.grade.abbrev.nonEmpty)
+      assert(sp.programDirector.id.nonEmpty)
+      assert(sp.studyForm.size == 1)
+      assert(sp.studyForm.head.scope.size == 1)
+      assert(sp.studyForm.head.scope.head.deReason.nonEmpty)
+      assert(sp.studyForm.head.scope.head.enReason.nonEmpty)
+      assert(sp.language.size == 1)
+      assert(sp.seasons.size == 1)
+      assert(sp.campus.size == 1)
+      assert(sp.restrictedAdmission.deReason.nonEmpty)
+      assert(sp.restrictedAdmission.enReason.nonEmpty)
+      assert(sp.deDescription.nonEmpty)
+      assert(sp.deNote.isEmpty)
+      assert(sp.enDescription.nonEmpty)
+      assert(sp.enNote.isEmpty)
+      assert(rest.isEmpty)
+    }
+
+    "parse gme" in {
+      val (res, rest) = withFile0("test/parsing/res/program.gme.yaml")(
+        fileParser.parse
+      )
+      val sp = res.value.head
+      assert(sp.abbrev.nonEmpty)
+      assert(sp.deLabel.nonEmpty)
+      assert(sp.enLabel.nonEmpty)
+      assert(sp.internalAbbreviation.isEmpty)
+      assert(sp.externalAbbreviation.isEmpty)
+      assert(sp.deUrl.nonEmpty)
+      assert(sp.enUrl.nonEmpty)
+      assert(sp.grade.abbrev.nonEmpty)
+      assert(sp.programDirector.id.nonEmpty)
+      assert(sp.studyForm.size == 2)
+      assert(sp.language.size == 1)
+      assert(sp.seasons.size == 2)
+      assert(sp.campus.size == 1)
+      assert(sp.restrictedAdmission.deReason.isEmpty)
+      assert(sp.restrictedAdmission.enReason.isEmpty)
+      assert(sp.deDescription.nonEmpty)
+      assert(sp.deNote.nonEmpty)
+      assert(sp.enDescription.nonEmpty)
+      assert(sp.enNote.nonEmpty)
+      assert(rest.isEmpty)
+    }
+
+    "parse ait" in {
+      val (res, rest) = withFile0("test/parsing/res/program.ait.yaml")(
+        fileParser.parse
+      )
+      val sp = res.value.head
+      assert(sp.abbrev.nonEmpty)
+      assert(sp.deLabel.nonEmpty)
+      assert(sp.enLabel.nonEmpty)
+      assert(sp.internalAbbreviation.isEmpty)
+      assert(sp.externalAbbreviation.isEmpty)
+      assert(sp.deUrl.nonEmpty)
+      assert(sp.enUrl.nonEmpty)
+      assert(sp.grade.abbrev.nonEmpty)
+      assert(sp.programDirector.id.nonEmpty)
+      assert(sp.studyForm.size == 2)
+      assert(sp.language.size == 1)
+      assert(sp.seasons.size == 1)
+      assert(sp.campus.size == 1)
+      assert(sp.restrictedAdmission.deReason.isEmpty)
+      assert(sp.restrictedAdmission.enReason.isEmpty)
+      assert(sp.deDescription.nonEmpty)
+      assert(sp.deNote.nonEmpty)
+      assert(sp.enDescription.nonEmpty)
+      assert(sp.enNote.nonEmpty)
+      assert(rest.isEmpty)
+    }
+
+    "parse coco" in {
+      val (res, rest) = withFile0("test/parsing/res/program.coco.yaml")(
+        fileParser.parse
+      )
+      val sp = res.value.head
+      assert(sp.abbrev.nonEmpty)
+      assert(sp.deLabel.nonEmpty)
+      assert(sp.enLabel.nonEmpty)
+      assert(sp.internalAbbreviation.isEmpty)
+      assert(sp.externalAbbreviation.isEmpty)
+      assert(sp.deUrl.nonEmpty)
+      assert(sp.enUrl.isEmpty)
+      assert(sp.grade.abbrev.nonEmpty)
+      assert(sp.programDirector.id.nonEmpty)
+      assert(sp.studyForm.size == 1)
+      assert(sp.studyForm.head.scope.size == 2)
+      assert(sp.studyForm.head.scope(1).deReason.nonEmpty)
+      assert(sp.studyForm.head.scope(1).enReason.nonEmpty)
+      assert(sp.language.size == 2)
+      assert(sp.seasons.size == 1)
+      assert(sp.campus.size == 1)
+      assert(sp.restrictedAdmission.deReason.isEmpty)
+      assert(sp.restrictedAdmission.enReason.isEmpty)
+      assert(sp.deDescription.nonEmpty)
+      assert(sp.deNote.isEmpty)
+      assert(sp.enDescription.isEmpty)
+      assert(sp.enNote.isEmpty)
+      assert(rest.isEmpty)
+    }
+
+    "parse een" in {
+      val (res, rest) = withFile0("test/parsing/res/program.een.yaml")(
+        fileParser.parse
+      )
+      val sp = res.value.head
+      assert(sp.abbrev.nonEmpty)
+      assert(sp.deLabel.nonEmpty)
+      assert(sp.enLabel.nonEmpty)
+      assert(sp.internalAbbreviation.isEmpty)
+      assert(sp.externalAbbreviation.isEmpty)
+      assert(sp.deUrl.nonEmpty)
+      assert(sp.enUrl.nonEmpty)
+      assert(sp.grade.abbrev.nonEmpty)
+      assert(sp.programDirector.id.nonEmpty)
+      assert(sp.studyForm.size == 2)
+      assert(sp.language.size == 1)
+      assert(sp.seasons.size == 2)
+      assert(sp.campus.size == 1)
+      assert(sp.restrictedAdmission.deReason.isEmpty)
+      assert(sp.restrictedAdmission.enReason.isEmpty)
+      assert(sp.deDescription.nonEmpty)
+      assert(sp.deNote.nonEmpty)
+      assert(sp.enDescription.isEmpty)
+      assert(sp.enNote.nonEmpty)
+      assert(rest.isEmpty)
+    }
+
+    "parse itm" in {
+      val (res, rest) = withFile0("test/parsing/res/program.itm.yaml")(
+        fileParser.parse
+      )
+      val sp = res.value.head
+      assert(sp.abbrev.nonEmpty)
+      assert(sp.deLabel.nonEmpty)
+      assert(sp.enLabel.nonEmpty)
+      assert(sp.internalAbbreviation.isEmpty)
+      assert(sp.externalAbbreviation.isEmpty)
+      assert(sp.deUrl.nonEmpty)
+      assert(sp.enUrl.nonEmpty)
+      assert(sp.grade.abbrev.nonEmpty)
+      assert(sp.programDirector.id.nonEmpty)
+      assert(sp.studyForm.size == 1)
+      assert(sp.language.size == 1)
+      assert(sp.seasons.size == 1)
+      assert(sp.campus.size == 1)
+      assert(sp.restrictedAdmission.deReason.nonEmpty)
+      assert(sp.restrictedAdmission.enReason.nonEmpty)
+      assert(sp.deDescription.nonEmpty)
+      assert(sp.deNote.isEmpty)
+      assert(sp.enDescription.isEmpty)
+      assert(sp.enNote.isEmpty)
+      assert(rest.isEmpty)
+    }
+
+    "parse mi" in {
+      val (res, rest) = withFile0("test/parsing/res/program.mi.yaml")(
+        fileParser.parse
+      )
+      val sp = res.value.head
+      assert(sp.abbrev.nonEmpty)
+      assert(sp.deLabel.nonEmpty)
+      assert(sp.enLabel.nonEmpty)
+      assert(sp.internalAbbreviation.isEmpty)
+      assert(sp.externalAbbreviation.isEmpty)
+      assert(sp.deUrl.nonEmpty)
+      assert(sp.enUrl.nonEmpty)
+      assert(sp.grade.abbrev.nonEmpty)
+      assert(sp.programDirector.id.nonEmpty)
+      assert(sp.studyForm.size == 1)
+      assert(sp.studyForm.head.scope.size == 1)
+      assert(sp.language.size == 1)
+      assert(sp.seasons.size == 1)
+      assert(sp.campus.size == 1)
+      assert(sp.restrictedAdmission.deReason.nonEmpty)
+      assert(sp.restrictedAdmission.enReason.nonEmpty)
+      assert(sp.deDescription.nonEmpty)
+      assert(sp.deNote.isEmpty)
+      assert(sp.enDescription.nonEmpty)
+      assert(sp.enNote.isEmpty)
+      assert(rest.isEmpty)
+    }
+
+    "parse mim" in {
+      val (res, rest) = withFile0("test/parsing/res/program.mim.yaml")(
+        fileParser.parse
+      )
+      val sp = res.value.head
+      assert(sp.abbrev.nonEmpty)
+      assert(sp.deLabel.nonEmpty)
+      assert(sp.enLabel.nonEmpty)
+      assert(sp.internalAbbreviation.isEmpty)
+      assert(sp.externalAbbreviation.isEmpty)
+      assert(sp.deUrl.nonEmpty)
+      assert(sp.enUrl.nonEmpty)
+      assert(sp.grade.abbrev.nonEmpty)
+      assert(sp.programDirector.id.nonEmpty)
+      assert(sp.studyForm.size == 1)
+      assert(sp.studyForm.head.scope.size == 1)
+      assert(sp.language.size == 1)
+      assert(sp.seasons.size == 2)
+      assert(sp.campus.size == 1)
+      assert(sp.restrictedAdmission.deReason.nonEmpty)
+      assert(sp.restrictedAdmission.enReason.nonEmpty)
+      assert(sp.deDescription.nonEmpty)
+      assert(sp.deNote.isEmpty)
+      assert(sp.enDescription.nonEmpty)
+      assert(sp.enNote.isEmpty)
+      assert(rest.isEmpty)
+    }
+
+    "parse pdpd" in {
+      val (res, rest) = withFile0("test/parsing/res/program.pdpd.yaml")(
+        fileParser.parse
+      )
+      val sp = res.value.head
+      assert(sp.abbrev.nonEmpty)
+      assert(sp.deLabel.nonEmpty)
+      assert(sp.enLabel.nonEmpty)
+      assert(sp.internalAbbreviation.isEmpty)
+      assert(sp.externalAbbreviation.isEmpty)
+      assert(sp.deUrl.nonEmpty)
+      assert(sp.enUrl.nonEmpty)
+      assert(sp.grade.abbrev.nonEmpty)
+      assert(sp.programDirector.id.nonEmpty)
+      assert(sp.studyForm.size == 1)
+      assert(sp.studyForm.head.scope.size == 2)
+      assert(sp.language.size == 1)
+      assert(sp.seasons.size == 1)
+      assert(sp.campus.size == 2)
+      assert(sp.restrictedAdmission.deReason.isEmpty)
+      assert(sp.restrictedAdmission.enReason.isEmpty)
+      assert(sp.deDescription.nonEmpty)
+      assert(sp.deNote.isEmpty)
+      assert(sp.enDescription.nonEmpty)
+      assert(sp.enNote.isEmpty)
+      assert(rest.isEmpty)
+    }
+
+    "parse wsc" in {
+      val (res, rest) = withFile0("test/parsing/res/program.wsc.yaml")(
+        fileParser.parse
+      )
+      val sp = res.value.head
+      assert(sp.abbrev.nonEmpty)
+      assert(sp.deLabel.nonEmpty)
+      assert(sp.enLabel.nonEmpty)
+      assert(sp.internalAbbreviation.isEmpty)
+      assert(sp.externalAbbreviation.isEmpty)
+      assert(sp.deUrl.nonEmpty)
+      assert(sp.enUrl.isEmpty)
+      assert(sp.grade.abbrev.nonEmpty)
+      assert(sp.programDirector.id.nonEmpty)
+      assert(sp.studyForm.size == 1)
+      assert(sp.studyForm.head.scope.size == 1)
+      assert(sp.language.size == 1)
+      assert(sp.seasons.size == 2)
+      assert(sp.campus.size == 2)
+      assert(sp.restrictedAdmission.deReason.isEmpty)
+      assert(sp.restrictedAdmission.enReason.isEmpty)
+      assert(sp.deDescription.nonEmpty)
+      assert(sp.deNote.nonEmpty)
+      assert(sp.enDescription.isEmpty)
+      assert(sp.enNote.isEmpty)
+      assert(rest.isEmpty)
+    }
+
+    "parse wi" in {
+      val (res, rest) = withFile0("test/parsing/res/program.wi.yaml")(
+        fileParser.parse
+      )
+      val sp = res.value.head
+      assert(sp.abbrev.nonEmpty)
+      assert(sp.deLabel.nonEmpty)
+      assert(sp.enLabel.nonEmpty)
+      assert(sp.internalAbbreviation.isEmpty)
+      assert(sp.externalAbbreviation.isEmpty)
+      assert(sp.deUrl.nonEmpty)
+      assert(sp.enUrl.nonEmpty)
+      assert(sp.grade.abbrev.nonEmpty)
+      assert(sp.programDirector.id.nonEmpty)
+      assert(sp.studyForm.size == 1)
+      assert(sp.studyForm.head.scope.size == 1)
+      assert(sp.language.size == 1)
+      assert(sp.seasons.size == 1)
+      assert(sp.campus.size == 1)
+      assert(sp.restrictedAdmission.deReason.nonEmpty)
+      assert(sp.restrictedAdmission.enReason.nonEmpty)
+      assert(sp.deDescription.nonEmpty)
+      assert(sp.deNote.isEmpty)
+      assert(sp.enDescription.nonEmpty)
+      assert(sp.enNote.isEmpty)
+      assert(rest.isEmpty)
+    }
+
+    "parse wiv" in {
+      val (res, rest) = withFile0("test/parsing/res/program.wiv.yaml")(
+        fileParser.parse
+      )
+      val sp = res.value.head
+      assert(sp.abbrev.nonEmpty)
+      assert(sp.deLabel.nonEmpty)
+      assert(sp.enLabel.nonEmpty)
+      assert(sp.internalAbbreviation.isEmpty)
+      assert(sp.externalAbbreviation.isEmpty)
+      assert(sp.deUrl.nonEmpty)
+      assert(sp.enUrl.nonEmpty)
+      assert(sp.grade.abbrev.nonEmpty)
+      assert(sp.programDirector.id.nonEmpty)
+      assert(sp.studyForm.size == 1)
+      assert(sp.studyForm.head.scope.size == 1)
+      assert(sp.language.size == 1)
+      assert(sp.seasons.size == 1)
+      assert(sp.campus.size == 1)
+      assert(sp.restrictedAdmission.deReason.nonEmpty)
+      assert(sp.restrictedAdmission.enReason.nonEmpty)
+      assert(sp.deDescription.nonEmpty)
+      assert(sp.deNote.nonEmpty)
+      assert(sp.enDescription.nonEmpty)
+      assert(sp.enNote.nonEmpty)
+      assert(rest.isEmpty)
+    }
+
+    "parse wivm" in {
+      val (res, rest) = withFile0("test/parsing/res/program.wivm.yaml")(
+        fileParser.parse
+      )
+      val sp = res.value.head
+      assert(sp.abbrev.nonEmpty)
+      assert(sp.deLabel.nonEmpty)
+      assert(sp.enLabel.nonEmpty)
+      assert(sp.internalAbbreviation.isEmpty)
+      assert(sp.externalAbbreviation.isEmpty)
+      assert(sp.deUrl.nonEmpty)
+      assert(sp.enUrl.nonEmpty)
+      assert(sp.grade.abbrev.nonEmpty)
+      assert(sp.programDirector.id.nonEmpty)
+      assert(sp.studyForm.size == 1)
+      assert(sp.studyForm.head.scope.size == 1)
+      assert(sp.language.size == 1)
+      assert(sp.seasons.size == 1)
+      assert(sp.campus.size == 1)
+      assert(sp.restrictedAdmission.deReason.nonEmpty)
+      assert(sp.restrictedAdmission.enReason.nonEmpty)
+      assert(sp.deDescription.nonEmpty)
+      assert(sp.deNote.nonEmpty)
+      assert(sp.enDescription.nonEmpty)
+      assert(sp.enNote.nonEmpty)
+      assert(rest.isEmpty)
+    }
+
+    "parse wiw" in {
+      val (res, rest) = withFile0("test/parsing/res/program.wiw.yaml")(
+        fileParser.parse
+      )
+      val sp = res.value.head
+      assert(sp.abbrev.nonEmpty)
+      assert(sp.deLabel.nonEmpty)
+      assert(sp.enLabel.nonEmpty)
+      assert(sp.internalAbbreviation.isEmpty)
+      assert(sp.externalAbbreviation.isEmpty)
+      assert(sp.deUrl.nonEmpty)
+      assert(sp.enUrl.nonEmpty)
+      assert(sp.grade.abbrev.nonEmpty)
+      assert(sp.programDirector.id.nonEmpty)
+      assert(sp.studyForm.size == 2)
+      assert(sp.studyForm.head.scope.size == 2)
+      assert(sp.studyForm.last.scope.size == 2)
+      assert(sp.language.size == 1)
+      assert(sp.seasons.size == 2)
+      assert(sp.campus.size == 1)
+      assert(sp.restrictedAdmission.deReason.isEmpty)
+      assert(sp.restrictedAdmission.enReason.isEmpty)
+      assert(sp.deDescription.nonEmpty)
+      assert(sp.deNote.nonEmpty)
+      assert(sp.enDescription.nonEmpty)
+      assert(sp.enNote.nonEmpty)
+      assert(rest.isEmpty)
+    }
+
+    "parse wiwm" in {
+      val (res, rest) = withFile0("test/parsing/res/program.wiwm.yaml")(
+        fileParser.parse
+      )
+      val sp = res.value.head
+      assert(sp.abbrev.nonEmpty)
+      assert(sp.deLabel.nonEmpty)
+      assert(sp.enLabel.nonEmpty)
+      assert(sp.internalAbbreviation.isEmpty)
+      assert(sp.externalAbbreviation.isEmpty)
+      assert(sp.deUrl.nonEmpty)
+      assert(sp.enUrl.nonEmpty)
+      assert(sp.grade.abbrev.nonEmpty)
+      assert(sp.programDirector.id.nonEmpty)
+      assert(sp.studyForm.size == 1)
+      assert(sp.studyForm.head.scope.size == 2)
+      assert(sp.language.size == 1)
+      assert(sp.seasons.size == 2)
+      assert(sp.campus.size == 1)
+      assert(sp.restrictedAdmission.deReason.isEmpty)
+      assert(sp.restrictedAdmission.enReason.isEmpty)
+      assert(sp.deDescription.nonEmpty)
+      assert(sp.deNote.isEmpty)
+      assert(sp.enDescription.nonEmpty)
+      assert(sp.enNote.isEmpty)
       assert(rest.isEmpty)
     }
   }

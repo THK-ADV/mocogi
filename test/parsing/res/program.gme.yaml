@@ -1,0 +1,55 @@
+ing_gme:
+  de_label: Allgemeiner Maschinenbau
+  en_label: General Mechanical Engineering
+  de_url: https://www.th-koeln.de/studium/allgemeiner-maschinenbau-bachelor_2709.php
+  en_url: https://www.th-koeln.de/en/academics/general-mechanical-engineering-bachelors-program_7323.php
+  grade: grade.beng
+  program_director: person.ald
+  accreditation_until: 30.09.2026
+  study_form:
+    - type: study_form.full
+      workload_per_ects: 30
+      scope:
+        - program_duration: 6
+          total_ECTS: 180
+        - program_duration: 7
+          total_ECTS: 210
+          de_reason: Im Falle eines integrierten fakultativen Praxissemester
+          en_reason: Internship
+    - type: study_form.part
+      workload_per_ects: 30
+      scope:
+        - program_duration: 9
+          total_ECTS: 180
+        - program_duration: 10
+          total_ECTS: 210
+          de_reason: Im Falle eines integrierten fakultativen Praxissemester
+          en_reason: Internship
+  language_of_instruction: lang.de
+  beginning_of_program:
+    - season.ws
+    - season.ss
+  campus:
+    - location.gm
+  restricted_admission:
+    value: false
+  de_desc: >
+    Der breit angelegte Studiengang „Allgemeiner Maschinenbau“ eröffnet eine Vielzahl von Arbeitsfeldern in der
+    Industrie. Es werden die Schwerpunkte Fertigung (Metall/Kunststoffe), Konstruktion und Umwelttechnik angeboten.
+    Durch die umfassenden Kontakte des Gummersbacher Campus zur Industrie lernen die Nachwuchskräfte schon im Studium
+    potenzielle Arbeitgeber im In- und Ausland kennen.
+  de_note: |
+    Vollzeitstudiengang: Dieser Studiengang trägt im ersten Studienjahr die Bezeichnung: Ingenieurwissenschaften.
+    Die Studierenden müssen sich erst am Ende des ersten gemeinsamen Studienjahrs für einen der drei Studiengänge
+    entscheiden: Allgemeiner Maschinenbau, Elektrotechnik oder Wirtschaftsingenieurwesen.
+    Teilzeitstudiengang: Bitte beachten Sie, dass bei einem Teilzeitstudium kein BAföG-Anspruch besteht.
+  en_desc: >
+    The broad-based Bachelor's program in General Mechanical Engineering is the starting point for many careers
+    in the industry. In the advanced period of the program, students may specialize in either Manufacturing
+    Engineering (metal/synthetics) or Construction.
+  en_note: |
+    During the first year, this Bachelor’s program bears the title: Engineering.
+    At the end of the first year, students can opt for either one of the following three programs:
+    General Mechanical Engineering, Electrical Engineering or Business Administration and Engineering.
+    Part-time program:
+    Please note that students enrolled in part-time programs are not eligible for BAföG.

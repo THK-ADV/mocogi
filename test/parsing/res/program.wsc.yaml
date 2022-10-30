@@ -1,0 +1,34 @@
+inf_wsc:
+  de_label: Web Science
+  en_label: Web Science
+  de_url: https://www.th-koeln.de/studium/web-science-master_3903.php
+  grade: grade.msc
+  program_director: person.nn
+  accreditation_until: 30.09.2023
+  study_form:
+    - type: study_form.bbw
+      workload_per_ects: 30
+      scope:
+        - program_duration: 5
+          total_ECTS: 120
+  language_of_instruction: lang.en
+  beginning_of_program:
+    - season.ws
+    - season.ss
+  campus:
+    - location.gm
+    - location.su
+  restricted_admission:
+    value: false
+  de_desc: >
+    Der fünfsemestrige Masterstudiengang „Web Science“ für Berufstätige umfasst alle wichtigen Aspekte,
+    die ein Entscheidungsträger bzgl. Webfragestellungen heute braucht. Der weiterbildende (d.h. berufsbegleitend
+    studierbare) Masterstudiengang ist englischsprachig; an den Lehrveranstaltungen nimmt man an zwei Abenden pro
+    Woche online teil.
+  de_note: >
+    - 1.400,- Euro (pro Semester)
+    - Semesterbeitrag ohne Semesterticket für den VRS und SemesterTicket NRW (pro Semester) 
+    Die Vor-Ort-Präsenzen dieses Studiengangs finden am Campus Südstadt in Köln statt.
+    Die Studierendenverwaltung befindet sich am Campus Gummersbach.
+  en_desc:
+  en_note:
