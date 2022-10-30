@@ -54,6 +54,9 @@ class Module() extends AbstractModule {
     bind(classOf[GlobalCriteriaService])
       .to(classOf[GlobalCriteriaServiceImpl])
       .asEagerSingleton()
+    bind(classOf[StudyProgramService])
+      .to(classOf[StudyProgramServiceImpl])
+      .asEagerSingleton()
 
     bind(classOf[MarkdownConverter])
       .toProvider(classOf[MarkdownConverterProvider])

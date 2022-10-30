@@ -1,0 +1,34 @@
+inf_wivm:
+  de_label: Wirtschaftsinformatik (Verbundstudiengang)
+  en_label: Business Information Systems (Integrated Campus and Distance Education)
+  de_url: https://www.th-koeln.de/studium/wirtschaftsinformatik-master-verbundstudiengang_4189.php
+  en_url: https://www.th-koeln.de/en/academics/business-information-systems-masters-programjoint-degree-program_7783.php
+  grade: grade.msc
+  program_director: person.nn
+  accreditation_until: 30.09.2026
+  study_form:
+    - type: study_form.bbs
+      workload_per_ects: 30
+      scope:
+        - program_duration: 5
+          total_ECTS: 120
+  language_of_instruction: lang.de
+  beginning_of_program: season.ws
+  campus: location.gm
+  restricted_admission:
+    value: true
+    de_reason: Orts-NC
+    en_reason: local nc
+  de_desc: >
+    Im "Verbundstudium" Wirtschaftsinformatik sind nicht nur Studium und Beruf miteinander verbunden, sondern auch
+    Fern- und Präsenzstudium: die Studierenden besuchen 14-tägig Lehrveranstaltungen in Gummersbach und haben so
+    direkten Kontakt zu den Dozenten und auch untereinander. Das erleichtert den Studienerfolg erheblich. Zu Hause
+    lernt man mit Lehrbriefen und multimedialer Unterstützung.
+  de_note: >
+    Der Studiengang wird gemeinsam mit der Fachhochschule Dortmund angeboten.
+  en_desc: >
+    The Master's program does not only combine professional employment and academic studies but also distance learning
+    with face-to-face classes, as students attend on-site classes in Gummersbach every two weeks. This opportunity to
+    meet their lecturers and fellow students significantly improves students' academic success.
+  en_note: >
+    This Master's program is offered in cooperation with Dortmund University of Applied Sciences and Arts.

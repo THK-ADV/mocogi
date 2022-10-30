@@ -1,0 +1,34 @@
+inf_inf:
+  de_label: Informatik
+  en_label: Computer Science
+  de_url: https://www.th-koeln.de/studium/informatik-bachelor_3488.php
+  en_url: https://www.th-koeln.de/en/academics/computer-science-bachelors-program_7326.php
+  grade: grade.bsc
+  program_director: person.ald
+  accreditation_until: 30.09.2026
+  study_form:
+    - type: study_form.full
+      workload_per_ects: 30
+      scope:
+        - program_duration: 7
+          total_ECTS: 210
+          de_reason: Praxissemester
+          en_reason: Internship
+  language_of_instruction: lang.de
+  beginning_of_program: season.ws
+  campus: location.gm
+  restricted_admission:
+    value: true
+    de_reason: Orts-NC
+    en_reason: local nc
+  de_desc: >
+    Im Studiengang Informatik lernt man, Kommunikations- und Arbeitsabläufe aller Art per Computer interaktiv zu
+    unterstützen. InformatikerInnen müssen wegen der komplexen Probleme in den Unternehmen meist im Team arbeiten,
+    um passende Lösungen zu entwickeln. Information, Kooperation und Kommunikation sind daher in der Informatik ebenso
+    wichtig wie Mathematik, formale Sprachen oder Algorithmen.
+  de_note:
+  en_desc: >
+    The Bachelor's program in Computer Science provides students with broad fundamental knowledge of the complex
+    field of computer science. Computer scientists usually work as a team to solve the various complex problems
+    that arise in companies and institutions.
+  en_note:

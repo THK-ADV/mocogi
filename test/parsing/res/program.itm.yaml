@@ -1,0 +1,31 @@
+inf_itm:
+  de_label: IT-Management (Informatik)
+  en_label: IT Management (Computer Science)
+  de_url: https://www.th-koeln.de/studium/it-management-informatik---bachelor_40759.php
+  en_url: https://www.th-koeln.de/en/academics/it-management-computer-science---bachelors-program_40818.php
+  grade: grade.bsc
+  program_director: person.nn
+  accreditation_until: 30.09.2026
+  study_form:
+    - type: study_form.full
+      workload_per_ects: 30
+      scope:
+        - program_duration: 7
+          total_ECTS: 210
+          de_reason: Praxissemester
+          en_reason: Internship
+  language_of_instruction: lang.de
+  beginning_of_program: season.ws
+  campus: location.gm
+  restricted_admission:
+    value: true
+    de_reason: Orts-NC
+    en_reason: local nc
+  de_desc: >
+    Der Studiengang IT-Management (Informatik), kurz: ITM, führt zum Bachelor of Science und bietet hochaktuelle
+    Inhalte für Studierende, die als Mitarbeiterinnen und Mitarbeiter in den IT-Abteilungen tätig werden wollen.
+    Inhaltlich geht es um Planung, Entwurf, Realisierung und Betrieb unterschiedlicher, verteilter und sicherer
+    IT-Systeme und das Management der Dienste.
+  de_note:
+  en_desc:
+  en_note:

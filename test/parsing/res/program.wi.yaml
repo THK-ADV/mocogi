@@ -1,0 +1,34 @@
+inf_wi:
+  de_label: Wirtschaftsinformatik
+  en_label: Business Information Systems
+  de_url: https://www.th-koeln.de/studium/wirtschaftsinformatik-bachelor_2770.php
+  en_url: https://www.th-koeln.de/en/academics/business-information-systems-bachelors-program_7329.php
+  grade: grade.bsc
+  program_director: person.nn
+  accreditation_until: 30.09.2026
+  study_form:
+    - type: study_form.full
+      workload_per_ects: 30
+      scope:
+        - program_duration: 7
+          total_ECTS: 210
+          de_reason: Praxissemester
+          en_reason: Internship
+  language_of_instruction: lang.de
+  beginning_of_program: season.ws
+  campus: location.gm
+  restricted_admission:
+    value: true
+    de_reason: Orts-NC
+    en_reason: local nc
+  de_desc: >
+    Wirtschaftsinformatik: viel mehr als Mathe und Marketing. Das Studium der Wirtschaftsinformatik verbindet
+    Wirtschaftsinformatikerinnen und -informatiker erfassen die wirtschaftlichen Prozesse in einem Unternehmen und
+    lösen anstehende Probleme mit Hilfe von IT-Anwendungen. Dazu müssen sie ganzheitlich denken und fachübergreifend
+    im Team arbeiten können.
+  de_note:
+  en_desc: >
+    Business information systems: so much more than just maths and marketing. Business information specialists
+    analyze a company's economic processes and solve arising problems by means of information technology. To do this,
+    holistic ways of thinking and interdisciplinary teamwork are indispensable.
+  en_note:

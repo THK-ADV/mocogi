@@ -1,0 +1,36 @@
+ing_wiwm:
+  de_label: Wirtschaftsingenieurwesen
+  en_label: Business Administration and Engineering
+  de_url: https://www.th-koeln.de/studium/wirtschaftsingenieurwesen-master_49282.php
+  en_url: https://www.th-koeln.de/en/academics/business-administration-and-engineering-masters-program_49280.php
+  grade: grade.msc
+  program_director: person.nn
+  accreditation_until: 30.09.2027
+  study_form:
+    - type: study_form.full
+      workload_per_ects: 30
+      scope:
+        - program_duration: 4
+          total_ECTS: 120
+        - program_duration: 3
+          total_ECTS: 90
+          de_reason: Möglich für Abstolvent*innen eines 7-semestrigen Bachelorstudiums mit einem Studienumfang von 210 ECTS.
+          en_reason: Possible for graduates of a 7-semester bachelor's program with a total of 210 ECTS credits.
+  language_of_instruction: lang.de
+  beginning_of_program:
+    - season.ws
+    - season.ss
+  campus: location.gm
+  restricted_admission:
+    value: false
+  de_desc: >
+    Ökologie und Ökonomie mit der richtigen Technologie in Einklang bringen - das ist ein Schwerpunkt im neuen Master
+    "Wirtschaftsingenieurwesen" mit den beiden Studienrichtungen Technologiemanagement und Energie- und
+    Ressourcenmanagement. Beim zweiten Angebot geht es darum, Roh- oder Reststoffe möglichst effizient einzusetzen,
+    um neue Produkte herzustellen oder Energie zu erzeugen.
+  de_note:
+  en_desc: >
+    TH Köln's new Master's program in Business Administration and Engineering aims at combining economic and
+    environmental aspects with the necessary technology. Students can opt for one of the following specializations:
+    Technology Management or Energy and Resources Management.
+  en_note:

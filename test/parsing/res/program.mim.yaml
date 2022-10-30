@@ -1,0 +1,35 @@
+inf_mim:
+  de_label: Medieninformatik
+  en_label: Media Informatics
+  de_url: https://www.th-koeln.de/studium/medieninformatik-master_3729.php
+  en_url: https://www.th-koeln.de/en/academics/media-informatics-masters-program_7781.php
+  grade: grade.msc
+  program_director: person.nn
+  accreditation_until: 30.09.2024
+  study_form:
+    - type: study_form.full
+      workload_per_ects: 30
+      scope:
+        - program_duration: 4
+          total_ECTS: 120
+  language_of_instruction: lang.de
+  beginning_of_program:
+    - season.ws
+    - season.ss
+  campus: location.gm
+  restricted_admission:
+    value: true
+    de_reason: Orts-NC
+    en_reason: local nc
+  de_desc: >
+    Im Masterstudium Medieninformatik können AbsolventInnen von Studiengängen der Informatik ihre Kompetenzen
+    vertiefen und erweitern. Dabei geht es um die Gestaltung, Produktion, Bearbeitung, Distribution und Nutzung
+    medienbasierter Informationen. Im Masterstudium lernt man, wie sich web-basierte Prozesse und Systeme analysieren,
+    entwerfen, realisieren, adaptieren, betreiben und evaluieren lassen.
+  de_note:
+  en_desc:
+    The Master's program in Media Informatics is an opportunity for graduates of undergraduate programs in computer
+    science to expand their knowledge of IT processes and systems. Students of our master's program become experts
+    in designing, producing, editing, distributing and using media-based information. Graduates are qualified to fill
+    leadership positions or may choose to do a doctorate.
+  en_note:
