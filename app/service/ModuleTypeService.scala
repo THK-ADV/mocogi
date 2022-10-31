@@ -6,12 +6,10 @@ import parsing.base.ModuleTypeFileParser
 
 import javax.inject.{Inject, Singleton}
 
-trait ModuleTypeService extends YamlService[ModuleType, ModuleType]
+trait ModuleTypeService extends SimpleYamlService[ModuleType]
 
 @Singleton
 final class ModuleTypeServiceImpl @Inject() (
     val repo: ModuleTypeRepository,
     val parser: ModuleTypeFileParser
-) extends ModuleTypeService {
-  override def toInput(output: ModuleType) = output
-}
+) extends ModuleTypeService
