@@ -20,7 +20,7 @@ object FocusAreaFileParser {
             singleValueParser[String](
               "program",
               p => s"program.$p"
-            )
+            )(programs.sorted.reverse)
           )
           .skip(zeroOrMoreSpaces)
           .take(singleLineStringForKey("de_label"))
@@ -31,6 +31,6 @@ object FocusAreaFileParser {
           .skip(zeroOrMoreSpaces)
           .take(stringForKey("en_desc").option.map(_.getOrElse("")))
           .map(FocusArea.tupled)
-          .many(zeroOrMoreSpaces)
+          .all(zeroOrMoreSpaces)
       )
 }

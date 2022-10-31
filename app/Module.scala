@@ -60,6 +60,9 @@ class Module() extends AbstractModule {
     bind(classOf[POService])
       .to(classOf[POServiceImpl])
       .asEagerSingleton()
+    bind(classOf[FocusAreaService])
+      .to(classOf[FocusAreaServiceImpl])
+      .asEagerSingleton()
 
     bind(classOf[MarkdownConverter])
       .toProvider(classOf[MarkdownConverterProvider])
