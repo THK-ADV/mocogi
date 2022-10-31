@@ -24,8 +24,8 @@ class ResponsibilitiesParserSpec
           |lecturers:person.ald
           |""".stripMargin
       val (res, rest) = parser.parse(resp)
-      assert(res.value.moduleManagement.map(_.abbrev) == List("abe"))
-      assert(res.value.lecturers.map(_.abbrev) == List("ald"))
+      assert(res.value.moduleManagement.map(_.id) == List("abe"))
+      assert(res.value.lecturers.map(_.id) == List("ald"))
       assert(rest.isEmpty)
     }
 
@@ -36,8 +36,8 @@ class ResponsibilitiesParserSpec
           | lecturers: person.ald
           |""".stripMargin
       val (res, rest) = parser.parse(resp)
-      assert(res.value.moduleManagement.map(_.abbrev) == List("abe"))
-      assert(res.value.lecturers.map(_.abbrev) == List("ald"))
+      assert(res.value.moduleManagement.map(_.id) == List("abe"))
+      assert(res.value.lecturers.map(_.id) == List("ald"))
       assert(rest.isEmpty)
     }
 
@@ -50,8 +50,8 @@ class ResponsibilitiesParserSpec
           |lecturers:person.ald
           |""".stripMargin
       val (res, rest) = parser.parse(resp)
-      assert(res.value.moduleManagement.map(_.abbrev) == List("abe", "ddu"))
-      assert(res.value.lecturers.map(_.abbrev) == List("ald"))
+      assert(res.value.moduleManagement.map(_.id) == List("abe", "ddu"))
+      assert(res.value.lecturers.map(_.id) == List("ald"))
       assert(rest.isEmpty)
     }
 
@@ -64,8 +64,8 @@ class ResponsibilitiesParserSpec
           | lecturers: person.ald
           |""".stripMargin
       val (res, rest) = parser.parse(resp)
-      assert(res.value.moduleManagement.map(_.abbrev) == List("abe", "ddu"))
-      assert(res.value.lecturers.map(_.abbrev) == List("ald"))
+      assert(res.value.moduleManagement.map(_.id) == List("abe", "ddu"))
+      assert(res.value.lecturers.map(_.id) == List("ald"))
       assert(rest.isEmpty)
     }
 
@@ -78,8 +78,8 @@ class ResponsibilitiesParserSpec
           |-person.ddu
           |""".stripMargin
       val (res, rest) = parser.parse(resp)
-      assert(res.value.moduleManagement.map(_.abbrev) == List("abe"))
-      assert(res.value.lecturers.map(_.abbrev) == List("ald", "ddu"))
+      assert(res.value.moduleManagement.map(_.id) == List("abe"))
+      assert(res.value.lecturers.map(_.id) == List("ald", "ddu"))
       assert(rest.isEmpty)
     }
 
@@ -92,8 +92,8 @@ class ResponsibilitiesParserSpec
           | - person.ddu
           |""".stripMargin
       val (res, rest) = parser.parse(resp)
-      assert(res.value.moduleManagement.map(_.abbrev) == List("abe"))
-      assert(res.value.lecturers.map(_.abbrev) == List("ald", "ddu"))
+      assert(res.value.moduleManagement.map(_.id) == List("abe"))
+      assert(res.value.lecturers.map(_.id) == List("ald", "ddu"))
       assert(rest.isEmpty)
     }
 
@@ -108,8 +108,8 @@ class ResponsibilitiesParserSpec
           |  - person.ddu
           |""".stripMargin
       val (res, rest) = parser.parse(resp)
-      assert(res.value.moduleManagement.map(_.abbrev) == List("abe", "ald"))
-      assert(res.value.lecturers.map(_.abbrev) == List("ald", "ddu"))
+      assert(res.value.moduleManagement.map(_.id) == List("abe", "ald"))
+      assert(res.value.lecturers.map(_.id) == List("ald", "ddu"))
       assert(rest.isEmpty)
     }
 
@@ -124,8 +124,8 @@ class ResponsibilitiesParserSpec
           |  - person.ddu
           |""".stripMargin
       val (res, rest) = parser.parse(resp)
-      assert(res.value.moduleManagement.map(_.abbrev) == List("abe", "ald"))
-      assert(res.value.lecturers.map(_.abbrev) == List("ald", "ddu"))
+      assert(res.value.moduleManagement.map(_.id) == List("abe", "ald"))
+      assert(res.value.lecturers.map(_.id) == List("ald", "ddu"))
       assert(rest.isEmpty)
     }
   }
