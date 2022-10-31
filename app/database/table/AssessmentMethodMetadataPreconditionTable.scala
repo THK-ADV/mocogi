@@ -1,9 +1,13 @@
 package database.table
 
-import database.entities.AssessmentMethodMetadataPreconditionDbEntry
 import slick.jdbc.PostgresProfile.api._
 
 import java.util.UUID
+
+case class AssessmentMethodMetadataPreconditionDbEntry(
+    assessmentMethodMetadata: UUID,
+    assessmentMethod: String
+)
 
 final class AssessmentMethodMetadataPreconditionTable(tag: Tag)
     extends Table[AssessmentMethodMetadataPreconditionDbEntry](

@@ -1,9 +1,16 @@
 package database.table
 
-import database.entities.ECTSFocusAreaContributionDbEntry
 import slick.jdbc.PostgresProfile.api._
 
 import java.util.UUID
+
+case class ECTSFocusAreaContributionDbEntry(
+    id: UUID,
+    ects: UUID,
+    focusArea: UUID,
+    ectsValue: Double,
+    description: String
+)
 
 final class ECTSFocusAreaContributionTable(tag: Tag)
     extends Table[ECTSFocusAreaContributionDbEntry](

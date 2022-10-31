@@ -1,7 +1,11 @@
 package service
 
-import database.entities.{AssessmentMethodMetadataDbEntry, MetadataDbEntry, ResponsibilityDbEntry}
 import database.repo.MetadataRepository
+import database.table.{
+  AssessmentMethodMetadataDbEntry,
+  MetadataDbEntry,
+  ResponsibilityDbEntry
+}
 import git.GitFilePath
 import parsing.types.ParsedMetadata
 
@@ -20,7 +24,10 @@ final class MetadataService @Inject() (
       List[AssessmentMethodMetadataDbEntry]
   )
 
-  def createOrUpdate(m: ParsedMetadata, path: GitFilePath): Future[MetadataResult] =
+  def createOrUpdate(
+      m: ParsedMetadata,
+      path: GitFilePath
+  ): Future[MetadataResult] =
     for {
       exists <- repo.exists(m)
       res <- if (exists) update(m, path) else create(m, path)

@@ -1,9 +1,17 @@
 package database.table
 
-import database.entities.MetadataDbEntry
 import slick.jdbc.PostgresProfile.api._
 
 import java.util.UUID
+
+case class MetadataDbEntry(
+    id: UUID,
+    gitPath: String,
+    title: String,
+    abbrev: String,
+    moduleType: String,
+    language: String
+)
 
 final class MetadataTable(tag: Tag)
     extends Table[MetadataDbEntry](tag, "metadata") {

@@ -1,9 +1,10 @@
 package database.table
 
-import database.entities.ECTSDbEntry
 import slick.jdbc.PostgresProfile.api._
 
 import java.util.UUID
+
+case class ECTSDbEntry(id: UUID, value: Double)
 
 final class ECTSTable(tag: Tag) extends Table[ECTSDbEntry](tag, "ects") {
 

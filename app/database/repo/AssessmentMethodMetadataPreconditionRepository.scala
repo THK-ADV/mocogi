@@ -1,7 +1,9 @@
 package database.repo
 
-import database.entities.AssessmentMethodMetadataPreconditionDbEntry
-import database.table.AssessmentMethodMetadataPreconditionTable
+import database.table.{
+  AssessmentMethodMetadataPreconditionDbEntry,
+  AssessmentMethodMetadataPreconditionTable
+}
 import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfigProvider}
 import slick.jdbc.JdbcProfile
 

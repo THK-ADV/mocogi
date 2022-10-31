@@ -1,9 +1,15 @@
 package database.table
 
-import database.entities.AssessmentMethodMetadataDbEntry
 import slick.jdbc.PostgresProfile.api._
 
 import java.util.UUID
+
+case class AssessmentMethodMetadataDbEntry(
+    metadata: UUID,
+    assessmentMethod: String,
+    percentage: Option[Double],
+    mandatory: Boolean
+)
 
 final class AssessmentMethodMetadataTable(tag: Tag)
     extends Table[AssessmentMethodMetadataDbEntry](
