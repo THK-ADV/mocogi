@@ -1,6 +1,6 @@
 package parsing.base
 
-import basedata.{FocusArea, StudyProgramPreview}
+import basedata.FocusArea
 import parser.Parser
 import parser.Parser.{newline, optional, prefixTo, zeroOrMoreSpaces}
 import parser.ParserOps.{P0, P2, P3, P4, P5}
@@ -8,7 +8,7 @@ import parsing._
 
 object FocusAreaFileParser {
   def fileParser(implicit
-      programs: Seq[StudyProgramPreview]
+      programs: Seq[String]
   ): Parser[List[FocusArea]] =
     removeIndentation()
       .take(
@@ -17,9 +17,9 @@ object FocusAreaFileParser {
           .skip(newline)
           .skip(zeroOrMoreSpaces)
           .zip(
-            singleValueParser[StudyProgramPreview](
+            singleValueParser[String](
               "program",
-              p => s"program.${p.abbrev}"
+              p => s"program.$p"
             )
           )
           .skip(zeroOrMoreSpaces)

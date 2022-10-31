@@ -9,6 +9,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 trait StudyProgramService {
   def all(): Future[Seq[StudyProgramOutput]]
+  def allIds(): Future[Seq[String]]
   def create(input: String): Future[List[StudyProgram]]
 }
 
@@ -27,6 +28,9 @@ final class StudyProgramServiceImpl @Inject() (
   def all(): Future[Seq[StudyProgramOutput]] =
     repo.all()
 
+  override def allIds() =
+    repo.allIds()
+
   def create(input: String): Future[List[StudyProgram]] =
     for {
       grades <- gradeService.all()
@@ -35,14 +39,6 @@ final class StudyProgramServiceImpl @Inject() (
       languages <- languageService.all()
       seasons <- seasonService.all()
       locations <- locationService.all()
-      _ = println(
-        grades.size,
-        people.size,
-        studyFormTypes.size,
-        languages.size,
-        seasons.size,
-        locations.size
-      )
       programs <- StudyProgramFileParser
         .fileParser(
           grades,

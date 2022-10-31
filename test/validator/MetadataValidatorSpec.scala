@@ -19,7 +19,7 @@ final class MetadataValidatorSpec
   private lazy val am = AssessmentMethod("", "", "")
   private lazy val fa = FocusAreaPreview("")
   private lazy val ld = LocalDate.of(1998, 5, 9)
-  private lazy val sp = PO("", 0, ld, ld, None, Nil, StudyProgramPreview(""))
+  private lazy val sp = PO("", 0, ld, ld, None, Nil, "")
   private lazy val creditPointFactor = 30
 
   private def method(percentage: Option[Double]) =

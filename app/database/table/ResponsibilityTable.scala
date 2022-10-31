@@ -19,7 +19,7 @@ final class ResponsibilityTable(tag: Tag)
     foreignKey("metadata", metadata, TableQuery[MetadataTable])(_.id)
 
   def personFk =
-    foreignKey("person", person, TableQuery[PersonTable])(_.abbrev)
+    foreignKey("person", person, TableQuery[PersonTable])(_.id)
 
   override def * = (
     metadata,

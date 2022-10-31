@@ -1,6 +1,6 @@
 package parsing.base
 
-import helper.FakeStudyProgramPreviews
+import helper.FakeStudyPrograms
 import org.scalatest.EitherValues
 import org.scalatest.wordspec.AnyWordSpec
 import parsing.base.FocusAreaFileParser.fileParser
@@ -10,7 +10,7 @@ final class FocusAreaFileParserSpec
     extends AnyWordSpec
     with ParserSpecHelper
     with EitherValues
-    with FakeStudyProgramPreviews {
+    with FakeStudyPrograms {
   "A Focus Area File Parser" should {
     "parse a single focus area" in {
       val input =

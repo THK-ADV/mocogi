@@ -1,7 +1,6 @@
 package parsing.base
 
-import basedata.StudyProgramPreview
-import helper.FakeStudyProgramPreviews
+import helper.FakeStudyPrograms
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatest.{EitherValues, OptionValues}
 import parsing.base.POFileParser.fileParser
@@ -14,7 +13,7 @@ class POFileParserSpec
     with ParserSpecHelper
     with EitherValues
     with OptionValues
-    with FakeStudyProgramPreviews {
+    with FakeStudyPrograms {
 
   "A PO File Parser" should {
     "parse a single po" in {
@@ -44,7 +43,33 @@ class POFileParserSpec
           LocalDate.of(2016, 6, 7)
         )
       )
-      assert(po1.program == StudyProgramPreview("inf_inf"))
+      assert(po1.program == "inf_inf")
+      assert(rest.isEmpty)
+    }
+
+    "parse mim2" in {
+      val input =
+        """inf_mim2:
+          |  version: 2
+          |  date: 05.04.2007
+          |  date_from: 01.09.2001
+          |  date_to: 29.02.2020
+          |  modification_dates:
+          |    - 16.06.2009
+          |  program: program.inf_mim""".stripMargin
+      val (res, rest) = fileParser.parse(input)
+      val po1 = res.value.head
+      assert(po1.abbrev == "inf_mim2")
+      assert(po1.version == 2)
+      assert(po1.date == LocalDate.of(2007, 4, 5))
+      assert(po1.dateFrom == LocalDate.of(2001, 9, 1))
+      assert(po1.dateTo.value == LocalDate.of(2020, 2, 29))
+      assert(
+        po1.modificationDates == List(
+          LocalDate.of(2009, 6, 16)
+        )
+      )
+      assert(po1.program == "inf_mim")
       assert(rest.isEmpty)
     }
 
@@ -81,7 +106,7 @@ class POFileParserSpec
           LocalDate.of(2016, 6, 7)
         )
       )
-      assert(po1.program == StudyProgramPreview("inf_inf"))
+      assert(po1.program == "inf_inf")
       val po2 = res.value(1)
       assert(po2.abbrev == "ing_gme4")
       assert(po2.version == 4)
@@ -89,7 +114,7 @@ class POFileParserSpec
       assert(po2.dateFrom == LocalDate.of(2021, 3, 1))
       assert(po2.dateTo.isEmpty)
       assert(po2.modificationDates.isEmpty)
-      assert(po2.program == StudyProgramPreview("inf_inf"))
+      assert(po2.program == "inf_inf")
       assert(rest.isEmpty)
     }
 
