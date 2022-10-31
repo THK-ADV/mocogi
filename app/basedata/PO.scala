@@ -9,5 +9,5 @@ case class PO(
     dateFrom: LocalDate,
     dateTo: Option[LocalDate],
     modificationDates: List[LocalDate],
-    program: StudyProgramPreview
+    program: String
 )

@@ -1,6 +1,6 @@
 package parsing.base
 
-import basedata.{PO, StudyProgramPreview}
+import basedata.PO
 import parser.Parser.{newline, optional, prefixTo, zeroOrMoreSpaces}
 import parser.ParserOps.{P0, P2, P3, P4, P5, P6}
 import parsing._
@@ -8,7 +8,7 @@ import parsing._
 object POFileParser {
 
   def fileParser(implicit
-      programs: Seq[StudyProgramPreview]
+      programs: Seq[String]
   ) =
     optional(singleLineCommentParser())
       .take(prefixTo(":"))
@@ -30,11 +30,11 @@ object POFileParser {
       )
       .skip(zeroOrMoreSpaces)
       .take(
-        singleValueParser[StudyProgramPreview](
+        singleValueParser[String](
           "program",
-          p => s"program.${p.abbrev}"
-        )
+          p => s"program.$p"
+        )(programs.sorted.reverse)
       )
       .map(PO.tupled)
-      .many(zeroOrMoreSpaces)
+      .all(zeroOrMoreSpaces)
 }

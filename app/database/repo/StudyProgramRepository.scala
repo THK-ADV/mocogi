@@ -59,6 +59,9 @@ class StudyProgramRepository @Inject() (
   def all(): Future[Seq[StudyProgramOutput]] =
     retrieve(tableQuery)
 
+  def allIds(): Future[Seq[String]] =
+    db.run(tableQuery.map(_.abbrev).result)
+
   protected def retrieve(
       query: Query[StudyProgramTable, StudyProgramDbEntry, Seq]
   ) = {

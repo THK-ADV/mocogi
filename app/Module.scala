@@ -57,6 +57,9 @@ class Module() extends AbstractModule {
     bind(classOf[StudyProgramService])
       .to(classOf[StudyProgramServiceImpl])
       .asEagerSingleton()
+    bind(classOf[POService])
+      .to(classOf[POServiceImpl])
+      .asEagerSingleton()
 
     bind(classOf[MarkdownConverter])
       .toProvider(classOf[MarkdownConverterProvider])
