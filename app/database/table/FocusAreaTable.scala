@@ -1,10 +1,10 @@
 package database.table
 
-import database.entities.FocusAreaDbEntry
+import basedata.FocusArea
 import slick.jdbc.PostgresProfile.api._
 
 final class FocusAreaTable(tag: Tag)
-    extends Table[FocusAreaDbEntry](tag, "focus_area") {
+    extends Table[FocusArea](tag, "focus_area") {
 
   def abbrev = column[String]("abbrev", O.PrimaryKey)
 
@@ -16,14 +16,19 @@ final class FocusAreaTable(tag: Tag)
 
   def enDesc = column[String]("en_desc")
 
-  def program = column[String]("program")
+  def studyProgram = column[String]("study_program")
+
+  def studyProgramFk =
+    foreignKey("study_program", studyProgram, TableQuery[StudyProgramTable])(
+      _.abbrev
+    )
 
   override def * = (
     abbrev,
-    program,
+    studyProgram,
     deLabel,
     deDesc,
     enLabel,
     enDesc
-  ) <> (FocusAreaDbEntry.tupled, FocusAreaDbEntry.unapply)
+  ) <> (FocusArea.tupled, FocusArea.unapply)
 }

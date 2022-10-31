@@ -1,28 +1,29 @@
 package controllers
 
-import basedata.FocusArea
 import controllers.json.FocusAreaFormat
-import play.api.libs.json.Writes
+import play.api.libs.json.Json
 import play.api.mvc.{AbstractController, ControllerComponents}
-import service.YamlService
+import service.FocusAreaService
 
+import java.nio.charset.StandardCharsets
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 
 @Singleton
 final class FocusAreaController @Inject() (
     cc: ControllerComponents,
+    val service: FocusAreaService,
     implicit val ctx: ExecutionContext
 ) extends AbstractController(cc)
-    with FocusAreaFormat
-    with YamlController[FocusArea, FocusArea] {
-  override val service = new YamlService[FocusArea, FocusArea] {
-    override def repo = ???
+    with FocusAreaFormat {
+  def all() =
+    Action.async { _ =>
+      service.all().map(xs => Ok(Json.toJson(xs)))
+    }
 
-    override def parser = ???
-
-    override def toInput(output: FocusArea) = ???
-  }
-  override implicit val writesOut: Writes[FocusArea] = focusAreaFormat
-  override implicit val writesIn: Writes[FocusArea] = focusAreaFormat
+  def create() =
+    Action(parse.byteString).async { r =>
+      val input = r.body.decodeString(StandardCharsets.UTF_8)
+      service.create(input).map(xs => Ok(Json.toJson(xs)))
+    }
 }
