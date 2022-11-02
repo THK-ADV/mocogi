@@ -42,7 +42,7 @@ class MetadataCompositeParser @Inject() (
       globalCriteria: Seq[GlobalCriteria],
       pos: Seq[PO]
   ): Parser[ParsedMetadata] =
-    prefix("#---")
+    prefix("---")
       .take(versionSchemeParser)
       .skip(newline)
       .flatMap[ParsedMetadata] { scheme =>
@@ -57,7 +57,7 @@ class MetadataCompositeParser @Inject() (
             )
         }
       }
-      .skip(prefix("#---"))
+      .skip(prefix("---"))
 
   override val versionScheme = VersionScheme(0, "")
 }

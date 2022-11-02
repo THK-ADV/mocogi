@@ -5,15 +5,41 @@ import git.GitFilePath
 import parsing.types._
 import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfigProvider}
 import slick.jdbc.JdbcProfile
+import validator.{Metadata, Module, ModuleRelation, Workload}
 
+import java.util.UUID
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
+case class MetadataOutput(
+    id: UUID,
+    gitPath: String,
+    title: String,
+    abbrev: String,
+    moduleType: String,
+    ects: Double,
+    language: String,
+    duration: Int,
+    season: String,
+    workload: Workload,
+    status: String,
+    location: String,
+    participants: Option[Participants],
+    moduleRelation: Option[ModuleRelation]
+)
+
+trait MetadataRepository {
+  def create(metadata: Metadata, path: GitFilePath): Future[Metadata]
+  def all(): Future[Seq[MetadataOutput]]
+  def allIdsAndAbbrevs(): Future[Seq[(UUID, String)]]
+}
+
 @Singleton
-final class MetadataRepository @Inject() (
+final class MetadataRepositoryImpl @Inject() (
     val dbConfigProvider: DatabaseConfigProvider,
     private implicit val ctx: ExecutionContext
-) extends HasDatabaseConfigProvider[JdbcProfile] {
+) extends MetadataRepository
+    with HasDatabaseConfigProvider[JdbcProfile] {
   import profile.api._
 
   type GetResult = (ParsedMetadata, GitFilePath)
@@ -26,6 +52,12 @@ final class MetadataRepository @Inject() (
 
   private val metadataTable = TableQuery[MetadataTable]
 
+  private val ectsFocusAreaContributionTable =
+    TableQuery[ECTSFocusAreaContributionTable]
+
+  private val moduleRelationTable =
+    TableQuery[ModuleRelationTable]
+
   private val responsibilityTable = TableQuery[ResponsibilityTable]
 
   private val personTable = TableQuery[PersonTable]
@@ -36,8 +68,8 @@ final class MetadataRepository @Inject() (
   private val assessmentMethodTable =
     TableQuery[AssessmentMethodTable]
 
-  def all(): Future[Seq[GetResult]] =
-    Future.successful(Nil)
+  /*def all(): Future[Seq[GetResult]] =
+    Future.successful(Nil)*/
   // fetchWithDependencies(metadataTable)
 
   def delete(path: GitFilePath): Future[Unit] = Future.unit
@@ -128,9 +160,6 @@ final class MetadataRepository @Inject() (
       } yield res
     )
   }*/
-
-  def create(m: ParsedMetadata, path: GitFilePath): Future[AddResult] =
-    Future.failed(new Throwable("currently unsupported"))
 
   /*{
     def go() = {
@@ -346,4 +375,127 @@ final class MetadataRepository @Inject() (
         (Option.empty[String], Option.empty[String])
     }
    */
+
+  /*
+  responsibilities: Responsibilities,
+  assessmentMethods: AssessmentMethods,
+  prerequisites: Prerequisites,
+  validPOs: POs,
+  participants: Option[Participants],
+  competences: List[Competence],
+  globalCriteria: List[GlobalCriteria],
+  taughtWith: List[Module]
+   */
+  override def create(metadata: Metadata, path: GitFilePath) = {
+    val dbEntry = MetadataDbEntry(
+      metadata.id,
+      path.value,
+      metadata.title,
+      metadata.abbrev,
+      metadata.kind.abbrev,
+      metadata.ects.value,
+      metadata.language.abbrev,
+      metadata.duration,
+      metadata.season.abbrev,
+      metadata.workload,
+      metadata.status.abbrev,
+      metadata.location.abbrev,
+      metadata.participants.map(_.min),
+      metadata.participants.map(_.max)
+    )
+
+    val result = for {
+      _ <- metadataTable += dbEntry
+      _ <- ectsFocusAreaContributionTable ++= contributionsToFocusAreas(
+        metadata
+      )
+      _ <- moduleRelationTable ++= moduleRelations(metadata)
+    } yield metadata
+
+    db.run(result)
+  }
+
+  private def moduleRelations(metadata: Metadata): List[ModuleRelationDbEntry] =
+    metadata.relation.fold(List.empty[ModuleRelationDbEntry]) {
+      case ModuleRelation.Parent(children) =>
+        children.map(child =>
+          ModuleRelationDbEntry(
+            metadata.id,
+            ModuleRelationType.Parent,
+            child.id
+          )
+        )
+      case ModuleRelation.Child(parent) =>
+        List(
+          ModuleRelationDbEntry(
+            metadata.id,
+            ModuleRelationType.Child,
+            parent.id
+          )
+        )
+    }
+
+  private def contributionsToFocusAreas(metadata: Metadata) =
+    metadata.ects.contributionsToFocusAreas.map(c =>
+      ECTSFocusAreaContributionDbEntry(
+        metadata.id,
+        c.focusArea.abbrev,
+        c.ectsValue,
+        c.description
+      )
+    )
+
+  override def all() =
+    retrieve(metadataTable)
+
+  private def retrieve(
+      query: Query[MetadataTable, MetadataDbEntry, Seq]
+  ): Future[Seq[MetadataOutput]] =
+    db.run(
+      query
+        .joinLeft(moduleRelationTable)
+        .on(_.id === _.module)
+        .result
+        .map(_.groupBy(_._1).map { case (m, deps) =>
+          val participants = for {
+            min <- m.participantsMin
+            max <- m.participantsMax
+          } yield Participants(min, max)
+          val relations = deps.flatMap(_._2)
+          val relation = relations.headOption.map { r => // TODO test
+            r.relationType match {
+              case ModuleRelationType.Parent =>
+                ModuleRelation
+                  .Parent(
+                    relations.map(d => Module(d.module, "???")).toList
+                  ) // TODO replace ??? with real data
+              case ModuleRelationType.Child =>
+                ModuleRelation.Child(Module(r.module, "???"))
+            }
+          }
+          MetadataOutput(
+            m.id,
+            m.gitPath,
+            m.title,
+            m.abbrev,
+            m.moduleType,
+            m.ects,
+            m.language,
+            m.duration,
+            m.season,
+            m.workload,
+            m.status,
+            m.location,
+            participants,
+            relation
+          )
+        }.toSeq)
+    )
+
+  override def allIdsAndAbbrevs() =
+    db.run(
+      metadataTable
+        .map(m => (m.id, m.abbrev))
+        .result
+    )
 }

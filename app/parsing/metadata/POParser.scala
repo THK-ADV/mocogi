@@ -41,7 +41,7 @@ object POParser {
     prefix("po_mandatory:")
       .skip(zeroOrMoreSpaces)
       .take(
-        studyProgramParser
+        studyProgramParser(pos.sortBy(_.program).reverse)
           .skip(zeroOrMoreSpaces)
           .zip(recommendedSemesterParser)
           .skip(zeroOrMoreSpaces)

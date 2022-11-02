@@ -1,6 +1,7 @@
 package controllers.json
 
 import basedata.FocusAreaPreview
+import database.repo.MetadataOutput
 import parsing.types._
 import play.api.libs.json.{Format, JsError, Json, OFormat}
 import validator.ModuleRelation.{Child, Parent}
@@ -26,7 +27,8 @@ trait MetadataFormat
     with CompetencesFormat
     with GlobalCriteriaFormat
     with FocusAreaFormat
-    with POFormat {
+    with POFormat
+    with JsonNullWritable {
 
   implicit val participantsFormat: Format[Participants] =
     Json.format[Participants]
@@ -97,4 +99,7 @@ trait MetadataFormat
 
   implicit val metaDataFormat: Format[Metadata] =
     Json.format[Metadata]
+
+  implicit val metaDataOutputFormat: Format[MetadataOutput] =
+    Json.format[MetadataOutput]
 }

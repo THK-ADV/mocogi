@@ -1,4 +1,5 @@
 import com.google.inject.{AbstractModule, TypeLiteral}
+import database.repo.{MetadataRepository, MetadataRepositoryImpl}
 import git.publisher.{GitFilesDownloadActor, ModuleCompendiumPublisher}
 import git.{GitConfig, ModuleCompendiumSubscribers}
 import parsing.metadata.MetadataParser
@@ -62,6 +63,24 @@ class Module() extends AbstractModule {
       .asEagerSingleton()
     bind(classOf[FocusAreaService])
       .to(classOf[FocusAreaServiceImpl])
+      .asEagerSingleton()
+    bind(classOf[MetadataRepository])
+      .to(classOf[MetadataRepositoryImpl])
+      .asEagerSingleton()
+    bind(classOf[MetadataService])
+      .to(classOf[MetadataServiceImpl])
+      .asEagerSingleton()
+    bind(classOf[MetadataParserService])
+      .to(classOf[MetadataParserServiceImpl])
+      .asEagerSingleton()
+    bind(classOf[CompetenceService])
+      .to(classOf[CompetenceServiceImpl])
+      .asEagerSingleton()
+    bind(classOf[MetadataPipeline])
+      .to(classOf[MetadataPipelineImpl])
+      .asEagerSingleton()
+    bind(classOf[MetadataValidatorService])
+      .to(classOf[MetadataValidatorServiceImpl])
       .asEagerSingleton()
 
     bind(classOf[MarkdownConverter])
