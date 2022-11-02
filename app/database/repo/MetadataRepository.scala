@@ -9,6 +9,7 @@ import validator.{Metadata, Module, ModuleRelation, Workload}
 
 import java.util.UUID
 import javax.inject.{Inject, Singleton}
+import scala.collection.mutable
 import scala.concurrent.{ExecutionContext, Future}
 
 case class MetadataOutput(
@@ -25,7 +26,9 @@ case class MetadataOutput(
     status: String,
     location: String,
     participants: Option[Participants],
-    moduleRelation: Option[ModuleRelation]
+    moduleRelation: Option[ModuleRelation],
+    moduleManagement: List[String],
+    lecturers: List[String]
 )
 
 trait MetadataRepository {
@@ -377,7 +380,6 @@ final class MetadataRepositoryImpl @Inject() (
    */
 
   /*
-  responsibilities: Responsibilities,
   assessmentMethods: AssessmentMethods,
   prerequisites: Prerequisites,
   validPOs: POs,
@@ -410,6 +412,7 @@ final class MetadataRepositoryImpl @Inject() (
         metadata
       )
       _ <- moduleRelationTable ++= moduleRelations(metadata)
+      _ <- responsibilityTable ++= responsibilities(metadata)
     } yield metadata
 
     db.run(result)
@@ -435,7 +438,9 @@ final class MetadataRepositoryImpl @Inject() (
         )
     }
 
-  private def contributionsToFocusAreas(metadata: Metadata) =
+  private def contributionsToFocusAreas(
+      metadata: Metadata
+  ): List[ECTSFocusAreaContributionDbEntry] =
     metadata.ects.contributionsToFocusAreas.map(c =>
       ECTSFocusAreaContributionDbEntry(
         metadata.id,
@@ -444,6 +449,20 @@ final class MetadataRepositoryImpl @Inject() (
         c.description
       )
     )
+
+  private def responsibilities(
+      metadata: Metadata
+  ): List[ResponsibilityDbEntry] =
+    metadata.responsibilities.lecturers.map(p =>
+      ResponsibilityDbEntry(metadata.id, p.id, ResponsibilityType.Lecturer)
+    ) :::
+      metadata.responsibilities.moduleManagement.map(p =>
+        ResponsibilityDbEntry(
+          metadata.id,
+          p.id,
+          ResponsibilityType.ModuleManagement
+        )
+      )
 
   override def all() =
     retrieve(metadataTable)
@@ -455,13 +474,27 @@ final class MetadataRepositoryImpl @Inject() (
       query
         .joinLeft(moduleRelationTable)
         .on(_.id === _.module)
+        .join(responsibilityTable)
+        .on((a, b) => a._1.id === b.metadata)
         .result
-        .map(_.groupBy(_._1).map { case (m, deps) =>
+        .map(_.groupBy(_._1._1).map { case (m, deps) =>
           val participants = for {
             min <- m.participantsMin
             max <- m.participantsMax
           } yield Participants(min, max)
-          val relations = deps.flatMap(_._2)
+          val relations = mutable.HashSet[ModuleRelationDbEntry]()
+          val moduleManagement = mutable.HashSet[String]()
+          val lecturer = mutable.HashSet[String]()
+
+          deps.foreach { case ((_, mr), r) =>
+            mr.foreach(relations += _)
+            r.responsibilityType match {
+              case ResponsibilityType.ModuleManagement =>
+                moduleManagement += r.person
+              case ResponsibilityType.Lecturer => lecturer += r.person
+            }
+          }
+
           val relation = relations.headOption.map { r => // TODO test
             r.relationType match {
               case ModuleRelationType.Parent =>
@@ -473,6 +506,7 @@ final class MetadataRepositoryImpl @Inject() (
                 ModuleRelation.Child(Module(r.module, "???"))
             }
           }
+
           MetadataOutput(
             m.id,
             m.gitPath,
@@ -487,7 +521,9 @@ final class MetadataRepositoryImpl @Inject() (
             m.status,
             m.location,
             participants,
-            relation
+            relation,
+            moduleManagement.toList,
+            lecturer.toList
           )
         }.toSeq)
     )

@@ -7,4 +7,9 @@ package object table {
   implicit val moduleRelationColumnType: BaseColumnType[ModuleRelationType] =
     MappedColumnType
       .base[ModuleRelationType, String](_.toString, ModuleRelationType.apply)
+
+  implicit val responsibilityTypeColumnType
+      : BaseColumnType[ResponsibilityType] =
+    MappedColumnType
+      .base[ResponsibilityType, String](_.toString, ResponsibilityType.apply)
 }

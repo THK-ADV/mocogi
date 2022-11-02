@@ -7,7 +7,7 @@ import java.util.UUID
 case class ResponsibilityDbEntry(
     metadata: UUID,
     person: String,
-    kind: ResponsibilityType
+    responsibilityType: ResponsibilityType
 )
 
 final class ResponsibilityTable(tag: Tag)
@@ -17,7 +17,8 @@ final class ResponsibilityTable(tag: Tag)
 
   def person = column[String]("person", O.PrimaryKey)
 
-  def kind = column[String]("kind", O.PrimaryKey)
+  def responsibilityType =
+    column[ResponsibilityType]("responsibility_type", O.PrimaryKey)
 
   def metadataFk =
     foreignKey("metadata", metadata, TableQuery[MetadataTable])(_.id)
@@ -28,15 +29,6 @@ final class ResponsibilityTable(tag: Tag)
   override def * = (
     metadata,
     person,
-    kind
-  ) <> (mapRow, unmapRow)
-
-  def mapRow: ((UUID, String, String)) => ResponsibilityDbEntry = {
-    case (metadata, person, kind) =>
-      ResponsibilityDbEntry(metadata, person, ResponsibilityType(kind))
-  }
-
-  def unmapRow: ResponsibilityDbEntry => Option[(UUID, String, String)] = { a =>
-    Option((a.metadata, a.person, a.kind.toString))
-  }
+    responsibilityType
+  ) <> (ResponsibilityDbEntry.tupled, ResponsibilityDbEntry.unapply)
 }

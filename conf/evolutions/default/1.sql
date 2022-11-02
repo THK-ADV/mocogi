@@ -257,10 +257,10 @@ create table module_relation
 
 create table responsibility
 (
-    "metadata" uuid not null,
-    "person"   text not null,
-    "kind"     text not null,
-    PRIMARY KEY (metadata, person, kind),
+    "metadata"            uuid not null,
+    "person"              text not null,
+    "responsibility_type" text not null,
+    PRIMARY KEY (metadata, person, responsibility_type),
     FOREIGN KEY (metadata) REFERENCES metadata (id),
     FOREIGN KEY (person) REFERENCES person (id)
 );
