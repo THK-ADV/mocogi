@@ -10,5 +10,5 @@ case class Prerequisites(
 case class PrerequisiteEntry(
     text: String,
     modules: List[Module],
-    studyPrograms: List[PO]
+    pos: List[PO]
 )

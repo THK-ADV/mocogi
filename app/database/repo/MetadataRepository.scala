@@ -1,11 +1,11 @@
 package database.repo
 
-import database.table._
+import database.table.{PrerequisiteType, PrerequisitesTable, _}
 import git.GitFilePath
 import parsing.types._
 import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfigProvider}
 import slick.jdbc.JdbcProfile
-import validator.{Metadata, Module, ModuleRelation, Workload}
+import validator.{Metadata, Module, ModuleRelation, PrerequisiteEntry, Workload}
 
 import java.util.UUID
 import javax.inject.{Inject, Singleton}
@@ -17,6 +17,12 @@ case class AssessmentMethodEntryOutput(
     method: String,
     percentage: Option[Double],
     precondition: List[String]
+)
+
+case class PrerequisiteEntryOutput(
+    text: String,
+    modules: List[UUID],
+    pos: List[String]
 )
 
 case class MetadataOutput(
@@ -37,7 +43,9 @@ case class MetadataOutput(
     moduleManagement: List[String],
     lecturers: List[String],
     mandatory: List[AssessmentMethodEntryOutput],
-    optional: List[AssessmentMethodEntryOutput]
+    optional: List[AssessmentMethodEntryOutput],
+    recommendedPrerequisites: Option[PrerequisiteEntryOutput],
+    requiredPrerequisites: Option[PrerequisiteEntryOutput]
 )
 
 trait MetadataRepository {
@@ -53,6 +61,12 @@ final class MetadataRepositoryImpl @Inject() (
 ) extends MetadataRepository
     with HasDatabaseConfigProvider[JdbcProfile] {
   import profile.api._
+
+  type PrerequisitesDbResult = (
+      List[PrerequisitesDbEntry],
+      List[PrerequisitesModuleDbEntry],
+      List[PrerequisitesPODbEntry]
+  )
 
   type GetResult = (ParsedMetadata, GitFilePath)
 
@@ -78,318 +92,17 @@ final class MetadataRepositoryImpl @Inject() (
   private val metadataAssessmentMethodPreconditionTable =
     TableQuery[MetadataAssessmentMethodPreconditionTable]
 
-  /*def all(): Future[Seq[GetResult]] =
-    Future.successful(Nil)*/
-  // fetchWithDependencies(metadataTable)
+  private val prerequisitesTable =
+    TableQuery[PrerequisitesTable]
 
-  def delete(path: GitFilePath): Future[Unit] = Future.unit
-  /*{
-    def go(
-        query: Query[MetadataTable, MetadataDbEntry, Seq],
-        m: MetadataDbEntry
-    ) =
-      DBIO
-        .seq(
-          assessmentMethodMetadataTable.filter(_.metadata === m.id).delete,
-          responsibilityTable.filter(_.metadata === m.id).delete,
-          query.delete
-        )
-        .transactionally
+  private val prerequisitesModuleTable =
+    TableQuery[PrerequisitesModuleTable]
 
-    val query = metadataTable.filter(_.gitPath === path.value)
-
-    db.run(
-      for {
-        exists <- query.result
-        _ <-
-          if (exists.isEmpty)
-            DBIO.failed(
-              new Throwable(s"no metadata with path ${path.value} found")
-            )
-          else if (exists.size > 1)
-            DBIO.failed(
-              new Throwable(
-                s"more than one metadata objects with path ${path.value} are found"
-              )
-            )
-          else go(query, exists.head)
-      } yield ()
-    )
-  }*/
-
-  def update(m: ParsedMetadata, path: GitFilePath): Future[AddResult] =
-    Future.failed(new Throwable("currently unsupported"))
-  /*
-    def go(query: Query[MetadataTable, MetadataDbEntry, Seq]) = {
-      val mdb = toMetadataDbEntry(m, path)
-      val rdb = responsibilityDbEntries(m)
-      val adb = assessmentMethodMetadataDbEntries(m)
-
-      (
-        for {
-          _ <- query.update(mdb)
-          _ <- DBIO.seq(
-            rdb.map { rdb =>
-              for {
-                _ <- responsibilityTable
-                  .filter(_.metadata === rdb.metadata)
-                  .delete
-                _ <- responsibilityTable += rdb
-              } yield ()
-            }: _*
-          )
-          _ <- DBIO.seq(
-            adb.map { adb =>
-              for {
-                _ <- assessmentMethodMetadataTable
-                  .filter(_.metadata === adb.metadata)
-                  .delete
-                _ <- assessmentMethodMetadataTable += adb
-              } yield ()
-            }: _*
-          )
-        } yield (mdb, rdb, adb)
-      ).transactionally
-    }
-
-    val query = existsQuery(m)
-
-    db.run(
-      for {
-        exists <- query.result
-        res <-
-          if (exists.isEmpty)
-            DBIO.failed(new Throwable(s"no metadata with id ${m.id} found"))
-          else if (exists.size > 1)
-            DBIO.failed(
-              new Throwable(
-                s"more than one metadata objects with id ${m.id} are found"
-              )
-            )
-          else go(query)
-      } yield res
-    )
-  }*/
-
-  /*{
-    def go() = {
-      val mdb = toMetadataDbEntry(m, path)
-      val rdb = responsibilityDbEntries(m)
-      val adb = assessmentMethodMetadataDbEntries(m)
-
-      (
-        for {
-          a <- metadataTable returning metadataTable += mdb
-          b <- DBIO.sequence(
-            rdb.map(responsibilityTable returning responsibilityTable += _)
-          )
-          c <- DBIO.sequence(
-            adb.map(
-              assessmentMethodMetadataTable returning assessmentMethodMetadataTable += _
-            )
-          )
-        } yield (a, b, c)
-      ).transactionally
-    }
-
-    def alreadyExists() =
-      DBIO.failed(new Throwable(s"metadata with id ${m.id} already exists"))
-
-    db.run(
-      for {
-        exists <- existsQuery(m).result
-        res <-
-          if (exists.isEmpty) go()
-          else alreadyExists()
-      } yield res
-    )
-  }*/
-
-  /*private def fetchWithDependencies(
-      query: Query[MetadataTable, MetadataDbEntry, Seq]
-  ): Future[Seq[GetResult]] = {
-    val baseQ = for {
-      ((((q, r), p), ap), am) <- query
-        .joinLeft(responsibilityTable)
-        .on(_.id === _.metadata)
-        .joinLeft(personTable)
-        .on((l, r) => l._2.map(_.person === r.abbrev).getOrElse(false))
-        .joinLeft(assessmentMethodMetadataTable)
-        .on(_._1._1.id === _.metadata)
-        .filter(_._2.isDefined)
-        .joinLeft(assessmentMethodTable)
-        .on((l, r) =>
-          l._2.map(_.assessmentMethod === r.abbrev).getOrElse(false)
-        )
-      mt <- q.moduleTypeFk
-      lang <- q.languageFk
-      se <- q.seasonFk
-      st <- q.statusFk
-      loc <- q.locationFk
-    } yield ((q, mt, lang, se, st, loc), r, p, ap, am)
-
-    val action = baseQ.result.map(_.groupBy(_._1._1.id).map { case (_, xs) =>
-      val metadata = xs.head._1
-      val resp = xs.flatMap(_._2)
-      val ps = xs.flatMap(_._3)
-      val (coord, lec) = resp.zip(ps).partitionMap { case (r, p) =>
-        assert(r.person == p.abbrev) // TODO
-        Either.cond(r.kind == ModuleManagement, p, p)
-      }
-      val aps = xs.flatMap(_._4)
-      val ams = xs.flatMap(_._5)
-      val amps = aps.zip(ams).map { a =>
-        assert(a._1.assessmentMethod == a._2.abbrev) // TODO
-        AssessmentMethodPercentage(a._2, a._1.percentage)
-      }
-      (
-        toMetadata(metadata, coord.distinct, lec.distinct, amps.distinct),
-        GitFilePath(metadata._1.gitPath)
-      )
-    }.toSeq)
-
-    db.run(action.transactionally)
-  }*/
-
-  def exists(m: ParsedMetadata): Future[Boolean] =
-    Future.successful(true)
-
-  // db.run(existsQuery(m).result.map(_.nonEmpty))
-
-  /*  private def existsQuery(
-      m: Metadata
-  ): Query[MetadataTable, MetadataDbEntry, Seq] =
-    metadataTable.filter(_.id === m.id)*/
-
-  /*private def toMetadataDbEntry(m: Metadata, path: GitFilePath) = {
-    val (children, parent) = fromRelation(m.relation)
-    MetadataDbEntry(
-      m.id,
-      path.value,
-      m.title,
-      m.abbrev,
-      m.kind.abbrev,
-      children,
-      parent,
-      m.credits.value,
-      m.language.abbrev,
-      m.duration,
-      m.frequency.abbrev,
-      m.workload.lecture,
-      m.workload.seminar,
-      m.workload.practical,
-      m.workload.exercise,
-      m.workload.projectSupervision,
-      m.workload.projectWork,
-      fromList(
-        m.recommendedPrerequisites.map(_.modules) getOrElse Nil
-      ), // TODO use all fields
-      fromList(
-        m.requiredPrerequisites.map(_.modules) getOrElse Nil
-      ), // TODO use all fields
-      m.status.abbrev,
-      m.location.abbrev,
-      fromList(m.poMandatory.map(_.studyProgram)) // TODO
-    )
-  }
-
-  private def toList(s: String): List[String] =
-    if (s.isEmpty) Nil
-    else s.split(",").toList
-
-  private def fromList(xs: List[String]): String =
-    xs.mkString(",")
-
-  private def assessmentMethodMetadataDbEntries(
-      m: Metadata
-  ): List[AssessmentMethodMetadataDbEntry] =
-    m.assessmentMethodsMandatory.map(a =>
-      AssessmentMethodMetadataDbEntry(
-        m.id,
-        a.method.abbrev,
-        a.percentage // TODO use all fields
-      )
-    )
-
-  private def responsibilityDbEntries(
-      m: Metadata
-  ): List[ResponsibilityDbEntry] = {
-    val lecturers = m.responsibilities.lecturers.map(p =>
-      ResponsibilityDbEntry(m.id, p.abbrev, Lecturer)
-    )
-    val coordinator = m.responsibilities.moduleManagement.map(p =>
-      ResponsibilityDbEntry(m.id, p.abbrev, ModuleManagement)
-    )
-    lecturers ::: coordinator
-  }
-
-  private def toRelation(
-      children: Option[String],
-      parent: Option[String]
-  ): Option[ModuleRelation] =
-    children.map(toList _ andThen Parent.apply) orElse
-      parent.map(Child.apply)
-
-  private def toMetadata: (
-      (MetadataDbEntry, ModuleType, Language, Season, Status, Location),
-      Seq[Person],
-      Seq[Person],
-      Seq[AssessmentMethodPercentage]
-  ) => Metadata = { case ((m, mt, lang, se, st, loc), coord, lec, amps) =>
-    Metadata(
-      m.id,
-      m.title,
-      m.abbrev,
-      mt,
-      toRelation(m.children, m.parent),
-      ECTS(m.credits, Nil),
-      lang,
-      m.duration,
-      se,
-      Responsibilities(coord.toList, lec.toList),
-      amps.toList.map(a => AssessmentMethodEntry(a.assessmentMethod, a.percentage, Nil)), // TODO use all fields
-      Nil, // TODO add support
-      Workload(
-        m.workloadLecture,
-        m.workloadSeminar,
-        m.workloadPractical,
-        m.workloadExercise,
-        m.workloadProjectSupervision,
-        m.workloadProjectWork
-      ),
-      Some(PrerequisiteEntry("", toList(m.recommendedPrerequisites), Nil)),
-      Some(PrerequisiteEntry("", toList(m.requiredPrerequisites), Nil)),
-      st,
-      loc,
-      toList(m.poMandatory).map(po => POMandatory(po, Nil, Nil)), // TODO
-      Nil,
-      None,
-      Nil,
-      Nil,
-      Nil
-    )
-  }
-
-  private def fromRelation(
-      relation: Option[ModuleRelation]
-  ): (Option[String], Option[String]) =
-    relation match {
-      case Some(r) =>
-        r match {
-          case Parent(children) =>
-            (Some(fromList(children)), Option.empty[String])
-          case Child(parent) =>
-            (Option.empty[String], Some(parent))
-        }
-      case None =>
-        (Option.empty[String], Option.empty[String])
-    }
-   */
+  private val prerequisitesPOTable =
+    TableQuery[PrerequisitesPOTable]
 
   /*
-  prerequisites: Prerequisites,
   validPOs: POs,
-  participants: Option[Participants],
   competences: List[Competence],
   globalCriteria: List[GlobalCriteria],
   taughtWith: List[Module]
@@ -412,6 +125,9 @@ final class MetadataRepositoryImpl @Inject() (
       metadata.participants.map(_.max)
     )
     val (methods, preconditions) = metadataAssessmentMethods(metadata)
+    val (entries, prerequisitesModules, prerequisitesPOs) = prerequisites(
+      metadata
+    )
 
     val result = for {
       _ <- metadataTable += dbEntry
@@ -422,9 +138,50 @@ final class MetadataRepositoryImpl @Inject() (
       _ <- responsibilityTable ++= responsibilities(metadata)
       _ <- metadataAssessmentMethodTable ++= methods
       _ <- metadataAssessmentMethodPreconditionTable ++= preconditions
+      _ <- prerequisitesTable ++= entries
+      _ <- prerequisitesModuleTable ++= prerequisitesModules
+      _ <- prerequisitesPOTable ++= prerequisitesPOs
     } yield metadata
 
     db.run(result)
+  }
+
+  private def prerequisites(metadata: Metadata): PrerequisitesDbResult = {
+    val entries = ListBuffer[PrerequisitesDbEntry]()
+    val modules = ListBuffer[PrerequisitesModuleDbEntry]()
+    val pos = ListBuffer[PrerequisitesPODbEntry]()
+
+    def go(
+        entry: PrerequisiteEntry,
+        prerequisiteType: PrerequisiteType
+    ) = {
+      val prerequisites = PrerequisitesDbEntry(
+        UUID.randomUUID,
+        metadata.id,
+        prerequisiteType,
+        entry.text
+      )
+      entries += prerequisites
+      modules ++= entry.modules.map(m =>
+        PrerequisitesModuleDbEntry(prerequisites.id, m.id)
+      )
+      pos ++= entry.pos.map(po =>
+        PrerequisitesPODbEntry(prerequisites.id, po.abbrev)
+      )
+    }
+
+    metadata.prerequisites.required.foreach(
+      go(_, PrerequisiteType.Required)
+    )
+    metadata.prerequisites.recommended.foreach(
+      go(_, PrerequisiteType.Recommended)
+    )
+
+    (
+      entries.toList,
+      modules.toList,
+      pos.toList
+    )
   }
 
   private def moduleRelations(metadata: Metadata): List[ModuleRelationDbEntry] =
@@ -517,6 +274,12 @@ final class MetadataRepositoryImpl @Inject() (
       .joinLeft(metadataAssessmentMethodPreconditionTable)
       .on(_.id === _.metadataAssessmentMethod)
 
+    val prerequisites = prerequisitesTable
+      .joinLeft(prerequisitesModuleTable)
+      .on(_.id === _.prerequisites)
+      .joinLeft(prerequisitesPOTable)
+      .on(_._1.id === _.prerequisites)
+
     db.run(
       query
         .joinLeft(moduleRelationTable)
@@ -525,8 +288,10 @@ final class MetadataRepositoryImpl @Inject() (
         .on((a, b) => a._1.id === b.metadata)
         .joinLeft(methods)
         .on((a, b) => a._1._1.id === b._1.metadata)
+        .joinLeft(prerequisites)
+        .on(_._1._1._1.id === _._1._1.metadata)
         .result
-        .map(_.groupBy(_._1._1._1).map { case (m, deps) =>
+        .map(_.groupBy(_._1._1._1._1).map { case (m, deps) =>
           val participants = for {
             min <- m.participantsMin
             max <- m.participantsMax
@@ -540,8 +305,23 @@ final class MetadataRepositoryImpl @Inject() (
             mutable.HashSet[(UUID, AssessmentMethodEntryOutput)]()
           val preconditions =
             mutable.HashSet[MetadataAssessmentMethodPreconditionDbEntry]()
+          var recommendedPrerequisite = Option.empty[(UUID, PrerequisiteEntryOutput)]
+          var requiredPrerequisite = Option.empty[(UUID, PrerequisiteEntryOutput)]
+          val prerequisitesModules = mutable.HashSet[PrerequisitesModuleDbEntry]()
+          val prerequisitesPOS = mutable.HashSet[PrerequisitesPODbEntry]()
 
-          deps.foreach { case (((_, mr), r), am) =>
+          deps.foreach { case ((((_, mr), r), am), p) =>
+            p.foreach { case ((e, m), po) =>
+              val prerequisite = Some(e.id -> PrerequisiteEntryOutput(e.text, Nil, Nil))
+              e.prerequisitesType match {
+                case PrerequisiteType.Required =>
+                  requiredPrerequisite = prerequisite
+                case PrerequisiteType.Recommended =>
+                  recommendedPrerequisite = prerequisite
+              }
+              m.foreach(prerequisitesModules += _)
+              po.foreach(prerequisitesPOS += _)
+            }
             mr.foreach(relations += _)
             r.responsibilityType match {
               case ResponsibilityType.ModuleManagement =>
@@ -589,26 +369,6 @@ final class MetadataRepositoryImpl @Inject() (
             }
           }
 
-          val mandatory = mandatoryAssessmentMethods
-            .map(a =>
-              a._2.copy(precondition =
-                preconditions
-                  .filter(_.metadataAssessmentMethod == a._1)
-                  .map(_.assessmentMethod)
-                  .toList
-              )
-            )
-
-          val optional = optionalAssessmentMethods
-            .map(a =>
-              a._2.copy(precondition =
-                preconditions
-                  .filter(_.metadataAssessmentMethod == a._1)
-                  .map(_.assessmentMethod)
-                  .toList
-              )
-            )
-
           MetadataOutput(
             m.id,
             m.gitPath,
@@ -626,8 +386,32 @@ final class MetadataRepositoryImpl @Inject() (
             relation,
             moduleManagement.toList,
             lecturer.toList,
-            mandatory.toList,
-            optional.toList
+            mandatoryAssessmentMethods
+              .map(a =>
+                a._2.copy(precondition =
+                  preconditions
+                    .filter(_.metadataAssessmentMethod == a._1)
+                    .map(_.assessmentMethod)
+                    .toList
+                )
+              ).toList,
+            optionalAssessmentMethods
+              .map(a =>
+                a._2.copy(precondition =
+                  preconditions
+                    .filter(_.metadataAssessmentMethod == a._1)
+                    .map(_.assessmentMethod)
+                    .toList
+                )
+              ).toList,
+            recommendedPrerequisite.map(a => a._2.copy(
+              modules = prerequisitesModules.filter(_.prerequisites == a._1).map(_.module).toList,
+              pos = prerequisitesPOS.filter(_.prerequisites == a._1).map(_.po).toList
+            )),
+            requiredPrerequisite.map(a => a._2.copy(
+              modules = prerequisitesModules.filter(_.prerequisites == a._1).map(_.module).toList,
+              pos = prerequisitesPOS.filter(_.prerequisites == a._1).map(_.po).toList
+            ))
           )
         }.toSeq)
     )

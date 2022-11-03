@@ -287,10 +287,10 @@ create table metadata_assessment_method_precondition
 
 create table prerequisites
 (
-    "id"                 uuid PRIMARY KEY,
-    "metadata"           uuid not null,
-    "prerequisites_type" text not null,
-    "text"               text not null,
+    "id"                uuid PRIMARY KEY,
+    "metadata"          uuid not null,
+    "prerequisite_type" text not null,
+    "text"              text not null,
     FOREIGN KEY (metadata) REFERENCES metadata (id)
 );
 
@@ -303,13 +303,13 @@ create table prerequisites_module
     FOREIGN KEY (module) REFERENCES metadata (id)
 );
 
-create table prerequisites_study_program
+create table prerequisites_po
 (
     "prerequisites" uuid not null,
-    "study_program" text not null,
-    PRIMARY KEY (prerequisites, study_program),
+    "po" text not null,
+    PRIMARY KEY (prerequisites, po),
     FOREIGN KEY (prerequisites) REFERENCES prerequisites (id),
-    FOREIGN KEY (study_program) REFERENCES study_program (abbrev)
+    FOREIGN KEY (po) REFERENCES po (abbrev)
 );
 
 create table po_mandatory
@@ -369,7 +369,7 @@ drop table metadata_global_criteria if exists;
 drop table metadata_competence if exists;
 drop table po_optional if exists;
 drop table po_mandatory if exists;
-drop table prerequisites_study_program if exists;
+drop table prerequisites_po if exists;
 drop table prerequisites_module if exists;
 drop table prerequisites if exists;
 drop table metadata_assessment_method_precondition if exists;

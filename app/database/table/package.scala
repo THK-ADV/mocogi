@@ -20,4 +20,11 @@ package object table {
         _.toString,
         AssessmentMethodType.apply
       )
+
+  implicit val prerequisiteTypeColumnType: BaseColumnType[PrerequisiteType] =
+    MappedColumnType
+      .base[PrerequisiteType, String](
+        _.toString,
+        PrerequisiteType.apply
+      )
 }

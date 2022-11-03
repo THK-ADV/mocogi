@@ -1,7 +1,11 @@
 package controllers.json
 
 import basedata.FocusAreaPreview
-import database.repo.{AssessmentMethodEntryOutput, MetadataOutput}
+import database.repo.{
+  AssessmentMethodEntryOutput,
+  MetadataOutput,
+  PrerequisiteEntryOutput
+}
 import parsing.types._
 import play.api.libs.json.{Format, JsError, Json, OFormat}
 import validator.ModuleRelation.{Child, Parent}
@@ -103,6 +107,9 @@ trait MetadataFormat
   implicit val assessmentMethodEntryOutputFormat
       : Format[AssessmentMethodEntryOutput] =
     Json.format[AssessmentMethodEntryOutput]
+
+  implicit val prerequisiteEntryOutputFormat: Format[PrerequisiteEntryOutput] =
+    Json.format[PrerequisiteEntryOutput]
 
   implicit val metaDataOutputFormat: Format[MetadataOutput] =
     Json.format[MetadataOutput]
