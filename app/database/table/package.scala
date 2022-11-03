@@ -12,4 +12,12 @@ package object table {
       : BaseColumnType[ResponsibilityType] =
     MappedColumnType
       .base[ResponsibilityType, String](_.toString, ResponsibilityType.apply)
+
+  implicit val assessmentMethodTypeColumnType
+      : BaseColumnType[AssessmentMethodType] =
+    MappedColumnType
+      .base[AssessmentMethodType, String](
+        _.toString,
+        AssessmentMethodType.apply
+      )
 }

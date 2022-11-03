@@ -1,8 +1,8 @@
 package database.repo
 
 import database.table.{
-  AssessmentMethodMetadataPreconditionDbEntry,
-  AssessmentMethodMetadataPreconditionTable
+  MetadataAssessmentMethodPreconditionDbEntry,
+  MetadataAssessmentMethodPreconditionTable
 }
 import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfigProvider}
 import slick.jdbc.JdbcProfile
@@ -15,20 +15,20 @@ class AssessmentMethodMetadataPreconditionRepository @Inject() (
     val dbConfigProvider: DatabaseConfigProvider,
     implicit val ctx: ExecutionContext
 ) extends Repository[
-      AssessmentMethodMetadataPreconditionDbEntry,
-      AssessmentMethodMetadataPreconditionDbEntry,
-      AssessmentMethodMetadataPreconditionTable
+      MetadataAssessmentMethodPreconditionDbEntry,
+      MetadataAssessmentMethodPreconditionDbEntry,
+      MetadataAssessmentMethodPreconditionTable
     ]
     with HasDatabaseConfigProvider[JdbcProfile] {
   import profile.api._
 
   protected val tableQuery =
-    TableQuery[AssessmentMethodMetadataPreconditionTable]
+    TableQuery[MetadataAssessmentMethodPreconditionTable]
 
   override protected def retrieve(
       query: Query[
-        AssessmentMethodMetadataPreconditionTable,
-        AssessmentMethodMetadataPreconditionDbEntry,
+        MetadataAssessmentMethodPreconditionTable,
+        MetadataAssessmentMethodPreconditionDbEntry,
         Seq
       ]
   ) =

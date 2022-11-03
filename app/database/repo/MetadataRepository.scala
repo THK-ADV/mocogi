@@ -10,7 +10,14 @@ import validator.{Metadata, Module, ModuleRelation, Workload}
 import java.util.UUID
 import javax.inject.{Inject, Singleton}
 import scala.collection.mutable
+import scala.collection.mutable.ListBuffer
 import scala.concurrent.{ExecutionContext, Future}
+
+case class AssessmentMethodEntryOutput(
+    method: String,
+    percentage: Option[Double],
+    precondition: List[String]
+)
 
 case class MetadataOutput(
     id: UUID,
@@ -28,7 +35,9 @@ case class MetadataOutput(
     participants: Option[Participants],
     moduleRelation: Option[ModuleRelation],
     moduleManagement: List[String],
-    lecturers: List[String]
+    lecturers: List[String],
+    mandatory: List[AssessmentMethodEntryOutput],
+    optional: List[AssessmentMethodEntryOutput]
 )
 
 trait MetadataRepository {
@@ -50,7 +59,7 @@ final class MetadataRepositoryImpl @Inject() (
   type AddResult = (
       MetadataDbEntry,
       List[ResponsibilityDbEntry],
-      List[AssessmentMethodMetadataDbEntry]
+      List[MetadataAssessmentMethodDbEntry]
   )
 
   private val metadataTable = TableQuery[MetadataTable]
@@ -63,13 +72,11 @@ final class MetadataRepositoryImpl @Inject() (
 
   private val responsibilityTable = TableQuery[ResponsibilityTable]
 
-  private val personTable = TableQuery[PersonTable]
+  private val metadataAssessmentMethodTable =
+    TableQuery[MetadataAssessmentMethodTable]
 
-  private val assessmentMethodMetadataTable =
-    TableQuery[AssessmentMethodMetadataTable]
-
-  private val assessmentMethodTable =
-    TableQuery[AssessmentMethodTable]
+  private val metadataAssessmentMethodPreconditionTable =
+    TableQuery[MetadataAssessmentMethodPreconditionTable]
 
   /*def all(): Future[Seq[GetResult]] =
     Future.successful(Nil)*/
@@ -380,7 +387,6 @@ final class MetadataRepositoryImpl @Inject() (
    */
 
   /*
-  assessmentMethods: AssessmentMethods,
   prerequisites: Prerequisites,
   validPOs: POs,
   participants: Option[Participants],
@@ -405,6 +411,7 @@ final class MetadataRepositoryImpl @Inject() (
       metadata.participants.map(_.min),
       metadata.participants.map(_.max)
     )
+    val (methods, preconditions) = metadataAssessmentMethods(metadata)
 
     val result = for {
       _ <- metadataTable += dbEntry
@@ -413,6 +420,8 @@ final class MetadataRepositoryImpl @Inject() (
       )
       _ <- moduleRelationTable ++= moduleRelations(metadata)
       _ <- responsibilityTable ++= responsibilities(metadata)
+      _ <- metadataAssessmentMethodTable ++= methods
+      _ <- metadataAssessmentMethodPreconditionTable ++= preconditions
     } yield metadata
 
     db.run(result)
@@ -464,20 +473,60 @@ final class MetadataRepositoryImpl @Inject() (
         )
       )
 
+  private def metadataAssessmentMethods(
+      metadata: Metadata
+  ): (
+      List[MetadataAssessmentMethodDbEntry],
+      List[MetadataAssessmentMethodPreconditionDbEntry]
+  ) = {
+    val metadataAssessmentMethods =
+      ListBuffer[MetadataAssessmentMethodDbEntry]()
+    val metadataAssessmentMethodPreconditions =
+      ListBuffer[MetadataAssessmentMethodPreconditionDbEntry]()
+
+    metadata.assessmentMethods.mandatory.foreach { m =>
+      val metadataAssessmentMethod = MetadataAssessmentMethodDbEntry(
+        UUID.randomUUID,
+        metadata.id,
+        m.method.abbrev,
+        AssessmentMethodType.Mandatory,
+        m.percentage
+      )
+      metadataAssessmentMethods += metadataAssessmentMethod
+      m.precondition.foreach { m2 =>
+        val precondition = MetadataAssessmentMethodPreconditionDbEntry(
+          m2.abbrev,
+          metadataAssessmentMethod.id
+        )
+        metadataAssessmentMethodPreconditions += precondition
+      }
+    }
+    (
+      metadataAssessmentMethods.toList,
+      metadataAssessmentMethodPreconditions.toList
+    )
+  }
+
   override def all() =
     retrieve(metadataTable)
 
   private def retrieve(
       query: Query[MetadataTable, MetadataDbEntry, Seq]
-  ): Future[Seq[MetadataOutput]] =
+  ): Future[Seq[MetadataOutput]] = {
+    val methods = metadataAssessmentMethodTable
+      .joinLeft(metadataAssessmentMethodPreconditionTable)
+      .on(_.id === _.metadataAssessmentMethod)
+
     db.run(
       query
         .joinLeft(moduleRelationTable)
         .on(_.id === _.module)
         .join(responsibilityTable)
         .on((a, b) => a._1.id === b.metadata)
+        .joinLeft(methods)
+        .on((a, b) => a._1._1.id === b._1.metadata)
         .result
-        .map(_.groupBy(_._1._1).map { case (m, deps) =>
+        .map(_.groupBy(_._1._1._1).map { case (m, deps) =>
           val participants = for {
             min <- m.participantsMin
             max <- m.participantsMax
@@ -485,13 +534,46 @@ final class MetadataRepositoryImpl @Inject() (
           val relations = mutable.HashSet[ModuleRelationDbEntry]()
           val moduleManagement = mutable.HashSet[String]()
           val lecturer = mutable.HashSet[String]()
+          val mandatoryAssessmentMethods =
+            mutable.HashSet[(UUID, AssessmentMethodEntryOutput)]()
+          val optionalAssessmentMethods =
+            mutable.HashSet[(UUID, AssessmentMethodEntryOutput)]()
+          val preconditions =
+            mutable.HashSet[MetadataAssessmentMethodPreconditionDbEntry]()
 
-          deps.foreach { case ((_, mr), r) =>
+          deps.foreach { case (((_, mr), r), am) =>
             mr.foreach(relations += _)
             r.responsibilityType match {
               case ResponsibilityType.ModuleManagement =>
                 moduleManagement += r.person
               case ResponsibilityType.Lecturer => lecturer += r.person
+            }
+            am.foreach { case (am, amp) =>
+              amp.foreach(p =>
+                preconditions += MetadataAssessmentMethodPreconditionDbEntry(
+                  p.assessmentMethod,
+                  p.metadataAssessmentMethod
+                )
+              )
+              am.assessmentMethodType match {
+                case AssessmentMethodType.Mandatory =>
+                  mandatoryAssessmentMethods +=
+                    am.id ->
+                      AssessmentMethodEntryOutput(
+                        am.assessmentMethod,
+                        am.percentage,
+                        Nil
+                      )
+
+                case AssessmentMethodType.Optional =>
+                  optionalAssessmentMethods +=
+                    am.id ->
+                      AssessmentMethodEntryOutput(
+                        am.assessmentMethod,
+                        am.percentage,
+                        Nil
+                      )
+              }
             }
           }
 
@@ -506,6 +588,26 @@ final class MetadataRepositoryImpl @Inject() (
                 ModuleRelation.Child(Module(r.module, "???"))
             }
           }
+
+          val mandatory = mandatoryAssessmentMethods
+            .map(a =>
+              a._2.copy(precondition =
+                preconditions
+                  .filter(_.metadataAssessmentMethod == a._1)
+                  .map(_.assessmentMethod)
+                  .toList
+              )
+            )
+
+          val optional = optionalAssessmentMethods
+            .map(a =>
+              a._2.copy(precondition =
+                preconditions
+                  .filter(_.metadataAssessmentMethod == a._1)
+                  .map(_.assessmentMethod)
+                  .toList
+              )
+            )
 
           MetadataOutput(
             m.id,
@@ -523,10 +625,13 @@ final class MetadataRepositoryImpl @Inject() (
             participants,
             relation,
             moduleManagement.toList,
-            lecturer.toList
+            lecturer.toList,
+            mandatory.toList,
+            optional.toList
           )
         }.toSeq)
     )
+  }
 
   override def allIdsAndAbbrevs() =
     db.run(
