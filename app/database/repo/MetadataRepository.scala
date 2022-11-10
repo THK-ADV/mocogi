@@ -38,6 +38,21 @@ case class PrerequisiteEntryOutput(
     pos: List[String]
 )
 
+case class AssessmentMethodsOutput(
+    mandatory: List[AssessmentMethodEntryOutput],
+    optional: List[AssessmentMethodEntryOutput]
+)
+
+case class PrerequisitesOutput(
+    recommended: Option[PrerequisiteEntryOutput],
+    required: Option[PrerequisiteEntryOutput]
+)
+
+case class POOutput(
+    mandatory: List[POMandatoryOutput],
+    optional: List[POOptionalOutput]
+)
+
 case class MetadataOutput(
     id: UUID,
     gitPath: String,
@@ -55,12 +70,10 @@ case class MetadataOutput(
     moduleRelation: Option[ModuleRelation],
     moduleManagement: List[String],
     lecturers: List[String],
-    mandatory: List[AssessmentMethodEntryOutput],
-    optional: List[AssessmentMethodEntryOutput],
-    recommendedPrerequisites: Option[PrerequisiteEntryOutput],
-    requiredPrerequisites: Option[PrerequisiteEntryOutput],
-    poMandatory: List[POMandatoryOutput],
-    poOptional: List[POOptionalOutput]
+    assessmentMethods: AssessmentMethodsOutput,
+    prerequisites: PrerequisitesOutput,
+    po: POOutput,
+    competences: List[String]
 )
 
 trait MetadataRepository {
@@ -122,6 +135,9 @@ final class MetadataRepositoryImpl @Inject() (
   private val poOptionalTable =
     TableQuery[POOptionalTable]
 
+  private val metadataCompetenceTable =
+    TableQuery[MetadataCompetenceTable]
+
   /*
     competences: List[Competence],
     globalCriteria: List[GlobalCriteria],
@@ -164,10 +180,18 @@ final class MetadataRepositoryImpl @Inject() (
       _ <- prerequisitesPOTable ++= prerequisitesPOs
       _ <- poMandatoryTable ++= poMandatory
       _ <- poOptionalTable ++= poOptional
+      _ <- metadataCompetenceTable ++= metadataCompetences(metadata)
     } yield metadata
 
     db.run(result)
   }
+
+  private def metadataCompetences(
+      metadata: Metadata
+  ): List[MetadataCompetenceDbEntry] =
+    metadata.competences.map(c =>
+      MetadataCompetenceDbEntry(metadata.id, c.abbrev)
+    )
 
   private def pos(
       metadata: Metadata
@@ -340,8 +364,10 @@ final class MetadataRepositoryImpl @Inject() (
         .on(_._1._1._1._1.id === _.metadata)
         .joinLeft(poOptionalTable)
         .on(_._1._1._1._1._1.id === _.metadata)
+        .joinLeft(metadataCompetenceTable)
+        .on(_._1._1._1._1._1._1.id === _.metadata)
         .result
-        .map(_.groupBy(_._1._1._1._1._1._1).map { case (m, deps) =>
+        .map(_.groupBy(_._1._1._1._1._1._1._1).map { case (m, deps) =>
           val participants = for {
             min <- m.participantsMin
             max <- m.participantsMax
@@ -364,8 +390,10 @@ final class MetadataRepositoryImpl @Inject() (
           val prerequisitesPOS = mutable.HashSet[PrerequisitesPODbEntry]()
           val poMandatory = mutable.HashSet[POMandatoryOutput]()
           val poOptional = mutable.HashSet[POOptionalOutput]()
+          val competences = mutable.HashSet[String]()
 
-          deps.foreach { case ((((((_, mr), r), am), p), poM), poO) =>
+          deps.foreach { case (((((((_, mr), r), am), p), poM), poO), c) =>
+            c.foreach(competences += _.competence)
             poM.foreach(po =>
               poMandatory += POMandatoryOutput(
                 po.po,
@@ -457,52 +485,59 @@ final class MetadataRepositoryImpl @Inject() (
             relation,
             moduleManagement.toList,
             lecturer.toList,
-            mandatoryAssessmentMethods
-              .map(a =>
-                a._2.copy(precondition =
-                  preconditions
-                    .filter(_.metadataAssessmentMethod == a._1)
-                    .map(_.assessmentMethod)
+            AssessmentMethodsOutput(
+              mandatoryAssessmentMethods
+                .map(a =>
+                  a._2.copy(precondition =
+                    preconditions
+                      .filter(_.metadataAssessmentMethod == a._1)
+                      .map(_.assessmentMethod)
+                      .toList
+                  )
+                )
+                .toList,
+              optionalAssessmentMethods
+                .map(a =>
+                  a._2.copy(precondition =
+                    preconditions
+                      .filter(_.metadataAssessmentMethod == a._1)
+                      .map(_.assessmentMethod)
+                      .toList
+                  )
+                )
+                .toList
+            ),
+            PrerequisitesOutput(
+              recommendedPrerequisite.map(a =>
+                a._2.copy(
+                  modules = prerequisitesModules
+                    .filter(_.prerequisites == a._1)
+                    .map(_.module)
+                    .toList,
+                  pos = prerequisitesPOS
+                    .filter(_.prerequisites == a._1)
+                    .map(_.po)
+                    .toList
+                )
+              ),
+              requiredPrerequisite.map(a =>
+                a._2.copy(
+                  modules = prerequisitesModules
+                    .filter(_.prerequisites == a._1)
+                    .map(_.module)
+                    .toList,
+                  pos = prerequisitesPOS
+                    .filter(_.prerequisites == a._1)
+                    .map(_.po)
                     .toList
                 )
               )
-              .toList,
-            optionalAssessmentMethods
-              .map(a =>
-                a._2.copy(precondition =
-                  preconditions
-                    .filter(_.metadataAssessmentMethod == a._1)
-                    .map(_.assessmentMethod)
-                    .toList
-                )
-              )
-              .toList,
-            recommendedPrerequisite.map(a =>
-              a._2.copy(
-                modules = prerequisitesModules
-                  .filter(_.prerequisites == a._1)
-                  .map(_.module)
-                  .toList,
-                pos = prerequisitesPOS
-                  .filter(_.prerequisites == a._1)
-                  .map(_.po)
-                  .toList
-              )
             ),
-            requiredPrerequisite.map(a =>
-              a._2.copy(
-                modules = prerequisitesModules
-                  .filter(_.prerequisites == a._1)
-                  .map(_.module)
-                  .toList,
-                pos = prerequisitesPOS
-                  .filter(_.prerequisites == a._1)
-                  .map(_.po)
-                  .toList
-              )
+            POOutput(
+              poMandatory.toList,
+              poOptional.toList
             ),
-            poMandatory.toList,
-            poOptional.toList
+            competences.toList
           )
         }.toSeq)
     )
