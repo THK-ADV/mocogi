@@ -142,7 +142,7 @@ object MetadataValidator {
       .pullback[List[ParsedPOOptional]](_.map(_.instanceOf))
       .map(_.zip(_).map { case (po, m) =>
         POOptional(
-          po.studyProgram,
+          po.po,
           m,
           po.partOfCatalog,
           po.recommendedSemester

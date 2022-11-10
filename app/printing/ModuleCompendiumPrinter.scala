@@ -45,7 +45,7 @@ class ModuleCompendiumPrinterImpl extends ModuleCompendiumPrinter {
   private def fmtPOMandatory(pos: ParsedPOs): String = {
     val xs = pos.mandatory
     if (xs.isEmpty) "Keine"
-    else xs.map(_.studyProgram).mkString(", ") // TODO use all fields
+    else xs.map(_.po).mkString(", ") // TODO use all fields
   }
 
   private def moduleRelationRow(relation: ParsedModuleRelation): Printer[Unit] =

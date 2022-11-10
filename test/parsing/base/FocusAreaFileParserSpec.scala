@@ -86,7 +86,6 @@ final class FocusAreaFileParserSpec
         withFile0("test/parsing/res/focus_area.yaml")(
           fileParser.parse
         )
-      println(rest)
       assert(res.value.size == 26)
       assert(rest.isEmpty)
     }

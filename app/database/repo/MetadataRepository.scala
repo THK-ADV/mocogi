@@ -13,6 +13,19 @@ import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.{ExecutionContext, Future}
 
+case class POMandatoryOutput(
+    po: String,
+    recommendedSemester: List[Int],
+    recommendedSemesterPartTime: List[Int]
+)
+
+case class POOptionalOutput(
+    po: String,
+    instanceOf: UUID,
+    partOfCatalog: Boolean,
+    recommendedSemester: List[Int]
+)
+
 case class AssessmentMethodEntryOutput(
     method: String,
     percentage: Option[Double],
@@ -45,7 +58,9 @@ case class MetadataOutput(
     mandatory: List[AssessmentMethodEntryOutput],
     optional: List[AssessmentMethodEntryOutput],
     recommendedPrerequisites: Option[PrerequisiteEntryOutput],
-    requiredPrerequisites: Option[PrerequisiteEntryOutput]
+    requiredPrerequisites: Option[PrerequisiteEntryOutput],
+    poMandatory: List[POMandatoryOutput],
+    poOptional: List[POOptionalOutput]
 )
 
 trait MetadataRepository {
@@ -101,11 +116,16 @@ final class MetadataRepositoryImpl @Inject() (
   private val prerequisitesPOTable =
     TableQuery[PrerequisitesPOTable]
 
+  private val poMandatoryTable =
+    TableQuery[POMandatoryTable]
+
+  private val poOptionalTable =
+    TableQuery[POOptionalTable]
+
   /*
-  validPOs: POs,
-  competences: List[Competence],
-  globalCriteria: List[GlobalCriteria],
-  taughtWith: List[Module]
+    competences: List[Competence],
+    globalCriteria: List[GlobalCriteria],
+    taughtWith: List[Module]
    */
   override def create(metadata: Metadata, path: GitFilePath) = {
     val dbEntry = MetadataDbEntry(
@@ -128,6 +148,7 @@ final class MetadataRepositoryImpl @Inject() (
     val (entries, prerequisitesModules, prerequisitesPOs) = prerequisites(
       metadata
     )
+    val (poMandatory, poOptional) = pos(metadata)
 
     val result = for {
       _ <- metadataTable += dbEntry
@@ -141,10 +162,35 @@ final class MetadataRepositoryImpl @Inject() (
       _ <- prerequisitesTable ++= entries
       _ <- prerequisitesModuleTable ++= prerequisitesModules
       _ <- prerequisitesPOTable ++= prerequisitesPOs
+      _ <- poMandatoryTable ++= poMandatory
+      _ <- poOptionalTable ++= poOptional
     } yield metadata
 
     db.run(result)
   }
+
+  private def pos(
+      metadata: Metadata
+  ): (List[POMandatoryDbEntry], List[POOptionalDbEntry]) =
+    (
+      metadata.validPOs.mandatory.map(po =>
+        POMandatoryDbEntry(
+          metadata.id,
+          po.po.abbrev,
+          po.recommendedSemester,
+          po.recommendedSemesterPartTime
+        )
+      ),
+      metadata.validPOs.optional.map(po =>
+        POOptionalDbEntry(
+          metadata.id,
+          po.po.abbrev,
+          po.instanceOf.id,
+          po.partOfCatalog,
+          po.recommendedSemester
+        )
+      )
+    )
 
   private def prerequisites(metadata: Metadata): PrerequisitesDbResult = {
     val entries = ListBuffer[PrerequisitesDbEntry]()
@@ -285,13 +331,17 @@ final class MetadataRepositoryImpl @Inject() (
         .joinLeft(moduleRelationTable)
         .on(_.id === _.module)
         .join(responsibilityTable)
-        .on((a, b) => a._1.id === b.metadata)
+        .on(_._1.id === _.metadata)
         .joinLeft(methods)
-        .on((a, b) => a._1._1.id === b._1.metadata)
+        .on(_._1._1.id === _._1.metadata)
         .joinLeft(prerequisites)
         .on(_._1._1._1.id === _._1._1.metadata)
+        .joinLeft(poMandatoryTable)
+        .on(_._1._1._1._1.id === _.metadata)
+        .joinLeft(poOptionalTable)
+        .on(_._1._1._1._1._1.id === _.metadata)
         .result
-        .map(_.groupBy(_._1._1._1._1).map { case (m, deps) =>
+        .map(_.groupBy(_._1._1._1._1._1._1).map { case (m, deps) =>
           val participants = for {
             min <- m.participantsMin
             max <- m.participantsMax
@@ -305,14 +355,35 @@ final class MetadataRepositoryImpl @Inject() (
             mutable.HashSet[(UUID, AssessmentMethodEntryOutput)]()
           val preconditions =
             mutable.HashSet[MetadataAssessmentMethodPreconditionDbEntry]()
-          var recommendedPrerequisite = Option.empty[(UUID, PrerequisiteEntryOutput)]
-          var requiredPrerequisite = Option.empty[(UUID, PrerequisiteEntryOutput)]
-          val prerequisitesModules = mutable.HashSet[PrerequisitesModuleDbEntry]()
+          var recommendedPrerequisite =
+            Option.empty[(UUID, PrerequisiteEntryOutput)]
+          var requiredPrerequisite =
+            Option.empty[(UUID, PrerequisiteEntryOutput)]
+          val prerequisitesModules =
+            mutable.HashSet[PrerequisitesModuleDbEntry]()
           val prerequisitesPOS = mutable.HashSet[PrerequisitesPODbEntry]()
+          val poMandatory = mutable.HashSet[POMandatoryOutput]()
+          val poOptional = mutable.HashSet[POOptionalOutput]()
 
-          deps.foreach { case ((((_, mr), r), am), p) =>
+          deps.foreach { case ((((((_, mr), r), am), p), poM), poO) =>
+            poM.foreach(po =>
+              poMandatory += POMandatoryOutput(
+                po.po,
+                po.recommendedSemester,
+                po.recommendedPartTimeSemester
+              )
+            )
+            poO.foreach(po =>
+              poOptional += POOptionalOutput(
+                po.po,
+                po.instanceOf,
+                po.partOfCatalog,
+                po.recommendedSemester
+              )
+            )
             p.foreach { case ((e, m), po) =>
-              val prerequisite = Some(e.id -> PrerequisiteEntryOutput(e.text, Nil, Nil))
+              val prerequisite =
+                Some(e.id -> PrerequisiteEntryOutput(e.text, Nil, Nil))
               e.prerequisitesType match {
                 case PrerequisiteType.Required =>
                   requiredPrerequisite = prerequisite
@@ -394,7 +465,8 @@ final class MetadataRepositoryImpl @Inject() (
                     .map(_.assessmentMethod)
                     .toList
                 )
-              ).toList,
+              )
+              .toList,
             optionalAssessmentMethods
               .map(a =>
                 a._2.copy(precondition =
@@ -403,15 +475,34 @@ final class MetadataRepositoryImpl @Inject() (
                     .map(_.assessmentMethod)
                     .toList
                 )
-              ).toList,
-            recommendedPrerequisite.map(a => a._2.copy(
-              modules = prerequisitesModules.filter(_.prerequisites == a._1).map(_.module).toList,
-              pos = prerequisitesPOS.filter(_.prerequisites == a._1).map(_.po).toList
-            )),
-            requiredPrerequisite.map(a => a._2.copy(
-              modules = prerequisitesModules.filter(_.prerequisites == a._1).map(_.module).toList,
-              pos = prerequisitesPOS.filter(_.prerequisites == a._1).map(_.po).toList
-            ))
+              )
+              .toList,
+            recommendedPrerequisite.map(a =>
+              a._2.copy(
+                modules = prerequisitesModules
+                  .filter(_.prerequisites == a._1)
+                  .map(_.module)
+                  .toList,
+                pos = prerequisitesPOS
+                  .filter(_.prerequisites == a._1)
+                  .map(_.po)
+                  .toList
+              )
+            ),
+            requiredPrerequisite.map(a =>
+              a._2.copy(
+                modules = prerequisitesModules
+                  .filter(_.prerequisites == a._1)
+                  .map(_.module)
+                  .toList,
+                pos = prerequisitesPOS
+                  .filter(_.prerequisites == a._1)
+                  .map(_.po)
+                  .toList
+              )
+            ),
+            poMandatory.toList,
+            poOptional.toList
           )
         }.toSeq)
     )
