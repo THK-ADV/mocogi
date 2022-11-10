@@ -73,7 +73,8 @@ case class MetadataOutput(
     assessmentMethods: AssessmentMethodsOutput,
     prerequisites: PrerequisitesOutput,
     po: POOutput,
-    competences: List[String]
+    competences: List[String],
+    globalCriteria: List[String]
 )
 
 trait MetadataRepository {
@@ -138,9 +139,10 @@ final class MetadataRepositoryImpl @Inject() (
   private val metadataCompetenceTable =
     TableQuery[MetadataCompetenceTable]
 
+  private val metadataGlobalCriteriaTable =
+    TableQuery[MetadataGlobalCriteriaTable]
+
   /*
-    competences: List[Competence],
-    globalCriteria: List[GlobalCriteria],
     taughtWith: List[Module]
    */
   override def create(metadata: Metadata, path: GitFilePath) = {
@@ -181,11 +183,18 @@ final class MetadataRepositoryImpl @Inject() (
       _ <- poMandatoryTable ++= poMandatory
       _ <- poOptionalTable ++= poOptional
       _ <- metadataCompetenceTable ++= metadataCompetences(metadata)
+      _ <- metadataGlobalCriteriaTable ++= metadataGlobalCriteria(metadata)
     } yield metadata
 
     db.run(result)
   }
 
+  private def metadataGlobalCriteria(
+      metadata: Metadata
+  ): List[MetadataGlobalCriteriaDbEntry] =
+    metadata.globalCriteria.map(gc =>
+      MetadataGlobalCriteriaDbEntry(metadata.id, gc.abbrev)
+    )
   private def metadataCompetences(
       metadata: Metadata
   ): List[MetadataCompetenceDbEntry] =
@@ -366,8 +375,10 @@ final class MetadataRepositoryImpl @Inject() (
         .on(_._1._1._1._1._1.id === _.metadata)
         .joinLeft(metadataCompetenceTable)
         .on(_._1._1._1._1._1._1.id === _.metadata)
+        .joinLeft(metadataGlobalCriteriaTable)
+        .on(_._1._1._1._1._1._1._1.id === _.metadata)
         .result
-        .map(_.groupBy(_._1._1._1._1._1._1._1).map { case (m, deps) =>
+        .map(_.groupBy(_._1._1._1._1._1._1._1._1).map { case (m, deps) =>
           val participants = for {
             min <- m.participantsMin
             max <- m.participantsMax
@@ -391,8 +402,10 @@ final class MetadataRepositoryImpl @Inject() (
           val poMandatory = mutable.HashSet[POMandatoryOutput]()
           val poOptional = mutable.HashSet[POOptionalOutput]()
           val competences = mutable.HashSet[String]()
+          val globalCriteria = mutable.HashSet[String]()
 
-          deps.foreach { case (((((((_, mr), r), am), p), poM), poO), c) =>
+          deps.foreach { case ((((((((_, mr), r), am), p), poM), poO), c), gc) =>
+            gc.foreach(globalCriteria += _.globalCriteria)
             c.foreach(competences += _.competence)
             poM.foreach(po =>
               poMandatory += POMandatoryOutput(
@@ -537,7 +550,8 @@ final class MetadataRepositoryImpl @Inject() (
               poMandatory.toList,
               poOptional.toList
             ),
-            competences.toList
+            competences.toList,
+            globalCriteria.toList
           )
         }.toSeq)
     )
