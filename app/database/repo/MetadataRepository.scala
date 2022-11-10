@@ -74,7 +74,8 @@ case class MetadataOutput(
     prerequisites: PrerequisitesOutput,
     po: POOutput,
     competences: List[String],
-    globalCriteria: List[String]
+    globalCriteria: List[String],
+    taughtWith: List[UUID]
 )
 
 trait MetadataRepository {
@@ -142,6 +143,9 @@ final class MetadataRepositoryImpl @Inject() (
   private val metadataGlobalCriteriaTable =
     TableQuery[MetadataGlobalCriteriaTable]
 
+  private val metadataTaughtWithTable =
+    TableQuery[MetadataTaughtWithTable]
+
   /*
     taughtWith: List[Module]
    */
@@ -184,10 +188,16 @@ final class MetadataRepositoryImpl @Inject() (
       _ <- poOptionalTable ++= poOptional
       _ <- metadataCompetenceTable ++= metadataCompetences(metadata)
       _ <- metadataGlobalCriteriaTable ++= metadataGlobalCriteria(metadata)
+      _ <- metadataTaughtWithTable ++= metadataTaughtWith(metadata)
     } yield metadata
 
     db.run(result)
   }
+
+  private def metadataTaughtWith(
+      metadata: Metadata
+  ): List[MetadataTaughtWithDbEntry] =
+    metadata.taughtWith.map(m => MetadataTaughtWithDbEntry(metadata.id, m.id))
 
   private def metadataGlobalCriteria(
       metadata: Metadata
@@ -195,6 +205,7 @@ final class MetadataRepositoryImpl @Inject() (
     metadata.globalCriteria.map(gc =>
       MetadataGlobalCriteriaDbEntry(metadata.id, gc.abbrev)
     )
+
   private def metadataCompetences(
       metadata: Metadata
   ): List[MetadataCompetenceDbEntry] =
@@ -377,8 +388,10 @@ final class MetadataRepositoryImpl @Inject() (
         .on(_._1._1._1._1._1._1.id === _.metadata)
         .joinLeft(metadataGlobalCriteriaTable)
         .on(_._1._1._1._1._1._1._1.id === _.metadata)
+        .joinLeft(metadataTaughtWithTable)
+        .on(_._1._1._1._1._1._1._1._1.id === _.metadata)
         .result
-        .map(_.groupBy(_._1._1._1._1._1._1._1._1).map { case (m, deps) =>
+        .map(_.groupBy(_._1._1._1._1._1._1._1._1._1).map { case (m, deps) =>
           val participants = for {
             min <- m.participantsMin
             max <- m.participantsMax
@@ -403,70 +416,74 @@ final class MetadataRepositoryImpl @Inject() (
           val poOptional = mutable.HashSet[POOptionalOutput]()
           val competences = mutable.HashSet[String]()
           val globalCriteria = mutable.HashSet[String]()
+          val taughtWith = mutable.HashSet[UUID]()
 
-          deps.foreach { case ((((((((_, mr), r), am), p), poM), poO), c), gc) =>
-            gc.foreach(globalCriteria += _.globalCriteria)
-            c.foreach(competences += _.competence)
-            poM.foreach(po =>
-              poMandatory += POMandatoryOutput(
-                po.po,
-                po.recommendedSemester,
-                po.recommendedPartTimeSemester
-              )
-            )
-            poO.foreach(po =>
-              poOptional += POOptionalOutput(
-                po.po,
-                po.instanceOf,
-                po.partOfCatalog,
-                po.recommendedSemester
-              )
-            )
-            p.foreach { case ((e, m), po) =>
-              val prerequisite =
-                Some(e.id -> PrerequisiteEntryOutput(e.text, Nil, Nil))
-              e.prerequisitesType match {
-                case PrerequisiteType.Required =>
-                  requiredPrerequisite = prerequisite
-                case PrerequisiteType.Recommended =>
-                  recommendedPrerequisite = prerequisite
-              }
-              m.foreach(prerequisitesModules += _)
-              po.foreach(prerequisitesPOS += _)
-            }
-            mr.foreach(relations += _)
-            r.responsibilityType match {
-              case ResponsibilityType.ModuleManagement =>
-                moduleManagement += r.person
-              case ResponsibilityType.Lecturer => lecturer += r.person
-            }
-            am.foreach { case (am, amp) =>
-              amp.foreach(p =>
-                preconditions += MetadataAssessmentMethodPreconditionDbEntry(
-                  p.assessmentMethod,
-                  p.metadataAssessmentMethod
+          deps.foreach {
+            case (((((((((_, mr), r), am), p), poM), poO), c), gc), tw) =>
+              tw.foreach(taughtWith += _.module)
+              gc.foreach(globalCriteria += _.globalCriteria)
+              c.foreach(competences += _.competence)
+              poM.foreach(po =>
+                poMandatory += POMandatoryOutput(
+                  po.po,
+                  po.recommendedSemester,
+                  po.recommendedPartTimeSemester
                 )
               )
-              am.assessmentMethodType match {
-                case AssessmentMethodType.Mandatory =>
-                  mandatoryAssessmentMethods +=
-                    am.id ->
-                      AssessmentMethodEntryOutput(
-                        am.assessmentMethod,
-                        am.percentage,
-                        Nil
-                      )
-
-                case AssessmentMethodType.Optional =>
-                  optionalAssessmentMethods +=
-                    am.id ->
-                      AssessmentMethodEntryOutput(
-                        am.assessmentMethod,
-                        am.percentage,
-                        Nil
-                      )
+              poO.foreach(po =>
+                poOptional += POOptionalOutput(
+                  po.po,
+                  po.instanceOf,
+                  po.partOfCatalog,
+                  po.recommendedSemester
+                )
+              )
+              p.foreach { case ((e, m), po) =>
+                val prerequisite =
+                  Some(e.id -> PrerequisiteEntryOutput(e.text, Nil, Nil))
+                e.prerequisitesType match {
+                  case PrerequisiteType.Required =>
+                    requiredPrerequisite = prerequisite
+                  case PrerequisiteType.Recommended =>
+                    recommendedPrerequisite = prerequisite
+                }
+                m.foreach(prerequisitesModules += _)
+                po.foreach(prerequisitesPOS += _)
               }
-            }
+              mr.foreach(relations += _)
+              r.responsibilityType match {
+                case ResponsibilityType.ModuleManagement =>
+                  moduleManagement += r.person
+                case ResponsibilityType.Lecturer => lecturer += r.person
+              }
+              am.foreach {
+                case (am, amp) =>
+                  amp.foreach(p =>
+                    preconditions += MetadataAssessmentMethodPreconditionDbEntry(
+                      p.assessmentMethod,
+                      p.metadataAssessmentMethod
+                    )
+                  )
+                  am.assessmentMethodType match {
+                    case AssessmentMethodType.Mandatory =>
+                      mandatoryAssessmentMethods +=
+                        am.id ->
+                          AssessmentMethodEntryOutput(
+                            am.assessmentMethod,
+                            am.percentage,
+                            Nil
+                          )
+
+                    case AssessmentMethodType.Optional =>
+                      optionalAssessmentMethods +=
+                        am.id ->
+                          AssessmentMethodEntryOutput(
+                            am.assessmentMethod,
+                            am.percentage,
+                            Nil
+                          )
+                  }
+              }
           }
 
           val relation = relations.headOption.map { r => // TODO test
@@ -551,7 +568,8 @@ final class MetadataRepositoryImpl @Inject() (
               poOptional.toList
             ),
             competences.toList,
-            globalCriteria.toList
+            globalCriteria.toList,
+            taughtWith.toList
           )
         }.toSeq)
     )
