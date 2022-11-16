@@ -1,8 +1,18 @@
 package database.table
 
 import basedata.PersonStatus
-import database.entities.PersonDbEntry
 import slick.jdbc.PostgresProfile.api._
+
+case class PersonDbEntry(
+    id: String,
+    lastname: String,
+    firstname: String,
+    title: String,
+    faculties: List[String],
+    abbreviation: String,
+    status: PersonStatus,
+    kind: String
+)
 
 final class PersonTable(tag: Tag) extends Table[PersonDbEntry](tag, "person") {
 

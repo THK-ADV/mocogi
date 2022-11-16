@@ -1,8 +1,7 @@
 package database.repo
 
-import basedata.Person
-import database.entities.PersonDbEntry
-import database.table.{FacultyTable, PersonInFaculty, PersonInFacultyTable, PersonTable}
+import basedata.{Faculty, Person}
+import database.table._
 import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfigProvider}
 import slick.jdbc.JdbcProfile
 
@@ -45,7 +44,25 @@ class PersonRepository @Inject() (
         .result
         .map(_.groupBy(_._1._1).map { case (person, deps) =>
           val faculties = deps.flatMap(_._2)
-          makePerson(person, faculties.toList)
+          toPerson(person, faculties.toList)
         }.toSeq)
     )
+
+  private def toPerson(p: PersonDbEntry, faculties: List[Faculty]): Person =
+    p.kind match {
+      case Person.SingleKind =>
+        Person.Single(
+          p.id,
+          p.lastname,
+          p.firstname,
+          p.title,
+          faculties,
+          p.abbreviation,
+          p.status
+        )
+      case Person.GroupKind =>
+        Person.Group(p.id, p.title)
+      case Person.UnknownKind =>
+        Person.Unknown(p.id, p.title)
+    }
 }

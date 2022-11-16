@@ -207,32 +207,42 @@ create table po_modification_date
 create table metadata
 (
     "id"                           uuid PRIMARY KEY,
-    "git_path"                     text     not null,
-    "title"                        text     not null,
-    "abbrev"                       text     not null,
-    "module_type"                  text     not null,
-    "ects"                         uuid     not null,
-    "language"                     text     not null,
-    "duration"                     smallint not null,
-    "season"                       text     not null,
-    "workload_lecture"             smallint not null,
-    "workload_seminar"             smallint not null,
-    "workload_practical"           smallint not null,
-    "workload_exercise"            smallint not null,
-    "workload_project_supervision" smallint not null,
-    "workload_project_work"        smallint not null,
-    "workload_self_study"          smallint not null,
-    "workload_total"               smallint not null,
-    "status"                       text     not null,
-    "location"                     text     not null,
+    "git_path"                     text          not null,
+    "title"                        text          not null,
+    "abbrev"                       text          not null,
+    "module_type"                  text          not null,
+    "ects"                         numeric(4, 2) not null,
+    "language"                     text          not null,
+    "duration"                     smallint      not null,
+    "season"                       text          not null,
+    "workload_lecture"             smallint      not null,
+    "workload_seminar"             smallint      not null,
+    "workload_practical"           smallint      not null,
+    "workload_exercise"            smallint      not null,
+    "workload_project_supervision" smallint      not null,
+    "workload_project_work"        smallint      not null,
+    "workload_self_study"          smallint      not null,
+    "workload_total"               smallint      not null,
+    "status"                       text          not null,
+    "location"                     text          not null,
     "participants_min"             smallint null,
     "participants_max"             smallint null,
     FOREIGN KEY (module_type) REFERENCES module_type (abbrev),
-    FOREIGN KEY (etcs) REFERENCES ects (id),
     FOREIGN KEY (language) REFERENCES language (abbrev),
     FOREIGN KEY (season) REFERENCES season (abbrev),
     FOREIGN KEY (status) REFERENCES status (abbrev),
     FOREIGN KEY (location) REFERENCES location (abbrev)
+);
+
+create table ects_focus_area_contribution
+(
+    "focus_area"  text          not null,
+    "metadata"    uuid          not null,
+    "ects_value"  numeric(4, 2) not null,
+    "description" text          not null,
+    PRIMARY KEY (focus_area, metadata),
+    FOREIGN KEY (focus_area) REFERENCES focus_area (abbrev),
+    FOREIGN KEY (metadata) REFERENCES metadata (id)
 );
 
 create table module_relation
@@ -245,40 +255,23 @@ create table module_relation
     FOREIGN KEY (relation_module) REFERENCES metadata (id)
 );
 
-create table ects
-(
-    "id"    uuid PRIMARY KEY,
-    "value" numeric(4, 2) not null
-);
-
-create table ects_focus_area_contribution
-(
-    "focus_area"  text          not null,
-    "ects"        uuid          not null,
-    "ects_value"  numeric(4, 2) not null,
-    "description" text          not null,
-    PRIMARY KEY (focus_area, ects),
-    FOREIGN KEY (focus_area) REFERENCES focus_area (abbrev),
-    FOREIGN KEY (ects) REFERENCES ects (id)
-);
-
 create table responsibility
 (
-    "metadata" uuid not null,
-    "person"   text not null,
-    "kind"     text not null,
-    PRIMARY KEY (metadata, person, kind),
+    "metadata"            uuid not null,
+    "person"              text not null,
+    "responsibility_type" text not null,
+    PRIMARY KEY (metadata, person, responsibility_type),
     FOREIGN KEY (metadata) REFERENCES metadata (id),
     FOREIGN KEY (person) REFERENCES person (id)
 );
 
 create table metadata_assessment_method
 (
+    "id"                     uuid not null PRIMARY KEY,
     "metadata"               uuid not null,
     "assessment_method"      text not null,
     "assessment_method_type" text not null,
     "percentage"             numeric(5, 2) null,
-    PRIMARY KEY (metadata, assessment_method),
     FOREIGN KEY (assessment_method) REFERENCES assessment_method (abbrev),
     FOREIGN KEY (metadata) REFERENCES metadata (id)
 );
@@ -286,18 +279,18 @@ create table metadata_assessment_method
 create table metadata_assessment_method_precondition
 (
     "assessment_method"          text not null,
-    "metadata_assessment_method" text not null,
+    "metadata_assessment_method" uuid not null,
     PRIMARY KEY (assessment_method, metadata_assessment_method),
     FOREIGN KEY (assessment_method) REFERENCES assessment_method (abbrev),
-    FOREIGN KEY (metadata_assessment_method) REFERENCES metadata_assessment_method (metadata, assessment_method)
+    FOREIGN KEY (metadata_assessment_method) REFERENCES metadata_assessment_method (id)
 );
 
 create table prerequisites
 (
-    "id"                 uuid PRIMARY KEY,
-    "metadata"           uuid not null,
-    "prerequisites_type" text not null,
-    "text"               text not null,
+    "id"                uuid PRIMARY KEY,
+    "metadata"          uuid not null,
+    "prerequisite_type" text not null,
+    "text"              text not null,
     FOREIGN KEY (metadata) REFERENCES metadata (id)
 );
 
@@ -310,13 +303,13 @@ create table prerequisites_module
     FOREIGN KEY (module) REFERENCES metadata (id)
 );
 
-create table prerequisites_study_program
+create table prerequisites_po
 (
     "prerequisites" uuid not null,
-    "study_program" uuid not null,
-    PRIMARY KEY (prerequisites, study_program),
+    "po" text not null,
+    PRIMARY KEY (prerequisites, po),
     FOREIGN KEY (prerequisites) REFERENCES prerequisites (id),
-    FOREIGN KEY (study_program) REFERENCES study_program (abbrev)
+    FOREIGN KEY (po) REFERENCES po (abbrev)
 );
 
 create table po_mandatory
@@ -376,15 +369,14 @@ drop table metadata_global_criteria if exists;
 drop table metadata_competence if exists;
 drop table po_optional if exists;
 drop table po_mandatory if exists;
-drop table prerequisites_study_program if exists;
+drop table prerequisites_po if exists;
 drop table prerequisites_module if exists;
 drop table prerequisites if exists;
 drop table metadata_assessment_method_precondition if exists;
 drop table metadata_assessment_method if exists;
 drop table responsibility if exists;
-drop table ects_focus_area_contribution if exists;
-drop table ects if exists;
 drop table module_relation if exists;
+drop table ects_focus_area_contribution if exists;
 drop table metadata if exists;
 drop table po_modification_date if exists;
 drop table po if exists;

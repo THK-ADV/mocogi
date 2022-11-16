@@ -1,46 +1,76 @@
 package database.table
 
-import database.entities.MetadataDbEntry
 import slick.jdbc.PostgresProfile.api._
+import validator.Workload
 
 import java.util.UUID
+
+case class MetadataDbEntry(
+    id: UUID,
+    gitPath: String,
+    title: String,
+    abbrev: String,
+    moduleType: String,
+    ects: Double,
+    language: String,
+    duration: Int,
+    season: String,
+    workload: Workload,
+    status: String,
+    location: String,
+    participantsMin: Option[Int],
+    participantsMax: Option[Int]
+)
 
 final class MetadataTable(tag: Tag)
     extends Table[MetadataDbEntry](tag, "metadata") {
 
   def id = column[UUID]("id", O.PrimaryKey)
+
   def gitPath = column[String]("git_path")
+
   def title = column[String]("title")
+
   def abbrev = column[String]("abbrev")
+
   def moduleType = column[String]("module_type")
+
+  def ects = column[Double]("ects")
+
   def language = column[String]("language")
 
-  /*def children = column[Option[String]]("children")
-  def parent = column[Option[String]]("parent")
-
-  def credits = column[Double]("credits")
   def duration = column[Int]("duration")
+
   def season = column[String]("season")
 
   def workloadLecture = column[Int]("workload_lecture")
+
   def workloadSeminar = column[Int]("workload_seminar")
+
   def workloadPractical = column[Int]("workload_practical")
+
   def workloadExercise = column[Int]("workload_exercise")
+
   def workloadProjectSupervision = column[Int]("workload_project_supervision")
+
   def workloadProjectWork = column[Int]("workload_project_work")
 
-  def recommendedPrerequisites = column[String]("recommended-prerequisites")
-  def requiredPrerequisites = column[String]("required-prerequisites")
+  def workloadSelfStudy = column[Int]("workload_self_study")
+
+  def workloadTotal = column[Int]("workload_total")
 
   def status = column[String]("status")
+
   def location = column[String]("location")
 
-  def po = column[String]("po")*/
+  def participantsMin = column[Option[Int]]("participants_min")
+
+  def participantsMax = column[Option[Int]]("participants_max")
 
   def moduleTypeFk =
     foreignKey("module_type", moduleType, TableQuery[ModuleTypeTable])(_.abbrev)
 
-  /*def languageFk =
+  def languageFk =
     foreignKey("language", language, TableQuery[LanguageTable])(_.abbrev)
 
   def seasonFk =
@@ -50,7 +80,7 @@ final class MetadataTable(tag: Tag)
     foreignKey("status", status, TableQuery[StatusTable])(_.abbrev)
 
   def locationFk =
-    foreignKey("location", location, TableQuery[LocationTable])(_.abbrev)*/
+    foreignKey("location", location, TableQuery[LocationTable])(_.abbrev)
 
   override def * = (
     id,
@@ -58,24 +88,22 @@ final class MetadataTable(tag: Tag)
     title,
     abbrev,
     moduleType,
-    // (children, parent),
-    // credits,
-    language
-    /*duration,
+    ects,
+    language,
+    duration,
     season,
-    (
-      workloadLecture,
-      workloadSeminar,
-      workloadPractical,
-      workloadExercise,
-      workloadProjectSupervision,
-      workloadProjectWork
-    ),
-    recommendedPrerequisites,
-    requiredPrerequisites,
+    workloadLecture,
+    workloadSeminar,
+    workloadPractical,
+    workloadExercise,
+    workloadProjectSupervision,
+    workloadProjectWork,
+    workloadSelfStudy,
+    workloadTotal,
     status,
     location,
-    po*/
+    participantsMin,
+    participantsMax
   ) <> (mapRow, unmapRow)
 
   def mapRow: (
@@ -85,17 +113,22 @@ final class MetadataTable(tag: Tag)
           String,
           String,
           String,
-          // (Option[String], Option[String]),
-          // Double,
-          String
-          /*Int,
+          Double,
           String,
-          (Int, Int, Int, Int, Int, Int),
+          Int,
+          String,
+          Int,
+          Int,
+          Int,
+          Int,
+          Int,
+          Int,
+          Int,
+          Int,
           String,
           String,
-          String,
-          String,
-          String*/
+          Option[Int],
+          Option[Int]
       )
   ) => MetadataDbEntry = {
     case (
@@ -104,24 +137,22 @@ final class MetadataTable(tag: Tag)
           title,
           abbrev,
           moduleType,
-          // (children, parent),
-          // credits,
-          language
-          /*duration,
+          ects,
+          language,
+          duration,
           season,
-          (
-            workloadLecture,
-            workloadSeminar,
-            workloadPractical,
-            workloadExercise,
-            workloadProjectSupervision,
-            workloadProjectWork
-          ),
-          recommendedPrerequisites,
-          requiredPrerequisites,
+          workloadLecture,
+          workloadSeminar,
+          workloadPractical,
+          workloadExercise,
+          workloadProjectSupervision,
+          workloadProjectWork,
+          workloadSelfStudy,
+          workloadTotal,
           status,
           location,
-          po*/
+          participantsMin,
+          participantsMax
         ) =>
       MetadataDbEntry(
         id,
@@ -129,23 +160,24 @@ final class MetadataTable(tag: Tag)
         title,
         abbrev,
         moduleType,
-        /* children,
-        parent,
-        credits,*/
-        language
-        /*duration,
+        ects,
+        language,
+        duration,
         season,
-        workloadLecture,
-        workloadSeminar,
-        workloadPractical,
-        workloadExercise,
-        workloadProjectSupervision,
-        workloadProjectWork,
-        recommendedPrerequisites,
-        requiredPrerequisites,
+        Workload(
+          workloadLecture,
+          workloadSeminar,
+          workloadPractical,
+          workloadExercise,
+          workloadProjectSupervision,
+          workloadProjectWork,
+          workloadSelfStudy,
+          workloadTotal
+        ),
         status,
         location,
-        po*/
+        participantsMin,
+        participantsMax
       )
   }
 
@@ -156,17 +188,22 @@ final class MetadataTable(tag: Tag)
         String,
         String,
         String,
-        /*        (Option[String], Option[String]),
-        Double,*/
-        String
-        /*Int,
+        Double,
         String,
-        (Int, Int, Int, Int, Int, Int),
+        Int,
+        String,
+        Int,
+        Int,
+        Int,
+        Int,
+        Int,
+        Int,
+        Int,
+        Int,
         String,
         String,
-        String,
-        String,
-        String*/
+        Option[Int],
+        Option[Int]
     )
   ] =
     a =>
@@ -177,24 +214,22 @@ final class MetadataTable(tag: Tag)
           a.title,
           a.abbrev,
           a.moduleType,
-          /*(a.children, a.parent),
-          a.credits,*/
-          a.language
-          /*a.duration,
+          a.ects,
+          a.language,
+          a.duration,
           a.season,
-          (
-            a.workloadLecture,
-            a.workloadSeminar,
-            a.workloadPractical,
-            a.workloadExercise,
-            a.workloadProjectSupervi@sion,
-            a.workloadProjectWork
-          ),
-          a.recommendedPrerequisites,
-          a.requiredPrerequisites,
+          a.workload.lecture,
+          a.workload.seminar,
+          a.workload.practical,
+          a.workload.exercise,
+          a.workload.projectSupervision,
+          a.workload.projectWork,
+          a.workload.selfStudy,
+          a.workload.total,
           a.status,
           a.location,
-          a.poMandatory*/
+          a.participantsMin,
+          a.participantsMax
         )
       )
 }

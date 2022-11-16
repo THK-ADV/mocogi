@@ -1,7 +1,9 @@
 package service
 
-import basedata.Person
+import basedata.Person.{Group, Single, Unknown}
+import basedata.{Person, PersonStatus}
 import database.repo.PersonRepository
+import database.table.PersonDbEntry
 import parsing.base.PersonFileParser
 
 import javax.inject.{Inject, Singleton}
@@ -30,7 +32,53 @@ final class PersonServiceImpl @Inject() (
         case Left(e) =>
           Future.failed(e)
         case Right(xs) =>
-          repo.createMany(xs.map(makePersonDbEntry)).map(_ => xs)
+          repo.createMany(xs.map(toDbEntry)).map(_ => xs)
       }
     } yield people
+
+  private def toDbEntry(p: Person): PersonDbEntry =
+    p match {
+      case Single(
+            id,
+            lastname,
+            firstname,
+            title,
+            faculties,
+            abbreviation,
+            status
+          ) =>
+        PersonDbEntry(
+          id,
+          lastname,
+          firstname,
+          title,
+          faculties.map(_.abbrev),
+          abbreviation,
+          status,
+          Person.SingleKind
+        )
+      case Group(id, title) =>
+        PersonDbEntry(
+          id,
+          "",
+          "",
+          title,
+          Nil,
+          "",
+          PersonStatus.Active,
+          Person.GroupKind
+        )
+      case Unknown(id, title) =>
+        PersonDbEntry(
+          id,
+          "",
+          "",
+          title,
+          Nil,
+          "",
+          PersonStatus.Active,
+          Person.UnknownKind
+        )
+    }
+
 }

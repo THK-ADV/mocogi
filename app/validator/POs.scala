@@ -9,7 +9,7 @@ case class POs(
 )
 
 case class POOptional(
-    studyProgram: PO,
+    po: PO,
     instanceOf: Module,
     partOfCatalog: Boolean,
     recommendedSemester: List[Int]

@@ -123,7 +123,6 @@ object StudyProgramFileParser {
     removeIndentation()
       .take(
         prefixTo(":")
-          .skip(newline)
           .skip(zeroOrMoreSpaces)
           .zip(labelParser)
           .skip(zeroOrMoreSpaces)

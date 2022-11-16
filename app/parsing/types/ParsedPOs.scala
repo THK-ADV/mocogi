@@ -8,14 +8,14 @@ case class ParsedPOs(
 )
 
 case class ParsedPOOptional(
-    studyProgram: PO,
+    po: PO,
     instanceOf: String,
     partOfCatalog: Boolean,
     recommendedSemester: List[Int]
 )
 
 case class POMandatory(
-    studyProgram: PO,
+    po: PO,
     recommendedSemester: List[Int],
     recommendedSemesterPartTime: List[Int]
 )

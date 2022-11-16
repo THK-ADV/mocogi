@@ -52,6 +52,10 @@ POST        /globalCriterias            controllers.GlobalCriteriaController.cre
 GET         /studyPrograms              controllers.StudyProgramController.all()
 POST        /studyPrograms              controllers.StudyProgramController.create()
 
+GET         /competences                controllers.CompetenceController.all()
+POST        /competences                controllers.CompetenceController.create()
+
+POST        /metadata                   controllers.MetadataController.create()
 GET         /metadata                   controllers.MetadataController.all()
 
 # Map static resources from the /public folder to the /assets URL path

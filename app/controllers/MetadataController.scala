@@ -2,10 +2,9 @@ package controllers
 
 import controllers.json.MetadataFormat
 import git.GitFilePath
-import parsing.types.ParsedMetadata
-import play.api.libs.json.{Format, Json, OFormat}
+import play.api.libs.json.{Format, JsTrue, Json, OFormat}
 import play.api.mvc.{AbstractController, ControllerComponents}
-import service.MetadataService
+import service.{MetadataPipeline, MetadataService}
 import validator.Metadata
 
 import javax.inject.{Inject, Singleton}
@@ -15,9 +14,11 @@ import scala.concurrent.{ExecutionContext, Future}
 final class MetadataController @Inject() (
     cc: ControllerComponents,
     service: MetadataService,
+    pipeline: MetadataPipeline,
     implicit val ctx: ExecutionContext
 ) extends AbstractController(cc)
-    with MetadataFormat {
+    with MetadataFormat
+    with TextInputAction {
 
   implicit val fmt: Format[(Metadata, GitFilePath)] =
     OFormat.apply(
@@ -36,6 +37,10 @@ final class MetadataController @Inject() (
 
   def all() =
     Action.async { _ =>
-      Future.successful(Seq.empty[Metadata]).map(xs => Ok(Json.toJson(xs)))
+      service.all().map(xs => Ok(Json.toJson(xs)))
     }
+
+  def create() = textInputAction { input =>
+    pipeline.go(input).map(_ => Ok(JsTrue))
+  }
 }
