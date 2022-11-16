@@ -1,6 +1,7 @@
 package service
 
 import basedata.PO
+import database.InsertOrUpdateResult
 import database.repo.PORepository
 import parsing.base.POFileParser
 
@@ -10,6 +11,7 @@ import scala.concurrent.{ExecutionContext, Future}
 trait POService {
   def all(): Future[Seq[PO]]
   def create(input: String): Future[List[PO]]
+  def createOrUpdate(input: String): Future[List[(InsertOrUpdateResult, PO)]]
 }
 
 @Singleton
@@ -31,4 +33,27 @@ final class POServiceImpl @Inject() (
         ._1
         .fold(Future.failed, xs => repo.createMany(xs).map(_ => xs))
     } yield pos
+
+  override def createOrUpdate(
+      input: String
+  ): Future[List[(InsertOrUpdateResult, PO)]] = {
+    def go(xs: List[PO]) =
+      Future.sequence(
+        xs.map(po =>
+          repo.exists(po.abbrev).flatMap {
+            case true  => repo.update(po).map(InsertOrUpdateResult.Update -> _)
+            case false => repo.create(po).map(InsertOrUpdateResult.Insert -> _)
+          }
+        )
+      )
+
+    for {
+      sps <- studyProgramService.allIds()
+      pos <- POFileParser
+        .fileParser(sps)
+        .parse(input)
+        ._1
+        .fold(Future.failed, go)
+    } yield pos
+  }
 }

@@ -35,12 +35,14 @@ final class MetadataController @Inject() (
         )
     )
 
+  // TODO only used for testing
   def all() =
     Action.async { _ =>
       service.all().map(xs => Ok(Json.toJson(xs)))
     }
 
+  // TODO only used for testing
   def create() = textInputAction { input =>
-    pipeline.go(input).map(_ => Ok(JsTrue))
+    pipeline.go(input, GitFilePath("???")).map(m => Ok(Json.toJson(m)))
   }
 }

@@ -124,35 +124,12 @@ class StudyProgramRepository @Inject() (
 
     ls.foreach { sp =>
       studyPrograms += toDbEntry(sp)
-      val spId = sp.abbrev
-      sp.language.foreach { l =>
-        studyProgramLanguages += StudyProgramLanguageDbEntry(l.abbrev, spId)
-      }
-      sp.seasons.foreach { s =>
-        studyProgramSeasons += StudyProgramSeasonDbEntry(s.abbrev, spId)
-      }
-      sp.campus.foreach { c =>
-        studyProgramLocations += StudyProgramLocationDbEntry(c.abbrev, spId)
-      }
-      sp.studyForm.foreach { sf =>
-        val sfId = UUID.randomUUID()
-        studyForms += StudyFormDbEntry(
-          sfId,
-          spId,
-          sf.kind.abbrev,
-          sf.workloadPerEcts
-        )
-        sf.scope.foreach { sfs =>
-          studyFormScopes += StudyFormScopeDbEntry(
-            UUID.randomUUID(),
-            sfId,
-            sfs.programDuration,
-            sfs.totalEcts,
-            sfs.deReason,
-            sfs.enReason
-          )
-        }
-      }
+      studyProgramLanguages ++= toLanguages(sp)
+      studyProgramSeasons ++= toSeasons(sp)
+      studyProgramLocations ++= toLocation(sp)
+      val (sfs, sfscs) = toStudyForms(sp)
+      studyForms ++= sfs
+      studyFormScopes ++= sfscs
     }
 
     val action = for {
@@ -166,6 +143,89 @@ class StudyProgramRepository @Inject() (
 
     db.run(action.transactionally)
   }
+
+  def create(sp: StudyProgram) = {
+    val action = for {
+      _ <- tableQuery += toDbEntry(sp)
+      _ <- createDependencies(sp)
+    } yield sp
+
+    db.run(action.transactionally)
+  }
+
+  private def toLanguages(sp: StudyProgram) =
+    sp.language.map(l => StudyProgramLanguageDbEntry(l.abbrev, sp.abbrev))
+
+  private def toSeasons(sp: StudyProgram) =
+    sp.seasons.map(s => StudyProgramSeasonDbEntry(s.abbrev, sp.abbrev))
+
+  private def toLocation(sp: StudyProgram) =
+    sp.campus.map(c => StudyProgramLocationDbEntry(c.abbrev, sp.abbrev))
+
+  private def toStudyForms(sp: StudyProgram) = {
+    val studyForms = ListBuffer[StudyFormDbEntry]()
+    val studyFormScopes = ListBuffer[StudyFormScopeDbEntry]()
+    sp.studyForm.foreach { sf =>
+      val sfId = UUID.randomUUID()
+      studyForms += StudyFormDbEntry(
+        sfId,
+        sp.abbrev,
+        sf.kind.abbrev,
+        sf.workloadPerEcts
+      )
+      sf.scope.foreach { sfs =>
+        studyFormScopes += StudyFormScopeDbEntry(
+          UUID.randomUUID(),
+          sfId,
+          sfs.programDuration,
+          sfs.totalEcts,
+          sfs.deReason,
+          sfs.enReason
+        )
+      }
+    }
+    (studyForms.toList, studyFormScopes.toList)
+  }
+
+  private def createDependencies(sp: StudyProgram) = {
+    val (sfs, sfscs) = toStudyForms(sp)
+    for {
+      _ <- studyFormTableQuery ++= sfs
+      _ <- studyFormScopeTableQuery ++= sfscs
+      _ <- studyProgramLanguageTableQuery ++= toLanguages(sp)
+      _ <- studyProgramSeasonTableQuery ++= toSeasons(sp)
+      _ <- studyProgramLocationTableQuery ++= toLocation(sp)
+    } yield sp
+  }
+
+  private def updateAction(sp: StudyProgram) =
+    for {
+      _ <- studyProgramLocationTableQuery
+        .filter(_.studyProgram === sp.abbrev)
+        .delete
+      _ <- studyProgramSeasonTableQuery
+        .filter(_.studyProgram === sp.abbrev)
+        .delete
+      _ <- studyProgramLanguageTableQuery
+        .filter(_.studyProgram === sp.abbrev)
+        .delete
+      _ <- studyFormScopeTableQuery
+        .filter(s =>
+          s.studyForm in studyFormTableQuery
+            .filter(_.studyProgram === sp.abbrev)
+            .map(_.id)
+        )
+        .delete
+      _ <- studyFormTableQuery.filter(_.studyProgram === sp.abbrev).delete
+      _ <- tableQuery.filter(_.abbrev === sp.abbrev).update(toDbEntry(sp))
+      _ <- createDependencies(sp)
+    } yield sp
+
+  def update(sp: StudyProgram) =
+    db.run(updateAction(sp))
+
+  def exists(sp: StudyProgram): Future[Boolean] =
+    db.run(tableQuery.filter(_.abbrev === sp.abbrev).exists.result)
 
   private def toDbEntry(sp: StudyProgram): StudyProgramDbEntry =
     StudyProgramDbEntry(

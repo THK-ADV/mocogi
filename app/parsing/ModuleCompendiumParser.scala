@@ -10,14 +10,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 final class ModuleCompendiumParser @Inject() (
-    private val metadataParser: MetadataCompositeParser,
-    private val locationService: LocationService,
-    private val languageService: LanguageService,
-    private val statusService: StatusService,
-    private val assessmentMethodService: AssessmentMethodService,
-    private val moduleTypeService: ModuleTypeService,
-    private val seasonService: SeasonService,
-    private val personService: PersonService,
+    private val metadataParserService: MetadataParserService,
     private implicit val ctx: ExecutionContext
 ) {
   def parser(): Future[Parser[ModuleCompendium]] =

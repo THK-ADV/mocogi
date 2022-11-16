@@ -13,7 +13,7 @@ trait MetadataParserService {
 
 @Singleton
 final class MetadataParserServiceImpl @Inject() (
-    val metadataParser: MetadataCompositeParser,
+    private val metadataParser: MetadataCompositeParser,
     private val locationService: LocationService,
     private val languageService: LanguageService,
     private val statusService: StatusService,

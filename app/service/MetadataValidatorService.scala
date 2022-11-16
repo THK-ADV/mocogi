@@ -17,13 +17,13 @@ final class MetadataValidatorServiceImpl @Inject() (
 ) extends MetadataValidatorService {
   override def validate(metadata: ParsedMetadata) =
     for {
-      idsAndAbbrevs <- service.allIdsAndAbbrevs()
+      idsAndAbbrevs <- service.allIdsAndAbbrevs() // TODO add current ParsedMetadata if a batch of file is processed
     } yield {
       val modules = idsAndAbbrevs.map(Module.tupled)
       MetadataValidator
         .validate(
           Seq(metadata),
-          30, // TODO
+          30, // TODO use from StudyProgram
           a => modules.find(_.abbrev == a)
         )
         .head

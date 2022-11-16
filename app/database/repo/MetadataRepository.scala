@@ -79,7 +79,9 @@ case class MetadataOutput(
 )
 
 trait MetadataRepository {
+  def exists(metadata: Metadata): Future[Boolean]
   def create(metadata: Metadata, path: GitFilePath): Future[Metadata]
+  def update(metadata: Metadata, path: GitFilePath): Future[Metadata]
   def all(): Future[Seq[MetadataOutput]]
   def allIdsAndAbbrevs(): Future[Seq[(UUID, String)]]
 }
@@ -146,9 +148,12 @@ final class MetadataRepositoryImpl @Inject() (
   private val metadataTaughtWithTable =
     TableQuery[MetadataTaughtWithTable]
 
-  /*
-    taughtWith: List[Module]
-   */
+  override def exists(metadata: Metadata) =
+    db.run(metadataTable.filter(_.id === metadata.id).result.map(_.nonEmpty))
+
+  override def update(metadata: Metadata, path: GitFilePath) =
+    Future.failed(new Throwable("unsupported operation update(metadata: Metadata, path: GitFilePath)")) // TODO implement
+
   override def create(metadata: Metadata, path: GitFilePath) = {
     val dbEntry = MetadataDbEntry(
       metadata.id,

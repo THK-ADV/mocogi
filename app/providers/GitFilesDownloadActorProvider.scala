@@ -1,8 +1,8 @@
 package providers
 
 import akka.actor.ActorSystem
-import git.GitConfig
-import git.publisher.{GitFilesDownloadActor, ModuleCompendiumPublisher}
+import git.publisher.GitFilesDownloadActor
+import git.{GitConfig, GitFilesBroker}
 import play.api.libs.ws.WSClient
 
 import javax.inject.{Inject, Provider, Singleton}
@@ -12,7 +12,7 @@ import scala.concurrent.ExecutionContext
 final class GitFilesDownloadActorProvider @Inject() (
     system: ActorSystem,
     gitConfig: GitConfig,
-    publisher: ModuleCompendiumPublisher,
+    broker: GitFilesBroker,
     ws: WSClient,
     ctx: ExecutionContext
 ) extends Provider[GitFilesDownloadActor] {
@@ -21,7 +21,7 @@ final class GitFilesDownloadActorProvider @Inject() (
       system.actorOf(
         GitFilesDownloadActor.props(
           gitConfig,
-          publisher,
+          broker,
           ws,
           ctx
         )

@@ -1,13 +1,9 @@
 import com.google.inject.{AbstractModule, TypeLiteral}
 import database.repo.{MetadataRepository, MetadataRepositoryImpl}
-import git.publisher.{GitFilesDownloadActor, ModuleCompendiumPublisher}
-import git.{GitConfig, ModuleCompendiumSubscribers}
+import git.publisher.{CoreDataParsingValidator, GitFilesDownloadActor, ModuleCompendiumPublisher}
+import git.{GitConfig, GitFilesBroker, GitFilesBrokerImpl, ModuleCompendiumSubscribers}
 import parsing.metadata.MetadataParser
-import printing.{
-  MarkdownConverter,
-  ModuleCompendiumPrinter,
-  ModuleCompendiumPrinterImpl
-}
+import printing.{MarkdownConverter, ModuleCompendiumPrinter, ModuleCompendiumPrinterImpl}
 import providers._
 import publisher.KafkaPublisher
 import service._
@@ -82,6 +78,9 @@ class Module() extends AbstractModule {
     bind(classOf[MetadataValidatorService])
       .to(classOf[MetadataValidatorServiceImpl])
       .asEagerSingleton()
+    bind(classOf[GitFilesBroker])
+      .to(classOf[GitFilesBrokerImpl])
+      .asEagerSingleton()
 
     bind(classOf[MarkdownConverter])
       .toProvider(classOf[MarkdownConverterProvider])
@@ -97,6 +96,9 @@ class Module() extends AbstractModule {
       .asEagerSingleton()
     bind(classOf[ModuleCompendiumPublisher])
       .toProvider(classOf[ModuleCompendiumPublisherProvider])
+      .asEagerSingleton()
+    bind(classOf[CoreDataParsingValidator])
+      .toProvider(classOf[CoreDataParsingValidatorProvider])
       .asEagerSingleton()
 
     bind(new TypeLiteral[Set[MetadataParser]] {})
