@@ -2,9 +2,8 @@ package providers
 
 import akka.actor.ActorSystem
 import git.ModuleCompendiumSubscribers
-import git.subscriber.{ModuleCompendiumPrintingActor, ModuleCompendiumPublishActor}
+import git.subscriber.ModuleCompendiumLoggingActor
 import parserprinter.ModuleCompendiumParserPrinter
-import printing.PrinterOutputType
 import publisher.KafkaPublisher
 import service.MetadataService
 import validator.Metadata
@@ -23,15 +22,16 @@ class ModuleCompendiumSubscribersProvider @Inject() (
   override def get(): ModuleCompendiumSubscribers =
     ModuleCompendiumSubscribers(
       List(
-        system.actorOf(
+        system.actorOf(ModuleCompendiumLoggingActor.props)
+        /*        system.actorOf(
           ModuleCompendiumPrintingActor.props(
             parserPrinter,
             PrinterOutputType.HTMLStandaloneFile,
             "output"
           )
-        ),
-        system.actorOf(ModuleCompendiumPublishActor.props(publisher)),
-        //system.actorOf(MetadataDatabaseActor.props(metadataService, ctx))
+        ),*/
+        // system.actorOf(ModuleCompendiumPublishActor.props(publisher)),
+        // system.actorOf(MetadataDatabaseActor.props(metadataService, ctx))
       )
     )
 }

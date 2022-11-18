@@ -3,7 +3,7 @@ package git.publisher
 import akka.actor.{Actor, ActorRef, Props}
 import database.InsertOrUpdateResult
 import git.GitFilesBroker.Changes
-import git.publisher.CoreDataParsingValidator.ParsingValidation
+import git.publisher.CoreDataPublisher.ParsingValidation
 import git.{GitFileContent, GitFilePath}
 import play.api.Logging
 import service._
@@ -12,7 +12,7 @@ import javax.inject.Singleton
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
-object CoreDataParsingValidator {
+object CoreDataPublisher {
   def props(
       locationService: LocationService,
       languageService: LanguageService,
@@ -32,7 +32,7 @@ object CoreDataParsingValidator {
       ctx: ExecutionContext
   ) =
     Props(
-      new CoreDataParsingValidatorImpl(
+      new CoreDataPublisherImpl(
         locationService,
         languageService,
         statusService,
@@ -52,7 +52,7 @@ object CoreDataParsingValidator {
       )
     )
 
-  private final class CoreDataParsingValidatorImpl(
+  private final class CoreDataPublisherImpl(
       private val locationService: LocationService,
       private val languageService: LanguageService,
       private val statusService: StatusService,
@@ -159,7 +159,7 @@ object CoreDataParsingValidator {
 }
 
 @Singleton
-case class CoreDataParsingValidator(private val value: ActorRef) {
+case class CoreDataPublisher(private val value: ActorRef) {
   def notifySubscribers(changes: Changes): Unit =
     value ! ParsingValidation(changes)
 }

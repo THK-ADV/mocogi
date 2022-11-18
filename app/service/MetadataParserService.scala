@@ -8,7 +8,7 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 trait MetadataParserService {
-  def parse(input: String): Future[ParsedMetadata]
+  def parse(input: String): Future[(ParsedMetadata, String)]
 }
 
 @Singleton
@@ -27,7 +27,7 @@ final class MetadataParserServiceImpl @Inject() (
     private val competenceService: CompetenceService,
     private implicit val ctx: ExecutionContext
 ) extends MetadataParserService {
-  override def parse(input: String): Future[ParsedMetadata] =
+  override def parse(input: String): Future[(ParsedMetadata, String)] =
     for {
       locations <- locationService.all()
       languages <- languageService.all()
@@ -40,7 +40,7 @@ final class MetadataParserServiceImpl @Inject() (
       globalCriteria <- globalCriteriaService.all()
       pos <- poService.all()
       competences <- competenceService.all()
-      metadata <- metadataParser
+      (res, rest) = metadataParser
         .parser(
           locations,
           languages,
@@ -55,7 +55,6 @@ final class MetadataParserServiceImpl @Inject() (
           pos
         )
         .parse(input)
-        ._1
-        .fold(Future.failed, Future.successful)
+      metadata <- res.fold(Future.failed, m => Future.successful((m, rest)))
     } yield metadata
 }

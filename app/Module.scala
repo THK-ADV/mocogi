@@ -1,9 +1,22 @@
 import com.google.inject.{AbstractModule, TypeLiteral}
 import database.repo.{MetadataRepository, MetadataRepositoryImpl}
-import git.publisher.{CoreDataParsingValidator, GitFilesDownloadActor, ModuleCompendiumPublisher}
-import git.{GitConfig, GitFilesBroker, GitFilesBrokerImpl, ModuleCompendiumSubscribers}
+import git.publisher.{
+  CoreDataPublisher,
+  GitFilesDownloadActor,
+  ModuleCompendiumPublisher
+}
+import git.{
+  GitConfig,
+  GitFilesBroker,
+  GitFilesBrokerImpl,
+  ModuleCompendiumSubscribers
+}
 import parsing.metadata.MetadataParser
-import printing.{MarkdownConverter, ModuleCompendiumPrinter, ModuleCompendiumPrinterImpl}
+import printing.{
+  MarkdownConverter,
+  ModuleCompendiumPrinter,
+  ModuleCompendiumPrinterImpl
+}
 import providers._
 import publisher.KafkaPublisher
 import service._
@@ -72,14 +85,17 @@ class Module() extends AbstractModule {
     bind(classOf[CompetenceService])
       .to(classOf[CompetenceServiceImpl])
       .asEagerSingleton()
-    bind(classOf[MetadataPipeline])
-      .to(classOf[MetadataPipelineImpl])
+    bind(classOf[MetadataParsingValidator])
+      .to(classOf[MetadataParsingValidatorImpl])
       .asEagerSingleton()
     bind(classOf[MetadataValidatorService])
       .to(classOf[MetadataValidatorServiceImpl])
       .asEagerSingleton()
     bind(classOf[GitFilesBroker])
       .to(classOf[GitFilesBrokerImpl])
+      .asEagerSingleton()
+    bind(classOf[ModuleCompendiumParsingValidator])
+      .to(classOf[ModuleCompendiumParsingValidatorImpl])
       .asEagerSingleton()
 
     bind(classOf[MarkdownConverter])
@@ -97,7 +113,7 @@ class Module() extends AbstractModule {
     bind(classOf[ModuleCompendiumPublisher])
       .toProvider(classOf[ModuleCompendiumPublisherProvider])
       .asEagerSingleton()
-    bind(classOf[CoreDataParsingValidator])
+    bind(classOf[CoreDataPublisher])
       .toProvider(classOf[CoreDataParsingValidatorProvider])
       .asEagerSingleton()
 

@@ -1,7 +1,7 @@
 package providers
 
 import akka.actor.ActorSystem
-import git.publisher.CoreDataParsingValidator
+import git.publisher.CoreDataPublisher
 import service._
 
 import javax.inject.{Inject, Provider, Singleton}
@@ -26,10 +26,10 @@ final class CoreDataParsingValidatorProvider @Inject() (
     studyProgramService: StudyProgramService,
     studyFormTypeService: StudyFormTypeService,
     ctx: ExecutionContext
-) extends Provider[CoreDataParsingValidator] {
-  override def get() = CoreDataParsingValidator(
+) extends Provider[CoreDataPublisher] {
+  override def get() = CoreDataPublisher(
     system.actorOf(
-      CoreDataParsingValidator.props(
+      CoreDataPublisher.props(
         locationService,
         languageService,
         statusService,

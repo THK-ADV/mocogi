@@ -2,16 +2,16 @@ package parserprinter
 
 import controllers.parameter.PrinterOutputFormat
 import ops.EitherOps.EOps
-import parsing.ModuleCompendiumParser
 import parsing.types.ModuleCompendium
 import printing._
+import service.ModuleCompendiumContentParsing
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class ModuleCompendiumParserPrinter @Inject() (
-    private val parser: ModuleCompendiumParser,
+    private val parser: ModuleCompendiumContentParsing,
     private val printer: ModuleCompendiumPrinter,
     private val markdownConverter: MarkdownConverter,
     private implicit val ctx: ExecutionContext
@@ -41,7 +41,8 @@ class ModuleCompendiumParserPrinter @Inject() (
       outputType: PrinterOutputType,
       outputFormat: PrinterOutputFormat
   ): Future[Either[ModuleCompendiumGenerationError, PrinterOutput]] =
-    parser
+    Future.failed(new Throwable("unsupported operation"))
+/*    parser
       .parser()
       .map(
         _.parse(input)._1
@@ -54,6 +55,6 @@ class ModuleCompendiumParserPrinter @Inject() (
             identity,
             mc => print(mc, outputType, outputFormat)
           )
-      )
+      )*/
 
 }

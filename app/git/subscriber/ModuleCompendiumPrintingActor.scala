@@ -1,16 +1,13 @@
+/*
 package git.subscriber
 
 import akka.actor.{Actor, Props}
 import controllers.parameter.PrinterOutputFormat
-import git.publisher.ModuleCompendiumPublisher.OnUpdate
+import git.ModuleCompendiumSubscribers.OnUpdate
 import parserprinter.ModuleCompendiumParserPrinter
 import parsing.types.ModuleCompendium
 import play.api.Logging
-import printing.{
-  ModuleCompendiumGenerationError,
-  PrinterOutput,
-  PrinterOutputType
-}
+import printing.{ModuleCompendiumGenerationError, PrinterOutput, PrinterOutputType}
 
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Paths}
@@ -33,16 +30,16 @@ private final class ModuleCompendiumPrintingActor(
 ) extends Actor
     with Logging {
 
-  override def receive = { case OnUpdate(changes, outputFormat) =>
-    changes.added.foreach { case (_, mc) =>
-      print(outputFormat, mc)
-    }
-    changes.modified.foreach { case (_, mc) =>
-      print(outputFormat, mc)
-    }
-    changes.removed.foreach { path =>
-      logger.info(s"need to delete module compendium with path ${path.value}")
-    }
+  override def receive = { case OnUpdate(changes) =>
+    /*    changes.added.foreach { case (_, mc) =>
+          print(outputFormat, mc)
+        }
+        changes.modified.foreach { case (_, mc) =>
+          print(outputFormat, mc)
+        }
+        changes.removed.foreach { path =>
+          logger.info(s"need to delete module compendium with path ${path.value}")
+        }*/
   }
 
   private def print(
@@ -84,3 +81,4 @@ private final class ModuleCompendiumPrintingActor(
          |  - path: ${path}""".stripMargin
     )
 }
+*/

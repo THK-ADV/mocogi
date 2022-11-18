@@ -1,14 +1,11 @@
+/*
 package git.subscriber
 
 import akka.actor.{Actor, Props}
-import git.publisher.ModuleCompendiumPublisher.OnUpdate
-import ops.PrettyPrinter
-import parsing.types.ParsedMetadata
+import git.ModuleCompendiumSubscribers.OnUpdate
 import play.api.Logging
 import publisher.{KafkaPublisher, Record}
 import validator.Metadata
-
-import scala.util.{Failure, Success}
 
 object ModuleCompendiumPublishActor {
   def props(publisher: KafkaPublisher[Metadata]) = Props(
@@ -21,8 +18,8 @@ private final class ModuleCompendiumPublishActor(
 ) extends Actor
     with Logging {
 
-  override def receive = { case OnUpdate(changes, _) =>
-    val addedRecords = changes.added.map { case (_, mc) =>
+  override def receive = { case OnUpdate(changes) =>
+/*    val addedRecords = changes.added.map { case (_, mc) =>
       Record("added", mc.metadata)
     }
     val updatedRecords = changes.modified.map { case (_, mc) =>
@@ -32,10 +29,10 @@ private final class ModuleCompendiumPublishActor(
       logger.info(
         s"need to delete module compendium with path ${path.value}"
       )
-    }
+    }*/
 
-    // TODO
-/*    publisher.publishComplete(addedRecords ::: updatedRecords) {
+  // TODO
+  /*    publisher.publishComplete(addedRecords ::: updatedRecords) {
       case (record, res) =>
         res match {
           case Success(_) =>
@@ -56,3 +53,4 @@ private final class ModuleCompendiumPublishActor(
     }*/
   }
 }
+*/
