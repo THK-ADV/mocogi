@@ -100,14 +100,6 @@ final class MetadataRepositoryImpl @Inject() (
       List[PrerequisitesPODbEntry]
   )
 
-  type GetResult = (ParsedMetadata, GitFilePath)
-
-  type AddResult = (
-      MetadataDbEntry,
-      List[ResponsibilityDbEntry],
-      List[MetadataAssessmentMethodDbEntry]
-  )
-
   private val metadataTable = TableQuery[MetadataTable]
 
   private val ectsFocusAreaContributionTable =
@@ -151,34 +143,51 @@ final class MetadataRepositoryImpl @Inject() (
   override def exists(metadata: Metadata) =
     db.run(metadataTable.filter(_.id === metadata.id).result.map(_.nonEmpty))
 
-  override def update(metadata: Metadata, path: GitFilePath) =
-    Future.failed(new Throwable("unsupported operation update(metadata: Metadata, path: GitFilePath)")) // TODO implement
+  private def deleteDependencies(metadata: Metadata) =
+    for {
+      _ <- metadataTaughtWithTable.filter(_.metadata === metadata.id).delete
+      _ <- metadataGlobalCriteriaTable.filter(_.metadata === metadata.id).delete
+      _ <- metadataCompetenceTable.filter(_.metadata === metadata.id).delete
+      _ <- poOptionalTable.filter(_.metadata === metadata.id).delete
+      _ <- poMandatoryTable.filter(_.metadata === metadata.id).delete
+      prerequisitesQuery = prerequisitesTable.filter(_.metadata === metadata.id)
+      _ <- prerequisitesPOTable
+        .filter(
+          _.prerequisites in prerequisitesQuery
+            .map(_.id)
+        )
+        .delete
+      _ <- prerequisitesModuleTable
+        .filter(
+          _.prerequisites in prerequisitesQuery
+            .map(_.id)
+        )
+        .delete
+      _ <- prerequisitesQuery.delete
+      metadataAssessmentMethodQuery = metadataAssessmentMethodTable.filter(
+        _.metadata === metadata.id
+      )
+      _ <- metadataAssessmentMethodPreconditionTable
+        .filter(
+          _.metadataAssessmentMethod in metadataAssessmentMethodQuery.map(_.id)
+        )
+        .delete
+      _ <- metadataAssessmentMethodQuery.delete
+      _ <- responsibilityTable.filter(_.metadata === metadata.id).delete
+      _ <- moduleRelationTable.filter(_.module === metadata.id).delete
+      _ <- ectsFocusAreaContributionTable
+        .filter(_.metadata === metadata.id)
+        .delete
+    } yield metadata
 
-  override def create(metadata: Metadata, path: GitFilePath) = {
-    val dbEntry = MetadataDbEntry(
-      metadata.id,
-      path.value,
-      metadata.title,
-      metadata.abbrev,
-      metadata.kind.abbrev,
-      metadata.ects.value,
-      metadata.language.abbrev,
-      metadata.duration,
-      metadata.season.abbrev,
-      metadata.workload,
-      metadata.status.abbrev,
-      metadata.location.abbrev,
-      metadata.participants.map(_.min),
-      metadata.participants.map(_.max)
-    )
+  private def createDependencies(metadata: Metadata) = {
     val (methods, preconditions) = metadataAssessmentMethods(metadata)
     val (entries, prerequisitesModules, prerequisitesPOs) = prerequisites(
       metadata
     )
     val (poMandatory, poOptional) = pos(metadata)
 
-    val result = for {
-      _ <- metadataTable += dbEntry
+    for {
       _ <- ectsFocusAreaContributionTable ++= contributionsToFocusAreas(
         metadata
       )
@@ -195,9 +204,48 @@ final class MetadataRepositoryImpl @Inject() (
       _ <- metadataGlobalCriteriaTable ++= metadataGlobalCriteria(metadata)
       _ <- metadataTaughtWithTable ++= metadataTaughtWith(metadata)
     } yield metadata
-
-    db.run(result)
   }
+
+  override def update(metadata: Metadata, path: GitFilePath) =
+    db.run(
+      (
+        for {
+          _ <- deleteDependencies(metadata)
+          _ <- metadataTable
+            .filter(_.id === metadata.id)
+            .update(toDbEntry(metadata, path))
+          _ <- createDependencies(metadata)
+        } yield metadata
+      ).transactionally
+    )
+
+  override def create(metadata: Metadata, path: GitFilePath) =
+    db.run(
+      (
+        for {
+          _ <- metadataTable += toDbEntry(metadata, path)
+          _ <- createDependencies(metadata)
+        } yield metadata
+      ).transactionally
+    )
+
+  private def toDbEntry(metadata: Metadata, path: GitFilePath) =
+    MetadataDbEntry(
+      metadata.id,
+      path.value,
+      metadata.title,
+      metadata.abbrev,
+      metadata.kind.abbrev,
+      metadata.ects.value,
+      metadata.language.abbrev,
+      metadata.duration,
+      metadata.season.abbrev,
+      metadata.workload,
+      metadata.status.abbrev,
+      metadata.location.abbrev,
+      metadata.participants.map(_.min),
+      metadata.participants.map(_.max)
+    )
 
   private def metadataTaughtWith(
       metadata: Metadata

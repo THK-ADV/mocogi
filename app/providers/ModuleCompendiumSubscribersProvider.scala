@@ -2,7 +2,7 @@ package providers
 
 import akka.actor.ActorSystem
 import git.ModuleCompendiumSubscribers
-import git.subscriber.ModuleCompendiumLoggingActor
+import git.subscriber.{MetadataDatabaseActor, ModuleCompendiumLoggingActor}
 import parserprinter.ModuleCompendiumParserPrinter
 import publisher.KafkaPublisher
 import service.MetadataService
@@ -22,7 +22,7 @@ class ModuleCompendiumSubscribersProvider @Inject() (
   override def get(): ModuleCompendiumSubscribers =
     ModuleCompendiumSubscribers(
       List(
-        system.actorOf(ModuleCompendiumLoggingActor.props)
+        system.actorOf(ModuleCompendiumLoggingActor.props),
         /*        system.actorOf(
           ModuleCompendiumPrintingActor.props(
             parserPrinter,
@@ -31,7 +31,7 @@ class ModuleCompendiumSubscribersProvider @Inject() (
           )
         ),*/
         // system.actorOf(ModuleCompendiumPublishActor.props(publisher)),
-        // system.actorOf(MetadataDatabaseActor.props(metadataService, ctx))
+        system.actorOf(MetadataDatabaseActor.props(metadataService, ctx))
       )
     )
 }
