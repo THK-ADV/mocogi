@@ -8,14 +8,13 @@ import controllers.ModuleCompendiumParsingController.{
 import controllers.json._
 import controllers.parameter.{OutputType, PrinterOutputFormat}
 import parser.ParsingError
-import parserprinter.ModuleCompendiumParserPrinter
 import parsing.types._
 import play.api.libs.json._
 import play.api.libs.ws.WSClient
 import play.api.mvc._
 import printer.PrintingError
 import printing.{ModuleCompendiumGenerationError, PrinterOutput}
-import service.ModuleCompendiumContentParsing
+import service.{ModuleCompendiumContentParsing, ModuleCompendiumPrintingService}
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
@@ -27,7 +26,7 @@ class ModuleCompendiumParsingController @Inject() (
     cc: ControllerComponents,
     ws: WSClient,
     parser: ModuleCompendiumContentParsing,
-    parserPrinter: ModuleCompendiumParserPrinter,
+    parserPrinter: ModuleCompendiumPrintingService,
     implicit val ctx: ExecutionContext
 ) extends AbstractController(cc)
     with RequestBodyFileParser {

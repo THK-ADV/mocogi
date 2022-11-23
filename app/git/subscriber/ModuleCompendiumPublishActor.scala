@@ -20,11 +20,11 @@ private final class ModuleCompendiumPublishActor(
     with Logging {
 
   override def receive = {
-    case Added(_, _, result) =>
+    case Added(_, _, _, result) =>
       result.foreach(mc => publish(Record("added", mc.metadata)))
-    case Modified(_, _, result) =>
+    case Modified(_, _, _, result) =>
       result.foreach(mc => publish(Record("updated", mc.metadata)))
-    case Removed(_, path) =>
+    case Removed(_, _, path) =>
       logger.error(
         s"""failed to publish metadata record
            |  - git path: ${path.value}

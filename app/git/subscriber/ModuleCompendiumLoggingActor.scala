@@ -14,11 +14,11 @@ object ModuleCompendiumLoggingActor {
 
 final class ModuleCompendiumLoggingActor() extends Actor with Logging {
   override def receive = {
-    case Added(commitId, path, result) =>
+    case Added(commitId, _, path, result) =>
       log("added", commitId, path, Some(result))
-    case Modified(commitId, path, result) =>
+    case Modified(commitId, _, path, result) =>
       log("modified", commitId, path, Some(result))
-    case Removed(commitId, path) =>
+    case Removed(commitId, _, path) =>
       log("removed", commitId, path, None)
   }
 

@@ -7,6 +7,7 @@ import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfigProvider}
 import slick.jdbc.JdbcProfile
 import validator.{Metadata, Module, ModuleRelation, PrerequisiteEntry, Workload}
 
+import java.time.LocalDateTime
 import java.util.UUID
 import javax.inject.{Inject, Singleton}
 import scala.collection.mutable
@@ -80,8 +81,16 @@ case class MetadataOutput(
 
 trait MetadataRepository {
   def exists(metadata: Metadata): Future[Boolean]
-  def create(metadata: Metadata, path: GitFilePath): Future[Metadata]
-  def update(metadata: Metadata, path: GitFilePath): Future[Metadata]
+  def create(
+      metadata: Metadata,
+      path: GitFilePath,
+      timestamp: LocalDateTime
+  ): Future[Metadata]
+  def update(
+      metadata: Metadata,
+      path: GitFilePath,
+      timestamp: LocalDateTime
+  ): Future[Metadata]
   def all(): Future[Seq[MetadataOutput]]
   def allIdsAndAbbrevs(): Future[Seq[(UUID, String)]]
 }
@@ -206,33 +215,46 @@ final class MetadataRepositoryImpl @Inject() (
     } yield metadata
   }
 
-  override def update(metadata: Metadata, path: GitFilePath) =
+  override def update(
+      metadata: Metadata,
+      path: GitFilePath,
+      timestamp: LocalDateTime
+  ) =
     db.run(
       (
         for {
           _ <- deleteDependencies(metadata)
           _ <- metadataTable
             .filter(_.id === metadata.id)
-            .update(toDbEntry(metadata, path))
+            .update(toDbEntry(metadata, path, timestamp))
           _ <- createDependencies(metadata)
         } yield metadata
       ).transactionally
     )
 
-  override def create(metadata: Metadata, path: GitFilePath) =
+  override def create(
+      metadata: Metadata,
+      path: GitFilePath,
+      timestamp: LocalDateTime
+  ) =
     db.run(
       (
         for {
-          _ <- metadataTable += toDbEntry(metadata, path)
+          _ <- metadataTable += toDbEntry(metadata, path, timestamp)
           _ <- createDependencies(metadata)
         } yield metadata
       ).transactionally
     )
 
-  private def toDbEntry(metadata: Metadata, path: GitFilePath) =
+  private def toDbEntry(
+      metadata: Metadata,
+      path: GitFilePath,
+      timestamp: LocalDateTime
+  ) =
     MetadataDbEntry(
       metadata.id,
       path.value,
+      timestamp,
       metadata.title,
       metadata.abbrev,
       metadata.kind.abbrev,

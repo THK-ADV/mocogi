@@ -39,17 +39,15 @@ object GitFilesBroker {
     )
 
     Map(
-      modules -> GitChanges(
-        addedModules.toList,
-        modifiedModules.toList,
-        removedModules.toList,
-        changes.commitId
+      modules -> changes.copy(
+        added = addedModules.toList,
+        modified = modifiedModules.toList,
+        removed = removedModules.toList
       ),
-      core -> GitChanges(
-        addedCore.toList,
-        modifiedCore.toList,
-        removedCore.toList,
-        changes.commitId
+      core -> changes.copy(
+        added = addedCore.toList,
+        modified = modifiedCore.toList,
+        removed = removedCore.toList
       )
     ).filterNot(a => isEmpty(a._2))
   }

@@ -30,9 +30,10 @@ object ModuleCompendiumPublisher {
     override def receive = { case NotifySubscribers(changes) =>
       parse(
         changes,
-        (p, r) => subscribers.added(changes.commitId, p, r),
-        (p, r) => subscribers.modified(changes.commitId, p, r),
-        p => subscribers.removed(changes.commitId, p)
+        (p, r) => subscribers.added(changes.commitId, changes.timestamp, p, r),
+        (p, r) =>
+          subscribers.modified(changes.commitId, changes.timestamp, p, r),
+        p => subscribers.removed(changes.commitId, changes.timestamp, p)
       )
     }
 

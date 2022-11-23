@@ -1,28 +1,28 @@
 package printing
 
-import java.io.ByteArrayInputStream
+import java.io.{ByteArrayInputStream, File}
+import java.nio.charset.StandardCharsets
 import java.util.UUID
 import javax.inject.Singleton
-import scala.language.postfixOps
+import scala.language.{existentials, postfixOps}
 import scala.sys.process._
-import scala.util.Try
+import scala.util.{Failure, Success, Try}
 
 @Singleton
 final class MarkdownConverter(
     htmlCmd: String,
-    pdfCmd: String
+    pdfCmd: String,
+    outputFolderPath: String
 ) {
 
   private val htmlExtension = "html"
 
   private val pdfExtension = "pdf"
 
-  def convert(
-      id: UUID,
-      input: String,
-      outputType: PrinterOutputType
+  def convert(title: String, id: UUID, outputType: PrinterOutputType)(
+      input: String
   ): Either[Throwable, PrinterOutput] = {
-    val inputStream = new ByteArrayInputStream(input.getBytes)
+    val inputStream = toStream(input)
     val res = outputType match {
       case PrinterOutputType.HTML =>
         createText(htmlCmd, htmlExtension, inputStream)
@@ -41,16 +41,31 @@ final class MarkdownConverter(
     res
   }
 
+  private def toStream(input: String) =
+    new ByteArrayInputStream(
+      input.getBytes(StandardCharsets.UTF_8)
+    )
+
   private def standalone(cmd: String): String = s"$cmd -s"
+
+  private def metadataTag(title: String, cmd: String): String =
+    s"$cmd --metadata title=\"$title\""
 
   private def createText(
       cmd: String,
       extension: String,
       inputStream: ByteArrayInputStream
-  ): Either[Throwable, PrinterOutput] =
-    Try(cmd #< inputStream !!)
-      .map(c => PrinterOutput.Text(c, extension))
-      .toEither
+  ): Either[Throwable, PrinterOutput] = {
+    val process = cmd #< inputStream
+    var output = ""
+    val logger = ProcessLogger(_ => (), err => output += s"$err\n")
+    Try(process !! logger) match {
+      case Failure(e) =>
+        Left(new Throwable(output, e))
+      case Success(c) =>
+        Right(PrinterOutput.Text(c, extension, output))
+    }
+  }
 
   private def createFile(
       id: UUID,
@@ -58,9 +73,15 @@ final class MarkdownConverter(
       cmd: String,
       inputStream: ByteArrayInputStream
   ): Either[Throwable, PrinterOutput] = {
-    val filename = s"output/$id.$extension" // TODO
-    Try(s"$cmd -o $filename" #< inputStream !!)
-      .map(_ => PrinterOutput.File(filename))
-      .toEither
+    val filename = s"$outputFolderPath/$id.$extension"
+    val process = new File(filename) #< cmd #< inputStream
+    var output = ""
+    val logger = ProcessLogger(_ => (), err => output += s"$err\n")
+    Try(process ! logger) match {
+      case Failure(e) =>
+        Left(new Throwable(output, e))
+      case Success(_) =>
+        Right(PrinterOutput.File(filename, output))
+    }
   }
 }

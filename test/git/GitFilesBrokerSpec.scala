@@ -4,17 +4,21 @@ import git.GitFilesBroker.{Changes, core, modules, split}
 import org.scalatest.OptionValues
 import org.scalatest.wordspec.AnyWordSpec
 
+import java.time.LocalDateTime
+
 final class GitFilesBrokerSpec extends AnyWordSpec with OptionValues {
 
   "A GitFilesBroker" should {
     "split git files to paths if they are empty" in {
-      val changes1: Changes = GitChanges(Nil, Nil, Nil, "commitId")
+      val changes1: Changes =
+        GitChanges(Nil, Nil, Nil, "commitId", LocalDateTime.now())
       assert(split(changes1).isEmpty)
       val changes2: Changes = GitChanges(
         List((GitFilePath("modules/added1"), GitFileContent(""))),
         Nil,
         Nil,
-        "commitId"
+        "commitId",
+        LocalDateTime.now()
       )
       val mods = split(changes2)
       assert(mods.size == 1)
@@ -25,7 +29,8 @@ final class GitFilesBrokerSpec extends AnyWordSpec with OptionValues {
         List((GitFilePath("core/added1"), GitFileContent(""))),
         Nil,
         Nil,
-        "commitId"
+        "commitId",
+        LocalDateTime.now()
       )
       val cr = split(changes3)
       assert(cr.size == 1)
@@ -47,7 +52,8 @@ final class GitFilesBrokerSpec extends AnyWordSpec with OptionValues {
           (GitFilePath("core/stuff.yaml"), GitFileContent(""))
         ),
         List(GitFilePath("modules/removed1")),
-        "commitId"
+        "commitId",
+        LocalDateTime.now()
       )
 
       val res = split(changes)

@@ -7,6 +7,7 @@ import play.api.Logging
 import service.MetadataService
 import validator.Metadata
 
+import java.time.LocalDateTime
 import scala.concurrent.ExecutionContext
 import scala.util.{Failure, Success}
 
@@ -23,20 +24,23 @@ private final class MetadataDatabaseActor(
     with Logging {
 
   override def receive = {
-    case Added(_, path, result) =>
-      result.foreach(mc => createOrUpdate(mc.metadata, path))
-    case Modified(_, path, result) =>
-      result.foreach(mc => createOrUpdate(mc.metadata, path))
-    case Removed(_, path) =>
+    case Added(_, timestamp, path, result) =>
+      result.foreach(mc => createOrUpdate(mc.metadata, path, timestamp))
+    case Modified(_, timestamp, path, result) =>
+      result.foreach(mc => createOrUpdate(mc.metadata, path, timestamp))
+    case Removed(_, _, path) =>
       delete(path)
   }
 
-  private def createOrUpdate(metadata: Metadata, path: GitFilePath): Unit = {
-    metadataService.createOrUpdate(metadata, path) onComplete {
+  private def createOrUpdate(
+      metadata: Metadata,
+      path: GitFilePath,
+      timestamp: LocalDateTime
+  ): Unit =
+    metadataService.createOrUpdate(metadata, path, timestamp) onComplete {
       case Success(m) => logSuccess(m, path)
       case Failure(e) => logError(metadata, path, e)
     }
-  }
 
   private def delete(path: GitFilePath): Unit =
     logger.error(

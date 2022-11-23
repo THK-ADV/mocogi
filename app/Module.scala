@@ -12,11 +12,7 @@ import git.{
   ModuleCompendiumSubscribers
 }
 import parsing.metadata.MetadataParser
-import printing.{
-  MarkdownConverter,
-  ModuleCompendiumPrinter,
-  ModuleCompendiumPrinterImpl
-}
+import printing.MarkdownConverter
 import providers._
 import publisher.KafkaPublisher
 import service._
@@ -26,10 +22,6 @@ class Module() extends AbstractModule {
 
   override def configure(): Unit = {
     super.configure()
-
-    bind(classOf[ModuleCompendiumPrinter])
-      .to(classOf[ModuleCompendiumPrinterImpl])
-      .asEagerSingleton()
 
     bind(classOf[LocationService])
       .to(classOf[LocationServiceImpl])

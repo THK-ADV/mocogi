@@ -208,6 +208,7 @@ create table metadata
 (
     "id"                           uuid PRIMARY KEY,
     "git_path"                     text          not null,
+    "last_modified"                timestamp     not null,
     "title"                        text          not null,
     "abbrev"                       text          not null,
     "module_type"                  text          not null,
@@ -306,7 +307,7 @@ create table prerequisites_module
 create table prerequisites_po
 (
     "prerequisites" uuid not null,
-    "po" text not null,
+    "po"            text not null,
     PRIMARY KEY (prerequisites, po),
     FOREIGN KEY (prerequisites) REFERENCES prerequisites (id),
     FOREIGN KEY (po) REFERENCES po (abbrev)
