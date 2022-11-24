@@ -1,170 +1,115 @@
 package printing
 
-import basedata.Person
-import controllers.parameter.PrinterOutputFormat
+import basedata.{AbbrevLabelLike, Season}
 import parsing.types._
 import printer.Printer
-import printer.Printer._
+import validator.Workload
 
-import java.time.LocalDate
-import java.time.format.DateTimeFormatter
-import javax.inject.Singleton
-import scala.language.implicitConversions
+import java.time.LocalDateTime
 
 trait ModuleCompendiumPrinter {
-  def printerForFormat(
-      outputFormat: PrinterOutputFormat
+  def printer(implicit
+      language: PrintingLanguage,
+      lastModified: LocalDateTime
   ): Printer[ModuleCompendium]
 }
 
-@Singleton
-class ModuleCompendiumPrinterImpl extends ModuleCompendiumPrinter {
+object ModuleCompendiumPrinter {
+  implicit class LanguageOps(lang: PrintingLanguage) {
+    def moduleCodeLabel = lang.fold("Modulnummer", "Module Code")
+    def moduleTitleLabel = lang.fold("Modulbezeichnung", "Module Title")
+    def moduleTypeLabel = lang.fold("Art des Moduls", "Type of Module")
+    def ectsLabel = "ECTS credits"
+    def languageLabel = lang.fold("Sprache", "Language")
+    def durationLabel = lang.fold("Dauer des Moduls", "Duration of Module")
+    def recommendedSemesterLabel =
+      lang.fold("Empfohlenes Studiensemester", "Recommended for Semester")
+    def frequencyLabel = lang.fold("Häufigkeit des Angebots", "Frequency")
+    def moduleCoordinatorLabel =
+      lang.fold("Modulverantwortliche*r", "Module Coordinator")
+    def lecturersLabel = lang.fold("Dozierende", "Lecturers")
+    def assessmentMethodLabel = lang.fold("Prüfungsformen", "Assessment Method")
+    def workloadLabel = "Workload"
+    def contactHoursLabel = lang.fold("Präsenzzeit", "Contact hours")
+    def selfStudyLabel = lang.fold("Selbststudium", "Self-study")
+    def recommendedPrerequisitesLabel =
+      lang.fold("Empfohlene Voraussetzungen", "Recommended Prerequisites")
+    def requiredPrerequisitesLabel =
+      lang.fold("Zwingende Voraussetzungen", "Required Prerequisites")
+    def poLabel = lang.fold(
+      "Verwendung des Moduls in weiteren Studiengängen",
+      "Use of the Module in Other Degree Programs"
+    )
+    def lastModifiedLabel =
+      lang.fold("Letzte Aktualisierung am", "Last update at")
+    def parentLabel =
+      lang.fold("Besteht aus den Teilmodulen", "Consists of the submodules")
+    def childLabel = lang.fold("Gehört zum Modul", "Part of module")
+    def noneLabel = lang.fold("Keine", "None")
+    def prerequisitesTextLabel = lang.fold("Beschreibung", "Description")
+    def prerequisitesModuleLabel = lang.fold("Module", "Modules")
+    def prerequisitesStudyProgramLabel =
+      lang.fold("Studiengänge", "Degree Programs")
+    def semesterLabel = "Semester"
 
-  private val localDatePattern = DateTimeFormatter.ofPattern("dd.MM.yyyy")
+    def value(a: AbbrevLabelLike): String =
+      lang.fold(a.deLabel, a.enLabel)
 
-  private def now: String = LocalDate.now().format(localDatePattern)
+    def frequencyValue(season: Season): String =
+      lang.fold(s"Jedes ${season.deLabel}", s"Each ${season.enLabel}")
 
-  private def row(key: String, value: String): Printer[Unit] =
-    prefix(s"| $key | $value |")
-      .skip(newline)
-
-  private def fmtPeople(p: Person): String = "TODO" // TODO
-    /*p.id match {
-      case "all" | "nn" => p.lastname
-      case _ => s"${p.title} ${p.firstname} ${p.lastname} (${p.faculty})"
-    }*/
-
-  private def fmtPrerequisites(
-      prerequisites: Option[ParsedPrerequisiteEntry]
-  ): String =
-    prerequisites match {
-      case None    => "Keine"
-      case Some(p) => p.modules.mkString("\n") // TODO use all fields
-    }
-
-  private def fmtPOMandatory(pos: ParsedPOs): String = {
-    val xs = pos.mandatory
-    if (xs.isEmpty) "Keine"
-    else xs.map(_.po).mkString(", ") // TODO use all fields
-  }
-
-  private def moduleRelationRow(relation: ParsedModuleRelation): Printer[Unit] =
-    relation match {
-      case ParsedModuleRelation.Parent(children) =>
-        row("Besteht aus den Teilmodulen", children.mkString(", "))
-      case ParsedModuleRelation.Child(parent) =>
-        row("Gehört zum Modul", parent)
-    }
-
-  private def fmtDouble(d: Double): String =
-    if (d % 1 == 0) d.toInt.toString
-    else d.toString.replace('.', ',')
-
-  // TODO use all fields
-  private def fmtAssessmentMethod(ams: AssessmentMethods): String =
-    ams.mandatory
-      .map { am =>
-        am.percentage.fold(am.method.deLabel)(d =>
-          s"${am.method.deLabel} (${fmtDouble(d)} %)"
-        )
+    def lectureValue(wl: Workload): String =
+      if (wl.lecture == 0) ""
+      else {
+        val value = s"${wl.lecture} h"
+        val res = lang.fold("Vorlesung", "Lecture")
+        s"$value $res"
       }
-      .mkString(", ")
 
-  private def header(title: String) =
-    prefix(s"## $title")
-      .skip(newline)
+    def exerciseValue(wl: Workload): String =
+      if (wl.exercise == 0) ""
+      else {
+        val value = s"${wl.exercise} h"
+        val res = lang.fold("Übung", "Exercise")
+        s"$value $res"
+      }
 
-  private def contentBlock(title: String, content: String) =
-    header(title).skip(prefix(content))
+    def practicalValue(wl: Workload): String =
+      if (wl.practical == 0) ""
+      else {
+        val value = s"${wl.practical} h"
+        val res = lang.fold("Praktikum", "Practical")
+        s"$value $res"
+      }
 
-  private def linkToHeader(header: String): String =
-    s"[Siehe $header](#${header.toLowerCase.replace(' ', '-')})"
+    def seminarValue(wl: Workload): String =
+      if (wl.seminar == 0) ""
+      else {
+        val value = s"${wl.seminar} h"
+        val res = "Seminar"
+        s"$value $res"
+      }
 
-  override def printerForFormat(
-      outputFormat: PrinterOutputFormat
-  ): Printer[ModuleCompendium] =
-    outputFormat match {
-      case PrinterOutputFormat.DefaultPrinter => defaultPrinter
-    }
+    def projectSupervisionValue(wl: Workload): String =
+      if (wl.projectSupervision == 0) ""
+      else {
+        val value = s"${wl.projectSupervision} h"
+        val res = lang.fold("Projektbetreuung", "Project Supervision")
+        s"$value $res"
+      }
 
-  val defaultPrinter: Printer[ModuleCompendium] = Printer { case (mc, input) =>
-    val m = mc.metadata
-    val c = mc.deContent
-
-    prefix("#")
-      .skip(whitespace) // TODO
-      /*      .skip(prefix(m.title))
-      .skip(newline.repeat(2))
-      .skip(row("", ""))
-      .skip(row("---", "---"))
-      .skip(row("Modulnummer", m.abbrev))
-      .skip(row("Modulbezeichnung", m.title))
-      .skip(row("Art des Moduls", m.kind.deLabel))
-      .skipOpt(m.relation.map(moduleRelationRow))
-      //.skip(row("ECTS credits", fmtDouble(m.credits.value)))
-      .skip(row("Sprache", m.language.de_label))
-      .skip(row("Dauer des Moduls", s"${m.duration} Semester"))
-      .skip(row("Häufigkeit des Angebots", s"Jedes ${m.frequency.deLabel}"))
-      .skip(
-        row(
-          "Modulverantwortliche*r",
-          m.responsibilities.moduleManagement.map(fmtPeople).mkString(", ")
-        )
-      )
-      .skip(
-        row(
-          "Dozierende",
-          m.responsibilities.lecturers.map(fmtPeople).mkString(", ")
-        )
-      )
-      .skip(
-        row(
-          "Prüfungsformen",
-          fmtAssessmentMethod(m.assessmentMethods)
-        )
-      )
-      .skip(row("Workload", ""))
-      .skip(row("\tVorlesung", s"${m.workload.lecture} h"))
-      .skip(row("\tSeminar", s"${m.workload.seminar} h"))
-      .skip(row("\tPraktikum", s"${m.workload.practical} h"))
-      .skip(row("\tÜbung", s"${m.workload.exercise} h"))
-      .skip(row("\tProjektbetreuung", s"${m.workload.projectSupervision} h"))
-      .skip(row("\tProjektarbeit", s"${m.workload.projectWork} h"))
-      .skip(
-        row(
-          "Empfohlene Voraussetzungen",
-          fmtPrerequisites(m.prerequisites.recommended)
-        )
-      )
-      .skip(
-        row(
-          "Zwingende Voraussetzungen",
-          fmtPrerequisites(m.prerequisites.required)
-        )
-      )
-      .skip(
-        row(
-          "Verwendung des Moduls in weiteren Studiengängen",
-          fmtPOMandatory(m.pos)
-        )
-      )
-      .skip(newline)
-      .skip(contentBlock(c.learningOutcomeHeader, c.learningOutcomeBody))
-      .skip(contentBlock(c.contentHeader, c.contentBody))
-      .skip(
-        contentBlock(
-          c.teachingAndLearningMethodsHeader,
-          c.teachingAndLearningMethodsBody
-        )
-      )
-      .skip(
-        contentBlock(c.recommendedReadingHeader, c.recommendedReadingBody)
-      )
-      .skip(contentBlock(c.particularitiesHeader, c.particularitiesBody))
-      .skip(prefix("---"))
-      .skip(newline.repeat(2))
-      .skip(prefix(s"Letzte Aktualisierung am $now"))*/
-      .print((), input)
+    def projectWorkValue(wl: Workload): String =
+      if (wl.projectWork == 0) ""
+      else {
+        val value = s"${wl.projectWork} h"
+        val res = lang.fold("Projektarbeit", "Project Work")
+        s"$value $res"
+      }
   }
 
+  implicit class StringConcatOps(s: String) {
+    def combine(other: String): String =
+      if (other.isEmpty) s
+      else s"$s, $other"
+  }
 }

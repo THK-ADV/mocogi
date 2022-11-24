@@ -22,7 +22,7 @@ object GlobalCriteriaFileParser extends FileParser[GlobalCriteria] {
           .take(singleLineStringForKey("en_label"))
           .skip(zeroOrMoreSpaces)
           .take(stringForKey("en_desc").option.map(_.getOrElse("")))
-          .many(zeroOrMoreSpaces)
+          .all(zeroOrMoreSpaces)
           .map(_.map(GlobalCriteria.tupled))
       )
 }

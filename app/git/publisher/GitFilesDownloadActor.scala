@@ -1,7 +1,6 @@
 package git.publisher
 
 import akka.actor.{Actor, ActorRef, Props}
-import controllers.parameter.PrinterOutputFormat
 import git._
 import git.publisher.GitFilesDownloadActor.Download
 import play.api.Logging
@@ -16,11 +15,11 @@ import scala.util.{Failure, Success}
 object GitFilesDownloadActor {
   def props(
       gitConfig: GitConfig,
-      publisher: ModuleCompendiumPublisher,
+      broker: GitFilesBroker,
       ws: WSClient,
       ctx: ExecutionContext
   ) = Props(
-    new GitFilesDownloadActorImpl(gitConfig, publisher, ws, ctx)
+    new GitFilesDownloadActorImpl(gitConfig, broker, ws, ctx)
   )
 
   private case class Download(
@@ -30,18 +29,17 @@ object GitFilesDownloadActor {
 
   private final class GitFilesDownloadActorImpl(
       private val gitConfig: GitConfig,
-      private val publisher: ModuleCompendiumPublisher,
+      private val broker: GitFilesBroker,
       private val ws: WSClient,
       private implicit val ctx: ExecutionContext
   ) extends Actor
       with Logging {
 
     override def receive = { case Download(changes, projectId) =>
-      val outputFormat = PrinterOutputFormat.DefaultPrinter
       val urls = stitchFileUrl(projectId, changes)
       downloadFiles(urls) onComplete {
         case Success(s) =>
-          publisher.notifySubscribers(s, outputFormat)
+          broker.distributeToSubscriber(s)
         case Failure(t) =>
           logger.error( // TODO pull out
             s"""failed to download git file

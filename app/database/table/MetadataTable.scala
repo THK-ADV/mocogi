@@ -3,11 +3,13 @@ package database.table
 import slick.jdbc.PostgresProfile.api._
 import validator.Workload
 
+import java.time.LocalDateTime
 import java.util.UUID
 
 case class MetadataDbEntry(
     id: UUID,
     gitPath: String,
+    lastModified: LocalDateTime,
     title: String,
     abbrev: String,
     moduleType: String,
@@ -28,6 +30,8 @@ final class MetadataTable(tag: Tag)
   def id = column[UUID]("id", O.PrimaryKey)
 
   def gitPath = column[String]("git_path")
+
+  def lastModified = column[LocalDateTime]("last_modified")
 
   def title = column[String]("title")
 
@@ -85,6 +89,7 @@ final class MetadataTable(tag: Tag)
   override def * = (
     id,
     gitPath,
+    lastModified,
     title,
     abbrev,
     moduleType,
@@ -110,6 +115,7 @@ final class MetadataTable(tag: Tag)
       (
           UUID,
           String,
+          LocalDateTime,
           String,
           String,
           String,
@@ -134,6 +140,7 @@ final class MetadataTable(tag: Tag)
     case (
           id,
           gitPath,
+          lastModified,
           title,
           abbrev,
           moduleType,
@@ -157,6 +164,7 @@ final class MetadataTable(tag: Tag)
       MetadataDbEntry(
         id,
         gitPath,
+        lastModified,
         title,
         abbrev,
         moduleType,
@@ -185,6 +193,7 @@ final class MetadataTable(tag: Tag)
     (
         UUID,
         String,
+        LocalDateTime,
         String,
         String,
         String,
@@ -211,6 +220,7 @@ final class MetadataTable(tag: Tag)
         (
           a.id,
           a.gitPath,
+          a.lastModified,
           a.title,
           a.abbrev,
           a.moduleType,

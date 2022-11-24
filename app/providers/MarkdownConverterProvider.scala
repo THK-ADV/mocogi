@@ -10,6 +10,7 @@ final class MarkdownConverterProvider @Inject() (
 ) extends Provider[MarkdownConverter] {
   override def get() = new MarkdownConverter(
     config.htmlCmd,
-    config.pdfCmd
+    config.pdfCmd,
+    config.outputFolderPath
   )
 }

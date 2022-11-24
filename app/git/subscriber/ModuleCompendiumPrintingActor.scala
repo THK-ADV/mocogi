@@ -2,72 +2,96 @@ package git.subscriber
 
 import akka.actor.{Actor, Props}
 import controllers.parameter.PrinterOutputFormat
-import git.publisher.ModuleCompendiumPublisher.OnUpdate
-import parserprinter.ModuleCompendiumParserPrinter
+import git.ModuleCompendiumSubscribers.{Added, Modified}
 import parsing.types.ModuleCompendium
 import play.api.Logging
 import printing.{
   ModuleCompendiumGenerationError,
   PrinterOutput,
-  PrinterOutputType
+  PrinterOutputType,
+  PrintingLanguage
 }
+import service.ModuleCompendiumPrintingService
 
-import java.nio.charset.StandardCharsets
-import java.nio.file.{Files, Paths}
+import java.time.LocalDateTime
 
 object ModuleCompendiumPrintingActor {
   def props(
-      parserPrinter: ModuleCompendiumParserPrinter,
+      printingService: ModuleCompendiumPrintingService,
       outputType: PrinterOutputType,
-      outputFolder: String
+      outputFormat: PrinterOutputFormat
   ) =
     Props(
-      new ModuleCompendiumPrintingActor(parserPrinter, outputType, outputFolder)
+      new ModuleCompendiumPrintingActor(
+        printingService,
+        outputType,
+        outputFormat
+      )
     )
 }
 
 private final class ModuleCompendiumPrintingActor(
-    private val parserPrinter: ModuleCompendiumParserPrinter,
+    private val printingService: ModuleCompendiumPrintingService,
     private val outputType: PrinterOutputType,
-    private val outputFolder: String
+    private val outputFormat: PrinterOutputFormat
 ) extends Actor
     with Logging {
 
-  override def receive = { case OnUpdate(changes, outputFormat) =>
-    changes.added.foreach { case (_, mc) =>
-      print(outputFormat, mc)
-    }
-    changes.modified.foreach { case (_, mc) =>
-      print(outputFormat, mc)
-    }
-    changes.removed.foreach { path =>
-      logger.info(s"need to delete module compendium with path ${path.value}")
-    }
+  override def receive = {
+    case Added(_, lastModified, _, result) =>
+      result.foreach(print(outputFormat, lastModified, _))
+    case Modified(_, lastModified, _, result) =>
+      result.foreach(print(outputFormat, lastModified, _))
   }
 
   private def print(
       outputFormat: PrinterOutputFormat,
+      lastModified: LocalDateTime,
       mc: ModuleCompendium
   ): Unit = {
     def go(): Either[ModuleCompendiumGenerationError, Unit] =
-      parserPrinter.print(mc, outputType, outputFormat).map {
-        case PrinterOutput.Text(content, extension) =>
-          val filename = s"${mc.metadata.id}.$extension"
-          val newPath = Files.write(
-            createPath(filename),
-            content.getBytes(StandardCharsets.UTF_8)
-          )
-          logSuccess(mc, newPath.toString)
-        case PrinterOutput.File(path) =>
-          logSuccess(mc, path)
-      }
+      printingService
+        .print(
+          mc,
+          lastModified,
+          outputType,
+          outputFormat,
+          PrintingLanguage.German
+        )
+        .map {
+          case PrinterOutput.Text(content, _, consoleOutput) =>
+            logText(mc, content, consoleOutput)
+          case PrinterOutput.File(path, consoleOutput) =>
+            logFile(mc, path, consoleOutput)
+        }
 
     try go().fold(e => logError(mc, e), identity)
     catch { case t: Throwable => logError(mc, t) }
   }
 
-  private def createPath(filename: String) =
-    Paths.get(s"$outputFolder/$filename")
+  private def logText(
+      mc: ModuleCompendium,
+      content: String,
+      consoleOutput: String
+  ): Unit =
+    logger.info(
+      s"""successfully printed module compendium
+         |  - id: ${mc.metadata.id}
+         |  - content: ${content.length}
+         |  - console output: $consoleOutput""".stripMargin
+    )
+
+  private def logFile(
+      mc: ModuleCompendium,
+      path: String,
+      consoleOutput: String
+  ): Unit =
+    logger.info(
+      s"""successfully printed module compendium
+         |  - id: ${mc.metadata.id}
+         |  - path: $path
+         |  - console output: $consoleOutput""".stripMargin
+    )
 
   private def logError(mc: ModuleCompendium, t: Throwable): Unit =
     logger.error(
@@ -75,12 +99,5 @@ private final class ModuleCompendiumPrintingActor(
          |  - id: ${mc.metadata.id}
          |  - message: ${t.getMessage}
          |  - trace: ${t.getStackTrace.mkString("\n           ")}""".stripMargin
-    )
-
-  private def logSuccess(mc: ModuleCompendium, path: String): Unit =
-    logger.info(
-      s"""successfully printed module compendium
-         |  - id: ${mc.metadata.id}
-         |  - path: ${path}""".stripMargin
     )
 }

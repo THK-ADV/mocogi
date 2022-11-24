@@ -3,7 +3,6 @@ package providers
 import config.KafkaConfig
 import controllers.json.MetadataFormat
 import org.apache.kafka.common.serialization.Serializer
-import parsing.types.ParsedMetadata
 import play.api.inject.ApplicationLifecycle
 import play.api.libs.json.Json
 import publisher.KafkaPublisher

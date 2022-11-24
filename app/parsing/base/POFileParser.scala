@@ -35,6 +35,7 @@ object POFileParser {
           p => s"program.$p"
         )(programs.sorted.reverse)
       )
+      .skip(zeroOrMoreSpaces)
       .map(PO.tupled)
-      .all(zeroOrMoreSpaces)
+      .all()
 }

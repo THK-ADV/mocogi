@@ -1,3 +1,11 @@
+## (de) Sonstige empfohlene Voraussetzungen:
+
+a
+
+## (en) Other recommended prerequisites:
+
+b
+
 ## (de) Angestrebte Lernergebnisse:
 
 Programmieren lernen

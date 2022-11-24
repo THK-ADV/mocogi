@@ -23,7 +23,7 @@ trait LabelDescFileParser[A <: AbbrevLabelDescLike] extends FileParser[A] {
           .skip(zeroOrMoreSpaces)
           .take(stringForKey("en_desc"))
           .skip(optional(newline))
-          .many()
+          .all()
           .map(_.map(makeType))
       )
   }

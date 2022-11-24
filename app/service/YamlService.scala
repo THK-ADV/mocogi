@@ -1,5 +1,6 @@
 package service
 
+import database.InsertOrUpdateResult
 import database.repo.Repository
 import parsing.base.FileParser
 
@@ -19,4 +20,12 @@ trait YamlService[Input, Output] {
       .parse(input)
       ._1
       .fold(Future.failed, xs => repo.createMany(xs.map(toInput)))
+
+  def createOrUpdate(
+      input: String
+  ): Future[List[(InsertOrUpdateResult, Input)]] =
+    parser.fileParser
+      .parse(input)
+      ._1
+      .fold(Future.failed, xs => repo.createOrUpdateMany(xs.map(toInput)))
 }

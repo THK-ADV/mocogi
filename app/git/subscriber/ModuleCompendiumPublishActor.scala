@@ -1,9 +1,7 @@
 package git.subscriber
 
 import akka.actor.{Actor, Props}
-import git.publisher.ModuleCompendiumPublisher.OnUpdate
-import ops.PrettyPrinter
-import parsing.types.ParsedMetadata
+import git.ModuleCompendiumSubscribers.{Added, Modified, Removed}
 import play.api.Logging
 import publisher.{KafkaPublisher, Record}
 import validator.Metadata
@@ -21,38 +19,38 @@ private final class ModuleCompendiumPublishActor(
 ) extends Actor
     with Logging {
 
-  override def receive = { case OnUpdate(changes, _) =>
-    val addedRecords = changes.added.map { case (_, mc) =>
-      Record("added", mc.metadata)
-    }
-    val updatedRecords = changes.modified.map { case (_, mc) =>
-      Record("updated", mc.metadata)
-    }
-    changes.removed.foreach { path =>
-      logger.info(
-        s"need to delete module compendium with path ${path.value}"
+  override def receive = {
+    case Added(_, _, _, result) =>
+      result.foreach(mc => publish(Record("added", mc.metadata)))
+    case Modified(_, _, _, result) =>
+      result.foreach(mc => publish(Record("updated", mc.metadata)))
+    case Removed(_, _, path) =>
+      logger.error(
+        s"""failed to publish metadata record
+           |  - git path: ${path.value}
+           |  - message: deleting metadata is currently not supported""".stripMargin
       )
-    }
+  }
 
-    // TODO
-/*    publisher.publishComplete(addedRecords ::: updatedRecords) {
-      case (record, res) =>
-        res match {
-          case Success(_) =>
-            logger.info(
-              s"""successfully published module compendium
-               |  - record: ${PrettyPrinter.prettyPrint(record)}""".stripMargin
-            )
-          case Failure(t) =>
-            logger.error(
-              s"""failed to publish module compendium
-                 |  - record: $record
+  private def publish(record: Record[Metadata]): Unit =
+    publisher.publishComplete(Seq(record)) { case (record, res) =>
+      res match {
+        case Success(_) =>
+          logger.info(
+            s"""successfully published metadata record
+                 |  - id: ${record.value.id}
+                 |  - abbrev: ${record.value.abbrev}""".stripMargin
+          )
+        case Failure(t) =>
+          logger.error(
+            s"""failed to publish metadata record
+                 |  - id: ${record.value.id}
+                 |  - abbrev: ${record.value.abbrev}
                  |  - message: ${t.getMessage}
                  |  - trace: ${t.getStackTrace.mkString(
-                  "\n           "
-                )}""".stripMargin
-            )
-        }
-    }*/
-  }
+                "\n           "
+              )}""".stripMargin
+          )
+      }
+    }
 }

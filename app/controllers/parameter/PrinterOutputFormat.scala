@@ -1,17 +1,21 @@
 package controllers.parameter
 
+import printing.{ModuleCompendiumDefaultPrinter, ModuleCompendiumPrinter}
+
 import scala.util.{Success, Try}
 
 sealed trait PrinterOutputFormat {
-  override def toString = this match {
-    case PrinterOutputFormat.DefaultPrinter => "default"
-  }
+  def printer: ModuleCompendiumPrinter
 }
 
 object PrinterOutputFormat {
-  case object DefaultPrinter extends PrinterOutputFormat
-
-  def apply(string: String): Try[PrinterOutputFormat] = string.toLowerCase match {
-    case "default" => Success(DefaultPrinter)
+  case object DefaultPrinter extends PrinterOutputFormat {
+    override def printer = ModuleCompendiumDefaultPrinter
+    override def toString = "default"
   }
+
+  def apply(string: String): Try[PrinterOutputFormat] =
+    string.toLowerCase match {
+      case "default" => Success(DefaultPrinter)
+    }
 }

@@ -13,6 +13,8 @@ final class ConfigReader @Inject() (config: Configuration) {
 
   def pdfCmd: String = string("pandoc.pdfCmd")
 
+  def outputFolderPath: String = string("pandoc.outputFolderPath")
+
   def gitToken: Option[UUID] = config
     .getOptional[String]("git.token")
     .flatMap(s => Try(UUID.fromString(s)).toOption)

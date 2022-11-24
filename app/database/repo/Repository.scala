@@ -1,5 +1,6 @@
 package database.repo
 
+import database.InsertOrUpdateResult
 import play.api.db.slick.HasDatabaseConfigProvider
 import slick.jdbc.JdbcProfile
 import slick.jdbc.PostgresProfile.api._
@@ -21,8 +22,21 @@ trait Repository[Input, Output, T <: Table[Input]] {
   def all(): Future[Seq[Output]] =
     retrieve(tableQuery)
 
-  def createOrUpdate(l: Input): Future[Option[Input]] =
-    db.run((tableQuery returning tableQuery).insertOrUpdate(l))
+  def createOrUpdate(l: Input): Future[(InsertOrUpdateResult, Input)] =
+    db.run(createOrUpdateQuery(l))
+
+  private def createOrUpdateQuery(l: Input) =
+    (tableQuery returning tableQuery)
+      .insertOrUpdate(l)
+      .map {
+        case None    => InsertOrUpdateResult.Update -> l
+        case Some(_) => InsertOrUpdateResult.Insert -> l
+      }
+
+  def createOrUpdateMany(
+      ls: List[Input]
+  ): Future[List[(InsertOrUpdateResult, Input)]] =
+    db.run(DBIO.sequence(ls.map(l => createOrUpdateQuery(l))))
 
   def createMany(ls: List[Input]): Future[List[Input]] =
     db.run(DBIO.sequence(ls.map(l => tableQuery returning tableQuery += l)))

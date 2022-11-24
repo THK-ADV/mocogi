@@ -7,6 +7,7 @@ import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfigProvider}
 import slick.jdbc.JdbcProfile
 import validator.{Metadata, Module, ModuleRelation, PrerequisiteEntry, Workload}
 
+import java.time.LocalDateTime
 import java.util.UUID
 import javax.inject.{Inject, Singleton}
 import scala.collection.mutable
@@ -79,7 +80,17 @@ case class MetadataOutput(
 )
 
 trait MetadataRepository {
-  def create(metadata: Metadata, path: GitFilePath): Future[Metadata]
+  def exists(metadata: Metadata): Future[Boolean]
+  def create(
+      metadata: Metadata,
+      path: GitFilePath,
+      timestamp: LocalDateTime
+  ): Future[Metadata]
+  def update(
+      metadata: Metadata,
+      path: GitFilePath,
+      timestamp: LocalDateTime
+  ): Future[Metadata]
   def all(): Future[Seq[MetadataOutput]]
   def allIdsAndAbbrevs(): Future[Seq[(UUID, String)]]
 }
@@ -96,14 +107,6 @@ final class MetadataRepositoryImpl @Inject() (
       List[PrerequisitesDbEntry],
       List[PrerequisitesModuleDbEntry],
       List[PrerequisitesPODbEntry]
-  )
-
-  type GetResult = (ParsedMetadata, GitFilePath)
-
-  type AddResult = (
-      MetadataDbEntry,
-      List[ResponsibilityDbEntry],
-      List[MetadataAssessmentMethodDbEntry]
   )
 
   private val metadataTable = TableQuery[MetadataTable]
@@ -146,34 +149,54 @@ final class MetadataRepositoryImpl @Inject() (
   private val metadataTaughtWithTable =
     TableQuery[MetadataTaughtWithTable]
 
-  /*
-    taughtWith: List[Module]
-   */
-  override def create(metadata: Metadata, path: GitFilePath) = {
-    val dbEntry = MetadataDbEntry(
-      metadata.id,
-      path.value,
-      metadata.title,
-      metadata.abbrev,
-      metadata.kind.abbrev,
-      metadata.ects.value,
-      metadata.language.abbrev,
-      metadata.duration,
-      metadata.season.abbrev,
-      metadata.workload,
-      metadata.status.abbrev,
-      metadata.location.abbrev,
-      metadata.participants.map(_.min),
-      metadata.participants.map(_.max)
-    )
+  override def exists(metadata: Metadata) =
+    db.run(metadataTable.filter(_.id === metadata.id).result.map(_.nonEmpty))
+
+  private def deleteDependencies(metadata: Metadata) =
+    for {
+      _ <- metadataTaughtWithTable.filter(_.metadata === metadata.id).delete
+      _ <- metadataGlobalCriteriaTable.filter(_.metadata === metadata.id).delete
+      _ <- metadataCompetenceTable.filter(_.metadata === metadata.id).delete
+      _ <- poOptionalTable.filter(_.metadata === metadata.id).delete
+      _ <- poMandatoryTable.filter(_.metadata === metadata.id).delete
+      prerequisitesQuery = prerequisitesTable.filter(_.metadata === metadata.id)
+      _ <- prerequisitesPOTable
+        .filter(
+          _.prerequisites in prerequisitesQuery
+            .map(_.id)
+        )
+        .delete
+      _ <- prerequisitesModuleTable
+        .filter(
+          _.prerequisites in prerequisitesQuery
+            .map(_.id)
+        )
+        .delete
+      _ <- prerequisitesQuery.delete
+      metadataAssessmentMethodQuery = metadataAssessmentMethodTable.filter(
+        _.metadata === metadata.id
+      )
+      _ <- metadataAssessmentMethodPreconditionTable
+        .filter(
+          _.metadataAssessmentMethod in metadataAssessmentMethodQuery.map(_.id)
+        )
+        .delete
+      _ <- metadataAssessmentMethodQuery.delete
+      _ <- responsibilityTable.filter(_.metadata === metadata.id).delete
+      _ <- moduleRelationTable.filter(_.module === metadata.id).delete
+      _ <- ectsFocusAreaContributionTable
+        .filter(_.metadata === metadata.id)
+        .delete
+    } yield metadata
+
+  private def createDependencies(metadata: Metadata) = {
     val (methods, preconditions) = metadataAssessmentMethods(metadata)
     val (entries, prerequisitesModules, prerequisitesPOs) = prerequisites(
       metadata
     )
     val (poMandatory, poOptional) = pos(metadata)
 
-    val result = for {
-      _ <- metadataTable += dbEntry
+    for {
       _ <- ectsFocusAreaContributionTable ++= contributionsToFocusAreas(
         metadata
       )
@@ -190,9 +213,61 @@ final class MetadataRepositoryImpl @Inject() (
       _ <- metadataGlobalCriteriaTable ++= metadataGlobalCriteria(metadata)
       _ <- metadataTaughtWithTable ++= metadataTaughtWith(metadata)
     } yield metadata
-
-    db.run(result)
   }
+
+  override def update(
+      metadata: Metadata,
+      path: GitFilePath,
+      timestamp: LocalDateTime
+  ) =
+    db.run(
+      (
+        for {
+          _ <- deleteDependencies(metadata)
+          _ <- metadataTable
+            .filter(_.id === metadata.id)
+            .update(toDbEntry(metadata, path, timestamp))
+          _ <- createDependencies(metadata)
+        } yield metadata
+      ).transactionally
+    )
+
+  override def create(
+      metadata: Metadata,
+      path: GitFilePath,
+      timestamp: LocalDateTime
+  ) =
+    db.run(
+      (
+        for {
+          _ <- metadataTable += toDbEntry(metadata, path, timestamp)
+          _ <- createDependencies(metadata)
+        } yield metadata
+      ).transactionally
+    )
+
+  private def toDbEntry(
+      metadata: Metadata,
+      path: GitFilePath,
+      timestamp: LocalDateTime
+  ) =
+    MetadataDbEntry(
+      metadata.id,
+      path.value,
+      timestamp,
+      metadata.title,
+      metadata.abbrev,
+      metadata.kind.abbrev,
+      metadata.ects.value,
+      metadata.language.abbrev,
+      metadata.duration,
+      metadata.season.abbrev,
+      metadata.workload,
+      metadata.status.abbrev,
+      metadata.location.abbrev,
+      metadata.participants.map(_.min),
+      metadata.participants.map(_.max)
+    )
 
   private def metadataTaughtWith(
       metadata: Metadata

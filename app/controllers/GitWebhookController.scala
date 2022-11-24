@@ -7,6 +7,7 @@ import play.api.Logging
 import play.api.libs.json._
 import play.api.mvc._
 
+import java.time.LocalDateTime
 import java.util.UUID
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.Future
@@ -49,11 +50,13 @@ class GitWebhookController @Inject() (
       modified <- last.\("modified").validate[List[String]]
       removed <- last.\("removed").validate[List[String]]
       commitId <- last.\("id").validate[String]
+      timestamp <- last.\("timestamp").validate[LocalDateTime]
     } yield GitChanges(
       added.map(GitFilePath.apply),
       modified.map(GitFilePath.apply),
       removed.map(GitFilePath.apply),
-      commitId
+      commitId,
+      timestamp
     )
 
   private def isAuthenticated[A](action: Action[A]) = {

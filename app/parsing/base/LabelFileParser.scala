@@ -16,6 +16,6 @@ trait LabelFileParser[A] extends FileParser[A] {
       .skip(zeroOrMoreSpaces)
       .take(singleLineStringForKey("en_label"))
       .skip(optional(newline))
-      .many()
+      .all()
       .map(_.map(makeType))
 }

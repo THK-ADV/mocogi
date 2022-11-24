@@ -25,6 +25,9 @@ class PORepository @Inject() (
 
   private val poModificationDateTableQuery = TableQuery[POModificationDateTable]
 
+  def exists(abbrev: String): Future[Boolean] =
+    db.run(tableQuery.filter(_.abbrev === abbrev).exists.result)
+
   def all(): Future[Seq[PO]] =
     retrieve(tableQuery)
 
@@ -48,6 +51,17 @@ class PORepository @Inject() (
         }.toSeq)
     )
 
+  def create(po: PO) = {
+    val action = for {
+      _ <- tableQuery += toDbEntry(po)
+      _ <- poModificationDateTableQuery ++= po.modificationDates.map(date =>
+        POModificationDateDbEntry(po.abbrev, date)
+      )
+    } yield po
+
+    db.run(action.transactionally)
+  }
+
   def createMany(xs: List[PO]): Future[List[PODbEntry]] = {
     val pos = ListBuffer[PODbEntry]()
     val poModificationDates = ListBuffer[POModificationDateDbEntry]()
@@ -66,6 +80,23 @@ class PORepository @Inject() (
 
     db.run(action.transactionally)
   }
+
+  private def updateAction(po: PO) =
+    (
+      for {
+        _ <- poModificationDateTableQuery.filter(_.po === po.abbrev).delete
+        _ <- tableQuery.filter(_.abbrev === po.abbrev).update(toDbEntry(po))
+        _ <- poModificationDateTableQuery ++= po.modificationDates.map(date =>
+          POModificationDateDbEntry(po.abbrev, date)
+        )
+      } yield po
+    ).transactionally
+
+  def update(po: PO) =
+    db.run(updateAction(po))
+
+  def updateMany(pos: List[PO]) =
+    db.run(DBIO.sequence(pos.map(updateAction)))
 
   private def toDbEntry(po: PO): PODbEntry =
     PODbEntry(

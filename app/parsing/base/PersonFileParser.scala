@@ -58,5 +58,5 @@ class PersonFileParser {
       unknownParser,
       groupsParser,
       singleParser
-    ).many(zeroOrMoreSpaces)
+    ).all(zeroOrMoreSpaces)
 }
