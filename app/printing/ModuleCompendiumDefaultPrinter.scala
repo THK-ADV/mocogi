@@ -7,8 +7,8 @@ import printer.Printer.{newline, prefix, whitespace}
 import printing.ModuleCompendiumPrinter.{LanguageOps, StringConcatOps}
 import validator.{Metadata, ModuleRelation, POs, PrerequisiteEntry}
 
+import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
-import java.time.{LocalDate, LocalDateTime}
 
 object ModuleCompendiumDefaultPrinter extends ModuleCompendiumPrinter {
 
@@ -18,8 +18,15 @@ object ModuleCompendiumDefaultPrinter extends ModuleCompendiumPrinter {
     prefix(s"| $key | $value |")
       .skip(newline)
 
+  private def rows(key: String, value: List[String]): Printer[Unit] =
+    value.zipWithIndex
+      .map { case (s, i) =>
+        row(if (i == 0) key else "", s)
+      }
+      .reduce(_ skip _)
+
   private def fmtPeople(label: String, xs: List[Person]): Printer[Unit] = {
-    def go(x: Person) = x match {
+    def fmt(x: Person) = x match {
       case s: Person.Single =>
         s"${s.title} ${s.firstname} ${s.lastname} (${fmtCommaSeparated(s.faculties)(_.abbrev)})"
       case g: Person.Group =>
@@ -27,13 +34,7 @@ object ModuleCompendiumDefaultPrinter extends ModuleCompendiumPrinter {
       case u: Person.Unknown =>
         u.title
     }
-
-    xs.map(go)
-      .zipWithIndex
-      .map { case (s, i) =>
-        row(if (i == 0) label else "", s)
-      }
-      .reduce(_ skip _) // TODO this seems to be a good pattern
+    rows(label, xs.map(fmt))
   }
 
   private def fmtCommaSeparated[A](xs: List[A])(f: A => String): String =
@@ -55,12 +56,13 @@ object ModuleCompendiumDefaultPrinter extends ModuleCompendiumPrinter {
       case Some(e) if e.modules.isEmpty || e.text.isEmpty || e.pos.isEmpty =>
         row(label, lang.noneLabel)
       case Some(e) =>
-        val text = nonEmptyRow(e.text)(s => s"Beschreibung: $s")
+        val text =
+          nonEmptyRow(e.text)(s => s"${lang.prerequisitesTextLabel}: $s")
         val modules = nonEmptyRow(fmtCommaSeparated(e.modules)(_.abbrev))(s =>
-          s"Module: $s"
+          s"${lang.prerequisitesModuleLabel}: $s"
         )
         val pos = nonEmptyRow(fmtCommaSeparated(e.pos)(_.abbrev))(s =>
-          s"Studiengänge: $s"
+          s"${lang.prerequisitesStudyProgramLabel}: $s"
         )
         text
           .skip(modules)
@@ -70,16 +72,12 @@ object ModuleCompendiumDefaultPrinter extends ModuleCompendiumPrinter {
   private def fmtPOs(label: String, pos: POs)(implicit
       lang: PrintingLanguage
   ): Printer[Unit] = {
+    def fmt(p: POMandatory) =
+      s"${p.po.abbrev} (${lang.semesterLabel} ${fmtCommaSeparated(p.recommendedSemester)(_.toString)})"
+
     val xs = pos.mandatory
     if (xs.isEmpty) row(label, lang.noneLabel)
-    else
-      xs.map(p =>
-        s"${p.po.abbrev} (${fmtCommaSeparated(p.recommendedSemester)(_.toString)})"
-      ).zipWithIndex
-        .map { case (s, i) =>
-          row(if (i == 0) label else "", s)
-        }
-        .reduce(_ skip _) // TODO this seems to be a good pattern
+    else rows(label, xs.map(fmt))
   }
 
   private def fmtModuleRelation(
@@ -100,26 +98,27 @@ object ModuleCompendiumDefaultPrinter extends ModuleCompendiumPrinter {
     else d.toString.replace('.', ',')
 
   private def fmtAssessmentMethod(
+      label: String,
       ams: AssessmentMethods
-  )(implicit lang: PrintingLanguage): String =
-    ams.mandatory
-      .map { am =>
-        val methodValue = lang.value(am.method)
-        am.percentage.fold(methodValue)(d =>
-          s"$methodValue (${fmtDouble(d)} %)"
-        )
-      }
-      .mkString(", ")
+  )(implicit lang: PrintingLanguage): Printer[Unit] =
+    rows(
+      label,
+      ams.mandatory
+        .map { am =>
+          val methodValue = lang.value(am.method)
+          am.percentage.fold(methodValue)(d =>
+            s"$methodValue (${fmtDouble(d)} %)"
+          )
+        }
+    )
 
   private def header(title: String) =
-    prefix(s"## $title")
-      .skip(newline)
+    prefix(s"## $title").skip(newline)
 
-  private def contentBlock(title: String, content: String) =
-    header(title).skip(prefix(content))
-
-  private def linkToHeader(header: String): String =
-    s"[Siehe $header](#${header.toLowerCase.replace(' ', '-')})"
+  private def contentBlock(title: String, content: String) = {
+    val nonEmptyContent = if (content.isEmpty) "\n" else content
+    header(title).skip(prefix(nonEmptyContent))
+  }
 
   private def content(
       mc: ModuleCompendium
@@ -145,7 +144,7 @@ object ModuleCompendiumDefaultPrinter extends ModuleCompendiumPrinter {
     row(language.languageLabel, language.value(m.language))
 
   private def duration(implicit m: Metadata, language: PrintingLanguage) =
-    row(language.durationLabel, s"${m.duration} Semester")
+    row(language.durationLabel, s"${m.duration} ${language.semesterLabel}")
 
   private def frequency(implicit m: Metadata, language: PrintingLanguage) =
     row(language.frequencyLabel, language.frequencyValue(m.season))
@@ -172,9 +171,9 @@ object ModuleCompendiumDefaultPrinter extends ModuleCompendiumPrinter {
       m: Metadata,
       language: PrintingLanguage
   ) =
-    row(
+    fmtAssessmentMethod(
       language.assessmentMethodLabel,
-      fmtAssessmentMethod(m.assessmentMethods)
+      m.assessmentMethods
     )
 
   private def recommendedPrerequisites(implicit
@@ -219,16 +218,45 @@ object ModuleCompendiumDefaultPrinter extends ModuleCompendiumPrinter {
       .skip(row(language.selfStudyLabel, s"${wl.selfStudy} h"))
   }
 
-  override def printer(localDateTime: LocalDateTime)(implicit
-      lang: PrintingLanguage
+  private def lastModified(implicit
+      lang: PrintingLanguage,
+      localDateTime: LocalDateTime
+  ) =
+    prefix(
+      s"${lang.lastModifiedLabel} ${localDateTime.format(localDatePattern)}"
+    )
+
+  private def header(implicit m: Metadata) =
+    prefix("# ")
+      .skip(prefix(m.title))
+
+  private def particularities(implicit c: Content) =
+    contentBlock(c.particularitiesHeader, c.particularitiesBody)
+
+  private def recommendedReading(implicit c: Content) =
+    contentBlock(c.recommendedReadingHeader, c.recommendedReadingBody)
+
+  private def teachingAndLearningMethods(implicit c: Content) =
+    contentBlock(
+      c.teachingAndLearningMethodsHeader,
+      c.teachingAndLearningMethodsBody
+    )
+
+  private def moduleContent(implicit c: Content) =
+    contentBlock(c.contentHeader, c.contentBody)
+
+  private def learningOutcome(implicit c: Content) =
+    contentBlock(c.learningOutcomeHeader, c.learningOutcomeBody)
+
+  override def printer(implicit
+      lang: PrintingLanguage,
+      localDateTime: LocalDateTime
   ): Printer[ModuleCompendium] =
     Printer { case (mc, input) =>
       implicit val m: Metadata = mc.metadata
       implicit val c: Content = content(mc)
 
-      prefix("#")
-        .skip(whitespace)
-        .skip(prefix(m.title))
+      header
         .skip(newline.repeat(2))
         .skip(row("", ""))
         .skip(row("---", "---"))
@@ -255,28 +283,7 @@ object ModuleCompendiumDefaultPrinter extends ModuleCompendiumPrinter {
         .skip(particularities)
         .skip(prefix("---"))
         .skip(newline.repeat(2))
-        .skip(lastModified(localDateTime))
+        .skip(lastModified)
         .print((), input)
     }
-
-  private def lastModified(localDateTime: LocalDateTime) =
-    prefix(s"Letzte Aktualisierung am ${localDateTime.format(localDatePattern)}")
-
-  private def particularities(implicit c: Content) =
-    contentBlock(c.particularitiesHeader, c.particularitiesBody)
-
-  private def recommendedReading(implicit c: Content) =
-    contentBlock(c.recommendedReadingHeader, c.recommendedReadingBody)
-
-  private def teachingAndLearningMethods(implicit c: Content) =
-    contentBlock(
-      c.teachingAndLearningMethodsHeader,
-      c.teachingAndLearningMethodsBody
-    )
-
-  private def moduleContent(implicit c: Content) =
-    contentBlock(c.contentHeader, c.contentBody)
-
-  private def learningOutcome(implicit c: Content) =
-    contentBlock(c.learningOutcomeHeader, c.learningOutcomeBody)
 }

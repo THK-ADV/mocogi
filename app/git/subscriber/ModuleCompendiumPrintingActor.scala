@@ -56,7 +56,7 @@ private final class ModuleCompendiumPrintingActor(
           lastModified,
           outputType,
           outputFormat,
-          PrintingLanguage.English
+          PrintingLanguage.German
         )
         .map {
           case PrinterOutput.Text(content, _, consoleOutput) =>

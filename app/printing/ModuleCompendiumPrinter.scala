@@ -8,8 +8,9 @@ import validator.Workload
 import java.time.LocalDateTime
 
 trait ModuleCompendiumPrinter {
-  def printer(lastModified: LocalDateTime)(implicit
-      language: PrintingLanguage
+  def printer(implicit
+      language: PrintingLanguage,
+      lastModified: LocalDateTime
   ): Printer[ModuleCompendium]
 }
 
@@ -39,11 +40,17 @@ object ModuleCompendiumPrinter {
       "Verwendung des Moduls in weiteren Studiengängen",
       "Use of the Module in Other Degree Programs"
     )
-    def lastModifiedLabel = lang.fold("Letzte Aktualisierung", "Last update")
+    def lastModifiedLabel =
+      lang.fold("Letzte Aktualisierung am", "Last update at")
     def parentLabel =
       lang.fold("Besteht aus den Teilmodulen", "Consists of the submodules")
     def childLabel = lang.fold("Gehört zum Modul", "Part of module")
     def noneLabel = lang.fold("Keine", "None")
+    def prerequisitesTextLabel = lang.fold("Beschreibung", "Description")
+    def prerequisitesModuleLabel = lang.fold("Module", "Modules")
+    def prerequisitesStudyProgramLabel =
+      lang.fold("Studiengänge", "Degree Programs")
+    def semesterLabel = "Semester"
 
     def value(a: AbbrevLabelLike): String =
       lang.fold(a.deLabel, a.enLabel)

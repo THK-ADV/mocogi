@@ -21,7 +21,7 @@ final class ModuleCompendiumPrintingService @Inject() (
       language: PrintingLanguage
   ): Either[ModuleCompendiumGenerationError, PrinterOutput] =
     outputFormat.printer
-      .printer(lastModified)(language)
+      .printer(language, lastModified)
       .print(mc, "")
       .biFlatMap[
         ModuleCompendiumGenerationError,
