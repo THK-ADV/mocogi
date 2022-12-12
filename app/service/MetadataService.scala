@@ -22,6 +22,7 @@ trait MetadataService {
   ): Future[Metadata]
   def all(): Future[Seq[MetadataOutput]]
   def allIdsAndAbbrevs(): Future[Seq[(UUID, String)]]
+  def allOfUser(user: String): Future[Seq[MetadataOutput]]
 }
 
 @Singleton
@@ -53,5 +54,8 @@ final class MetadataServiceImpl @Inject() (
     repo.all()
 
   override def allIdsAndAbbrevs() =
-    repo.allIdsAndAbbrevs()
+    repo.allIds()
+
+  override def allOfUser(user: String) =
+    repo.allOfUser(user)
 }

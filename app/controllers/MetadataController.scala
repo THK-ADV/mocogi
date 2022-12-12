@@ -1,5 +1,6 @@
 package controllers
 
+import controllers.MetadataController.userAttribute
 import controllers.json.MetadataFormat
 import git.GitFilePath
 import play.api.libs.json.{Format, Json, OFormat}
@@ -10,6 +11,10 @@ import validator.Metadata
 import java.time.LocalDateTime
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
+
+object MetadataController {
+  val userAttribute = "user"
+}
 
 @Singleton
 final class MetadataController @Inject() (
@@ -38,8 +43,11 @@ final class MetadataController @Inject() (
 
   // TODO only used for testing
   def all() =
-    Action.async { _ =>
-      service.all().map(xs => Ok(Json.toJson(xs)))
+    Action.async { request =>
+      val res = request
+        .getQueryString(userAttribute)
+        .fold(service.all())(service.allOfUser)
+      res.map(xs => Ok(Json.toJson(xs)))
     }
 
   // TODO only used for testing

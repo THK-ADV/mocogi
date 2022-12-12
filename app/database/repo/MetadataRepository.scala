@@ -92,7 +92,8 @@ trait MetadataRepository {
       timestamp: LocalDateTime
   ): Future[Metadata]
   def all(): Future[Seq[MetadataOutput]]
-  def allIdsAndAbbrevs(): Future[Seq[(UUID, String)]]
+  def allIds(): Future[Seq[(UUID, String)]]
+  def allOfUser(user: String): Future[Seq[MetadataOutput]]
 }
 
 @Singleton
@@ -650,10 +651,19 @@ final class MetadataRepositoryImpl @Inject() (
     )
   }
 
-  override def allIdsAndAbbrevs() =
+  override def allIds() =
     db.run(
       metadataTable
         .map(m => (m.id, m.abbrev))
         .result
+    )
+
+  override def allOfUser(user: String) =
+    retrieve(
+      metadataTable
+        .joinLeft(responsibilityTable)
+        .on(_.id === _.metadata)
+        .filter(_._2.map(_.person.toLowerCase === user.toLowerCase))
+        .map(_._1)
     )
 }
