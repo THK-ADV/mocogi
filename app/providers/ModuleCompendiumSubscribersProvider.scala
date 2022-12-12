@@ -3,7 +3,12 @@ package providers
 import akka.actor.ActorSystem
 import controllers.parameter.PrinterOutputFormat
 import git.ModuleCompendiumSubscribers
-import git.subscriber.ModuleCompendiumPrintingActor
+import git.subscriber.{
+  MetadataDatabaseActor,
+  ModuleCompendiumLoggingActor,
+  ModuleCompendiumPrintingActor,
+  ModuleCompendiumPublishActor
+}
 import printing.PrinterOutputType
 import publisher.KafkaPublisher
 import service.{MetadataService, ModuleCompendiumPrintingService}
@@ -23,16 +28,16 @@ class ModuleCompendiumSubscribersProvider @Inject() (
   override def get(): ModuleCompendiumSubscribers =
     ModuleCompendiumSubscribers(
       List(
-        // system.actorOf(ModuleCompendiumLoggingActor.props),
+        system.actorOf(ModuleCompendiumLoggingActor.props),
         system.actorOf(
           ModuleCompendiumPrintingActor.props(
             parserPrinter,
             PrinterOutputType.HTMLStandaloneFile,
             PrinterOutputFormat.DefaultPrinter
           )
-        )
-        /*        system.actorOf(ModuleCompendiumPublishActor.props(publisher)),
-        system.actorOf(MetadataDatabaseActor.props(metadataService, ctx))*/
+        ),
+        system.actorOf(ModuleCompendiumPublishActor.props(publisher)),
+        system.actorOf(MetadataDatabaseActor.props(metadataService, ctx))
       )
     )
 }
