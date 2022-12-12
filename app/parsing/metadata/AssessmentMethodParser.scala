@@ -54,10 +54,14 @@ object AssessmentMethodParser {
   def assessmentMethodsMandatoryParser(implicit
       assessmentMethods: Seq[AssessmentMethod]
   ): Parser[List[AssessmentMethodEntry]] =
-    parser("assessment_methods_mandatory")
+    parser("assessment_methods_mandatory")(
+      assessmentMethods.sortBy(_.abbrev.reverse)
+    )
 
   def assessmentMethodsOptionalParser(implicit
       assessmentMethods: Seq[AssessmentMethod]
   ): Parser[List[AssessmentMethodEntry]] =
-    parser("assessment_methods_optional")
+    parser("assessment_methods_optional")(
+      assessmentMethods.sortBy(_.abbrev.reverse)
+    )
 }
