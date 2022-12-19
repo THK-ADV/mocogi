@@ -1,17 +1,34 @@
 package controllers.json
 
 import basedata.{Person, PersonStatus}
-import play.api.libs.json.{Format, JsError, Json}
+import play.api.libs.json._
 
 trait PersonFormat extends FacultyFormat {
-  implicit val unknownPersonFmt: Format[Person.Unknown] =
-    Json.format[Person.Unknown]
+  private implicit val unknownPersonReads: Reads[Person.Unknown] =
+    Json.reads[Person.Unknown]
 
-  implicit lazy val singlePersonFmt: Format[Person.Single] =
-    Json.format[Person.Single]
+  private implicit val unknownPersonWrites: Writes[Person.Unknown] =
+    Json
+      .writes[Person.Unknown]
+      .transform((js: JsObject) =>
+        js + ("kind" -> JsString(Person.UnknownKind))
+      )
 
-  implicit val groupPersonFmt: Format[Person.Group] =
-    Json.format[Person.Group]
+  implicit lazy val singlePersonReads: Reads[Person.Single] =
+    Json.reads[Person.Single]
+
+  implicit lazy val singlePersonWrites: Writes[Person.Single] =
+    Json
+      .writes[Person.Single]
+      .transform((js: JsObject) => js + ("kind" -> JsString(Person.SingleKind)))
+
+  implicit val groupPersonReads: Reads[Person.Group] =
+    Json.reads[Person.Group]
+
+  implicit val groupPersonWrites: Writes[Person.Group] =
+    Json
+      .writes[Person.Group]
+      .transform((js: JsObject) => js + ("kind" -> JsString(Person.GroupKind)))
 
   implicit val personStatusFmt: Format[PersonStatus] =
     Format.of[String].bimap(PersonStatus.apply, _.toString)
@@ -22,9 +39,9 @@ trait PersonFormat extends FacultyFormat {
         js.\("kind")
           .validate[String]
           .flatMap {
-            case Person.SingleKind  => singlePersonFmt.reads(js)
-            case Person.GroupKind   => groupPersonFmt.reads(js)
-            case Person.UnknownKind => unknownPersonFmt.reads(js)
+            case Person.SingleKind  => singlePersonReads.reads(js)
+            case Person.GroupKind   => groupPersonReads.reads(js)
+            case Person.UnknownKind => unknownPersonReads.reads(js)
             case other =>
               JsError(
                 s"kind must be ${Person.SingleKind}, ${Person.GroupKind} or ${Person.UnknownKind}, but was $other"
@@ -32,11 +49,11 @@ trait PersonFormat extends FacultyFormat {
           },
       {
         case single: Person.Single =>
-          singlePersonFmt.writes(single)
+          singlePersonWrites.writes(single)
         case group: Person.Group =>
-          groupPersonFmt.writes(group)
+          groupPersonWrites.writes(group)
         case unknown: Person.Unknown =>
-          unknownPersonFmt.writes(unknown)
+          unknownPersonWrites.writes(unknown)
       }
     )
 }

@@ -19,15 +19,15 @@ object Person {
       abbreviation: String,
       status: PersonStatus
   ) extends Person {
-    override def kind = SingleKind
+    override val kind = SingleKind
   }
 
   case class Group(id: String, title: String) extends Person {
-    override def kind = GroupKind
+    override val kind = GroupKind
   }
 
   case class Unknown(id: String, title: String) extends Person {
-    override def kind = UnknownKind
+    override val kind = UnknownKind
   }
 }
 
