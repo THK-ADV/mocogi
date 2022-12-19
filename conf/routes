@@ -46,8 +46,8 @@ POST        /focusAreas                       controllers.FocusAreaController.cr
 GET         /faculties                        controllers.FacultyController.all()
 POST        /faculties                        controllers.FacultyController.create()
 
-GET         /globalCriterias                  controllers.GlobalCriteriaController.all()
-POST        /globalCriterias                  controllers.GlobalCriteriaController.create()
+GET         /globalCriteria                   controllers.GlobalCriteriaController.all()
+POST        /globalCriteria                   controllers.GlobalCriteriaController.create()
 
 GET         /studyPrograms                    controllers.StudyProgramController.all()
 POST        /studyPrograms                    controllers.StudyProgramController.create()
