@@ -94,6 +94,9 @@ trait MetadataRepository {
   def all(): Future[Seq[MetadataOutput]]
   def allIds(): Future[Seq[(UUID, String)]]
   def allOfUser(user: String): Future[Seq[MetadataOutput]]
+  def allPreviewOfUser(user: String): Future[Seq[(UUID, String, String)]]
+  def allPreview(): Future[Seq[(UUID, String, String)]]
+  def get(id: UUID): Future[MetadataOutput]
 }
 
 @Singleton
@@ -666,4 +669,31 @@ final class MetadataRepositoryImpl @Inject() (
         .filter(_._2.map(_.person.toLowerCase === user.toLowerCase))
         .map(_._1)
     )
+
+  def allPreviewOfUser(user: String) =
+    db.run(
+      metadataTable
+        .joinLeft(responsibilityTable)
+        .on(_.id === _.metadata)
+        .filter(_._2.map(_.person.toLowerCase === user.toLowerCase))
+        .map(a => (a._1.id, a._1.title, a._1.abbrev))
+        .distinct
+        .result
+    )
+
+  def allPreview() =
+    db.run(
+      metadataTable
+        .map(m => (m.id, m.title, m.abbrev))
+        .result
+    )
+
+  override def get(id: UUID) =
+    retrieve(metadataTable.filter(_.id === id))
+      .flatMap(xs =>
+        if (xs.size > 1)
+          Future.failed(new Throwable(s"expected one element, but found: $xs"))
+        else
+          Future.successful(xs.head)
+      )
 }

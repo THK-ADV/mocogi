@@ -9,6 +9,12 @@ import java.util.UUID
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
+case class MetadataPreview(
+    id: UUID,
+    title: String,
+    abbrev: String
+)
+
 trait MetadataService {
   def create(
       metadata: Metadata,
@@ -23,6 +29,9 @@ trait MetadataService {
   def all(): Future[Seq[MetadataOutput]]
   def allIdsAndAbbrevs(): Future[Seq[(UUID, String)]]
   def allOfUser(user: String): Future[Seq[MetadataOutput]]
+  def allPreviewOfUser(user: String): Future[Seq[MetadataPreview]]
+  def allPreview(): Future[Seq[MetadataPreview]]
+  def get(id: UUID): Future[MetadataOutput]
 }
 
 @Singleton
@@ -58,4 +67,13 @@ final class MetadataServiceImpl @Inject() (
 
   override def allOfUser(user: String) =
     repo.allOfUser(user)
+
+  override def allPreviewOfUser(user: String) =
+    repo.allPreviewOfUser(user).map(_.map(MetadataPreview.tupled))
+
+  override def get(id: UUID) =
+    repo.get(id)
+
+  override def allPreview() =
+    repo.allPreview().map(_.map(MetadataPreview.tupled))
 }

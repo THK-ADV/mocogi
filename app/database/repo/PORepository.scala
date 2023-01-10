@@ -10,6 +10,7 @@ import database.table.{
 import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfigProvider}
 import slick.jdbc.JdbcProfile
 
+import java.time.LocalDate
 import javax.inject.{Inject, Singleton}
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.{ExecutionContext, Future}
@@ -106,5 +107,12 @@ class PORepository @Inject() (
       po.date,
       po.dateFrom,
       po.dateTo
+    )
+
+  def allValid(date: LocalDate = LocalDate.now) =
+    retrieve(
+      tableQuery.filter(a =>
+        a.dateFrom <= date && a.dateTo.map(_ >= date).getOrElse(true)
+      )
     )
 }

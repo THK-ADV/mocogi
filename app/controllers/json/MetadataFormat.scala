@@ -4,17 +4,9 @@ import basedata.FocusAreaPreview
 import database.repo._
 import parsing.types._
 import play.api.libs.json.{Format, JsError, Json, OFormat}
+import service.MetadataPreview
 import validator.ModuleRelation.{Child, Parent}
-import validator.{
-  Metadata,
-  Module,
-  ModuleRelation,
-  POOptional,
-  POs,
-  PrerequisiteEntry,
-  Prerequisites,
-  Workload
-}
+import validator.{Metadata, Module, ModuleRelation, POOptional, POs, PrerequisiteEntry, Prerequisites, Workload}
 
 trait MetadataFormat
     extends ModuleTypeFormat
@@ -124,4 +116,7 @@ trait MetadataFormat
 
   implicit val metaDataOutputFormat: Format[MetadataOutput] =
     Json.format[MetadataOutput]
+
+  implicit val metaDataPreviewFormat: Format[MetadataPreview] =
+    Json.format[MetadataPreview]
 }
