@@ -1,11 +1,12 @@
 package database.repo
 
+import database._
 import database.table.{PrerequisiteType, PrerequisitesTable, _}
 import git.GitFilePath
 import parsing.types._
 import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfigProvider}
 import slick.jdbc.JdbcProfile
-import validator.{Metadata, Module, ModuleRelation, PrerequisiteEntry, Workload}
+import validator.{Metadata, ModuleRelation, PrerequisiteEntry}
 
 import java.time.LocalDateTime
 import java.util.UUID
@@ -13,71 +14,6 @@ import javax.inject.{Inject, Singleton}
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.{ExecutionContext, Future}
-
-case class POMandatoryOutput(
-    po: String,
-    recommendedSemester: List[Int],
-    recommendedSemesterPartTime: List[Int]
-)
-
-case class POOptionalOutput(
-    po: String,
-    instanceOf: UUID,
-    partOfCatalog: Boolean,
-    recommendedSemester: List[Int]
-)
-
-case class AssessmentMethodEntryOutput(
-    method: String,
-    percentage: Option[Double],
-    precondition: List[String]
-)
-
-case class PrerequisiteEntryOutput(
-    text: String,
-    modules: List[UUID],
-    pos: List[String]
-)
-
-case class AssessmentMethodsOutput(
-    mandatory: List[AssessmentMethodEntryOutput],
-    optional: List[AssessmentMethodEntryOutput]
-)
-
-case class PrerequisitesOutput(
-    recommended: Option[PrerequisiteEntryOutput],
-    required: Option[PrerequisiteEntryOutput]
-)
-
-case class POOutput(
-    mandatory: List[POMandatoryOutput],
-    optional: List[POOptionalOutput]
-)
-
-case class MetadataOutput(
-    id: UUID,
-    gitPath: String,
-    title: String,
-    abbrev: String,
-    moduleType: String,
-    ects: Double,
-    language: String,
-    duration: Int,
-    season: String,
-    workload: Workload,
-    status: String,
-    location: String,
-    participants: Option[Participants],
-    moduleRelation: Option[ModuleRelation],
-    moduleManagement: List[String],
-    lecturers: List[String],
-    assessmentMethods: AssessmentMethodsOutput,
-    prerequisites: PrerequisitesOutput,
-    po: POOutput,
-    competences: List[String],
-    globalCriteria: List[String],
-    taughtWith: List[UUID]
-)
 
 trait MetadataRepository {
   def exists(metadata: Metadata): Future[Boolean]
@@ -91,11 +27,11 @@ trait MetadataRepository {
       path: GitFilePath,
       timestamp: LocalDateTime
   ): Future[Metadata]
-  def all(): Future[Seq[MetadataOutput]]
+  def all(filter: Map[String, Seq[String]]): Future[Seq[MetadataOutput]]
+  def allPreview(
+      filter: Map[String, Seq[String]]
+  ): Future[Seq[(UUID, String, String)]]
   def allIds(): Future[Seq[(UUID, String)]]
-  def allOfUser(user: String): Future[Seq[MetadataOutput]]
-  def allPreviewOfUser(user: String): Future[Seq[(UUID, String, String)]]
-  def allPreview(): Future[Seq[(UUID, String, String)]]
   def get(id: UUID): Future[MetadataOutput]
 }
 
@@ -104,7 +40,8 @@ final class MetadataRepositoryImpl @Inject() (
     val dbConfigProvider: DatabaseConfigProvider,
     private implicit val ctx: ExecutionContext
 ) extends MetadataRepository
-    with HasDatabaseConfigProvider[JdbcProfile] {
+    with HasDatabaseConfigProvider[JdbcProfile]
+    with Filterable[MetadataDbEntry, MetadataTable] {
   import profile.api._
 
   type PrerequisitesDbResult = (
@@ -113,7 +50,7 @@ final class MetadataRepositoryImpl @Inject() (
       List[PrerequisitesPODbEntry]
   )
 
-  private val metadataTable = TableQuery[MetadataTable]
+  val tableQuery = TableQuery[MetadataTable]
 
   private val ectsFocusAreaContributionTable =
     TableQuery[ECTSFocusAreaContributionTable]
@@ -153,8 +90,16 @@ final class MetadataRepositoryImpl @Inject() (
   private val metadataTaughtWithTable =
     TableQuery[MetadataTaughtWithTable]
 
-  override def exists(metadata: Metadata) =
-    db.run(metadataTable.filter(_.id === metadata.id).result.map(_.nonEmpty))
+  // Filter
+  // TODO use this everywhere where all is used
+  override protected val makeFilter
+      : PartialFunction[(String, String), MetadataTable => Rep[Boolean]] = {
+    case ("user", value) =>
+      t =>
+        responsibilityTable
+          .filter(r => r.metadata === t.id && r.isPerson(value))
+          .exists
+  }
 
   private def deleteDependencies(metadata: Metadata) =
     for {
@@ -218,37 +163,6 @@ final class MetadataRepositoryImpl @Inject() (
       _ <- metadataTaughtWithTable ++= metadataTaughtWith(metadata)
     } yield metadata
   }
-
-  override def update(
-      metadata: Metadata,
-      path: GitFilePath,
-      timestamp: LocalDateTime
-  ) =
-    db.run(
-      (
-        for {
-          _ <- deleteDependencies(metadata)
-          _ <- metadataTable
-            .filter(_.id === metadata.id)
-            .update(toDbEntry(metadata, path, timestamp))
-          _ <- createDependencies(metadata)
-        } yield metadata
-      ).transactionally
-    )
-
-  override def create(
-      metadata: Metadata,
-      path: GitFilePath,
-      timestamp: LocalDateTime
-  ) =
-    db.run(
-      (
-        for {
-          _ <- metadataTable += toDbEntry(metadata, path, timestamp)
-          _ <- createDependencies(metadata)
-        } yield metadata
-      ).transactionally
-    )
 
   private def toDbEntry(
       metadata: Metadata,
@@ -433,8 +347,42 @@ final class MetadataRepositoryImpl @Inject() (
     )
   }
 
-  override def all() =
-    retrieve(metadataTable)
+  override def exists(metadata: Metadata) =
+    db.run(tableQuery.filter(_.id === metadata.id).result.map(_.nonEmpty))
+
+  override def update(
+      metadata: Metadata,
+      path: GitFilePath,
+      timestamp: LocalDateTime
+  ) =
+    db.run(
+      (
+        for {
+          _ <- deleteDependencies(metadata)
+          _ <- tableQuery
+            .filter(_.id === metadata.id)
+            .update(toDbEntry(metadata, path, timestamp))
+          _ <- createDependencies(metadata)
+        } yield metadata
+      ).transactionally
+    )
+
+  override def create(
+      metadata: Metadata,
+      path: GitFilePath,
+      timestamp: LocalDateTime
+  ) =
+    db.run(
+      (
+        for {
+          _ <- tableQuery += toDbEntry(metadata, path, timestamp)
+          _ <- createDependencies(metadata)
+        } yield metadata
+      ).transactionally
+    )
+
+  override def all(filter: Map[String, Seq[String]]) =
+    retrieve(allWithFilter(filter))
 
   private def retrieve(
       query: Query[MetadataTable, MetadataDbEntry, Seq]
@@ -565,15 +513,13 @@ final class MetadataRepositoryImpl @Inject() (
               }
           }
 
-          val relation = relations.headOption.map { r => // TODO test
+          val relation = relations.headOption.map { r =>
             r.relationType match {
               case ModuleRelationType.Parent =>
-                ModuleRelation
-                  .Parent(
-                    relations.map(d => Module(d.module, "???")).toList
-                  ) // TODO replace ??? with real data
+                ModuleRelationOutput
+                  .Parent(relations.map(_.module).toList)
               case ModuleRelationType.Child =>
-                ModuleRelation.Child(Module(r.module, "???"))
+                ModuleRelationOutput.Child(r.module)
             }
           }
 
@@ -656,40 +602,27 @@ final class MetadataRepositoryImpl @Inject() (
 
   override def allIds() =
     db.run(
-      metadataTable
+      tableQuery
         .map(m => (m.id, m.abbrev))
-        .result
-    )
-
-  override def allOfUser(user: String) =
-    retrieve(
-      metadataTable
-        .joinLeft(responsibilityTable)
-        .on(_.id === _.metadata)
-        .filter(_._2.map(_.person.toLowerCase === user.toLowerCase))
-        .map(_._1)
-    )
-
-  def allPreviewOfUser(user: String) =
-    db.run(
-      metadataTable
-        .joinLeft(responsibilityTable)
-        .on(_.id === _.metadata)
-        .filter(_._2.map(_.person.toLowerCase === user.toLowerCase))
-        .map(a => (a._1.id, a._1.title, a._1.abbrev))
-        .distinct
         .result
     )
 
   def allPreview() =
     db.run(
-      metadataTable
+      tableQuery
+        .map(m => (m.id, m.title, m.abbrev))
+        .result
+    )
+
+  override def allPreview(filter: Map[String, Seq[String]]) =
+    db.run(
+      allWithFilter(filter)
         .map(m => (m.id, m.title, m.abbrev))
         .result
     )
 
   override def get(id: UUID) =
-    retrieve(metadataTable.filter(_.id === id))
+    retrieve(tableQuery.filter(_.id === id))
       .flatMap(xs =>
         if (xs.size > 1)
           Future.failed(new Throwable(s"expected one element, but found: $xs"))

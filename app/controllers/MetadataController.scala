@@ -1,6 +1,5 @@
 package controllers
 
-import controllers.MetadataController.{previewAttribute, userAttribute}
 import controllers.json.MetadataFormat
 import git.GitFilePath
 import play.api.libs.json.{Format, Json, OFormat}
@@ -12,11 +11,6 @@ import java.time.LocalDateTime
 import java.util.UUID
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
-
-object MetadataController {
-  val userAttribute = "user"
-  val previewAttribute = "preview"
-}
 
 @Singleton
 final class MetadataController @Inject() (
@@ -43,34 +37,11 @@ final class MetadataController @Inject() (
         )
     )
 
-  // TODO add proper querying
   def all() =
     Action.async { request =>
-      val user = request.getQueryString(userAttribute)
-      val preview = request
-        .getQueryString(previewAttribute)
-        .flatMap(_.toBooleanOption)
-        .getOrElse(false)
-      user match {
-        case Some(user) =>
-          if (preview)
-            service
-              .allPreviewOfUser(user)
-              .map(xs => Ok(Json.toJson(xs)))
-          else
-            service
-              .allOfUser(user)
-              .map(xs => Ok(Json.toJson(xs)))
-        case None =>
-          if (preview)
-            service
-              .allPreview()
-              .map(xs => Ok(Json.toJson(xs)))
-          else
-            service
-              .all()
-              .map(xs => Ok(Json.toJson(xs)))
-      }
+      service
+        .all(request.queryString)
+        .map(xs => Ok(Json.toJson(xs)))
     }
 
   def get(id: UUID) =

@@ -17,6 +17,9 @@ final class ResponsibilityTable(tag: Tag)
 
   def person = column[String]("person", O.PrimaryKey)
 
+  def isPerson(person: String) =
+    this.person.toLowerCase === person.toLowerCase
+
   def responsibilityType =
     column[ResponsibilityType]("responsibility_type", O.PrimaryKey)
 

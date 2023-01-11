@@ -1,6 +1,7 @@
 package service
 
-import database.repo.{MetadataOutput, MetadataRepository}
+import database.MetadataOutput
+import database.repo.MetadataRepository
 import git.GitFilePath
 import validator.Metadata
 
@@ -9,7 +10,7 @@ import java.util.UUID
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
-case class MetadataPreview(
+case class Module(
     id: UUID,
     title: String,
     abbrev: String
@@ -26,11 +27,9 @@ trait MetadataService {
       path: GitFilePath,
       timestamp: LocalDateTime
   ): Future[Metadata]
-  def all(): Future[Seq[MetadataOutput]]
+  def all(filter: Map[String, Seq[String]]): Future[Seq[MetadataOutput]]
   def allIdsAndAbbrevs(): Future[Seq[(UUID, String)]]
-  def allOfUser(user: String): Future[Seq[MetadataOutput]]
-  def allPreviewOfUser(user: String): Future[Seq[MetadataPreview]]
-  def allPreview(): Future[Seq[MetadataPreview]]
+  def allModules(filter: Map[String, Seq[String]]): Future[Seq[Module]]
   def get(id: UUID): Future[MetadataOutput]
 }
 
@@ -59,21 +58,15 @@ final class MetadataServiceImpl @Inject() (
   ) =
     repo.create(metadata, path, timestamp)
 
-  override def all() =
-    repo.all()
+  override def all(filter: Map[String, Seq[String]]) =
+    repo.all(filter)
 
   override def allIdsAndAbbrevs() =
     repo.allIds()
 
-  override def allOfUser(user: String) =
-    repo.allOfUser(user)
-
-  override def allPreviewOfUser(user: String) =
-    repo.allPreviewOfUser(user).map(_.map(MetadataPreview.tupled))
-
   override def get(id: UUID) =
     repo.get(id)
 
-  override def allPreview() =
-    repo.allPreview().map(_.map(MetadataPreview.tupled))
+  override def allModules(filter: Map[String, Seq[String]]) =
+    repo.allPreview(filter).map(_.map(Module.tupled))
 }
