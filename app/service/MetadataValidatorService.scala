@@ -24,7 +24,7 @@ final class MetadataValidatorServiceImpl @Inject() (
         .validate(
           Seq(metadata),
           30, // TODO use from StudyProgram
-          a => modules.find(_.abbrev == a)
+          a => modules.find(_.abbrev.toLowerCase == a.toLowerCase)
         )
         .head
         .fold(

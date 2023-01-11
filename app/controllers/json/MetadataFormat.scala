@@ -1,10 +1,9 @@
 package controllers.json
 
 import basedata.FocusAreaPreview
-import database.repo._
+import database._
 import parsing.types._
 import play.api.libs.json.{Format, JsError, Json, OFormat}
-import validator.ModuleRelation.{Child, Parent}
 import validator.{
   Metadata,
   Module,
@@ -15,6 +14,8 @@ import validator.{
   Prerequisites,
   Workload
 }
+
+import java.util.UUID
 
 trait MetadataFormat
     extends ModuleTypeFormat
@@ -75,21 +76,56 @@ trait MetadataFormat
   implicit val moduleRelationFormat: Format[ModuleRelation] =
     OFormat.apply(
       js =>
-        js.\("type").validate[String].flatMap {
-          case "parent" =>
-            js.\("children").validate[List[Module]].map(Parent.apply)
-          case "child" =>
-            js.\("parent").validate[Module].map(Child.apply)
-          case other =>
-            JsError(s"expected type to be parent or child, but was $other")
-        },
+        js.\("type")
+          .validate[String]
+          .flatMap {
+            case "parent" =>
+              js.\("children")
+                .validate[List[Module]]
+                .map(ModuleRelation.Parent.apply)
+            case "child" =>
+              js.\("parent").validate[Module].map(ModuleRelation.Child.apply)
+            case other =>
+              JsError(s"expected type to be parent or child, but was $other")
+          },
       {
-        case Parent(children) =>
+        case ModuleRelation.Parent(children) =>
           Json.obj(
             "type" -> "parent",
             "children" -> Json.toJson(children)
           )
-        case Child(parent) =>
+        case ModuleRelation.Child(parent) =>
+          Json.obj(
+            "type" -> "child",
+            "parent" -> Json.toJson(parent)
+          )
+      }
+    )
+
+  implicit val moduleRelationOutputFormat: Format[ModuleRelationOutput] =
+    OFormat.apply(
+      js =>
+        js.\("type")
+          .validate[String]
+          .flatMap {
+            case "parent" =>
+              js.\("children")
+                .validate[List[UUID]]
+                .map(ModuleRelationOutput.Parent.apply)
+            case "child" =>
+              js.\("parent")
+                .validate[UUID]
+                .map(ModuleRelationOutput.Child.apply)
+            case other =>
+              JsError(s"expected type to be parent or child, but was $other")
+          },
+      {
+        case ModuleRelationOutput.Parent(children) =>
+          Json.obj(
+            "type" -> "parent",
+            "children" -> Json.toJson(children)
+          )
+        case ModuleRelationOutput.Child(parent) =>
           Json.obj(
             "type" -> "child",
             "parent" -> Json.toJson(parent)

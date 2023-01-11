@@ -8,6 +8,7 @@ import service.{MetadataParsingValidator, MetadataService}
 import validator.Metadata
 
 import java.time.LocalDateTime
+import java.util.UUID
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 
@@ -36,10 +37,16 @@ final class MetadataController @Inject() (
         )
     )
 
-  // TODO only used for testing
   def all() =
+    Action.async { request =>
+      service
+        .all(request.queryString)
+        .map(xs => Ok(Json.toJson(xs)))
+    }
+
+  def get(id: UUID) =
     Action.async { _ =>
-      service.all().map(xs => Ok(Json.toJson(xs)))
+      service.get(id).map(x => Ok(Json.toJson(x)))
     }
 
   // TODO only used for testing
