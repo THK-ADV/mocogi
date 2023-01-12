@@ -11,6 +11,8 @@ final class GitConfigProvider @Inject() (config: ConfigReader)
     GitConfig(
       config.gitToken,
       config.accessToken,
-      config.baseUrl
+      config.baseUrl,
+      config.projectId,
+      config.mainBranch
     )
 }

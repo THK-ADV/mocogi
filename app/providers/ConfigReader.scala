@@ -23,6 +23,10 @@ final class ConfigReader @Inject() (config: Configuration) {
 
   def baseUrl: String = string("git.baseUrl")
 
+  def mainBranch: String = string("git.mainBranch")
+
+  def projectId: Int = int("git.projectId")
+
   def kafkaServerUrl: String = string("kafka.serverUrl")
 
   def kafkaApplicationId: String = string("kafka.applicationId")
@@ -31,5 +35,11 @@ final class ConfigReader @Inject() (config: Configuration) {
     config.getOptional[String](key) match {
       case Some(value) if value.nonEmpty => value
       case _ => throw new Throwable(s"$key must be set")
+    }
+
+  private def int(key: String): Int =
+    config.getOptional[Int](key) match {
+      case Some(value) => value
+      case _           => throw new Throwable(s"$key must be set")
     }
 }

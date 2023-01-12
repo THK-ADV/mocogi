@@ -622,11 +622,5 @@ final class MetadataRepositoryImpl @Inject() (
     )
 
   override def get(id: UUID) =
-    retrieve(tableQuery.filter(_.id === id))
-      .flatMap(xs =>
-        if (xs.size > 1)
-          Future.failed(new Throwable(s"expected one element, but found: $xs"))
-        else
-          Future.successful(xs.head)
-      )
+    retrieve(tableQuery.filter(_.id === id)).single
 }
