@@ -1,7 +1,7 @@
 package controllers
 
-import database.table.UserBranch
-import play.api.libs.json.{Format, Json, Reads, Writes}
+import controllers.json.UserBranchFormat
+import play.api.libs.json.{Json, Reads}
 import play.api.mvc.{AbstractController, ControllerComponents}
 import service.GitService
 
@@ -13,13 +13,11 @@ final class GitController @Inject() (
     cc: ControllerComponents,
     val service: GitService,
     implicit val ctx: ExecutionContext
-) extends AbstractController(cc) {
+) extends AbstractController(cc)
+    with UserBranchFormat {
 
   private implicit val usernameReads: Reads[String] =
     Reads.apply(_.\("username").validate(Reads.StringReads))
-
-  private implicit val userBranchFmt: Format[UserBranch] =
-    Json.format[UserBranch]
 
   def createBranch() =
     Action.async(parse.json(usernameReads)) { r =>

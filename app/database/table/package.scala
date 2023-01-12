@@ -1,5 +1,6 @@
 package database
 
+import models.ModuleDraftStatus
 import slick.jdbc.PostgresProfile.api._
 
 package object table {
@@ -39,4 +40,8 @@ package object table {
               s.toInt :: acc
             }
       )
+
+  implicit val moduleDraftStatusColumnType: BaseColumnType[ModuleDraftStatus] =
+    MappedColumnType
+      .base[ModuleDraftStatus, String](_.toString, ModuleDraftStatus.apply)
 }

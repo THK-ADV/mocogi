@@ -32,6 +32,9 @@ final class UserBranchRepository @Inject() (
   def exists(user: UUID): Future[Boolean] =
     db.run(tableQuery.filter(_.user === user).exists.result)
 
+  def exists(branch: String): Future[Boolean] =
+    db.run(tableQuery.filter(_.branch === branch).exists.result)
+
   def delete(user: UUID): Future[Int] =
     db.run(tableQuery.filter(_.user === user).delete)
 }
