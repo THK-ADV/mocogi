@@ -15,33 +15,33 @@ import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.{ExecutionContext, Future}
 
-trait MetadataRepository {
-  def exists(metadata: Metadata): Future[Boolean]
+trait ModuleCompendiumRepository {
+  def exists(moduleCompendium: ModuleCompendium): Future[Boolean]
   def create(
-      metadata: Metadata,
+      moduleCompendium: ModuleCompendium,
       path: GitFilePath,
       timestamp: LocalDateTime
-  ): Future[Metadata]
+  ): Future[ModuleCompendium]
   def update(
-      metadata: Metadata,
+      moduleCompendium: ModuleCompendium,
       path: GitFilePath,
       timestamp: LocalDateTime
-  ): Future[Metadata]
-  def all(filter: Map[String, Seq[String]]): Future[Seq[MetadataOutput]]
+  ): Future[ModuleCompendium]
+  def all(filter: Map[String, Seq[String]]): Future[Seq[ModuleCompendiumOutput]]
   def allPreview(
       filter: Map[String, Seq[String]]
   ): Future[Seq[(UUID, String, String)]]
   def allIds(): Future[Seq[(UUID, String)]]
-  def get(id: UUID): Future[MetadataOutput]
+  def get(id: UUID): Future[ModuleCompendiumOutput]
 }
 
 @Singleton
-final class MetadataRepositoryImpl @Inject() (
+final class ModuleCompendiumRepositoryImpl @Inject() (
     val dbConfigProvider: DatabaseConfigProvider,
     private implicit val ctx: ExecutionContext
-) extends MetadataRepository
+) extends ModuleCompendiumRepository
     with HasDatabaseConfigProvider[JdbcProfile]
-    with Filterable[MetadataDbEntry, MetadataTable] {
+    with Filterable[ModuleCompendiumDbEntry, ModuleCompendiumTable] {
   import profile.api._
 
   type PrerequisitesDbResult = (
@@ -50,7 +50,7 @@ final class MetadataRepositoryImpl @Inject() (
       List[PrerequisitesPODbEntry]
   )
 
-  val tableQuery = TableQuery[MetadataTable]
+  val tableQuery = TableQuery[ModuleCompendiumTable]
 
   private val ectsFocusAreaContributionTable =
     TableQuery[ECTSFocusAreaContributionTable]
@@ -93,12 +93,13 @@ final class MetadataRepositoryImpl @Inject() (
   // Filter
   // TODO use this everywhere where all is used
   override protected val makeFilter
-      : PartialFunction[(String, String), MetadataTable => Rep[Boolean]] = {
-    case ("user", value) =>
-      t =>
-        responsibilityTable
-          .filter(r => r.metadata === t.id && r.isPerson(value))
-          .exists
+      : PartialFunction[(String, String), ModuleCompendiumTable => Rep[
+        Boolean
+      ]] = { case ("user", value) =>
+    t =>
+      responsibilityTable
+        .filter(r => r.metadata === t.id && r.isPerson(value))
+        .exists
   }
 
   private def deleteDependencies(metadata: Metadata) =
@@ -165,26 +166,28 @@ final class MetadataRepositoryImpl @Inject() (
   }
 
   private def toDbEntry(
-      metadata: Metadata,
+      moduleCompendium: ModuleCompendium,
       path: GitFilePath,
       timestamp: LocalDateTime
   ) =
-    MetadataDbEntry(
-      metadata.id,
+    ModuleCompendiumDbEntry(
+      moduleCompendium.metadata.id,
       path.value,
       timestamp,
-      metadata.title,
-      metadata.abbrev,
-      metadata.kind.abbrev,
-      metadata.ects.value,
-      metadata.language.abbrev,
-      metadata.duration,
-      metadata.season.abbrev,
-      metadata.workload,
-      metadata.status.abbrev,
-      metadata.location.abbrev,
-      metadata.participants.map(_.min),
-      metadata.participants.map(_.max)
+      moduleCompendium.metadata.title,
+      moduleCompendium.metadata.abbrev,
+      moduleCompendium.metadata.kind.abbrev,
+      moduleCompendium.metadata.ects.value,
+      moduleCompendium.metadata.language.abbrev,
+      moduleCompendium.metadata.duration,
+      moduleCompendium.metadata.season.abbrev,
+      moduleCompendium.metadata.workload,
+      moduleCompendium.metadata.status.abbrev,
+      moduleCompendium.metadata.location.abbrev,
+      moduleCompendium.metadata.participants.map(_.min),
+      moduleCompendium.metadata.participants.map(_.max),
+      moduleCompendium.deContent,
+      moduleCompendium.enContent
     )
 
   private def metadataTaughtWith(
@@ -347,37 +350,42 @@ final class MetadataRepositoryImpl @Inject() (
     )
   }
 
-  override def exists(metadata: Metadata) =
-    db.run(tableQuery.filter(_.id === metadata.id).result.map(_.nonEmpty))
+  override def exists(moduleCompendium: ModuleCompendium) =
+    db.run(
+      tableQuery
+        .filter(_.id === moduleCompendium.metadata.id)
+        .result
+        .map(_.nonEmpty)
+    )
 
   override def update(
-      metadata: Metadata,
+      moduleCompendium: ModuleCompendium,
       path: GitFilePath,
       timestamp: LocalDateTime
   ) =
     db.run(
       (
         for {
-          _ <- deleteDependencies(metadata)
+          _ <- deleteDependencies(moduleCompendium.metadata)
           _ <- tableQuery
-            .filter(_.id === metadata.id)
-            .update(toDbEntry(metadata, path, timestamp))
-          _ <- createDependencies(metadata)
-        } yield metadata
+            .filter(_.id === moduleCompendium.metadata.id)
+            .update(toDbEntry(moduleCompendium, path, timestamp))
+          _ <- createDependencies(moduleCompendium.metadata)
+        } yield moduleCompendium
       ).transactionally
     )
 
   override def create(
-      metadata: Metadata,
+      moduleCompendium: ModuleCompendium,
       path: GitFilePath,
       timestamp: LocalDateTime
   ) =
     db.run(
       (
         for {
-          _ <- tableQuery += toDbEntry(metadata, path, timestamp)
-          _ <- createDependencies(metadata)
-        } yield metadata
+          _ <- tableQuery += toDbEntry(moduleCompendium, path, timestamp)
+          _ <- createDependencies(moduleCompendium.metadata)
+        } yield moduleCompendium
       ).transactionally
     )
 
@@ -385,8 +393,8 @@ final class MetadataRepositoryImpl @Inject() (
     retrieve(allWithFilter(filter))
 
   private def retrieve(
-      query: Query[MetadataTable, MetadataDbEntry, Seq]
-  ): Future[Seq[MetadataOutput]] = {
+      query: Query[ModuleCompendiumTable, ModuleCompendiumDbEntry, Seq]
+  ): Future[Seq[ModuleCompendiumOutput]] = {
     val methods = metadataAssessmentMethodTable
       .joinLeft(metadataAssessmentMethodPreconditionTable)
       .on(_.id === _.metadataAssessmentMethod)
@@ -523,78 +531,82 @@ final class MetadataRepositoryImpl @Inject() (
             }
           }
 
-          MetadataOutput(
-            m.id,
+          ModuleCompendiumOutput(
             m.gitPath,
-            m.title,
-            m.abbrev,
-            m.moduleType,
-            m.ects,
-            m.language,
-            m.duration,
-            m.season,
-            m.workload,
-            m.status,
-            m.location,
-            participants,
-            relation,
-            moduleManagement.toList,
-            lecturer.toList,
-            AssessmentMethodsOutput(
-              mandatoryAssessmentMethods
-                .map(a =>
-                  a._2.copy(precondition =
-                    preconditions
-                      .filter(_.metadataAssessmentMethod == a._1)
-                      .map(_.assessmentMethod)
+            MetadataOutput(
+              m.id,
+              m.title,
+              m.abbrev,
+              m.moduleType,
+              m.ects,
+              m.language,
+              m.duration,
+              m.season,
+              m.workload,
+              m.status,
+              m.location,
+              participants,
+              relation,
+              moduleManagement.toList,
+              lecturer.toList,
+              AssessmentMethodsOutput(
+                mandatoryAssessmentMethods
+                  .map(a =>
+                    a._2.copy(precondition =
+                      preconditions
+                        .filter(_.metadataAssessmentMethod == a._1)
+                        .map(_.assessmentMethod)
+                        .toList
+                    )
+                  )
+                  .toList,
+                optionalAssessmentMethods
+                  .map(a =>
+                    a._2.copy(precondition =
+                      preconditions
+                        .filter(_.metadataAssessmentMethod == a._1)
+                        .map(_.assessmentMethod)
+                        .toList
+                    )
+                  )
+                  .toList
+              ),
+              PrerequisitesOutput(
+                recommendedPrerequisite.map(a =>
+                  a._2.copy(
+                    modules = prerequisitesModules
+                      .filter(_.prerequisites == a._1)
+                      .map(_.module)
+                      .toList,
+                    pos = prerequisitesPOS
+                      .filter(_.prerequisites == a._1)
+                      .map(_.po)
                       .toList
                   )
-                )
-                .toList,
-              optionalAssessmentMethods
-                .map(a =>
-                  a._2.copy(precondition =
-                    preconditions
-                      .filter(_.metadataAssessmentMethod == a._1)
-                      .map(_.assessmentMethod)
+                ),
+                requiredPrerequisite.map(a =>
+                  a._2.copy(
+                    modules = prerequisitesModules
+                      .filter(_.prerequisites == a._1)
+                      .map(_.module)
+                      .toList,
+                    pos = prerequisitesPOS
+                      .filter(_.prerequisites == a._1)
+                      .map(_.po)
                       .toList
                   )
-                )
-                .toList
-            ),
-            PrerequisitesOutput(
-              recommendedPrerequisite.map(a =>
-                a._2.copy(
-                  modules = prerequisitesModules
-                    .filter(_.prerequisites == a._1)
-                    .map(_.module)
-                    .toList,
-                  pos = prerequisitesPOS
-                    .filter(_.prerequisites == a._1)
-                    .map(_.po)
-                    .toList
                 )
               ),
-              requiredPrerequisite.map(a =>
-                a._2.copy(
-                  modules = prerequisitesModules
-                    .filter(_.prerequisites == a._1)
-                    .map(_.module)
-                    .toList,
-                  pos = prerequisitesPOS
-                    .filter(_.prerequisites == a._1)
-                    .map(_.po)
-                    .toList
-                )
-              )
+              POOutput(
+                poMandatory.toList,
+                poOptional.toList
+              ),
+              competences.toList,
+              globalCriteria.toList,
+              taughtWith.toList
             ),
-            POOutput(
-              poMandatory.toList,
-              poOptional.toList
-            ),
-            competences.toList,
-            globalCriteria.toList,
-            taughtWith.toList
+            m.deContent,
+            m.enContent
           )
         }.toSeq)
     )

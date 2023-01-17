@@ -54,7 +54,7 @@ object POParser {
     prefix("po_optional:")
       .skip(zeroOrMoreSpaces)
       .take(
-        studyProgramParser
+        studyProgramParser(pos.sortBy(_.program).reverse)
           .skip(zeroOrMoreSpaces)
           .zip(instanceOfParser)
           .skip(zeroOrMoreSpaces)

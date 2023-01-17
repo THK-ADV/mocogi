@@ -1,9 +1,9 @@
 package service
 
-import database.MetadataOutput
-import database.repo.MetadataRepository
+import database.ModuleCompendiumOutput
+import database.repo.ModuleCompendiumRepository
 import git.GitFilePath
-import validator.Metadata
+import parsing.types.ModuleCompendium
 
 import java.time.LocalDateTime
 import java.util.UUID
@@ -16,47 +16,47 @@ case class Module(
     abbrev: String
 )
 
-trait MetadataService {
+trait ModuleCompendiumService {
   def create(
-      metadata: Metadata,
+      moduleCompendium: ModuleCompendium,
       path: GitFilePath,
       timestamp: LocalDateTime
-  ): Future[Metadata]
+  ): Future[ModuleCompendium]
   def createOrUpdate(
-      metadata: Metadata,
+      moduleCompendium: ModuleCompendium,
       path: GitFilePath,
       timestamp: LocalDateTime
-  ): Future[Metadata]
-  def all(filter: Map[String, Seq[String]]): Future[Seq[MetadataOutput]]
+  ): Future[ModuleCompendium]
+  def all(filter: Map[String, Seq[String]]): Future[Seq[ModuleCompendiumOutput]]
   def allIdsAndAbbrevs(): Future[Seq[(UUID, String)]]
   def allModules(filter: Map[String, Seq[String]]): Future[Seq[Module]]
-  def get(id: UUID): Future[MetadataOutput]
+  def get(id: UUID): Future[ModuleCompendiumOutput]
 }
 
 @Singleton
-final class MetadataServiceImpl @Inject() (
-    private val repo: MetadataRepository,
+final class ModuleCompendiumServiceImpl @Inject() (
+    private val repo: ModuleCompendiumRepository,
     private implicit val ctx: ExecutionContext
-) extends MetadataService {
+) extends ModuleCompendiumService {
 
   override def createOrUpdate(
-      metadata: Metadata,
+      moduleCompendium: ModuleCompendium,
       path: GitFilePath,
       timestamp: LocalDateTime
   ) =
     for {
-      exists <- repo.exists(metadata)
+      exists <- repo.exists(moduleCompendium)
       res <-
-        if (exists) repo.update(metadata, path, timestamp)
-        else create(metadata, path, timestamp)
+        if (exists) repo.update(moduleCompendium, path, timestamp)
+        else create(moduleCompendium, path, timestamp)
     } yield res
 
   override def create(
-      metadata: Metadata,
+      moduleCompendium: ModuleCompendium,
       path: GitFilePath,
       timestamp: LocalDateTime
   ) =
-    repo.create(metadata, path, timestamp)
+    repo.create(moduleCompendium, path, timestamp)
 
   override def all(filter: Map[String, Seq[String]]) =
     repo.all(filter)

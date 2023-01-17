@@ -44,7 +44,8 @@ object ECTSParser {
   ): Parser[Either[Double, List[ECTSFocusAreaContribution]]] = {
     oneOf(
       ectsValueParser.map(Left.apply),
-      ectsContributionsToFocusAreasParser.map(Right.apply)
+      ectsContributionsToFocusAreasParser(focusAreas.sortBy(_.abbrev).reverse)
+        .map(Right.apply)
     )
   }
 }

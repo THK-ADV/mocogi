@@ -38,7 +38,7 @@ object PrerequisitesParser {
       .skip(removeIndentation())
       .take(textParser)
       .zip(modulesParser)
-      .take(studyProgramsParser)
+      .take(studyProgramsParser(pos.sortBy(_.abbrev).reverse))
       .map(ParsedPrerequisiteEntry.tupled)
 
   def recommendedPrerequisitesParser(implicit

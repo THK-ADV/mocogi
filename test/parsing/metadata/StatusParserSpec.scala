@@ -32,7 +32,7 @@ class StatusParserSpec
       assertError(
         parser,
         "status: status.unknown\n",
-        "status.active or status.inactive",
+        "status.inactive or status.active",
         Some("status.unknown\n")
       )
     }

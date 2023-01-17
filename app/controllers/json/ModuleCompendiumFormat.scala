@@ -17,7 +17,7 @@ import validator.{
 
 import java.util.UUID
 
-trait MetadataFormat
+trait ModuleCompendiumFormat
     extends ModuleTypeFormat
     with LanguageFormat
     with SeasonFormat
@@ -158,6 +158,12 @@ trait MetadataFormat
   implicit val poOutputFormat: Format[POOutput] =
     Json.format[POOutput]
 
-  implicit val metaDataOutputFormat: Format[MetadataOutput] =
+  implicit val contentFormat: Format[Content] =
+    Json.format[Content]
+
+  implicit val metadataOutputFormat: Format[MetadataOutput] =
     Json.format[MetadataOutput]
+
+  implicit val metaDataOutputFormat: Format[ModuleCompendiumOutput] =
+    Json.format[ModuleCompendiumOutput]
 }

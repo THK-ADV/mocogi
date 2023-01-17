@@ -1,7 +1,3 @@
-## (de) Sonstige empfohlene Voraussetzungen:
-
-## (en) Other recommended prerequisites:
-
 ## (de) Angestrebte Lernergebnisse:
 
 ## (en) Learning Outcome:

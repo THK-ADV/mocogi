@@ -1,6 +1,6 @@
 package database
 
-import parsing.types.Participants
+import parsing.types.{Content, Participants}
 import validator.Workload
 
 import java.util.UUID
@@ -54,7 +54,6 @@ object ModuleRelationOutput {
 
 case class MetadataOutput(
     id: UUID,
-    gitPath: String,
     title: String,
     abbrev: String,
     moduleType: String,
@@ -75,4 +74,11 @@ case class MetadataOutput(
     competences: List[String],
     globalCriteria: List[String],
     taughtWith: List[UUID]
+)
+
+case class ModuleCompendiumOutput(
+    gitPath: String,
+    metadata: MetadataOutput,
+    deContent: Content,
+    enContent: Content
 )

@@ -124,7 +124,7 @@ object ModuleCompendiumParsingController
     with ModuleTypeFormat
     with SeasonFormat
     with PersonFormat
-    with MetadataFormat {
+    with ModuleCompendiumFormat {
 
   implicit val mcgErrorWrites: Writes[ModuleCompendiumGenerationError] =
     Writes.apply {
@@ -150,9 +150,6 @@ object ModuleCompendiumParsingController
         "found" -> e.found
       )
     )
-
-  implicit val contentFormat: Format[Content] =
-    Json.format[Content]
 
   implicit val moduleCompendiumFormat: Format[ModuleCompendium] =
     Json.format[ModuleCompendium]

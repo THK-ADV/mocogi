@@ -9,18 +9,6 @@ object ContentParser {
     prefix("## (de)")
       .take(
         zeroOrMoreSpaces
-          .take(literal("Sonstige empfohlene Voraussetzungen"))
-          .skip(prefix(":"))
-          .skip(newline)
-          .zip(prefixTo("## (en)"))
-          .skip(zeroOrMoreSpaces)
-          .take(literal("Other recommended prerequisites"))
-          .skip(prefix(":"))
-          .skip(newline)
-          .take(prefixTo("## (de)"))
-      )
-      .take(
-        zeroOrMoreSpaces
           .take(literal("Angestrebte Lernergebnisse"))
           .skip(prefix(":"))
           .skip(newline)
@@ -89,8 +77,7 @@ object ContentParser {
               (deH1, deC1, enH1, enC1),
               (deH2, deC2, enH2, enC2),
               (deH3, deC3, enH3, enC3),
-              (deH4, deC4, enH4, enC4),
-              (deH5, deC5, enH5, enC5)
+              (deH4, deC4, enH4, enC4)
             ) =>
           (
             Content(
@@ -103,9 +90,7 @@ object ContentParser {
               deH3,
               deC3,
               deH4,
-              deC4,
-              deH5,
-              deC5
+              deC4
             ),
             Content(
               enH0,
@@ -117,9 +102,7 @@ object ContentParser {
               enH3,
               enC3,
               enH4,
-              enC4,
-              enH5,
-              enC5
+              enC4
             )
           )
       }

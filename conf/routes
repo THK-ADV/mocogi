@@ -3,74 +3,74 @@
 # This file defines all application routes (Higher priority routes first)
 # ~~~~
 
-GET           /                                 controllers.HomeController.index
+GET           /                              controllers.HomeController.index
 
-PUT           /generateFromFile                 controllers.ModuleCompendiumParsingController.generateFromFile()
-GET           /generateFromUrl                  controllers.ModuleCompendiumParsingController.generateFromUrl()
+PUT           /generateFromFile              controllers.ModuleCompendiumParsingController.generateFromFile()
+GET           /generateFromUrl               controllers.ModuleCompendiumParsingController.generateFromUrl()
 
-POST          /webhook/onPushEvent              controllers.GitWebhookController.onPushEvent()
+POST          /webhook/onPushEvent           controllers.GitWebhookController.onPushEvent()
 
-GET           /locations                        controllers.LocationController.all()
-POST          /locations                        controllers.LocationController.create()
+GET           /locations                     controllers.LocationController.all()
+POST          /locations                     controllers.LocationController.create()
 
-GET           /languages                        controllers.LanguageController.all()
-POST          /languages                        controllers.LanguageController.create()
+GET           /languages                     controllers.LanguageController.all()
+POST          /languages                     controllers.LanguageController.create()
 
-GET           /status                           controllers.StatusController.all()
-POST          /status                           controllers.StatusController.create()
+GET           /status                        controllers.StatusController.all()
+POST          /status                        controllers.StatusController.create()
 
-GET           /assessmentMethods                controllers.AssessmentMethodController.all()
-POST          /assessmentMethods                controllers.AssessmentMethodController.create()
+GET           /assessmentMethods             controllers.AssessmentMethodController.all()
+POST          /assessmentMethods             controllers.AssessmentMethodController.create()
 
-GET           /moduleTypes                      controllers.ModuleTypeController.all()
-POST          /moduleTypes                      controllers.ModuleTypeController.create()
+GET           /moduleTypes                   controllers.ModuleTypeController.all()
+POST          /moduleTypes                   controllers.ModuleTypeController.create()
 
-GET           /seasons                          controllers.SeasonController.all()
-POST          /seasons                          controllers.SeasonController.create()
+GET           /seasons                       controllers.SeasonController.all()
+POST          /seasons                       controllers.SeasonController.create()
 
-GET           /persons                          controllers.PersonController.all()
-POST          /persons                          controllers.PersonController.create()
+GET           /persons                       controllers.PersonController.all()
+POST          /persons                       controllers.PersonController.create()
 
-GET           /studyFormTypes                   controllers.StudyFormTypeController.all()
-POST          /studyFormTypes                   controllers.StudyFormTypeController.create()
+GET           /studyFormTypes                controllers.StudyFormTypeController.all()
+POST          /studyFormTypes                controllers.StudyFormTypeController.create()
 
-GET           /pos                              controllers.POController.all()
-POST          /pos                              controllers.POController.create()
+GET           /pos                           controllers.POController.all()
+POST          /pos                           controllers.POController.create()
 
-GET           /grades                           controllers.GradeController.all()
-POST          /grades                           controllers.GradeController.create()
+GET           /grades                        controllers.GradeController.all()
+POST          /grades                        controllers.GradeController.create()
 
-GET           /focusAreas                       controllers.FocusAreaController.all()
-POST          /focusAreas                       controllers.FocusAreaController.create()
+GET           /focusAreas                    controllers.FocusAreaController.all()
+POST          /focusAreas                    controllers.FocusAreaController.create()
 
-GET           /faculties                        controllers.FacultyController.all()
-POST          /faculties                        controllers.FacultyController.create()
+GET           /faculties                     controllers.FacultyController.all()
+POST          /faculties                     controllers.FacultyController.create()
 
-GET           /globalCriteria                   controllers.GlobalCriteriaController.all()
-POST          /globalCriteria                   controllers.GlobalCriteriaController.create()
+GET           /globalCriteria                controllers.GlobalCriteriaController.all()
+POST          /globalCriteria                controllers.GlobalCriteriaController.create()
 
-GET           /studyPrograms                    controllers.StudyProgramController.all()
-POST          /studyPrograms                    controllers.StudyProgramController.create()
+GET           /studyPrograms                 controllers.StudyProgramController.all()
+POST          /studyPrograms                 controllers.StudyProgramController.create()
 
-GET           /competences                      controllers.CompetenceController.all()
-POST          /competences                      controllers.CompetenceController.create()
+GET           /competences                   controllers.CompetenceController.all()
+POST          /competences                   controllers.CompetenceController.create()
 
-POST          /metadata                         controllers.MetadataController.create()
-GET           /metadata/parseAndValidate        controllers.MetadataController.parseAndValidate()
-GET           /metadata                         controllers.MetadataController.all()
-GET           /metadata/:id                     controllers.MetadataController.get(id: java.util.UUID)
+# POST          /metadata                         controllers.MetadataController.create()
+# GET           /metadata/parseAndValidate        controllers.MetadataController.parseAndValidate()
+GET           /moduleCompendium              controllers.ModuleCompendiumController.all()
+GET           /moduleCompendium/:id          controllers.ModuleCompendiumController.get(id: java.util.UUID)
 
-GET           /modules                          controllers.ModuleController.all()
+GET           /modules                       controllers.ModuleController.all()
 
-POST          /git/branch                       controllers.GitController.createBranch()
-GET           /git/branch/:username             controllers.GitController.branchForUser(username)
-DELETE        /git/branch/:username             controllers.GitController.deleteBranch(username)
+POST          /git/branch                    controllers.GitController.createBranch()
+GET           /git/branch/:username          controllers.GitController.branchForUser(username)
+DELETE        /git/branch/:username          controllers.GitController.deleteBranch(username)
 
-POST          /moduleDrafts                     controllers.ModuleDraftController.addModuleDraft()
-PUT           /moduleDrafts/:moduleId           controllers.ModuleDraftController.updateModuleDraft(moduleId: java.util.UUID)
-GET           /moduleDrafts/:branch             controllers.ModuleDraftController.moduleDrafts(branch)
+POST          /moduleDrafts                  controllers.ModuleDraftController.addModuleDraft()
+PUT           /moduleDrafts/:moduleId        controllers.ModuleDraftController.updateModuleDraft(moduleId: java.util.UUID)
+GET           /moduleDrafts/:branch          controllers.ModuleDraftController.moduleDrafts(branch)
 
 # Map static resources from the /public folder to the /assets URL path
-GET           /assets/*file                     controllers.Assets.versioned(path="/public", file: Asset)
+GET           /assets/*file                  controllers.Assets.versioned(path="/public", file: Asset)
 
       

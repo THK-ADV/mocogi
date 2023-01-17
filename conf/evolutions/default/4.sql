@@ -1,0 +1,46 @@
+-- !Ups
+
+alter table metadata
+    add column learning_outcome_body_de   text not null default '',
+    add column learning_outcome_header_de text not null default '',
+    add column learning_outcome_body_en   text not null default '',
+    add column learning_outcome_header_en text not null default '',
+    add column module_content_body_de     text not null default '',
+    add column module_content_header_de   text not null default '',
+    add column module_content_body_en     text not null default '',
+    add column module_content_header_en   text not null default '',
+    add column learning_methods_body_de   text not null default '',
+    add column learning_methods_header_de text not null default '',
+    add column learning_methods_body_en   text not null default '',
+    add column learning_methods_header_en text not null default '',
+    add column literature_body_de         text not null default '',
+    add column literature_header_de       text not null default '',
+    add column literature_body_en         text not null default '',
+    add column literature_header_en       text not null default '',
+    add column particularities_body_de    text not null default '',
+    add column particularities_header_de  text not null default '',
+    add column particularities_body_en    text not null default '',
+    add column particularities_header_en  text not null default '';
+
+-- !Downs
+alter table metadata
+    drop column learning_outcome_body_de,
+    drop column learning_outcome_header_de,
+    drop column learning_outcome_body_en,
+    drop column learning_outcome_header_en,
+    drop column module_content_body_de,
+    drop column module_content_header_de,
+    drop column module_content_body_en,
+    drop column module_content_header_en,
+    drop column learning_methods_body_de,
+    drop column learning_methods_header_de,
+    drop column learning_methods_body_en,
+    drop column learning_methods_header_en,
+    drop column literature_body_de,
+    drop column literature_header_de,
+    drop column literature_body_en,
+    drop column literature_header_en,
+    drop column particularities_body_de,
+    drop column particularities_header_de,
+    drop column particularities_body_en,
+    drop column particularities_header_en;

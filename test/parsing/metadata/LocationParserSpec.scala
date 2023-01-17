@@ -34,7 +34,7 @@ class LocationParserSpec
       assertError(
         parser,
         "location: location.iwz\n",
-        "location.gm or location.dz or location.su or location.km",
+        "location.su or location.km or location.gm or location.dz",
         Some("location.iwz\n")
       )
     }

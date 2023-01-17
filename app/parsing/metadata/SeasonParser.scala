@@ -9,5 +9,9 @@ import javax.inject.Singleton
 @Singleton
 final class SeasonParser extends SingleValueParser[Season] {
   def parser(implicit seasons: Seq[Season]): Parser[Season] =
-    itemParser("frequency", seasons, x => s"season.${x.abbrev}")
+    itemParser(
+      "frequency",
+      seasons.sortBy(_.abbrev).reverse,
+      x => s"season.${x.abbrev}"
+    )
 }

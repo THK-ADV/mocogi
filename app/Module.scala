@@ -1,5 +1,5 @@
 import com.google.inject.{AbstractModule, TypeLiteral}
-import database.repo.{MetadataRepository, MetadataRepositoryImpl}
+import database.repo.{ModuleCompendiumRepository, ModuleCompendiumRepositoryImpl}
 import git.publisher.{
   CoreDataPublisher,
   GitFilesDownloadActor,
@@ -65,11 +65,11 @@ class Module() extends AbstractModule {
     bind(classOf[FocusAreaService])
       .to(classOf[FocusAreaServiceImpl])
       .asEagerSingleton()
-    bind(classOf[MetadataRepository])
-      .to(classOf[MetadataRepositoryImpl])
+    bind(classOf[ModuleCompendiumRepository])
+      .to(classOf[ModuleCompendiumRepositoryImpl])
       .asEagerSingleton()
-    bind(classOf[MetadataService])
-      .to(classOf[MetadataServiceImpl])
+    bind(classOf[ModuleCompendiumService])
+      .to(classOf[ModuleCompendiumServiceImpl])
       .asEagerSingleton()
     bind(classOf[MetadataParserService])
       .to(classOf[MetadataParserServiceImpl])

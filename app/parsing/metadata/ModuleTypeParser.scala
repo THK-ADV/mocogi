@@ -9,5 +9,9 @@ import javax.inject.Singleton
 @Singleton
 final class ModuleTypeParser extends SingleValueParser[ModuleType] {
   def parser(implicit moduleTypes: Seq[ModuleType]): Parser[ModuleType] =
-    itemParser("type", moduleTypes, x => s"type.${x.abbrev}")
+    itemParser(
+      "type",
+      moduleTypes.sortBy(_.abbrev).reverse,
+      x => s"type.${x.abbrev}"
+    )
 }

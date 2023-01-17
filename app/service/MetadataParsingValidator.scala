@@ -33,7 +33,7 @@ trait MetadataParsingValidator {
 final class MetadataParsingValidatorImpl @Inject() (
     val parserService: MetadataParserService,
     val validatorService: MetadataValidatorService,
-    val service: MetadataService,
+    val service: ModuleCompendiumService,
     private implicit val ctx: ExecutionContext
 ) extends MetadataParsingValidator {
   override def parse(input: String, gitFilePath: GitFilePath) =

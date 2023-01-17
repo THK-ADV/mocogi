@@ -12,7 +12,7 @@ trait MetadataValidatorService {
 
 @Singleton
 final class MetadataValidatorServiceImpl @Inject() (
-    val service: MetadataService,
+    val service: ModuleCompendiumService,
     private implicit val ctx: ExecutionContext
 ) extends MetadataValidatorService {
   override def validate(metadata: ParsedMetadata) =

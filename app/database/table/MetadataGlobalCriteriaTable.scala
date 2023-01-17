@@ -20,7 +20,7 @@ final class MetadataGlobalCriteriaTable(tag: Tag)
   def globalCriteria = column[String]("global_criteria", O.PrimaryKey)
 
   def metadataFk =
-    foreignKey("metadata", metadata, TableQuery[MetadataTable])(_.id)
+    foreignKey("metadata", metadata, TableQuery[ModuleCompendiumTable])(_.id)
 
   def globalCriteriaFk =
     foreignKey("global_criteria", globalCriteria, TableQuery[CompetenceTable])(

@@ -30,7 +30,7 @@ final class MetadataAssessmentMethodTable(tag: Tag)
   def percentage = column[Option[Double]]("percentage")
 
   def metadataFk =
-    foreignKey("metadata", metadata, TableQuery[MetadataTable])(_.id)
+    foreignKey("metadata", metadata, TableQuery[ModuleCompendiumTable])(_.id)
 
   def assessmentMethodFk =
     foreignKey(

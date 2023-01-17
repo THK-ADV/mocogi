@@ -38,7 +38,7 @@ class LanguageParserSpec
       assertError(
         parser,
         "language: lang.ger\n",
-        "lang.de or lang.en or lang.de_en",
+        "lang.en or lang.de_en or lang.de",
         Some("lang.ger\n")
       )
     }

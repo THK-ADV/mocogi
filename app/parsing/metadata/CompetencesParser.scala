@@ -11,7 +11,7 @@ object CompetencesParser {
   ): Parser[List[Competence]] =
     multipleValueParser(
       "competences",
-      c => s"competence.${c.abbrev}",
+      (c: Competence) => s"competence.${c.abbrev}",
       0
-    )
+    )(competences.sortBy(_.abbrev).reverse)
 }

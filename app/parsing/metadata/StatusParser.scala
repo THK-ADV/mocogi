@@ -9,5 +9,9 @@ import javax.inject.Singleton
 @Singleton
 final class StatusParser extends SingleValueParser[Status] {
   def parser(implicit status: Seq[Status]): Parser[Status] =
-    itemParser("status", status, x => s"status.${x.abbrev}")
+    itemParser(
+      "status",
+      status.sortBy(_.abbrev).reverse,
+      x => s"status.${x.abbrev}"
+    )
 }

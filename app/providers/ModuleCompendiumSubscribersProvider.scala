@@ -4,14 +4,14 @@ import akka.actor.ActorSystem
 import controllers.parameter.PrinterOutputFormat
 import git.ModuleCompendiumSubscribers
 import git.subscriber.{
-  MetadataDatabaseActor,
+  ModuleCompendiumDatabaseActor,
   ModuleCompendiumLoggingActor,
   ModuleCompendiumPrintingActor,
   ModuleCompendiumPublishActor
 }
 import printing.PrinterOutputType
 import publisher.KafkaPublisher
-import service.{MetadataService, ModuleCompendiumPrintingService}
+import service.{ModuleCompendiumService, ModuleCompendiumPrintingService}
 import validator.Metadata
 
 import javax.inject.{Inject, Provider, Singleton}
@@ -21,7 +21,7 @@ import scala.concurrent.ExecutionContext
 class ModuleCompendiumSubscribersProvider @Inject() (
     system: ActorSystem,
     parserPrinter: ModuleCompendiumPrintingService,
-    metadataService: MetadataService,
+    metadataService: ModuleCompendiumService,
     publisher: KafkaPublisher[Metadata],
     ctx: ExecutionContext
 ) extends Provider[ModuleCompendiumSubscribers] {
@@ -37,7 +37,7 @@ class ModuleCompendiumSubscribersProvider @Inject() (
           )
         ),
         system.actorOf(ModuleCompendiumPublishActor.props(publisher)),
-        system.actorOf(MetadataDatabaseActor.props(metadataService, ctx))
+        system.actorOf(ModuleCompendiumDatabaseActor.props(metadataService, ctx))
       )
     )
 }

@@ -27,10 +27,10 @@ final class POOptionalTable(tag: Tag)
     column[List[Int]]("recommended_semester", O.PrimaryKey)
 
   def metadataFk =
-    foreignKey("metadata", metadata, TableQuery[MetadataTable])(_.id)
+    foreignKey("metadata", metadata, TableQuery[ModuleCompendiumTable])(_.id)
 
   def instanceOfFk =
-    foreignKey("instance_of", instanceOf, TableQuery[MetadataTable])(_.id)
+    foreignKey("instance_of", instanceOf, TableQuery[ModuleCompendiumTable])(_.id)
 
   def poFk =
     foreignKey("po", po, TableQuery[POTable])(_.abbrev)
