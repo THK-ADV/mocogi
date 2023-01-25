@@ -74,45 +74,25 @@ final class ModuleCompendiumTable(tag: Tag)
 
   def participantsMax = column[Option[Int]]("participants_max")
 
-  def learningOutcomeBodyDe = column[String]("learning_outcome_body_de")
+  def learningOutcomeDe = column[String]("learning_outcome_de")
 
-  def learningOutcomeHeaderDe = column[String]("learning_outcome_header_de")
+  def learningOutcomeEn = column[String]("learning_outcome_en")
 
-  def learningOutcomeBodyEn = column[String]("learning_outcome_body_en")
+  def moduleContentDe = column[String]("module_content_de")
 
-  def learningOutcomeHeaderEn = column[String]("learning_outcome_header_en")
+  def moduleContentEn = column[String]("module_content_en")
 
-  def moduleContentBodyDe = column[String]("module_content_body_de")
+  def learningMethodsDe = column[String]("learning_methods_de")
 
-  def moduleContentHeaderDe = column[String]("module_content_header_de")
+  def learningMethodsEn = column[String]("learning_methods_en")
 
-  def moduleContentBodyEn = column[String]("module_content_body_en")
+  def literatureDe = column[String]("literature_de")
 
-  def moduleContentHeaderEn = column[String]("module_content_header_en")
+  def literatureEn = column[String]("literature_en")
 
-  def learningMethodsBodyDe = column[String]("learning_methods_body_de")
+  def particularitiesDe = column[String]("particularities_de")
 
-  def learningMethodsHeaderDe = column[String]("learning_methods_header_de")
-
-  def learningMethodsBodyEn = column[String]("learning_methods_body_en")
-
-  def learningMethodsHeaderEn = column[String]("learning_methods_header_en")
-
-  def literatureBodyDe = column[String]("literature_body_de")
-
-  def literatureHeaderDe = column[String]("literature_header_de")
-
-  def literatureBodyEn = column[String]("literature_body_en")
-
-  def literatureHeaderEn = column[String]("literature_header_en")
-
-  def particularitiesBodyDe = column[String]("particularities_body_de")
-
-  def particularitiesHeaderDe = column[String]("particularities_header_de")
-
-  def particularitiesBodyEn = column[String]("particularities_body_en")
-
-  def particularitiesHeaderEn = column[String]("particularities_header_en")
+  def particularitiesEn = column[String]("particularities_en")
 
   def moduleTypeFk =
     foreignKey("module_type", moduleType, TableQuery[ModuleTypeTable])(_.abbrev)
@@ -154,34 +134,24 @@ final class ModuleCompendiumTable(tag: Tag)
     location,
     (participantsMin, participantsMax),
     (
-      learningOutcomeHeaderDe,
-      learningOutcomeBodyDe,
-      learningOutcomeHeaderEn,
-      learningOutcomeBodyEn
+      learningOutcomeDe,
+      learningOutcomeEn
     ),
     (
-      moduleContentHeaderDe,
-      moduleContentBodyDe,
-      moduleContentHeaderEn,
-      moduleContentBodyEn
+      moduleContentDe,
+      moduleContentEn
     ),
     (
-      learningMethodsHeaderDe,
-      learningMethodsBodyDe,
-      learningMethodsHeaderEn,
-      learningMethodsBodyEn
+      learningMethodsDe,
+      learningMethodsEn
     ),
     (
-      literatureHeaderDe,
-      literatureBodyDe,
-      literatureHeaderEn,
-      literatureBodyEn
+      literatureDe,
+      literatureEn
     ),
     (
-      particularitiesHeaderDe,
-      particularitiesBodyDe,
-      particularitiesHeaderEn,
-      particularitiesBodyEn
+      particularitiesDe,
+      particularitiesEn
     )
   ) <> (mapRow, unmapRow)
 
@@ -201,11 +171,11 @@ final class ModuleCompendiumTable(tag: Tag)
           String,
           String,
           (Option[Int], Option[Int]),
-          (String, String, String, String),
-          (String, String, String, String),
-          (String, String, String, String),
-          (String, String, String, String),
-          (String, String, String, String)
+          (String, String),
+          (String, String),
+          (String, String),
+          (String, String),
+          (String, String)
       )
   ) => ModuleCompendiumDbEntry = {
     case (
@@ -233,34 +203,24 @@ final class ModuleCompendiumTable(tag: Tag)
           location,
           (participantsMin, participantsMax),
           (
-            learningOutcomeHeaderDe,
-            learningOutcomeBodyDe,
-            learningOutcomeHeaderEn,
-            learningOutcomeBodyEn
+            learningOutcomeDe,
+            learningOutcomeEn
           ),
           (
-            moduleContentHeaderDe,
-            moduleContentBodyDe,
-            moduleContentHeaderEn,
-            moduleContentBodyEn
+            moduleContentDe,
+            moduleContentEn
           ),
           (
-            learningMethodsHeaderDe,
-            learningMethodsBodyDe,
-            learningMethodsHeaderEn,
-            learningMethodsBodyEn
+            learningMethodsDe,
+            learningMethodsEn
           ),
           (
-            literatureHeaderDe,
-            literatureBodyDe,
-            literatureHeaderEn,
-            literatureBodyEn
+            literatureDe,
+            literatureEn
           ),
           (
-            particularitiesHeaderDe,
-            particularitiesBodyDe,
-            particularitiesHeaderEn,
-            particularitiesBodyEn
+            particularitiesDe,
+            particularitiesEn
           )
         ) =>
       ModuleCompendiumDbEntry(
@@ -289,28 +249,18 @@ final class ModuleCompendiumTable(tag: Tag)
         participantsMin,
         participantsMax,
         Content(
-          learningOutcomeHeaderDe,
-          learningOutcomeBodyDe,
-          moduleContentHeaderDe,
-          moduleContentBodyDe,
-          learningMethodsHeaderDe,
-          learningMethodsBodyDe,
-          literatureHeaderDe,
-          literatureBodyDe,
-          particularitiesHeaderDe,
-          particularitiesBodyDe
+          learningOutcomeDe,
+          moduleContentDe,
+          learningMethodsDe,
+          literatureDe,
+          particularitiesDe
         ),
         Content(
-          learningOutcomeHeaderEn,
-          learningOutcomeBodyEn,
-          moduleContentHeaderEn,
-          moduleContentBodyEn,
-          learningMethodsHeaderEn,
-          learningMethodsBodyEn,
-          literatureHeaderEn,
-          literatureBodyEn,
-          particularitiesHeaderEn,
-          particularitiesBodyEn
+          learningOutcomeEn,
+          moduleContentEn,
+          learningMethodsEn,
+          literatureEn,
+          particularitiesEn
         )
       )
   }
@@ -331,11 +281,11 @@ final class ModuleCompendiumTable(tag: Tag)
         String,
         String,
         (Option[Int], Option[Int]),
-        (String, String, String, String),
-        (String, String, String, String),
-        (String, String, String, String),
-        (String, String, String, String),
-        (String, String, String, String)
+        (String, String),
+        (String, String),
+        (String, String),
+        (String, String),
+        (String, String)
     )
   ] =
     a =>
@@ -365,34 +315,24 @@ final class ModuleCompendiumTable(tag: Tag)
           a.location,
           (a.participantsMin, a.participantsMax),
           (
-            a.deContent.learningOutcomeHeader,
-            a.deContent.learningOutcomeBody,
-            a.enContent.learningOutcomeHeader,
-            a.enContent.learningOutcomeBody
+            a.deContent.learningOutcome,
+            a.enContent.learningOutcome
           ),
           (
-            a.deContent.contentHeader,
-            a.deContent.contentBody,
-            a.enContent.contentHeader,
-            a.enContent.contentBody
+            a.deContent.content,
+            a.enContent.content
           ),
           (
-            a.deContent.teachingAndLearningMethodsHeader,
-            a.deContent.teachingAndLearningMethodsBody,
-            a.enContent.teachingAndLearningMethodsHeader,
-            a.enContent.teachingAndLearningMethodsBody
+            a.deContent.teachingAndLearningMethods,
+            a.enContent.teachingAndLearningMethods
           ),
           (
-            a.deContent.recommendedReadingHeader,
-            a.deContent.recommendedReadingBody,
-            a.enContent.recommendedReadingHeader,
-            a.enContent.recommendedReadingBody
+            a.deContent.recommendedReading,
+            a.enContent.recommendedReading
           ),
           (
-            a.deContent.particularitiesHeader,
-            a.deContent.particularitiesBody,
-            a.enContent.particularitiesHeader,
-            a.enContent.particularitiesBody
+            a.deContent.particularities,
+            a.enContent.particularities
           )
         )
       )

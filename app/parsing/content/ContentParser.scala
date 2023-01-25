@@ -9,99 +9,87 @@ object ContentParser {
     prefix("## (de)")
       .take(
         zeroOrMoreSpaces
-          .take(literal("Angestrebte Lernergebnisse"))
+          .skip(prefix("Angestrebte Lernergebnisse"))
           .skip(prefix(":"))
           .skip(newline)
-          .zip(prefixTo("## (en)"))
+          .take(prefixTo("## (en)"))
           .skip(zeroOrMoreSpaces)
-          .take(literal("Learning Outcome"))
+          .skip(prefix("Learning Outcome"))
           .skip(prefix(":"))
           .skip(newline)
-          .take(prefixTo("## (de)"))
+          .zip(prefixTo("## (de)"))
       )
       .take(
         zeroOrMoreSpaces
-          .take(literal("Modulinhalte"))
+          .skip(prefix("Modulinhalte"))
           .skip(prefix(":"))
           .skip(newline)
-          .zip(prefixTo("## (en)"))
+          .take(prefixTo("## (en)"))
           .skip(zeroOrMoreSpaces)
-          .take(literal("Module Content"))
+          .skip(prefix("Module Content"))
           .skip(prefix(":"))
           .skip(newline)
-          .take(prefixTo("## (de)"))
+          .zip(prefixTo("## (de)"))
       )
       .take(
         zeroOrMoreSpaces
-          .take(literal("Lehr- und Lernmethoden (Medienformen)"))
+          .skip(prefix("Lehr- und Lernmethoden (Medienformen)"))
           .skip(prefix(":"))
           .skip(newline)
-          .zip(prefixTo("## (en)"))
+          .take(prefixTo("## (en)"))
           .skip(zeroOrMoreSpaces)
-          .take(literal("Teaching and Learning Methods"))
+          .skip(prefix("Teaching and Learning Methods"))
           .skip(prefix(":"))
           .skip(newline)
-          .take(prefixTo("## (de)"))
+          .zip(prefixTo("## (de)"))
       )
       .take(
         zeroOrMoreSpaces
-          .take(literal("Empfohlene Literatur"))
+          .skip(prefix("Empfohlene Literatur"))
           .skip(prefix(":"))
           .skip(newline)
-          .zip(prefixTo("## (en)"))
+          .take(prefixTo("## (en)"))
           .skip(zeroOrMoreSpaces)
-          .take(literal("Recommended Reading"))
+          .skip(prefix("Recommended Reading"))
           .skip(prefix(":"))
           .skip(newline)
-          .take(prefixTo("## (de)"))
+          .zip(prefixTo("## (de)"))
       )
       .take(
         zeroOrMoreSpaces
-          .take(literal("Besonderheiten"))
+          .skip(prefix("Besonderheiten"))
           .skip(prefix(":"))
           .skip(newline)
-          .zip(prefixTo("## (en)"))
+          .take(prefixTo("## (en)"))
           .skip(zeroOrMoreSpaces)
-          .take(literal("Particularities"))
+          .skip(prefix("Particularities"))
           .skip(prefix(":"))
           .skip(optional(newline))
-          .take(rest)
+          .zip(rest)
           .skip(end)
       )
       .map {
         case (
-              deH0,
               deC0,
-              enH0,
               enC0,
-              (deH1, deC1, enH1, enC1),
-              (deH2, deC2, enH2, enC2),
-              (deH3, deC3, enH3, enC3),
-              (deH4, deC4, enH4, enC4)
+              (deC1, enC1),
+              (deC2, enC2),
+              (deC3, enC3),
+              (deC4, enC4)
             ) =>
           (
             Content(
-              deH0,
               deC0,
-              deH1,
               deC1,
-              deH2,
               deC2,
-              deH3,
               deC3,
-              deH4,
               deC4
             ),
             Content(
-              enH0,
               enC0,
-              enH1,
               enC1,
-              enH2,
               enC2,
-              enH3,
               enC3,
-              enH4,
               enC4
             )
           )

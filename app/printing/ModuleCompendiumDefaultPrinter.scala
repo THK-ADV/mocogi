@@ -3,7 +3,7 @@ package printing
 import basedata.Person
 import parsing.types._
 import printer.Printer
-import printer.Printer.{newline, prefix, whitespace}
+import printer.Printer.{newline, prefix}
 import printing.ModuleCompendiumPrinter.{LanguageOps, StringConcatOps}
 import validator.{Metadata, ModuleRelation, POs, PrerequisiteEntry}
 
@@ -230,23 +230,26 @@ object ModuleCompendiumDefaultPrinter extends ModuleCompendiumPrinter {
     prefix("# ")
       .skip(prefix(m.title))
 
-  private def particularities(implicit c: Content) =
-    contentBlock(c.particularitiesHeader, c.particularitiesBody)
+  private def particularities(implicit c: Content, lang: PrintingLanguage) =
+    contentBlock(lang.particularitiesLabel, c.particularities)
 
-  private def recommendedReading(implicit c: Content) =
-    contentBlock(c.recommendedReadingHeader, c.recommendedReadingBody)
+  private def recommendedReading(implicit c: Content, lang: PrintingLanguage) =
+    contentBlock(lang.literatureLabel, c.recommendedReading)
 
-  private def teachingAndLearningMethods(implicit c: Content) =
+  private def teachingAndLearningMethods(implicit
+      c: Content,
+      lang: PrintingLanguage
+  ) =
     contentBlock(
-      c.teachingAndLearningMethodsHeader,
-      c.teachingAndLearningMethodsBody
+      lang.teachingAndLearningMethodsLabel,
+      c.teachingAndLearningMethods
     )
 
-  private def moduleContent(implicit c: Content) =
-    contentBlock(c.contentHeader, c.contentBody)
+  private def moduleContent(implicit c: Content, lang: PrintingLanguage) =
+    contentBlock(lang.moduleContentLabel, c.content)
 
-  private def learningOutcome(implicit c: Content) =
-    contentBlock(c.learningOutcomeHeader, c.learningOutcomeBody)
+  private def learningOutcome(implicit c: Content, lang: PrintingLanguage) =
+    contentBlock(lang.learningOutcomeLabel, c.learningOutcome)
 
   override def printer(implicit
       lang: PrintingLanguage,

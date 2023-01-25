@@ -52,6 +52,17 @@ object ModuleCompendiumPrinter {
       lang.fold("Studiengänge", "Degree Programs")
     def semesterLabel = "Semester"
 
+    def learningOutcomeLabel =
+      lang.fold("Angestrebte Lernergebnisse", "Learning Outcome")
+    def moduleContentLabel = lang.fold("Modulinhalte", "Module Content")
+    def teachingAndLearningMethodsLabel = lang.fold(
+      "Lehr- und Lernmethoden (Medienformen)",
+      "Teaching and Learning Methods"
+    )
+    def literatureLabel =
+      lang.fold("Empfohlene Literatur", "Recommended Reading")
+    def particularitiesLabel = lang.fold("Besonderheiten", "Particularities")
+
     def value(a: AbbrevLabelLike): String =
       lang.fold(a.deLabel, a.enLabel)
 

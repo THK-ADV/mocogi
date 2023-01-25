@@ -19,34 +19,16 @@ class ContentParserSpec
 
       assert(rest.isEmpty)
 
-      assert(de.learningOutcomeHeader == "Angestrebte Lernergebnisse")
-      assert(de.learningOutcomeBody == "\n")
-      assert(en.learningOutcomeHeader == "Learning Outcome")
-      assert(en.learningOutcomeBody == "\n")
-
-      assert(de.contentHeader == "Modulinhalte")
-      assert(de.contentBody == "\n")
-      assert(en.contentHeader == "Module Content")
-      assert(en.contentBody == "\n")
-
-      assert(
-        de.teachingAndLearningMethodsHeader == "Lehr- und Lernmethoden (Medienformen)"
-      )
-      assert(de.teachingAndLearningMethodsBody == "\n")
-      assert(
-        en.teachingAndLearningMethodsHeader == "Teaching and Learning Methods"
-      )
-      assert(en.teachingAndLearningMethodsBody == "\n")
-
-      assert(de.recommendedReadingHeader == "Empfohlene Literatur")
-      assert(de.recommendedReadingBody == "\n")
-      assert(en.recommendedReadingHeader == "Recommended Reading")
-      assert(en.recommendedReadingBody == "\n")
-
-      assert(de.particularitiesHeader == "Besonderheiten")
-      assert(de.particularitiesBody == "\n")
-      assert(en.particularitiesHeader == "Particularities")
-      assert(en.particularitiesBody == "")
+      assert(de.learningOutcome == "\n")
+      assert(en.learningOutcome == "\n")
+      assert(de.content == "\n")
+      assert(en.content == "\n")
+      assert(de.teachingAndLearningMethods == "\n")
+      assert(en.teachingAndLearningMethods == "\n")
+      assert(de.recommendedReading == "\n")
+      assert(en.recommendedReading == "\n")
+      assert(de.particularities == "\n")
+      assert(en.particularities == "")
     }
 
     "parse content1.md" in {
@@ -56,38 +38,20 @@ class ContentParserSpec
 
       assert(rest.isEmpty)
 
-      assert(de.learningOutcomeHeader == "Angestrebte Lernergebnisse")
-      assert(de.learningOutcomeBody == "\nProgrammieren lernen\n\n")
-      assert(en.learningOutcomeHeader == "Learning Outcome")
-      assert(en.learningOutcomeBody == "\nLearn to code\n\n")
-
-      assert(de.contentHeader == "Modulinhalte")
-      assert(de.contentBody == "\n- Klassen\n- Vererbung\n- Polymorphie\n\n")
-      assert(en.contentHeader == "Module Content")
-      assert(en.contentBody == "\n- Classes\n- Inheritance\n- Polymorphism\n\n")
-
+      assert(de.learningOutcome == "\nProgrammieren lernen\n\n")
+      assert(en.learningOutcome == "\nLearn to code\n\n")
+      assert(de.content == "\n- Klassen\n- Vererbung\n- Polymorphie\n\n")
+      assert(en.content == "\n- Classes\n- Inheritance\n- Polymorphism\n\n")
+      assert(de.teachingAndLearningMethods == "\nSlides, Whiteboard\n\n")
+      assert(en.teachingAndLearningMethods == "\n")
       assert(
-        de.teachingAndLearningMethodsHeader == "Lehr- und Lernmethoden (Medienformen)"
+        de.recommendedReading == "\nProgrammieren lernen mit Kotlin. Kohls, Dobrynin, Leonhardt\n\n"
       )
-      assert(de.teachingAndLearningMethodsBody == "\nSlides, Whiteboard\n\n")
       assert(
-        en.teachingAndLearningMethodsHeader == "Teaching and Learning Methods"
+        en.recommendedReading == "\nProgrammieren lernen mit Kotlin. Kohls, Dobrynin, Leonhardt\n\n"
       )
-      assert(en.teachingAndLearningMethodsBody == "\n")
-
-      assert(de.recommendedReadingHeader == "Empfohlene Literatur")
-      assert(
-        de.recommendedReadingBody == "\nProgrammieren lernen mit Kotlin. Kohls, Dobrynin, Leonhardt\n\n"
-      )
-      assert(en.recommendedReadingHeader == "Recommended Reading")
-      assert(
-        en.recommendedReadingBody == "\nProgrammieren lernen mit Kotlin. Kohls, Dobrynin, Leonhardt\n\n"
-      )
-
-      assert(de.particularitiesHeader == "Besonderheiten")
-      assert(de.particularitiesBody == "\nnichts\n\n")
-      assert(en.particularitiesHeader == "Particularities")
-      assert(en.particularitiesBody == "\nnothing")
+      assert(de.particularities == "\nnichts\n\n")
+      assert(en.particularities == "\nnothing")
     }
   }
 }
