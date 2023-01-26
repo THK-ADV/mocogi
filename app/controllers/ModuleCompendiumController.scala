@@ -1,13 +1,12 @@
 package controllers
 
 import controllers.json.ModuleCompendiumFormat
-import git.GitFilePath
-import play.api.libs.json.{Format, Json, OFormat}
+import ops.FileOps
+import play.api.libs.json.Json
 import play.api.mvc.{AbstractController, ControllerComponents}
+import providers.ConfigReader
 import service.{MetadataParsingValidator, ModuleCompendiumService}
-import validator.Metadata
 
-import java.time.LocalDateTime
 import java.util.UUID
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
@@ -17,25 +16,10 @@ final class ModuleCompendiumController @Inject() (
     cc: ControllerComponents,
     service: ModuleCompendiumService,
     parsingValidator: MetadataParsingValidator,
+    configReader: ConfigReader,
     implicit val ctx: ExecutionContext
 ) extends AbstractController(cc)
-    with ModuleCompendiumFormat
-    with TextInputAction {
-
-/*  implicit val fmt: Format[(Metadata, GitFilePath)] =
-    OFormat.apply(
-      js => {
-        for {
-          m <- js.\("metadata").validate[Metadata]
-          p <- js.\("gitFilePath").validate[String]
-        } yield (m, GitFilePath(p))
-      },
-      (a: (Metadata, GitFilePath)) =>
-        Json.obj(
-          "metadata" -> Json.toJson(a._1),
-          "gitFilePath" -> Json.toJson(a._2.value)
-        )
-    )*/
+    with ModuleCompendiumFormat {
 
   def all() =
     Action.async { request =>
@@ -49,21 +33,13 @@ final class ModuleCompendiumController @Inject() (
       service.get(id).map(x => Ok(Json.toJson(x)))
     }
 
-  // TODO only used for testing
-/*  def create() = textInputAction { input =>
-    val path = GitFilePath("???") // TODO replace with real path
-    val now = LocalDateTime.now() // TODO replace with date time
-    parsingValidator
-      .parse(input, path)
-      .flatMap(m => service.create(m._1, path, now))
-      .map(m => Ok(Json.toJson(m)))
-  }*/
-
-  // TODO only used for testing
-/*  def parseAndValidate() = textInputAction { input =>
-    val path = GitFilePath("???") // TODO replace with real path
-    parsingValidator
-      .parse(input, path)
-      .map(m => Ok(Json.toJson(m._1)))
-  }*/
+  def getFile(id: UUID) =
+    Action { _ =>
+      val folder = configReader.outputFolderPath
+      val filename = s"${id}.html"
+      Ok.sendFile(
+        content = FileOps.getFile(s"$folder/$filename").get,
+        fileName = _ => Some(filename)
+      )
+    }
 }

@@ -57,8 +57,9 @@ POST          /competences                   controllers.CompetenceController.cr
 
 # POST          /metadata                         controllers.MetadataController.create()
 # GET           /metadata/parseAndValidate        controllers.MetadataController.parseAndValidate()
-GET           /moduleCompendium              controllers.ModuleCompendiumController.all()
-GET           /moduleCompendium/:id          controllers.ModuleCompendiumController.get(id: java.util.UUID)
+GET           /moduleCompendium                     controllers.ModuleCompendiumController.all()
+GET           /moduleCompendium/:id/file            controllers.ModuleCompendiumController.getFile(id: java.util.UUID)
+GET           /moduleCompendium/:id                 controllers.ModuleCompendiumController.get(id: java.util.UUID)
 
 GET           /modules                       controllers.ModuleController.all()
 
