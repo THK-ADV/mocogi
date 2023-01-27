@@ -4,8 +4,8 @@ import basedata.PO
 import parser.Parser
 import parser.Parser._
 import parser.ParserOps._
-import parsing.multipleValueParser
 import parsing.types.{POMandatory, ParsedPOOptional}
+import parsing.{multipleValueParser, uuidParser}
 
 object POParser {
   private def studyProgramParser(implicit pos: Seq[PO]): Parser[PO] =
@@ -31,6 +31,7 @@ object POParser {
     prefix("instance_of:")
       .skip(zeroOrMoreSpaces)
       .take(prefix("module.").take(prefixTo("\n").or(rest)))
+      .flatMap(uuidParser)
 
   private def partOfCatalogParser =
     prefix("part_of_catalog:")

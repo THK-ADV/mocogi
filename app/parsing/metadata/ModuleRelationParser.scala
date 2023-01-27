@@ -4,6 +4,7 @@ import parser.Parser
 import parser.Parser._
 import parser.ParserOps.P0
 import parsing.types.ParsedModuleRelation
+import parsing.uuidParser
 
 object ModuleRelationParser {
 
@@ -13,6 +14,7 @@ object ModuleRelationParser {
         .skip(zeroOrMoreSpaces)
         .skip(prefix("module."))
         .take(prefixTo("\n") or rest)
+        .flatMap(uuidParser)
         .map[ParsedModuleRelation](ParsedModuleRelation.Child.apply),
       prefix("children:")
         .skip(newline)
@@ -22,6 +24,7 @@ object ModuleRelationParser {
             .skip(zeroOrMoreSpaces)
             .skip(prefix("module."))
             .take(prefixUntil("\n") or rest)
+            .flatMap(uuidParser)
             .many(newline, minimum = 1)
         )
         .map[ParsedModuleRelation](ParsedModuleRelation.Parent.apply)

@@ -23,7 +23,7 @@ final class ModuleCompendiumPrintingService @Inject() (
     outputFormat.printer
       .printer(language, lastModified)
       .print(mc, "")
-      .biFlatMap[
+      .biflatMap[
         ModuleCompendiumGenerationError,
         Throwable,
         PrinterOutput

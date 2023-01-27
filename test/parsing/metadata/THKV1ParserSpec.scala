@@ -101,7 +101,13 @@ class THKV1ParserSpec
         assert(metadata.title == "Algorithmik")
         assert(metadata.abbrev == "ALG")
         assert(metadata.kind == ModuleType("module", "Modul", "--"))
-        assert(metadata.relation.contains(ParsedModuleRelation.Child("inf")))
+        assert(
+          metadata.relation.contains(
+            ParsedModuleRelation.Child(
+              UUID.fromString("3bd4ee93-b921-4d52-9223-04be3bb13676")
+            )
+          )
+        )
         assert(metadata.credits == Left(5))
         assert(metadata.language == Language("de", "Deutsch", "--"))
         assert(metadata.duration == 1)
@@ -159,7 +165,11 @@ class THKV1ParserSpec
             Some(
               ParsedPrerequisiteEntry(
                 "",
-                List("ap1", "ap2", "ma1"),
+                List(
+                  UUID.fromString("ce09539e-fc0a-4c74-b85d-40a293998bb4"),
+                  UUID.fromString("d4365c35-a3aa-4dab-b6a3-e17449269055"),
+                  UUID.fromString("84223dc5-69b9-4dbb-a6ea-45bf5e9672e3")
+                ),
                 Nil
               )
             ),
@@ -174,7 +184,7 @@ class THKV1ParserSpec
             List(
               ParsedPOOptional(
                 wi1,
-                "wpf",
+                UUID.fromString("d1cecfbc-a314-42f6-99b3-be92f22c3295"),
                 partOfCatalog = false,
                 List(3)
               )
@@ -317,7 +327,11 @@ class THKV1ParserSpec
         assert(metadata.participants.value == Participants(4, 20))
         assert(metadata.competences.isEmpty)
         assert(metadata.globalCriteria.isEmpty)
-        assert(metadata.taughtWith == List("pp-mi"))
+        assert(
+          metadata.taughtWith == List(
+            UUID.fromString("d1cecfbc-a314-42f6-99b3-be92f22c3295")
+          )
+        )
         assert(rest.isEmpty)
       }
     }

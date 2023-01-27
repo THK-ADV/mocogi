@@ -59,7 +59,7 @@ object ModuleCompendiumPrinter {
       "Lehr- und Lernmethoden (Medienformen)",
       "Teaching and Learning Methods"
     )
-    def literatureLabel =
+    def recommendedReadingLabel =
       lang.fold("Empfohlene Literatur", "Recommended Reading")
     def particularitiesLabel = lang.fold("Besonderheiten", "Particularities")
 

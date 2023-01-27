@@ -234,7 +234,7 @@ object ModuleCompendiumDefaultPrinter extends ModuleCompendiumPrinter {
     contentBlock(lang.particularitiesLabel, c.particularities)
 
   private def recommendedReading(implicit c: Content, lang: PrintingLanguage) =
-    contentBlock(lang.literatureLabel, c.recommendedReading)
+    contentBlock(lang.recommendedReadingLabel, c.recommendedReading)
 
   private def teachingAndLearningMethods(implicit
       c: Content,

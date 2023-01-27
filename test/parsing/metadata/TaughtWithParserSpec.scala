@@ -5,6 +5,8 @@ import org.scalatest.wordspec.AnyWordSpec
 import parsing.ParserSpecHelper
 import parsing.metadata.TaughtWithParser.taughtWithParser
 
+import java.util.UUID
+
 final class TaughtWithParserSpec
     extends AnyWordSpec
     with ParserSpecHelper
@@ -12,20 +14,23 @@ final class TaughtWithParserSpec
 
   "A Taught with Parser" should {
     "parse a single module which is taught with" in {
-      val input = "taught_with: module.pp-mi"
+      val m1 = UUID.randomUUID
+      val input = s"taught_with: module.$m1"
       val (res, rest) = taughtWithParser.parse(input)
       assert(rest.isEmpty)
-      assert(res.value == List("pp-mi"))
+      assert(res.value == List(m1))
     }
 
     "parse multiple modules which are taught with" in {
+      val m1 = UUID.randomUUID
+      val m2 = UUID.randomUUID
       val input =
-        """taught_with:
-          |  - module.pp-mi
-          |  - module.pp-ai""".stripMargin
+        s"""taught_with:
+          |  - module.$m1
+          |  - module.$m2""".stripMargin
       val (res, rest) = taughtWithParser.parse(input)
       assert(rest.isEmpty)
-      assert(res.value == List("pp-mi", "pp-ai"))
+      assert(res.value == List(m1, m2))
     }
   }
 }

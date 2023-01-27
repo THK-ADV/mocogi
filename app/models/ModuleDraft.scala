@@ -10,3 +10,8 @@ case class ModuleDraft(
     status: ModuleDraftStatus,
     lastModified: LocalDateTime
 )
+
+case class ModuleDraftProtocol(
+    data: String,
+    branch: String
+)

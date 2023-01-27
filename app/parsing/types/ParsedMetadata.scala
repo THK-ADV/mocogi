@@ -24,5 +24,5 @@ case class ParsedMetadata(
     participants: Option[Participants],
     competences: List[Competence],
     globalCriteria: List[GlobalCriteria],
-    taughtWith: List[String]
+    taughtWith: List[UUID]
 )

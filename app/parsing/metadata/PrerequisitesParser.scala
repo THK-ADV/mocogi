@@ -5,7 +5,14 @@ import parser.Parser
 import parser.Parser._
 import parser.ParserOps._
 import parsing.types.ParsedPrerequisiteEntry
-import parsing.{multipleValueParser, removeIndentation, stringForKey}
+import parsing.{
+  multipleValueParser,
+  removeIndentation,
+  stringForKey,
+  uuidParser
+}
+
+import java.util.UUID
 
 object PrerequisitesParser {
 
@@ -13,10 +20,10 @@ object PrerequisitesParser {
     stringForKey("text").option
       .map(_.getOrElse(""))
 
-  private def modulesParser: Parser[List[String]] =
+  private def modulesParser: Parser[List[UUID]] =
     multipleValueParser(
       "modules",
-      skipFirst(prefix("module.")).take(prefixTo("\n"))
+      skipFirst(prefix("module.")).take(prefixTo("\n")).flatMap(uuidParser)
     ).option.map(_.getOrElse(Nil))
 
   private def studyProgramsParser(implicit pos: Seq[PO]): Parser[List[PO]] =

@@ -1,14 +1,16 @@
 package printing
 
 import database._
+import models.MetadataProtocol
 import parsing.metadata.VersionScheme
 import parsing.types.{ParsedWorkload, Participants}
 import printer.Printer
-import printer.Printer.{newline, prefix, whitespace}
-import service.MetadataProtocol
+import printer.Printer.{always, newline, prefix, whitespace}
 
 import java.util.UUID
+import javax.inject.Singleton
 
+@Singleton
 final class MetadataProtocolPrinter(identLevel: Int) {
 
   implicit val showUUID: UUID => String = _.toString
@@ -243,41 +245,47 @@ final class MetadataProtocolPrinter(identLevel: Int) {
   private def prerequisites(
       key: Printer[Unit],
       value: PrerequisiteEntryOutput
-  ) =
-    key
-      .skip(newline)
-      .skipOpt(
-        Option.when(value.text.nonEmpty)(
-          whitespace.repeat(identLevel).skip(entry("text", value.text))
+  ) = {
+    if (value.text.isEmpty && value.pos.isEmpty && value.modules.isEmpty)
+      always[Unit]()
+    else
+      key
+        .skip(newline)
+        .skipOpt(
+          Option.when(value.text.nonEmpty)(
+            whitespace.repeat(identLevel).skip(entry("text", value.text))
+          )
         )
-      )
-      .skipOpt(
-        Option.when(value.modules.nonEmpty)(
-          whitespace
-            .repeat(identLevel)
-            .skip(list(prefix("modules:"), value.modules, "module", identLevel))
-        )
-      )
-      .skipOpt(
-        Option.when(value.pos.nonEmpty)(
-          whitespace
-            .repeat(identLevel)
-            .skip(
-              list(
-                prefix("study_programs:"),
-                value.pos,
-                "study_program",
-                identLevel
+        .skipOpt(
+          Option.when(value.modules.nonEmpty)(
+            whitespace
+              .repeat(identLevel)
+              .skip(
+                list(prefix("modules:"), value.modules, "module", identLevel)
               )
-            )
+          )
         )
-      )
+        .skipOpt(
+          Option.when(value.pos.nonEmpty)(
+            whitespace
+              .repeat(identLevel)
+              .skip(
+                list(
+                  prefix("study_programs:"),
+                  value.pos,
+                  "study_program",
+                  identLevel
+                )
+              )
+          )
+        )
+  }
 
   def recommendedPrerequisites(value: PrerequisiteEntryOutput) =
-    prerequisites(prefix("recommended_prerequisites"), value)
+    prerequisites(prefix("recommended_prerequisites:"), value)
 
   def requiredPrerequisites(value: PrerequisiteEntryOutput) =
-    prerequisites(prefix("required_prerequisites"), value)
+    prerequisites(prefix("required_prerequisites:"), value)
 
   def status(value: String) =
     entry("status", s"status.$value")

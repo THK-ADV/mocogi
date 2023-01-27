@@ -7,6 +7,8 @@ import parsing.ParserSpecHelper
 import parsing.metadata.POParser._
 import parsing.types.{POMandatory, ParsedPOOptional}
 
+import java.util.UUID
+
 class POParserSpec
     extends AnyWordSpec
     with ParserSpecHelper
@@ -70,30 +72,33 @@ class POParserSpec
     }
 
     "parse a single optional po" in {
+      val m1 = UUID.randomUUID
       val input =
-        """po_optional:
+        s"""po_optional:
           |  - study_program: study_program.wi1
-          |    instance_of: module.wpf
+          |    instance_of: module.$m1
           |    part_of_catalog: false
           |    recommended_semester: 3""".stripMargin
       val (res, rest) = optionalPOParser.parse(input)
       assert(
         res.value == List(
-          ParsedPOOptional(wi1, "wpf", partOfCatalog = false, List(3))
+          ParsedPOOptional(wi1, m1, partOfCatalog = false, List(3))
         )
       )
       assert(rest.isEmpty)
     }
 
     "parse many optional pos" in {
+      val m1 = UUID.randomUUID
+      val m2 = UUID.randomUUID
       val input =
-        """po_optional:
+        s"""po_optional:
           |  - study_program: study_program.wi1
-          |    instance_of: module.wpf
+          |    instance_of: module.$m1
           |    part_of_catalog: false
           |    recommended_semester: 3
           |  - study_program: study_program.inf1
-          |    instance_of: module.wpf
+          |    instance_of: module.$m2
           |    part_of_catalog: true
           |    recommended_semester:
           |      - 3
@@ -101,8 +106,8 @@ class POParserSpec
       val (res, rest) = optionalPOParser.parse(input)
       assert(
         res.value == List(
-          ParsedPOOptional(wi1, "wpf", partOfCatalog = false, List(3)),
-          ParsedPOOptional(inf1, "wpf", partOfCatalog = true, List(3, 1))
+          ParsedPOOptional(wi1, m1, partOfCatalog = false, List(3)),
+          ParsedPOOptional(inf1, m2, partOfCatalog = true, List(3, 1))
         )
       )
       assert(rest.isEmpty)

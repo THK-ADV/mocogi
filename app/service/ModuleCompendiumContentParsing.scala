@@ -21,4 +21,7 @@ final class ModuleCompendiumContentParsing {
       c => Future.successful(c, rest)
     )
   }
+
+  def parse2(input: String)  =
+    parser.parse(input)
 }

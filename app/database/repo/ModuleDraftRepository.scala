@@ -6,8 +6,9 @@ import models.ModuleDraft
 import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfigProvider}
 import slick.jdbc.JdbcProfile
 
+import java.util.UUID
 import javax.inject.{Inject, Singleton}
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 final class ModuleDraftRepository @Inject() (
@@ -31,4 +32,17 @@ final class ModuleDraftRepository @Inject() (
 
   def allFromBranch(branch: String) =
     retrieve(allWithFilter(Map(("branch", Seq(branch)))))
+
+  def get(module: UUID): Future[Option[ModuleDraft]] =
+    db.run(
+      tableQuery.filter(_.module === module).take(1).result.map(_.headOption)
+    )
+
+  def update(draft: ModuleDraft) =
+    db.run(
+      tableQuery
+        .filter(_.module === draft.module)
+        .update(draft)
+        .map(_ => draft)
+    )
 }

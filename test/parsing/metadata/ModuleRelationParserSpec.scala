@@ -6,37 +6,43 @@ import parsing.ParserSpecHelper
 import parsing.metadata.ModuleRelationParser.moduleRelationParser
 import parsing.types.ParsedModuleRelation
 
-class ModuleRelationParserSpec extends AnyWordSpec
-  with ParserSpecHelper
-  with EitherValues
-  with OptionValues {
+import java.util.UUID
+
+class ModuleRelationParserSpec
+    extends AnyWordSpec
+    with ParserSpecHelper
+    with EitherValues
+    with OptionValues {
 
   "A Module Relation Parser" should {
     "parse a super module with its children" in {
+      val m1 = UUID.randomUUID
+      val m2 = UUID.randomUUID
       val input1 =
-        """relation:
+        s"""relation:
           | children:
-          |  - module.abc
-          |  - module.def""".stripMargin
+          |  - module.$m1
+          |  - module.$m2""".stripMargin
       val (res1, rest1) = moduleRelationParser.parse(input1)
-      assert(res1.value.value == ParsedModuleRelation.Parent(List("abc", "def")))
+      assert(res1.value.value == ParsedModuleRelation.Parent(List(m1, m2)))
       assert(rest1.isEmpty)
 
       val input2 =
-        """relation:
+        s"""relation:
           | children:
-          |  - module.abc""".stripMargin
+          |  - module.$m1""".stripMargin
       val (res2, rest2) = moduleRelationParser.parse(input2)
-      assert(res2.value.value == ParsedModuleRelation.Parent(List("abc")))
+      assert(res2.value.value == ParsedModuleRelation.Parent(List(m1)))
       assert(rest2.isEmpty)
     }
 
     "parse a sub module with its parent" in {
+      val m1 = UUID.randomUUID
       val input =
-        """relation:
-          | parent: module.abc""".stripMargin
+        s"""relation:
+          | parent: module.$m1""".stripMargin
       val (res, rest) = moduleRelationParser.parse(input)
-      assert(res.value.value == ParsedModuleRelation.Child("abc"))
+      assert(res.value.value == ParsedModuleRelation.Child(m1))
       assert(rest.isEmpty)
     }
 

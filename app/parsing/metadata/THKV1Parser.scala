@@ -21,11 +21,10 @@ import parsing.metadata.PrerequisitesParser.{
 import parsing.metadata.TaughtWithParser.taughtWithParser
 import parsing.metadata.WorkloadParser.workloadParser
 import parsing.types._
-import parsing.{posIntForKey, singleLineStringForKey}
+import parsing.{posIntForKey, singleLineStringForKey, uuidParser}
 
 import java.util.UUID
 import javax.inject.{Inject, Singleton}
-import scala.util.Try
 
 @Singleton
 final class THKV1Parser @Inject() (
@@ -40,7 +39,7 @@ final class THKV1Parser @Inject() (
 
   val idParser: Parser[UUID] =
     singleLineStringForKey("id")
-      .flatMap(s => Try(UUID.fromString(s)).fold(_ => never("uuid"), always))
+      .flatMap(uuidParser)
 
   val titleParser = singleLineStringForKey("title")
 

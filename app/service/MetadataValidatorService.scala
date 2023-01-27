@@ -21,10 +21,10 @@ final class MetadataValidatorServiceImpl @Inject() (
         .allIdsAndAbbrevs() // TODO add current ParsedMetadata if a batch of file is processed
       modules = idsAndAbbrevs.map(Module.tupled)
       metadata <- MetadataValidator
-        .validate(
+        .validateMany(
           Seq(metadata),
           30, // TODO use from StudyProgram
-          a => modules.find(_.abbrev.toLowerCase == a.toLowerCase)
+          id => modules.find(_.id == id)
         )
         .head
         .fold(

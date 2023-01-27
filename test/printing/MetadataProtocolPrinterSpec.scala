@@ -1,21 +1,16 @@
 package printing
 
 import database._
-import org.scalatest.EitherValues
+import models.MetadataProtocol
 import org.scalatest.wordspec.AnyWordSpec
 import parsing.metadata.VersionScheme
 import parsing.types.{ParsedWorkload, Participants}
-import printer.Printer
-import service.MetadataProtocol
 
 import java.util.UUID
 
-final class MetadataProtocolPrinterSpec extends AnyWordSpec with EitherValues {
+final class MetadataProtocolPrinterSpec extends AnyWordSpec with PrinterSpec {
 
   val printer = new MetadataProtocolPrinter(2)
-
-  def run(printer: Printer[Unit]): String =
-    printer.print((), "").value
 
   "A MetadataProtocolPrinter" should {
     "print version scheme" in {
@@ -149,9 +144,13 @@ final class MetadataProtocolPrinterSpec extends AnyWordSpec with EitherValues {
     }
 
     "print recommended prerequisites" in {
+      val entry0 = PrerequisiteEntryOutput("", Nil, Nil)
+      val res0 = ""
+      assert(run(printer.recommendedPrerequisites(entry0)) == res0)
+
       val entry1 = PrerequisiteEntryOutput("abc", Nil, Nil)
       val res1 =
-        s"""recommended_prerequisites
+        s"""recommended_prerequisites:
           |  text: abc\n""".stripMargin
       assert(run(printer.recommendedPrerequisites(entry1)) == res1)
 
@@ -159,7 +158,7 @@ final class MetadataProtocolPrinterSpec extends AnyWordSpec with EitherValues {
       val m2 = UUID.randomUUID
       val entry2 = PrerequisiteEntryOutput("abc", List(m1, m2), Nil)
       val res2 =
-        s"""recommended_prerequisites
+        s"""recommended_prerequisites:
            |  text: abc
            |  modules:
            |    - module.$m1
@@ -169,7 +168,7 @@ final class MetadataProtocolPrinterSpec extends AnyWordSpec with EitherValues {
       val entry3 =
         PrerequisiteEntryOutput("abc", List(m1, m2), List("abc", "def"))
       val res3 =
-        s"""recommended_prerequisites
+        s"""recommended_prerequisites:
            |  text: abc
            |  modules:
            |    - module.$m1
@@ -181,7 +180,7 @@ final class MetadataProtocolPrinterSpec extends AnyWordSpec with EitherValues {
 
       val entry4 = PrerequisiteEntryOutput("abc", Nil, List("abc", "def"))
       val res4 =
-        s"""recommended_prerequisites
+        s"""recommended_prerequisites:
            |  text: abc
            |  study_programs:
            |    - study_program.abc
@@ -190,7 +189,7 @@ final class MetadataProtocolPrinterSpec extends AnyWordSpec with EitherValues {
 
       val entry5 = PrerequisiteEntryOutput("", Nil, List("abc", "def"))
       val res5 =
-        s"""recommended_prerequisites
+        s"""recommended_prerequisites:
            |  study_programs:
            |    - study_program.abc
            |    - study_program.def\n""".stripMargin
@@ -291,7 +290,7 @@ final class MetadataProtocolPrinterSpec extends AnyWordSpec with EitherValues {
     "print" in {
       val m1 = UUID.randomUUID
       val m2 = UUID.randomUUID
-      val metadata = MetadataProtocol(
+      val metadata = models.MetadataProtocol(
         "Module A",
         "M",
         "module",
@@ -388,10 +387,10 @@ final class MetadataProtocolPrinterSpec extends AnyWordSpec with EitherValues {
           |  exercise: 10
           |  project_supervision: 10
           |  project_work: 10
-          |recommended_prerequisites
+          |recommended_prerequisites:
           |  text: abc
           |  modules: module.$m1
-          |required_prerequisites
+          |required_prerequisites:
           |  study_programs:
           |    - study_program.po1
           |    - study_program.po2

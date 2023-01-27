@@ -28,10 +28,10 @@ final class MetadataValidatorSpec
   private def ectsContrib(value: Double) =
     ECTSFocusAreaContribution(fa, value, "")
 
-  private def prerequisiteEntry(modules: List[String]) =
+  private def prerequisiteEntry(modules: List[UUID]) =
     ParsedPrerequisiteEntry("", modules, Nil)
 
-  private def poOpt(module: String) =
+  private def poOpt(module: UUID) =
     ParsedPOOptional(sp, module, partOfCatalog = false, Nil)
 
   val m1 = Module(UUID.randomUUID, "m1")
@@ -39,8 +39,8 @@ final class MetadataValidatorSpec
   val m3 = Module(UUID.randomUUID, "m3")
   val modules = List(m1, m2, m3)
 
-  def lookup(module: String): Option[Module] =
-    modules.find(_.abbrev == module)
+  def lookup(module: UUID): Option[Module] =
+    modules.find(_.id == module)
 
   "A Metadata Validator" when {
     "flatMap a validator" in {
@@ -237,14 +237,14 @@ final class MetadataValidatorSpec
       "pass if all modules are found" in {
         assert(
           moduleValidator("module", lookup)
-            .validate(List("m1", "m2"))
+            .validate(List(m1.id, m2.id))
             .value == List(
             m1,
             m2
           )
         )
         assert(
-          moduleValidator("module", lookup).validate(List("m1")).value == List(
+          moduleValidator("module", lookup).validate(List(m1.id)).value == List(
             m1
           )
         )
@@ -254,13 +254,15 @@ final class MetadataValidatorSpec
       }
 
       "fail if one module can't be found" in {
+        val m4 = UUID.randomUUID
+        val m5 = UUID.randomUUID
         assert(
           moduleValidator("module", lookup)
-            .validate(List("m1", "m4", "m5"))
+            .validate(List(m1.id, m4, m5))
             .left
             .value == List(
-            "module in 'module' not found: m4",
-            "module in 'module' not found: m5"
+            s"module in 'module' not found: $m4",
+            s"module in 'module' not found: $m5"
           )
         )
       }
@@ -279,13 +281,13 @@ final class MetadataValidatorSpec
       "pass if modules defined in prerequisiteEntry are found" in {
         assert(
           prerequisitesEntryValidator("prerequisites", lookup)
-            .validate(Some(prerequisiteEntry(List("m1", "m2"))))
+            .validate(Some(prerequisiteEntry(List(m1.id, m2.id))))
             .value
             .value == PrerequisiteEntry("", List(m1, m2), Nil)
         )
         assert(
           prerequisitesEntryValidator("prerequisites", lookup)
-            .validate(Some(prerequisiteEntry(List("m1"))))
+            .validate(Some(prerequisiteEntry(List(m1.id))))
             .value
             .value == PrerequisiteEntry("", List(m1), Nil)
         )
@@ -298,21 +300,25 @@ final class MetadataValidatorSpec
       }
 
       "fail if modules defined in prerequisiteEntry are not found" in {
+        val id = UUID.randomUUID
         assert(
           prerequisitesEntryValidator("prerequisites", lookup)
-            .validate(Some(prerequisiteEntry(List("abc"))))
+            .validate(Some(prerequisiteEntry(List(id))))
             .left
-            .value == List("module in 'prerequisites' not found: abc")
+            .value == List(s"module in 'prerequisites' not found: $id")
         )
       }
 
       "pass validating prerequisites" in {
+        val random = UUID.randomUUID
+        val random2 = UUID.randomUUID
+        val random3 = UUID.randomUUID
         assert(
           prerequisitesValidator(lookup)
             .validate(
               ParsedPrerequisites(
-                Some(prerequisiteEntry(List("m1"))),
-                Some(prerequisiteEntry(List("m2")))
+                Some(prerequisiteEntry(List(m1.id))),
+                Some(prerequisiteEntry(List(m2.id)))
               )
             )
             .value == Prerequisites(
@@ -324,7 +330,7 @@ final class MetadataValidatorSpec
           prerequisitesValidator(lookup)
             .validate(
               ParsedPrerequisites(
-                Some(prerequisiteEntry(List("m1"))),
+                Some(prerequisiteEntry(List(m1.id))),
                 None
               )
             )
@@ -342,26 +348,28 @@ final class MetadataValidatorSpec
           prerequisitesValidator(lookup)
             .validate(
               ParsedPrerequisites(
-                Some(prerequisiteEntry(List("m1"))),
-                Some(prerequisiteEntry(List("abc")))
+                Some(prerequisiteEntry(List(m1.id))),
+                Some(prerequisiteEntry(List(random)))
               )
             )
             .left
-            .value == List("module in 'required prerequisites' not found: abc")
+            .value == List(
+            s"module in 'required prerequisites' not found: $random"
+          )
         )
         assert(
           prerequisitesValidator(lookup)
             .validate(
               ParsedPrerequisites(
-                Some(prerequisiteEntry(List("def", "123"))),
-                Some(prerequisiteEntry(List("abc")))
+                Some(prerequisiteEntry(List(random, random2))),
+                Some(prerequisiteEntry(List(random3)))
               )
             )
             .left
             .value == List(
-            "module in 'recommended prerequisites' not found: def",
-            "module in 'recommended prerequisites' not found: 123",
-            "module in 'required prerequisites' not found: abc"
+            s"module in 'recommended prerequisites' not found: $random",
+            s"module in 'recommended prerequisites' not found: $random2",
+            s"module in 'required prerequisites' not found: $random3"
           )
         )
       }
@@ -390,13 +398,15 @@ final class MetadataValidatorSpec
     "validating po optionals" should {
       "pass if modules can be found" in {
         assert(
-          poOptionalValidator(lookup).validate(List(poOpt("m1"))).value == List(
+          poOptionalValidator(lookup)
+            .validate(List(poOpt(m1.id)))
+            .value == List(
             POOptional(sp, m1, partOfCatalog = false, Nil)
           )
         )
         assert(
           poOptionalValidator(lookup)
-            .validate(List(poOpt("m1"), poOpt("m2")))
+            .validate(List(poOpt(m1.id), poOpt(m2.id)))
             .value == List(
             POOptional(sp, m1, partOfCatalog = false, Nil),
             POOptional(sp, m2, partOfCatalog = false, Nil)
@@ -406,17 +416,19 @@ final class MetadataValidatorSpec
       }
 
       "fail if modules cant be found" in {
+        val random = UUID.randomUUID
         assert(
           poOptionalValidator(lookup)
-            .validate(List(poOpt("m1"), poOpt("abc")))
+            .validate(List(poOpt(m1.id), poOpt(random)))
             .left
-            .value == List("module in 'po optional' not found: abc")
+            .value == List(s"module in 'po optional' not found: $random")
         )
       }
 
       "handle pos validation" in {
+        val random = UUID.randomUUID
         posValidator(lookup)
-          .validate(ParsedPOs(Nil, List(poOpt("m1"))))
+          .validate(ParsedPOs(Nil, List(poOpt(m1.id))))
           .value == POs(
           Nil,
           List(POOptional(sp, m1, partOfCatalog = false, Nil))
@@ -425,9 +437,9 @@ final class MetadataValidatorSpec
           .validate(ParsedPOs(Nil, Nil))
           .value == POs(Nil, Nil)
         posValidator(lookup)
-          .validate(ParsedPOs(Nil, List(poOpt("abc"))))
+          .validate(ParsedPOs(Nil, List(poOpt(random))))
           .left
-          .value == List("module not found: abc")
+          .value == List(s"module not found: $random")
       }
     }
 
@@ -439,31 +451,26 @@ final class MetadataValidatorSpec
       "pass if parent is found" in {
         assert(
           moduleRelationValidator(lookup)
-            .validate(Some(ParsedModuleRelation.Child("m1")))
+            .validate(Some(ParsedModuleRelation.Child(m1.id)))
             .value
             .value == ModuleRelation.Child(m1)
         )
       }
 
       "fail if parent is not found" in {
+        val random = UUID.randomUUID
         assert(
           moduleRelationValidator(lookup)
-            .validate(Some(ParsedModuleRelation.Child("abc")))
+            .validate(Some(ParsedModuleRelation.Child(random)))
             .left
-            .value == List("module in 'module relation' not found: abc")
-        )
-        assert(
-          moduleRelationValidator(lookup)
-            .validate(Some(ParsedModuleRelation.Child("")))
-            .left
-            .value == List("module in 'module relation' not found: ")
+            .value == List(s"module in 'module relation' not found: $random")
         )
       }
 
       "pass if children are found" in {
         assert(
           moduleRelationValidator(lookup)
-            .validate(Some(ParsedModuleRelation.Parent(List("m1", "m2"))))
+            .validate(Some(ParsedModuleRelation.Parent(List(m1.id, m2.id))))
             .value
             .value == ModuleRelation.Parent(List(m1, m2))
         )
@@ -476,11 +483,12 @@ final class MetadataValidatorSpec
       }
 
       "fail if one child is not found" in {
+        val random = UUID.randomUUID
         assert(
           moduleRelationValidator(lookup)
-            .validate(Some(ParsedModuleRelation.Parent(List("m1", "abc"))))
+            .validate(Some(ParsedModuleRelation.Parent(List(m1.id, random))))
             .left
-            .value == List("module in 'module relation' not found: abc")
+            .value == List(s"module in 'module relation' not found: $random")
         )
       }
     }
@@ -492,7 +500,7 @@ final class MetadataValidatorSpec
           "title",
           "abbrev",
           ModuleType("", "", ""),
-          Some(ParsedModuleRelation.Child("m1")),
+          Some(ParsedModuleRelation.Child(m1.id)),
           Left(1),
           Language("", "", ""),
           1,
@@ -508,7 +516,7 @@ final class MetadataValidatorSpec
           Location("", "", ""),
           ParsedPOs(
             List(POMandatory(sp, List(1), Nil)),
-            List(ParsedPOOptional(sp, "m2", partOfCatalog = false, List(2)))
+            List(ParsedPOOptional(sp, m2.id, partOfCatalog = false, List(2)))
           ),
           Some(Participants(10, 20)),
           Nil,
@@ -541,7 +549,7 @@ final class MetadataValidatorSpec
           Nil
         )
 
-        val res = validate(Seq(ivm1), 10, lookup).head.value
+        val res = validateMany(Seq(ivm1), 10, lookup).head.value
         assert(res.id == vm1.id)
         assert(res.title == vm1.title)
         assert(res.abbrev == vm1.abbrev)
@@ -565,12 +573,13 @@ final class MetadataValidatorSpec
       }
 
       "fail if something is invalid" in {
+        val random = UUID.randomUUID
         val ivm1: ParsedMetadata = ParsedMetadata(
           UUID.randomUUID(),
           "",
           "abbrev",
           ModuleType("", "", ""),
-          Some(ParsedModuleRelation.Child("abc")),
+          Some(ParsedModuleRelation.Child(random)),
           Left(1),
           Language("", "", ""),
           1,
@@ -586,7 +595,7 @@ final class MetadataValidatorSpec
           Location("", "", ""),
           ParsedPOs(
             List(POMandatory(sp, List(1), Nil)),
-            List(ParsedPOOptional(sp, "m2", partOfCatalog = false, List(2)))
+            List(ParsedPOOptional(sp, m1.id, partOfCatalog = false, List(2)))
           ),
           Some(Participants(20, 15)),
           Nil,
@@ -595,10 +604,10 @@ final class MetadataValidatorSpec
         )
 
         assert(
-          validate(Seq(ivm1), 10, lookup).head.left.value == List(
+          validateMany(Seq(ivm1), 10, lookup).head.left.value == List(
             "title must be set, but was empty",
             "participants min must be lower than max. min: 20, max: 15",
-            "module in 'module relation' not found: abc"
+            s"module in 'module relation' not found: $random"
           )
         )
       }
