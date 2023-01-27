@@ -1,7 +1,7 @@
 package controllers
 
 import basedata.{Faculty, Person, PersonStatus}
-import controllers.json.PersonFormat
+import controllers.formats.PersonFormat
 import org.scalatest.wordspec.AnyWordSpec
 import play.api.libs.json.{JsString, Writes}
 

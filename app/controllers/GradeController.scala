@@ -1,7 +1,7 @@
 package controllers
 
 import basedata.Grade
-import controllers.json.GradesFormat
+import controllers.formats.GradesFormat
 import play.api.libs.json.Writes
 import play.api.mvc.{AbstractController, ControllerComponents}
 import service.GradeService

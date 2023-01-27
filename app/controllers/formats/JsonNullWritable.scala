@@ -1,4 +1,4 @@
-package controllers.json
+package controllers.formats
 
 import play.api.libs.json.JsonConfiguration.Aux
 import play.api.libs.json.{Json, JsonConfiguration, OptionHandlers}

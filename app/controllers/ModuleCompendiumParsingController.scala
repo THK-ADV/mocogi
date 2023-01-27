@@ -1,19 +1,13 @@
 package controllers
 
-import controllers.ModuleCompendiumParsingController.{
-  mcgErrorWrites,
-  moduleCompendiumFormat,
-  parsingErrorWrites
-}
-import controllers.json._
+import controllers.formats._
 import controllers.parameter.{OutputType, PrinterOutputFormat}
 import parser.ParsingError
-import parsing.types._
 import play.api.libs.json._
 import play.api.libs.ws.WSClient
 import play.api.mvc._
 import printer.PrintingError
-import printing.{ModuleCompendiumGenerationError, PrinterOutput}
+import printing.ModuleCompendiumGenerationError
 import service.{ModuleCompendiumContentParsing, ModuleCompendiumPrintingService}
 
 import javax.inject.{Inject, Singleton}
@@ -79,7 +73,7 @@ class ModuleCompendiumParsingController @Inject() (
       printerOutputFormat: PrinterOutputFormat
   ): Future[Result] =
     Future.failed(new Throwable(""))
-/*    outputType match {
+  /*    outputType match {
       case OutputType.JSON =>
         parser
           .parser()
@@ -150,7 +144,4 @@ object ModuleCompendiumParsingController
         "found" -> e.found
       )
     )
-
-  implicit val moduleCompendiumFormat: Format[ModuleCompendium] =
-    Json.format[ModuleCompendium]
 }

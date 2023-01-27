@@ -1,6 +1,7 @@
 package database.repo
 
-import database.table.{UserBranch, UserBranchTable}
+import database.table.UserBranchTable
+import models.UserBranch
 import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfigProvider}
 import slick.jdbc.JdbcProfile
 

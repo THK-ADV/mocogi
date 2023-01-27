@@ -1,4 +1,4 @@
-package controllers.json
+package controllers.formats
 
 import basedata.{RestrictedAdmission, StudyForm, StudyFormScope, StudyProgram}
 import database.repo.StudyProgramOutput

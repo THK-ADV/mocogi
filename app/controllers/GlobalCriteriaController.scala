@@ -1,7 +1,7 @@
 package controllers
 
 import basedata.GlobalCriteria
-import controllers.json.GlobalCriteriaFormat
+import controllers.formats.GlobalCriteriaFormat
 import play.api.libs.json.Writes
 import play.api.mvc.{AbstractController, ControllerComponents}
 import service.GlobalCriteriaService

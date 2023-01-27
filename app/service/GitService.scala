@@ -1,9 +1,8 @@
 package service
 
 import database.repo.{UserBranchRepository, UserRepository}
-import database.table.UserBranch
 import git.GitConfig
-import models.User
+import models.{User, UserBranch}
 import play.api.libs.ws.{EmptyBody, WSClient, WSResponse}
 import play.mvc.Http.Status
 
@@ -33,7 +32,7 @@ final class GitService @Inject() (
         else
           for {
             branch <- createBranchApiRequest(user)
-            res <- userBranchRepository.create(UserBranch(user.id, branch))
+            res <- userBranchRepository.create(models.UserBranch(user.id, branch))
           } yield res
     } yield res
 

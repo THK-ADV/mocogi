@@ -1,6 +1,6 @@
 package controllers
 
-import controllers.json.ThrowableWrites
+import controllers.formats.ThrowableWrites
 import git._
 import git.publisher.GitFilesDownloadActor
 import play.api.Logging

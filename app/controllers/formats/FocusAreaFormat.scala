@@ -1,4 +1,4 @@
-package controllers.json
+package controllers.formats
 
 import basedata.FocusArea
 import play.api.libs.json.{Format, Json}

@@ -1,7 +1,7 @@
 package controllers
 
 import basedata.StudyFormType
-import controllers.json.StudyFormTypeFormat
+import controllers.formats.StudyFormTypeFormat
 import play.api.libs.json.Writes
 import play.api.mvc.{AbstractController, ControllerComponents}
 import service.StudyFormTypeService

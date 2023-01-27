@@ -1,6 +1,6 @@
 package controllers
 
-import controllers.json.StudyProgramFormat
+import controllers.formats.StudyProgramFormat
 import play.api.libs.json.Json
 import play.api.mvc.{AbstractController, ControllerComponents}
 import service.StudyProgramService

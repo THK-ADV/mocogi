@@ -1,10 +1,10 @@
 package controllers
 
-import play.api.libs.json.{Format, JsResult, JsValue}
+import play.api.libs.json.{Format, JsResult, JsValue, Reads}
 
 import scala.util.Try
 
-package object json {
+package object formats {
   implicit class FormatOps[A](fmt: Format[A]) {
     def bimapTry[B](read: A => Try[B], write: B => A): Format[B] =
       new Format[B] {
@@ -15,4 +15,6 @@ package object json {
           fmt.writes(write(b))
       }
   }
+
+  implicit def listReads[A](implicit reads: Reads[A]): Reads[List[A]] = Reads.list(reads)
 }

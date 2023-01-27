@@ -1,4 +1,4 @@
-package controllers.json
+package controllers.formats
 
 import basedata.Grade
 import play.api.libs.json.{Format, Json}

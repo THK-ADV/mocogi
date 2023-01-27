@@ -1,7 +1,7 @@
 package controllers
 
 import controllers.POController.validAttribute
-import controllers.json.POFormat
+import controllers.formats.POFormat
 import play.api.libs.json.Json
 import play.api.mvc.{AbstractController, ControllerComponents}
 import service.POService

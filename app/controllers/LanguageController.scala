@@ -1,7 +1,7 @@
 package controllers
 
 import basedata.Language
-import controllers.json.LanguageFormat
+import controllers.formats.LanguageFormat
 import play.api.libs.json.Writes
 import play.api.mvc.{AbstractController, ControllerComponents}
 import service.LanguageService

@@ -1,6 +1,6 @@
 package controllers
 
-import controllers.json.ModuleCompendiumFormat
+import controllers.formats.ModuleCompendiumOutputFormat
 import ops.FileOps
 import play.api.libs.json.Json
 import play.api.mvc.{AbstractController, ControllerComponents}
@@ -19,7 +19,7 @@ final class ModuleCompendiumController @Inject() (
     configReader: ConfigReader,
     implicit val ctx: ExecutionContext
 ) extends AbstractController(cc)
-    with ModuleCompendiumFormat {
+    with ModuleCompendiumOutputFormat {
 
   def all() =
     Action.async { request =>

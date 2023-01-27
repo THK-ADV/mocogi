@@ -1,4 +1,4 @@
-package controllers.json
+package controllers.formats
 
 import basedata.{Person, PersonStatus}
 import play.api.libs.json._

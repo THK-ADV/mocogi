@@ -1,10 +1,9 @@
 package database.table
 
+import models.UserBranch
 import slick.jdbc.PostgresProfile.api._
 
 import java.util.UUID
-
-case class UserBranch(user: UUID, branch: String)
 
 final class UserBranchTable(tag: Tag)
     extends Table[UserBranch](tag, "user_has_branch") {

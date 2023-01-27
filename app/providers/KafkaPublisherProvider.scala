@@ -1,7 +1,7 @@
 package providers
 
 import config.KafkaConfig
-import controllers.json.ModuleCompendiumFormat
+import controllers.formats.ModuleCompendiumFormat
 import org.apache.kafka.common.serialization.Serializer
 import play.api.inject.ApplicationLifecycle
 import play.api.libs.json.Json

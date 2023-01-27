@@ -1,7 +1,7 @@
 package controllers
 
 import basedata.Faculty
-import controllers.json.FacultyFormat
+import controllers.formats.FacultyFormat
 import play.api.libs.json.Writes
 import play.api.mvc.{AbstractController, ControllerComponents}
 import service.FacultyService

@@ -1,4 +1,4 @@
-package controllers.json
+package controllers.formats
 
 import basedata.AssessmentMethod
 import play.api.libs.json.{Format, Json}

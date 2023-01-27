@@ -1,6 +1,6 @@
 package controllers
 
-import controllers.json.PersonFormat
+import controllers.formats.PersonFormat
 import play.api.libs.json.Json
 import play.api.mvc.{AbstractController, ControllerComponents}
 import service.PersonService

@@ -1,6 +1,6 @@
-package controllers.json
+package controllers.formats
 
-import database.table.UserBranch
+import models.UserBranch
 import play.api.libs.json.{Format, Json}
 
 trait UserBranchFormat {

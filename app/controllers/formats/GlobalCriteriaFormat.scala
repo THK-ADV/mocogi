@@ -1,4 +1,4 @@
-package controllers.json
+package controllers.formats
 
 import basedata.GlobalCriteria
 import play.api.libs.json.{Format, Json}

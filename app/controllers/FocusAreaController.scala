@@ -1,6 +1,6 @@
 package controllers
 
-import controllers.json.FocusAreaFormat
+import controllers.formats.FocusAreaFormat
 import play.api.libs.json.Json
 import play.api.mvc.{AbstractController, ControllerComponents}
 import service.FocusAreaService

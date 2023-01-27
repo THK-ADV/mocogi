@@ -1,7 +1,7 @@
 package controllers
 
 import basedata.Competence
-import controllers.json.CompetencesFormat
+import controllers.formats.CompetencesFormat
 import play.api.libs.json.Writes
 import play.api.mvc.{AbstractController, ControllerComponents}
 import service.CompetenceService
