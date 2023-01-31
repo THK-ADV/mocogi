@@ -19,6 +19,10 @@ final class ModuleDraftRepository @Inject() (
     with Filterable[ModuleDraft, ModuleDraftTable] {
   import profile.api._
 
+  type McJson = String
+  type McPrint = String
+  type Errors = String
+
   protected val tableQuery = TableQuery[ModuleDraftTable]
 
   override protected def retrieve(
@@ -45,4 +49,19 @@ final class ModuleDraftRepository @Inject() (
         .update(draft)
         .map(_ => draft)
     )
+
+  def updateValidation(id: UUID, e: Either[Errors, (McJson, McPrint)]) = {
+    def go = e match {
+      case Left(err)            => (None, None, Some(err))
+      case Right((json, print)) => (Some(json), Some(print), None)
+    }
+    db.run(
+      tableQuery
+        .filter(_.module === id)
+        .map(a =>
+          (a.moduleCompendiumJson, a.moduleCompendiumPrint, a.pipelineError)
+        )
+        .update(go)
+    )
+  }
 }

@@ -8,7 +8,8 @@ case class ModuleDraft(
     data: String,
     branch: String,
     status: ModuleDraftStatus,
-    lastModified: LocalDateTime
+    lastModified: LocalDateTime,
+    validation: Option[Either[String, (String, String)]]
 )
 
 case class ModuleDraftProtocol(

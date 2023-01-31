@@ -5,14 +5,17 @@ import parser.ParsingError
 import parsing.metadata.MetadataCompositeParser
 import parsing.types.ParsedMetadata
 
+import java.util.UUID
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 trait MetadataParserService {
   def parse(input: String): Future[(ParsedMetadata, String)]
   def parseMany(
-      inputs: Seq[String]
-  ): Future[Seq[(Either[ParsingError, ParsedMetadata], String)]]
+      inputs: Seq[(UUID, String)]
+  ): Future[
+    Seq[(Either[(UUID, ParsingError), (String, ParsedMetadata)], String)]
+  ]
 }
 
 @Singleton
@@ -31,6 +34,7 @@ final class MetadataParserServiceImpl @Inject() (
     private val competenceService: CompetenceService,
     private implicit val ctx: ExecutionContext
 ) extends MetadataParserService {
+  import ops.EitherOps._
 
   private def parser(
       locations: Seq[Location],
@@ -91,8 +95,10 @@ final class MetadataParserServiceImpl @Inject() (
     } yield metadata
 
   override def parseMany(
-      inputs: Seq[String]
-  ): Future[Seq[(Either[ParsingError, ParsedMetadata], String)]] =
+      inputs: Seq[(UUID, String)]
+  ): Future[
+    Seq[(Either[(UUID, ParsingError), (String, ParsedMetadata)], String)]
+  ] =
     for {
       locations <- locationService.all()
       languages <- languageService.all()
@@ -119,6 +125,15 @@ final class MetadataParserServiceImpl @Inject() (
         pos,
         competences
       )
-      inputs.map(p.parse)
+      inputs.map { case (id, input) =>
+        val res = p.parse(input)
+        (
+          res._1.bimap(
+            (id, _),
+            (input, _)
+          ),
+          res._2
+        )
+      }
     }
 }

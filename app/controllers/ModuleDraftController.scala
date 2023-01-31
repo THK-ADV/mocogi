@@ -1,10 +1,14 @@
 package controllers
 
-import controllers.formats.{ModuleDraftFormat, UserBranchFormat}
+import controllers.formats.{
+  ModuleDraftFormat,
+  PipelineErrorFormat,
+  UserBranchFormat
+}
 import models.ModuleDraftProtocol
-import play.api.libs.json.{JsArray, JsNull, Json, Writes}
+import play.api.libs.json.{JsArray, JsNull, Json}
 import play.api.mvc.{AbstractController, ControllerComponents}
-import service.{ModuleDraftService, PipelineError}
+import service.ModuleDraftService
 
 import java.util.UUID
 import javax.inject.{Inject, Singleton}
@@ -17,36 +21,8 @@ final class ModuleDraftController @Inject() (
     implicit val ctx: ExecutionContext
 ) extends AbstractController(cc)
     with UserBranchFormat
-    with ModuleDraftFormat {
-
-  implicit val errWrites: Writes[PipelineError] =
-    Writes.apply {
-      case PipelineError.Parser(value) =>
-        Json.obj(
-          "tag" -> "parsing-error",
-          "error" -> Json.obj(
-            "found" -> value.found,
-            "expected" -> value.expected
-          )
-        )
-      case PipelineError.Printer(value) =>
-        Json.obj(
-          "tag" -> "printing-error",
-          "error" -> Json.obj(
-            "found" -> value.found,
-            "expected" -> value.expected
-          )
-        )
-      case PipelineError.Validator(value) =>
-        Json.obj(
-          "tag" -> "validation-error",
-          "error" -> Json.obj(
-            "id" -> value.id,
-            "title" -> value.title,
-            "errors" -> Json.toJson(value.errs)
-          )
-        )
-    }
+    with ModuleDraftFormat
+    with PipelineErrorFormat {
 
   def moduleDrafts(branch: String) =
     Action.async { _ =>

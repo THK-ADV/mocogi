@@ -1,12 +1,16 @@
 package service
 
-import controllers.formats.ModuleCompendiumProtocolFormat
+import controllers.formats.{
+  ModuleCompendiumFormat,
+  ModuleCompendiumProtocolFormat,
+  PipelineErrorFormat
+}
 import database.repo.{ModuleDraftRepository, UserBranchRepository}
 import models.{ModuleCompendiumProtocol, ModuleDraft, ModuleDraftStatus}
 import parser.ParsingError
 import parsing.metadata.VersionScheme
 import parsing.types._
-import play.api.libs.json.{JsError, JsSuccess, Json}
+import play.api.libs.json.{JsError, JsString, JsSuccess, Json}
 import printer.PrintingError
 import printing.ModuleCompendiumProtocolPrinter
 import validator.{MetadataValidator, Module, ValidationError}
@@ -17,12 +21,15 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
 
-sealed trait PipelineError
+sealed trait PipelineError {
+  def metadata: UUID
+}
 
 object PipelineError {
-  case class Parser(value: ParsingError) extends PipelineError
-  case class Printer(value: PrintingError) extends PipelineError
-  case class Validator(value: ValidationError) extends PipelineError
+  case class Parser(error: ParsingError, metadata: UUID) extends PipelineError
+  case class Printer(error: PrintingError, metadata: UUID) extends PipelineError
+  case class Validator(error: ValidationError, metadata: UUID)
+      extends PipelineError
 }
 
 @Singleton
@@ -34,20 +41,29 @@ class ModuleDraftService @Inject() (
     private val metadataParserService: MetadataParserService,
     private val moduleCompendiumContentParsing: ModuleCompendiumContentParsing,
     private implicit val ctx: ExecutionContext
-) extends ModuleCompendiumProtocolFormat {
+) extends ModuleCompendiumProtocolFormat
+    with PipelineErrorFormat
+    with ModuleCompendiumFormat {
   import ops.EitherOps._
 
+  type Print = String
   type PrintingResult =
-    Future[Either[Seq[PipelineError], Seq[String]]]
+    Future[Either[Seq[PipelineError], Seq[(UUID, Print)]]]
   type ParsingResult =
-    Future[Either[Seq[PipelineError], Seq[(ParsedMetadata, Content, Content)]]]
+    Future[
+      Either[Seq[PipelineError], Seq[(Print, ParsedMetadata, Content, Content)]]
+    ]
   type ValidationResult =
-    Future[Either[Seq[PipelineError], Seq[ModuleCompendium]]]
+    Future[Either[Seq[PipelineError], Seq[(Print, ModuleCompendium)]]]
 
-  def allFromBranch(branch: String) =
+  def allFromBranch(branch: String): Future[Seq[ModuleDraft]] =
     repo.allFromBranch(branch)
 
-  def createOrUpdate(module: Option[UUID], data: String, branch: String) = {
+  def createOrUpdate(
+      module: Option[UUID],
+      data: String,
+      branch: String
+  ): Future[ModuleDraft] = {
     def go() = module match {
       case Some(id) =>
         repo.get(id).flatMap {
@@ -61,7 +77,8 @@ class ModuleDraftService @Inject() (
                 data,
                 branch,
                 ModuleDraftStatus.Modified,
-                LocalDateTime.now()
+                LocalDateTime.now(),
+                None
               )
             )
         }
@@ -72,7 +89,8 @@ class ModuleDraftService @Inject() (
             data,
             branch,
             ModuleDraftStatus.Added,
-            LocalDateTime.now()
+            LocalDateTime.now(),
+            None
           )
         )
     }
@@ -94,47 +112,72 @@ class ModuleDraftService @Inject() (
       protocols <- Future.fromTry(parseDrafts(drafts))
       printer = moduleCompendiumPrinter.printer(VersionScheme(1, "s"))
       (errs, prints) = protocols.partitionMap(e =>
-        printer.print(e, "").mapLeft(PipelineError.Printer)
+        printer
+          .print(e, "")
+          .bimap(
+            PipelineError.Printer(_, e._1),
+            (e._1, _)
+          )
       )
     } yield Either.cond(errs.isEmpty, prints, errs)
 
-  private def parse(inputs: Seq[String]): ParsingResult =
+  private def parse(inputs: Seq[(UUID, Print)]): ParsingResult =
     metadataParserService.parseMany(inputs).map { res =>
       val (errs, parses) = res.partitionMap { case (res, rest) =>
-        res.biflatMap(
-          PipelineError.Parser,
-          PipelineError.Parser,
-          m =>
-            moduleCompendiumContentParsing
-              .parse2(rest)
-              ._1
-              .map(c => (m, c._1, c._2))
-        )
+        res match {
+          case Left((id, err)) => Left(PipelineError.Parser(err, id))
+          case Right((print, parsedMetadata)) =>
+            moduleCompendiumContentParsing.parse2(rest)._1 match {
+              case Left(err) =>
+                Left(PipelineError.Parser(err, parsedMetadata.id))
+              case Right((de, en)) => Right((print, parsedMetadata, de, en))
+            }
+
+        }
       }
       Either.cond(errs.isEmpty, parses, errs)
     }
 
   private def validate(
-      parsed: Seq[(ParsedMetadata, Content, Content)]
+      parsed: Seq[(Print, ParsedMetadata, Content, Content)]
   ): ValidationResult =
     moduleCompendiumService.allIdsAndAbbrevs().map { existing =>
       val existingModules = existing.map(Module.tupled)
-      val parsedModules = parsed.map(a => Module(a._1.id, a._1.abbrev))
+      val parsedModules = parsed.map(a => Module(a._2.id, a._2.abbrev))
       val modules = existingModules ++ parsedModules
       val validator =
         MetadataValidator.validate(30, id => modules.find(_.id == id)) _
       val (errs, moduleCompendiums) =
-        parsed.partitionMap { case (parsedMetadata, de, en) =>
+        parsed.partitionMap { case (print, parsedMetadata, de, en) =>
           validator(parsedMetadata).bimap(
             errs =>
               PipelineError.Validator(
-                ValidationError(parsedMetadata.id, parsedMetadata.title, errs)
+                ValidationError(errs),
+                parsedMetadata.id
               ),
-            metadata => ModuleCompendium(metadata, de, en)
+            metadata => (print, ModuleCompendium(metadata, de, en))
           )
         }
       Either.cond(errs.isEmpty, moduleCompendiums, errs)
     }
+
+  private def persist(
+      e: Either[Seq[PipelineError], Seq[(Print, ModuleCompendium)]]
+  ) =
+    Future.sequence(
+      e match {
+        case Left(errs) =>
+          errs.groupBy(_.metadata).map { case (id, errs) =>
+            repo.updateValidation(id, Left(Json.toJson(errs).toString()))
+          }
+        case Right(mcs) =>
+          mcs.map { case (print, mc) =>
+            val mcJson = Json.toJson(mc).toString()
+            val printJson = JsString(print).toString()
+            repo.updateValidation(mc.metadata.id, Right((mcJson, printJson)))
+          }
+      }
+    )
 
   private def continue[A, B](
       e: Either[Seq[PipelineError], Seq[A]],
@@ -152,6 +195,7 @@ class ModuleDraftService @Inject() (
       prints <- print(branch)
       parses <- continue(prints, parse)
       validates <- continue(parses, validate)
+      _ <- persist(validates)
     } yield validates
 
   private def parseDrafts(
