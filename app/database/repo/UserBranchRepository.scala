@@ -43,8 +43,9 @@ final class UserBranchRepository @Inject() (
     db.run(
       tableQuery
         .filter(a => a.branch === branch && a.commitId.isDefined)
-        .exists
+        .map(_.commitId.get)
         .result
+        .map(_.headOption)
     )
 
   def updateCommitId(branch: String, commitId: Option[String]) =

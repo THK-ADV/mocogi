@@ -17,11 +17,11 @@ class ModuleDraftReviewService @Inject() (
 ) {
   type CommitID = String
 
-  def createReview(branch: String, username: String): Future[CommitID] =
+  def commitDrafts(branch: String, username: String): Future[CommitID] =
     for {
       hasCommit <- userBranchRepository.hasCommit(branch)
       res <-
-        if (hasCommit)
+        if (hasCommit.isDefined)
           Future.failed(new Throwable(s"user $username has already committed"))
         else
           for {
@@ -41,5 +41,21 @@ class ModuleDraftReviewService @Inject() (
             commitId <- gitService.commit(branch, username, actions)
             _ <- userBranchRepository.updateCommitId(branch, Some(commitId))
           } yield commitId
+    } yield res
+
+  def revertCommit(branch: String) =
+    for {
+      maybeCommit <- userBranchRepository.hasCommit(branch)
+      res <- maybeCommit match {
+        case Some(commit) =>
+          for {
+            _ <- gitService.revertCommit(branch, commit)
+            _ <- userBranchRepository.updateCommitId(branch, None)
+          } yield ()
+        case None =>
+          Future.failed(
+            new Throwable(s"branch $branch has no commit to revert")
+          )
+      }
     } yield res
 }

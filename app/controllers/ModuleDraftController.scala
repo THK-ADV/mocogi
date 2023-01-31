@@ -1,10 +1,6 @@
 package controllers
 
-import controllers.formats.{
-  ModuleDraftFormat,
-  PipelineErrorFormat,
-  UserBranchFormat
-}
+import controllers.formats.{ModuleDraftFormat, PipelineErrorFormat, UserBranchFormat}
 import models.ModuleDraftProtocol
 import play.api.libs.json.{JsArray, JsNull, Json}
 import play.api.mvc.{AbstractController, ControllerComponents}
@@ -56,12 +52,19 @@ final class ModuleDraftController @Inject() (
       }
     }
 
-  def review(branch: String) =
+  def commit(branch: String) =
     Action(parse.json).async { request =>
       val username = request.body.\("username").validate[String].get
       reviewService
-        .createReview(branch, username)
+        .commitDrafts(branch, username)
         .map(id => Ok(Json.obj("commitId" -> id)))
+    }
+
+  def revertCommit(branch: String) =
+    Action.async { _ =>
+      reviewService
+        .revertCommit(branch)
+        .map(_ => NoContent)
     }
 
   private def createOrUpdate(
