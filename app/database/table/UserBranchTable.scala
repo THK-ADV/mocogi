@@ -11,8 +11,11 @@ final class UserBranchTable(tag: Tag)
 
   def branch = column[String]("branch_id")
 
+  def commitId = column[Option[String]]("commit_id")
+
   def userFk =
     foreignKey("user", user, TableQuery[UserTable])(_.id)
 
-  override def * = (user, branch) <> (UserBranch.tupled, UserBranch.unapply)
+  override def * =
+    (user, branch, commitId) <> (UserBranch.tupled, UserBranch.unapply)
 }

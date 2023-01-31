@@ -25,6 +25,8 @@ final class ConfigReader @Inject() (config: Configuration) {
 
   def mainBranch: String = string("git.mainBranch")
 
+  def modulesRootFolder: String = string("git.modulesRootFolder")
+
   def projectId: Int = int("git.projectId")
 
   def kafkaServerUrl: String = string("kafka.serverUrl")

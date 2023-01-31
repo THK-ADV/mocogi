@@ -13,6 +13,7 @@ final class GitConfigProvider @Inject() (config: ConfigReader)
       config.accessToken,
       config.baseUrl,
       config.projectId,
-      config.mainBranch
+      config.mainBranch,
+      config.modulesRootFolder
     )
 }

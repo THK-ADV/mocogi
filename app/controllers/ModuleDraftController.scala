@@ -8,7 +8,7 @@ import controllers.formats.{
 import models.ModuleDraftProtocol
 import play.api.libs.json.{JsArray, JsNull, Json}
 import play.api.mvc.{AbstractController, ControllerComponents}
-import service.ModuleDraftService
+import service.{ModuleDraftReviewService, ModuleDraftService}
 
 import java.util.UUID
 import javax.inject.{Inject, Singleton}
@@ -18,6 +18,7 @@ import scala.concurrent.ExecutionContext
 final class ModuleDraftController @Inject() (
     cc: ControllerComponents,
     service: ModuleDraftService,
+    reviewService: ModuleDraftReviewService,
     implicit val ctx: ExecutionContext
 ) extends AbstractController(cc)
     with UserBranchFormat
@@ -53,6 +54,14 @@ final class ModuleDraftController @Inject() (
           )
         )
       }
+    }
+
+  def review(branch: String) =
+    Action(parse.json).async { request =>
+      val username = request.body.\("username").validate[String].get
+      reviewService
+        .createReview(branch, username)
+        .map(id => Ok(Json.obj("commitId" -> id)))
     }
 
   private def createOrUpdate(

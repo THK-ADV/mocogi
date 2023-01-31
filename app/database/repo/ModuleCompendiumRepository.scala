@@ -33,6 +33,7 @@ trait ModuleCompendiumRepository {
   ): Future[Seq[(UUID, String, String)]]
   def allIds(): Future[Seq[(UUID, String)]]
   def get(id: UUID): Future[ModuleCompendiumOutput]
+  def paths(ids: Seq[UUID]): Future[Seq[(UUID, GitFilePath)]]
 }
 
 @Singleton
@@ -635,4 +636,13 @@ final class ModuleCompendiumRepositoryImpl @Inject() (
 
   override def get(id: UUID) =
     retrieve(tableQuery.filter(_.id === id)).single
+
+  override def paths(ids: Seq[UUID]) =
+    db.run(
+      tableQuery
+        .filter(_.id.inSet(ids))
+        .map(a => (a.id, a.gitPath))
+        .result
+        .map(_.map(a => (a._1, GitFilePath(a._2))))
+    )
 }

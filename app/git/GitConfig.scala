@@ -7,5 +7,6 @@ case class GitConfig(
     accessToken: String,
     baseUrl: String,
     projectId: Int,
-    mainBranch: String
+    mainBranch: String,
+    modulesRootFolder: String
 )

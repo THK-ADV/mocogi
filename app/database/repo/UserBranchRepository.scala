@@ -38,4 +38,17 @@ final class UserBranchRepository @Inject() (
 
   def delete(user: UUID): Future[Int] =
     db.run(tableQuery.filter(_.user === user).delete)
+
+  def hasCommit(branch: String) =
+    db.run(
+      tableQuery
+        .filter(a => a.branch === branch && a.commitId.isDefined)
+        .exists
+        .result
+    )
+
+  def updateCommitId(branch: String, commitId: Option[String]) =
+    db.run(
+      tableQuery.filter(_.branch === branch).map(_.commitId).update(commitId)
+    )
 }

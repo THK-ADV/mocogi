@@ -31,6 +31,7 @@ trait ModuleCompendiumService {
   def allIdsAndAbbrevs(): Future[Seq[(UUID, String)]]
   def allModules(filter: Map[String, Seq[String]]): Future[Seq[Module]]
   def get(id: UUID): Future[ModuleCompendiumOutput]
+  def paths(ids: Seq[UUID]): Future[Seq[(UUID, GitFilePath)]]
 }
 
 @Singleton
@@ -69,4 +70,7 @@ final class ModuleCompendiumServiceImpl @Inject() (
 
   override def allModules(filter: Map[String, Seq[String]]) =
     repo.allPreview(filter).map(_.map(Module.tupled))
+
+  override def paths(ids: Seq[UUID]) =
+    repo.paths(ids)
 }

@@ -10,7 +10,7 @@ import models.{ModuleCompendiumProtocol, ModuleDraft, ModuleDraftStatus}
 import parser.ParsingError
 import parsing.metadata.VersionScheme
 import parsing.types._
-import play.api.libs.json.{JsError, JsString, JsSuccess, Json}
+import play.api.libs.json.{JsError, JsSuccess, Json}
 import printer.PrintingError
 import printing.ModuleCompendiumProtocolPrinter
 import validator.{MetadataValidator, Module, ValidationError}
@@ -55,6 +55,7 @@ class ModuleDraftService @Inject() (
     ]
   type ValidationResult =
     Future[Either[Seq[PipelineError], Seq[(Print, ModuleCompendium)]]]
+  type ValidDraft = (UUID, ModuleDraftStatus, Print)
 
   def allFromBranch(branch: String): Future[Seq[ModuleDraft]] =
     repo.allFromBranch(branch)
@@ -173,8 +174,7 @@ class ModuleDraftService @Inject() (
         case Right(mcs) =>
           mcs.map { case (print, mc) =>
             val mcJson = Json.toJson(mc).toString()
-            val printJson = JsString(print).toString()
-            repo.updateValidation(mc.metadata.id, Right((mcJson, printJson)))
+            repo.updateValidation(mc.metadata.id, Right((mcJson, print)))
           }
       }
     )
@@ -197,6 +197,21 @@ class ModuleDraftService @Inject() (
       validates <- continue(parses, validate)
       _ <- persist(validates)
     } yield validates
+
+  def validDrafts(branch: String): Future[Seq[ValidDraft]] =
+    for {
+      drafts <- repo.allFromBranch(branch)
+    } yield drafts.map { d =>
+      d.validation match {
+        case Some(Right((_, print))) =>
+          (d.module, d.status, print)
+        case _ =>
+          println("err")
+          throw new Throwable(
+            s"expected branch $branch to only contain valid drafts"
+          )
+      }
+    }
 
   private def parseDrafts(
       drafts: Seq[ModuleDraft]

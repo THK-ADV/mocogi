@@ -58,10 +58,8 @@ object GitFilesBroker {
   def foldGitFilePath(
       path: GitFilePath
   )(isModule: GitFilePath => Unit)(isCore: GitFilePath => Unit): Unit =
-    if (path.value.startsWith(s"$modules/"))
-      isModule(path.copy(path.value.stripPrefix(s"$modules/")))
-    else if (path.value.startsWith(s"$core/"))
-      isCore(path.copy(path.value.stripPrefix(s"$core/")))
+    if (path.value.startsWith(s"$modules/")) isModule(path)
+    else if (path.value.startsWith(s"$core/")) isCore(path)
 }
 
 @Singleton
