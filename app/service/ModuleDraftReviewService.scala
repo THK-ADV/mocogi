@@ -1,6 +1,7 @@
 package service
 
 import database.repo.UserBranchRepository
+import git.{GitCommitAction, GitCommitActionType, GitService}
 import models.ModuleDraftStatus
 
 import javax.inject.{Inject, Singleton}

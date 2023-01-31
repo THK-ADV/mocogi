@@ -1,9 +1,9 @@
 package controllers
 
 import controllers.formats.UserBranchFormat
+import git.GitService
 import play.api.libs.json.{Json, Reads}
 import play.api.mvc.{AbstractController, ControllerComponents}
-import service.GitService
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext

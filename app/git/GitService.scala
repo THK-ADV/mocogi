@@ -1,7 +1,6 @@
-package service
+package git
 
 import database.repo.{UserBranchRepository, UserRepository}
-import git.GitConfig
 import models.{User, UserBranch}
 import play.api.http.{ContentTypes, HeaderNames}
 import play.api.libs.json.{JsValue, Json}
@@ -10,26 +9,6 @@ import play.mvc.Http.Status
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
-
-sealed trait GitCommitActionType {
-  override def toString = this match {
-    case GitCommitActionType.Create => "create"
-    case GitCommitActionType.Delete => "delete"
-    case GitCommitActionType.Update => "update"
-  }
-}
-
-object GitCommitActionType {
-  case object Create extends GitCommitActionType
-  case object Delete extends GitCommitActionType
-  case object Update extends GitCommitActionType
-}
-
-case class GitCommitAction(
-    action: GitCommitActionType,
-    filename: String,
-    fileContent: String
-)
 
 @Singleton
 final class GitService @Inject() (
