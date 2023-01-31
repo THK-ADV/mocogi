@@ -1,7 +1,7 @@
 package service
 
 import database.repo.UserBranchRepository
-import git.{GitCommitAction, GitCommitActionType, GitService}
+import git.{GitCommitAction, GitCommitActionType, GitCommitService}
 import models.ModuleDraftStatus
 
 import javax.inject.{Inject, Singleton}
@@ -11,7 +11,7 @@ import scala.concurrent.{ExecutionContext, Future}
 class ModuleDraftReviewService @Inject() (
     private val moduleDraftService: ModuleDraftService,
     private val moduleCompendiumService: ModuleCompendiumService,
-    private val gitService: GitService,
+    private val commitService: GitCommitService,
     private val userBranchRepository: UserBranchRepository,
     private implicit val ctx: ExecutionContext
 ) {
@@ -38,7 +38,7 @@ class ModuleDraftReviewService @Inject() (
               }
               GitCommitAction(gitActionType, filename, print)
             }
-            commitId <- gitService.commit(branch, username, actions)
+            commitId <- commitService.commit(branch, username, actions)
             _ <- userBranchRepository.updateCommitId(branch, Some(commitId))
           } yield commitId
     } yield res
@@ -49,7 +49,7 @@ class ModuleDraftReviewService @Inject() (
       res <- maybeCommit match {
         case Some(commit) =>
           for {
-            _ <- gitService.revertCommit(branch, commit)
+            _ <- commitService.revertCommit(branch, commit)
             _ <- userBranchRepository.updateCommitId(branch, None)
           } yield ()
         case None =>

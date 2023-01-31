@@ -1,7 +1,7 @@
 package controllers
 
 import controllers.formats.UserBranchFormat
-import git.GitService
+import git.GitBranchService
 import play.api.libs.json.{Json, Reads}
 import play.api.mvc.{AbstractController, ControllerComponents}
 
@@ -11,7 +11,7 @@ import scala.concurrent.ExecutionContext
 @Singleton
 final class GitController @Inject() (
     cc: ControllerComponents,
-    val service: GitService,
+    val service: GitBranchService,
     implicit val ctx: ExecutionContext
 ) extends AbstractController(cc)
     with UserBranchFormat {

@@ -1,150 +1,17 @@
 package git
 
-import database.repo.{UserBranchRepository, UserRepository}
-import models.{User, UserBranch}
-import play.api.http.{ContentTypes, HeaderNames}
-import play.api.libs.json.{JsValue, Json}
-import play.api.libs.ws.{EmptyBody, WSClient, WSResponse}
-import play.mvc.Http.Status
+import play.api.libs.ws.WSResponse
 
-import javax.inject.{Inject, Singleton}
-import scala.concurrent.{ExecutionContext, Future}
+trait GitService {
+  def gitConfig: GitConfig
 
-@Singleton
-final class GitService @Inject() (
-    private val userBranchRepository: UserBranchRepository,
-    private val userRepository: UserRepository,
-    private val ws: WSClient,
-    private val gitConfig: GitConfig,
-    private implicit val ctx: ExecutionContext
-) {
+  def baseUrl() =
+    s"${gitConfig.baseUrl}/projects/${gitConfig.projectId}/repository"
 
-  // Branch Service
+  def tokenHeader() =
+    ("PRIVATE-TOKEN", gitConfig.accessToken)
 
-  def branchForUser(username: String): Future[Option[UserBranch]] =
-    userBranchRepository.branchForUser(username)
-
-  def createBranch(username: String): Future[UserBranch] =
-    for {
-      user <- userRepository.byUsername(username)
-      exists <- userBranchRepository.exists(user.id)
-      res <-
-        if (exists)
-          Future.failed(
-            new Throwable(s"branch for user $username already exists")
-          )
-        else
-          for {
-            branch <- createBranchApiRequest(user)
-            res <- userBranchRepository.create(
-              UserBranch(user.id, branch, None)
-            )
-          } yield res
-    } yield res
-
-  def deleteBranch(username: String) =
-    for {
-      user <- userRepository.byUsername(username)
-      exists <- userBranchRepository.exists(user.id)
-      res <-
-        if (!exists)
-          Future.failed(
-            new Throwable(s"branch for user $username doesn't exists")
-          )
-        else
-          for {
-            _ <- deleteBranchApiRequest(user)
-            d <- userBranchRepository.delete(user.id) if d > 0
-          } yield ()
-    } yield res
-
-  // Commit Service
-
-  def commit(
-      branchName: String,
-      username: String,
-      actions: Seq[GitCommitAction]
-  ): Future[String] =
-    ws
-      .url(this.commitUrl())
-      .withHttpHeaders(tokenHeader(), contentTypeJson())
-      .post(commitBody(branchName, username, actions))
-      .flatMap(parseCommitResult)
-
-  def revertCommit(branchName: String, commitId: String) =
-    ws
-      .url(s"${this.commitUrl()}/${commitId}/revert")
-      .withHttpHeaders(tokenHeader(), contentTypeForm())
-      .post(s"branch=$branchName")
-      .flatMap(parseCommitResult)
-
-  private def commitBody(
-      branchName: String,
-      username: String,
-      actions: Seq[GitCommitAction]
-  ): JsValue =
-    Json.obj(
-      "branch" -> branchName,
-      "commit_message" -> "changes",
-      "author_email" -> s"$username@th-koeln.de",
-      "author_name" -> username,
-      "actions" -> actions.map { a =>
-        a.action match {
-          case GitCommitActionType.Create =>
-            Json.obj(
-              "action" -> a.action.toString,
-              "file_path" -> s"${gitConfig.modulesRootFolder}/${a.filename}",
-              "content" -> a.fileContent
-            )
-          case GitCommitActionType.Delete =>
-            Json.obj(
-              "action" -> a.action.toString,
-              "file_path" -> a.filename
-            )
-          case GitCommitActionType.Update =>
-            Json.obj(
-              "action" -> a.action.toString,
-              "file_path" -> a.filename,
-              "content" -> a.fileContent
-            )
-        }
-      }
-    )
-
-  private def parseCommitResult(res: WSResponse) =
-    if (res.status == Status.CREATED)
-      Future.successful(res.json.\("id").validate[String].get)
-    else Future.failed(parseErrorMessage(res))
-
-  private def createBranchApiRequest(user: User): Future[String] = {
-    val branchName = this.branchName(user)
-    ws
-      .url(this.branchUrl())
-      .withHttpHeaders(tokenHeader())
-      .withQueryStringParameters(
-        ("branch", branchName),
-        ("ref", gitConfig.mainBranch)
-      )
-      .post(EmptyBody)
-      .flatMap { res =>
-        if (res.status == Status.CREATED) Future.successful(branchName)
-        else Future.failed(parseErrorMessage(res))
-      }
-  }
-
-  private def deleteBranchApiRequest(user: User): Future[String] = {
-    val branchName = this.branchName(user)
-    ws
-      .url(s"${this.branchUrl()}/$branchName")
-      .withHttpHeaders(tokenHeader())
-      .delete()
-      .flatMap { res =>
-        if (res.status == Status.NO_CONTENT) Future.successful(branchName)
-        else Future.failed(parseErrorMessage(res))
-      }
-  }
-
-  private def parseErrorMessage(res: WSResponse) =
+  def parseErrorMessage(res: WSResponse) =
     res.json
       .\("message")
       .validate[String]
@@ -152,25 +19,4 @@ final class GitService @Inject() (
         errs => new Throwable(errs.mkString("\n")),
         msg => new Throwable(msg)
       )
-
-  private def branchName(user: User) =
-    s"${user.username}_${user.id}"
-
-  private def baseUrl() =
-    s"${gitConfig.baseUrl}/projects/${gitConfig.projectId}/repository"
-
-  private def branchUrl() =
-    s"${baseUrl()}/branches"
-
-  private def commitUrl() =
-    s"${baseUrl()}/commits"
-
-  private def tokenHeader() =
-    ("PRIVATE-TOKEN", gitConfig.accessToken)
-
-  private def contentTypeJson() =
-    (HeaderNames.CONTENT_TYPE, ContentTypes.JSON)
-
-  private def contentTypeForm() =
-    (HeaderNames.CONTENT_TYPE, ContentTypes.FORM)
 }
