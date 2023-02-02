@@ -14,18 +14,20 @@ final class GitCommitService @Inject() (
     val gitConfig: GitConfig,
     private implicit val ctx: ExecutionContext
 ) extends GitService {
+  type CommitID = String
+
   def commit(
       branchName: String,
       username: String,
       actions: Seq[GitCommitAction]
-  ): Future[String] =
+  ): Future[CommitID] =
     ws
       .url(this.commitUrl())
       .withHttpHeaders(tokenHeader(), contentTypeJson())
       .post(commitBody(branchName, username, actions))
       .flatMap(parseCommitResult)
 
-  def revertCommit(branchName: String, commitId: String) =
+  def revertCommit(branchName: String, commitId: CommitID) =
     ws
       .url(s"${this.commitUrl()}/${commitId}/revert")
       .withHttpHeaders(tokenHeader(), contentTypeForm())
@@ -67,11 +69,11 @@ final class GitCommitService @Inject() (
 
   private def parseCommitResult(res: WSResponse) =
     if (res.status == Status.CREATED)
-      Future.successful(res.json.\("id").validate[String].get)
+      Future.successful(res.json.\("id").validate[CommitID].get)
     else Future.failed(parseErrorMessage(res))
 
   private def commitUrl() =
-    s"${baseUrl()}/commits"
+    s"${repositoryUrl()}/commits"
 
   private def contentTypeJson() =
     (HeaderNames.CONTENT_TYPE, ContentTypes.JSON)

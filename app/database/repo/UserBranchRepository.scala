@@ -39,11 +39,11 @@ final class UserBranchRepository @Inject() (
   def delete(user: UUID): Future[Int] =
     db.run(tableQuery.filter(_.user === user).delete)
 
-  def hasCommit(branch: String) =
+  def hasCommitAndMergeRequest(branch: String) =
     db.run(
       tableQuery
-        .filter(a => a.branch === branch && a.commitId.isDefined)
-        .map(_.commitId.get)
+        .filter(a => a.branch === branch && a.commitId.isDefined && a.mergeRequestId.isDefined)
+        .map(a => (a.commitId.get, a.mergeRequestId.get))
         .result
         .map(_.headOption)
     )
@@ -51,5 +51,13 @@ final class UserBranchRepository @Inject() (
   def updateCommitId(branch: String, commitId: Option[String]) =
     db.run(
       tableQuery.filter(_.branch === branch).map(_.commitId).update(commitId)
+    )
+
+  def updateMergeRequestId(branch: String, mergeRequestId: Option[Int]) =
+    db.run(
+      tableQuery
+        .filter(_.branch === branch)
+        .map(_.mergeRequestId)
+        .update(mergeRequestId)
     )
 }

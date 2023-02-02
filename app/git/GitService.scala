@@ -5,8 +5,11 @@ import play.api.libs.ws.WSResponse
 trait GitService {
   def gitConfig: GitConfig
 
-  def baseUrl() =
-    s"${gitConfig.baseUrl}/projects/${gitConfig.projectId}/repository"
+  def projectsUrl() =
+    s"${gitConfig.baseUrl}/projects/${gitConfig.projectId}"
+
+  def repositoryUrl() =
+    s"${projectsUrl()}/repository"
 
   def tokenHeader() =
     ("PRIVATE-TOKEN", gitConfig.accessToken)

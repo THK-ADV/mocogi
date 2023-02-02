@@ -56,14 +56,14 @@ final class ModuleDraftController @Inject() (
     Action(parse.json).async { request =>
       val username = request.body.\("username").validate[String].get
       reviewService
-        .commitDrafts(branch, username)
+        .createReview(branch, username)
         .map(id => Ok(Json.obj("commitId" -> id)))
     }
 
   def revertCommit(branch: String) =
     Action.async { _ =>
       reviewService
-        .revertCommit(branch)
+        .revertReview(branch)
         .map(_ => NoContent)
     }
 

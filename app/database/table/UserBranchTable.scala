@@ -13,9 +13,16 @@ final class UserBranchTable(tag: Tag)
 
   def commitId = column[Option[String]]("commit_id")
 
+  def mergeRequestId = column[Option[Int]]("merge_request_id")
+
   def userFk =
     foreignKey("user", user, TableQuery[UserTable])(_.id)
 
   override def * =
-    (user, branch, commitId) <> (UserBranch.tupled, UserBranch.unapply)
+    (
+      user,
+      branch,
+      commitId,
+      mergeRequestId
+    ) <> (UserBranch.tupled, UserBranch.unapply)
 }

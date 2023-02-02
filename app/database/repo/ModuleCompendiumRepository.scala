@@ -328,23 +328,31 @@ final class ModuleCompendiumRepositoryImpl @Inject() (
     val metadataAssessmentMethodPreconditions =
       ListBuffer[MetadataAssessmentMethodPreconditionDbEntry]()
 
-    metadata.assessmentMethods.mandatory.foreach { m =>
-      val metadataAssessmentMethod = MetadataAssessmentMethodDbEntry(
-        UUID.randomUUID,
-        metadata.id,
-        m.method.abbrev,
-        AssessmentMethodType.Mandatory,
-        m.percentage
-      )
-      metadataAssessmentMethods += metadataAssessmentMethod
-      m.precondition.foreach { m2 =>
-        val precondition = MetadataAssessmentMethodPreconditionDbEntry(
-          m2.abbrev,
-          metadataAssessmentMethod.id
+    def go(
+        xs: List[AssessmentMethodEntry],
+        `type`: AssessmentMethodType
+    ): Unit =
+      xs.foreach { m =>
+        val metadataAssessmentMethod = MetadataAssessmentMethodDbEntry(
+          UUID.randomUUID,
+          metadata.id,
+          m.method.abbrev,
+          `type`,
+          m.percentage
         )
-        metadataAssessmentMethodPreconditions += precondition
+        metadataAssessmentMethods += metadataAssessmentMethod
+        m.precondition.foreach { m2 =>
+          val precondition = MetadataAssessmentMethodPreconditionDbEntry(
+            m2.abbrev,
+            metadataAssessmentMethod.id
+          )
+          metadataAssessmentMethodPreconditions += precondition
+        }
       }
-    }
+
+    go(metadata.assessmentMethods.mandatory, AssessmentMethodType.Mandatory)
+    go(metadata.assessmentMethods.optional, AssessmentMethodType.Optional)
+
     (
       metadataAssessmentMethods.toList,
       metadataAssessmentMethodPreconditions.toList

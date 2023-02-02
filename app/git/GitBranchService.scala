@@ -32,7 +32,7 @@ final class GitBranchService @Inject() (
           for {
             branch <- createBranchApiRequest(user)
             res <- userBranchRepository.create(
-              UserBranch(user.id, branch, None)
+              UserBranch(user.id, branch, None, None)
             )
           } yield res
     } yield res
@@ -85,5 +85,5 @@ final class GitBranchService @Inject() (
     s"${user.username}_${user.id}"
 
   private def branchUrl() =
-    s"${baseUrl()}/branches"
+    s"${repositoryUrl()}/branches"
 }
