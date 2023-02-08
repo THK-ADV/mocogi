@@ -63,18 +63,18 @@ final class GitFilesBrokerSpec extends AnyWordSpec with OptionValues {
 
       assert(
         modules.added == List(
-          (GitFilePath("added1"), GitFileContent("")),
-          (GitFilePath("added2"), GitFileContent(""))
+          (GitFilePath("modules/added1"), GitFileContent("")),
+          (GitFilePath("modules/added2"), GitFileContent(""))
         )
       )
       assert(
         modules.modified == List(
-          (GitFilePath("modified1"), GitFileContent(""))
+          (GitFilePath("modules/modified1"), GitFileContent(""))
         )
       )
       assert(
         modules.removed == List(
-          GitFilePath("removed1")
+          GitFilePath("modules/removed1")
         )
       )
 
@@ -83,13 +83,13 @@ final class GitFilesBrokerSpec extends AnyWordSpec with OptionValues {
 
       assert(
         core.added == List(
-          (GitFilePath("people.yaml"), GitFileContent("")),
-          (GitFilePath("data.yaml"), GitFileContent(""))
+          (GitFilePath("core/people.yaml"), GitFileContent("")),
+          (GitFilePath("core/data.yaml"), GitFileContent(""))
         )
       )
       assert(
         core.modified == List(
-          (GitFilePath("stuff.yaml"), GitFileContent(""))
+          (GitFilePath("core/stuff.yaml"), GitFileContent(""))
         )
       )
       assert(core.removed.isEmpty)

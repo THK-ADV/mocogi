@@ -22,7 +22,7 @@ class ModuleRelationParserSpec
         s"""relation:
           | children:
           |  - module.$m1
-          |  - module.$m2""".stripMargin
+          |  - module.$m2\n""".stripMargin
       val (res1, rest1) = moduleRelationParser.parse(input1)
       assert(res1.value.value == ParsedModuleRelation.Parent(List(m1, m2)))
       assert(rest1.isEmpty)
@@ -30,10 +30,17 @@ class ModuleRelationParserSpec
       val input2 =
         s"""relation:
           | children:
-          |  - module.$m1""".stripMargin
+          |  - module.$m1\n""".stripMargin
       val (res2, rest2) = moduleRelationParser.parse(input2)
       assert(res2.value.value == ParsedModuleRelation.Parent(List(m1)))
       assert(rest2.isEmpty)
+
+      val input3 =
+        s"""relation:
+          | children: module.$m1\n""".stripMargin
+      val (res3, rest3) = moduleRelationParser.parse(input3)
+      assert(res3.value.value == ParsedModuleRelation.Parent(List(m1)))
+      assert(rest3.isEmpty)
     }
 
     "parse a sub module with its parent" in {
