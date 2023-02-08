@@ -17,6 +17,16 @@ final class MetadataProtocolPrinter(identLevel: Int) {
 
   implicit val showInt: Int => String = _.toString
 
+  implicit val assessmentMethodEntryOutputOrd
+      : Ordering[AssessmentMethodEntryOutput] =
+    Ordering.String.on[AssessmentMethodEntryOutput](_.method)
+
+  implicit val poMandatoryOutputOrd: Ordering[POMandatoryOutput] =
+    Ordering.by[POMandatoryOutput, String](_.po)
+
+  implicit val poOptionalOutputOrd: Ordering[POOptionalOutput] =
+    Ordering.by[POOptionalOutput, String](_.po)
+
   def printer(versionScheme: VersionScheme): Printer[(UUID, MetadataProtocol)] =
     Printer { case ((id, metadata), input) =>
       opener(versionScheme)
@@ -29,8 +39,17 @@ final class MetadataProtocolPrinter(identLevel: Int) {
         .skip(language(metadata.language))
         .skip(duration(metadata.duration))
         .skip(frequency(metadata.season))
-        .skip(responsibilities(metadata.moduleManagement, metadata.lecturers))
-        .skip(assessmentMethodsMandatory(metadata.assessmentMethods.mandatory))
+        .skip(
+          responsibilities(
+            metadata.moduleManagement,
+            metadata.lecturers
+          )
+        )
+        .skip(
+          assessmentMethodsMandatory(
+            metadata.assessmentMethods.mandatory
+          )
+        )
         .skipOpt(
           opt(metadata.assessmentMethods.optional).map(
             assessmentMethodsOptional
@@ -75,7 +94,7 @@ final class MetadataProtocolPrinter(identLevel: Int) {
   def moduleRelation(r: ModuleRelationOutput) = {
     val relation = r match {
       case ModuleRelationOutput.Parent(children) =>
-        list(prefix("children:"), children, "module", identLevel)
+        list(prefix("children:"), children.sorted, "module", identLevel)
       case ModuleRelationOutput.Child(parent) =>
         entry("parent", s"module.$parent")
     }
@@ -151,13 +170,13 @@ final class MetadataProtocolPrinter(identLevel: Int) {
       .skip(
         list(
           prefix("module_management:"),
-          moduleManagement,
+          moduleManagement.sorted,
           "person",
           identLevel
         )
       )
       .skip(whitespace.repeat(identLevel))
-      .skip(list(prefix("lecturers:"), lecturers, "person", identLevel))
+      .skip(list(prefix("lecturers:"), lecturers.sorted, "person", identLevel))
   }
 
   private def assessmentMethods(
@@ -169,6 +188,7 @@ final class MetadataProtocolPrinter(identLevel: Int) {
       .skip(newline)
       .skip(
         value
+          .sorted
           .map(e => {
             whitespace
               .repeat(identLevel)
@@ -188,7 +208,7 @@ final class MetadataProtocolPrinter(identLevel: Int) {
                     .skip(
                       list(
                         prefix("precondition:"),
-                        e.precondition,
+                        e.precondition.sorted,
                         "assessment",
                         deepness
                       )
@@ -261,7 +281,12 @@ final class MetadataProtocolPrinter(identLevel: Int) {
             whitespace
               .repeat(identLevel)
               .skip(
-                list(prefix("modules:"), value.modules, "module", identLevel)
+                list(
+                  prefix("modules:"),
+                  value.modules.sorted,
+                  "module",
+                  identLevel
+                )
               )
           )
         )
@@ -272,7 +297,7 @@ final class MetadataProtocolPrinter(identLevel: Int) {
               .skip(
                 list(
                   prefix("study_programs:"),
-                  value.pos,
+                  value.pos.sorted,
                   "study_program",
                   identLevel
                 )
@@ -304,13 +329,13 @@ final class MetadataProtocolPrinter(identLevel: Int) {
       )
 
   def competences(value: List[String]) =
-    list(prefix("competences:"), value, "competence", 0)
+    list(prefix("competences:"), value.sorted, "competence", 0)
 
   def globalCriteria(value: List[String]) =
-    list(prefix("global_criteria:"), value, "global_criteria", 0)
+    list(prefix("global_criteria:"), value.sorted, "global_criteria", 0)
 
   def taughtWith(value: List[UUID]) =
-    list(prefix("taught_with:"), value, "module", 0)
+    list(prefix("taught_with:"), value.sorted, "module", 0)
 
   def poMandatory(value: List[POMandatoryOutput]) = {
     val deepness = identLevel + 2
@@ -318,6 +343,7 @@ final class MetadataProtocolPrinter(identLevel: Int) {
       .skip(newline)
       .skip(
         value
+          .sorted
           .map(e => {
             whitespace
               .repeat(identLevel)
@@ -329,7 +355,7 @@ final class MetadataProtocolPrinter(identLevel: Int) {
                   .skip(
                     list(
                       prefix("recommended_semester:"),
-                      e.recommendedSemester,
+                      e.recommendedSemester.sorted,
                       "",
                       deepness
                     )
@@ -342,7 +368,7 @@ final class MetadataProtocolPrinter(identLevel: Int) {
                     .skip(
                       list(
                         prefix("recommended_semester_part_time:"),
-                        e.recommendedSemesterPartTime,
+                        e.recommendedSemesterPartTime.sorted,
                         "",
                         deepness
                       )
@@ -360,6 +386,7 @@ final class MetadataProtocolPrinter(identLevel: Int) {
       .skip(newline)
       .skip(
         value
+          .sorted
           .map(e => {
             whitespace
               .repeat(identLevel)
@@ -381,7 +408,7 @@ final class MetadataProtocolPrinter(identLevel: Int) {
                   .skip(
                     list(
                       prefix("recommended_semester:"),
-                      e.recommendedSemester,
+                      e.recommendedSemester.sorted,
                       "",
                       deepness
                     )

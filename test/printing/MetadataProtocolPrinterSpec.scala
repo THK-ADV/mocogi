@@ -1,7 +1,6 @@
 package printing
 
 import database._
-import models.MetadataProtocol
 import org.scalatest.wordspec.AnyWordSpec
 import parsing.metadata.VersionScheme
 import parsing.types.{ParsedWorkload, Participants}
@@ -11,6 +10,8 @@ import java.util.UUID
 final class MetadataProtocolPrinterSpec extends AnyWordSpec with PrinterSpec {
 
   val printer = new MetadataProtocolPrinter(2)
+  val m1 = UUID.fromString("0ef7d976-206e-4654-a987-8d0e184fdd3f")
+  val m2 = UUID.fromString("330bd356-e766-433b-ae2c-0a98d49ca49d")
 
   "A MetadataProtocolPrinter" should {
     "print version scheme" in {
@@ -36,8 +37,6 @@ final class MetadataProtocolPrinterSpec extends AnyWordSpec with PrinterSpec {
     }
 
     "print module relation" in {
-      val m1 = UUID.randomUUID
-      val m2 = UUID.randomUUID
       val parent0 = ModuleRelationOutput.Parent(List(m1))
       val res0 = s"relation:\n  children: module.$m1\n"
       assert(run(printer.moduleRelation(parent0)) === res0)
@@ -76,8 +75,8 @@ final class MetadataProtocolPrinterSpec extends AnyWordSpec with PrinterSpec {
         s"""responsibilities:
            |  module_management: person.ald
            |  lecturers:
-           |    - person.ald
-           |    - person.abe\n""".stripMargin
+           |    - person.abe
+           |    - person.ald\n""".stripMargin
       assert(
         run(printer.responsibilities(moduleManagement1, lecturers1)) === res1
       )
@@ -85,11 +84,11 @@ final class MetadataProtocolPrinterSpec extends AnyWordSpec with PrinterSpec {
       val res2 =
         s"""responsibilities:
            |  module_management:
-           |    - person.ald
            |    - person.abe
-           |  lecturers:
            |    - person.ald
-           |    - person.abe\n""".stripMargin
+           |  lecturers:
+           |    - person.abe
+           |    - person.ald\n""".stripMargin
       assert(
         run(printer.responsibilities(moduleManagement2, lecturers1)) === res2
       )
@@ -97,8 +96,8 @@ final class MetadataProtocolPrinterSpec extends AnyWordSpec with PrinterSpec {
 
     "print assessment methods mandatory" in {
       val values1 = List(
-        AssessmentMethodEntryOutput("exam", None, Nil),
-        AssessmentMethodEntryOutput("project", None, Nil)
+        AssessmentMethodEntryOutput("project", None, Nil),
+        AssessmentMethodEntryOutput("exam", None, Nil)
       )
       val res1 =
         s"""assessment_methods_mandatory:
@@ -116,8 +115,8 @@ final class MetadataProtocolPrinterSpec extends AnyWordSpec with PrinterSpec {
            |  - method: assessment.project\n""".stripMargin
       assert(run(printer.assessmentMethodsMandatory(values2)) == res2)
       val values3 = List(
-        AssessmentMethodEntryOutput("exam", Some(100), List("abc", "def")),
-        AssessmentMethodEntryOutput("project", None, Nil)
+        AssessmentMethodEntryOutput("project", None, Nil),
+        AssessmentMethodEntryOutput("exam", Some(100), List("def", "abc"))
       )
       val res3 =
         s"""assessment_methods_mandatory:
@@ -154,9 +153,7 @@ final class MetadataProtocolPrinterSpec extends AnyWordSpec with PrinterSpec {
           |  text: abc\n""".stripMargin
       assert(run(printer.recommendedPrerequisites(entry1)) == res1)
 
-      val m1 = UUID.randomUUID
-      val m2 = UUID.randomUUID
-      val entry2 = PrerequisiteEntryOutput("abc", List(m1, m2), Nil)
+      val entry2 = PrerequisiteEntryOutput("abc", List(m2, m1), Nil)
       val res2 =
         s"""recommended_prerequisites:
            |  text: abc
@@ -166,7 +163,7 @@ final class MetadataProtocolPrinterSpec extends AnyWordSpec with PrinterSpec {
       assert(run(printer.recommendedPrerequisites(entry2)) == res2)
 
       val entry3 =
-        PrerequisiteEntryOutput("abc", List(m1, m2), List("abc", "def"))
+        PrerequisiteEntryOutput("abc", List(m1, m2), List("def", "abc"))
       val res3 =
         s"""recommended_prerequisites:
            |  text: abc
@@ -214,7 +211,7 @@ final class MetadataProtocolPrinterSpec extends AnyWordSpec with PrinterSpec {
     }
 
     "print competences" in {
-      val competences = List("abc", "def")
+      val competences = List("def", "abc")
       val res =
         s"""competences:
           |  - competence.abc
@@ -232,8 +229,6 @@ final class MetadataProtocolPrinterSpec extends AnyWordSpec with PrinterSpec {
     }
 
     "print taught with" in {
-      val m1 = UUID.randomUUID
-      val m2 = UUID.randomUUID
       val taughtWith = List(m1, m2)
       val res =
         s"""taught_with:
@@ -245,8 +240,8 @@ final class MetadataProtocolPrinterSpec extends AnyWordSpec with PrinterSpec {
     "print po mandatory" in {
       val po1 = List(
         POMandatoryOutput("abc", List(1), Nil),
-        POMandatoryOutput("def", List(1, 2), Nil),
-        POMandatoryOutput("ghi", List(1, 2), List(1, 2))
+        POMandatoryOutput("ghi", List(1, 2), List(2, 1)),
+        POMandatoryOutput("def", List(2, 1), Nil)
       )
       val res1 =
         s"""po_mandatory:
@@ -267,10 +262,9 @@ final class MetadataProtocolPrinterSpec extends AnyWordSpec with PrinterSpec {
     }
 
     "print po optional" in {
-      val m1 = UUID.randomUUID
       val po1 = List(
         POOptionalOutput("abc", m1, partOfCatalog = true, List(1)),
-        POOptionalOutput("def", m1, partOfCatalog = false, List(1, 2))
+        POOptionalOutput("def", m1, partOfCatalog = false, List(2, 1))
       )
       val res1 =
         s"""po_optional:
@@ -288,8 +282,6 @@ final class MetadataProtocolPrinterSpec extends AnyWordSpec with PrinterSpec {
     }
 
     "print" in {
-      val m1 = UUID.randomUUID
-      val m2 = UUID.randomUUID
       val metadata = models.MetadataProtocol(
         "Module A",
         "M",
@@ -372,8 +364,8 @@ final class MetadataProtocolPrinterSpec extends AnyWordSpec with PrinterSpec {
           |responsibilities:
           |  module_management: person.ald
           |  lecturers:
-          |    - person.ald
           |    - person.abe
+          |    - person.ald
           |assessment_methods_mandatory:
           |  - method: assessment.written-exam
           |    percentage: 100.0
