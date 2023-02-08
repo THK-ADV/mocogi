@@ -20,7 +20,7 @@ class ModuleRelationFormatSpec extends AnyWordSpec {
       val json = moduleRelationFormat.writes(parent)
       assert(
         json == Json.obj(
-          "type" -> "parent",
+          "kind" -> "parent",
           "children" -> Json.toJson(List(m1, m2, m3))
         )
       )
@@ -30,7 +30,7 @@ class ModuleRelationFormatSpec extends AnyWordSpec {
     "convert a child object to json and parse it back to the original object" in {
       val child: ModuleRelation = ModuleRelation.Child(m1)
       val json = moduleRelationFormat.writes(child)
-      assert(json == Json.obj("type" -> "child", "parent" -> Json.toJson(m1)))
+      assert(json == Json.obj("kind" -> "child", "parent" -> Json.toJson(m1)))
       assert(moduleRelationFormat.reads(json).get == child)
     }
   }

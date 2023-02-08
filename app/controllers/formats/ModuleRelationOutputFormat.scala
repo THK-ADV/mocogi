@@ -9,7 +9,7 @@ trait ModuleRelationOutputFormat {
   implicit val moduleRelationOutputFormat: Format[ModuleRelationOutput] =
     OFormat.apply(
       js =>
-        js.\("type")
+        js.\("kind")
           .validate[String]
           .flatMap {
             case "parent" =>
@@ -21,17 +21,17 @@ trait ModuleRelationOutputFormat {
                 .validate[UUID]
                 .map(ModuleRelationOutput.Child.apply)
             case other =>
-              JsError(s"expected type to be parent or child, but was $other")
+              JsError(s"expected kind to be parent or child, but was $other")
           },
       {
         case ModuleRelationOutput.Parent(children) =>
           Json.obj(
-            "type" -> "parent",
+            "kind" -> "parent",
             "children" -> Json.toJson(children)
           )
         case ModuleRelationOutput.Child(parent) =>
           Json.obj(
-            "type" -> "child",
+            "kind" -> "child",
             "parent" -> Json.toJson(parent)
           )
       }
