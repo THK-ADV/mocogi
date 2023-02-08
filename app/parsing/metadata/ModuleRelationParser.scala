@@ -4,7 +4,7 @@ import parser.Parser
 import parser.Parser._
 import parser.ParserOps.P0
 import parsing.types.ParsedModuleRelation
-import parsing.uuidParser
+import parsing.{multipleValueParser, uuidParser}
 
 object ModuleRelationParser {
 
@@ -16,18 +16,11 @@ object ModuleRelationParser {
         .take(prefixTo("\n") or rest)
         .flatMap(uuidParser)
         .map[ParsedModuleRelation](ParsedModuleRelation.Child.apply),
-      prefix("children:")
-        .skip(newline)
-        .take(
-          zeroOrMoreSpaces
-            .skip(prefix("-"))
-            .skip(zeroOrMoreSpaces)
-            .skip(prefix("module."))
-            .take(prefixUntil("\n") or rest)
-            .flatMap(uuidParser)
-            .many(newline, minimum = 1)
-        )
-        .map[ParsedModuleRelation](ParsedModuleRelation.Parent.apply)
+      multipleValueParser(
+        "children",
+        skipFirst(prefix("module.")).take(prefixTo("\n")).flatMap(uuidParser),
+        1
+      ).map[ParsedModuleRelation](ParsedModuleRelation.Parent.apply)
     )
 
     prefix("relation:")
