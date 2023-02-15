@@ -24,7 +24,7 @@ final class ResponsibilityTable(tag: Tag)
     column[ResponsibilityType]("responsibility_type", O.PrimaryKey)
 
   def metadataFk =
-    foreignKey("metadata", metadata, TableQuery[MetadataTable])(_.id)
+    foreignKey("metadata", metadata, TableQuery[ModuleCompendiumTable])(_.id)
 
   def personFk =
     foreignKey("person", person, TableQuery[PersonTable])(_.id)

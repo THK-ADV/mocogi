@@ -17,7 +17,7 @@ final class PrerequisitesModuleTable(tag: Tag)
   def module = column[UUID]("module", O.PrimaryKey)
 
   def moduleFk =
-    foreignKey("module", module, TableQuery[MetadataTable])(_.id)
+    foreignKey("module", module, TableQuery[ModuleCompendiumTable])(_.id)
 
   def prerequisitesFk =
     foreignKey("prerequisites", prerequisites, TableQuery[PrerequisitesTable])(

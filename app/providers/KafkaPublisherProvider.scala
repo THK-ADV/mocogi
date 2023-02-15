@@ -1,7 +1,7 @@
 package providers
 
 import config.KafkaConfig
-import controllers.json.MetadataFormat
+import controllers.formats.ModuleCompendiumFormat
 import org.apache.kafka.common.serialization.Serializer
 import play.api.inject.ApplicationLifecycle
 import play.api.libs.json.Json
@@ -13,7 +13,7 @@ import scala.util.control.NonFatal
 
 private class MetadataSerializer
     extends Serializer[Metadata]
-    with MetadataFormat {
+    with ModuleCompendiumFormat {
   override def serialize(topic: String, data: Metadata) =
     topic match {
       case "metadata" =>

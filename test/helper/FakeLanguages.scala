@@ -1,6 +1,6 @@
 package helper
 
-import basedata.Language
+import models.core.Language
 
 trait FakeLanguages {
   implicit def fakeLanguages: Seq[Language] = Seq(

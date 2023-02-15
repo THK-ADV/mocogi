@@ -17,7 +17,7 @@ final class MetadataCompetenceTable(tag: Tag)
   def competence = column[String]("competence", O.PrimaryKey)
 
   def metadataFk =
-    foreignKey("metadata", metadata, TableQuery[MetadataTable])(_.id)
+    foreignKey("metadata", metadata, TableQuery[ModuleCompendiumTable])(_.id)
 
   def competenceFk =
     foreignKey("competence", competence, TableQuery[CompetenceTable])(_.abbrev)

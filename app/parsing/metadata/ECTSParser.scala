@@ -1,6 +1,6 @@
 package parsing.metadata
 
-import basedata.FocusAreaPreview
+import models.core.FocusAreaPreview
 import parser.Parser
 import parser.Parser._
 import parser.ParserOps.P0
@@ -44,7 +44,8 @@ object ECTSParser {
   ): Parser[Either[Double, List[ECTSFocusAreaContribution]]] = {
     oneOf(
       ectsValueParser.map(Left.apply),
-      ectsContributionsToFocusAreasParser.map(Right.apply)
+      ectsContributionsToFocusAreasParser(focusAreas.sortBy(_.abbrev).reverse)
+        .map(Right.apply)
     )
   }
 }

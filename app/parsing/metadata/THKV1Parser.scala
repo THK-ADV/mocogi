@@ -1,31 +1,24 @@
 package parsing.metadata
 
-import basedata._
+import models.core.{AssessmentMethod, Competence, FocusAreaPreview, GlobalCriteria, Language, Location, ModuleType, PO, Person, Season, Status}
 import parser.Parser
 import parser.Parser._
 import parser.ParserOps._
-import parsing.metadata.AssessmentMethodParser.{
-  assessmentMethodsMandatoryParser,
-  assessmentMethodsOptionalParser
-}
+import parsing.metadata.AssessmentMethodParser.{assessmentMethodsMandatoryParser, assessmentMethodsOptionalParser}
 import parsing.metadata.CompetencesParser.competencesParser
 import parsing.metadata.ECTSParser.ectsParser
 import parsing.metadata.GlobalCriteriaParser.globalCriteriaParser
 import parsing.metadata.ModuleRelationParser.moduleRelationParser
 import parsing.metadata.POParser.{mandatoryPOParser, optionalPOParser}
 import parsing.metadata.ParticipantsParser.participantsParser
-import parsing.metadata.PrerequisitesParser.{
-  recommendedPrerequisitesParser,
-  requiredPrerequisitesParser
-}
+import parsing.metadata.PrerequisitesParser.{recommendedPrerequisitesParser, requiredPrerequisitesParser}
 import parsing.metadata.TaughtWithParser.taughtWithParser
 import parsing.metadata.WorkloadParser.workloadParser
 import parsing.types._
-import parsing.{posIntForKey, singleLineStringForKey}
+import parsing.{posIntForKey, singleLineStringForKey, uuidParser}
 
 import java.util.UUID
 import javax.inject.{Inject, Singleton}
-import scala.util.Try
 
 @Singleton
 final class THKV1Parser @Inject() (
@@ -40,7 +33,7 @@ final class THKV1Parser @Inject() (
 
   val idParser: Parser[UUID] =
     singleLineStringForKey("id")
-      .flatMap(s => Try(UUID.fromString(s)).fold(_ => never("uuid"), always))
+      .flatMap(uuidParser)
 
   val titleParser = singleLineStringForKey("title")
 

@@ -2,7 +2,7 @@ package controllers
 
 import play.api.libs.json.{Format, Json}
 import play.api.mvc.{AbstractController, ControllerComponents}
-import service.{MetadataService, Module}
+import service.{ModuleCompendiumService, Module}
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
@@ -10,7 +10,7 @@ import scala.concurrent.ExecutionContext
 @Singleton
 final class ModuleController @Inject() (
     cc: ControllerComponents,
-    service: MetadataService,
+    service: ModuleCompendiumService,
     implicit val ctx: ExecutionContext
 ) extends AbstractController(cc) {
   implicit val moduleFormat: Format[Module] =

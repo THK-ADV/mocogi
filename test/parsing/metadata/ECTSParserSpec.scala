@@ -1,7 +1,7 @@
 package parsing.metadata
 
-import basedata.FocusAreaPreview
 import helper.FakeFocusAreas
+import models.core.FocusAreaPreview
 import org.scalatest.EitherValues
 import org.scalatest.wordspec.AnyWordSpec
 import parsing.ParserSpecHelper

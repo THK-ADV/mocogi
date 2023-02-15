@@ -1,6 +1,6 @@
 package database.table
 
-import basedata.AbbrevLabelDescLike
+import models.core.AbbrevLabelDescLike
 import slick.jdbc.PostgresProfile.api._
 
 trait AbbrevLabelDescColumn[A <: AbbrevLabelDescLike] {

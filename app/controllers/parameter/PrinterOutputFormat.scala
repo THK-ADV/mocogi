@@ -1,6 +1,6 @@
 package controllers.parameter
 
-import printing.{ModuleCompendiumDefaultPrinter, ModuleCompendiumPrinter}
+import printing.markdown.{ModuleCompendiumMarkdownPrinter, ModuleCompendiumPrinter}
 
 import scala.util.{Success, Try}
 
@@ -10,7 +10,7 @@ sealed trait PrinterOutputFormat {
 
 object PrinterOutputFormat {
   case object DefaultPrinter extends PrinterOutputFormat {
-    override def printer = ModuleCompendiumDefaultPrinter
+    override def printer = ModuleCompendiumMarkdownPrinter
     override def toString = "default"
   }
 

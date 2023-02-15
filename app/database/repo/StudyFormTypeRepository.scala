@@ -1,7 +1,7 @@
 package database.repo
 
-import basedata.StudyFormType
 import database.table.StudyFormTypeTable
+import models.core.StudyFormType
 import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfigProvider}
 import slick.jdbc.JdbcProfile
 

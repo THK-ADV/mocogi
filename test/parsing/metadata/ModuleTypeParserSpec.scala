@@ -1,7 +1,7 @@
 package parsing.metadata
 
-import basedata.ModuleType
 import helper.{FakeApplication, FakeModuleTypes}
+import models.core.ModuleType
 import org.scalatest.EitherValues
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite

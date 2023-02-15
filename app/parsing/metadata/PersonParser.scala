@@ -1,6 +1,6 @@
 package parsing.metadata
 
-import basedata.Person
+import models.core.Person
 import parser.Parser
 import parser.Parser._
 import parser.ParserOps._
@@ -13,11 +13,14 @@ final class PersonParser {
   def parser(implicit person: Seq[Person]): Parser[List[Person]] = {
     val single =
       oneOf(
-        person.map(p =>
-          literal(s"person.${p.id}")
-            .skip(newline)
-            .map(_ => p)
-        ): _*
+        person
+          .sortBy(_.id)
+          .reverse
+          .map(p =>
+            literal(s"person.${p.id}")
+              .skip(newline)
+              .map(_ => p)
+          ): _*
       )
 
     val dashes =

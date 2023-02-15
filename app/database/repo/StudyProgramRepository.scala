@@ -1,7 +1,7 @@
 package database.repo
 
-import basedata.{RestrictedAdmission, StudyProgram}
 import database.table._
+import models.core.{RestrictedAdmission, StudyProgram}
 import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfigProvider}
 import slick.jdbc.JdbcProfile
 

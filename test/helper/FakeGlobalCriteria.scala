@@ -1,6 +1,6 @@
 package helper
 
-import basedata.GlobalCriteria
+import models.core.GlobalCriteria
 
 trait FakeGlobalCriteria {
   implicit def fakeGlobalCriteria: Seq[GlobalCriteria] = Seq(

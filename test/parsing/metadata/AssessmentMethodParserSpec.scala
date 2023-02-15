@@ -1,7 +1,7 @@
 package parsing.metadata
 
-import basedata.AssessmentMethod
 import helper.FakeAssessmentMethod
+import models.core.AssessmentMethod
 import org.scalatest.EitherValues
 import org.scalatest.wordspec.AnyWordSpec
 import parsing.ParserSpecHelper

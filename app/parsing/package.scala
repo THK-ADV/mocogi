@@ -1,8 +1,10 @@
 import java.io.File
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
+import java.util.UUID
 import scala.annotation.tailrec
 import scala.io.Source
+import scala.util.Try
 
 package object parsing {
   import parser.Parser
@@ -208,4 +210,7 @@ package object parsing {
   // TODO test
   def singleLineCommentParser(): Parser[Unit] =
     prefix("#").skip(prefix(_ != '\n').skip(newline))
+
+  def uuidParser(string: String): Parser[UUID] =
+    Try(UUID.fromString(string)).fold(_ => never("uuid"), always)
 }

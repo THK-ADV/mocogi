@@ -25,7 +25,7 @@ final class POMandatoryTable(tag: Tag)
     column[List[Int]]("recommended_semester_part_time")
 
   def metadataFk =
-    foreignKey("metadata", metadata, TableQuery[MetadataTable])(_.id)
+    foreignKey("metadata", metadata, TableQuery[ModuleCompendiumTable])(_.id)
 
   def poFk =
     foreignKey("po", po, TableQuery[POTable])(_.abbrev)

@@ -1,6 +1,6 @@
 package parsing.metadata
 
-import basedata.AssessmentMethod
+import models.core.AssessmentMethod
 import parser.Parser
 import parser.Parser._
 import parser.ParserOps.{P0, P2}
@@ -55,13 +55,13 @@ object AssessmentMethodParser {
       assessmentMethods: Seq[AssessmentMethod]
   ): Parser[List[AssessmentMethodEntry]] =
     parser("assessment_methods_mandatory")(
-      assessmentMethods.sortBy(_.abbrev.reverse)
+      assessmentMethods.sortBy(_.abbrev).reverse
     )
 
   def assessmentMethodsOptionalParser(implicit
       assessmentMethods: Seq[AssessmentMethod]
   ): Parser[List[AssessmentMethodEntry]] =
     parser("assessment_methods_optional")(
-      assessmentMethods.sortBy(_.abbrev.reverse)
+      assessmentMethods.sortBy(_.abbrev).reverse
     )
 }

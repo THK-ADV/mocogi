@@ -1,6 +1,6 @@
 package parsing.metadata
 
-import basedata.GlobalCriteria
+import models.core.GlobalCriteria
 import parser.Parser
 import parsing.multipleValueParser
 
@@ -10,7 +10,7 @@ object GlobalCriteriaParser {
   ): Parser[List[GlobalCriteria]] =
     multipleValueParser(
       "global_criteria",
-      c => s"global_criteria.${c.abbrev}",
+      (g: GlobalCriteria) => s"global_criteria.${g.abbrev}",
       0
-    )
+    )(globalCriteria.sortBy(_.abbrev).reverse)
 }

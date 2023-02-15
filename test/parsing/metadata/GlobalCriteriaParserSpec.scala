@@ -1,7 +1,7 @@
 package parsing.metadata
 
-import basedata.GlobalCriteria
 import helper.FakeGlobalCriteria
+import models.core.GlobalCriteria
 import org.scalatest.EitherValues
 import org.scalatest.wordspec.AnyWordSpec
 import parsing.ParserSpecHelper

@@ -1,7 +1,7 @@
 package git.subscriber
 
 import akka.actor.{Actor, Props}
-import git.ModuleCompendiumSubscribers.{Added, Modified, Removed}
+import ModuleCompendiumSubscribers.{Added, Modified, Removed}
 import play.api.Logging
 import publisher.{KafkaPublisher, Record}
 import validator.Metadata

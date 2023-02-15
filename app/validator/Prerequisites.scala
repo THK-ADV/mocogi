@@ -1,6 +1,6 @@
 package validator
 
-import basedata.PO
+import models.core.PO
 
 case class Prerequisites(
     recommended: Option[PrerequisiteEntry],

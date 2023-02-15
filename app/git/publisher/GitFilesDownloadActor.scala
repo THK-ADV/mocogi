@@ -1,16 +1,4 @@
-package git.publisher
-
-import akka.actor.{Actor, ActorRef, Props}
-import git._
-import git.publisher.GitFilesDownloadActor.Download
-import play.api.Logging
-import play.api.libs.ws.WSClient
-
-import java.net.URLEncoder
-import java.nio.charset.StandardCharsets
-import javax.inject.Singleton
-import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Failure, Success}
+/*package git.publisher
 
 object GitFilesDownloadActor {
   def props(
@@ -105,4 +93,4 @@ object GitFilesDownloadActor {
 case class GitFilesDownloadActor(private val value: ActorRef) {
   def download(changes: GitChanges[List[GitFilePath]], projectId: Int): Unit =
     value ! Download(changes: GitChanges[List[GitFilePath]], projectId: Int)
-}
+}*/

@@ -1,6 +1,6 @@
 package database.table
 
-import basedata.StudyFormType
+import models.core.StudyFormType
 import slick.jdbc.PostgresProfile.api._
 
 final class StudyFormTypeTable(tag: Tag)

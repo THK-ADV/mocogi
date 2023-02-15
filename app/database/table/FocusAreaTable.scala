@@ -1,6 +1,6 @@
 package database.table
 
-import basedata.FocusArea
+import models.core.FocusArea
 import slick.jdbc.PostgresProfile.api._
 
 final class FocusAreaTable(tag: Tag)

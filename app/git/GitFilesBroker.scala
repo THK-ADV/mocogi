@@ -1,10 +1,4 @@
-package git
-
-import git.GitFilesBroker.{Changes, core, modules, split}
-import git.publisher.{CoreDataPublisher, ModuleCompendiumPublisher}
-
-import javax.inject.{Inject, Singleton}
-import scala.collection.mutable.ListBuffer
+/*package git
 
 trait GitFilesBroker {
   def distributeToSubscriber(changes: Changes): Unit
@@ -58,17 +52,14 @@ object GitFilesBroker {
   def foldGitFilePath(
       path: GitFilePath
   )(isModule: GitFilePath => Unit)(isCore: GitFilePath => Unit): Unit =
-    if (path.value.startsWith(s"$modules/"))
-      isModule(path.copy(path.value.stripPrefix(s"$modules/")))
-    else if (path.value.startsWith(s"$core/"))
-      isCore(path.copy(path.value.stripPrefix(s"$core/")))
+    if (path.value.startsWith(s"$modules/")) isModule(path)
+    else if (path.value.startsWith(s"$core/")) isCore(path)
 }
 
 @Singleton
 final class GitFilesBrokerImpl @Inject() (
     private val moduleCompendiumParsingValidator: ModuleCompendiumPublisher,
     private val coreDataParsingValidator: CoreDataPublisher
-    // val parsingValidators: Map[GitFilePath, List[ParsingValidator[_]]],
 ) extends GitFilesBroker {
   override def distributeToSubscriber(changes: Changes): Unit = {
     val map = split(changes)
@@ -79,4 +70,4 @@ final class GitFilesBrokerImpl @Inject() (
       .get(core)
       .foreach(coreDataParsingValidator.notifySubscribers)
   }
-}
+}*/

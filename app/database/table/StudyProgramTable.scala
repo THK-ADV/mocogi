@@ -1,6 +1,6 @@
 package database.table
 
-import basedata.RestrictedAdmission
+import models.core.RestrictedAdmission
 import slick.jdbc.PostgresProfile.api._
 
 import java.time.LocalDate

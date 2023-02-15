@@ -1,7 +1,7 @@
 package parsing.metadata
 
-import basedata.Language
 import helper.{FakeApplication, FakeLanguages}
+import models.core.Language
 import org.scalatest.EitherValues
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
@@ -38,7 +38,7 @@ class LanguageParserSpec
       assertError(
         parser,
         "language: lang.ger\n",
-        "lang.de or lang.en or lang.de_en",
+        "lang.en or lang.de_en or lang.de",
         Some("lang.ger\n")
       )
     }

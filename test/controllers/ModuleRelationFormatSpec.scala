@@ -1,13 +1,13 @@
 package controllers
 
+import controllers.formats.ModuleRelationFormat
 import org.scalatest.wordspec.AnyWordSpec
 import play.api.libs.json.Json
 import validator.{Module, ModuleRelation}
 
 import java.util.UUID
 
-class ModuleRelationFormatSpec extends AnyWordSpec {
-  import ModuleCompendiumParsingController.{moduleFormat, moduleRelationFormat}
+class ModuleRelationFormatSpec extends AnyWordSpec with ModuleRelationFormat {
 
   private lazy val m1 = Module(UUID.randomUUID, "m1")
   private lazy val m2 = Module(UUID.randomUUID, "m2")
@@ -20,7 +20,7 @@ class ModuleRelationFormatSpec extends AnyWordSpec {
       val json = moduleRelationFormat.writes(parent)
       assert(
         json == Json.obj(
-          "type" -> "parent",
+          "kind" -> "parent",
           "children" -> Json.toJson(List(m1, m2, m3))
         )
       )
@@ -30,7 +30,7 @@ class ModuleRelationFormatSpec extends AnyWordSpec {
     "convert a child object to json and parse it back to the original object" in {
       val child: ModuleRelation = ModuleRelation.Child(m1)
       val json = moduleRelationFormat.writes(child)
-      assert(json == Json.obj("type" -> "child", "parent" -> Json.toJson(m1)))
+      assert(json == Json.obj("kind" -> "child", "parent" -> Json.toJson(m1)))
       assert(moduleRelationFormat.reads(json).get == child)
     }
   }

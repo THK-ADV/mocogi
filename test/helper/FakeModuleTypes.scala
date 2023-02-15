@@ -1,6 +1,6 @@
 package helper
 
-import basedata.ModuleType
+import models.core.ModuleType
 
 trait FakeModuleTypes {
   implicit def fakeModuleTypes: Seq[ModuleType] = Seq(

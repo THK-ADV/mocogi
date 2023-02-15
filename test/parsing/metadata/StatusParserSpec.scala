@@ -1,7 +1,7 @@
 package parsing.metadata
 
-import basedata.Status
 import helper.{FakeApplication, FakeStatus}
+import models.core.Status
 import org.scalatest.EitherValues
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
@@ -32,7 +32,7 @@ class StatusParserSpec
       assertError(
         parser,
         "status: status.unknown\n",
-        "status.active or status.inactive",
+        "status.inactive or status.active",
         Some("status.unknown\n")
       )
     }

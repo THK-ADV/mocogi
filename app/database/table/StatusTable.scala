@@ -1,6 +1,6 @@
 package database.table
 
-import basedata.Status
+import models.core.Status
 import slick.jdbc.PostgresProfile.api._
 
 final class StatusTable(tag: Tag)

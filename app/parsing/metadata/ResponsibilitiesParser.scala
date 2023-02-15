@@ -1,6 +1,6 @@
 package parsing.metadata
 
-import basedata.Person
+import models.core.Person
 import parser.Parser
 import parser.Parser._
 import parser.ParserOps._

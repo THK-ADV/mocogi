@@ -1,6 +1,6 @@
 package parsing.types
 
-import basedata.FocusAreaPreview
+import models.core.FocusAreaPreview
 
 case class ECTS(
     value: Double,

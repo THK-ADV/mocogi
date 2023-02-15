@@ -1,11 +1,4 @@
-package providers
-
-import akka.actor.ActorSystem
-import git.publisher.CoreDataPublisher
-import service._
-
-import javax.inject.{Inject, Provider, Singleton}
-import scala.concurrent.ExecutionContext
+/*package providers
 
 @Singleton
 final class CoreDataParsingValidatorProvider @Inject() (
@@ -49,4 +42,4 @@ final class CoreDataParsingValidatorProvider @Inject() (
       )
     )
   )
-}
+}*/

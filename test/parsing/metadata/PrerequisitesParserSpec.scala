@@ -7,6 +7,8 @@ import parsing.ParserSpecHelper
 import parsing.metadata.PrerequisitesParser.recommendedPrerequisitesParser
 import parsing.types.ParsedPrerequisiteEntry
 
+import java.util.UUID
+
 class PrerequisitesParserSpec
     extends AnyWordSpec
     with ParserSpecHelper
@@ -15,22 +17,24 @@ class PrerequisitesParserSpec
 
   "A Prerequisites Parser" should {
     "parse prerequisites" in {
+      val m1 = UUID.randomUUID
+      val m2 = UUID.randomUUID
       val input =
-        """recommended_prerequisites:
+        s"""recommended_prerequisites:
           |  text: >
           |    benötigt werden kenntnisse in algebra und java
           |
           |    und ein pc.
           |  modules:
-          |    - module.ap1
-          |    - module.ap2
+          |    - module.$m1
+          |    - module.$m2
           |  study_programs:
           |    - study_program.mi1""".stripMargin
       val (res, rest) = recommendedPrerequisitesParser.parse(input)
       assert(
         res.value == ParsedPrerequisiteEntry(
           "benötigt werden kenntnisse in algebra und java\nund ein pc.\n",
-          List("ap1", "ap2"),
+          List(m1, m2),
           List(mi1)
         )
       )
@@ -38,17 +42,19 @@ class PrerequisitesParserSpec
     }
 
     "parse prerequisites with not text and no study programs" in {
+      val m1 = UUID.randomUUID
+      val m2 = UUID.randomUUID
       val input =
-        """recommended_prerequisites:
+        s"""recommended_prerequisites:
           |  modules:
-          |    - module.ap1
-          |    - module.ap2
+          |    - module.$m1
+          |    - module.$m2
           |  """.stripMargin
       val (res, rest) = recommendedPrerequisitesParser.parse(input)
       assert(
         res.value == ParsedPrerequisiteEntry(
           "",
-          List("ap1", "ap2"),
+          List(m1, m2),
           Nil
         )
       )

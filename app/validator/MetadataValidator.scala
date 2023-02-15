@@ -2,11 +2,12 @@ package validator
 
 import parsing.types._
 
+import java.util.UUID
 import scala.collection.mutable.ListBuffer
 
 object MetadataValidator {
 
-  type Lookup = String => Option[Module]
+  private type Lookup = UUID => Option[Module]
 
   def assessmentMethodsValidator: SimpleValidator[AssessmentMethods] = {
     def sum(xs: List[AssessmentMethodEntry]): Double =
@@ -98,7 +99,7 @@ object MetadataValidator {
   def moduleValidator(
       label: String,
       lookup: Lookup
-  ): Validator[List[String], List[Module]] =
+  ): Validator[List[UUID], List[Module]] =
     Validator { modules =>
       val (errs, res) =
         modules.partitionMap(m =>
@@ -109,7 +110,7 @@ object MetadataValidator {
 
   def taughtWithValidator(
       lookup: Lookup
-  ): Validator[List[String], List[Module]] =
+  ): Validator[List[UUID], List[Module]] =
     moduleValidator("taught with", lookup)
 
   def prerequisitesEntryValidator(
@@ -267,12 +268,19 @@ object MetadataValidator {
       }
   }
 
-  def validate(
+  def validateMany(
       metadata: Seq[ParsedMetadata],
       creditPointFactor: Int,
-      lookup: String => Option[Module]
+      lookup: Lookup
   ): Seq[Validation[Metadata]] = {
     val validator = validations(creditPointFactor, lookup)
     metadata.map(m => validator.validate(m))
+  }
+
+  def validate(creditPointFactor: Int, lookup: Lookup)(
+      metadata: ParsedMetadata
+  ): Validation[Metadata] = {
+    val validator = validations(creditPointFactor, lookup)
+    validator.validate(metadata)
   }
 }

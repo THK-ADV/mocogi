@@ -1,6 +1,7 @@
 package parsing.types
 
-import basedata.PO
+import models.core.PO
+import java.util.UUID
 
 case class ParsedPrerequisites(
     recommended: Option[ParsedPrerequisiteEntry],
@@ -9,6 +10,6 @@ case class ParsedPrerequisites(
 
 case class ParsedPrerequisiteEntry(
     text: String,
-    modules: List[String],
+    modules: List[UUID],
     studyPrograms: List[PO]
 )

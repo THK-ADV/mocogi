@@ -22,6 +22,9 @@ trait Repository[Input, Output, T <: Table[Input]] {
   def all(): Future[Seq[Output]] =
     retrieve(tableQuery)
 
+  def create(input: Input): Future[Input] =
+    db.run(tableQuery returning tableQuery += input)
+
   def createOrUpdate(l: Input): Future[(InsertOrUpdateResult, Input)] =
     db.run(createOrUpdateQuery(l))
 

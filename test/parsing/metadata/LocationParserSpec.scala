@@ -1,7 +1,7 @@
 package parsing.metadata
 
-import basedata.Location
 import helper.{FakeApplication, FakeLocations}
+import models.core.Location
 import org.scalatest.EitherValues
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
@@ -34,7 +34,7 @@ class LocationParserSpec
       assertError(
         parser,
         "location: location.iwz\n",
-        "location.gm or location.dz or location.su or location.km",
+        "location.su or location.km or location.gm or location.dz",
         Some("location.iwz\n")
       )
     }

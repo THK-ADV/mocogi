@@ -1,7 +1,7 @@
 package database.repo
 
-import basedata.FocusArea
 import database.table.FocusAreaTable
+import models.core.FocusArea
 import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfigProvider}
 import slick.jdbc.JdbcProfile
 

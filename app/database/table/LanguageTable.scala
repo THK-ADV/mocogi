@@ -1,6 +1,6 @@
 package database.table
 
-import basedata.Language
+import models.core.Language
 import slick.jdbc.PostgresProfile.api._
 
 final class LanguageTable(tag: Tag)

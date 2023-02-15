@@ -1,6 +1,6 @@
 package database.table
 
-import basedata.AssessmentMethod
+import models.core.AssessmentMethod
 import slick.jdbc.PostgresProfile.api._
 
 final class AssessmentMethodTable(tag: Tag)

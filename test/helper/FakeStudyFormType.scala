@@ -1,6 +1,6 @@
 package helper
 
-import basedata.StudyFormType
+import models.core.StudyFormType
 
 trait FakeStudyFormType {
   implicit def fakeStudyFormType: Seq[StudyFormType] = Seq(

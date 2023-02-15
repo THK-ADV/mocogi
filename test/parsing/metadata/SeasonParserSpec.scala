@@ -1,7 +1,7 @@
 package parsing.metadata
 
-import basedata.Season
 import helper.{FakeApplication, FakeSeasons}
+import models.core.Season
 import org.scalatest.EitherValues
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite

@@ -1,6 +1,6 @@
 package database.table
 
-import basedata.Competence
+import models.core.Competence
 import slick.jdbc.PostgresProfile.api._
 
 final class CompetenceTable(tag: Tag)

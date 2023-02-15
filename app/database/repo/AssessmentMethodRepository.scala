@@ -1,7 +1,7 @@
 package database.repo
 
-import basedata.AssessmentMethod
 import database.table.AssessmentMethodTable
+import models.core.AssessmentMethod
 import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfigProvider}
 import slick.jdbc.JdbcProfile
 

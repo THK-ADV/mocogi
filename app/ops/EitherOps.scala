@@ -2,7 +2,13 @@ package ops
 
 object EitherOps {
   implicit class EOps[A, B](e: Either[A, B]) {
-    def biFlatMap[A0, A1, B1](
+    def bimap[A1, B1](left: A => A1, right: B => B1): Either[A1, B1] =
+      e match {
+        case Left(a)  => Left(left(a))
+        case Right(b) => Right(right(b))
+      }
+
+    def biflatMap[A0, A1, B1](
         left: A => A0,
         newLeft: A1 => A0,
         right: B => Either[A1, B1]

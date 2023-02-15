@@ -1,6 +1,7 @@
 package parsing.types
 
-import basedata.PO
+import models.core.PO
+import java.util.UUID
 
 case class ParsedPOs(
     mandatory: List[POMandatory],
@@ -9,7 +10,7 @@ case class ParsedPOs(
 
 case class ParsedPOOptional(
     po: PO,
-    instanceOf: String,
+    instanceOf: UUID,
     partOfCatalog: Boolean,
     recommendedSemester: List[Int]
 )
