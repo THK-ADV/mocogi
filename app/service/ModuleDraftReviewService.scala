@@ -1,13 +1,9 @@
 package service
 
 import database.repo.UserBranchRepository
-import git.{
-  GitCommitAction,
-  GitCommitActionType,
-  GitCommitService,
-  GitMergeRequestService
-}
-import models.ModuleDraftStatus
+import git.api.{GitCommitService, GitMergeRequestService}
+import git.{GitCommitAction, GitCommitActionType, GitConfig, GitFilePath}
+import models.{ModuleDraftStatus, ValidModuleDraft}
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
@@ -19,6 +15,7 @@ class ModuleDraftReviewService @Inject() (
     private val commitService: GitCommitService,
     private val mergeRequestService: GitMergeRequestService,
     private val userBranchRepository: UserBranchRepository,
+    private implicit val gitConfig: GitConfig,
     private implicit val ctx: ExecutionContext
 ) {
 
@@ -60,7 +57,7 @@ class ModuleDraftReviewService @Inject() (
 
   private def mergeRequestDescription(actions: Seq[GitCommitAction]) =
     actions.foldLeft("") { case (acc, a) =>
-      s"$acc\n- ${a.action}s [${a.filename}](${a.filename})"
+      s"$acc\n- ${a.action}s [${a.filePath.value}](${a.filePath.value})"
     }
 
   private def createMergeRequest(
@@ -80,19 +77,16 @@ class ModuleDraftReviewService @Inject() (
       )
     } yield mergeRequestId
 
-  private def commitActions(drafts: Seq[ModuleDraftService#ValidDraft]) =
+  private def commitActions(drafts: Seq[ValidModuleDraft]) =
     for {
-      paths <- moduleCompendiumService.paths(drafts.map(_._1))
-    } yield drafts.map { case (id, status, print) =>
-      val gitActionType = status match {
+      paths <- moduleCompendiumService.paths(drafts.map(_.module))
+    } yield drafts.map { draft =>
+      val gitActionType = draft.status match {
         case ModuleDraftStatus.Added    => GitCommitActionType.Create
         case ModuleDraftStatus.Modified => GitCommitActionType.Update
       }
-      val filename = paths.find(_._1 == id) match {
-        case Some((_, path)) => path.value
-        case None            => s"${id.toString}.md"
-      }
-      GitCommitAction(gitActionType, filename, print)
+      val filePath = GitFilePath.apply(paths, draft)
+      GitCommitAction(gitActionType, filePath, draft.print.value)
     }
 
   private def commit(

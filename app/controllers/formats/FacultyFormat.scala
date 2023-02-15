@@ -1,6 +1,6 @@
 package controllers.formats
 
-import basedata.Faculty
+import models.core.Faculty
 import play.api.libs.json.{Format, Json}
 
 trait FacultyFormat {

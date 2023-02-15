@@ -1,6 +1,6 @@
 package helper
 
-import basedata.Faculty
+import models.core.Faculty
 
 trait FakeFaculties {
   val f10 = Faculty("f10", "10", "10")

@@ -1,0 +1,427 @@
+package printing
+
+import database._
+import org.scalatest.wordspec.AnyWordSpec
+import parsing.metadata.VersionScheme
+import parsing.types.{ParsedWorkload, Participants}
+import printing.yaml.MetadataYamlPrinter
+
+import java.util.UUID
+
+final class MetadataYamlPrinterSpec extends AnyWordSpec with PrinterSpec {
+
+  val printer = new MetadataYamlPrinter(2)
+  val m1 = UUID.fromString("0ef7d976-206e-4654-a987-8d0e184fdd3f")
+  val m2 = UUID.fromString("330bd356-e766-433b-ae2c-0a98d49ca49d")
+
+  "A MetadataProtocolPrinter" should {
+    "print version scheme" in {
+      val version: VersionScheme = VersionScheme(1, "s")
+      assert(run(printer.versionScheme(version)) === "v1.0s")
+    }
+
+    "print opener" in {
+      val version: VersionScheme = VersionScheme(1, "s")
+      assert(run(printer.opener(version)) === "---v1.0s\n")
+    }
+
+    "print title" in {
+      assert(run(printer.title("Title")) === "title: Title\n")
+    }
+
+    "print abbreviation" in {
+      assert(run(printer.abbreviation("ABC")) === "abbreviation: ABC\n")
+    }
+
+    "print module type" in {
+      assert(run(printer.moduleType("module")) === "type: type.module\n")
+    }
+
+    "print module relation" in {
+      val parent0 = ModuleRelationOutput.Parent(List(m1))
+      val res0 = s"relation:\n  children: module.$m1\n"
+      assert(run(printer.moduleRelation(parent0)) === res0)
+      val parent1 = ModuleRelationOutput.Parent(List(m1, m2))
+      val res1 =
+        s"""relation:
+         |  children:
+         |    - module.$m1
+         |    - module.$m2\n""".stripMargin
+      assert(run(printer.moduleRelation(parent1)) === res1)
+      val child = ModuleRelationOutput.Child(m1)
+      val res2 = s"relation:\n  parent: module.$m1\n"
+      assert(run(printer.moduleRelation(child)) === res2)
+    }
+
+    "print ects" in {
+      assert(run(printer.ects(5)) === "ects: 5.0\n")
+    }
+
+    "print language" in {
+      assert(run(printer.language("de")) === "language: lang.de\n")
+    }
+
+    "print duration" in {
+      assert(run(printer.duration(1)) === "duration: 1\n")
+    }
+
+    "print frequency" in {
+      assert(run(printer.frequency("ws")) === "frequency: season.ws\n")
+    }
+
+    "print responsibilities" in {
+      val moduleManagement1 = List("ald")
+      val lecturers1 = List("ald", "abe")
+      val res1 =
+        s"""responsibilities:
+           |  module_management: person.ald
+           |  lecturers:
+           |    - person.abe
+           |    - person.ald\n""".stripMargin
+      assert(
+        run(printer.responsibilities(moduleManagement1, lecturers1)) === res1
+      )
+      val moduleManagement2 = List("ald", "abe")
+      val res2 =
+        s"""responsibilities:
+           |  module_management:
+           |    - person.abe
+           |    - person.ald
+           |  lecturers:
+           |    - person.abe
+           |    - person.ald\n""".stripMargin
+      assert(
+        run(printer.responsibilities(moduleManagement2, lecturers1)) === res2
+      )
+    }
+
+    "print assessment methods mandatory" in {
+      val values1 = List(
+        AssessmentMethodEntryOutput("project", None, Nil),
+        AssessmentMethodEntryOutput("exam", None, Nil)
+      )
+      val res1 =
+        s"""assessment_methods_mandatory:
+           |  - method: assessment.exam
+           |  - method: assessment.project\n""".stripMargin
+      assert(run(printer.assessmentMethodsMandatory(values1)) == res1)
+      val values2 = List(
+        AssessmentMethodEntryOutput("exam", Some(100), Nil),
+        AssessmentMethodEntryOutput("project", None, Nil)
+      )
+      val res2 =
+        s"""assessment_methods_mandatory:
+           |  - method: assessment.exam
+           |    percentage: 100.0
+           |  - method: assessment.project\n""".stripMargin
+      assert(run(printer.assessmentMethodsMandatory(values2)) == res2)
+      val values3 = List(
+        AssessmentMethodEntryOutput("project", None, Nil),
+        AssessmentMethodEntryOutput("exam", Some(100), List("def", "abc"))
+      )
+      val res3 =
+        s"""assessment_methods_mandatory:
+           |  - method: assessment.exam
+           |    percentage: 100.0
+           |    precondition:
+           |      - assessment.abc
+           |      - assessment.def
+           |  - method: assessment.project\n""".stripMargin
+      assert(run(printer.assessmentMethodsMandatory(values3)) == res3)
+    }
+
+    "print workload" in {
+      val workload = ParsedWorkload(1, 2, 3, 4, 5, 6)
+      val res =
+        s"""workload:
+          |  lecture: 1
+          |  seminar: 2
+          |  practical: 3
+          |  exercise: 4
+          |  project_supervision: 5
+          |  project_work: 6\n""".stripMargin
+      assert(run(printer.workload(workload)) == res)
+    }
+
+    "print recommended prerequisites" in {
+      val entry0 = PrerequisiteEntryOutput("", Nil, Nil)
+      val res0 = ""
+      assert(run(printer.recommendedPrerequisites(entry0)) == res0)
+
+      val entry1 = PrerequisiteEntryOutput("abc", Nil, Nil)
+      val res1 =
+        s"""recommended_prerequisites:
+          |  text: abc\n""".stripMargin
+      assert(run(printer.recommendedPrerequisites(entry1)) == res1)
+
+      val entry2 = PrerequisiteEntryOutput("abc", List(m2, m1), Nil)
+      val res2 =
+        s"""recommended_prerequisites:
+           |  text: abc
+           |  modules:
+           |    - module.$m1
+           |    - module.$m2\n""".stripMargin
+      assert(run(printer.recommendedPrerequisites(entry2)) == res2)
+
+      val entry3 =
+        PrerequisiteEntryOutput("abc", List(m1, m2), List("def", "abc"))
+      val res3 =
+        s"""recommended_prerequisites:
+           |  text: abc
+           |  modules:
+           |    - module.$m1
+           |    - module.$m2
+           |  study_programs:
+           |    - study_program.abc
+           |    - study_program.def\n""".stripMargin
+      assert(run(printer.recommendedPrerequisites(entry3)) == res3)
+
+      val entry4 = PrerequisiteEntryOutput("abc", Nil, List("abc", "def"))
+      val res4 =
+        s"""recommended_prerequisites:
+           |  text: abc
+           |  study_programs:
+           |    - study_program.abc
+           |    - study_program.def\n""".stripMargin
+      assert(run(printer.recommendedPrerequisites(entry4)) == res4)
+
+      val entry5 = PrerequisiteEntryOutput("", Nil, List("abc", "def"))
+      val res5 =
+        s"""recommended_prerequisites:
+           |  study_programs:
+           |    - study_program.abc
+           |    - study_program.def\n""".stripMargin
+      assert(run(printer.recommendedPrerequisites(entry5)) == res5)
+    }
+
+    "print status" in {
+      assert(run(printer.status("active")) == "status: status.active\n")
+    }
+
+    "print location" in {
+      assert(run(printer.location("active")) == "location: location.active\n")
+    }
+
+    "print participants" in {
+      val participants = Participants(0, 10)
+      val res =
+        s"""participants:
+          |  min: 0
+          |  max: 10\n""".stripMargin
+      assert(run(printer.participants(participants)) == res)
+    }
+
+    "print competences" in {
+      val competences = List("def", "abc")
+      val res =
+        s"""competences:
+          |  - competence.abc
+          |  - competence.def\n""".stripMargin
+      assert(run(printer.competences(competences)) == res)
+    }
+
+    "print global criteria" in {
+      val globalCriteria = List("abc", "def")
+      val res =
+        s"""global_criteria:
+          |  - global_criteria.abc
+          |  - global_criteria.def\n""".stripMargin
+      assert(run(printer.globalCriteria(globalCriteria)) == res)
+    }
+
+    "print taught with" in {
+      val taughtWith = List(m1, m2)
+      val res =
+        s"""taught_with:
+          |  - module.$m1
+          |  - module.$m2\n""".stripMargin
+      assert(run(printer.taughtWith(taughtWith)) == res)
+    }
+
+    "print po mandatory" in {
+      val po1 = List(
+        POMandatoryOutput("abc", List(1), Nil),
+        POMandatoryOutput("ghi", List(1, 2), List(2, 1)),
+        POMandatoryOutput("def", List(2, 1), Nil)
+      )
+      val res1 =
+        s"""po_mandatory:
+          |  - study_program: study_program.abc
+          |    recommended_semester: 1
+          |  - study_program: study_program.def
+          |    recommended_semester:
+          |      - 1
+          |      - 2
+          |  - study_program: study_program.ghi
+          |    recommended_semester:
+          |      - 1
+          |      - 2
+          |    recommended_semester_part_time:
+          |      - 1
+          |      - 2\n""".stripMargin
+      assert(run(printer.poMandatory(po1)) == res1)
+    }
+
+    "print po optional" in {
+      val po1 = List(
+        POOptionalOutput("abc", m1, partOfCatalog = true, List(1)),
+        POOptionalOutput("def", m1, partOfCatalog = false, List(2, 1))
+      )
+      val res1 =
+        s"""po_optional:
+           |  - study_program: study_program.abc
+           |    instance_of: module.$m1
+           |    part_of_catalog: true
+           |    recommended_semester: 1
+           |  - study_program: study_program.def
+           |    instance_of: module.$m1
+           |    part_of_catalog: false
+           |    recommended_semester:
+           |      - 1
+           |      - 2\n""".stripMargin
+      assert(run(printer.poOptional(po1)) == res1)
+    }
+
+    "print" in {
+      val metadata = models.MetadataProtocol(
+        "Module A",
+        "M",
+        "module",
+        5.0,
+        "de",
+        1,
+        "ws",
+        ParsedWorkload(10, 10, 10, 10, 10, 10),
+        "active",
+        "gm",
+        Some(Participants(0, 10)),
+        Some(
+          ModuleRelationOutput.Parent(List(m1, m2))
+        ),
+        List("ald"),
+        List("ald", "abe"),
+        AssessmentMethodsOutput(
+          List(
+            AssessmentMethodEntryOutput(
+              "written-exam",
+              Some(100),
+              List("practical")
+            )
+          ),
+          List(
+            AssessmentMethodEntryOutput("written-exam", None, Nil)
+          )
+        ),
+        PrerequisitesOutput(
+          Some(
+            PrerequisiteEntryOutput("abc", List(m1), Nil)
+          ),
+          Some(
+            PrerequisiteEntryOutput("", Nil, List("po1", "po2"))
+          )
+        ),
+        POOutput(
+          List(
+            POMandatoryOutput("po1", List(1, 2), List(1)),
+            POMandatoryOutput("po2", List(1), Nil),
+            POMandatoryOutput("po3", List(1), Nil)
+          ),
+          List(
+            POOptionalOutput(
+              "po4",
+              m1,
+              partOfCatalog = false,
+              List(1, 2)
+            ),
+            POOptionalOutput(
+              "po5",
+              m2,
+              partOfCatalog = true,
+              List(1)
+            )
+          )
+        ),
+        List("competence1", "competence2"),
+        List("global_criteria1", "global_criteria2"),
+        List(m1)
+      )
+      val id = UUID.randomUUID
+      val version: VersionScheme = VersionScheme(1, "s")
+      val print = printer.printer(version).print((id, metadata), "").value
+      val res =
+        s"""---v1.0s
+          |id: $id
+          |title: Module A
+          |abbreviation: M
+          |type: type.module
+          |relation:
+          |  children:
+          |    - module.$m1
+          |    - module.$m2
+          |ects: 5.0
+          |language: lang.de
+          |duration: 1
+          |frequency: season.ws
+          |responsibilities:
+          |  module_management: person.ald
+          |  lecturers:
+          |    - person.abe
+          |    - person.ald
+          |assessment_methods_mandatory:
+          |  - method: assessment.written-exam
+          |    percentage: 100.0
+          |    precondition: assessment.practical
+          |assessment_methods_optional:
+          |  - method: assessment.written-exam
+          |workload:
+          |  lecture: 10
+          |  seminar: 10
+          |  practical: 10
+          |  exercise: 10
+          |  project_supervision: 10
+          |  project_work: 10
+          |recommended_prerequisites:
+          |  text: abc
+          |  modules: module.$m1
+          |required_prerequisites:
+          |  study_programs:
+          |    - study_program.po1
+          |    - study_program.po2
+          |status: status.active
+          |location: location.gm
+          |po_mandatory:
+          |  - study_program: study_program.po1
+          |    recommended_semester:
+          |      - 1
+          |      - 2
+          |    recommended_semester_part_time: 1
+          |  - study_program: study_program.po2
+          |    recommended_semester: 1
+          |  - study_program: study_program.po3
+          |    recommended_semester: 1
+          |po_optional:
+          |  - study_program: study_program.po4
+          |    instance_of: module.$m1
+          |    part_of_catalog: false
+          |    recommended_semester:
+          |      - 1
+          |      - 2
+          |  - study_program: study_program.po5
+          |    instance_of: module.$m2
+          |    part_of_catalog: true
+          |    recommended_semester: 1
+          |participants:
+          |  min: 0
+          |  max: 10
+          |competences:
+          |  - competence.competence1
+          |  - competence.competence2
+          |global_criteria:
+          |  - global_criteria.global_criteria1
+          |  - global_criteria.global_criteria2
+          |taught_with: module.$m1
+          |---""".stripMargin
+      assert(print == res)
+    }
+  }
+}

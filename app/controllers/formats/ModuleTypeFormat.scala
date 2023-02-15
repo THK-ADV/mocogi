@@ -1,6 +1,6 @@
 package controllers.formats
 
-import basedata.ModuleType
+import models.core.ModuleType
 import play.api.libs.json.{Format, Json}
 
 trait ModuleTypeFormat {

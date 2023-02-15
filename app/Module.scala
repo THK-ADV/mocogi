@@ -3,22 +3,19 @@ import database.repo.{
   ModuleCompendiumRepository,
   ModuleCompendiumRepositoryImpl
 }
-import git.publisher.{
-  CoreDataPublisher,
-  GitFilesDownloadActor,
-  ModuleCompendiumPublisher
-}
-import git.{
-  GitConfig,
-  GitFilesBroker,
-  GitFilesBrokerImpl,
+import git.GitConfig
+import git.subscriber.{
+  ModuleCompendiumMarkdownActor,
   ModuleCompendiumSubscribers
 }
+import git.webhook.GitMergeEventHandlingActor
 import parsing.metadata.MetadataParser
-import printing.{ContentPrinter, MarkdownConverter, MetadataProtocolPrinter}
+import printing.pandoc.PandocApi
+import printing.yaml.{ContentMarkdownPrinter, MetadataYamlPrinter}
 import providers._
 import publisher.KafkaPublisher
 import service._
+import service.core._
 import validator.Metadata
 
 class Module() extends AbstractModule {
@@ -74,26 +71,14 @@ class Module() extends AbstractModule {
     bind(classOf[ModuleCompendiumService])
       .to(classOf[ModuleCompendiumServiceImpl])
       .asEagerSingleton()
-    bind(classOf[MetadataParserService])
-      .to(classOf[MetadataParserServiceImpl])
+    bind(classOf[MetadataParsingService])
+      .to(classOf[MetadataParsingServiceImpl])
       .asEagerSingleton()
     bind(classOf[CompetenceService])
       .to(classOf[CompetenceServiceImpl])
       .asEagerSingleton()
-    bind(classOf[MetadataParsingValidator])
-      .to(classOf[MetadataParsingValidatorImpl])
-      .asEagerSingleton()
-    bind(classOf[MetadataValidatorService])
-      .to(classOf[MetadataValidatorServiceImpl])
-      .asEagerSingleton()
-    bind(classOf[GitFilesBroker])
-      .to(classOf[GitFilesBrokerImpl])
-      .asEagerSingleton()
-    bind(classOf[ModuleCompendiumParsingValidator])
-      .to(classOf[ModuleCompendiumParsingValidatorImpl])
-      .asEagerSingleton()
 
-    bind(classOf[MarkdownConverter])
+    bind(classOf[PandocApi])
       .toProvider(classOf[MarkdownConverterProvider])
       .asEagerSingleton()
     bind(classOf[GitConfig])
@@ -102,14 +87,11 @@ class Module() extends AbstractModule {
     bind(classOf[ModuleCompendiumSubscribers])
       .toProvider(classOf[ModuleCompendiumSubscribersProvider])
       .asEagerSingleton()
-    bind(classOf[GitFilesDownloadActor])
-      .toProvider(classOf[GitFilesDownloadActorProvider])
+    bind(classOf[ModuleCompendiumMarkdownActor])
+      .toProvider(classOf[ModuleCompendiumMarkdownActorProvider])
       .asEagerSingleton()
-    bind(classOf[ModuleCompendiumPublisher])
-      .toProvider(classOf[ModuleCompendiumPublisherProvider])
-      .asEagerSingleton()
-    bind(classOf[CoreDataPublisher])
-      .toProvider(classOf[CoreDataParsingValidatorProvider])
+    bind(classOf[GitMergeEventHandlingActor])
+      .toProvider(classOf[GitMergeEventHandlingActorProvider])
       .asEagerSingleton()
 
     bind(new TypeLiteral[Set[MetadataParser]] {})
@@ -119,9 +101,11 @@ class Module() extends AbstractModule {
       .toProvider(classOf[KafkaPublisherProvider])
       .asEagerSingleton()
 
-    bind(classOf[ContentPrinter]).toInstance(new ContentPrinter())
-    bind(classOf[MetadataProtocolPrinter]).toInstance(
-      new MetadataProtocolPrinter(2)
+    bind(classOf[ContentMarkdownPrinter]).toInstance(
+      new ContentMarkdownPrinter()
+    )
+    bind(classOf[MetadataYamlPrinter]).toInstance(
+      new MetadataYamlPrinter(2)
     )
   }
 }

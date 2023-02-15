@@ -1,6 +1,6 @@
 package parsing.metadata
 
-import basedata.Status
+import models.core.Status
 import parser.Parser
 import parsing.helper.SingleValueParser
 

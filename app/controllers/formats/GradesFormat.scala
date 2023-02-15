@@ -1,6 +1,6 @@
 package controllers.formats
 
-import basedata.Grade
+import models.core.Grade
 import play.api.libs.json.{Format, Json}
 
 trait GradesFormat {

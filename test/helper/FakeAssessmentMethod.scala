@@ -1,6 +1,6 @@
 package helper
 
-import basedata.AssessmentMethod
+import models.core.AssessmentMethod
 
 trait FakeAssessmentMethod {
   implicit def fakeAssessmentMethod: Seq[AssessmentMethod] = Seq(

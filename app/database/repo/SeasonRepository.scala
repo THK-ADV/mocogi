@@ -1,7 +1,7 @@
 package database.repo
 
-import basedata.Season
 import database.table.SeasonTable
+import models.core.Season
 import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfigProvider}
 import slick.jdbc.JdbcProfile
 

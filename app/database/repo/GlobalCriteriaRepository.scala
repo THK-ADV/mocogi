@@ -1,7 +1,7 @@
 package database.repo
 
-import basedata.GlobalCriteria
 import database.table.GlobalCriteriaTable
+import models.core.GlobalCriteria
 import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfigProvider}
 import slick.jdbc.JdbcProfile
 

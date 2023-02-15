@@ -1,10 +1,11 @@
 package database
 
 import models.ModuleDraftStatus
+import play.api.libs.json.{JsValue, Json}
+import service.Print
 import slick.jdbc.PostgresProfile.api._
 
 package object table {
-  // TODO use this whenever a custom type needs to be mapped to a column type
   implicit val moduleRelationColumnType: BaseColumnType[ModuleRelationType] =
     MappedColumnType
       .base[ModuleRelationType, String](_.toString, ModuleRelationType.apply)
@@ -44,4 +45,12 @@ package object table {
   implicit val moduleDraftStatusColumnType: BaseColumnType[ModuleDraftStatus] =
     MappedColumnType
       .base[ModuleDraftStatus, String](_.toString, ModuleDraftStatus.apply)
+
+  implicit val printColumnType: BaseColumnType[Print] =
+    MappedColumnType
+      .base[Print, String](_.value, Print.apply)
+
+  implicit val jsValueColumnType: BaseColumnType[JsValue] =
+    MappedColumnType
+      .base[JsValue, String](Json.stringify, Json.parse)
 }

@@ -1,6 +1,6 @@
 package parsing.types
 
-import basedata.{Competence, GlobalCriteria, Language, Location, ModuleType, Season, Status}
+import models.core.{Competence, GlobalCriteria, Language, Location, ModuleType, Season, Status}
 
 import java.util.UUID
 

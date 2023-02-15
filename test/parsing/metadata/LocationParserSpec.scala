@@ -1,7 +1,7 @@
 package parsing.metadata
 
-import basedata.Location
 import helper.{FakeApplication, FakeLocations}
+import models.core.Location
 import org.scalatest.EitherValues
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite

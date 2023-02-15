@@ -6,13 +6,11 @@ import controllers.formats.{
   PipelineErrorFormat
 }
 import database.repo.{ModuleDraftRepository, UserBranchRepository}
-import models.{ModuleCompendiumProtocol, ModuleDraft, ModuleDraftStatus}
-import parser.ParsingError
+import models._
 import parsing.metadata.VersionScheme
 import parsing.types._
-import play.api.libs.json.{JsError, JsSuccess, Json}
-import printer.PrintingError
-import printing.ModuleCompendiumProtocolPrinter
+import play.api.libs.json.{JsError, JsSuccess, JsValue, Json}
+import printing.yaml.ModuleCompendiumYamlPrinter
 import validator.{MetadataValidator, Module, ValidationError}
 
 import java.time.LocalDateTime
@@ -21,44 +19,32 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
 
-sealed trait PipelineError {
-  def metadata: UUID
-}
-
-object PipelineError {
-  case class Parser(error: ParsingError, metadata: UUID) extends PipelineError
-  case class Printer(error: PrintingError, metadata: UUID) extends PipelineError
-  case class Validator(error: ValidationError, metadata: UUID)
-      extends PipelineError
-}
-
 @Singleton
 class ModuleDraftService @Inject() (
-    private val repo: ModuleDraftRepository,
+    private val moduleDraftRepository: ModuleDraftRepository,
     private val userBranchRepository: UserBranchRepository,
     private val moduleCompendiumService: ModuleCompendiumService,
-    private val moduleCompendiumPrinter: ModuleCompendiumProtocolPrinter,
-    private val metadataParserService: MetadataParserService,
-    private val moduleCompendiumContentParsing: ModuleCompendiumContentParsing,
+    private val moduleCompendiumPrinter: ModuleCompendiumYamlPrinter,
+    private val metadataParsingService: MetadataParsingService,
+    private val contentParsingService: ContentParsingService,
     private implicit val ctx: ExecutionContext
 ) extends ModuleCompendiumProtocolFormat
     with PipelineErrorFormat
     with ModuleCompendiumFormat {
   import ops.EitherOps._
+  import ops.JsResultOps._
 
-  type Print = String
-  type PrintingResult =
-    Future[Either[Seq[PipelineError], Seq[(UUID, Print)]]]
-  type ParsingResult =
-    Future[
-      Either[Seq[PipelineError], Seq[(Print, ParsedMetadata, Content, Content)]]
-    ]
-  type ValidationResult =
-    Future[Either[Seq[PipelineError], Seq[(Print, ModuleCompendium)]]]
-  type ValidDraft = (UUID, ModuleDraftStatus, Print)
+  type Result[A] = Future[Either[Seq[PipelineError], Seq[A]]]
+
+  private type PrintingResult = Result[(UUID, Print)]
+  private type ParsingResult = Result[(Print, ParsedMetadata, Content, Content)]
+  private type ValidationResult = Result[(Print, ModuleCompendium)]
 
   def allFromBranch(branch: String): Future[Seq[ModuleDraft]] =
-    repo.allFromBranch(branch)
+    moduleDraftRepository.allFromBranch(branch)
+
+  def delete(userBranch: UserBranch): Future[Int] =
+    moduleDraftRepository.delete(userBranch.branch)
 
   def createOrUpdate(
       module: Option[UUID],
@@ -67,12 +53,12 @@ class ModuleDraftService @Inject() (
   ): Future[ModuleDraft] = {
     def go() = module match {
       case Some(id) =>
-        repo.get(id).flatMap {
+        moduleDraftRepository.get(id).flatMap {
           case Some(draft) =>
-            repo
+            moduleDraftRepository
               .update(draft.copy(data = data, lastModified = LocalDateTime.now))
           case None =>
-            repo.create(
+            moduleDraftRepository.create(
               ModuleDraft(
                 id,
                 data,
@@ -84,7 +70,7 @@ class ModuleDraftService @Inject() (
             )
         }
       case None =>
-        repo.create(
+        moduleDraftRepository.create(
           ModuleDraft(
             UUID.randomUUID,
             data,
@@ -109,7 +95,7 @@ class ModuleDraftService @Inject() (
 
   private def print(branch: String): PrintingResult =
     for {
-      drafts <- repo.allFromBranch(branch)
+      drafts <- moduleDraftRepository.allFromBranch(branch)
       protocols <- Future.fromTry(parseDrafts(drafts))
       printer = moduleCompendiumPrinter.printer(VersionScheme(1, "s"))
       (errs, prints) = protocols.partitionMap(e =>
@@ -117,18 +103,18 @@ class ModuleDraftService @Inject() (
           .print(e, "")
           .bimap(
             PipelineError.Printer(_, e._1),
-            (e._1, _)
+            p => (e._1, Print(p))
           )
       )
     } yield Either.cond(errs.isEmpty, prints, errs)
 
   private def parse(inputs: Seq[(UUID, Print)]): ParsingResult =
-    metadataParserService.parseMany(inputs).map { res =>
+    metadataParsingService.parseMany(inputs).map { res =>
       val (errs, parses) = res.partitionMap { case (res, rest) =>
         res match {
           case Left((id, err)) => Left(PipelineError.Parser(err, id))
           case Right((print, parsedMetadata)) =>
-            moduleCompendiumContentParsing.parse2(rest)._1 match {
+            contentParsingService.parse(rest.value)._1 match {
               case Left(err) =>
                 Left(PipelineError.Parser(err, parsedMetadata.id))
               case Right((de, en)) => Right((print, parsedMetadata, de, en))
@@ -164,20 +150,26 @@ class ModuleDraftService @Inject() (
 
   private def persist(
       e: Either[Seq[PipelineError], Seq[(Print, ModuleCompendium)]]
-  ) =
-    Future.sequence(
-      e match {
-        case Left(errs) =>
-          errs.groupBy(_.metadata).map { case (id, errs) =>
-            repo.updateValidation(id, Left(Json.toJson(errs).toString()))
-          }
-        case Right(mcs) =>
-          mcs.map { case (print, mc) =>
-            val mcJson = Json.toJson(mc).toString()
-            repo.updateValidation(mc.metadata.id, Right((mcJson, print)))
-          }
-      }
-    )
+  ): Future[Unit] =
+    Future
+      .sequence(
+        e match {
+          case Left(errs) =>
+            errs.groupBy(_.metadata).map { case (id, errs) =>
+              moduleDraftRepository
+                .updateValidation(id, Left(Json.toJson(errs)))
+            }
+          case Right(mcs) =>
+            mcs.map { case (print, mc) =>
+              val mcJson = Json.toJson(mc)
+              moduleDraftRepository.updateValidation(
+                mc.metadata.id,
+                Right((mcJson, print))
+              )
+            }
+        }
+      )
+      .map(_ => ())
 
   private def continue[A, B](
       e: Either[Seq[PipelineError], Seq[A]],
@@ -198,20 +190,28 @@ class ModuleDraftService @Inject() (
       _ <- persist(validates)
     } yield validates
 
-  def validDrafts(branch: String): Future[Seq[ValidDraft]] =
+  def validDrafts(branch: String): Future[Seq[ValidModuleDraft]] =
     for {
-      drafts <- repo.allFromBranch(branch)
+      drafts <- moduleDraftRepository.allFromBranch(branch)
     } yield drafts.map { d =>
       d.validation match {
-        case Some(Right((_, print))) =>
-          (d.module, d.status, print)
+        case Some(Right((json, print))) =>
+          ValidModuleDraft(
+            d.module,
+            d.status,
+            d.lastModified,
+            json,
+            print
+          )
         case _ =>
-          println("err")
           throw new Throwable(
             s"expected branch $branch to only contain valid drafts"
           )
       }
     }
+
+  def parseModuleCompendium(json: JsValue): Try[ModuleCompendium] =
+    Json.fromJson[ModuleCompendium](json).toTry
 
   private def parseDrafts(
       drafts: Seq[ModuleDraft]
@@ -222,4 +222,5 @@ class ModuleDraftService @Inject() (
         case JsError(errors)     => throw new Throwable(errors.mkString("\n"))
       }
     })
+
 }

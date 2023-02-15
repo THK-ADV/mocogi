@@ -1,6 +1,6 @@
 package parsing.types
 
-import basedata.AssessmentMethod
+import models.core.AssessmentMethod
 
 case class AssessmentMethods(
     mandatory: List[AssessmentMethodEntry],

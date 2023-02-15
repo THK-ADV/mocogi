@@ -1,6 +1,6 @@
 package database.table
 
-import basedata.Grade
+import models.core.Grade
 import slick.jdbc.PostgresProfile.api._
 
 final class GradeTable(tag: Tag)

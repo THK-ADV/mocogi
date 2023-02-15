@@ -1,6 +1,6 @@
 package controllers.formats
 
-import basedata.FocusArea
+import models.core.FocusArea
 import play.api.libs.json.{Format, Json}
 
 trait FocusAreaFormat {

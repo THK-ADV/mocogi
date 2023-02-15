@@ -1,6 +1,6 @@
 package database.table
 
-import basedata.Location
+import models.core.Location
 import slick.jdbc.PostgresProfile.api._
 
 final class LocationTable(tag: Tag)

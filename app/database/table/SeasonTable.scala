@@ -1,6 +1,6 @@
 package database.table
 
-import basedata.Season
+import models.core.Season
 import slick.jdbc.PostgresProfile.api._
 
 final class SeasonTable(tag: Tag)

@@ -1,6 +1,6 @@
 package helper
 
-import basedata.Grade
+import models.core.Grade
 
 trait FakeGrades {
   lazy val bsc = Grade(

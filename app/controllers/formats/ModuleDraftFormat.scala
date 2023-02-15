@@ -1,13 +1,14 @@
 package controllers.formats
 
 import models.{ModuleDraft, ModuleDraftProtocol, ModuleDraftStatus}
-import play.api.libs.json.{Format, Json, Writes}
+import play.api.libs.json.{Format, JsValue, Json, Writes}
+import service.Print
 
 trait ModuleDraftFormat extends JsonNullWritable {
   implicit val moduleDraftStatusFmt: Format[ModuleDraftStatus] =
     Format.of[String].bimap(ModuleDraftStatus.apply, _.toString)
 
-  implicit val validationFmt: Writes[Either[String, (String, String)]] =
+  implicit val validationFmt: Writes[Either[JsValue, (JsValue, Print)]] =
     Writes.apply(
       {
         case Left(err) =>

@@ -1,16 +1,4 @@
-package git.publisher
-
-import akka.actor.{Actor, ActorRef, Props}
-import git.GitFilesBroker.Changes
-import git.publisher.ModuleCompendiumPublisher.NotifySubscribers
-import git.{GitFileContent, GitFilePath, ModuleCompendiumSubscribers}
-import parsing.types.ModuleCompendium
-import play.api.Logging
-import service.ModuleCompendiumParsingValidator
-
-import javax.inject.Singleton
-import scala.concurrent.ExecutionContext
-import scala.util.Try
+/*package git.publisher
 
 object ModuleCompendiumPublisher {
   def props(
@@ -66,4 +54,4 @@ object ModuleCompendiumPublisher {
 case class ModuleCompendiumPublisher(private val value: ActorRef) {
   def notifySubscribers(changes: Changes): Unit =
     value ! NotifySubscribers(changes)
-}
+}*/

@@ -1,7 +1,6 @@
 package controllers.parameter
 
-import printing.PrinterOutputType
-
+import printing.pandoc.PrinterOutputType
 import scala.util.{Success, Try}
 
 sealed trait OutputType {

@@ -1,6 +1,6 @@
 package database.table
 
-import basedata.Faculty
+import models.core.Faculty
 import slick.jdbc.PostgresProfile.api._
 
 final class FacultyTable(tag: Tag)

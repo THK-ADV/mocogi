@@ -1,6 +1,6 @@
 package validator
 
-import basedata.PO
+import models.core.PO
 import parsing.types.POMandatory
 
 case class POs(

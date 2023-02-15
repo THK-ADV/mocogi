@@ -2,37 +2,28 @@ package git.subscriber
 
 import akka.actor.{Actor, Props}
 import controllers.parameter.PrinterOutputFormat
-import git.ModuleCompendiumSubscribers.{Added, Modified}
+import ModuleCompendiumSubscribers.{Added, Modified}
 import parsing.types.ModuleCompendium
 import play.api.Logging
-import printing.{
-  ModuleCompendiumGenerationError,
-  PrinterOutput,
-  PrinterOutputType,
-  PrintingLanguage
-}
-import service.ModuleCompendiumPrintingService
+import printing.PrintingLanguage
 
 import java.time.LocalDateTime
 
 object ModuleCompendiumPrintingActor {
   def props(
-      printingService: ModuleCompendiumPrintingService,
-      outputType: PrinterOutputType,
+      markdownActor: ModuleCompendiumMarkdownActor,
       outputFormat: PrinterOutputFormat
   ) =
     Props(
       new ModuleCompendiumPrintingActor(
-        printingService,
-        outputType,
+        markdownActor,
         outputFormat
       )
     )
 }
 
 private final class ModuleCompendiumPrintingActor(
-    private val printingService: ModuleCompendiumPrintingService,
-    private val outputType: PrinterOutputType,
+    private val markdownActor: ModuleCompendiumMarkdownActor,
     private val outputFormat: PrinterOutputFormat
 ) extends Actor
     with Logging {
@@ -49,48 +40,21 @@ private final class ModuleCompendiumPrintingActor(
       lastModified: LocalDateTime,
       mc: ModuleCompendium
   ): Unit = {
-    def go(): Either[ModuleCompendiumGenerationError, Unit] =
-      printingService
-        .print(
-          mc,
-          lastModified,
-          outputType,
-          outputFormat,
-          PrintingLanguage.German
-        )
-        .map {
-          case PrinterOutput.Text(content, _, consoleOutput) =>
-            logText(mc, content, consoleOutput)
-          case PrinterOutput.File(path, consoleOutput) =>
-            logFile(mc, path, consoleOutput)
-        }
-
-    try go().fold(e => logError(mc, e), identity)
-    catch { case t: Throwable => logError(mc, t) }
+    val language = PrintingLanguage.German
+    outputFormat.printer.printer(language, lastModified).print(mc, "") match {
+      case Left(err) =>
+        logError(mc, err)
+      case Right(print) =>
+        logSuccess(mc)
+        markdownActor.convert(mc.metadata.title, mc.metadata.id, print)
+    }
   }
 
-  private def logText(
-      mc: ModuleCompendium,
-      content: String,
-      consoleOutput: String
-  ): Unit =
+  private def logSuccess(mc: ModuleCompendium): Unit =
     logger.info(
       s"""successfully printed module compendium
          |  - id: ${mc.metadata.id}
-         |  - content: ${content.length}
-         |  - console output: $consoleOutput""".stripMargin
-    )
-
-  private def logFile(
-      mc: ModuleCompendium,
-      path: String,
-      consoleOutput: String
-  ): Unit =
-    logger.info(
-      s"""successfully printed module compendium
-         |  - id: ${mc.metadata.id}
-         |  - path: $path
-         |  - console output: $consoleOutput""".stripMargin
+         |  - title: ${mc.metadata.title}""".stripMargin
     )
 
   private def logError(mc: ModuleCompendium, t: Throwable): Unit =

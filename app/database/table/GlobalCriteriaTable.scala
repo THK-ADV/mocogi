@@ -1,6 +1,6 @@
 package database.table
 
-import basedata.GlobalCriteria
+import models.core.GlobalCriteria
 import slick.jdbc.PostgresProfile.api._
 
 final class GlobalCriteriaTable(tag: Tag)

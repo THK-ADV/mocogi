@@ -1,6 +1,6 @@
 package database.table
 
-import basedata.PersonStatus
+import models.core.PersonStatus
 import slick.jdbc.PostgresProfile.api._
 
 case class PersonDbEntry(

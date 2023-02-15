@@ -1,7 +1,7 @@
 package database.repo
 
-import basedata.Location
 import database.table.LocationTable
+import models.core.Location
 import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfigProvider}
 import slick.jdbc.JdbcProfile
 

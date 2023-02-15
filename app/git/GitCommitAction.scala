@@ -2,6 +2,6 @@ package git
 
 case class GitCommitAction(
     action: GitCommitActionType,
-    filename: String,
+    filePath: GitFilePath,
     fileContent: String
 )

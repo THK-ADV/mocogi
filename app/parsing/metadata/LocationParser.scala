@@ -1,6 +1,6 @@
 package parsing.metadata
 
-import basedata.Location
+import models.core.Location
 import parser.Parser
 import parsing.helper.SingleValueParser
 

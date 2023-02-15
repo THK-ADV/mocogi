@@ -1,14 +1,13 @@
 package providers
 
-import printing.MarkdownConverter
-
+import printing.pandoc.PandocApi
 import javax.inject.{Inject, Provider, Singleton}
 
 @Singleton
 final class MarkdownConverterProvider @Inject() (
     config: ConfigReader
-) extends Provider[MarkdownConverter] {
-  override def get() = new MarkdownConverter(
+) extends Provider[PandocApi] {
+  override def get() = new PandocApi(
     config.htmlCmd,
     config.pdfCmd,
     config.outputFolderPath

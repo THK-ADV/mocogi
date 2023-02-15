@@ -1,7 +1,7 @@
 package parsing.metadata
 
-import basedata.Status
 import helper.{FakeApplication, FakeStatus}
+import models.core.Status
 import org.scalatest.EitherValues
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite

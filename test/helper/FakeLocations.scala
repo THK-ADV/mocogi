@@ -1,6 +1,6 @@
 package helper
 
-import basedata.Location
+import models.core.Location
 
 trait FakeLocations {
   implicit def fakeLocations: Seq[Location] = Seq(

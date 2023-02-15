@@ -1,6 +1,6 @@
 package parsing.metadata
 
-import basedata.GlobalCriteria
+import models.core.GlobalCriteria
 import parser.Parser
 import parsing.multipleValueParser
 

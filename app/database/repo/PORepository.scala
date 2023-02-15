@@ -1,12 +1,12 @@
 package database.repo
 
-import basedata.PO
 import database.table.{
   PODbEntry,
   POModificationDateDbEntry,
   POModificationDateTable,
   POTable
 }
+import models.core.PO
 import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfigProvider}
 import slick.jdbc.JdbcProfile
 

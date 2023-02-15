@@ -1,6 +1,6 @@
 package helper
 
-import basedata.FocusAreaPreview
+import models.core.FocusAreaPreview
 
 trait FakeFocusAreas {
   implicit def fakeFocusAreas: Seq[FocusAreaPreview] =

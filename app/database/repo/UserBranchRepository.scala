@@ -48,6 +48,13 @@ final class UserBranchRepository @Inject() (
         .map(_.headOption)
     )
 
+  def allWithOpenedMergeRequests() =
+    db.run(
+      tableQuery
+        .filter(a => a.commitId.isDefined && a.mergeRequestId.isDefined)
+        .result
+    )
+
   def updateCommitId(branch: String, commitId: Option[String]) =
     db.run(
       tableQuery.filter(_.branch === branch).map(_.commitId).update(commitId)

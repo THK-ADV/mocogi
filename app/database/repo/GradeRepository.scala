@@ -1,7 +1,7 @@
 package database.repo
 
-import basedata.Grade
 import database.table.GradeTable
+import models.core.Grade
 import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfigProvider}
 import slick.jdbc.JdbcProfile
 

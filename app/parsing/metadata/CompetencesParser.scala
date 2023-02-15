@@ -1,6 +1,6 @@
 package parsing.metadata
 
-import basedata.Competence
+import models.core.Competence
 import parser.Parser
 import parsing.multipleValueParser
 

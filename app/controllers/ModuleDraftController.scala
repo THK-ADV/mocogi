@@ -1,6 +1,10 @@
 package controllers
 
-import controllers.formats.{ModuleDraftFormat, PipelineErrorFormat, UserBranchFormat}
+import controllers.formats.{
+  ModuleDraftFormat,
+  PipelineErrorFormat,
+  UserBranchFormat
+}
 import models.ModuleDraftProtocol
 import play.api.libs.json.{JsArray, JsNull, Json}
 import play.api.mvc.{AbstractController, ControllerComponents}

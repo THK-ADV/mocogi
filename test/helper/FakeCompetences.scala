@@ -1,6 +1,6 @@
 package helper
 
-import basedata.Competence
+import models.core.Competence
 
 trait FakeCompetences {
   implicit def fakeCompetences: Seq[Competence] = Seq(

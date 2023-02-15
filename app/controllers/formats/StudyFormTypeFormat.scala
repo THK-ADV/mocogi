@@ -1,6 +1,6 @@
 package controllers.formats
 
-import basedata.StudyFormType
+import models.core.StudyFormType
 import play.api.libs.json.{Format, Json}
 
 trait StudyFormTypeFormat {

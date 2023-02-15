@@ -1,12 +1,4 @@
-package providers
-
-import akka.actor.ActorSystem
-import git.ModuleCompendiumSubscribers
-import git.publisher.ModuleCompendiumPublisher
-import service.ModuleCompendiumParsingValidator
-
-import javax.inject.{Inject, Provider, Singleton}
-import scala.concurrent.ExecutionContext
+/*package providers
 
 @Singleton
 final class ModuleCompendiumPublisherProvider @Inject() (
@@ -20,4 +12,4 @@ final class ModuleCompendiumPublisherProvider @Inject() (
       ModuleCompendiumPublisher.props(parsingValidator, subscribers, ctx)
     )
   )
-}
+}*/

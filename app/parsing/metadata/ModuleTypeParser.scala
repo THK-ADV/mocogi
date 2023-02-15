@@ -1,6 +1,6 @@
 package parsing.metadata
 
-import basedata.ModuleType
+import models.core.ModuleType
 import parser.Parser
 import parsing.helper.SingleValueParser
 

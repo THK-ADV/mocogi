@@ -1,6 +1,6 @@
 package controllers.formats
 
-import basedata.Status
+import models.core.Status
 import play.api.libs.json.{Format, Json}
 
 trait StatusFormat {

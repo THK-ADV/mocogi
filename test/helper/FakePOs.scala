@@ -1,7 +1,6 @@
 package helper
 
-import basedata.PO
-
+import models.core.PO
 import java.time.LocalDate
 
 trait FakePOs {

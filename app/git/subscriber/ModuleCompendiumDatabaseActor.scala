@@ -2,7 +2,7 @@ package git.subscriber
 
 import akka.actor.{Actor, Props}
 import git.GitFilePath
-import git.ModuleCompendiumSubscribers.{Added, Modified, Removed}
+import ModuleCompendiumSubscribers.{Added, Modified, Removed}
 import parsing.types.ModuleCompendium
 import play.api.Logging
 import service.ModuleCompendiumService

@@ -1,7 +1,6 @@
 package parsing.types
 
-import basedata.PO
-
+import models.core.PO
 import java.util.UUID
 
 case class ParsedPrerequisites(

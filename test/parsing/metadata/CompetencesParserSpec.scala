@@ -1,7 +1,7 @@
 package parsing.metadata
 
-import basedata.Competence
 import helper.FakeCompetences
+import models.core.Competence
 import org.scalatest.EitherValues
 import org.scalatest.wordspec.AnyWordSpec
 import parsing.ParserSpecHelper

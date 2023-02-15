@@ -1,7 +1,7 @@
 package database.repo
 
-import basedata.Competence
 import database.table.CompetenceTable
+import models.core.Competence
 import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfigProvider}
 import slick.jdbc.JdbcProfile
 

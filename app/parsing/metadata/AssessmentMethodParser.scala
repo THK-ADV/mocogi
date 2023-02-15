@@ -1,6 +1,6 @@
 package parsing.metadata
 
-import basedata.AssessmentMethod
+import models.core.AssessmentMethod
 import parser.Parser
 import parser.Parser._
 import parser.ParserOps.{P0, P2}

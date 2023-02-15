@@ -1,6 +1,6 @@
 package controllers.formats
 
-import basedata.PO
+import models.core.PO
 import play.api.libs.json.{Format, Json}
 
 trait POFormat extends JsonNullWritable {

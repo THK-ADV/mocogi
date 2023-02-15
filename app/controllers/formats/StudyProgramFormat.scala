@@ -1,7 +1,7 @@
 package controllers.formats
 
-import basedata.{RestrictedAdmission, StudyForm, StudyFormScope, StudyProgram}
 import database.repo.StudyProgramOutput
+import models.core.{RestrictedAdmission, StudyForm, StudyFormScope, StudyProgram}
 import play.api.libs.json.{Format, Json}
 
 trait StudyProgramFormat

@@ -1,6 +1,6 @@
 package controllers.formats
 
-import basedata.Competence
+import models.core.Competence
 import play.api.libs.json.{Format, Json}
 
 trait CompetencesFormat {

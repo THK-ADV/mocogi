@@ -1,6 +1,6 @@
 package controllers.formats
 
-import basedata.Season
+import models.core.Season
 import play.api.libs.json.{Format, Json}
 
 trait SeasonFormat {

@@ -1,6 +1,6 @@
 package parsing.metadata
 
-import basedata.FocusAreaPreview
+import models.core.FocusAreaPreview
 import parser.Parser
 import parser.Parser._
 import parser.ParserOps.P0

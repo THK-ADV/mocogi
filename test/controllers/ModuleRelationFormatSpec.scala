@@ -1,13 +1,13 @@
 package controllers
 
+import controllers.formats.ModuleRelationFormat
 import org.scalatest.wordspec.AnyWordSpec
 import play.api.libs.json.Json
 import validator.{Module, ModuleRelation}
 
 import java.util.UUID
 
-class ModuleRelationFormatSpec extends AnyWordSpec {
-  import ModuleCompendiumParsingController.{moduleFormat, moduleRelationFormat}
+class ModuleRelationFormatSpec extends AnyWordSpec with ModuleRelationFormat {
 
   private lazy val m1 = Module(UUID.randomUUID, "m1")
   private lazy val m2 = Module(UUID.randomUUID, "m2")

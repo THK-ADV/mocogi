@@ -1,7 +1,7 @@
 package parsing.metadata
 
-import basedata._
 import helper._
+import models.core.{AssessmentMethod, Competence, FocusAreaPreview, GlobalCriteria, Language, Location, ModuleType, Person, PersonStatus, Season, Status}
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatest.{EitherValues, OptionValues}
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite

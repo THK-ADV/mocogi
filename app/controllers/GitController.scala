@@ -1,7 +1,7 @@
 package controllers
 
 import controllers.formats.UserBranchFormat
-import git.GitBranchService
+import git.api.GitBranchService
 import play.api.libs.json.{Json, Reads}
 import play.api.mvc.{AbstractController, ControllerComponents}
 

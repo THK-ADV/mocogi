@@ -1,6 +1,8 @@
 package database.table
 
 import models.{ModuleDraft, ModuleDraftStatus}
+import play.api.libs.json.JsValue
+import service.Print
 import slick.jdbc.PostgresProfile.api._
 
 import java.time.LocalDateTime
@@ -19,11 +21,11 @@ final class ModuleDraftTable(tag: Tag)
   def lastModified = column[LocalDateTime]("last_modified")
 
   def moduleCompendiumJson =
-    column[Option[String]]("valid_module_compendium_json")
+    column[Option[JsValue]]("valid_module_compendium_json")
 
-  def moduleCompendiumPrint = column[Option[String]]("module_compendium_print")
+  def moduleCompendiumPrint = column[Option[Print]]("module_compendium_print")
 
-  def pipelineError = column[Option[String]]("pipeline_error")
+  def pipelineErrorJson = column[Option[JsValue]]("pipeline_error")
 
   override def * =
     (
@@ -34,14 +36,14 @@ final class ModuleDraftTable(tag: Tag)
       lastModified,
       moduleCompendiumJson,
       moduleCompendiumPrint,
-      pipelineError
+      pipelineErrorJson
     ) <> (mapRow, unmapRow)
 
   private def toValidation(
-      moduleCompendiumJson: Option[String],
-      moduleCompendiumPrint: Option[String],
-      pipelineError: Option[String]
-  ): Option[Either[String, (String, String)]] = {
+      moduleCompendiumJson: Option[JsValue],
+      moduleCompendiumPrint: Option[Print],
+      pipelineError: Option[JsValue]
+  ): Option[Either[JsValue, (JsValue, Print)]] = {
     (moduleCompendiumJson, moduleCompendiumPrint, pipelineError) match {
       case (Some(json), Some(print), None) => Some(Right((json, print)))
       case (None, None, Some(err))         => Some(Left(err))
@@ -54,8 +56,8 @@ final class ModuleDraftTable(tag: Tag)
   }
 
   private def fromValidation(
-      e: Option[Either[String, (String, String)]]
-  ): (Option[String], Option[String], Option[String]) =
+      e: Option[Either[JsValue, (JsValue, Print)]]
+  ): (Option[JsValue], Option[Print], Option[JsValue]) =
     e match {
       case Some(e) =>
         e match {
@@ -71,9 +73,9 @@ final class ModuleDraftTable(tag: Tag)
           String,
           ModuleDraftStatus,
           LocalDateTime,
-          Option[String],
-          Option[String],
-          Option[String]
+          Option[JsValue],
+          Option[Print],
+          Option[JsValue]
       )
   ) => ModuleDraft = {
     case (
@@ -103,9 +105,9 @@ final class ModuleDraftTable(tag: Tag)
         String,
         ModuleDraftStatus,
         LocalDateTime,
-        Option[String],
-        Option[String],
-        Option[String]
+        Option[JsValue],
+        Option[Print],
+        Option[JsValue]
     )
   ] = { a =>
     val (json, print, err) = fromValidation(a.validation)

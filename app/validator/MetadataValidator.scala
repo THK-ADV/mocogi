@@ -7,7 +7,7 @@ import scala.collection.mutable.ListBuffer
 
 object MetadataValidator {
 
-  type Lookup = UUID => Option[Module]
+  private type Lookup = UUID => Option[Module]
 
   def assessmentMethodsValidator: SimpleValidator[AssessmentMethods] = {
     def sum(xs: List[AssessmentMethodEntry]): Double =

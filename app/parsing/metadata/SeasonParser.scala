@@ -1,6 +1,6 @@
 package parsing.metadata
 
-import basedata.Season
+import models.core.Season
 import parser.Parser
 import parsing.helper.SingleValueParser
 

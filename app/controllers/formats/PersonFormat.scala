@@ -1,6 +1,6 @@
 package controllers.formats
 
-import basedata.{Person, PersonStatus}
+import models.core.{Person, PersonStatus}
 import play.api.libs.json._
 
 trait PersonFormat extends FacultyFormat {

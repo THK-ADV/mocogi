@@ -1,6 +1,6 @@
 package parsing.metadata
 
-import basedata._
+import models.core.{AssessmentMethod, Competence, FocusAreaPreview, GlobalCriteria, Language, Location, ModuleType, PO, Person, Season, Status}
 import parser.Parser
 import parser.Parser._
 import parser.ParserOps._

@@ -1,6 +1,6 @@
 package controllers.formats
 
-import basedata.AssessmentMethod
+import models.core.AssessmentMethod
 import play.api.libs.json.{Format, Json}
 
 trait AssessmentMethodFormat {

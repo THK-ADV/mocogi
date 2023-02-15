@@ -1,6 +1,6 @@
 package validator
 
-import basedata._
+import models.core.{AssessmentMethod, FocusAreaPreview, Language, Location, ModuleType, PO, Season, Status}
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatest.{EitherValues, OptionValues}
 import parsing.types._

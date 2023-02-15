@@ -1,6 +1,6 @@
 package validator
 
-import basedata._
+import models.core.{Competence, GlobalCriteria, Language, Location, ModuleType, Season, Status}
 import parsing.types._
 
 import java.util.UUID
