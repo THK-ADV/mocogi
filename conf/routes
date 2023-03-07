@@ -63,7 +63,8 @@ GET           /moduleCompendium                         controllers.ModuleCompen
 GET           /moduleCompendium/:id/file                controllers.ModuleCompendiumController.getFile(id: java.util.UUID)
 GET           /moduleCompendium/:id                     controllers.ModuleCompendiumController.get(id: java.util.UUID)
 
-GET           /modules                                  controllers.ModuleController.all()
+GET           /modules                                  controllers.ModuleController.allModules()
+GET           /metadata                                 controllers.ModuleController.allModuleMetadata()
 
 # Git Workflow
 

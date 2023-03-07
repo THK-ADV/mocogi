@@ -1,6 +1,6 @@
 package service
 
-import database.ModuleCompendiumOutput
+import database.{MetadataOutput, ModuleCompendiumOutput}
 import database.repo.ModuleCompendiumRepository
 import git.GitFilePath
 import parsing.types.ModuleCompendium
@@ -30,6 +30,7 @@ trait ModuleCompendiumService {
   def all(filter: Map[String, Seq[String]]): Future[Seq[ModuleCompendiumOutput]]
   def allIdsAndAbbrevs(): Future[Seq[(UUID, String)]]
   def allModules(filter: Map[String, Seq[String]]): Future[Seq[Module]]
+  def allMetadata(filter: Map[String, Seq[String]]): Future[Seq[MetadataOutput]]
   def get(id: UUID): Future[ModuleCompendiumOutput]
   def paths(ids: Seq[UUID]): Future[Seq[(UUID, GitFilePath)]]
 }
@@ -73,4 +74,7 @@ final class ModuleCompendiumServiceImpl @Inject() (
 
   override def paths(ids: Seq[UUID]) =
     repo.paths(ids)
+
+  override def allMetadata(filter: Map[String, Seq[String]]) =
+    repo.all(filter).map(_.map(_.metadata))
 }
