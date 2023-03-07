@@ -21,11 +21,14 @@ object POParser {
       )
 
   private def recommendedSemesterParser =
-    multipleValueParser("recommended_semester", int)
+    multipleValueParser("recommended_semester", int).option.map(
+      _.getOrElse(Nil)
+    )
 
   private def recommendedSemesterPartTimeParser =
-    multipleValueParser("recommended_semester_part_time", int).option
-      .map(_.getOrElse(Nil))
+    multipleValueParser("recommended_semester_part_time", int).option.map(
+      _.getOrElse(Nil)
+    )
 
   private def instanceOfParser =
     prefix("instance_of:")

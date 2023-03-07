@@ -35,6 +35,17 @@ class POParserSpec
       assert(rest.isEmpty)
     }
 
+    "parse a single mandatory po where recommended semester is missing" in {
+      val input =
+        """po_mandatory:
+          |  - study_program: study_program.wi1""".stripMargin
+      val (res, rest) = mandatoryPOParser.parse(input)
+      assert(
+        res.value == List(POMandatory(wi1, Nil, Nil))
+      )
+      assert(rest.isEmpty)
+    }
+
     "parse a single mandatory po where recommended semester part time is missing" in {
       val input =
         """po_mandatory:
@@ -83,6 +94,22 @@ class POParserSpec
       assert(
         res.value == List(
           ParsedPOOptional(wi1, m1, partOfCatalog = false, List(3))
+        )
+      )
+      assert(rest.isEmpty)
+    }
+
+    "parse a single optional po where recommended semester is missing" in {
+      val m1 = UUID.randomUUID
+      val input =
+        s"""po_optional:
+           |  - study_program: study_program.wi1
+           |    instance_of: module.$m1
+           |    part_of_catalog: false""".stripMargin
+      val (res, rest) = optionalPOParser.parse(input)
+      assert(
+        res.value == List(
+          ParsedPOOptional(wi1, m1, partOfCatalog = false, Nil)
         )
       )
       assert(rest.isEmpty)
