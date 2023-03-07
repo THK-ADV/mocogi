@@ -127,6 +127,7 @@ package object parsing {
           .many(newline)
       )
       .map(mergeMultilineString)
+      .map(_.stripLeading())
 
   def stringForKey(key: String): Parser[String] =
     oneOf(

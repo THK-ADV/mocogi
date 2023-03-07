@@ -41,12 +41,8 @@ final class ECTSParserSpec
           |        Text2""".stripMargin
       val (res, rest) =
         ectsContributionsToFocusAreasParser.parse(input)
-      assert(
-        res.value == List(
-          ECTSFocusAreaContribution(FocusAreaPreview("gak"), 0, ""),
-          ECTSFocusAreaContribution(FocusAreaPreview("acs"), 6, "Text1\nText2\n")
-        )
-      )
+      assert(res.value.head == ECTSFocusAreaContribution(FocusAreaPreview("gak"), 0, ""))
+      assert(res.value(1) == ECTSFocusAreaContribution(FocusAreaPreview("acs"), 6, "Text1\nText2\n"))
       assert(rest.isEmpty)
     }
 

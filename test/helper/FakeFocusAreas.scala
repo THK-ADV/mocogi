@@ -6,6 +6,7 @@ trait FakeFocusAreas {
   implicit def fakeFocusAreas: Seq[FocusAreaPreview] =
     Seq(
       FocusAreaPreview("gak"),
-      FocusAreaPreview("acs")
+      FocusAreaPreview("acs"),
+      FocusAreaPreview("bs"),
     )
 }
