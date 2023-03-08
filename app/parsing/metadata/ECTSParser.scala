@@ -3,7 +3,7 @@ package parsing.metadata
 import models.core.FocusAreaPreview
 import parser.Parser
 import parser.Parser._
-import parser.ParserOps.P0
+import parser.ParserOps.{P0, P2}
 import parsing.types.ECTSFocusAreaContribution
 import parsing.{doubleForKey, removeIndentation, stringForKey}
 
@@ -25,9 +25,11 @@ object ECTSParser {
             .skip(zeroOrMoreSpaces)
             .take(double)
             .skip(zeroOrMoreSpaces)
-            .zip(stringForKey("desc"))
-            .map { case (value, desc) =>
-              ECTSFocusAreaContribution(f, value, desc)
+            .zip(stringForKey("de_desc"))
+            .skip(zeroOrMoreSpaces)
+            .take(stringForKey("en_desc").option.map(_.getOrElse("")))
+            .map { case (value, deDesc, enDesc) =>
+              ECTSFocusAreaContribution(f, value, deDesc, enDesc)
             }
         }: _*
       )

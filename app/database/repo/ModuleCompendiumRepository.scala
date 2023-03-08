@@ -299,7 +299,8 @@ final class ModuleCompendiumRepositoryImpl @Inject() (
         metadata.id,
         c.focusArea.abbrev,
         c.ectsValue,
-        c.description
+        c.deDesc,
+        c.enDesc
       )
     )
 

@@ -26,7 +26,7 @@ final class MetadataValidatorSpec
     AssessmentMethodEntry(am, percentage, Nil)
 
   private def ectsContrib(value: Double) =
-    ECTSFocusAreaContribution(fa, value, "")
+    ECTSFocusAreaContribution(fa, value, "", "")
 
   private def prerequisiteEntry(modules: List[UUID]) =
     ParsedPrerequisiteEntry("", modules, Nil)

@@ -249,11 +249,12 @@ class THKV1ParserSpec
         assert(
           metadata.credits == Right(
             List(
-              ECTSFocusAreaContribution(FocusAreaPreview("gak"), 3.5, ""),
+              ECTSFocusAreaContribution(FocusAreaPreview("gak"), 3.5, "", ""),
               ECTSFocusAreaContribution(
                 FocusAreaPreview("acs"),
                 6,
-                "Text1\nText2\n"
+                "Text1\nText2\n",
+                ""
               )
             )
           )
