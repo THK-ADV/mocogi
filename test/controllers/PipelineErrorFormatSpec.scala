@@ -1,6 +1,7 @@
 package controllers
 
 import controllers.formats.PipelineErrorFormat
+import org.scalatest.OptionValues
 import org.scalatest.wordspec.AnyWordSpec
 import parser.ParsingError
 import play.api.libs.json.{JsArray, JsString, Json}
@@ -12,11 +13,12 @@ import java.util.UUID
 
 final class PipelineErrorFormatSpec
     extends AnyWordSpec
-    with PipelineErrorFormat {
+    with PipelineErrorFormat
+    with OptionValues {
 
   "A PipelineErrorFormat Spec" should {
     "serialize back and forth a parsing error" in {
-      val medata = UUID.randomUUID
+      val medata = Some(UUID.randomUUID)
       val parsingError = ParsingError("exp", "fo")
       val res =
         pipelineErrorFormat.writes(PipelineError.Parser(parsingError, medata))
@@ -43,7 +45,7 @@ final class PipelineErrorFormatSpec
     }
 
     "serialize back and forth a printing error" in {
-      val medata = UUID.randomUUID
+      val medata = Some(UUID.randomUUID)
       val printingError = PrintingError("exp", "fo")
       val res =
         pipelineErrorFormat.writes(PipelineError.Printer(printingError, medata))
@@ -70,7 +72,7 @@ final class PipelineErrorFormatSpec
     }
 
     "serialize back and forth a validation error" in {
-      val metadata = UUID.randomUUID()
+      val metadata = Some(UUID.randomUUID())
       val validationError = ValidationError(List("abc", "def"))
       val res =
         pipelineErrorFormat.writes(

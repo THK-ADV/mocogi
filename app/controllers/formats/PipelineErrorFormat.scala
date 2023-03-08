@@ -28,7 +28,7 @@ trait PipelineErrorFormat {
     Format.apply(
       json =>
         for {
-          metadata <- json.\("metadata").validate[UUID]
+          metadata <- json.\("metadata").validateOpt[UUID]
           tag <- json.\("tag").validate[String]
           errorJson = json.\("error")
           res <- tag match {

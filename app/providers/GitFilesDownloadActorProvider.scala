@@ -1,4 +1,12 @@
-/*package providers
+package providers
+
+import akka.actor.ActorSystem
+import git.publisher.GitFilesDownloadActor
+import git.{GitConfig, GitFilesBroker}
+import play.api.libs.ws.WSClient
+
+import javax.inject.{Inject, Provider, Singleton}
+import scala.concurrent.ExecutionContext
 
 @Singleton
 final class GitFilesDownloadActorProvider @Inject() (
@@ -19,4 +27,4 @@ final class GitFilesDownloadActorProvider @Inject() (
         )
       )
     )
-}*/
+}

@@ -11,17 +11,13 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 trait MetadataParsingService {
-  def parse(print: Print): Future[(ParsedMetadata, Rest)]
-  def parseMany(
-      prints: Seq[(UUID, Print)]
-  ): Future[
-    Seq[(Either[(UUID, ParsingError), (Print, ParsedMetadata)], Rest)]
-  ]
+  def parse(prints: Seq[(Option[UUID], Print)]): ParsingResult
 }
 
 @Singleton
 final class MetadataParsingServiceImpl @Inject() (
     private val metadataParser: MetadataCompositeParser,
+    private val contentParsingService: ContentParsingService,
     private val locationService: LocationService,
     private val languageService: LanguageService,
     private val statusService: StatusService,
@@ -65,42 +61,8 @@ final class MetadataParsingServiceImpl @Inject() (
         pos
       )
 
-  override def parse(print: Print): Future[(ParsedMetadata, Rest)] =
-    for {
-      locations <- locationService.all()
-      languages <- languageService.all()
-      status <- statusService.all()
-      assessmentMethods <- assessmentMethodService.all()
-      moduleTypes <- moduleTypeService.all()
-      seasons <- seasonService.all()
-      persons <- personService.all()
-      focusAreas <- focusAreaService.all()
-      globalCriteria <- globalCriteriaService.all()
-      pos <- poService.all()
-      competences <- competenceService.all()
-      (res, rest) = parser(
-        locations,
-        languages,
-        status,
-        assessmentMethods,
-        moduleTypes,
-        seasons,
-        persons,
-        focusAreas,
-        globalCriteria,
-        pos,
-        competences
-      ).parse(print.value)
-      metadata <- res.fold(
-        Future.failed,
-        m => Future.successful((m, Rest(rest)))
-      )
-    } yield metadata
-
-  override def parseMany(
-      prints: Seq[(UUID, Print)]
-  ): Future[
-    Seq[(Either[(UUID, ParsingError), (Print, ParsedMetadata)], Rest)]
+  private def parseMany(prints: Seq[(Option[UUID], Print)]): Future[
+    Seq[(Either[(Option[UUID], ParsingError), (Print, ParsedMetadata)], Rest)]
   ] =
     for {
       locations <- locationService.all()
@@ -138,5 +100,21 @@ final class MetadataParsingServiceImpl @Inject() (
           Rest(res._2)
         )
       }
+    }
+
+  def parse(prints: Seq[(Option[UUID], Print)]): ParsingResult =
+    parseMany(prints).map { res =>
+      val (errs, parses) = res.partitionMap { case (res, rest) =>
+        res match {
+          case Left((id, err)) => Left(PipelineError.Parser(err, id))
+          case Right((print, parsedMetadata)) =>
+            contentParsingService.parse(rest.value)._1 match {
+              case Left(err) =>
+                Left(PipelineError.Parser(err, Some(parsedMetadata.id)))
+              case Right((de, en)) => Right((print, parsedMetadata, de, en))
+            }
+        }
+      }
+      Either.cond(errs.isEmpty, parses, errs)
     }
 }

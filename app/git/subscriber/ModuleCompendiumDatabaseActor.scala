@@ -2,7 +2,7 @@ package git.subscriber
 
 import akka.actor.{Actor, Props}
 import git.GitFilePath
-import ModuleCompendiumSubscribers.{Added, Modified, Removed}
+import git.subscriber.ModuleCompendiumSubscribers.{CreatedOrUpdated, Removed}
 import parsing.types.ModuleCompendium
 import play.api.Logging
 import service.ModuleCompendiumService
@@ -25,10 +25,8 @@ private final class ModuleCompendiumDatabaseActor(
     with Logging {
 
   override def receive = {
-    case Added(_, timestamp, path, result) =>
-      result.foreach(mc => createOrUpdate(mc, path, timestamp))
-    case Modified(_, timestamp, path, result) =>
-      result.foreach(mc => createOrUpdate(mc, path, timestamp))
+    case CreatedOrUpdated(_, timestamp, path, mc) =>
+      createOrUpdate(mc, path, timestamp)
     case Removed(_, _, path) =>
       delete(path)
   }

@@ -1,7 +1,30 @@
-/*package providers
+package providers
+
+import akka.actor.ActorSystem
+import git.publisher.CoreDataPublisher
+import service.core.{
+  AssessmentMethodService,
+  CompetenceService,
+  FacultyService,
+  FocusAreaService,
+  GlobalCriteriaService,
+  GradeService,
+  LanguageService,
+  LocationService,
+  ModuleTypeService,
+  POService,
+  PersonService,
+  SeasonService,
+  StatusService,
+  StudyFormTypeService,
+  StudyProgramService
+}
+
+import javax.inject.{Inject, Provider, Singleton}
+import scala.concurrent.ExecutionContext
 
 @Singleton
-final class CoreDataParsingValidatorProvider @Inject() (
+final class CoreDataPublisherProvider @Inject() (
     system: ActorSystem,
     locationService: LocationService,
     languageService: LanguageService,
@@ -42,4 +65,4 @@ final class CoreDataParsingValidatorProvider @Inject() (
       )
     )
   )
-}*/
+}

@@ -110,14 +110,14 @@ object GitMergeEventHandlingActor {
         val mc = moduleDraftService.parseModuleCompendium(d.json)
         d.status match {
           case ModuleDraftStatus.Added =>
-            subscribers.added(
+            subscribers.createdOrUpdated(
               commitId,
               d.lastModified,
               GitFilePath(d),
               mc
             )
           case ModuleDraftStatus.Modified =>
-            subscribers.modified(
+            subscribers.createdOrUpdated(
               commitId,
               d.lastModified,
               GitFilePath(d),

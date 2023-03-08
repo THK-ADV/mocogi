@@ -1,4 +1,16 @@
-/*package git.publisher
+package git.publisher
+
+import akka.actor.{Actor, ActorRef, Props}
+import database.InsertOrUpdateResult
+import git.GitFilesBroker.Changes
+import git.publisher.CoreDataPublisher.ParsingValidation
+import git.{GitFileContent, GitFilePath}
+import play.api.Logging
+import service.core._
+
+import javax.inject.Singleton
+import scala.concurrent.{ExecutionContext, Future}
+import scala.util.{Failure, Success}
 
 object CoreDataPublisher {
   def props(
@@ -64,10 +76,9 @@ object CoreDataPublisher {
       parseAndUpdate(changes.added)
     }
 
-    /* TODO add support for deletion.
+    /*TODO add support for deletion.
         if an entry doesn't exists anymore in a yaml file, it will not be deleted currently.
-        instead, each entry will be either created (if new) or updated (if already exists).
- */
+        instead, each entry will be either created (if new) or updated (if already exists).*/
     private def parseAndUpdate(
         changes: List[(GitFilePath, GitFileContent)]
     ): Unit = {
@@ -150,4 +161,4 @@ object CoreDataPublisher {
 case class CoreDataPublisher(private val value: ActorRef) {
   def notifySubscribers(changes: Changes): Unit =
     value ! ParsingValidation(changes)
-}*/
+}

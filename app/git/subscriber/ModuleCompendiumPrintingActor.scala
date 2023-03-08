@@ -2,7 +2,7 @@ package git.subscriber
 
 import akka.actor.{Actor, Props}
 import controllers.parameter.PrinterOutputFormat
-import ModuleCompendiumSubscribers.{Added, Modified}
+import git.subscriber.ModuleCompendiumSubscribers.CreatedOrUpdated
 import parsing.types.ModuleCompendium
 import play.api.Logging
 import printing.PrintingLanguage
@@ -28,11 +28,8 @@ private final class ModuleCompendiumPrintingActor(
 ) extends Actor
     with Logging {
 
-  override def receive = {
-    case Added(_, lastModified, _, result) =>
-      result.foreach(print(outputFormat, lastModified, _))
-    case Modified(_, lastModified, _, result) =>
-      result.foreach(print(outputFormat, lastModified, _))
+  override def receive = { case CreatedOrUpdated(_, lastModified, _, mc) =>
+    print(outputFormat, lastModified, mc)
   }
 
   private def print(

@@ -2,25 +2,18 @@ package git.subscriber
 
 import akka.actor.ActorRef
 import git.GitFilePath
-import git.subscriber.ModuleCompendiumSubscribers.{Added, Modified, Removed}
+import git.subscriber.ModuleCompendiumSubscribers.{CreatedOrUpdated, Removed}
 import parsing.types.ModuleCompendium
 
 import java.time.LocalDateTime
 import javax.inject.Singleton
-import scala.util.Try
 
 object ModuleCompendiumSubscribers {
-  case class Added(
+  case class CreatedOrUpdated(
       commitId: String,
       timestamp: LocalDateTime,
       path: GitFilePath,
-      result: Try[ModuleCompendium]
-  )
-  case class Modified(
-      commitId: String,
-      timestamp: LocalDateTime,
-      path: GitFilePath,
-      result: Try[ModuleCompendium]
+      result: ModuleCompendium
   )
   case class Removed(
       commitId: String,
@@ -31,21 +24,13 @@ object ModuleCompendiumSubscribers {
 
 @Singleton
 case class ModuleCompendiumSubscribers(private val value: List[ActorRef]) {
-  def added(
+  def createdOrUpdated(
       commitId: String,
       timestamp: LocalDateTime,
       path: GitFilePath,
-      result: Try[ModuleCompendium]
+      result: ModuleCompendium
   ): Unit =
-    value.foreach(_ ! Added(commitId, timestamp, path, result))
-
-  def modified(
-      commitId: String,
-      timestamp: LocalDateTime,
-      path: GitFilePath,
-      result: Try[ModuleCompendium]
-  ): Unit =
-    value.foreach(_ ! Modified(commitId, timestamp, path, result))
+    value.foreach(_ ! CreatedOrUpdated(commitId, timestamp, path, result))
 
   def removed(
       commitId: String,
