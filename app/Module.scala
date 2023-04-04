@@ -85,6 +85,9 @@ class Module() extends AbstractModule {
     bind(classOf[GitFilesBroker])
       .to(classOf[GitFilesBrokerImpl])
       .asEagerSingleton()
+    bind(classOf[SpecializationService])
+      .to(classOf[SpecializationServiceImpl])
+      .asEagerSingleton()
 
     bind(classOf[PandocApi])
       .toProvider(classOf[MarkdownConverterProvider])

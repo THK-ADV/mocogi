@@ -57,6 +57,9 @@ POST          /studyPrograms                            controllers.core.StudyPr
 GET           /competences                              controllers.core.CompetenceController.all()
 POST          /competences                              controllers.core.CompetenceController.create()
 
+GET           /specializations                          controllers.core.SpecializationController.all()
+POST          /specializations                          controllers.core.SpecializationController.create()
+
 # Module Compendium
 
 GET           /moduleCompendium                         controllers.ModuleCompendiumController.all()
