@@ -29,6 +29,7 @@ final class MetadataParsingServiceImpl @Inject() (
     private val globalCriteriaService: GlobalCriteriaService,
     private val poService: POService,
     private val competenceService: CompetenceService,
+    private val specializationService: SpecializationService,
     private implicit val ctx: ExecutionContext
 ) extends MetadataParsingService {
   import ops.EitherOps._
@@ -44,7 +45,8 @@ final class MetadataParsingServiceImpl @Inject() (
       focusAreas: Seq[FocusArea],
       globalCriteria: Seq[GlobalCriteria],
       pos: Seq[PO],
-      competences: Seq[Competence]
+      competences: Seq[Competence],
+      specializations: Seq[Specialization]
   ) =
     metadataParser
       .parser(
@@ -58,7 +60,8 @@ final class MetadataParsingServiceImpl @Inject() (
         focusAreas.map(f => FocusAreaPreview(f.abbrev)),
         competences,
         globalCriteria,
-        pos
+        pos,
+        specializations
       )
 
   private def parseMany(prints: Seq[(Option[UUID], Print)]): Future[
@@ -76,6 +79,7 @@ final class MetadataParsingServiceImpl @Inject() (
       globalCriteria <- globalCriteriaService.all()
       pos <- poService.all()
       competences <- competenceService.all()
+      specializations <- specializationService.all()
     } yield {
       val p = parser(
         locations,
@@ -88,7 +92,8 @@ final class MetadataParsingServiceImpl @Inject() (
         focusAreas,
         globalCriteria,
         pos,
-        competences
+        competences,
+        specializations
       )
       prints.map { case (id, print) =>
         val res = p.parse(print.value)

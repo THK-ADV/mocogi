@@ -218,6 +218,7 @@ final class ModuleCompendiumRepositoryImpl @Inject() (
         POMandatoryDbEntry(
           metadata.id,
           po.po.abbrev,
+          po.specialization.map(_.abbrev),
           po.recommendedSemester,
           po.recommendedSemesterPartTime
         )
@@ -226,6 +227,7 @@ final class ModuleCompendiumRepositoryImpl @Inject() (
         POOptionalDbEntry(
           metadata.id,
           po.po.abbrev,
+          po.specialization.map(_.abbrev),
           po.instanceOf.id,
           po.partOfCatalog,
           po.recommendedSemester

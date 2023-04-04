@@ -1,7 +1,7 @@
 package parsing.metadata
 
 import helper._
-import models.core.{AssessmentMethod, Competence, FocusAreaPreview, GlobalCriteria, Language, Location, ModuleType, Person, PersonStatus, Season, Status}
+import models.core._
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatest.{EitherValues, OptionValues}
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
@@ -27,7 +27,8 @@ class THKV1ParserSpec
     with FakeFocusAreas
     with FakeGlobalCriteria
     with FakeCompetences
-    with FakePOs {
+    with FakePOs
+    with FakeSpecializations {
 
   val parser = app.injector.instanceOf(classOf[THKV1Parser])
 
@@ -180,10 +181,11 @@ class THKV1ParserSpec
         assert(metadata.location == Location("gm", "Gummersbach", "--"))
         assert(
           metadata.pos == ParsedPOs(
-            List(POMandatory(inf1, List(3), Nil)),
+            List(POMandatory(inf1, None, List(3), Nil)),
             List(
               ParsedPOOptional(
                 wi1,
+                None,
                 UUID.fromString("d1cecfbc-a314-42f6-99b3-be92f22c3295"),
                 partOfCatalog = false,
                 List(3)
@@ -318,9 +320,9 @@ class THKV1ParserSpec
         assert(
           metadata.pos == ParsedPOs(
             List(
-              POMandatory(inf1, List(4), Nil),
-              POMandatory(mi1, List(4), Nil),
-              POMandatory(itm1, List(4), Nil)
+              POMandatory(inf1, None, List(4), Nil),
+              POMandatory(mi1, None, List(4), Nil),
+              POMandatory(itm1, None, List(4), Nil)
             ),
             Nil
           )

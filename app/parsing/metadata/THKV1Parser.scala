@@ -1,17 +1,23 @@
 package parsing.metadata
 
-import models.core.{AssessmentMethod, Competence, FocusAreaPreview, GlobalCriteria, Language, Location, ModuleType, PO, Person, Season, Status}
+import models.core._
 import parser.Parser
 import parser.Parser._
 import parser.ParserOps._
-import parsing.metadata.AssessmentMethodParser.{assessmentMethodsMandatoryParser, assessmentMethodsOptionalParser}
+import parsing.metadata.AssessmentMethodParser.{
+  assessmentMethodsMandatoryParser,
+  assessmentMethodsOptionalParser
+}
 import parsing.metadata.CompetencesParser.competencesParser
 import parsing.metadata.ECTSParser.ectsParser
 import parsing.metadata.GlobalCriteriaParser.globalCriteriaParser
 import parsing.metadata.ModuleRelationParser.moduleRelationParser
 import parsing.metadata.POParser.{mandatoryPOParser, optionalPOParser}
 import parsing.metadata.ParticipantsParser.participantsParser
-import parsing.metadata.PrerequisitesParser.{recommendedPrerequisitesParser, requiredPrerequisitesParser}
+import parsing.metadata.PrerequisitesParser.{
+  recommendedPrerequisitesParser,
+  requiredPrerequisitesParser
+}
 import parsing.metadata.TaughtWithParser.taughtWithParser
 import parsing.metadata.WorkloadParser.workloadParser
 import parsing.types._
@@ -52,7 +58,8 @@ final class THKV1Parser @Inject() (
       focusAreas: Seq[FocusAreaPreview],
       competences: Seq[Competence],
       globalCriteria: Seq[GlobalCriteria],
-      pos: Seq[PO]
+      pos: Seq[PO],
+      specializations: Seq[Specialization]
   ): Parser[ParsedMetadata] =
     idParser
       .zip(titleParser)

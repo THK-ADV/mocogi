@@ -7,6 +7,7 @@ import java.util.UUID
 case class POOptionalDbEntry(
     metadata: UUID,
     po: String,
+    specialization: Option[String],
     instanceOf: UUID,
     partOfCatalog: Boolean,
     recommendedSemester: List[Int]
@@ -26,18 +27,13 @@ final class POOptionalTable(tag: Tag)
   def recommendedSemester =
     column[List[Int]]("recommended_semester", O.PrimaryKey)
 
-  def metadataFk =
-    foreignKey("metadata", metadata, TableQuery[ModuleCompendiumTable])(_.id)
-
-  def instanceOfFk =
-    foreignKey("instance_of", instanceOf, TableQuery[ModuleCompendiumTable])(_.id)
-
-  def poFk =
-    foreignKey("po", po, TableQuery[POTable])(_.abbrev)
+  def specialization =
+    column[Option[String]]("specialization")
 
   override def * = (
     metadata,
     po,
+    specialization,
     instanceOf,
     partOfCatalog,
     recommendedSemester

@@ -7,6 +7,7 @@ import java.util.UUID
 case class POMandatoryDbEntry(
     metadata: UUID,
     po: String,
+    specialization: Option[String],
     recommendedSemester: List[Int],
     recommendedPartTimeSemester: List[Int]
 )
@@ -24,15 +25,13 @@ final class POMandatoryTable(tag: Tag)
   def recommendedPartTimeSemester =
     column[List[Int]]("recommended_semester_part_time")
 
-  def metadataFk =
-    foreignKey("metadata", metadata, TableQuery[ModuleCompendiumTable])(_.id)
-
-  def poFk =
-    foreignKey("po", po, TableQuery[POTable])(_.abbrev)
+  def specialization =
+    column[Option[String]]("specialization")
 
   override def * = (
     metadata,
     po,
+    specialization,
     recommendedSemester,
     recommendedPartTimeSemester
   ) <> (POMandatoryDbEntry.tupled, POMandatoryDbEntry.unapply)

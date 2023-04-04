@@ -1,6 +1,6 @@
 package validator
 
-import models.core.{AssessmentMethod, FocusAreaPreview, Language, Location, ModuleType, PO, Season, Status}
+import models.core._
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatest.{EitherValues, OptionValues}
 import parsing.types._
@@ -32,7 +32,7 @@ final class MetadataValidatorSpec
     ParsedPrerequisiteEntry("", modules, Nil)
 
   private def poOpt(module: UUID) =
-    ParsedPOOptional(sp, module, partOfCatalog = false, Nil)
+    ParsedPOOptional(sp, None, module, partOfCatalog = false, Nil)
 
   val m1 = Module(UUID.randomUUID, "m1")
   val m2 = Module(UUID.randomUUID, "m2")
@@ -401,15 +401,15 @@ final class MetadataValidatorSpec
           poOptionalValidator(lookup)
             .validate(List(poOpt(m1.id)))
             .value == List(
-            POOptional(sp, m1, partOfCatalog = false, Nil)
+            POOptional(sp, None, m1, partOfCatalog = false, Nil)
           )
         )
         assert(
           poOptionalValidator(lookup)
             .validate(List(poOpt(m1.id), poOpt(m2.id)))
             .value == List(
-            POOptional(sp, m1, partOfCatalog = false, Nil),
-            POOptional(sp, m2, partOfCatalog = false, Nil)
+            POOptional(sp, None, m1, partOfCatalog = false, Nil),
+            POOptional(sp, None, m2, partOfCatalog = false, Nil)
           )
         )
         assert(poOptionalValidator(lookup).validate(Nil).value == Nil)
@@ -431,7 +431,7 @@ final class MetadataValidatorSpec
           .validate(ParsedPOs(Nil, List(poOpt(m1.id))))
           .value == POs(
           Nil,
-          List(POOptional(sp, m1, partOfCatalog = false, Nil))
+          List(POOptional(sp, None, m1, partOfCatalog = false, Nil))
         )
         posValidator(lookup)
           .validate(ParsedPOs(Nil, Nil))
@@ -515,8 +515,10 @@ final class MetadataValidatorSpec
           Status("", "", ""),
           Location("", "", ""),
           ParsedPOs(
-            List(POMandatory(sp, List(1), Nil)),
-            List(ParsedPOOptional(sp, m2.id, partOfCatalog = false, List(2)))
+            List(POMandatory(sp, None, List(1), Nil)),
+            List(
+              ParsedPOOptional(sp, None, m2.id, partOfCatalog = false, List(2))
+            )
           ),
           Some(Participants(10, 20)),
           Nil,
@@ -540,8 +542,8 @@ final class MetadataValidatorSpec
           ivm1.status,
           ivm1.location,
           POs(
-            List(POMandatory(sp, List(1), Nil)),
-            List(POOptional(sp, m2, partOfCatalog = false, List(2)))
+            List(POMandatory(sp, None, List(1), Nil)),
+            List(POOptional(sp, None, m2, partOfCatalog = false, List(2)))
           ),
           Some(Participants(10, 20)),
           Nil,
@@ -594,8 +596,10 @@ final class MetadataValidatorSpec
           Status("", "", ""),
           Location("", "", ""),
           ParsedPOs(
-            List(POMandatory(sp, List(1), Nil)),
-            List(ParsedPOOptional(sp, m1.id, partOfCatalog = false, List(2)))
+            List(POMandatory(sp, None, List(1), Nil)),
+            List(
+              ParsedPOOptional(sp, None, m1.id, partOfCatalog = false, List(2))
+            )
           ),
           Some(Participants(20, 15)),
           Nil,

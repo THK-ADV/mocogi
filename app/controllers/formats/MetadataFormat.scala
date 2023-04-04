@@ -2,16 +2,8 @@ package controllers.formats
 
 import models.core.FocusAreaPreview
 import parsing.types._
-import play.api.libs.json.{Format, JsError, Json, OFormat}
-import validator.{
-  Metadata,
-  Module,
-  ModuleRelation,
-  POOptional,
-  POs,
-  PrerequisiteEntry,
-  Prerequisites
-}
+import play.api.libs.json.{Format, Json}
+import validator._
 
 trait MetadataFormat
     extends JsonNullWritable
@@ -28,7 +20,8 @@ trait MetadataFormat
     with POFormat
     with StatusFormat
     with LocationFormat
-    with ModuleRelationFormat {
+    with ModuleRelationFormat
+    with SpecializationFormat {
   implicit val poMandatoryFormat: Format[POMandatory] =
     Json.format[POMandatory]
 
