@@ -10,9 +10,9 @@ sealed trait PipelineError extends Throwable {
   def metadata: Option[UUID]
 
   override def getMessage = this match {
-    case PipelineError.Parser(error, _)    => error.getMessage()
-    case PipelineError.Printer(error, _)   => error.getMessage()
-    case PipelineError.Validator(error, _) => error.getMessage
+    case PipelineError.Parser(error, id)    => s"id: $id\nmessage:${error.getMessage}"
+    case PipelineError.Printer(error, id)   => s"id: $id\nmessage:${error.getMessage}"
+    case PipelineError.Validator(error, id) => s"id: $id\nmessage:${error.getMessage}"
   }
 }
 

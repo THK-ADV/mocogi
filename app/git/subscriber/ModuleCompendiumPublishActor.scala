@@ -23,7 +23,7 @@ private final class ModuleCompendiumPublishActor(
     case CreatedOrUpdated(_, _, _, mc) =>
       publish(Record("updated", mc.metadata))
     case Removed(_, _, path) =>
-      logger.error(
+      logger.info(
         s"""failed to publish metadata record
            |  - git path: ${path.value}
            |  - message: deleting metadata is currently not supported""".stripMargin

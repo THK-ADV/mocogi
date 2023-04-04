@@ -6,6 +6,7 @@ import git.subscriber.ModuleCompendiumSubscribers.{CreatedOrUpdated, Removed}
 import parsing.types.ModuleCompendium
 import play.api.Logging
 import service.ModuleCompendiumService
+import validator.Module
 
 import java.time.LocalDateTime
 import scala.concurrent.ExecutionContext
@@ -35,18 +36,40 @@ private final class ModuleCompendiumDatabaseActor(
       moduleCompendium: ModuleCompendium,
       path: GitFilePath,
       timestamp: LocalDateTime
-  ): Unit =
-    metadataService.createOrUpdate(
-      moduleCompendium,
-      path,
-      timestamp
-    ) onComplete {
+  ): Unit = {
+    def go(mc: ModuleCompendium) =
+      metadataService.createOrUpdate(mc, path, timestamp)
+    val withoutSelfDependencies = moduleCompendium.copy(metadata =
+      moduleCompendium.metadata.copy(
+        relation = None,
+        prerequisites = moduleCompendium.metadata.prerequisites.copy(
+          recommended = moduleCompendium.metadata.prerequisites.recommended
+            .map(_.copy(modules = Nil)),
+          required = moduleCompendium.metadata.prerequisites.required
+            .map(_.copy(modules = Nil))
+        ),
+        validPOs = moduleCompendium.metadata.validPOs.copy(
+          optional = moduleCompendium.metadata.validPOs.optional.map(
+            _.copy(instanceOf =
+              Module(
+                moduleCompendium.metadata.id,
+                moduleCompendium.metadata.abbrev
+              )
+            )
+          )
+        ),
+        taughtWith = Nil
+      )
+    )
+    val update = go(withoutSelfDependencies).flatMap(_ => go(moduleCompendium))
+    update onComplete {
       case Success(m) => logSuccess(m, path)
       case Failure(e) => logError(moduleCompendium, path, e)
     }
+  }
 
   private def delete(path: GitFilePath): Unit =
-    logger.error(
+    logger.info(
       s"""failed to delete metadata
          |  - git path: ${path.value}
          |  - message: deleting metadata is currently not supported""".stripMargin
