@@ -4,7 +4,7 @@ import akka.actor.{Actor, ActorRef, Props}
 import database.InsertOrUpdateResult
 import git.GitFilesBroker.Changes
 import git.publisher.CoreDataPublisher.ParsingValidation
-import git.{GitFileContent, GitFilePath}
+import git.{GitFileContent, GitFilePath, GitFilesBroker}
 import play.api.Logging
 import service.core._
 
@@ -86,42 +86,47 @@ object CoreDataPublisher {
           path: GitFilePath,
           content: GitFileContent
       ): Future[Seq[(InsertOrUpdateResult, _)]] =
-        path.value.split('.').headOption.map {
-          case "location" =>
-            locationService.createOrUpdate(content.value)
-          case "lang" =>
-            languageService.createOrUpdate(content.value)
-          case "status" =>
-            statusService.createOrUpdate(content.value)
-          case "assessment" =>
-            assessmentMethodService.createOrUpdate(content.value)
-          case "module_type" =>
-            moduleTypeService.createOrUpdate(content.value)
-          case "season" =>
-            seasonService.createOrUpdate(content.value)
-          case "person" =>
-            personService.createOrUpdate(content.value)
-          case "focus_area" =>
-            focusAreaService.createOrUpdate(content.value)
-          case "global_criteria" =>
-            globalCriteriaService.createOrUpdate(content.value)
-          case "po" =>
-            poService.createOrUpdate(content.value)
-          case "competence" =>
-            competenceService.createOrUpdate(content.value)
-          case "faculty" =>
-            facultyService.createOrUpdate(content.value)
-          case "grade" =>
-            gradeService.createOrUpdate(content.value)
-          case "program" =>
-            studyProgramService.createOrUpdate(content.value)
-          case "study_form" =>
-            studyFormTypeService.createOrUpdate(content.value)
-          case other =>
-            Future.failed(new Throwable(s"unknown core data found: $other"))
-        } getOrElse Future.failed(
+        path.value
+          .stripPrefix(s"${GitFilesBroker.core}/")
+          .split('.')
+          .headOption
+          .map {
+            case "location" =>
+              locationService.createOrUpdate(content.value)
+            case "lang" =>
+              languageService.createOrUpdate(content.value)
+            case "status" =>
+              statusService.createOrUpdate(content.value)
+            case "assessment" =>
+              assessmentMethodService.createOrUpdate(content.value)
+            case "module_type" =>
+              moduleTypeService.createOrUpdate(content.value)
+            case "season" =>
+              seasonService.createOrUpdate(content.value)
+            case "person" =>
+              personService.createOrUpdate(content.value)
+            case "focus_area" =>
+              focusAreaService.createOrUpdate(content.value)
+            case "global_criteria" =>
+              globalCriteriaService.createOrUpdate(content.value)
+            case "po" =>
+              poService.createOrUpdate(content.value)
+            case "competence" =>
+              competenceService.createOrUpdate(content.value)
+            case "faculty" =>
+              facultyService.createOrUpdate(content.value)
+            case "grade" =>
+              gradeService.createOrUpdate(content.value)
+            case "program" =>
+              studyProgramService.createOrUpdate(content.value)
+            case "study_form" =>
+              studyFormTypeService.createOrUpdate(content.value)
+            case other =>
+              Future.failed(new Throwable(s"unknown core data found: $other"))
+          } getOrElse Future.failed(
           new Throwable(s"expected path to be filename.yaml, but was $path")
         )
+
       changes.foreach { case (path, content) =>
         go(path, content) onComplete {
           case Success(s) => logSuccess(path, content, s)
