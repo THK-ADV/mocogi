@@ -29,6 +29,7 @@ object CoreDataPublisher {
       gradeService: GradeService,
       studyProgramService: StudyProgramService,
       studyFormTypeService: StudyFormTypeService,
+      specializationService: SpecializationService,
       ctx: ExecutionContext
   ) =
     Props(
@@ -48,6 +49,7 @@ object CoreDataPublisher {
         gradeService,
         studyProgramService,
         studyFormTypeService,
+        specializationService,
         ctx
       )
     )
@@ -68,6 +70,7 @@ object CoreDataPublisher {
       private val gradeService: GradeService,
       private val studyProgramService: StudyProgramService,
       private val studyFormTypeService: StudyFormTypeService,
+      private val specializationService: SpecializationService,
       private implicit val ctx: ExecutionContext
   ) extends Actor
       with Logging {
@@ -121,6 +124,8 @@ object CoreDataPublisher {
               studyProgramService.createOrUpdate(content.value)
             case "study_form" =>
               studyFormTypeService.createOrUpdate(content.value)
+            case "specialization" =>
+              specializationService.createOrUpdate(content.value)
             case other =>
               Future.failed(new Throwable(s"unknown core data found: $other"))
           } getOrElse Future.failed(

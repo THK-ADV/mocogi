@@ -2,23 +2,7 @@ package providers
 
 import akka.actor.ActorSystem
 import git.publisher.CoreDataPublisher
-import service.core.{
-  AssessmentMethodService,
-  CompetenceService,
-  FacultyService,
-  FocusAreaService,
-  GlobalCriteriaService,
-  GradeService,
-  LanguageService,
-  LocationService,
-  ModuleTypeService,
-  POService,
-  PersonService,
-  SeasonService,
-  StatusService,
-  StudyFormTypeService,
-  StudyProgramService
-}
+import service.core._
 
 import javax.inject.{Inject, Provider, Singleton}
 import scala.concurrent.ExecutionContext
@@ -41,6 +25,7 @@ final class CoreDataPublisherProvider @Inject() (
     gradeService: GradeService,
     studyProgramService: StudyProgramService,
     studyFormTypeService: StudyFormTypeService,
+    specializationService: SpecializationService,
     ctx: ExecutionContext
 ) extends Provider[CoreDataPublisher] {
   override def get() = CoreDataPublisher(
@@ -61,6 +46,7 @@ final class CoreDataPublisherProvider @Inject() (
         gradeService,
         studyProgramService,
         studyFormTypeService,
+        specializationService,
         ctx
       )
     )
