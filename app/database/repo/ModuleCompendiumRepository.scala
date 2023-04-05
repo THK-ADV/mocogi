@@ -571,6 +571,7 @@ final class ModuleCompendiumRepositoryImpl @Inject() (
               poM.foreach(po =>
                 poMandatory += POMandatoryOutput(
                   po.po,
+                  po.specialization,
                   po.recommendedSemester,
                   po.recommendedPartTimeSemester
                 )
@@ -578,6 +579,7 @@ final class ModuleCompendiumRepositoryImpl @Inject() (
               poO.foreach(po =>
                 poOptional += POOptionalOutput(
                   po.po,
+                  po.specialization,
                   po.instanceOf,
                   po.partOfCatalog,
                   po.recommendedSemester

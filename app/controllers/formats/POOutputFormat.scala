@@ -3,7 +3,7 @@ package controllers.formats
 import database.{POMandatoryOutput, POOptionalOutput, POOutput}
 import play.api.libs.json.{Format, Json}
 
-trait POOutputFormat {
+trait POOutputFormat extends JsonNullWritable {
   implicit val poMandatoryOutputFormat: Format[POMandatoryOutput] =
     Json.format[POMandatoryOutput]
 
