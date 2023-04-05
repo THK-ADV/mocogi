@@ -204,6 +204,14 @@ create table po_modification_date
     FOREIGN KEY (po) REFERENCES po (abbrev)
 );
 
+create table specialization
+(
+    "abbrev" text PRIMARY KEY,
+    "po"     text not null,
+    "label"  text not null,
+    FOREIGN KEY (po) REFERENCES po (abbrev)
+);
+
 create table metadata
 (
     "id"                           uuid PRIMARY KEY,
@@ -228,6 +236,16 @@ create table metadata
     "location"                     text          not null,
     "participants_min"             smallint null,
     "participants_max"             smallint null,
+    "learning_outcome_de"          text          not null,
+    "learning_outcome_en"          text          not null,
+    "module_content_de"            text          not null,
+    "module_content_en"            text          not null,
+    "learning_methods_de"          text          not null,
+    "learning_methods_en"          text          not null,
+    "literature_de"                text          not null,
+    "literature_en"                text          not null,
+    "particularities_de"           text          not null,
+    "particularities_en"           text          not null,
     FOREIGN KEY (module_type) REFERENCES module_type (abbrev),
     FOREIGN KEY (language) REFERENCES language (abbrev),
     FOREIGN KEY (season) REFERENCES season (abbrev),
@@ -237,10 +255,11 @@ create table metadata
 
 create table ects_focus_area_contribution
 (
-    "focus_area"  text          not null,
-    "metadata"    uuid          not null,
-    "ects_value"  numeric(4, 2) not null,
-    "description" text          not null,
+    "focus_area" text          not null,
+    "metadata"   uuid          not null,
+    "ects_value" numeric(4, 2) not null,
+    "de_desc"    text          not null,
+    "en_desc"    text          not null,
     PRIMARY KEY (focus_area, metadata),
     FOREIGN KEY (focus_area) REFERENCES focus_area (abbrev),
     FOREIGN KEY (metadata) REFERENCES metadata (id)
@@ -315,23 +334,27 @@ create table prerequisites_po
 
 create table po_mandatory
 (
+    "id"                             uuid not null PRIMARY KEY,
     "metadata"                       uuid not null,
     "po"                             text not null,
     "recommended_semester"           text not null,
     "recommended_semester_part_time" text not null,
-    PRIMARY KEY (metadata, po),
+    "specialization"                 text null,
+    FOREIGN KEY (specialization) REFERENCES specialization (abbrev),
     FOREIGN KEY (metadata) REFERENCES metadata (id),
     FOREIGN KEY (po) REFERENCES po (abbrev)
 );
 
 create table po_optional
 (
+    "id"                   uuid    not null PRIMARY KEY,
     "metadata"             uuid    not null,
     "po"                   text    not null,
     "instance_of"          uuid    not null,
     "part_of_catalog"      boolean not null,
     "recommended_semester" text    not null,
-    PRIMARY KEY (metadata, po),
+    "specialization"       text null,
+    FOREIGN KEY (specialization) REFERENCES specialization (abbrev),
     FOREIGN KEY (metadata) REFERENCES metadata (id),
     FOREIGN KEY (po) REFERENCES po (abbrev),
     FOREIGN KEY (instance_of) REFERENCES metadata (id)
@@ -364,7 +387,40 @@ create table metadata_taught_with
     FOREIGN KEY (module) REFERENCES metadata (id)
 );
 
+-- git handling
+
+create table users
+(
+    "id"       uuid PRIMARY KEY,
+    "username" text not null
+);
+
+create table user_has_branch
+(
+    "user"             uuid PRIMARY KEY,
+    "branch_id"        text not null,
+    "commit_id"        text null,
+    "merge_request_id" integer null,
+    FOREIGN KEY ("user") REFERENCES users (id)
+);
+
+create table module_draft
+(
+    "module_id"                    uuid      not null,
+    "module_json"                  text      not null,
+    "branch"                       text      not null,
+    "status"                       text      not null,
+    "last_modified"                timestamp not null,
+    "valid_module_compendium_json" text null,
+    "module_compendium_print"      text null,
+    "pipeline_error"               text null,
+    PRIMARY KEY (module_id, branch)
+);
+
 -- !Downs
+drop table module_draft if exists;
+drop table users if exists;
+drop table user_has_branch if exists;
 drop table metadata_taught_with if exists;
 drop table metadata_global_criteria if exists;
 drop table metadata_competence if exists;
@@ -379,6 +435,7 @@ drop table responsibility if exists;
 drop table module_relation if exists;
 drop table ects_focus_area_contribution if exists;
 drop table metadata if exists;
+drop table specialization if exists;
 drop table po_modification_date if exists;
 drop table po if exists;
 drop table focus_area if exists;
