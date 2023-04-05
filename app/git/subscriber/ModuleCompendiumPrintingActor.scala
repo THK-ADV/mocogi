@@ -28,8 +28,10 @@ private final class ModuleCompendiumPrintingActor(
 ) extends Actor
     with Logging {
 
-  override def receive = { case CreatedOrUpdated(_, lastModified, _, mc) =>
-    print(outputFormat, lastModified, mc)
+  override def receive = { case CreatedOrUpdated(_, entries) =>
+    entries.foreach { case (_, mc, lastModified) =>
+      print(outputFormat, lastModified, mc)
+    }
   }
 
   private def print(

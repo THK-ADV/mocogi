@@ -20,12 +20,14 @@ private final class ModuleCompendiumPublishActor(
     with Logging {
 
   override def receive = {
-    case CreatedOrUpdated(_, _, _, mc) =>
-      publish(Record("updated", mc.metadata))
-    case Removed(_, _, path) =>
+    case CreatedOrUpdated(_, entries) =>
+      entries.foreach { case (_, mc, _) =>
+        publish(Record("updated", mc.metadata))
+      }
+    case Removed(_, _, entries) =>
       logger.info(
         s"""failed to publish metadata record
-           |  - git path: ${path.value}
+           |  - git path: ${entries.map(_.value).mkString(", ")}
            |  - message: deleting metadata is currently not supported""".stripMargin
       )
   }

@@ -53,16 +53,14 @@ object ModuleCompendiumPublisher {
         case Success(s) =>
           s match {
             case Right(mcs) =>
-              mcs.foreach(a =>
-                subscribers.createdOrUpdated(
-                  changes.commitId,
-                  changes.timestamp,
-                  a._1,
-                  a._2
-                )
+              subscribers.createdOrUpdated(
+                changes.commitId,
+                mcs.map(t => (t._1, t._2, changes.timestamp))
               )
-              changes.removed.foreach(p =>
-                subscribers.removed(changes.commitId, changes.timestamp, p)
+              subscribers.removed(
+                changes.commitId,
+                changes.timestamp,
+                changes.removed
               )
             case Left(errs) => logPipelineErrors(errs)
           }
