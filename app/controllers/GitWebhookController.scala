@@ -3,7 +3,8 @@ package controllers
 import controllers.GitWebhookController.GitlabTokenHeader
 import controllers.formats.ThrowableWrites
 import git._
-import git.webhook.GitMergeEventHandlingActor
+import git.publisher.GitFilesDownloadActor
+import git.webhook.{GitMergeEventHandlingActor, GitPushEventHandler}
 import play.api.Logging
 import play.api.libs.json._
 import play.api.mvc._
@@ -22,14 +23,16 @@ object GitWebhookController {
 class GitWebhookController @Inject() (
     cc: ControllerComponents,
     gitConfig: GitConfig,
-    gitMergeEventHandlingActor: GitMergeEventHandlingActor
+    gitMergeEventHandlingActor: GitMergeEventHandlingActor,
+    downloadActor: GitFilesDownloadActor
 ) extends AbstractController(cc)
     with Logging
     with ThrowableWrites {
 
   def onPushEvent() = isAuthenticated(
-    Action(parse.json) {
-      // TODO handle core service updates
+    Action(parse.json) { implicit r =>
+      // TODO this should only work in specific case
+      GitPushEventHandler.handlePushEvent(downloadActor)
       NoContent
     }
   )

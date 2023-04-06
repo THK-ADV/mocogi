@@ -21,7 +21,7 @@ class PersonFileParser {
   def groupsParser: Parser[Person] =
     prefixTo(":")
       .skip(zeroOrMoreSpaces)
-      .zip(singleLineStringForKey("title"))
+      .zip(singleLineStringForKey("title").map(s => if (s == "--") "" else s))
       .map(Person.Group.tupled)
 
   def statusParser: Parser[PersonStatus] =

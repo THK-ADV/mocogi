@@ -13,6 +13,7 @@ trait POService {
   def create(input: String): Future[List[PO]]
   def createOrUpdate(input: String): Future[List[(InsertOrUpdateResult, PO)]]
   def allValid(): Future[Seq[PO]]
+  def allIds(): Future[Seq[String]]
 }
 
 @Singleton
@@ -24,6 +25,9 @@ final class POServiceImpl @Inject() (
 
   override def all() =
     repo.all()
+
+  override def allIds() =
+    repo.allIds()
 
   override def create(input: String) =
     for {

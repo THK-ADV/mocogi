@@ -1,0 +1,19 @@
+inf_mim4_hci:
+  label: Human-Computer Interaction
+  po: po.inf1
+
+inf_mim4_mppd:
+  label: Multiperspective Product Development
+  po: po.itm1
+
+inf_mim4_sc:
+  label: Social Computing
+  po: po.inf1
+
+inf_mim4_vc:
+  label: Visual Computing
+  po: po.wi1
+
+inf_mim4_wtw:
+  label: Weaving the Web
+  po: po.mi1

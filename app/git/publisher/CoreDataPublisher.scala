@@ -1,4 +1,16 @@
-/*package git.publisher
+package git.publisher
+
+import akka.actor.{Actor, ActorRef, Props}
+import database.InsertOrUpdateResult
+import git.GitFilesBroker.Changes
+import git.publisher.CoreDataPublisher.ParsingValidation
+import git.{GitFileContent, GitFilePath, GitFilesBroker}
+import play.api.Logging
+import service.core._
+
+import javax.inject.Singleton
+import scala.concurrent.{ExecutionContext, Future}
+import scala.util.{Failure, Success}
 
 object CoreDataPublisher {
   def props(
@@ -17,6 +29,7 @@ object CoreDataPublisher {
       gradeService: GradeService,
       studyProgramService: StudyProgramService,
       studyFormTypeService: StudyFormTypeService,
+      specializationService: SpecializationService,
       ctx: ExecutionContext
   ) =
     Props(
@@ -36,6 +49,7 @@ object CoreDataPublisher {
         gradeService,
         studyProgramService,
         studyFormTypeService,
+        specializationService,
         ctx
       )
     )
@@ -56,6 +70,7 @@ object CoreDataPublisher {
       private val gradeService: GradeService,
       private val studyProgramService: StudyProgramService,
       private val studyFormTypeService: StudyFormTypeService,
+      private val specializationService: SpecializationService,
       private implicit val ctx: ExecutionContext
   ) extends Actor
       with Logging {
@@ -64,10 +79,9 @@ object CoreDataPublisher {
       parseAndUpdate(changes.added)
     }
 
-    /* TODO add support for deletion.
+    /*TODO add support for deletion.
         if an entry doesn't exists anymore in a yaml file, it will not be deleted currently.
-        instead, each entry will be either created (if new) or updated (if already exists).
- */
+        instead, each entry will be either created (if new) or updated (if already exists).*/
     private def parseAndUpdate(
         changes: List[(GitFilePath, GitFileContent)]
     ): Unit = {
@@ -75,42 +89,49 @@ object CoreDataPublisher {
           path: GitFilePath,
           content: GitFileContent
       ): Future[Seq[(InsertOrUpdateResult, _)]] =
-        path.value.split('.').headOption.map {
-          case "location" =>
-            locationService.createOrUpdate(content.value)
-          case "lang" =>
-            languageService.createOrUpdate(content.value)
-          case "status" =>
-            statusService.createOrUpdate(content.value)
-          case "assessment" =>
-            assessmentMethodService.createOrUpdate(content.value)
-          case "module_type" =>
-            moduleTypeService.createOrUpdate(content.value)
-          case "season" =>
-            seasonService.createOrUpdate(content.value)
-          case "person" =>
-            personService.createOrUpdate(content.value)
-          case "focus_area" =>
-            focusAreaService.createOrUpdate(content.value)
-          case "global_criteria" =>
-            globalCriteriaService.createOrUpdate(content.value)
-          case "po" =>
-            poService.createOrUpdate(content.value)
-          case "competence" =>
-            competenceService.createOrUpdate(content.value)
-          case "faculty" =>
-            facultyService.createOrUpdate(content.value)
-          case "grade" =>
-            gradeService.createOrUpdate(content.value)
-          case "program" =>
-            studyProgramService.createOrUpdate(content.value)
-          case "study_form" =>
-            studyFormTypeService.createOrUpdate(content.value)
-          case other =>
-            Future.failed(new Throwable(s"unknown core data found: $other"))
-        } getOrElse Future.failed(
+        path.value
+          .stripPrefix(s"${GitFilesBroker.core}/")
+          .split('.')
+          .headOption
+          .map {
+            case "location" =>
+              locationService.createOrUpdate(content.value)
+            case "lang" =>
+              languageService.createOrUpdate(content.value)
+            case "status" =>
+              statusService.createOrUpdate(content.value)
+            case "assessment" =>
+              assessmentMethodService.createOrUpdate(content.value)
+            case "module_type" =>
+              moduleTypeService.createOrUpdate(content.value)
+            case "season" =>
+              seasonService.createOrUpdate(content.value)
+            case "person" =>
+              personService.createOrUpdate(content.value)
+            case "focus_area" =>
+              focusAreaService.createOrUpdate(content.value)
+            case "global_criteria" =>
+              globalCriteriaService.createOrUpdate(content.value)
+            case "po" =>
+              poService.createOrUpdate(content.value)
+            case "competence" =>
+              competenceService.createOrUpdate(content.value)
+            case "faculty" =>
+              facultyService.createOrUpdate(content.value)
+            case "grade" =>
+              gradeService.createOrUpdate(content.value)
+            case "program" =>
+              studyProgramService.createOrUpdate(content.value)
+            case "study_form" =>
+              studyFormTypeService.createOrUpdate(content.value)
+            case "specialization" =>
+              specializationService.createOrUpdate(content.value)
+            case other =>
+              Future.failed(new Throwable(s"unknown core data found: $other"))
+          } getOrElse Future.failed(
           new Throwable(s"expected path to be filename.yaml, but was $path")
         )
+
       changes.foreach { case (path, content) =>
         go(path, content) onComplete {
           case Success(s) => logSuccess(path, content, s)
@@ -150,4 +171,4 @@ object CoreDataPublisher {
 case class CoreDataPublisher(private val value: ActorRef) {
   def notifySubscribers(changes: Changes): Unit =
     value ! ParsingValidation(changes)
-}*/
+}

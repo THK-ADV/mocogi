@@ -2,7 +2,7 @@ package git.subscriber
 
 import akka.actor.{Actor, Props}
 import git.GitFilePath
-import ModuleCompendiumSubscribers.{Added, Modified, Removed}
+import git.subscriber.ModuleCompendiumSubscribers.{CreatedOrUpdated, Removed}
 import parsing.types.ModuleCompendium
 import play.api.Logging
 import service.ModuleCompendiumService
@@ -25,56 +25,42 @@ private final class ModuleCompendiumDatabaseActor(
     with Logging {
 
   override def receive = {
-    case Added(_, timestamp, path, result) =>
-      result.foreach(mc => createOrUpdate(mc, path, timestamp))
-    case Modified(_, timestamp, path, result) =>
-      result.foreach(mc => createOrUpdate(mc, path, timestamp))
-    case Removed(_, _, path) =>
-      delete(path)
+    case CreatedOrUpdated(_, entries) =>
+      createOrUpdate(entries)
+    case Removed(_, _, entries) =>
+      delete(entries)
   }
 
   private def createOrUpdate(
-      moduleCompendium: ModuleCompendium,
-      path: GitFilePath,
-      timestamp: LocalDateTime
+      entries: Seq[(GitFilePath, ModuleCompendium, LocalDateTime)]
   ): Unit =
-    metadataService.createOrUpdate(
-      moduleCompendium,
-      path,
-      timestamp
-    ) onComplete {
-      case Success(m) => logSuccess(m, path)
-      case Failure(e) => logError(moduleCompendium, path, e)
-    }
+    metadataService
+      .createOrUpdateMany(entries)
+      .onComplete {
+        case Success(mcs) =>
+          logSuccess(mcs)
+        case Failure(e) =>
+          logError(e)
+      }
 
-  private def delete(path: GitFilePath): Unit =
-    logger.error(
+  private def logSuccess(mcs: Seq[ModuleCompendium]): Unit =
+    logger.info(
+      s"""successfully created or updated metadata entries
+         |  - entries: ${mcs
+          .map(a => (a.metadata.id, a.metadata.abbrev))
+          .mkString("\n    ")}""".stripMargin
+    )
+
+  private def delete(entries: Seq[GitFilePath]): Unit =
+    logger.info(
       s"""failed to delete metadata
-         |  - git path: ${path.value}
+         |  - git path: ${entries.map(_.value).mkString(", ")}
          |  - message: deleting metadata is currently not supported""".stripMargin
     )
 
-  private def logSuccess(
-      moduleCompendium: ModuleCompendium,
-      path: GitFilePath
-  ): Unit =
-    logger.info(
-      s"""successfully created or updated metadata
-         |  - id: ${moduleCompendium.metadata.id}
-         |  - abbrev: ${moduleCompendium.metadata.abbrev}
-         |  - git path: ${path.value}""".stripMargin
-    )
-
-  private def logError(
-      moduleCompendium: ModuleCompendium,
-      path: GitFilePath,
-      throwable: Throwable
-  ): Unit =
+  private def logError(throwable: Throwable): Unit =
     logger.error(
       s"""failed to create or update metadata
-         |  - id: ${moduleCompendium.metadata.id}
-         |  - abbrev: ${moduleCompendium.metadata.abbrev}
-         |  - git path: ${path.value}
          |  - message: ${throwable.getMessage}
          |  - trace: ${throwable.getStackTrace.mkString(
           "\n           "

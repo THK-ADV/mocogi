@@ -3,12 +3,17 @@ import database.repo.{
   ModuleCompendiumRepository,
   ModuleCompendiumRepositoryImpl
 }
-import git.GitConfig
+import git.publisher.{
+  CoreDataPublisher,
+  GitFilesDownloadActor,
+  ModuleCompendiumPublisher
+}
 import git.subscriber.{
   ModuleCompendiumMarkdownActor,
   ModuleCompendiumSubscribers
 }
 import git.webhook.GitMergeEventHandlingActor
+import git.{GitConfig, GitFilesBroker, GitFilesBrokerImpl}
 import parsing.metadata.MetadataParser
 import printing.pandoc.PandocApi
 import printing.yaml.{ContentMarkdownPrinter, MetadataYamlPrinter}
@@ -77,6 +82,12 @@ class Module() extends AbstractModule {
     bind(classOf[CompetenceService])
       .to(classOf[CompetenceServiceImpl])
       .asEagerSingleton()
+    bind(classOf[GitFilesBroker])
+      .to(classOf[GitFilesBrokerImpl])
+      .asEagerSingleton()
+    bind(classOf[SpecializationService])
+      .to(classOf[SpecializationServiceImpl])
+      .asEagerSingleton()
 
     bind(classOf[PandocApi])
       .toProvider(classOf[MarkdownConverterProvider])
@@ -92,6 +103,15 @@ class Module() extends AbstractModule {
       .asEagerSingleton()
     bind(classOf[GitMergeEventHandlingActor])
       .toProvider(classOf[GitMergeEventHandlingActorProvider])
+      .asEagerSingleton()
+    bind(classOf[GitFilesDownloadActor])
+      .toProvider(classOf[GitFilesDownloadActorProvider])
+      .asEagerSingleton()
+    bind(classOf[CoreDataPublisher])
+      .toProvider(classOf[CoreDataPublisherProvider])
+      .asEagerSingleton()
+    bind(classOf[ModuleCompendiumPublisher])
+      .toProvider(classOf[ModuleCompendiumPublisherProvider])
       .asEagerSingleton()
 
     bind(new TypeLiteral[Set[MetadataParser]] {})

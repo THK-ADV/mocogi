@@ -6,7 +6,7 @@ import git.GitFilePath
 import parsing.types._
 import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfigProvider}
 import slick.jdbc.JdbcProfile
-import validator.{Metadata, ModuleRelation, PrerequisiteEntry}
+import validator._
 
 import java.time.LocalDateTime
 import java.util.UUID
@@ -17,16 +17,25 @@ import scala.concurrent.{ExecutionContext, Future}
 
 trait ModuleCompendiumRepository {
   def exists(moduleCompendium: ModuleCompendium): Future[Boolean]
+  def createOrUpdateMany(
+      entries: Seq[(GitFilePath, ModuleCompendium, LocalDateTime)]
+  ): Future[Seq[ModuleCompendium]]
   def create(
       moduleCompendium: ModuleCompendium,
       path: GitFilePath,
       timestamp: LocalDateTime
   ): Future[ModuleCompendium]
+  def createMany(
+      entries: Seq[(GitFilePath, ModuleCompendium, LocalDateTime)]
+  ): Future[Seq[ModuleCompendium]]
   def update(
       moduleCompendium: ModuleCompendium,
       path: GitFilePath,
       timestamp: LocalDateTime
   ): Future[ModuleCompendium]
+  def updateMany(
+      entries: Seq[(GitFilePath, ModuleCompendium, LocalDateTime)]
+  ): Future[Seq[ModuleCompendium]]
   def all(filter: Map[String, Seq[String]]): Future[Seq[ModuleCompendiumOutput]]
   def allPreview(
       filter: Map[String, Seq[String]]
@@ -45,7 +54,7 @@ final class ModuleCompendiumRepositoryImpl @Inject() (
     with Filterable[ModuleCompendiumDbEntry, ModuleCompendiumTable] {
   import profile.api._
 
-  type PrerequisitesDbResult = (
+  private type PrerequisitesDbResult = (
       List[PrerequisitesDbEntry],
       List[PrerequisitesModuleDbEntry],
       List[PrerequisitesPODbEntry]
@@ -102,6 +111,129 @@ final class ModuleCompendiumRepositoryImpl @Inject() (
         .filter(r => r.metadata === t.id && r.isPerson(value))
         .exists
   }
+
+  override def exists(moduleCompendium: ModuleCompendium) =
+    db.run(existsAction(moduleCompendium))
+
+  override def update(
+      moduleCompendium: ModuleCompendium,
+      path: GitFilePath,
+      timestamp: LocalDateTime
+  ) =
+    db.run(updateAction(moduleCompendium, path, timestamp).transactionally)
+
+  override def updateMany(
+      entries: Seq[(GitFilePath, ModuleCompendium, LocalDateTime)]
+  ) = {
+    val actions = entries.map { case (path, moduleCompendium, timestamp) =>
+      updateAction(moduleCompendium, path, timestamp)
+    }
+    db.run(DBIO.sequence(actions).transactionally)
+  }
+
+  override def create(
+      moduleCompendium: ModuleCompendium,
+      path: GitFilePath,
+      timestamp: LocalDateTime
+  ) =
+    db.run(
+      (
+        for {
+          _ <- tableQuery += toDbEntry(moduleCompendium, path, timestamp)
+          _ <- createDependencies(moduleCompendium.metadata)
+        } yield moduleCompendium
+      ).transactionally
+    )
+
+  override def createMany(
+      entries: Seq[(GitFilePath, ModuleCompendium, LocalDateTime)]
+  ) = {
+    val actions = entries.map { case (path, moduleCompendium, timestamp) =>
+      createAction(moduleCompendium, path, timestamp)
+    }
+    db.run(DBIO.sequence(actions).transactionally)
+  }
+
+  override def createOrUpdateMany(
+      entries: Seq[(GitFilePath, ModuleCompendium, LocalDateTime)]
+  ) = {
+    def flat(mc: ModuleCompendium) =
+      mc.copy(
+        metadata = mc.metadata.copy(
+          relation = None,
+          prerequisites = Prerequisites(None, None),
+          validPOs = POs(Nil, Nil),
+          taughtWith = Nil
+        )
+      )
+    val createOrUpdateInstant = entries.map {
+      case (path, moduleCompendium, timestamp) =>
+        for {
+          exists <- existsAction(moduleCompendium)
+          res <-
+            if (exists) updateAction(moduleCompendium, path, timestamp)
+            else createAction(flat(moduleCompendium), path, timestamp)
+        } yield res
+    }
+    val updateAfterCreation = entries.map {
+      case (path, moduleCompendium, timestamp) =>
+        updateAction(moduleCompendium, path, timestamp)
+    }
+    val actions = createOrUpdateInstant.appendedAll(updateAfterCreation)
+    db.run(DBIO.sequence(actions).transactionally)
+  }
+
+  override def all(filter: Map[String, Seq[String]]) =
+    retrieve(allWithFilter(filter))
+
+  override def allIds() =
+    db.run(
+      tableQuery
+        .map(m => (m.id, m.abbrev))
+        .result
+    )
+
+  override def allPreview(filter: Map[String, Seq[String]]) =
+    db.run(
+      allWithFilter(filter)
+        .map(m => (m.id, m.title, m.abbrev))
+        .result
+    )
+
+  override def get(id: UUID) =
+    retrieve(tableQuery.filter(_.id === id)).single
+
+  override def paths(ids: Seq[UUID]) =
+    db.run(
+      tableQuery
+        .filter(_.id.inSet(ids))
+        .map(a => (a.id, a.gitPath))
+        .result
+        .map(_.map(a => (a._1, GitFilePath(a._2))))
+    )
+
+  private def updateAction(
+      moduleCompendium: ModuleCompendium,
+      path: GitFilePath,
+      timestamp: LocalDateTime
+  ) =
+    for {
+      _ <- deleteDependencies(moduleCompendium.metadata)
+      _ <- tableQuery
+        .filter(_.id === moduleCompendium.metadata.id)
+        .update(toDbEntry(moduleCompendium, path, timestamp))
+      _ <- createDependencies(moduleCompendium.metadata)
+    } yield moduleCompendium
+
+  private def createAction(
+      moduleCompendium: ModuleCompendium,
+      path: GitFilePath,
+      timestamp: LocalDateTime
+  ) =
+    for {
+      _ <- tableQuery += toDbEntry(moduleCompendium, path, timestamp)
+      _ <- createDependencies(moduleCompendium.metadata)
+    } yield moduleCompendium
 
   private def deleteDependencies(metadata: Metadata) =
     for {
@@ -216,16 +348,20 @@ final class ModuleCompendiumRepositoryImpl @Inject() (
     (
       metadata.validPOs.mandatory.map(po =>
         POMandatoryDbEntry(
+          UUID.randomUUID(),
           metadata.id,
           po.po.abbrev,
+          po.specialization.map(_.abbrev),
           po.recommendedSemester,
           po.recommendedSemesterPartTime
         )
       ),
       metadata.validPOs.optional.map(po =>
         POOptionalDbEntry(
+          UUID.randomUUID(),
           metadata.id,
           po.po.abbrev,
+          po.specialization.map(_.abbrev),
           po.instanceOf.id,
           po.partOfCatalog,
           po.recommendedSemester
@@ -299,7 +435,8 @@ final class ModuleCompendiumRepositoryImpl @Inject() (
         metadata.id,
         c.focusArea.abbrev,
         c.ectsValue,
-        c.description
+        c.deDesc,
+        c.enDesc
       )
     )
 
@@ -359,47 +496,11 @@ final class ModuleCompendiumRepositoryImpl @Inject() (
     )
   }
 
-  override def exists(moduleCompendium: ModuleCompendium) =
-    db.run(
-      tableQuery
-        .filter(_.id === moduleCompendium.metadata.id)
-        .result
-        .map(_.nonEmpty)
-    )
-
-  override def update(
-      moduleCompendium: ModuleCompendium,
-      path: GitFilePath,
-      timestamp: LocalDateTime
-  ) =
-    db.run(
-      (
-        for {
-          _ <- deleteDependencies(moduleCompendium.metadata)
-          _ <- tableQuery
-            .filter(_.id === moduleCompendium.metadata.id)
-            .update(toDbEntry(moduleCompendium, path, timestamp))
-          _ <- createDependencies(moduleCompendium.metadata)
-        } yield moduleCompendium
-      ).transactionally
-    )
-
-  override def create(
-      moduleCompendium: ModuleCompendium,
-      path: GitFilePath,
-      timestamp: LocalDateTime
-  ) =
-    db.run(
-      (
-        for {
-          _ <- tableQuery += toDbEntry(moduleCompendium, path, timestamp)
-          _ <- createDependencies(moduleCompendium.metadata)
-        } yield moduleCompendium
-      ).transactionally
-    )
-
-  override def all(filter: Map[String, Seq[String]]) =
-    retrieve(allWithFilter(filter))
+  private def existsAction(moduleCompendium: ModuleCompendium) =
+    tableQuery
+      .filter(_.id === moduleCompendium.metadata.id)
+      .exists
+      .result
 
   private def retrieve(
       query: Query[ModuleCompendiumTable, ModuleCompendiumDbEntry, Seq]
@@ -470,6 +571,7 @@ final class ModuleCompendiumRepositoryImpl @Inject() (
               poM.foreach(po =>
                 poMandatory += POMandatoryOutput(
                   po.po,
+                  po.specialization,
                   po.recommendedSemester,
                   po.recommendedPartTimeSemester
                 )
@@ -477,6 +579,7 @@ final class ModuleCompendiumRepositoryImpl @Inject() (
               poO.foreach(po =>
                 poOptional += POOptionalOutput(
                   po.po,
+                  po.specialization,
                   po.instanceOf,
                   po.partOfCatalog,
                   po.recommendedSemester
@@ -620,37 +723,4 @@ final class ModuleCompendiumRepositoryImpl @Inject() (
         }.toSeq)
     )
   }
-
-  override def allIds() =
-    db.run(
-      tableQuery
-        .map(m => (m.id, m.abbrev))
-        .result
-    )
-
-  def allPreview() =
-    db.run(
-      tableQuery
-        .map(m => (m.id, m.title, m.abbrev))
-        .result
-    )
-
-  override def allPreview(filter: Map[String, Seq[String]]) =
-    db.run(
-      allWithFilter(filter)
-        .map(m => (m.id, m.title, m.abbrev))
-        .result
-    )
-
-  override def get(id: UUID) =
-    retrieve(tableQuery.filter(_.id === id)).single
-
-  override def paths(ids: Seq[UUID]) =
-    db.run(
-      tableQuery
-        .filter(_.id.inSet(ids))
-        .map(a => (a.id, a.gitPath))
-        .result
-        .map(_.map(a => (a._1, GitFilePath(a._2))))
-    )
 }

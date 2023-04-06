@@ -1,7 +1,7 @@
 package git.subscriber
 
 import akka.actor.{Actor, Props}
-import ModuleCompendiumSubscribers.{Added, Modified, Removed}
+import git.subscriber.ModuleCompendiumSubscribers.{CreatedOrUpdated, Removed}
 import play.api.Logging
 import publisher.{KafkaPublisher, Record}
 import validator.Metadata
@@ -20,14 +20,14 @@ private final class ModuleCompendiumPublishActor(
     with Logging {
 
   override def receive = {
-    case Added(_, _, _, result) =>
-      result.foreach(mc => publish(Record("added", mc.metadata)))
-    case Modified(_, _, _, result) =>
-      result.foreach(mc => publish(Record("updated", mc.metadata)))
-    case Removed(_, _, path) =>
-      logger.error(
+    case CreatedOrUpdated(_, entries) =>
+      entries.foreach { case (_, mc, _) =>
+        publish(Record("updated", mc.metadata))
+      }
+    case Removed(_, _, entries) =>
+      logger.info(
         s"""failed to publish metadata record
-           |  - git path: ${path.value}
+           |  - git path: ${entries.map(_.value).mkString(", ")}
            |  - message: deleting metadata is currently not supported""".stripMargin
       )
   }

@@ -10,5 +10,6 @@ case class ECTS(
 case class ECTSFocusAreaContribution(
     focusArea: FocusAreaPreview,
     ectsValue: Double,
-    description: String
+    deDesc: String,
+    enDesc: String
 )

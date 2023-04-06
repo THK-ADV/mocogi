@@ -33,18 +33,62 @@ final class ECTSParserSpec
           |  contributions_to_focus_areas:
           |    gak:
           |      num: 0
-          |      desc:
+          |      de_desc:
           |    acs:
           |      num: 6
-          |      desc: |
+          |      de_desc: |
           |        Text1
           |        Text2""".stripMargin
       val (res, rest) =
         ectsContributionsToFocusAreasParser.parse(input)
       assert(
-        res.value == List(
-          ECTSFocusAreaContribution(FocusAreaPreview("gak"), 0, ""),
-          ECTSFocusAreaContribution(FocusAreaPreview("acs"), 6, "Text1\nText2\n")
+        res.value.head == ECTSFocusAreaContribution(
+          FocusAreaPreview("gak"),
+          0,
+          "",
+          ""
+        )
+      )
+      assert(
+        res.value(1) == ECTSFocusAreaContribution(
+          FocusAreaPreview("acs"),
+          6,
+          "Text1\nText2\n",
+          ""
+        )
+      )
+      assert(rest.isEmpty)
+    }
+
+    "parse ects with contributions to focus areas with de and en desc set or not" in {
+      val input =
+        """ects:
+          |  contributions_to_focus_areas:
+          |    gak:
+          |      num: 0
+          |      de_desc: a
+          |    acs:
+          |      num: 6
+          |      de_desc: |
+          |        a
+          |        b
+          |      en_desc: c  """.stripMargin
+      val (res, rest) =
+        ectsContributionsToFocusAreasParser.parse(input)
+      assert(
+        res.value.head == ECTSFocusAreaContribution(
+          FocusAreaPreview("gak"),
+          0,
+          "a",
+          ""
+        )
+      )
+      assert(
+        res.value(1) == ECTSFocusAreaContribution(
+          FocusAreaPreview("acs"),
+          6,
+          "a\nb\n",
+          "c"
         )
       )
       assert(rest.isEmpty)
@@ -61,19 +105,29 @@ final class ECTSParserSpec
           |  contributions_to_focus_areas:
           |    gak:
           |      num: 4
-          |      desc: |
+          |      de_desc: |
           |        Text1
           |        Text2
           |    acs:
           |      num: 6
-          |      desc: |
+          |      de_desc: |
           |        Text1
           |        Text2""".stripMargin
       val (res2, rest2) = ectsParser.parse(complexInput)
       assert(
         res2.value.value == List(
-          ECTSFocusAreaContribution(FocusAreaPreview("gak"), 4, "Text1\nText2\n"),
-          ECTSFocusAreaContribution(FocusAreaPreview("acs"), 6, "Text1\nText2\n")
+          ECTSFocusAreaContribution(
+            FocusAreaPreview("gak"),
+            4,
+            "Text1\nText2\n",
+            ""
+          ),
+          ECTSFocusAreaContribution(
+            FocusAreaPreview("acs"),
+            6,
+            "Text1\nText2\n",
+            ""
+          )
         )
       )
       assert(rest2.isEmpty)

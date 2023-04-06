@@ -1,52 +1,91 @@
-/*package git.publisher
+package git.publisher
+
+import akka.actor.{Actor, ActorRef, Props}
+import git.GitFilesBroker.Changes
+import git.publisher.ModuleCompendiumPublisher.NotifySubscribers
+import git.subscriber.ModuleCompendiumSubscribers
+import play.api.Logging
+import service._
+
+import java.util.UUID
+import javax.inject.Singleton
+import scala.concurrent.ExecutionContext
+import scala.util.{Failure, Success}
 
 object ModuleCompendiumPublisher {
   def props(
-      parsingValidator: ModuleCompendiumParsingValidator,
+      metadataParsingService: MetadataParsingService,
+      metadataValidatingService: MetadataValidatingService,
       subscribers: ModuleCompendiumSubscribers,
       ctx: ExecutionContext
   ) = Props(
-    new ModuleCompendiumPublisherImpl(parsingValidator, subscribers, ctx)
+    new ModuleCompendiumPublisherImpl(
+      metadataParsingService,
+      metadataValidatingService,
+      subscribers,
+      ctx
+    )
   )
 
   private final class ModuleCompendiumPublisherImpl(
-      private val parsingValidator: ModuleCompendiumParsingValidator,
+      private val parsingService: MetadataParsingService,
+      private val validatingService: MetadataValidatingService,
       private val subscribers: ModuleCompendiumSubscribers,
       private implicit val ctx: ExecutionContext
   ) extends Actor
       with Logging {
     override def receive = { case NotifySubscribers(changes) =>
-      parse(
-        changes,
-        (p, r) => subscribers.added(changes.commitId, changes.timestamp, p, r),
-        (p, r) =>
-          subscribers.modified(changes.commitId, changes.timestamp, p, r),
-        p => subscribers.removed(changes.commitId, changes.timestamp, p)
-      )
+      go(changes)
     }
 
-    private def parse(
-        changes: Changes,
-        added: (GitFilePath, Try[ModuleCompendium]) => Unit,
-        modified: (GitFilePath, Try[ModuleCompendium]) => Unit,
-        removed: GitFilePath => Unit
-    ): Unit = {
-      def go(
-          xs: List[(GitFilePath, GitFileContent)],
-          onComplete: (GitFilePath, Try[ModuleCompendium]) => Unit
-      ): Unit = {
-        xs foreach { case (path, content) =>
-          parsingValidator
-            .parse(content.value, path)
-            .onComplete(res => onComplete(path, res.map(_._1)))
-        }
+    private def go(changes: Changes): Unit = {
+      val allChanges = changes.added ++ changes.modified
+      val allPrints =
+        allChanges.map(c => (Option.empty[UUID], Print(c._2.value)))
+      val f = for {
+        parsed <- parsingService.parse(allPrints)
+        validates <- continue(parsed, validatingService.validate)
+      } yield validates.map(_.map { case (print, mc) =>
+        (allChanges.find(_._2.value == print.value).get._1, mc)
+      })
+
+      f onComplete {
+        case Success(s) =>
+          s match {
+            case Right(mcs) =>
+              subscribers.createdOrUpdated(
+                changes.commitId,
+                mcs.map(t => (t._1, t._2, changes.timestamp))
+              )
+              subscribers.removed(
+                changes.commitId,
+                changes.timestamp,
+                changes.removed
+              )
+            case Left(errs) => logPipelineErrors(errs)
+          }
+        case Failure(t) =>
+          logFutureFailure(t)
       }
-      go(changes.added, added)
-      go(changes.modified, modified)
-      changes.removed.foreach(removed)
     }
-  }
 
+    private def logPipelineErrors(errs: Seq[PipelineError]): Unit =
+      logger.error(
+        s"""failed to parse or validate module compendium
+           |  - messages: ${errs
+            .map(_.getMessage)
+            .mkString("\n")}""".stripMargin
+      )
+
+    private def logFutureFailure(t: Throwable): Unit =
+      logger.error(
+        s"""failed to handle git push event
+           |  - message: ${t.getMessage}
+           |  - trace: ${t.getStackTrace.mkString(
+            "\n           "
+          )}""".stripMargin
+      )
+  }
   private case class NotifySubscribers(changes: Changes)
 }
 
@@ -54,4 +93,4 @@ object ModuleCompendiumPublisher {
 case class ModuleCompendiumPublisher(private val value: ActorRef) {
   def notifySubscribers(changes: Changes): Unit =
     value ! NotifySubscribers(changes)
-}*/
+}

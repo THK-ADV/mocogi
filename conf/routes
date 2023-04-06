@@ -57,13 +57,17 @@ POST          /studyPrograms                            controllers.core.StudyPr
 GET           /competences                              controllers.core.CompetenceController.all()
 POST          /competences                              controllers.core.CompetenceController.create()
 
+GET           /specializations                          controllers.core.SpecializationController.all()
+POST          /specializations                          controllers.core.SpecializationController.create()
+
 # Module Compendium
 
 GET           /moduleCompendium                         controllers.ModuleCompendiumController.all()
 GET           /moduleCompendium/:id/file                controllers.ModuleCompendiumController.getFile(id: java.util.UUID)
 GET           /moduleCompendium/:id                     controllers.ModuleCompendiumController.get(id: java.util.UUID)
 
-GET           /modules                                  controllers.ModuleController.all()
+GET           /modules                                  controllers.ModuleController.allModules()
+GET           /metadata                                 controllers.ModuleController.allModuleMetadata()
 
 # Git Workflow
 

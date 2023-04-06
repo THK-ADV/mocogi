@@ -1,6 +1,6 @@
 package parsing.metadata
 
-import models.core.{AssessmentMethod, Competence, FocusAreaPreview, GlobalCriteria, Language, Location, ModuleType, PO, Person, Season, Status}
+import models.core._
 import parser.Parser
 import parser.Parser._
 import parser.ParserOps._
@@ -20,7 +20,7 @@ class MetadataCompositeParser @Inject() (
       .zip(prefix(_ != '\n'))
       .map(VersionScheme.tupled)
 
-  val versionSchemePrinter: Printer[VersionScheme] = {
+  private val versionSchemePrinter: Printer[VersionScheme] = {
     import printer.PrinterOps.P0
     Printer
       .prefix("v")
@@ -40,7 +40,8 @@ class MetadataCompositeParser @Inject() (
       focusAreas: Seq[FocusAreaPreview],
       competences: Seq[Competence],
       globalCriteria: Seq[GlobalCriteria],
-      pos: Seq[PO]
+      pos: Seq[PO],
+      specializations: Seq[Specialization]
   ): Parser[ParsedMetadata] =
     prefix("---")
       .take(versionSchemeParser)

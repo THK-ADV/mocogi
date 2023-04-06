@@ -1,7 +1,7 @@
 package service
 
-import database.ModuleCompendiumOutput
 import database.repo.ModuleCompendiumRepository
+import database.{MetadataOutput, ModuleCompendiumOutput}
 import git.GitFilePath
 import parsing.types.ModuleCompendium
 
@@ -22,14 +22,29 @@ trait ModuleCompendiumService {
       path: GitFilePath,
       timestamp: LocalDateTime
   ): Future[ModuleCompendium]
+  def createMany(
+      entries: Seq[(GitFilePath, ModuleCompendium, LocalDateTime)]
+  ): Future[Seq[ModuleCompendium]]
   def createOrUpdate(
       moduleCompendium: ModuleCompendium,
       path: GitFilePath,
       timestamp: LocalDateTime
   ): Future[ModuleCompendium]
+  def createOrUpdateMany(
+      entries: Seq[(GitFilePath, ModuleCompendium, LocalDateTime)]
+  ): Future[Seq[ModuleCompendium]]
+  def update(
+      moduleCompendium: ModuleCompendium,
+      path: GitFilePath,
+      timestamp: LocalDateTime
+  ): Future[ModuleCompendium]
+  def updateMany(
+      entries: Seq[(GitFilePath, ModuleCompendium, LocalDateTime)]
+  ): Future[Seq[ModuleCompendium]]
   def all(filter: Map[String, Seq[String]]): Future[Seq[ModuleCompendiumOutput]]
   def allIdsAndAbbrevs(): Future[Seq[(UUID, String)]]
   def allModules(filter: Map[String, Seq[String]]): Future[Seq[Module]]
+  def allMetadata(filter: Map[String, Seq[String]]): Future[Seq[MetadataOutput]]
   def get(id: UUID): Future[ModuleCompendiumOutput]
   def paths(ids: Seq[UUID]): Future[Seq[(UUID, GitFilePath)]]
 }
@@ -52,12 +67,34 @@ final class ModuleCompendiumServiceImpl @Inject() (
         else create(moduleCompendium, path, timestamp)
     } yield res
 
+  override def createOrUpdateMany(
+      entries: Seq[(GitFilePath, ModuleCompendium, LocalDateTime)]
+  ) =
+    repo.createOrUpdateMany(entries)
+
+  override def update(
+      moduleCompendium: ModuleCompendium,
+      path: GitFilePath,
+      timestamp: LocalDateTime
+  ) =
+    repo.update(moduleCompendium, path, timestamp)
+
+  override def updateMany(
+      entries: Seq[(GitFilePath, ModuleCompendium, LocalDateTime)]
+  ) =
+    repo.updateMany(entries)
+
   override def create(
       moduleCompendium: ModuleCompendium,
       path: GitFilePath,
       timestamp: LocalDateTime
   ) =
     repo.create(moduleCompendium, path, timestamp)
+
+  override def createMany(
+      entries: Seq[(GitFilePath, ModuleCompendium, LocalDateTime)]
+  ) =
+    repo.createMany(entries)
 
   override def all(filter: Map[String, Seq[String]]) =
     repo.all(filter)
@@ -73,4 +110,7 @@ final class ModuleCompendiumServiceImpl @Inject() (
 
   override def paths(ids: Seq[UUID]) =
     repo.paths(ids)
+
+  override def allMetadata(filter: Map[String, Seq[String]]) =
+    repo.all(filter).map(_.map(_.metadata))
 }

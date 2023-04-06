@@ -7,12 +7,14 @@ import java.util.UUID
 
 case class POMandatoryOutput(
     po: String,
+    specialization: Option[String],
     recommendedSemester: List[Int],
     recommendedSemesterPartTime: List[Int]
 )
 
 case class POOptionalOutput(
     po: String,
+    specialization: Option[String],
     instanceOf: UUID,
     partOfCatalog: Boolean,
     recommendedSemester: List[Int]

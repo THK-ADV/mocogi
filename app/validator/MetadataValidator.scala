@@ -144,6 +144,7 @@ object MetadataValidator {
       .map(_.zip(_).map { case (po, m) =>
         POOptional(
           po.po,
+          po.specialization,
           m,
           po.partOfCatalog,
           po.recommendedSemester

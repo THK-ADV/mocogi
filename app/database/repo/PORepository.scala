@@ -1,11 +1,6 @@
 package database.repo
 
-import database.table.{
-  PODbEntry,
-  POModificationDateDbEntry,
-  POModificationDateTable,
-  POTable
-}
+import database.table.{PODbEntry, POModificationDateDbEntry, POModificationDateTable, POTable}
 import models.core.PO
 import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfigProvider}
 import slick.jdbc.JdbcProfile
@@ -31,6 +26,9 @@ class PORepository @Inject() (
 
   def all(): Future[Seq[PO]] =
     retrieve(tableQuery)
+
+  def allIds(): Future[Seq[String]] =
+    db.run(tableQuery.map(_.abbrev).result)
 
   def retrieve(query: Query[POTable, PODbEntry, Seq]) =
     db.run(

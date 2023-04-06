@@ -1,4 +1,10 @@
-/*package git
+package git
+
+import git.GitFilesBroker.{Changes, core, modules, split}
+import git.publisher.{CoreDataPublisher, ModuleCompendiumPublisher}
+
+import javax.inject.{Inject, Singleton}
+import scala.collection.mutable.ListBuffer
 
 trait GitFilesBroker {
   def distributeToSubscriber(changes: Changes): Unit
@@ -58,16 +64,16 @@ object GitFilesBroker {
 
 @Singleton
 final class GitFilesBrokerImpl @Inject() (
-    private val moduleCompendiumParsingValidator: ModuleCompendiumPublisher,
-    private val coreDataParsingValidator: CoreDataPublisher
+    private val moduleCompendiumPublisher: ModuleCompendiumPublisher,
+    private val coreDataPublisher: CoreDataPublisher
 ) extends GitFilesBroker {
   override def distributeToSubscriber(changes: Changes): Unit = {
     val map = split(changes)
     map
       .get(modules)
-      .foreach(moduleCompendiumParsingValidator.notifySubscribers)
+      .foreach(moduleCompendiumPublisher.notifySubscribers)
     map
       .get(core)
-      .foreach(coreDataParsingValidator.notifySubscribers)
+      .foreach(coreDataPublisher.notifySubscribers)
   }
-}*/
+}

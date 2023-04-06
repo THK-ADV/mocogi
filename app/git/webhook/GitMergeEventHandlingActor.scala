@@ -5,7 +5,7 @@ import database.repo.UserBranchRepository
 import git.subscriber.ModuleCompendiumSubscribers
 import git.webhook.GitMergeEventHandlingActor.HandleMergeEvent
 import git.{GitConfig, GitFilePath}
-import models.{ModuleDraftStatus, UserBranch, ValidModuleDraft}
+import models.{UserBranch, ValidModuleDraft}
 import play.api.Logging
 import play.api.libs.json.{JsResult, JsValue}
 import service.ModuleDraftService
@@ -105,26 +105,13 @@ object GitMergeEventHandlingActor {
     private def notifySubscribers(
         drafts: Seq[ValidModuleDraft],
         commitId: LastCommitId
-    ): Unit = // TODO maybe this should be done synchronously in one transaction
-      drafts.foreach { d =>
+    ): Unit = {
+      val entries = drafts.map { d =>
         val mc = moduleDraftService.parseModuleCompendium(d.json)
-        d.status match {
-          case ModuleDraftStatus.Added =>
-            subscribers.added(
-              commitId,
-              d.lastModified,
-              GitFilePath(d),
-              mc
-            )
-          case ModuleDraftStatus.Modified =>
-            subscribers.modified(
-              commitId,
-              d.lastModified,
-              GitFilePath(d),
-              mc
-            )
-        }
+        (GitFilePath(d), mc, d.lastModified)
       }
+      subscribers.createdOrUpdated(commitId, entries)
+    }
 
     private def go(json: JsValue): Future[Unit] =
       Future.fromTry(parse(json)).flatMap {

@@ -8,7 +8,8 @@ case class ECTSFocusAreaContributionDbEntry(
     metadata: UUID,
     focusArea: String,
     ectsValue: Double,
-    description: String
+    deDesc: String,
+    enDesc: String
 )
 
 final class ECTSFocusAreaContributionTable(tag: Tag)
@@ -23,12 +24,15 @@ final class ECTSFocusAreaContributionTable(tag: Tag)
 
   def ectsValue = column[Double]("ects_value")
 
-  def description = column[String]("description")
+  def deDesc = column[String]("de_desc")
+
+  def enDesc = column[String]("en_desc")
 
   override def * = (
     metadata,
     focusArea,
     ectsValue,
-    description
+    deDesc,
+    enDesc
   ) <> (ECTSFocusAreaContributionDbEntry.tupled, ECTSFocusAreaContributionDbEntry.unapply)
 }
