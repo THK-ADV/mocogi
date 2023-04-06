@@ -17,25 +17,14 @@ object POParser {
     val poParser = oneOf(
       pos0.map(s => prefix(s"study_program.${s.abbrev}").map(_ => s)): _*
     )
-    val specializationsParser = Parser[Option[Specialization]] { str => // TODO rewrite with combinators
-      val (maybeDot, rest) = (char.map(_.toString) or Parser.rest).parse(str)
-      maybeDot match {
-        case Left(value) => Left(value) -> rest
-        case Right(c) =>
-          if (c == ".") {
-            val parser = oneOf(
-              specializations0.map(s => prefix(s.abbrev).map(_ => s)): _*
-            )
-            val (maybeSpec, rest1) = parser.parse(rest)
-            maybeSpec match {
-              case Left(value) => Left(value) -> rest1
-              case Right(spec) => Right(Some(spec)) -> rest1
-            }
-          } else {
-            Right(Option.empty[Specialization]) -> rest
-          }
-      }
-    }
+    val specializationsParser: Parser[Option[Specialization]] =
+      (char.map(_.toString) or Parser.rest)
+        .flatMap { c =>
+          if (c == ".")
+            oneOf(specializations0.map(s => prefix(s.abbrev).map(_ => s)): _*)
+              .map(Some.apply)
+          else always(None)
+        }
     prefix("- study_program:")
       .skip(zeroOrMoreSpaces)
       .take(poParser)
