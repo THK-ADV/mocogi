@@ -105,7 +105,7 @@ object GitMergeEventHandlingActor {
     private def notifySubscribers(
         drafts: Seq[ValidModuleDraft],
         commitId: LastCommitId
-    ): Unit = { // TODO maybe this should be done synchronously in one transaction
+    ): Unit = {
       val entries = drafts.map { d =>
         val mc = moduleDraftService.parseModuleCompendium(d.json)
         (GitFilePath(d), mc, d.lastModified)
