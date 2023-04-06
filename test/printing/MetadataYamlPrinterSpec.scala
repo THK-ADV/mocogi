@@ -240,9 +240,9 @@ final class MetadataYamlPrinterSpec extends AnyWordSpec with PrinterSpec {
 
     "print po mandatory" in {
       val po1 = List(
-        POMandatoryOutput("abc", List(1), Nil),
-        POMandatoryOutput("ghi", List(1, 2), List(2, 1)),
-        POMandatoryOutput("def", List(2, 1), Nil)
+        POMandatoryOutput("abc", None, List(1), Nil),
+        POMandatoryOutput("ghi", None, List(1, 2), List(2, 1)),
+        POMandatoryOutput("def", None, List(2, 1), Nil)
       )
       val res1 =
         s"""po_mandatory:
@@ -264,8 +264,8 @@ final class MetadataYamlPrinterSpec extends AnyWordSpec with PrinterSpec {
 
     "print po optional" in {
       val po1 = List(
-        POOptionalOutput("abc", m1, partOfCatalog = true, List(1)),
-        POOptionalOutput("def", m1, partOfCatalog = false, List(2, 1))
+        POOptionalOutput("abc", None, m1, partOfCatalog = true, List(1)),
+        POOptionalOutput("def", None, m1, partOfCatalog = false, List(2, 1))
       )
       val res1 =
         s"""po_optional:
@@ -322,19 +322,21 @@ final class MetadataYamlPrinterSpec extends AnyWordSpec with PrinterSpec {
         ),
         POOutput(
           List(
-            POMandatoryOutput("po1", List(1, 2), List(1)),
-            POMandatoryOutput("po2", List(1), Nil),
-            POMandatoryOutput("po3", List(1), Nil)
+            POMandatoryOutput("po1", None, List(1, 2), List(1)),
+            POMandatoryOutput("po2", None, List(1), Nil),
+            POMandatoryOutput("po3", None, List(1), Nil)
           ),
           List(
             POOptionalOutput(
               "po4",
+              None,
               m1,
               partOfCatalog = false,
               List(1, 2)
             ),
             POOptionalOutput(
               "po5",
+              None,
               m2,
               partOfCatalog = true,
               List(1)

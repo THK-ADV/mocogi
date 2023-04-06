@@ -18,10 +18,12 @@ final class PipelineErrorFormatSpec
 
   "A PipelineErrorFormat Spec" should {
     "serialize back and forth a parsing error" in {
-      val medata = Some(UUID.randomUUID)
+      val medata = UUID.randomUUID
       val parsingError = ParsingError("exp", "fo")
       val res =
-        pipelineErrorFormat.writes(PipelineError.Parser(parsingError, medata))
+        pipelineErrorFormat.writes(
+          PipelineError.Parser(parsingError, Some(medata))
+        )
       assert(res.\("tag").get == JsString("parsing-error"))
       assert(res.\("metadata").get == JsString(medata.toString))
       assert(res.\("error").\("expected").get == JsString("exp"))
@@ -34,7 +36,7 @@ final class PipelineErrorFormatSpec
       )
       pipelineErrorFormat.reads(json).get match {
         case PipelineError.Parser(error, id) =>
-          assert(id == medata)
+          assert(id.get == medata)
           assert(error.expected == "abc")
           assert(error.found == "def")
         case PipelineError.Printer(error, _) =>
@@ -45,10 +47,12 @@ final class PipelineErrorFormatSpec
     }
 
     "serialize back and forth a printing error" in {
-      val medata = Some(UUID.randomUUID)
+      val medata = UUID.randomUUID
       val printingError = PrintingError("exp", "fo")
       val res =
-        pipelineErrorFormat.writes(PipelineError.Printer(printingError, medata))
+        pipelineErrorFormat.writes(
+          PipelineError.Printer(printingError, Some(medata))
+        )
       assert(res.\("tag").get == JsString("printing-error"))
       assert(res.\("metadata").get == JsString(medata.toString))
       assert(res.\("error").\("expected").get == JsString("exp"))
@@ -63,7 +67,7 @@ final class PipelineErrorFormatSpec
         case PipelineError.Parser(error, _) =>
           fail(s"expected printing error, but was $error")
         case PipelineError.Printer(error, id) =>
-          assert(id == medata)
+          assert(id.get == medata)
           assert(error.expected == "abc")
           assert(error.found == "def")
         case PipelineError.Validator(error, _) =>
@@ -72,11 +76,11 @@ final class PipelineErrorFormatSpec
     }
 
     "serialize back and forth a validation error" in {
-      val metadata = Some(UUID.randomUUID())
+      val metadata = UUID.randomUUID()
       val validationError = ValidationError(List("abc", "def"))
       val res =
         pipelineErrorFormat.writes(
-          PipelineError.Validator(validationError, metadata)
+          PipelineError.Validator(validationError, Some(metadata))
         )
       assert(res.\("tag").get == JsString("validation-error"))
       assert(res.\("metadata").get == JsString(metadata.toString))
@@ -99,7 +103,7 @@ final class PipelineErrorFormatSpec
         case PipelineError.Printer(error, _) =>
           fail(s"expected validation error, but was $error")
         case PipelineError.Validator(error, id) =>
-          assert(id == metadata)
+          assert(id.get == metadata)
           assert(error.errs == List("123", "456"))
       }
     }

@@ -6,10 +6,10 @@ ects:
   contributions_to_focus_areas:
     gak:
       num: 3.5
-      desc:
+      de_desc:
     acs:
       num: 6
-      desc: |
+      de_desc: |
         Text1
         Text2
 language: lang.en
