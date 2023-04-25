@@ -14,8 +14,8 @@
 | Dozierende | unknown |
 | Prüfungsformen | method |
 | Workload | 150 h |
-| Präsenzzeit | 45 h (11 h Übung, 34 h Praktikum) |
-| Selbststudium | 105 h |
+| Präsenzzeit | 150 h (15 h Vorlesung, 11 h Übung, 34 h Praktikum) |
+| Selbststudium | Keine |
 | Empfohlene Voraussetzungen | Keine |
 | Zwingende Voraussetzungen | Keine |
 | Verwendung des Moduls in weiteren Studiengängen | po1 (Semester 1) |

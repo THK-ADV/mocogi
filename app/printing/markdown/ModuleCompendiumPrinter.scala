@@ -1,6 +1,6 @@
 package printing.markdown
 
-import models.core.{AbbrevLabelLike, Season, StudyProgram}
+import models.core.{AbbrevLabelLike, Season}
 import parsing.types._
 import printer.Printer
 import printing.PrintingLanguage
@@ -122,7 +122,8 @@ object ModuleCompendiumPrinter {
 
   implicit class StringConcatOps(s: String) {
     def combine(other: String): String =
-      if (other.isEmpty) s
+      if (s.isEmpty) other
+      else if (other.isEmpty) s
       else s"$s, $other"
   }
 }

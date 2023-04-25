@@ -236,9 +236,15 @@ object ModuleCompendiumMarkdownPrinter extends ModuleCompendiumPrinter {
       .combine(language.seminarValue(wl))
       .combine(language.projectSupervisionValue(wl))
       .combine(language.projectWorkValue(wl))
+    val contactHoursValueLabel =
+      if (parts.isEmpty) s"$contactHoursValue h"
+      else s"$contactHoursValue h ($parts)"
+    val selfStudyLabel =
+      if (wl.selfStudy == 0) language.noneLabel
+      else s"${wl.selfStudy} h"
     row(language.workloadLabel, s"${wl.total} h")
-      .skip(row(language.contactHoursLabel, s"$contactHoursValue h ($parts)"))
-      .skip(row(language.selfStudyLabel, s"${wl.selfStudy} h"))
+      .skip(row(language.contactHoursLabel, contactHoursValueLabel))
+      .skip(row(language.selfStudyLabel, selfStudyLabel))
   }
 
   private def lastModified(implicit

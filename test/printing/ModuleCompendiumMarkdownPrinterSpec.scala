@@ -48,7 +48,7 @@ final class ModuleCompendiumMarkdownPrinterSpec
           ),
           Nil
         ),
-        Workload(0, 0, 0, 0, 0, 0, 0, 0),
+        Workload(0, 0, 34, 11, 0, 0, 105, 150),
         Prerequisites(None, None),
         Status("status", "status", "status"),
         Location("location", "location", "location"),
@@ -88,7 +88,6 @@ final class ModuleCompendiumMarkdownPrinterSpec
       val dePrinter =
         printer(_ => None)(PrintingLanguage.German, LocalDateTime.now())
       val deFile = withFile0("test/printing/res/de-print.md")(identity)
-      println(dePrinter.print(mc, "").value)
       assert(
         dePrinter.print(mc, "").value.dropRight(10) == deFile.dropRight(10)
       )
@@ -98,6 +97,28 @@ final class ModuleCompendiumMarkdownPrinterSpec
       val enFile = withFile0("test/printing/res/en-print.md")(identity)
       assert(
         enPrinter.print(mc, "").value.dropRight(10) == enFile.dropRight(10)
+      )
+
+      val deFile2 = withFile0("test/printing/res/de-print2.md")(identity)
+      val mc2 = mc.copy(metadata =
+        mc.metadata.copy(workload = mc.metadata.workload.copy(
+          lecture = 15,
+          practical = 0
+        ))
+      )
+      assert(
+        dePrinter.print(mc2, "").value.dropRight(10) == deFile2.dropRight(10)
+      )
+
+      val deFile3 = withFile0("test/printing/res/de-print3.md")(identity)
+      val mc3 = mc.copy(metadata =
+        mc.metadata.copy(workload = mc.metadata.workload.copy(
+          lecture = 15,
+          selfStudy = 0
+        ))
+      )
+      assert(
+        dePrinter.print(mc3, "").value.dropRight(10) == deFile3.dropRight(10)
       )
     }
   }
