@@ -55,9 +55,15 @@ final class ModuleCompendiumMarkdownPrinterSpec
         POs(
           List(
             POMandatory(
-              PO("po", 0, LocalDate.now, LocalDate.now, None, Nil, "program"),
+              PO("po1", 0, LocalDate.now, LocalDate.now, None, Nil, "program1"),
               None,
               List(1),
+              Nil
+            ),
+            POMandatory(
+              PO("po2", 0, LocalDate.now, LocalDate.now, None, Nil, "program1"),
+              None,
+              Nil,
               Nil
             )
           ),
@@ -82,6 +88,7 @@ final class ModuleCompendiumMarkdownPrinterSpec
       val dePrinter =
         printer(_ => None)(PrintingLanguage.German, LocalDateTime.now())
       val deFile = withFile0("test/printing/res/de-print.md")(identity)
+      println(dePrinter.print(mc, "").value)
       assert(
         dePrinter.print(mc, "").value.dropRight(10) == deFile.dropRight(10)
       )

@@ -79,8 +79,9 @@ object ModuleCompendiumMarkdownPrinter extends ModuleCompendiumPrinter {
       lang: PrintingLanguage
   ): Printer[Unit] = {
     def fmt(p: POMandatory) = {
-      val semester =
+      val semester = Option.when(p.recommendedSemester.nonEmpty)(
         s"(${lang.semesterLabel} ${fmtCommaSeparated(p.recommendedSemester)(_.toString)})"
+      )
       val studyProgramWithPO = studyProgram(p.po.program) match {
         case Some(sp) =>
           val spLabel = lang.fold(sp.deLabel, sp.enLabel)
@@ -89,7 +90,7 @@ object ModuleCompendiumMarkdownPrinter extends ModuleCompendiumPrinter {
         case None =>
           p.po.abbrev
       }
-      s"$studyProgramWithPO $semester"
+      semester.fold(studyProgramWithPO)(s => s"$studyProgramWithPO $s")
     }
 
     val xs = pos.mandatory

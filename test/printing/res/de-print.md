@@ -18,7 +18,8 @@
 | Selbststudium | 0 h |
 | Empfohlene Voraussetzungen | Keine |
 | Zwingende Voraussetzungen | Keine |
-| Verwendung des Moduls in weiteren Studiengängen | po (Semester 1) |
+| Verwendung des Moduls in weiteren Studiengängen | po1 (Semester 1) |
+|  | po2 |
 
 ## Angestrebte Lernergebnisse
 
