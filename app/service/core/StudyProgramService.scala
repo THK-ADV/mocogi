@@ -2,14 +2,22 @@ package service.core
 
 import database.InsertOrUpdateResult
 import database.repo.{StudyProgramOutput, StudyProgramRepository}
-import models.core.StudyProgram
+import models.core.{Grade, StudyProgram}
 import parsing.core.StudyProgramFileParser
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
+case class StudyProgramShort(
+    abbrev: String,
+    deLabel: String,
+    enLabel: String,
+    grade: Grade
+)
+
 trait StudyProgramService {
   def all(): Future[Seq[StudyProgramOutput]]
+  def allShort(): Future[Seq[StudyProgramShort]]
   def allIds(): Future[Seq[String]]
   def create(input: String): Future[List[StudyProgram]]
   def createOrUpdate(
@@ -31,6 +39,9 @@ final class StudyProgramServiceImpl @Inject() (
 
   def all(): Future[Seq[StudyProgramOutput]] =
     repo.all()
+
+  override def allShort() =
+    repo.allShort()
 
   override def allIds() =
     repo.allIds()

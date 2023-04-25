@@ -1,11 +1,12 @@
 package printing.markdown
 
+import models.core.Person
 import parsing.types._
 import printer.Printer
 import printer.Printer.{newline, prefix}
-import ModuleCompendiumPrinter.{LanguageOps, StringConcatOps}
-import models.core.Person
 import printing.PrintingLanguage
+import printing.markdown.ModuleCompendiumPrinter.{LanguageOps, StringConcatOps}
+import service.core.StudyProgramShort
 import validator.{Metadata, ModuleRelation, POs, PrerequisiteEntry}
 
 import java.time.LocalDateTime
@@ -70,11 +71,26 @@ object ModuleCompendiumMarkdownPrinter extends ModuleCompendiumPrinter {
           .skip(pos)
     }
 
-  private def fmtPOs(label: String, pos: POs)(implicit
+  private def fmtPOs(
+      label: String,
+      pos: POs,
+      studyProgram: String => Option[StudyProgramShort]
+  )(implicit
       lang: PrintingLanguage
   ): Printer[Unit] = {
-    def fmt(p: POMandatory) =
-      s"${p.po.abbrev} (${lang.semesterLabel} ${fmtCommaSeparated(p.recommendedSemester)(_.toString)})"
+    def fmt(p: POMandatory) = {
+      val semester =
+        s"(${lang.semesterLabel} ${fmtCommaSeparated(p.recommendedSemester)(_.toString)})"
+      val studyProgramWithPO = studyProgram(p.po.program) match {
+        case Some(sp) =>
+          val spLabel = lang.fold(sp.deLabel, sp.enLabel)
+          val gradeLabel = lang.fold(sp.grade.deLabel, sp.grade.enLabel)
+          s"$gradeLabel: $spLabel PO ${p.po.version}"
+        case None =>
+          p.po.abbrev
+      }
+      s"$studyProgramWithPO $semester"
+    }
 
     val xs = pos.mandatory
     if (xs.isEmpty) row(label, lang.noneLabel)
@@ -116,10 +132,15 @@ object ModuleCompendiumMarkdownPrinter extends ModuleCompendiumPrinter {
   private def header(title: String) =
     prefix(s"## $title").skip(newline)
 
-  private def contentBlock(title: String, content: String) = {
-    val nonEmptyContent = if (content.isEmpty) "\n" else content
-    header(title).skip(prefix(nonEmptyContent))
-  }
+  private def contentBlock(title: String, content: String) =
+    header(title)
+      .skip(
+        if (content.isEmpty) newline
+        else
+          newline
+            .skip(prefix(content))
+            .skip(newline.repeat(2))
+      )
 
   private def content(
       mc: ModuleCompendium
@@ -195,11 +216,11 @@ object ModuleCompendiumMarkdownPrinter extends ModuleCompendiumPrinter {
       m.prerequisites.required
     )
 
-  private def pos(implicit
+  private def pos(studyProgram: String => Option[StudyProgramShort])(implicit
       m: Metadata,
       language: PrintingLanguage
   ) =
-    fmtPOs(language.poLabel, m.validPOs)
+    fmtPOs(language.poLabel, m.validPOs, studyProgram)
 
   private def workload(implicit
       m: Metadata,
@@ -252,7 +273,8 @@ object ModuleCompendiumMarkdownPrinter extends ModuleCompendiumPrinter {
   private def learningOutcome(implicit c: Content, lang: PrintingLanguage) =
     contentBlock(lang.learningOutcomeLabel, c.learningOutcome)
 
-  override def printer(implicit
+  override def printer(studyProgram: String => Option[StudyProgramShort])(
+      implicit
       lang: PrintingLanguage,
       localDateTime: LocalDateTime
   ): Printer[ModuleCompendium] =
@@ -278,7 +300,7 @@ object ModuleCompendiumMarkdownPrinter extends ModuleCompendiumPrinter {
         .skip(workload)
         .skip(recommendedPrerequisites)
         .skip(requiredPrerequisites)
-        .skip(pos)
+        .skip(pos(studyProgram))
         .skip(newline)
         .skip(learningOutcome)
         .skip(moduleContent)

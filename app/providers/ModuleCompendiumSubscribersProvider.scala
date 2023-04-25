@@ -5,6 +5,7 @@ import controllers.parameter.PrinterOutputFormat
 import git.subscriber._
 import publisher.KafkaPublisher
 import service.ModuleCompendiumService
+import service.core.StudyProgramService
 import validator.Metadata
 
 import javax.inject.{Inject, Provider, Singleton}
@@ -16,6 +17,7 @@ class ModuleCompendiumSubscribersProvider @Inject() (
     moduleCompendiumMarkdownActor: ModuleCompendiumMarkdownActor,
     metadataService: ModuleCompendiumService,
     publisher: KafkaPublisher[Metadata],
+    studyProgramService: StudyProgramService,
     ctx: ExecutionContext
 ) extends Provider[ModuleCompendiumSubscribers] {
   override def get(): ModuleCompendiumSubscribers =
@@ -25,7 +27,9 @@ class ModuleCompendiumSubscribersProvider @Inject() (
         system.actorOf(
           ModuleCompendiumPrintingActor.props(
             moduleCompendiumMarkdownActor,
-            PrinterOutputFormat.DefaultPrinter
+            PrinterOutputFormat.DefaultPrinter,
+            studyProgramService,
+            ctx
           )
         ),
         system.actorOf(ModuleCompendiumPublishActor.props(publisher)),

@@ -1,15 +1,16 @@
 package printing.markdown
 
-import models.core.{AbbrevLabelLike, Season}
+import models.core.{AbbrevLabelLike, Season, StudyProgram}
 import parsing.types._
 import printer.Printer
 import printing.PrintingLanguage
+import service.core.StudyProgramShort
 import validator.Workload
 
 import java.time.LocalDateTime
 
 trait ModuleCompendiumPrinter {
-  def printer(implicit
+  def printer(studyProgram: String => Option[StudyProgramShort])(implicit
       language: PrintingLanguage,
       lastModified: LocalDateTime
   ): Printer[ModuleCompendium]
