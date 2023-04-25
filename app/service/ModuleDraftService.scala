@@ -30,7 +30,6 @@ class ModuleDraftService @Inject() (
     with PipelineErrorFormat
     with ModuleCompendiumFormat {
   import ops.EitherOps._
-  import ops.JsResultOps._
 
   def allFromBranch(branch: String): Future[Seq[ModuleDraft]] =
     moduleDraftRepository.allFromBranch(branch)
@@ -40,10 +39,10 @@ class ModuleDraftService @Inject() (
 
   def createOrUpdate(
       module: Option[UUID],
-      data: String,
+      data: ModuleCompendiumProtocol,
       branch: String
   ): Future[ModuleDraft] = {
-    def go() = module match {
+    def go(data: String) = module match {
       case Some(id) =>
         moduleDraftRepository.get(id).flatMap {
           case Some(draft) =>
@@ -77,13 +76,46 @@ class ModuleDraftService @Inject() (
     for {
       branchExists <- userBranchRepository.exists(branch)
       res <-
-        if (branchExists) go()
+        if (branchExists) go(toJson(normalize(data)))
         else
           Future.failed(
             new Throwable(s"branch $branch doesn't exist")
           )
     } yield res
   }
+
+  private def normalizeContent(c: Content) =
+    Content(
+      c.learningOutcome.trim,
+      c.content.trim,
+      c.teachingAndLearningMethods.trim,
+      c.recommendedReading.trim,
+      c.particularities.trim
+    )
+
+  private def normalize(
+      p: ModuleCompendiumProtocol
+  ): ModuleCompendiumProtocol = ModuleCompendiumProtocol(
+    p.metadata.copy(
+      title = p.metadata.title.trim,
+      abbrev = p.metadata.abbrev.trim,
+      prerequisites = p.metadata.prerequisites.copy(
+        recommended = p.metadata.prerequisites.recommended.map(e =>
+          e.copy(text = e.text.trim)
+        ),
+        required =
+          p.metadata.prerequisites.required.map(e => e.copy(text = e.text.trim))
+      )
+    ),
+    normalizeContent(p.deContent),
+    normalizeContent(p.enContent)
+  )
+
+  private def toJson(protocol: ModuleCompendiumProtocol) =
+    moduleCompendiumProtocolFormat.writes(protocol).toString()
+
+  private def fromJson(json: String) =
+    moduleCompendiumProtocolFormat.reads(Json.parse(json))
 
   private def print(branch: String): PrintingResult =
     for {
@@ -121,9 +153,13 @@ class ModuleDraftService @Inject() (
             }
           case Right(mcs) =>
             mcs.map { case (print, mc) =>
-              val mcJson = Json.toJson(mc)
+              val mcNormalized = mc.copy(
+                deContent = normalizeContent(mc.deContent),
+                enContent = normalizeContent(mc.enContent)
+              )
+              val mcJson = Json.toJson(mcNormalized)
               moduleDraftRepository.updateValidation(
-                mc.metadata.id,
+                mcNormalized.metadata.id,
                 Right((mcJson, print))
               )
             }
@@ -166,7 +202,7 @@ class ModuleDraftService @Inject() (
       drafts: Seq[ModuleDraft]
   ): Try[Seq[(UUID, ModuleCompendiumProtocol)]] =
     Try(drafts.map { draft =>
-      moduleCompendiumProtocolFormat.reads(Json.parse(draft.data)) match {
+      fromJson(draft.data) match {
         case JsSuccess(value, _) => (draft.module, value)
         case JsError(errors)     => throw new Throwable(errors.mkString("\n"))
       }

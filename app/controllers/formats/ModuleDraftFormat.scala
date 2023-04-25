@@ -4,7 +4,9 @@ import models.{ModuleDraft, ModuleDraftProtocol, ModuleDraftStatus}
 import play.api.libs.json.{Format, JsValue, Json, Writes}
 import service.Print
 
-trait ModuleDraftFormat extends JsonNullWritable {
+trait ModuleDraftFormat
+    extends JsonNullWritable
+    with ModuleCompendiumProtocolFormat {
   implicit val moduleDraftStatusFmt: Format[ModuleDraftStatus] =
     Format.of[String].bimap(ModuleDraftStatus.apply, _.toString)
 
