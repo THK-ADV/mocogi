@@ -11,6 +11,7 @@ import parsing.metadata.VersionScheme
 import parsing.types._
 import play.api.libs.json.{JsError, JsSuccess, JsValue, Json}
 import printing.yaml.ModuleCompendiumYamlPrinter
+import service.ModuleCompendiumNormalizer.normalize
 
 import java.time.LocalDateTime
 import java.util.UUID
@@ -84,33 +85,6 @@ class ModuleDraftService @Inject() (
     } yield res
   }
 
-  private def normalizeContent(c: Content) =
-    Content(
-      c.learningOutcome.trim,
-      c.content.trim,
-      c.teachingAndLearningMethods.trim,
-      c.recommendedReading.trim,
-      c.particularities.trim
-    )
-
-  private def normalize(
-      p: ModuleCompendiumProtocol
-  ): ModuleCompendiumProtocol = ModuleCompendiumProtocol(
-    p.metadata.copy(
-      title = p.metadata.title.trim,
-      abbrev = p.metadata.abbrev.trim,
-      prerequisites = p.metadata.prerequisites.copy(
-        recommended = p.metadata.prerequisites.recommended.map(e =>
-          e.copy(text = e.text.trim)
-        ),
-        required =
-          p.metadata.prerequisites.required.map(e => e.copy(text = e.text.trim))
-      )
-    ),
-    normalizeContent(p.deContent),
-    normalizeContent(p.enContent)
-  )
-
   private def toJson(protocol: ModuleCompendiumProtocol) =
     moduleCompendiumProtocolFormat.writes(protocol).toString()
 
@@ -153,13 +127,9 @@ class ModuleDraftService @Inject() (
             }
           case Right(mcs) =>
             mcs.map { case (print, mc) =>
-              val mcNormalized = mc.copy(
-                deContent = normalizeContent(mc.deContent),
-                enContent = normalizeContent(mc.enContent)
-              )
-              val mcJson = Json.toJson(mcNormalized)
+              val mcJson = Json.toJson(normalize(mc))
               moduleDraftRepository.updateValidation(
-                mcNormalized.metadata.id,
+                mc.metadata.id,
                 Right((mcJson, print))
               )
             }

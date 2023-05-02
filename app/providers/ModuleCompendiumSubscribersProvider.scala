@@ -1,8 +1,8 @@
 package providers
 
 import akka.actor.ActorSystem
-import controllers.parameter.PrinterOutputFormat
 import git.subscriber._
+import printing.markdown.ModuleCompendiumPrinter
 import publisher.KafkaPublisher
 import service.ModuleCompendiumService
 import service.core.StudyProgramService
@@ -13,11 +13,13 @@ import scala.concurrent.ExecutionContext
 
 @Singleton
 class ModuleCompendiumSubscribersProvider @Inject() (
+    printer: ModuleCompendiumPrinter,
     system: ActorSystem,
     moduleCompendiumMarkdownActor: ModuleCompendiumMarkdownActor,
     metadataService: ModuleCompendiumService,
     publisher: KafkaPublisher[Metadata],
     studyProgramService: StudyProgramService,
+    configReader: ConfigReader,
     ctx: ExecutionContext
 ) extends Provider[ModuleCompendiumSubscribers] {
   override def get(): ModuleCompendiumSubscribers =
@@ -26,9 +28,11 @@ class ModuleCompendiumSubscribersProvider @Inject() (
         system.actorOf(ModuleCompendiumLoggingActor.props),
         system.actorOf(
           ModuleCompendiumPrintingActor.props(
+            printer,
             moduleCompendiumMarkdownActor,
-            PrinterOutputFormat.DefaultPrinter,
             studyProgramService,
+            configReader.deOutputFolderPath,
+            configReader.enOutputFolderPath,
             ctx
           )
         ),

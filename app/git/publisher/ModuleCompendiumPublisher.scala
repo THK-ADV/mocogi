@@ -5,6 +5,7 @@ import git.GitFilesBroker.Changes
 import git.publisher.ModuleCompendiumPublisher.NotifySubscribers
 import git.subscriber.ModuleCompendiumSubscribers
 import play.api.Logging
+import service.ModuleCompendiumNormalizer.normalize
 import service._
 
 import java.util.UUID
@@ -46,7 +47,7 @@ object ModuleCompendiumPublisher {
         parsed <- parsingService.parse(allPrints)
         validates <- continue(parsed, validatingService.validate)
       } yield validates.map(_.map { case (print, mc) =>
-        (allChanges.find(_._2.value == print.value).get._1, mc)
+        (allChanges.find(_._2.value == print.value).get._1, normalize(mc))
       })
 
       f onComplete {

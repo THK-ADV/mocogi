@@ -34,7 +34,7 @@ final class ModuleCompendiumController @Inject() (
 
   def getFile(id: UUID) =
     Action { _ =>
-      val folder = configReader.outputFolderPath
+      val folder = configReader.deOutputFolderPath
       val filename = s"$id.html"
       Ok.sendFile(
         content = FileOps.getFile(s"$folder/$filename").get,

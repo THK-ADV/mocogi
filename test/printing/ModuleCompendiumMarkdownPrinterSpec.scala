@@ -5,7 +5,8 @@ import org.scalatest.EitherValues
 import org.scalatest.wordspec.AnyWordSpec
 import parsing.types._
 import parsing.withFile0
-import printing.markdown.ModuleCompendiumMarkdownPrinter.printer
+import printing.markdown.ModuleCompendiumMarkdownPrinter
+import printing.markdown.ModuleCompendiumMarkdownPrinter.contentBlock
 import validator.{
   Metadata,
   Module,
@@ -21,6 +22,8 @@ import java.util.UUID
 final class ModuleCompendiumMarkdownPrinterSpec
     extends AnyWordSpec
     with EitherValues {
+
+  val printer = new ModuleCompendiumMarkdownPrinter(false)
 
   "A ModuleCompendiumMarkdownPrinter" should {
     "print markdown file" in {
@@ -86,40 +89,72 @@ final class ModuleCompendiumMarkdownPrinterSpec
         Content("", "", "", "", "")
       )
       val dePrinter =
-        printer(_ => None)(PrintingLanguage.German, LocalDateTime.now())
+        printer.printer(_ => None)(PrintingLanguage.German, LocalDateTime.now())
       val deFile = withFile0("test/printing/res/de-print.md")(identity)
       assert(
-        dePrinter.print(mc, "").value.dropRight(10) == deFile.dropRight(10)
+        dePrinter.print(mc, "").value.dropRight(16) == deFile.dropRight(16)
       )
 
       val enPrinter =
-        printer(_ => None)(PrintingLanguage.English, LocalDateTime.now())
+        printer
+          .printer(_ => None)(PrintingLanguage.English, LocalDateTime.now())
       val enFile = withFile0("test/printing/res/en-print.md")(identity)
       assert(
-        enPrinter.print(mc, "").value.dropRight(10) == enFile.dropRight(10)
+        enPrinter.print(mc, "").value.dropRight(16) == enFile.dropRight(16)
       )
 
       val deFile2 = withFile0("test/printing/res/de-print2.md")(identity)
       val mc2 = mc.copy(metadata =
-        mc.metadata.copy(workload = mc.metadata.workload.copy(
-          lecture = 15,
-          practical = 0
-        ))
+        mc.metadata.copy(workload =
+          mc.metadata.workload.copy(
+            lecture = 15,
+            practical = 0
+          )
+        )
       )
       assert(
-        dePrinter.print(mc2, "").value.dropRight(10) == deFile2.dropRight(10)
+        dePrinter.print(mc2, "").value.dropRight(16) == deFile2.dropRight(16)
       )
 
       val deFile3 = withFile0("test/printing/res/de-print3.md")(identity)
       val mc3 = mc.copy(metadata =
-        mc.metadata.copy(workload = mc.metadata.workload.copy(
-          lecture = 15,
-          selfStudy = 0
-        ))
+        mc.metadata.copy(workload =
+          mc.metadata.workload.copy(
+            lecture = 15,
+            selfStudy = 0
+          )
+        )
       )
       assert(
-        dePrinter.print(mc3, "").value.dropRight(10) == deFile3.dropRight(10)
+        dePrinter.print(mc3, "").value.dropRight(16) == deFile3.dropRight(16)
       )
+    }
+
+    "print content block" in {
+      implicit val substituteLocalisedContent: Boolean = true
+      implicit var lang: PrintingLanguage = PrintingLanguage.German
+      var p = contentBlock("Title", "de text", "en text")
+      assert(p.print((), "").value === "## Title\n\nde text\n\n")
+
+      lang = PrintingLanguage.English
+      p = contentBlock("Title", "de text", "en text")
+      assert(p.print((), "").value === "## Title\n\nen text\n\n")
+
+      lang = PrintingLanguage.German
+      p = contentBlock("Title", "", "en text")
+      assert(p.print((), "").value === "## Title\n\nen text\n\n")
+
+      lang = PrintingLanguage.English
+      p = contentBlock("Title", "de text", "")
+      assert(p.print((), "").value === "## Title\n\nde text\n\n")
+
+      lang = PrintingLanguage.German
+      p = contentBlock("Title", "", "")
+      assert(p.print((), "").value === "## Title\n\n")
+
+      lang = PrintingLanguage.English
+      p = contentBlock("Title", "", "")
+      assert(p.print((), "").value === "## Title\n\n")
     }
   }
 }

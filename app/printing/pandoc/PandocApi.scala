@@ -11,16 +11,18 @@ import scala.util.{Failure, Success, Try}
 @Singleton
 final class PandocApi(
     htmlCmd: String,
-    pdfCmd: String,
-    outputFolderPath: String
+    pdfCmd: String
 ) {
 
   private val htmlExtension = "html"
 
   private val pdfExtension = "pdf"
 
-  def run(id: UUID, outputType: PrinterOutputType)(
-      input: String
+  def run(
+      id: UUID,
+      outputType: PrinterOutputType,
+      input: String,
+      outputFolderPath: String
   ): Either[Throwable, PrinterOutput] = {
     val inputStream = toStream(input)
     val res = outputType match {
@@ -29,13 +31,25 @@ final class PandocApi(
       case PrinterOutputType.HTMLStandalone =>
         createText(standalone(htmlCmd), htmlExtension, inputStream)
       case PrinterOutputType.HTMLFile =>
-        createFile(id, htmlExtension, htmlCmd, inputStream)
+        createFile(id, htmlExtension, htmlCmd, inputStream, outputFolderPath)
       case PrinterOutputType.HTMLStandaloneFile =>
-        createFile(id, htmlExtension, standalone(htmlCmd), inputStream)
+        createFile(
+          id,
+          htmlExtension,
+          standalone(htmlCmd),
+          inputStream,
+          outputFolderPath
+        )
       case PrinterOutputType.PDFFile =>
-        createFile(id, pdfExtension, pdfCmd, inputStream)
+        createFile(id, pdfExtension, pdfCmd, inputStream, outputFolderPath)
       case PrinterOutputType.PDFStandaloneFile =>
-        createFile(id, pdfExtension, standalone(pdfCmd), inputStream)
+        createFile(
+          id,
+          pdfExtension,
+          standalone(pdfCmd),
+          inputStream,
+          outputFolderPath
+        )
     }
     inputStream.close()
     res
@@ -68,7 +82,8 @@ final class PandocApi(
       id: UUID,
       extension: String,
       cmd: String,
-      inputStream: ByteArrayInputStream
+      inputStream: ByteArrayInputStream,
+      outputFolderPath: String
   ): Either[Throwable, PrinterOutput] = {
     val filename = s"$outputFolderPath/$id.$extension"
     val process = new File(filename) #< cmd #< inputStream
