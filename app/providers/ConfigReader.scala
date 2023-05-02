@@ -21,6 +21,10 @@ final class ConfigReader @Inject() (config: Configuration) {
     .getOptional[String]("git.token")
     .flatMap(s => Try(UUID.fromString(s)).toOption)
 
+  def moduleModeToken: Option[UUID] = config
+    .getOptional[String]("git.moduleModeToken")
+    .flatMap(s => Try(UUID.fromString(s)).toOption)
+
   def accessToken: String = string("git.accessToken")
 
   def baseUrl: String = string("git.baseUrl")

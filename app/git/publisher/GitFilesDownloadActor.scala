@@ -51,7 +51,7 @@ object GitFilesDownloadActor {
       }
     }
 
-    def downloadFile(
+    private def downloadFile(
         t: (GitFilePath, GitFileURL)
     ): Future[(GitFilePath, GitFileContent)] =
       ws
