@@ -20,9 +20,13 @@ stop() {
     docker-compose down
 }
 
-clearDockerImages() {
+clearDockerImage() {
   docker image rm $1
+}
+
+clearDocker() {
   docker image prune -f
+  docker container prune -f
 }
 
 uploadDockHub() {
@@ -35,21 +39,24 @@ uploadDockHub() {
 case "$1" in
 "backend")
   stop &&
-    clearDockerImages $backend_img_name &&
+    clearDockerImage $backend_img_name &&
+    clearDocker &&
     buildBackend &&
     docker-compose up -d &&
     exit 0
   ;;
 "dockhub")
   stop &&
-    clearDockerImages $backend_img_name &&
+    clearDockerImage $backend_img_name &&
+    clearDocker &&
     buildBackend &&
     uploadDockHub &&
     exit 0
   ;;
 "frontend")
   stop &&
-    clearDockerImages $frontend_img_name &&
+    clearDockerImage $frontend_img_name &&
+    clearDocker &&
     buildFrontend &&
     docker run -d -p 8080:80 --name $frontend_img_name $frontend_img_name
   exit 0
@@ -57,8 +64,9 @@ case "$1" in
 
 "both")
   stop &&
-    clearDockerImages $backend_img_name &&
-    clearDockerImages $frontend_img_name &&
+    clearDockerImage $backend_img_name &&
+    clearDockerImage $frontend_img_name &&
+    clearDocker &&
     buildBackend &&
     buildFrontend &&
     docker-compose up -d &&
