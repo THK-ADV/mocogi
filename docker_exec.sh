@@ -39,24 +39,24 @@ uploadDockHub() {
 case "$1" in
 "backend")
   stop &&
-    clearDockerImage $backend_img_name &&
-    clearDocker &&
+    clearDockerImage $backend_img_name
+    clearDocker
     buildBackend &&
     docker-compose up -d &&
     exit 0
   ;;
 "dockhub")
   stop &&
-    clearDockerImage $backend_img_name &&
-    clearDocker &&
+    clearDockerImage $backend_img_name
+    clearDocker
     buildBackend &&
     uploadDockHub &&
     exit 0
   ;;
 "frontend")
   stop &&
-    clearDockerImage $frontend_img_name &&
-    clearDocker &&
+    clearDockerImage $frontend_img_name
+    clearDocker
     buildFrontend &&
     docker run -d -p 8080:80 --name $frontend_img_name $frontend_img_name
   exit 0
@@ -64,9 +64,9 @@ case "$1" in
 
 "both")
   stop &&
-    clearDockerImage $backend_img_name &&
-    clearDockerImage $frontend_img_name &&
-    clearDocker &&
+    clearDockerImage $backend_img_name
+    clearDockerImage $frontend_img_name
+    clearDocker
     buildBackend &&
     buildFrontend &&
     docker-compose up -d &&
