@@ -60,7 +60,7 @@ final class PandocApi(
       input.getBytes(StandardCharsets.UTF_8)
     )
 
-  private def standalone(cmd: String): String = s"$cmd -s --embed-resource"
+  private def standalone(cmd: String): String = s"$cmd -s"
 
   private def createText(
       cmd: String,
