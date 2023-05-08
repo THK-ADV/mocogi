@@ -16,24 +16,7 @@ import scala.collection.mutable.ListBuffer
 import scala.concurrent.{ExecutionContext, Future}
 
 trait ModuleCompendiumRepository {
-  def exists(moduleCompendium: ModuleCompendium): Future[Boolean]
   def createOrUpdateMany(
-      entries: Seq[(GitFilePath, ModuleCompendium, LocalDateTime)]
-  ): Future[Seq[ModuleCompendium]]
-  def create(
-      moduleCompendium: ModuleCompendium,
-      path: GitFilePath,
-      timestamp: LocalDateTime
-  ): Future[ModuleCompendium]
-  def createMany(
-      entries: Seq[(GitFilePath, ModuleCompendium, LocalDateTime)]
-  ): Future[Seq[ModuleCompendium]]
-  def update(
-      moduleCompendium: ModuleCompendium,
-      path: GitFilePath,
-      timestamp: LocalDateTime
-  ): Future[ModuleCompendium]
-  def updateMany(
       entries: Seq[(GitFilePath, ModuleCompendium, LocalDateTime)]
   ): Future[Seq[ModuleCompendium]]
   def all(filter: Map[String, Seq[String]]): Future[Seq[ModuleCompendiumOutput]]
@@ -110,48 +93,6 @@ final class ModuleCompendiumRepositoryImpl @Inject() (
       responsibilityTable
         .filter(r => r.metadata === t.id && r.isPerson(value))
         .exists
-  }
-
-  override def exists(moduleCompendium: ModuleCompendium) =
-    db.run(existsAction(moduleCompendium))
-
-  override def update(
-      moduleCompendium: ModuleCompendium,
-      path: GitFilePath,
-      timestamp: LocalDateTime
-  ) =
-    db.run(updateAction(moduleCompendium, path, timestamp).transactionally)
-
-  override def updateMany(
-      entries: Seq[(GitFilePath, ModuleCompendium, LocalDateTime)]
-  ) = {
-    val actions = entries.map { case (path, moduleCompendium, timestamp) =>
-      updateAction(moduleCompendium, path, timestamp)
-    }
-    db.run(DBIO.sequence(actions).transactionally)
-  }
-
-  override def create(
-      moduleCompendium: ModuleCompendium,
-      path: GitFilePath,
-      timestamp: LocalDateTime
-  ) =
-    db.run(
-      (
-        for {
-          _ <- tableQuery += toDbEntry(moduleCompendium, path, timestamp)
-          _ <- createDependencies(moduleCompendium.metadata)
-        } yield moduleCompendium
-      ).transactionally
-    )
-
-  override def createMany(
-      entries: Seq[(GitFilePath, ModuleCompendium, LocalDateTime)]
-  ) = {
-    val actions = entries.map { case (path, moduleCompendium, timestamp) =>
-      createAction(moduleCompendium, path, timestamp)
-    }
-    db.run(DBIO.sequence(actions).transactionally)
   }
 
   override def createOrUpdateMany(
@@ -515,55 +456,56 @@ final class ModuleCompendiumRepositoryImpl @Inject() (
       .joinLeft(prerequisitesPOTable)
       .on(_._1.id === _.prerequisites)
 
-    db.run(
-      query
-        .joinLeft(moduleRelationTable)
-        .on(_.id === _.module)
-        .join(responsibilityTable)
-        .on(_._1.id === _.metadata)
-        .joinLeft(methods)
-        .on(_._1._1.id === _._1.metadata)
-        .joinLeft(prerequisites)
-        .on(_._1._1._1.id === _._1._1.metadata)
-        .joinLeft(poMandatoryTable)
-        .on(_._1._1._1._1.id === _.metadata)
-        .joinLeft(poOptionalTable)
-        .on(_._1._1._1._1._1.id === _.metadata)
-        .joinLeft(metadataCompetenceTable)
-        .on(_._1._1._1._1._1._1.id === _.metadata)
-        .joinLeft(metadataGlobalCriteriaTable)
-        .on(_._1._1._1._1._1._1._1.id === _.metadata)
-        .joinLeft(metadataTaughtWithTable)
-        .on(_._1._1._1._1._1._1._1._1.id === _.metadata)
-        .result
-        .map(_.groupBy(_._1._1._1._1._1._1._1._1._1).map { case (m, deps) =>
-          val participants = for {
-            min <- m.participantsMin
-            max <- m.participantsMax
-          } yield Participants(min, max)
-          val relations = mutable.HashSet[ModuleRelationDbEntry]()
-          val moduleManagement = mutable.HashSet[String]()
-          val lecturer = mutable.HashSet[String]()
-          val mandatoryAssessmentMethods =
-            mutable.HashSet[(UUID, AssessmentMethodEntryOutput)]()
-          val optionalAssessmentMethods =
-            mutable.HashSet[(UUID, AssessmentMethodEntryOutput)]()
-          val preconditions =
-            mutable.HashSet[MetadataAssessmentMethodPreconditionDbEntry]()
-          var recommendedPrerequisite =
-            Option.empty[(UUID, PrerequisiteEntryOutput)]
-          var requiredPrerequisite =
-            Option.empty[(UUID, PrerequisiteEntryOutput)]
-          val prerequisitesModules =
-            mutable.HashSet[PrerequisitesModuleDbEntry]()
-          val prerequisitesPOS = mutable.HashSet[PrerequisitesPODbEntry]()
-          val poMandatory = mutable.HashSet[POMandatoryOutput]()
-          val poOptional = mutable.HashSet[POOptionalOutput]()
-          val competences = mutable.HashSet[String]()
-          val globalCriteria = mutable.HashSet[String]()
-          val taughtWith = mutable.HashSet[UUID]()
+    val action = query
+      .joinLeft(moduleRelationTable)
+      .on(_.id === _.module)
+      .join(responsibilityTable)
+      .on(_._1.id === _.metadata)
+      .joinLeft(methods)
+      .on(_._1._1.id === _._1.metadata)
+      .joinLeft(prerequisites)
+      .on(_._1._1._1.id === _._1._1.metadata)
+      .joinLeft(poMandatoryTable)
+      .on(_._1._1._1._1.id === _.metadata)
+      .joinLeft(poOptionalTable)
+      .on(_._1._1._1._1._1.id === _.metadata)
+      .joinLeft(metadataCompetenceTable)
+      .on(_._1._1._1._1._1._1.id === _.metadata)
+      .joinLeft(metadataGlobalCriteriaTable)
+      .on(_._1._1._1._1._1._1._1.id === _.metadata)
+      .joinLeft(metadataTaughtWithTable)
+      .on(_._1._1._1._1._1._1._1._1.id === _.metadata)
+      .result
+    db.run(action.map(_.groupBy(_._1._1._1._1._1._1._1._1._1).map {
+      case (m, deps) =>
+        val participants = for {
+          min <- m.participantsMin
+          max <- m.participantsMax
+        } yield Participants(min, max)
+        val relations = mutable.HashSet[ModuleRelationDbEntry]()
+        val moduleManagement = mutable.HashSet[String]()
+        val lecturer = mutable.HashSet[String]()
+        val mandatoryAssessmentMethods =
+          mutable.HashSet[(UUID, AssessmentMethodEntryOutput)]()
+        val optionalAssessmentMethods =
+          mutable.HashSet[(UUID, AssessmentMethodEntryOutput)]()
+        val preconditions =
+          mutable.HashSet[MetadataAssessmentMethodPreconditionDbEntry]()
+        var recommendedPrerequisite =
+          Option.empty[(UUID, PrerequisiteEntryOutput)]
+        var requiredPrerequisite =
+          Option.empty[(UUID, PrerequisiteEntryOutput)]
+        val prerequisitesModules =
+          mutable.HashSet[PrerequisitesModuleDbEntry]()
+        val prerequisitesPOS = mutable.HashSet[PrerequisitesPODbEntry]()
+        val poMandatory = mutable.HashSet[POMandatoryOutput]()
+        val poOptional = mutable.HashSet[POOptionalOutput]()
+        val competences = mutable.HashSet[String]()
+        val globalCriteria = mutable.HashSet[String]()
+        val taughtWith = mutable.HashSet[UUID]()
 
-          deps.foreach {
+        deps
+          .foreach {
             case (((((((((_, mr), r), am), p), poM), poO), c), gc), tw) =>
               tw.foreach(taughtWith += _.module)
               gc.foreach(globalCriteria += _.globalCriteria)
@@ -633,94 +575,93 @@ final class ModuleCompendiumRepositoryImpl @Inject() (
               }
           }
 
-          val relation = relations.headOption.map { r =>
-            r.relationType match {
-              case ModuleRelationType.Parent =>
-                ModuleRelationOutput
-                  .Parent(relations.map(_.module).toList)
-              case ModuleRelationType.Child =>
-                ModuleRelationOutput.Child(r.module)
-            }
+        val relation = relations.headOption.map { r =>
+          r.relationType match {
+            case ModuleRelationType.Parent =>
+              ModuleRelationOutput
+                .Parent(relations.map(_.module).toList)
+            case ModuleRelationType.Child =>
+              ModuleRelationOutput.Child(r.module)
           }
+        }
 
-          ModuleCompendiumOutput(
-            m.gitPath,
-            MetadataOutput(
-              m.id,
-              m.title,
-              m.abbrev,
-              m.moduleType,
-              m.ects,
-              m.language,
-              m.duration,
-              m.season,
-              m.workload,
-              m.status,
-              m.location,
-              participants,
-              relation,
-              moduleManagement.toList,
-              lecturer.toList,
-              AssessmentMethodsOutput(
-                mandatoryAssessmentMethods
-                  .map(a =>
-                    a._2.copy(precondition =
-                      preconditions
-                        .filter(_.metadataAssessmentMethod == a._1)
-                        .map(_.assessmentMethod)
-                        .toList
-                    )
-                  )
-                  .toList,
-                optionalAssessmentMethods
-                  .map(a =>
-                    a._2.copy(precondition =
-                      preconditions
-                        .filter(_.metadataAssessmentMethod == a._1)
-                        .map(_.assessmentMethod)
-                        .toList
-                    )
-                  )
-                  .toList
-              ),
-              PrerequisitesOutput(
-                recommendedPrerequisite.map(a =>
-                  a._2.copy(
-                    modules = prerequisitesModules
-                      .filter(_.prerequisites == a._1)
-                      .map(_.module)
-                      .toList,
-                    pos = prerequisitesPOS
-                      .filter(_.prerequisites == a._1)
-                      .map(_.po)
-                      .toList
-                  )
-                ),
-                requiredPrerequisite.map(a =>
-                  a._2.copy(
-                    modules = prerequisitesModules
-                      .filter(_.prerequisites == a._1)
-                      .map(_.module)
-                      .toList,
-                    pos = prerequisitesPOS
-                      .filter(_.prerequisites == a._1)
-                      .map(_.po)
+        ModuleCompendiumOutput(
+          m.gitPath,
+          MetadataOutput(
+            m.id,
+            m.title,
+            m.abbrev,
+            m.moduleType,
+            m.ects,
+            m.language,
+            m.duration,
+            m.season,
+            m.workload,
+            m.status,
+            m.location,
+            participants,
+            relation,
+            moduleManagement.toList,
+            lecturer.toList,
+            AssessmentMethodsOutput(
+              mandatoryAssessmentMethods
+                .map(a =>
+                  a._2.copy(precondition =
+                    preconditions
+                      .filter(_.metadataAssessmentMethod == a._1)
+                      .map(_.assessmentMethod)
                       .toList
                   )
                 )
-              ),
-              POOutput(
-                poMandatory.toList,
-                poOptional.toList
-              ),
-              competences.toList,
-              globalCriteria.toList,
-              taughtWith.toList
+                .toList,
+              optionalAssessmentMethods
+                .map(a =>
+                  a._2.copy(precondition =
+                    preconditions
+                      .filter(_.metadataAssessmentMethod == a._1)
+                      .map(_.assessmentMethod)
+                      .toList
+                  )
+                )
+                .toList
             ),
-            m.deContent,
-            m.enContent
-          )
-        }.toSeq)
-    )
+            PrerequisitesOutput(
+              recommendedPrerequisite.map(a =>
+                a._2.copy(
+                  modules = prerequisitesModules
+                    .filter(_.prerequisites == a._1)
+                    .map(_.module)
+                    .toList,
+                  pos = prerequisitesPOS
+                    .filter(_.prerequisites == a._1)
+                    .map(_.po)
+                    .toList
+                )
+              ),
+              requiredPrerequisite.map(a =>
+                a._2.copy(
+                  modules = prerequisitesModules
+                    .filter(_.prerequisites == a._1)
+                    .map(_.module)
+                    .toList,
+                  pos = prerequisitesPOS
+                    .filter(_.prerequisites == a._1)
+                    .map(_.po)
+                    .toList
+                )
+              )
+            ),
+            POOutput(
+              poMandatory.toList,
+              poOptional.toList
+            ),
+            competences.toList,
+            globalCriteria.toList,
+            taughtWith.toList
+          ),
+          m.deContent,
+          m.enContent
+        )
+    }.toSeq))
   }
 }

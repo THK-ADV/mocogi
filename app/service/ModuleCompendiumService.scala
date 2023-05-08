@@ -17,28 +17,7 @@ case class Module(
 )
 
 trait ModuleCompendiumService {
-  def create(
-      moduleCompendium: ModuleCompendium,
-      path: GitFilePath,
-      timestamp: LocalDateTime
-  ): Future[ModuleCompendium]
-  def createMany(
-      entries: Seq[(GitFilePath, ModuleCompendium, LocalDateTime)]
-  ): Future[Seq[ModuleCompendium]]
-  def createOrUpdate(
-      moduleCompendium: ModuleCompendium,
-      path: GitFilePath,
-      timestamp: LocalDateTime
-  ): Future[ModuleCompendium]
   def createOrUpdateMany(
-      entries: Seq[(GitFilePath, ModuleCompendium, LocalDateTime)]
-  ): Future[Seq[ModuleCompendium]]
-  def update(
-      moduleCompendium: ModuleCompendium,
-      path: GitFilePath,
-      timestamp: LocalDateTime
-  ): Future[ModuleCompendium]
-  def updateMany(
       entries: Seq[(GitFilePath, ModuleCompendium, LocalDateTime)]
   ): Future[Seq[ModuleCompendium]]
   def all(filter: Map[String, Seq[String]]): Future[Seq[ModuleCompendiumOutput]]
@@ -55,46 +34,10 @@ final class ModuleCompendiumServiceImpl @Inject() (
     private implicit val ctx: ExecutionContext
 ) extends ModuleCompendiumService {
 
-  override def createOrUpdate(
-      moduleCompendium: ModuleCompendium,
-      path: GitFilePath,
-      timestamp: LocalDateTime
-  ) =
-    for {
-      exists <- repo.exists(moduleCompendium)
-      res <-
-        if (exists) repo.update(moduleCompendium, path, timestamp)
-        else create(moduleCompendium, path, timestamp)
-    } yield res
-
   override def createOrUpdateMany(
       entries: Seq[(GitFilePath, ModuleCompendium, LocalDateTime)]
   ) =
     repo.createOrUpdateMany(entries)
-
-  override def update(
-      moduleCompendium: ModuleCompendium,
-      path: GitFilePath,
-      timestamp: LocalDateTime
-  ) =
-    repo.update(moduleCompendium, path, timestamp)
-
-  override def updateMany(
-      entries: Seq[(GitFilePath, ModuleCompendium, LocalDateTime)]
-  ) =
-    repo.updateMany(entries)
-
-  override def create(
-      moduleCompendium: ModuleCompendium,
-      path: GitFilePath,
-      timestamp: LocalDateTime
-  ) =
-    repo.create(moduleCompendium, path, timestamp)
-
-  override def createMany(
-      entries: Seq[(GitFilePath, ModuleCompendium, LocalDateTime)]
-  ) =
-    repo.createMany(entries)
 
   override def all(filter: Map[String, Seq[String]]) =
     repo.all(filter)
