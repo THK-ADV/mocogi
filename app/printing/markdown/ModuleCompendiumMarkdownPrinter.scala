@@ -1,18 +1,66 @@
 package printing.markdown
 
+import models.core.Person
 import parsing.types._
 import printer.Printer
 import printer.Printer.{newline, prefix}
-import ModuleCompendiumPrinter.{LanguageOps, StringConcatOps}
-import models.core.Person
 import printing.PrintingLanguage
+import printing.markdown.ModuleCompendiumPrinter.{LanguageOps, StringConcatOps}
+import service.core.StudyProgramShort
 import validator.{Metadata, ModuleRelation, POs, PrerequisiteEntry}
 
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import javax.inject.Singleton
 
-object ModuleCompendiumMarkdownPrinter extends ModuleCompendiumPrinter {
+@Singleton
+final class ModuleCompendiumMarkdownPrinter(
+    private val substituteLocalisedContent: Boolean
+) extends ModuleCompendiumPrinter {
+  import ModuleCompendiumMarkdownPrinter._
 
+  override def printer(studyProgram: String => Option[StudyProgramShort])(
+      implicit
+      lang: PrintingLanguage,
+      localDateTime: LocalDateTime
+  ): Printer[ModuleCompendium] =
+    Printer { case (mc, input) =>
+      implicit val m: Metadata = mc.metadata
+      implicit val slc: Boolean = substituteLocalisedContent
+
+      header
+        .skip(newline.repeat(2))
+        .skip(row("", ""))
+        .skip(row("---", "---"))
+        .skip(moduleNumber)
+        .skip(moduleTitle)
+        .skip(moduleType)
+        .skipOpt(m.relation.map(fmtModuleRelation))
+        .skip(ects)
+        .skip(language)
+        .skip(duration)
+        .skip(frequency)
+        .skip(moduleCoordinator)
+        .skip(moduleLecturer)
+        .skip(assessmentMethods)
+        .skip(workload)
+        .skip(recommendedPrerequisites)
+        .skip(requiredPrerequisites)
+        .skip(pos(studyProgram))
+        .skip(newline)
+        .skip(learningOutcome(mc.deContent, mc.enContent))
+        .skip(moduleContent(mc.deContent, mc.enContent))
+        .skip(teachingAndLearningMethods(mc.deContent, mc.enContent))
+        .skip(recommendedReading(mc.deContent, mc.enContent))
+        .skip(particularities(mc.deContent, mc.enContent))
+        .skip(prefix("---"))
+        .skip(newline.repeat(2))
+        .skip(lastModified)
+        .print((), input)
+    }
+}
+
+object ModuleCompendiumMarkdownPrinter {
   private val localDatePattern = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm")
 
   private def row(key: String, value: String): Printer[Unit] =
@@ -35,6 +83,7 @@ object ModuleCompendiumMarkdownPrinter extends ModuleCompendiumPrinter {
       case u: Person.Unknown =>
         u.title
     }
+
     rows(label, xs.map(fmt))
   }
 
@@ -70,11 +119,27 @@ object ModuleCompendiumMarkdownPrinter extends ModuleCompendiumPrinter {
           .skip(pos)
     }
 
-  private def fmtPOs(label: String, pos: POs)(implicit
+  private def fmtPOs(
+      label: String,
+      pos: POs,
+      studyProgram: String => Option[StudyProgramShort]
+  )(implicit
       lang: PrintingLanguage
   ): Printer[Unit] = {
-    def fmt(p: POMandatory) =
-      s"${p.po.abbrev} (${lang.semesterLabel} ${fmtCommaSeparated(p.recommendedSemester)(_.toString)})"
+    def fmt(p: POMandatory) = {
+      val semester = Option.when(p.recommendedSemester.nonEmpty)(
+        s"(${lang.semesterLabel} ${fmtCommaSeparated(p.recommendedSemester)(_.toString)})"
+      )
+      val studyProgramWithPO = studyProgram(p.po.program) match {
+        case Some(sp) =>
+          val spLabel = lang.fold(sp.deLabel, sp.enLabel)
+          val gradeLabel = lang.fold(sp.grade.deLabel, sp.grade.enLabel)
+          s"$gradeLabel: $spLabel PO ${p.po.version}"
+        case None =>
+          p.po.abbrev
+      }
+      semester.fold(studyProgramWithPO)(s => s"$studyProgramWithPO $s")
+    }
 
     val xs = pos.mandatory
     if (xs.isEmpty) row(label, lang.noneLabel)
@@ -116,18 +181,22 @@ object ModuleCompendiumMarkdownPrinter extends ModuleCompendiumPrinter {
   private def header(title: String) =
     prefix(s"## $title").skip(newline)
 
-  private def contentBlock(title: String, content: String) = {
-    val nonEmptyContent = if (content.isEmpty) "\n" else content
-    header(title).skip(prefix(nonEmptyContent))
-  }
-
-  private def content(
-      mc: ModuleCompendium
-  )(implicit language: PrintingLanguage) =
-    language match {
-      case PrintingLanguage.German  => mc.deContent
-      case PrintingLanguage.English => mc.enContent
+  def contentBlock(title: String, de: String, en: String)(implicit
+      lang: PrintingLanguage,
+      substituteLocalisedContent: Boolean
+  ) = {
+    val content = {
+      val l = lang.fold(de, en)
+      if (l.isEmpty && substituteLocalisedContent) lang.fold(en, de) else l
     }
+    val contentPrinter =
+      if (content.isEmpty) newline
+      else
+        newline
+          .skip(prefix(content))
+          .skip(newline.repeat(2))
+    header(title).skip(contentPrinter)
+  }
 
   private def moduleNumber(implicit m: Metadata, language: PrintingLanguage) =
     row(language.moduleCodeLabel, m.abbrev)
@@ -195,11 +264,11 @@ object ModuleCompendiumMarkdownPrinter extends ModuleCompendiumPrinter {
       m.prerequisites.required
     )
 
-  private def pos(implicit
+  private def pos(studyProgram: String => Option[StudyProgramShort])(implicit
       m: Metadata,
       language: PrintingLanguage
   ) =
-    fmtPOs(language.poLabel, m.validPOs)
+    fmtPOs(language.poLabel, m.validPOs, studyProgram)
 
   private def workload(implicit
       m: Metadata,
@@ -214,9 +283,15 @@ object ModuleCompendiumMarkdownPrinter extends ModuleCompendiumPrinter {
       .combine(language.seminarValue(wl))
       .combine(language.projectSupervisionValue(wl))
       .combine(language.projectWorkValue(wl))
+    val contactHoursValueLabel =
+      if (parts.isEmpty) s"$contactHoursValue h"
+      else s"$contactHoursValue h ($parts)"
+    val selfStudyLabel =
+      if (wl.selfStudy == 0) language.noneLabel
+      else s"${wl.selfStudy} h"
     row(language.workloadLabel, s"${wl.total} h")
-      .skip(row(language.contactHoursLabel, s"$contactHoursValue h ($parts)"))
-      .skip(row(language.selfStudyLabel, s"${wl.selfStudy} h"))
+      .skip(row(language.contactHoursLabel, contactHoursValueLabel))
+      .skip(row(language.selfStudyLabel, selfStudyLabel))
   }
 
   private def lastModified(implicit
@@ -228,66 +303,51 @@ object ModuleCompendiumMarkdownPrinter extends ModuleCompendiumPrinter {
     )
 
   private def header(implicit m: Metadata) =
-    prefix("# ")
-      .skip(prefix(m.title))
+    prefix("# ").skip(prefix(m.title))
 
-  private def particularities(implicit c: Content, lang: PrintingLanguage) =
-    contentBlock(lang.particularitiesLabel, c.particularities)
+  private def particularities(de: Content, en: Content)(implicit
+      lang: PrintingLanguage,
+      substituteLocalisedContent: Boolean
+  ) =
+    contentBlock(
+      lang.particularitiesLabel,
+      de.particularities,
+      en.particularities
+    )
 
-  private def recommendedReading(implicit c: Content, lang: PrintingLanguage) =
-    contentBlock(lang.recommendedReadingLabel, c.recommendedReading)
+  private def recommendedReading(de: Content, en: Content)(implicit
+      lang: PrintingLanguage,
+      substituteLocalisedContent: Boolean
+  ) =
+    contentBlock(
+      lang.recommendedReadingLabel,
+      de.recommendedReading,
+      en.recommendedReading
+    )
 
-  private def teachingAndLearningMethods(implicit
-      c: Content,
-      lang: PrintingLanguage
+  private def teachingAndLearningMethods(de: Content, en: Content)(implicit
+      lang: PrintingLanguage,
+      substituteLocalisedContent: Boolean
   ) =
     contentBlock(
       lang.teachingAndLearningMethodsLabel,
-      c.teachingAndLearningMethods
+      de.teachingAndLearningMethods,
+      en.teachingAndLearningMethods
     )
 
-  private def moduleContent(implicit c: Content, lang: PrintingLanguage) =
-    contentBlock(lang.moduleContentLabel, c.content)
-
-  private def learningOutcome(implicit c: Content, lang: PrintingLanguage) =
-    contentBlock(lang.learningOutcomeLabel, c.learningOutcome)
-
-  override def printer(implicit
+  private def moduleContent(de: Content, en: Content)(implicit
       lang: PrintingLanguage,
-      localDateTime: LocalDateTime
-  ): Printer[ModuleCompendium] =
-    Printer { case (mc, input) =>
-      implicit val m: Metadata = mc.metadata
-      implicit val c: Content = content(mc)
+      substituteLocalisedContent: Boolean
+  ) =
+    contentBlock(lang.moduleContentLabel, de.content, en.content)
 
-      header
-        .skip(newline.repeat(2))
-        .skip(row("", ""))
-        .skip(row("---", "---"))
-        .skip(moduleNumber)
-        .skip(moduleTitle)
-        .skip(moduleType)
-        .skipOpt(m.relation.map(fmtModuleRelation))
-        .skip(ects)
-        .skip(language)
-        .skip(duration)
-        .skip(frequency)
-        .skip(moduleCoordinator)
-        .skip(moduleLecturer)
-        .skip(assessmentMethods)
-        .skip(workload)
-        .skip(recommendedPrerequisites)
-        .skip(requiredPrerequisites)
-        .skip(pos)
-        .skip(newline)
-        .skip(learningOutcome)
-        .skip(moduleContent)
-        .skip(teachingAndLearningMethods)
-        .skip(recommendedReading)
-        .skip(particularities)
-        .skip(prefix("---"))
-        .skip(newline.repeat(2))
-        .skip(lastModified)
-        .print((), input)
-    }
+  private def learningOutcome(de: Content, en: Content)(implicit
+      lang: PrintingLanguage,
+      substituteLocalisedContent: Boolean
+  ) =
+    contentBlock(
+      lang.learningOutcomeLabel,
+      de.learningOutcome,
+      en.learningOutcome
+    )
 }

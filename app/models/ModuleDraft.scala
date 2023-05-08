@@ -16,6 +16,6 @@ case class ModuleDraft(
 )
 
 case class ModuleDraftProtocol(
-    data: String,
+    data: ModuleCompendiumProtocol,
     branch: String
 )

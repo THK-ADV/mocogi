@@ -19,7 +19,8 @@ object ModuleCompendiumMarkdownActor {
   private case class Convert(
       title: String,
       moduleId: UUID,
-      input: String
+      input: String,
+      path: String
   )
 
   private class ModuleCompendiumMarkdownActorImpl(
@@ -27,18 +28,19 @@ object ModuleCompendiumMarkdownActor {
       private val outputType: PrinterOutputType
   ) extends Actor
       with Logging {
-    override def receive: Receive = { case Convert(title, moduleId, input) =>
-      markdownConverter.run(moduleId, outputType)(input) match {
-        case Left(err) =>
-          logError(title, moduleId, err)
-        case Right(output) =>
-          output match {
-            case PrinterOutput.Text(content, _, consoleOutput) =>
-              logText(title, moduleId, content, consoleOutput)
-            case PrinterOutput.File(path, consoleOutput) =>
-              logFile(title, moduleId, path, consoleOutput)
-          }
-      }
+    override def receive: Receive = {
+      case Convert(title, moduleId, input, path) =>
+        markdownConverter.run(moduleId, outputType, input, path) match {
+          case Left(err) =>
+            logError(title, moduleId, err)
+          case Right(output) =>
+            output match {
+              case PrinterOutput.Text(content, _, consoleOutput) =>
+                logText(title, moduleId, content, consoleOutput)
+              case PrinterOutput.File(path, consoleOutput) =>
+                logFile(title, moduleId, path, consoleOutput)
+            }
+        }
     }
 
     private def logError(title: String, id: UUID, t: Throwable): Unit =
@@ -87,7 +89,8 @@ case class ModuleCompendiumMarkdownActor(private val value: ActorRef) {
   def convert(
       title: String,
       moduleId: UUID,
-      input: String
+      input: String,
+      path: String
   ): Unit =
-    value ! Convert(title, moduleId, input)
+    value ! Convert(title, moduleId, input, path)
 }

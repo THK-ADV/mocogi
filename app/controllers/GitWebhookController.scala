@@ -1,6 +1,9 @@
 package controllers
 
-import controllers.GitWebhookController.GitlabTokenHeader
+import controllers.GitWebhookController.{
+  GitlabTokenHeader,
+  ModuleModeTokenHeader
+}
 import controllers.formats.ThrowableWrites
 import git._
 import git.publisher.GitFilesDownloadActor
@@ -17,6 +20,7 @@ import scala.util.{Failure, Success, Try}
 
 object GitWebhookController {
   val GitlabTokenHeader = "X-Gitlab-Token"
+  val ModuleModeTokenHeader = "Mocogi-Module-Mode-Token-Header"
 }
 
 @Singleton
@@ -31,8 +35,11 @@ class GitWebhookController @Inject() (
 
   def onPushEvent() = isAuthenticated(
     Action(parse.json) { implicit r =>
-      // TODO this should only work in specific case
-      GitPushEventHandler.handlePushEvent(downloadActor)
+      GitPushEventHandler.handlePushEvent(
+        downloadActor,
+        moduleMode,
+        gitConfig.modulesRootFolder
+      )
       NoContent
     }
   )
@@ -43,6 +50,16 @@ class GitWebhookController @Inject() (
       NoContent
     }
   )
+
+  private def moduleMode(implicit r: Request[_]): Boolean = {
+    val moduleMode = for {
+      moduleModeToken <- gitConfig.moduleModeToken
+      headerToken <- r.headers
+        .get(ModuleModeTokenHeader)
+        .flatMap(s => Try(UUID.fromString(s)).toOption)
+    } yield moduleModeToken == headerToken
+    moduleMode getOrElse false
+  }
 
   private def isAuthenticated[A](action: Action[A]) = {
     def parseGitToken(implicit r: Request[_]): Try[UUID] =

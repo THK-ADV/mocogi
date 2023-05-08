@@ -15,6 +15,10 @@ import git.subscriber.{
 import git.webhook.GitMergeEventHandlingActor
 import git.{GitConfig, GitFilesBroker, GitFilesBrokerImpl}
 import parsing.metadata.MetadataParser
+import printing.markdown.{
+  ModuleCompendiumMarkdownPrinter,
+  ModuleCompendiumPrinter
+}
 import printing.pandoc.PandocApi
 import printing.yaml.{ContentMarkdownPrinter, MetadataYamlPrinter}
 import providers._
@@ -126,6 +130,9 @@ class Module() extends AbstractModule {
     )
     bind(classOf[MetadataYamlPrinter]).toInstance(
       new MetadataYamlPrinter(2)
+    )
+    bind(classOf[ModuleCompendiumPrinter]).toInstance(
+      new ModuleCompendiumMarkdownPrinter(true)
     )
   }
 }

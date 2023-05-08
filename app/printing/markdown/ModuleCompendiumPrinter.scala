@@ -4,12 +4,13 @@ import models.core.{AbbrevLabelLike, Season}
 import parsing.types._
 import printer.Printer
 import printing.PrintingLanguage
+import service.core.StudyProgramShort
 import validator.Workload
 
 import java.time.LocalDateTime
 
 trait ModuleCompendiumPrinter {
-  def printer(implicit
+  def printer(studyProgram: String => Option[StudyProgramShort])(implicit
       language: PrintingLanguage,
       lastModified: LocalDateTime
   ): Printer[ModuleCompendium]
@@ -121,7 +122,8 @@ object ModuleCompendiumPrinter {
 
   implicit class StringConcatOps(s: String) {
     def combine(other: String): String =
-      if (other.isEmpty) s
+      if (s.isEmpty) other
+      else if (other.isEmpty) s
       else s"$s, $other"
   }
 }

@@ -3,13 +3,22 @@ package controllers
 import controllers.formats.ModuleCompendiumOutputFormat
 import ops.FileOps
 import play.api.libs.json.Json
-import play.api.mvc.{AbstractController, ControllerComponents}
+import play.api.mvc.{
+  AbstractController,
+  AnyContent,
+  ControllerComponents,
+  Request
+}
 import providers.ConfigReader
 import service.ModuleCompendiumService
 
 import java.util.UUID
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
+
+object ModuleCompendiumController {
+  lazy val languageAttribute = "lang"
+}
 
 @Singleton
 final class ModuleCompendiumController @Inject() (
@@ -33,12 +42,17 @@ final class ModuleCompendiumController @Inject() (
     }
 
   def getFile(id: UUID) =
-    Action { _ =>
+    Action { implicit r =>
+      val lang = parseLang
       val folder = configReader.outputFolderPath
       val filename = s"$id.html"
-      Ok.sendFile(
-        content = FileOps.getFile(s"$folder/$filename").get,
-        fileName = _ => Some(filename)
-      )
+      val path = s"$folder/$lang/$filename"
+      val file = FileOps.getFile(path).get
+      Ok.sendFile(content = file, fileName = _ => Some(filename))
     }
+
+  private def parseLang(implicit r: Request[AnyContent]): String =
+    r.getQueryString(ModuleCompendiumController.languageAttribute)
+      .filter(s => s == "de" || s == "en")
+      .getOrElse("de")
 }

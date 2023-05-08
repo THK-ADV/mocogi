@@ -33,30 +33,32 @@ class ContentMarkdownPrinter {
   def particularitiesHeader(lang: PrintingLanguage) =
     prefix(s"## (${abbrev(lang)}) ${lang.particularitiesLabel}:")
 
+  private def content(header: Printer[Unit], text: String) =
+    if (text.isEmpty) {
+      header
+        .skip(newline)
+        .skip(prefix(text))
+    } else {
+      header
+        .skip(newline.repeat(2))
+        .skip(prefix(text))
+        .skip(newline)
+    }
+
   def learningOutcome(lang: PrintingLanguage, text: String) =
-    learningOutcomeHeader(lang)
-      .skip(newline)
-      .skip(prefix(text))
+    content(learningOutcomeHeader(lang), text)
 
   def moduleContent(lang: PrintingLanguage, text: String) =
-    moduleContentHeader(lang)
-      .skip(newline)
-      .skip(prefix(text))
+    content(moduleContentHeader(lang), text)
 
   def teachingAndLearningMethods(lang: PrintingLanguage, text: String) =
-    teachingAndLearningMethodsHeader(lang)
-      .skip(newline)
-      .skip(prefix(text))
+    content(teachingAndLearningMethodsHeader(lang), text)
 
   def recommendedReading(lang: PrintingLanguage, text: String) =
-    recommendedReadingHeader(lang)
-      .skip(newline)
-      .skip(prefix(text))
+    content(recommendedReadingHeader(lang), text)
 
   def particularities(lang: PrintingLanguage, text: String) =
-    particularitiesHeader(lang)
-      .skip(newline)
-      .skip(prefix(text))
+    content(particularitiesHeader(lang), text)
 
   def printer(): Printer[(Content, Content)] =
     Printer { case ((de, en), input) =>

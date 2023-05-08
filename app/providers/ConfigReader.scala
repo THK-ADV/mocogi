@@ -15,8 +15,16 @@ final class ConfigReader @Inject() (config: Configuration) {
 
   def outputFolderPath: String = string("pandoc.outputFolderPath")
 
+  def deOutputFolderPath: String = string("pandoc.deOutputFolderPath")
+
+  def enOutputFolderPath: String = string("pandoc.enOutputFolderPath")
+
   def gitToken: Option[UUID] = config
     .getOptional[String]("git.token")
+    .flatMap(s => Try(UUID.fromString(s)).toOption)
+
+  def moduleModeToken: Option[UUID] = config
+    .getOptional[String]("git.moduleModeToken")
     .flatMap(s => Try(UUID.fromString(s)).toOption)
 
   def accessToken: String = string("git.accessToken")

@@ -30,13 +30,28 @@ object GitPushEventHandler {
       timestamp
     )
 
+  def removeModuleChanges(
+      changes: GitChanges[List[GitFilePath]],
+      modulesRootFolder: String
+  ): GitChanges[List[GitFilePath]] = changes.copy(
+    added = changes.added.filterNot(_.value.startsWith(modulesRootFolder)),
+    modified =
+      changes.modified.filterNot(_.value.startsWith(modulesRootFolder)),
+    removed = changes.removed.filterNot(_.value.startsWith(modulesRootFolder))
+  )
+
   def handlePushEvent(
-      downloadActor: GitFilesDownloadActor
+      downloadActor: GitFilesDownloadActor,
+      moduleMode: Boolean,
+      modulesRootFolder: String
   )(implicit r: Request[JsValue]) =
     for {
       projectId <- parseProjectId
-      changes <- parseChanges
+      allChanges <- parseChanges
     } yield {
+      val changes =
+        if (moduleMode) allChanges
+        else removeModuleChanges(allChanges, modulesRootFolder)
       downloadActor.download(changes, projectId)
       "Okay!"
     }

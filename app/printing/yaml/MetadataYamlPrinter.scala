@@ -94,7 +94,7 @@ final class MetadataYamlPrinter(identLevel: Int) {
   def moduleRelation(r: ModuleRelationOutput) = {
     val relation = r match {
       case ModuleRelationOutput.Parent(children) =>
-        list(prefix("children:"), children.sorted, "module", identLevel)
+        list(prefix("children:"), children, "module", identLevel)
       case ModuleRelationOutput.Child(parent) =>
         entry("parent", s"module.$parent")
     }
@@ -111,7 +111,8 @@ final class MetadataYamlPrinter(identLevel: Int) {
       prefixLabel: String,
       identLevel: Int
   )(implicit
-      toString: A => String
+      toString: A => String,
+      ord: Ordering[A]
   ) = {
     def value(a: A) =
       if (prefixLabel.isEmpty) toString(a)
@@ -125,7 +126,7 @@ final class MetadataYamlPrinter(identLevel: Int) {
       key
         .skip(newline)
         .skip(
-          list
+          list.sorted
             .map(id =>
               whitespace
                 .repeat(identLevel + 2)
@@ -170,13 +171,13 @@ final class MetadataYamlPrinter(identLevel: Int) {
       .skip(
         list(
           prefix("module_management:"),
-          moduleManagement.sorted,
+          moduleManagement,
           "person",
           identLevel
         )
       )
       .skip(whitespace.repeat(identLevel))
-      .skip(list(prefix("lecturers:"), lecturers.sorted, "person", identLevel))
+      .skip(list(prefix("lecturers:"), lecturers, "person", identLevel))
   }
 
   private def assessmentMethods(
@@ -187,8 +188,7 @@ final class MetadataYamlPrinter(identLevel: Int) {
     key
       .skip(newline)
       .skip(
-        value
-          .sorted
+        value.sorted
           .map(e => {
             whitespace
               .repeat(identLevel)
@@ -283,7 +283,7 @@ final class MetadataYamlPrinter(identLevel: Int) {
               .skip(
                 list(
                   prefix("modules:"),
-                  value.modules.sorted,
+                  value.modules,
                   "module",
                   identLevel
                 )
@@ -297,7 +297,7 @@ final class MetadataYamlPrinter(identLevel: Int) {
               .skip(
                 list(
                   prefix("study_programs:"),
-                  value.pos.sorted,
+                  value.pos,
                   "study_program",
                   identLevel
                 )
@@ -329,21 +329,20 @@ final class MetadataYamlPrinter(identLevel: Int) {
       )
 
   def competences(value: List[String]) =
-    list(prefix("competences:"), value.sorted, "competence", 0)
+    list(prefix("competences:"), value, "competence", 0)
 
   def globalCriteria(value: List[String]) =
-    list(prefix("global_criteria:"), value.sorted, "global_criteria", 0)
+    list(prefix("global_criteria:"), value, "global_criteria", 0)
 
   def taughtWith(value: List[UUID]) =
-    list(prefix("taught_with:"), value.sorted, "module", 0)
+    list(prefix("taught_with:"), value, "module", 0)
 
   def poMandatory(value: List[POMandatoryOutput]) = {
     val deepness = identLevel + 2
     prefix("po_mandatory:")
       .skip(newline)
       .skip(
-        value
-          .sorted
+        value.sorted
           .map(e => {
             whitespace
               .repeat(identLevel)
@@ -355,7 +354,7 @@ final class MetadataYamlPrinter(identLevel: Int) {
                   .skip(
                     list(
                       prefix("recommended_semester:"),
-                      e.recommendedSemester.sorted,
+                      e.recommendedSemester,
                       "",
                       deepness
                     )
@@ -368,7 +367,7 @@ final class MetadataYamlPrinter(identLevel: Int) {
                     .skip(
                       list(
                         prefix("recommended_semester_part_time:"),
-                        e.recommendedSemesterPartTime.sorted,
+                        e.recommendedSemesterPartTime,
                         "",
                         deepness
                       )
@@ -385,8 +384,7 @@ final class MetadataYamlPrinter(identLevel: Int) {
     prefix("po_optional:")
       .skip(newline)
       .skip(
-        value
-          .sorted
+        value.sorted
           .map(e => {
             whitespace
               .repeat(identLevel)
@@ -408,7 +406,7 @@ final class MetadataYamlPrinter(identLevel: Int) {
                   .skip(
                     list(
                       prefix("recommended_semester:"),
-                      e.recommendedSemester.sorted,
+                      e.recommendedSemester,
                       "",
                       deepness
                     )

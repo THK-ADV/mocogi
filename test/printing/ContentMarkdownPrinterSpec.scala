@@ -75,7 +75,7 @@ final class ContentMarkdownPrinterSpec extends AnyWordSpec with PrinterSpec {
     }
 
     "print learning outcome" in {
-      val gerText = "\n- Klassen\n- Vererbung\n- Polymorphie\n"
+      val gerText = "- Klassen\n- Vererbung\n- Polymorphie"
       val gerRes =
         """## (de) Angestrebte Lernergebnisse:
           |
@@ -86,7 +86,7 @@ final class ContentMarkdownPrinterSpec extends AnyWordSpec with PrinterSpec {
       assert(
         run(printer.learningOutcome(PrintingLanguage.German, gerText)) == gerRes
       )
-      val enText = "\n- Classes\n- Inheritance\n- Polymorphism\n"
+      val enText = "- Classes\n- Inheritance\n- Polymorphism"
       val enRes =
         """## (en) Learning Outcome:
           |
@@ -101,21 +101,21 @@ final class ContentMarkdownPrinterSpec extends AnyWordSpec with PrinterSpec {
 
     "print" in {
       val de = Content(
-        "\nProgrammieren lernen\n",
-        "\n- Klassen\n- Vererbung\n- Polymorphie\n",
-        "\nSlides, Whiteboard\n",
-        "\nProgrammieren lernen mit Kotlin. Kohls, Dobrynin, Leonhardt\n",
-        "\nnichts\n"
+        "Programmieren lernen",
+        "- Klassen\n- Vererbung\n- Polymorphie",
+        "Slides, Whiteboard",
+        "Programmieren lernen mit Kotlin. Kohls, Dobrynin, Leonhardt",
+        "nichts"
       )
       val en = Content(
-        "\nLearn to code\n",
-        "\n- Classes\n- Inheritance\n- Polymorphism\n",
+        "Learn to code",
+        "- Classes\n- Inheritance\n- Polymorphism",
         "",
-        "\nProgrammieren lernen mit Kotlin. Kohls, Dobrynin, Leonhardt\n",
-        "\nnothing"
+        "Programmieren lernen mit Kotlin. Kohls, Dobrynin, Leonhardt",
+        "nothing"
       )
       val res =
-        """## (de) Angestrebte Lernergebnisse:
+        s"""## (de) Angestrebte Lernergebnisse:
           |
           |Programmieren lernen
           |
@@ -155,7 +155,7 @@ final class ContentMarkdownPrinterSpec extends AnyWordSpec with PrinterSpec {
           |
           |## (en) Particularities:
           |
-          |nothing""".stripMargin
+          |nothing\n""".stripMargin
       assert(printer.printer().print((de, en), "").value == res)
     }
   }

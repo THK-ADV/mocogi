@@ -3,6 +3,7 @@ package database.repo
 import database.table._
 import models.core.{RestrictedAdmission, StudyProgram}
 import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfigProvider}
+import service.core.StudyProgramShort
 import slick.jdbc.JdbcProfile
 
 import java.time.LocalDate
@@ -58,6 +59,14 @@ class StudyProgramRepository @Inject() (
 
   def all(): Future[Seq[StudyProgramOutput]] =
     retrieve(tableQuery)
+
+  def allShort(): Future[Seq[StudyProgramShort]] = {
+    val query = for {
+      q <- tableQuery
+      g <- q.gradeFk
+    } yield (q.abbrev, q.deLabel, q.enLabel, g)
+    db.run(query.result.map(_.map(StudyProgramShort.tupled)))
+  }
 
   def allIds(): Future[Seq[String]] =
     db.run(tableQuery.map(_.abbrev).result)

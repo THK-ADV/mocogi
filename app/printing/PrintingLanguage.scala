@@ -6,6 +6,8 @@ sealed trait PrintingLanguage {
       case PrintingLanguage.German  => de
       case PrintingLanguage.English => en
     }
+
+  override def toString = fold("german", "english")
 }
 
 object PrintingLanguage {

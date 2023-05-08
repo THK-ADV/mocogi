@@ -11,6 +11,7 @@ final class GitConfigProvider @Inject() (config: ConfigReader)
     GitConfig(
       config.gitToken,
       config.accessToken,
+      config.moduleModeToken,
       config.baseUrl,
       config.projectId,
       config.mainBranch,

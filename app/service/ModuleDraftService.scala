@@ -11,6 +11,7 @@ import parsing.metadata.VersionScheme
 import parsing.types._
 import play.api.libs.json.{JsError, JsSuccess, JsValue, Json}
 import printing.yaml.ModuleCompendiumYamlPrinter
+import service.ModuleCompendiumNormalizer.normalize
 
 import java.time.LocalDateTime
 import java.util.UUID
@@ -30,7 +31,6 @@ class ModuleDraftService @Inject() (
     with PipelineErrorFormat
     with ModuleCompendiumFormat {
   import ops.EitherOps._
-  import ops.JsResultOps._
 
   def allFromBranch(branch: String): Future[Seq[ModuleDraft]] =
     moduleDraftRepository.allFromBranch(branch)
@@ -40,10 +40,10 @@ class ModuleDraftService @Inject() (
 
   def createOrUpdate(
       module: Option[UUID],
-      data: String,
+      data: ModuleCompendiumProtocol,
       branch: String
   ): Future[ModuleDraft] = {
-    def go() = module match {
+    def go(data: String) = module match {
       case Some(id) =>
         moduleDraftRepository.get(id).flatMap {
           case Some(draft) =>
@@ -77,13 +77,19 @@ class ModuleDraftService @Inject() (
     for {
       branchExists <- userBranchRepository.exists(branch)
       res <-
-        if (branchExists) go()
+        if (branchExists) go(toJson(normalize(data)))
         else
           Future.failed(
             new Throwable(s"branch $branch doesn't exist")
           )
     } yield res
   }
+
+  private def toJson(protocol: ModuleCompendiumProtocol) =
+    moduleCompendiumProtocolFormat.writes(protocol).toString()
+
+  private def fromJson(json: String) =
+    moduleCompendiumProtocolFormat.reads(Json.parse(json))
 
   private def print(branch: String): PrintingResult =
     for {
@@ -121,7 +127,7 @@ class ModuleDraftService @Inject() (
             }
           case Right(mcs) =>
             mcs.map { case (print, mc) =>
-              val mcJson = Json.toJson(mc)
+              val mcJson = Json.toJson(normalize(mc))
               moduleDraftRepository.updateValidation(
                 mc.metadata.id,
                 Right((mcJson, print))
@@ -166,7 +172,7 @@ class ModuleDraftService @Inject() (
       drafts: Seq[ModuleDraft]
   ): Try[Seq[(UUID, ModuleCompendiumProtocol)]] =
     Try(drafts.map { draft =>
-      moduleCompendiumProtocolFormat.reads(Json.parse(draft.data)) match {
+      fromJson(draft.data) match {
         case JsSuccess(value, _) => (draft.module, value)
         case JsError(errors)     => throw new Throwable(errors.mkString("\n"))
       }
