@@ -1,6 +1,6 @@
 package git.api
 
-import database.repo.{UserBranchRepository, UserRepository}
+import database.repo.UserBranchRepository
 import git.GitConfig
 import models.{User, UserBranch}
 import play.api.libs.ws.{EmptyBody, WSClient}
@@ -12,7 +12,6 @@ import scala.concurrent.{ExecutionContext, Future}
 @Singleton
 final class GitBranchService @Inject() (
     private val userBranchRepository: UserBranchRepository, // TODO remove (like GitCommitService SRP)
-    private val userRepository: UserRepository, // TODO remove (like GitCommitService SRP)
     private val ws: WSClient,
     val gitConfig: GitConfig,
     private implicit val ctx: ExecutionContext
@@ -20,41 +19,39 @@ final class GitBranchService @Inject() (
   def branchForUser(username: String): Future[Option[UserBranch]] =
     userBranchRepository.branchForUser(username)
 
-  def createBranch(username: String): Future[UserBranch] =
+  def createBranch(user: String): Future[UserBranch] =
     for {
-      user <- userRepository.byUsername(username)
-      exists <- userBranchRepository.exists(user.id)
+      exists <- userBranchRepository.existsByUser(user)
       res <-
         if (exists)
           Future.failed(
-            new Throwable(s"branch for user $username already exists")
+            new Throwable(s"branch for user $user already exists")
           )
         else
           for {
             branch <- createBranchApiRequest(user)
             res <- userBranchRepository.create(
-              UserBranch(user.id, branch, None, None)
+              UserBranch(user, branch, None, None)
             )
           } yield res
     } yield res
 
-  def deleteBranch(username: String) =
+  def deleteBranch(user: String) =
     for {
-      user <- userRepository.byUsername(username)
-      exists <- userBranchRepository.exists(user.id)
+      exists <- userBranchRepository.existsByUser(user)
       res <-
         if (!exists)
           Future.failed(
-            new Throwable(s"branch for user $username doesn't exists")
+            new Throwable(s"branch for user $user doesn't exists")
           )
         else
           for {
             _ <- deleteBranchApiRequest(user)
-            d <- userBranchRepository.delete(user.id) if d > 0
+            d <- userBranchRepository.delete(user) if d > 0
           } yield ()
     } yield res
 
-  private def createBranchApiRequest(user: User): Future[String] = {
+  private def createBranchApiRequest(user: String): Future[String] = {
     val branchName = this.branchName(user)
     ws
       .url(this.branchUrl())
@@ -70,7 +67,7 @@ final class GitBranchService @Inject() (
       }
   }
 
-  private def deleteBranchApiRequest(user: User): Future[String] = {
+  private def deleteBranchApiRequest(user: String): Future[String] = {
     val branchName = this.branchName(user)
     ws
       .url(s"${this.branchUrl()}/$branchName")
@@ -82,8 +79,8 @@ final class GitBranchService @Inject() (
       }
   }
 
-  private def branchName(user: User) =
-    s"${user.username}_${user.id}"
+  private def branchName(user: String) =
+    user
 
   private def branchUrl() =
     s"${repositoryUrl()}/branches"

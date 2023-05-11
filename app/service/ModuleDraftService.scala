@@ -75,7 +75,7 @@ class ModuleDraftService @Inject() (
     }
 
     for {
-      branchExists <- userBranchRepository.exists(branch)
+      branchExists <- userBranchRepository.existsByBranch(branch)
       res <-
         if (branchExists) go(toJson(normalize(data)))
         else

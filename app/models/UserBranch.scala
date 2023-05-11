@@ -1,9 +1,7 @@
 package models
 
-import java.util.UUID
-
 case class UserBranch(
-    user: UUID,
+    user: String,
     branch: String,
     commitId: Option[String],
     mergeRequestId: Option[Int]

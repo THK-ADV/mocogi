@@ -389,19 +389,12 @@ create table metadata_taught_with
 
 -- git handling
 
-create table users
-(
-    "id"       uuid PRIMARY KEY,
-    "username" text not null
-);
-
 create table user_has_branch
 (
-    "user"             uuid PRIMARY KEY,
+    "user"             text PRIMARY KEY,
     "branch_id"        text not null,
     "commit_id"        text null,
-    "merge_request_id" integer null,
-    FOREIGN KEY ("user") REFERENCES users (id)
+    "merge_request_id" integer null
 );
 
 create table module_draft
@@ -419,7 +412,6 @@ create table module_draft
 
 -- !Downs
 drop table module_draft if exists;
-drop table users if exists;
 drop table user_has_branch if exists;
 drop table metadata_taught_with if exists;
 drop table metadata_global_criteria if exists;

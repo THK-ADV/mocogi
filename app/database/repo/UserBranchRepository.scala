@@ -5,7 +5,6 @@ import models.UserBranch
 import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfigProvider}
 import slick.jdbc.JdbcProfile
 
-import java.util.UUID
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -24,25 +23,27 @@ final class UserBranchRepository @Inject() (
   ) =
     db.run(query.result)
 
-  def branchForUser(username: String): Future[Option[UserBranch]] =
-    retrieve(
-      tableQuery
-        .filter(_.userFk.filter(_.username === username).exists)
-    ).map(_.headOption)
+  def branchForUser(user: String): Future[Option[UserBranch]] =
+    retrieve(tableQuery.filter(_.user.toLowerCase === user.toLowerCase()))
+      .map(_.headOption)
 
-  def exists(user: UUID): Future[Boolean] =
-    db.run(tableQuery.filter(_.user === user).exists.result)
+  def existsByUser(user: String): Future[Boolean] =
+    db.run(
+      tableQuery.filter(_.user.toLowerCase === user.toLowerCase).exists.result
+    )
 
-  def exists(branch: String): Future[Boolean] =
+  def existsByBranch(branch: String): Future[Boolean] =
     db.run(tableQuery.filter(_.branch === branch).exists.result)
 
-  def delete(user: UUID): Future[Int] =
-    db.run(tableQuery.filter(_.user === user).delete)
+  def delete(user: String): Future[Int] =
+    db.run(tableQuery.filter(_.user.toLowerCase === user.toLowerCase).delete)
 
   def hasCommitAndMergeRequest(branch: String) =
     db.run(
       tableQuery
-        .filter(a => a.branch === branch && a.commitId.isDefined && a.mergeRequestId.isDefined)
+        .filter(a =>
+          a.branch === branch && a.commitId.isDefined && a.mergeRequestId.isDefined
+        )
         .map(a => (a.commitId.get, a.mergeRequestId.get))
         .result
         .map(_.headOption)
