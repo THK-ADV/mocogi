@@ -1,0 +1,15 @@
+.bsp
+.idea
+logs
+output
+target
+test
+docker-compose.yaml
+docker_exec.sh
+Dockerfile
+LICENSE
+README.md
+.gitignore
+.dockerignore
+.scalafmt.conf
+.DS_Store
