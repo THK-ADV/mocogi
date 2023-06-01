@@ -1,4 +1,5 @@
 val playSlickVersion = "5.0.2"
+val guiceVersion = "5.1.0"
 
 lazy val `mocogi` = (project in file("."))
   .enablePlugins(PlayScala)
@@ -6,7 +7,7 @@ lazy val `mocogi` = (project in file("."))
     name := "mocogi",
     maintainer := "Alexander Dobrynin <alexander.dobrynin@th-koeln.de>",
     version := "1.0",
-    scalaVersion := "2.13.8",
+    scalaVersion := "2.13.10",
     resolvers += "Akka Snapshot Repository" at "https://repo.akka.io/snapshots/",
     libraryDependencies ++= play,
     libraryDependencies ++= test,
@@ -26,11 +27,13 @@ lazy val `mocogi` = (project in file("."))
 
 lazy val play = Seq(
   specs2 % Test,
-  guice,
   ws,
+  guice,
   ehcache,
   "com.typesafe.play" %% "play-json" % "2.9.2",
-  "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.13.3"
+  "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.13.3",
+  "com.google.inject" % "guice" % guiceVersion,
+  "com.google.inject.extensions" % "guice-assistedinject" % guiceVersion
 )
 
 lazy val test = Seq(
