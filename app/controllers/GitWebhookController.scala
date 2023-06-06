@@ -6,6 +6,7 @@ import controllers.GitWebhookController.{
 }
 import controllers.formats.ThrowableWrites
 import git._
+import git.api.GitRepositoryService
 import git.publisher.GitFilesDownloadActor
 import git.webhook.{GitMergeEventHandlingActor, GitPushEventHandler}
 import play.api.Logging
@@ -14,7 +15,7 @@ import play.api.mvc._
 
 import java.util.UUID
 import javax.inject.{Inject, Singleton}
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 import scala.language.implicitConversions
 import scala.util.{Failure, Success, Try}
 
@@ -28,7 +29,9 @@ class GitWebhookController @Inject() (
     cc: ControllerComponents,
     gitConfig: GitConfig,
     gitMergeEventHandlingActor: GitMergeEventHandlingActor,
-    downloadActor: GitFilesDownloadActor
+    downloadActor: GitFilesDownloadActor,
+    gitRepositoryService: GitRepositoryService,
+    implicit val ctx: ExecutionContext
 ) extends AbstractController(cc)
     with Logging
     with ThrowableWrites {
@@ -50,6 +53,27 @@ class GitWebhookController @Inject() (
       NoContent
     }
   )
+
+  def onForceUpdate() =
+    isAuthenticated( // TODO proper permission handling. move to other class
+      Action.async { implicit r =>
+        if (moduleMode(r)) {
+          for {
+            core <- gitRepositoryService.listCoreFiles()
+            modules <- gitRepositoryService.listModuleFiles()
+          } yield {
+            downloadActor.download(
+              GitChanges(core ::: modules),
+              gitConfig.projectId
+            )
+            NoContent
+          }
+        } else
+          Future.successful(
+            Forbidden(Json.obj("message" -> "unable to call this route"))
+          )
+      }
+    )
 
   private def moduleMode(implicit r: Request[_]): Boolean = {
     val moduleMode = for {

@@ -9,3 +9,8 @@ case class GitChanges[A](
     commitId: String,
     timestamp: LocalDateTime
 )
+
+object GitChanges {
+  def apply(modified: List[GitFilePath]): GitChanges[List[GitFilePath]] =
+    GitChanges(Nil, modified, Nil, "-", LocalDateTime.now())
+}
