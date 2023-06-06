@@ -1,6 +1,6 @@
 package git
 
-import git.GitFilesBroker.{Changes, core, modules, split}
+import git.GitFilesBroker.{Changes, split}
 import git.publisher.{CoreDataPublisher, ModuleCompendiumPublisher}
 
 import javax.inject.{Inject, Singleton}
@@ -11,12 +11,11 @@ trait GitFilesBroker {
 }
 
 object GitFilesBroker {
-  val modules = "modules"
-  val core = "core"
-
   type Changes = GitChanges[List[(GitFilePath, GitFileContent)]]
 
-  def split(changes: Changes): Map[String, Changes] = {
+  def split(
+      changes: Changes
+  )(implicit config: GitConfig): Map[String, Changes] = {
     val addedModules = ListBuffer[(GitFilePath, GitFileContent)]()
     val addedCore = ListBuffer[(GitFilePath, GitFileContent)]()
     val modifiedModules = ListBuffer[(GitFilePath, GitFileContent)]()
@@ -25,26 +24,30 @@ object GitFilesBroker {
     val removedCore = ListBuffer[GitFilePath]()
 
     changes.added.foreach(a =>
-      foldGitFilePath(a._1)(p => addedModules += p -> a._2)(p =>
-        addedCore += p -> a._2
+      foldGitFilePath(
+        a._1,
+        p => addedModules += p -> a._2,
+        p => addedCore += p -> a._2
       )
     )
     changes.modified.foreach(a =>
-      foldGitFilePath(a._1)(p => modifiedModules += p -> a._2)(p =>
-        modifiedCore += p -> a._2
+      foldGitFilePath(
+        a._1,
+        p => modifiedModules += p -> a._2,
+        p => modifiedCore += p -> a._2
       )
     )
     changes.removed.foreach(a =>
-      foldGitFilePath(a)(p => removedModules += p)(p => removedCore += p)
+      foldGitFilePath(a, p => removedModules += p, p => removedCore += p)
     )
 
     Map(
-      modules -> changes.copy(
+      config.modulesRootFolder -> changes.copy(
         added = addedModules.toList,
         modified = modifiedModules.toList,
         removed = removedModules.toList
       ),
-      core -> changes.copy(
+      config.coreRootFolder -> changes.copy(
         added = addedCore.toList,
         modified = modifiedCore.toList,
         removed = removedCore.toList
@@ -55,25 +58,28 @@ object GitFilesBroker {
   def isEmpty(changes: Changes) =
     changes.added.isEmpty && changes.modified.isEmpty && changes.removed.isEmpty
 
-  def foldGitFilePath(
-      path: GitFilePath
-  )(isModule: GitFilePath => Unit)(isCore: GitFilePath => Unit): Unit =
-    if (path.value.startsWith(s"$modules/")) isModule(path)
-    else if (path.value.startsWith(s"$core/")) isCore(path)
+  private def foldGitFilePath(
+      path: GitFilePath,
+      isModule: GitFilePath => Unit,
+      isCore: GitFilePath => Unit
+  )(implicit config: GitConfig): Unit =
+    if (path.value.startsWith(s"${config.modulesRootFolder}/")) isModule(path)
+    else if (path.value.startsWith(s"${config.coreRootFolder}/")) isCore(path)
 }
 
 @Singleton
 final class GitFilesBrokerImpl @Inject() (
     private val moduleCompendiumPublisher: ModuleCompendiumPublisher,
-    private val coreDataPublisher: CoreDataPublisher
+    private val coreDataPublisher: CoreDataPublisher,
+    private implicit val gitConfig: GitConfig
 ) extends GitFilesBroker {
   override def distributeToSubscriber(changes: Changes): Unit = {
     val map = split(changes)
     map
-      .get(modules)
+      .get(gitConfig.modulesRootFolder)
       .foreach(moduleCompendiumPublisher.notifySubscribers)
     map
-      .get(core)
+      .get(gitConfig.coreRootFolder)
       .foreach(coreDataPublisher.notifySubscribers)
   }
 }

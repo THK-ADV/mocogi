@@ -15,6 +15,7 @@ final class GitConfigProvider @Inject() (config: ConfigReader)
       config.baseUrl,
       config.projectId,
       config.mainBranch,
-      config.modulesRootFolder
+      config.modulesRootFolder,
+      config.coreRootFolder
     )
 }
