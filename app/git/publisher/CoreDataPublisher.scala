@@ -4,7 +4,7 @@ import akka.actor.{Actor, ActorRef, Props}
 import database.InsertOrUpdateResult
 import git.GitFilesBroker.Changes
 import git.publisher.CoreDataPublisher.ParsingValidation
-import git.{GitFileContent, GitFilePath, GitFilesBroker}
+import git.{GitFileContent, GitFilePath}
 import play.api.Logging
 import service.core._
 
@@ -14,6 +14,7 @@ import scala.util.{Failure, Success}
 
 object CoreDataPublisher {
   def props(
+      folderPrefix: String,
       locationService: LocationService,
       languageService: LanguageService,
       statusService: StatusService,
@@ -34,6 +35,7 @@ object CoreDataPublisher {
   ) =
     Props(
       new CoreDataPublisherImpl(
+        folderPrefix,
         locationService,
         languageService,
         statusService,
@@ -55,6 +57,7 @@ object CoreDataPublisher {
     )
 
   private final class CoreDataPublisherImpl(
+      private val folderPrefix: String,
       private val locationService: LocationService,
       private val languageService: LanguageService,
       private val statusService: StatusService,
@@ -90,7 +93,7 @@ object CoreDataPublisher {
           content: GitFileContent
       ): Future[Seq[(InsertOrUpdateResult, _)]] =
         path.value
-          .stripPrefix(s"${GitFilesBroker.core}/")
+          .stripPrefix(s"$folderPrefix/")
           .split('.')
           .headOption
           .map {

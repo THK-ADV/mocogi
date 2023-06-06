@@ -26,11 +26,13 @@ final class CoreDataPublisherProvider @Inject() (
     studyProgramService: StudyProgramService,
     studyFormTypeService: StudyFormTypeService,
     specializationService: SpecializationService,
-    ctx: ExecutionContext
+    ctx: ExecutionContext,
+    configReader: ConfigReader
 ) extends Provider[CoreDataPublisher] {
   override def get() = CoreDataPublisher(
     system.actorOf(
       CoreDataPublisher.props(
+        configReader.coreRootFolder,
         locationService,
         languageService,
         statusService,
