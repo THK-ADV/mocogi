@@ -54,6 +54,7 @@ POST          /globalCriteria                           controllers.core.GlobalC
 
 GET           /studyPrograms                            controllers.core.StudyProgramController.all()
 POST          /studyPrograms                            controllers.core.StudyProgramController.create()
+GET           /studyPrograms/view                       controllers.core.StudyProgramController.allAtomic()
 
 GET           /competences                              controllers.core.CompetenceController.all()
 POST          /competences                              controllers.core.CompetenceController.create()
@@ -69,6 +70,7 @@ GET           /moduleCompendium/:id                     controllers.ModuleCompen
 
 GET           /modules                                  controllers.ModuleController.allModules()
 GET           /metadata                                 controllers.ModuleController.allModuleMetadata()
+GET           /metadata/view                            controllers.ModuleController.allModuleMetadataView()
 
 # Git Workflow
 

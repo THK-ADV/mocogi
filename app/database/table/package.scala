@@ -30,16 +30,21 @@ package object table {
         PrerequisiteType.apply
       )
 
+  def intsToString(xs: List[Int]): String =
+    if (xs.isEmpty) "" else xs.mkString(",")
+
+  def stringToInts(s: String): List[Int] =
+    if (s.isEmpty) Nil
+    else
+      s.split(",").foldLeft(List.empty[Int]) { case (acc, s) =>
+        s.toInt :: acc
+      }
+
   implicit val listIntColumnType: BaseColumnType[List[Int]] =
     MappedColumnType
       .base[List[Int], String](
-        xs => if (xs.isEmpty) "" else xs.mkString(","),
-        s =>
-          if (s.isEmpty) Nil
-          else
-            s.split(",").foldLeft(List.empty[Int]) { case (acc, s) =>
-              s.toInt :: acc
-            }
+        intsToString,
+        stringToInts
       )
 
   implicit val moduleDraftStatusColumnType: BaseColumnType[ModuleDraftStatus] =
