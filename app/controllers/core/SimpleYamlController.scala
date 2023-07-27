@@ -7,5 +7,4 @@ trait SimpleYamlController[A] extends YamlController[A, A] {
   self: AbstractController =>
   implicit val writes: Writes[A]
   override implicit lazy val writesOut: Writes[A] = writes
-  override implicit lazy val writesIn: Writes[A] = writes
 }

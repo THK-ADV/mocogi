@@ -42,7 +42,7 @@ final class ModuleController @Inject() (
         .map(xs => Ok(Json.toJson(xs)))
     }
 
-  def allModuleMetadataView() =
+  def allModuleMetadataFromView() =
     Action.async { _ =>
       metadataViewRepository
         .all()

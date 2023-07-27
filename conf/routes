@@ -14,53 +14,22 @@ POST          /webhook/onForceUpdate                    controllers.GitWebhookCo
 # Core
 
 GET           /locations                                controllers.core.LocationController.all()
-POST          /locations                                controllers.core.LocationController.create()
-
 GET           /languages                                controllers.core.LanguageController.all()
-POST          /languages                                controllers.core.LanguageController.create()
-
 GET           /status                                   controllers.core.StatusController.all()
-POST          /status                                   controllers.core.StatusController.create()
-
 GET           /assessmentMethods                        controllers.core.AssessmentMethodController.all()
-POST          /assessmentMethods                        controllers.core.AssessmentMethodController.create()
-
 GET           /moduleTypes                              controllers.core.ModuleTypeController.all()
-POST          /moduleTypes                              controllers.core.ModuleTypeController.create()
-
 GET           /seasons                                  controllers.core.SeasonController.all()
-POST          /seasons                                  controllers.core.SeasonController.create()
-
 GET           /persons                                  controllers.core.PersonController.all()
-POST          /persons                                  controllers.core.PersonController.create()
-
 GET           /studyFormTypes                           controllers.core.StudyFormTypeController.all()
-POST          /studyFormTypes                           controllers.core.StudyFormTypeController.create()
-
 GET           /pos                                      controllers.core.POController.all()
-POST          /pos                                      controllers.core.POController.create()
-
 GET           /grades                                   controllers.core.GradeController.all()
-POST          /grades                                   controllers.core.GradeController.create()
-
 GET           /focusAreas                               controllers.core.FocusAreaController.all()
-POST          /focusAreas                               controllers.core.FocusAreaController.create()
-
 GET           /faculties                                controllers.core.FacultyController.all()
-POST          /faculties                                controllers.core.FacultyController.create()
-
 GET           /globalCriteria                           controllers.core.GlobalCriteriaController.all()
-POST          /globalCriteria                           controllers.core.GlobalCriteriaController.create()
-
 GET           /studyPrograms                            controllers.core.StudyProgramController.all()
-POST          /studyPrograms                            controllers.core.StudyProgramController.create()
-GET           /studyPrograms/view                       controllers.core.StudyProgramController.allAtomic()
-
+GET           /studyPrograms/view                       controllers.core.StudyProgramController.allFromView()
 GET           /competences                              controllers.core.CompetenceController.all()
-POST          /competences                              controllers.core.CompetenceController.create()
-
 GET           /specializations                          controllers.core.SpecializationController.all()
-POST          /specializations                          controllers.core.SpecializationController.create()
 
 # Module Compendium
 
@@ -70,7 +39,7 @@ GET           /moduleCompendium/:id                     controllers.ModuleCompen
 
 GET           /modules                                  controllers.ModuleController.allModules()
 GET           /metadata                                 controllers.ModuleController.allModuleMetadata()
-GET           /metadata/view                            controllers.ModuleController.allModuleMetadataView()
+GET           /metadata/view                            controllers.ModuleController.allModuleMetadataFromView()
 
 # Git Workflow
 

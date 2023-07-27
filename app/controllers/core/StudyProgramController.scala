@@ -6,7 +6,6 @@ import play.api.libs.json.Json
 import play.api.mvc.{AbstractController, ControllerComponents}
 import service.core.StudyProgramService
 
-import java.nio.charset.StandardCharsets
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 
@@ -24,13 +23,7 @@ final class StudyProgramController @Inject() (
       service.all().map(xs => Ok(Json.toJson(xs)))
     }
 
-  def create() =
-    Action(parse.byteString).async { r =>
-      val input = r.body.decodeString(StandardCharsets.UTF_8)
-      service.create(input).map(xs => Ok(Json.toJson(xs)))
-    }
-
-  def allAtomic() =
+  def allFromView() =
     Action.async { _ =>
       materializedView.all().map(res => Ok(Json.toJson(res)))
     }

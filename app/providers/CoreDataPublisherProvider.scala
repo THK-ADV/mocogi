@@ -1,6 +1,7 @@
 package providers
 
 import akka.actor.ActorSystem
+import database.view.{MetadataViewRepository, StudyProgramViewRepository}
 import git.publisher.CoreDataPublisher
 import service.core._
 
@@ -26,6 +27,8 @@ final class CoreDataPublisherProvider @Inject() (
     studyProgramService: StudyProgramService,
     studyFormTypeService: StudyFormTypeService,
     specializationService: SpecializationService,
+    studyProgramViewRepository: StudyProgramViewRepository,
+    metadataViewRepository: MetadataViewRepository,
     ctx: ExecutionContext,
     configReader: ConfigReader
 ) extends Provider[CoreDataPublisher] {
@@ -49,6 +52,8 @@ final class CoreDataPublisherProvider @Inject() (
         studyProgramService,
         studyFormTypeService,
         specializationService,
+        studyProgramViewRepository,
+        metadataViewRepository,
         ctx
       )
     )

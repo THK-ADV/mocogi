@@ -11,5 +11,5 @@ trait MaterializedView { self: HasDatabaseConfigProvider[JdbcProfile] =>
   def name: String
 
   def refreshView(): Future[Int] =
-    db.run(sqlu"refresh materialized view $name")
+    db.run(sqlu"refresh materialized view #$name")
 }

@@ -1,6 +1,7 @@
 package providers
 
 import akka.actor.ActorSystem
+import database.view.MetadataViewRepository
 import git.subscriber._
 import printing.markdown.ModuleCompendiumPrinter
 import publisher.KafkaPublisher
@@ -19,6 +20,7 @@ class ModuleCompendiumSubscribersProvider @Inject() (
     metadataService: ModuleCompendiumService,
     publisher: KafkaPublisher[Metadata],
     studyProgramService: StudyProgramService,
+    metadataViewRepository: MetadataViewRepository,
     configReader: ConfigReader,
     ctx: ExecutionContext
 ) extends Provider[ModuleCompendiumSubscribers] {
@@ -38,7 +40,11 @@ class ModuleCompendiumSubscribersProvider @Inject() (
         ),
         system.actorOf(ModuleCompendiumPublishActor.props(publisher)),
         system.actorOf(
-          ModuleCompendiumDatabaseActor.props(metadataService, ctx)
+          ModuleCompendiumDatabaseActor.props(
+            metadataService,
+            metadataViewRepository,
+            ctx
+          )
         )
       )
     )
