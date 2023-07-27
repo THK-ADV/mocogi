@@ -6,7 +6,6 @@ import play.api.libs.json.Json
 import play.api.mvc.{AbstractController, ControllerComponents}
 import service.core.POService
 
-import java.nio.charset.StandardCharsets
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 
@@ -32,11 +31,5 @@ final class POController @Inject() (
         if (validOnly) service.allValid()
         else service.all()
       res.map(xs => Ok(Json.toJson(xs)))
-    }
-
-  def create() =
-    Action(parse.byteString).async { r =>
-      val input = r.body.decodeString(StandardCharsets.UTF_8)
-      service.create(input).map(xs => Ok(Json.toJson(xs)))
     }
 }

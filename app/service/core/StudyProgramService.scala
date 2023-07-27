@@ -47,40 +47,29 @@ final class StudyProgramServiceImpl @Inject() (
     repo.allIds()
 
   def create(input: String): Future[List[StudyProgram]] =
-    for {
-      grades <- gradeService.all()
-      people <- personService.all()
-      studyFormTypes <- studyFormTypeService.all()
-      languages <- languageService.all()
-      seasons <- seasonService.all()
-      locations <- locationService.all()
-      programs <- StudyProgramFileParser
-        .fileParser(
-          grades,
-          people,
-          studyFormTypes,
-          languages,
-          seasons,
-          locations
-        )
-        .parse(input)
-        ._1
-        .fold(Future.failed, xs => repo.createMany(xs).map(_ => xs))
-    } yield programs
+    createFromInput(input, xs => repo.createMany(xs).map(_ => xs))
 
   def createOrUpdate(
       input: String
-  ): Future[List[(InsertOrUpdateResult, StudyProgram)]] = {
-    def go(xs: List[StudyProgram]) =
-      Future.sequence(
-        xs.map(sp =>
-          repo.exists(sp).flatMap {
-            case true  => repo.update(sp).map(InsertOrUpdateResult.Update -> _)
-            case false => repo.create(sp).map(InsertOrUpdateResult.Insert -> _)
-          }
+  ): Future[List[(InsertOrUpdateResult, StudyProgram)]] =
+    createFromInput(
+      input,
+      xs =>
+        Future.sequence(
+          xs.map(sp =>
+            repo.exists(sp).flatMap {
+              case true => repo.update(sp).map(InsertOrUpdateResult.Update -> _)
+              case false =>
+                repo.create(sp).map(InsertOrUpdateResult.Insert -> _)
+            }
+          )
         )
-      )
+    )
 
+  private def createFromInput[A](
+      input: String,
+      createMany: List[StudyProgram] => Future[List[A]]
+  ): Future[List[A]] =
     for {
       grades <- gradeService.all()
       people <- personService.all()
@@ -99,7 +88,6 @@ final class StudyProgramServiceImpl @Inject() (
         )
         .parse(input)
         ._1
-        .fold(Future.failed, go)
+        .fold(Future.failed, createMany)
     } yield programs
-  }
 }

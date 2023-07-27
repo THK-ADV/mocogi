@@ -1,7 +1,7 @@
 package git.publisher
 
 import akka.actor.{Actor, ActorRef, Props}
-import database.InsertOrUpdateResult
+import database.view.{MetadataViewRepository, StudyProgramViewRepository}
 import git.GitFilesBroker.Changes
 import git.publisher.CoreDataPublisher.ParsingValidation
 import git.{GitFileContent, GitFilePath}
@@ -31,6 +31,8 @@ object CoreDataPublisher {
       studyProgramService: StudyProgramService,
       studyFormTypeService: StudyFormTypeService,
       specializationService: SpecializationService,
+      studyProgramViewRepository: StudyProgramViewRepository,
+      metadataViewRepository: MetadataViewRepository,
       ctx: ExecutionContext
   ) =
     Props(
@@ -52,6 +54,8 @@ object CoreDataPublisher {
         studyProgramService,
         studyFormTypeService,
         specializationService,
+        studyProgramViewRepository,
+        metadataViewRepository,
         ctx
       )
     )
@@ -74,29 +78,49 @@ object CoreDataPublisher {
       private val studyProgramService: StudyProgramService,
       private val studyFormTypeService: StudyFormTypeService,
       private val specializationService: SpecializationService,
+      private val studyProgramViewRepository: StudyProgramViewRepository,
+      private val metadataViewRepository: MetadataViewRepository,
       private implicit val ctx: ExecutionContext
   ) extends Actor
       with Logging {
     override def receive = { case ParsingValidation(changes) =>
-      parseAndUpdate(changes.modified)
-      parseAndUpdate(changes.added)
+      val res = for {
+        res <- Future.sequence(
+          (changes.modified ::: changes.added).map(a =>
+            createOrUpdate(a._1, a._2)
+          )
+        )
+        _ <- studyProgramViewRepository.refreshView()
+        _ <- metadataViewRepository.refreshView()
+      } yield res
+
+      res onComplete {
+        case Success(s) =>
+          s.foreach { case (path, content, either) =>
+            either match {
+              case Left(size) =>
+                logSuccess(path, content, size)
+              case Right(errMsg) =>
+                logFailure(path, content, errMsg)
+            }
+          }
+        case Failure(t) => logFailure(t)
+      }
     }
 
     /*TODO add support for deletion.
-        if an entry doesn't exists anymore in a yaml file, it will not be deleted currently.
-        instead, each entry will be either created (if new) or updated (if already exists).*/
-    private def parseAndUpdate(
-        changes: List[(GitFilePath, GitFileContent)]
-    ): Unit = {
-      def go(
-          path: GitFilePath,
-          content: GitFileContent
-      ): Future[Seq[(InsertOrUpdateResult, _)]] =
-        path.value
-          .stripPrefix(s"$folderPrefix/")
-          .split('.')
-          .headOption
-          .map {
+            if an entry doesn't exists anymore in a yaml file, it will not be deleted currently.
+            instead, each entry will be either created (if new) or updated (if already exists).*/
+    private def createOrUpdate(
+        path: GitFilePath,
+        content: GitFileContent
+    ): Future[(GitFilePath, GitFileContent, Either[Int, String])] =
+      path.value
+        .stripPrefix(s"$folderPrefix/")
+        .split('.')
+        .headOption match {
+        case Some(value) =>
+          val res = value match {
             case "location" =>
               locationService.createOrUpdate(content.value)
             case "lang" =>
@@ -131,40 +155,44 @@ object CoreDataPublisher {
               specializationService.createOrUpdate(content.value)
             case other =>
               Future.failed(new Throwable(s"unknown core data found: $other"))
-          } getOrElse Future.failed(
-          new Throwable(s"expected path to be filename.yaml, but was $path")
-        )
-
-      changes.foreach { case (path, content) =>
-        go(path, content) onComplete {
-          case Success(s) => logSuccess(path, content, s)
-          case Failure(t) => logFailure(path, content, t)
-        }
+          }
+          res.map(xs => (path, content, Left(xs.size)))
+        case None =>
+          Future.successful(
+            (
+              path,
+              content,
+              Right(s"expected path to be filename.yaml, but was $path")
+            )
+          )
       }
-    }
 
-    private def logFailure(
-        path: GitFilePath,
-        content: GitFileContent,
-        error: Throwable
-    ): Unit =
+    private def logFailure(error: Throwable): Unit =
       logger.error(s"""failed to create or update core data file
-           |  - file path: ${path.value}
-           |  - file content size: ${content.value.length}
            |  - message: ${error.getMessage}
            |  - trace: ${error.getStackTrace.mkString(
                        "\n           "
                      )}""".stripMargin)
 
+    private def logFailure(
+        path: GitFilePath,
+        content: GitFileContent,
+        error: String
+    ): Unit =
+      logger.error(s"""failed to create or update core data file
+           |  - file path: ${path.value}
+           |  - file content size: ${content.value.length}
+           |  - message: $error""".stripMargin)
+
     private def logSuccess(
         path: GitFilePath,
         content: GitFileContent,
-        result: Seq[(InsertOrUpdateResult, _)]
+        size: Int
     ): Unit =
       logger.info(s"""successfully created or updated core data file
            |  - file path: ${path.value}
            |  - file content size: ${content.value.length}
-           |  - result: ${result.size}""".stripMargin)
+           |  - result: $size""".stripMargin)
   }
 
   private case class ParsingValidation(changes: Changes)

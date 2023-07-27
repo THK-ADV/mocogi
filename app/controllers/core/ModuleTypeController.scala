@@ -18,5 +18,4 @@ final class ModuleTypeController @Inject() (
     with ModuleTypeFormat
     with YamlController[ModuleType, ModuleType] {
   override implicit val writesOut: Writes[ModuleType] = moduleTypeFormat
-  override implicit val writesIn: Writes[ModuleType] = moduleTypeFormat
 }
