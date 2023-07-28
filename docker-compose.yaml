@@ -24,17 +24,17 @@ services:
       - backend_logs_vol:/mocogi/logs
       - app_vol:/mocogi/output
 
-  frontend:
-    container_name: mocogi-frontend
-    image: mocogi-frontend
-    restart: always
-    ports:
-      - "8080:80"
-      - "4433:443"
-    volumes:
-      - nginx_cert_vol:/etc/cert
-      - nginx_config_vol:/etc/nginx/conf.d
-      - app_vol:/usr/share/nginx/html/public
+#  frontend:
+#    container_name: mocogi-frontend
+#    image: mocogi-frontend
+#    restart: always
+#    ports:
+#      - "8080:80"
+#      - "4433:443"
+#    volumes:
+#      - nginx_cert_vol:/etc/cert
+#      - nginx_config_vol:/etc/nginx/conf.d
+#      - app_vol:/usr/share/nginx/html/public
 
 volumes:
   backend_logs_vol:

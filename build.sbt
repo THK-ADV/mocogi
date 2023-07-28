@@ -22,7 +22,7 @@ lazy val `mocogi` = (project in file("."))
       "GitHub Package Registry",
       "maven.pkg.github.com",
       "THK-ADV",
-      ""
+      "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"
     )
   )
 
