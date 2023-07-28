@@ -82,8 +82,10 @@ final class MetadataViewRepository @Inject() (
     private def poVersion = column[Int]("po_version")
     private def poMandatoryRecommendedSemester =
       column[String]("recommended_semester")
-    private def study_programDeLabel = column[String]("sp_label")
+    private def studyProgramAbbrev = column[String]("sp_abbrev")
+    private def studyProgramDeLabel = column[String]("sp_label")
     private def gradeDeLabel = column[String]("grade_label")
+    private def specializationAbbrev = column[Option[String]]("spec_abbrev")
     private def specializationLabel = column[Option[String]]("spec_label")
 
     override def * = (
@@ -99,8 +101,10 @@ final class MetadataViewRepository @Inject() (
       poAbbrev,
       poVersion,
       poMandatoryRecommendedSemester,
-      study_programDeLabel,
+      studyProgramAbbrev,
+      studyProgramDeLabel,
       gradeDeLabel,
+      specializationAbbrev,
       specializationLabel
     ) <> (mapRow, unmapRow)
 
@@ -120,6 +124,8 @@ final class MetadataViewRepository @Inject() (
             String,
             String,
             String,
+            String,
+            Option[String],
             Option[String]
         )
     ) => DbEntry = {
@@ -136,8 +142,10 @@ final class MetadataViewRepository @Inject() (
             poAbbrev,
             poVersion,
             poMandatoryRecommendedSemester,
-            study_programDeLabel,
+            studyProgramAbbrev,
+            studyProgramDeLabel,
             gradeDeLabel,
+            specializationAbbrev,
             specializationLabel
           ) =>
         MetadataAtomic[PersonShort, String, StudyProgramAtomic](
@@ -154,10 +162,13 @@ final class MetadataViewRepository @Inject() (
           ),
           StudyProgramAtomic(
             poAbbrev,
-            study_programDeLabel,
+            studyProgramAbbrev,
+            studyProgramDeLabel,
             gradeDeLabel,
             poVersion,
-            specializationLabel
+            specializationAbbrev
+              .zip(specializationLabel)
+              .map(SpecializationShort.tupled)
           ),
           poMandatoryRecommendedSemester
         )
@@ -179,6 +190,8 @@ final class MetadataViewRepository @Inject() (
           String,
           String,
           String,
+          String,
+          Option[String],
           Option[String]
       )
     ] = { a =>
@@ -193,12 +206,14 @@ final class MetadataViewRepository @Inject() (
           a.moduleManagement.title,
           a.moduleManagement.firstname,
           a.moduleManagement.lastname,
-          a.studyProgram.po,
+          a.studyProgram.poAbbrev,
           a.studyProgram.version,
           a.recommendedSemester,
-          a.studyProgram.studyProgram,
+          a.studyProgram.studyProgramAbbrev,
+          a.studyProgram.studyProgramLabel,
           a.studyProgram.grade,
-          a.studyProgram.specialization
+          a.studyProgram.specialization.map(_.abbrev),
+          a.studyProgram.specialization.map(_.label)
         )
       )
     }
