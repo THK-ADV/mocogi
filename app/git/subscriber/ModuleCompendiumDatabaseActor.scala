@@ -1,7 +1,7 @@
 package git.subscriber
 
 import akka.actor.{Actor, Props}
-import database.view.MetadataViewRepository
+import database.view.ModuleViewRepository
 import git.GitFilePath
 import git.subscriber.ModuleCompendiumSubscribers.{CreatedOrUpdated, Removed}
 import parsing.types.ModuleCompendium
@@ -15,13 +15,13 @@ import scala.util.{Failure, Success}
 object ModuleCompendiumDatabaseActor {
   def props(
       metadataService: ModuleCompendiumService,
-      metadataViewRepository: MetadataViewRepository,
+      moduleViewRepository: ModuleViewRepository,
       ctx: ExecutionContext
   ) =
     Props(
       new ModuleCompendiumDatabaseActor(
         metadataService,
-        metadataViewRepository,
+        moduleViewRepository,
         ctx
       )
     )
@@ -29,7 +29,7 @@ object ModuleCompendiumDatabaseActor {
 
 private final class ModuleCompendiumDatabaseActor(
     metadataService: ModuleCompendiumService,
-    metadataViewRepository: MetadataViewRepository,
+    moduleViewRepository: ModuleViewRepository,
     implicit val ctx: ExecutionContext
 ) extends Actor
     with Logging {
@@ -46,7 +46,7 @@ private final class ModuleCompendiumDatabaseActor(
   ): Unit =
     metadataService
       .createOrUpdateMany(entries)
-      .flatMap(xs => metadataViewRepository.refreshView().map(_ => xs))
+      .flatMap(xs => moduleViewRepository.refreshView().map(_ => xs))
       .onComplete {
         case Success(mcs) =>
           logSuccess(mcs)
