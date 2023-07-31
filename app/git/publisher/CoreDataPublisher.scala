@@ -1,7 +1,7 @@
 package git.publisher
 
 import akka.actor.{Actor, ActorRef, Props}
-import database.view.{MetadataViewRepository, StudyProgramViewRepository}
+import database.view.{ModuleViewRepository, StudyProgramViewRepository}
 import git.GitFilesBroker.Changes
 import git.publisher.CoreDataPublisher.ParsingValidation
 import git.{GitFileContent, GitFilePath}
@@ -32,7 +32,7 @@ object CoreDataPublisher {
       studyFormTypeService: StudyFormTypeService,
       specializationService: SpecializationService,
       studyProgramViewRepository: StudyProgramViewRepository,
-      metadataViewRepository: MetadataViewRepository,
+      moduleViewRepository: ModuleViewRepository,
       ctx: ExecutionContext
   ) =
     Props(
@@ -55,7 +55,7 @@ object CoreDataPublisher {
         studyFormTypeService,
         specializationService,
         studyProgramViewRepository,
-        metadataViewRepository,
+        moduleViewRepository,
         ctx
       )
     )
@@ -79,7 +79,7 @@ object CoreDataPublisher {
       private val studyFormTypeService: StudyFormTypeService,
       private val specializationService: SpecializationService,
       private val studyProgramViewRepository: StudyProgramViewRepository,
-      private val metadataViewRepository: MetadataViewRepository,
+      private val moduleViewRepository: ModuleViewRepository,
       private implicit val ctx: ExecutionContext
   ) extends Actor
       with Logging {
@@ -91,7 +91,7 @@ object CoreDataPublisher {
           )
         )
         _ <- studyProgramViewRepository.refreshView()
-        _ <- metadataViewRepository.refreshView()
+        _ <- moduleViewRepository.refreshView()
       } yield res
 
       res onComplete {

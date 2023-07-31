@@ -9,7 +9,19 @@ import javax.inject.{Inject, Singleton}
 import scala.collection.mutable
 import scala.concurrent.{ExecutionContext, Future}
 
+case class StudyProgramModuleAssociation[Semester](
+    poAbbrev: String,
+    studyProgramAbbrev: String,
+    studyProgramLabel: String,
+    grade: String,
+    version: Int,
+    specialization: Option[SpecializationShort],
+    mandatory: Boolean,
+    recommendedSemester: Semester
+)
+
 case class PersonShort(
+    id: String,
     abbrev: String,
     kind: String,
     title: String,
@@ -17,62 +29,64 @@ case class PersonShort(
     lastname: String
 )
 
-case class MetadataAtomic[ModuleManagement, Semester, StudyProgram](
+case class ModuleAtomic[ModuleManagement, StudyProgram](
     id: UUID,
     title: String,
     abbrev: String,
     ects: Double,
     moduleManagement: ModuleManagement,
-    studyProgram: StudyProgram,
-    recommendedSemester: Semester
+    studyProgram: StudyProgram
 )
 @Singleton
-final class MetadataViewRepository @Inject() (
+final class ModuleViewRepository @Inject() (
     val dbConfigProvider: DatabaseConfigProvider,
     implicit val ctx: ExecutionContext
 ) extends HasDatabaseConfigProvider[JdbcProfile]
     with MaterializedView {
   import profile.api._
 
-  private type DbEntry = MetadataAtomic[
+  private type DbEntry = ModuleAtomic[
     PersonShort,
-    String,
-    StudyProgramAtomic
+    StudyProgramModuleAssociation[String]
   ]
 
-  type Entry = MetadataAtomic[
+  type Entry = ModuleAtomic[
     Iterable[PersonShort],
-    Iterable[Int],
-    Iterable[StudyProgramAtomic]
+    Iterable[StudyProgramModuleAssociation[Iterable[Int]]]
   ]
 
-  override def name: String = "metadata_atomic"
+  override def name: String = "module_atomic"
 
-  private val tableQuery = TableQuery[MetadataView]
+  private val tableQuery = TableQuery[ModuleView]
 
   def all(): Future[Iterable[Entry]] =
     db.run(
       tableQuery.result.map(_.groupBy(_.id).map { case (_, deps) =>
         // TODO can this be removed via query?
         val moduleManagement = mutable.HashSet[PersonShort]()
-        val studyProgram = mutable.HashSet[StudyProgramAtomic]()
+        val studyPrograms =
+          mutable.HashSet[StudyProgramModuleAssociation[Iterable[Int]]]()
         deps.foreach { dep =>
           moduleManagement.add(dep.moduleManagement)
-          studyProgram.add(dep.studyProgram)
+          studyPrograms.add(
+            dep.studyProgram.copy(recommendedSemester =
+              stringToInts(dep.studyProgram.recommendedSemester)
+            )
+          )
         }
         deps.head.copy(
-          recommendedSemester = stringToInts(deps.head.recommendedSemester),
           moduleManagement = moduleManagement,
-          studyProgram = studyProgram
+          studyProgram = studyPrograms
         )
       })
     )
 
-  private final class MetadataView(tag: Tag) extends Table[DbEntry](tag, name) {
+  private final class ModuleView(tag: Tag) extends Table[DbEntry](tag, name) {
     private def id = column[UUID]("id")
     private def title = column[String]("title")
     private def abbrev = column[String]("abbrev")
     private def ects = column[Double]("ects")
+    private def personId = column[String]("module_management_id")
     private def personKind = column[String]("module_management_kind")
     private def personAbbrev = column[String]("module_management_abbrev")
     private def personTitle = column[String]("module_management_title")
@@ -80,32 +94,34 @@ final class MetadataViewRepository @Inject() (
     private def personLastname = column[String]("module_management_lastname")
     private def poAbbrev = column[String]("po_abbrev")
     private def poVersion = column[Int]("po_version")
-    private def poMandatoryRecommendedSemester =
-      column[String]("recommended_semester")
     private def studyProgramAbbrev = column[String]("sp_abbrev")
     private def studyProgramDeLabel = column[String]("sp_label")
     private def gradeDeLabel = column[String]("grade_label")
     private def specializationAbbrev = column[Option[String]]("spec_abbrev")
     private def specializationLabel = column[Option[String]]("spec_label")
+    private def recommendedSemester = column[String]("recommended_semester")
+    private def mandatory = column[Boolean]("mandatory")
 
     override def * = (
       id,
       title,
       abbrev,
       ects,
-      personAbbrev,
+      personId,
       personKind,
+      personAbbrev,
       personTitle,
       personFirstname,
       personLastname,
       poAbbrev,
       poVersion,
-      poMandatoryRecommendedSemester,
       studyProgramAbbrev,
       studyProgramDeLabel,
       gradeDeLabel,
       specializationAbbrev,
-      specializationLabel
+      specializationLabel,
+      recommendedSemester,
+      mandatory
     ) <> (mapRow, unmapRow)
 
     private def mapRow: (
@@ -120,13 +136,15 @@ final class MetadataViewRepository @Inject() (
             String,
             String,
             String,
+            String,
             Int,
             String,
             String,
             String,
-            String,
             Option[String],
-            Option[String]
+            Option[String],
+            String,
+            Boolean
         )
     ) => DbEntry = {
       case (
@@ -134,33 +152,36 @@ final class MetadataViewRepository @Inject() (
             title,
             abbrev,
             ects,
-            personAbbrev,
+            personId,
             personKind,
+            personAbbrev,
             personTitle,
             personFirstname,
             personLastname,
             poAbbrev,
             poVersion,
-            poMandatoryRecommendedSemester,
             studyProgramAbbrev,
             studyProgramDeLabel,
             gradeDeLabel,
             specializationAbbrev,
-            specializationLabel
+            specializationLabel,
+            recommendedSemester,
+            mandatory
           ) =>
-        MetadataAtomic[PersonShort, String, StudyProgramAtomic](
+        ModuleAtomic[PersonShort, StudyProgramModuleAssociation[String]](
           id,
           title,
           abbrev,
           ects,
           PersonShort(
+            personId,
             personAbbrev,
             personKind,
             personTitle,
             personFirstname,
             personLastname
           ),
-          StudyProgramAtomic(
+          StudyProgramModuleAssociation(
             poAbbrev,
             studyProgramAbbrev,
             studyProgramDeLabel,
@@ -168,9 +189,10 @@ final class MetadataViewRepository @Inject() (
             poVersion,
             specializationAbbrev
               .zip(specializationLabel)
-              .map(SpecializationShort.tupled)
-          ),
-          poMandatoryRecommendedSemester
+              .map(SpecializationShort.tupled),
+            mandatory,
+            recommendedSemester
+          )
         )
     }
 
@@ -186,13 +208,15 @@ final class MetadataViewRepository @Inject() (
           String,
           String,
           String,
+          String,
           Int,
           String,
           String,
           String,
-          String,
           Option[String],
-          Option[String]
+          Option[String],
+          String,
+          Boolean
       )
     ] = { a =>
       Option(
@@ -201,19 +225,21 @@ final class MetadataViewRepository @Inject() (
           a.title,
           a.abbrev,
           a.ects,
-          a.moduleManagement.abbrev,
+          a.moduleManagement.id,
           a.moduleManagement.kind,
+          a.moduleManagement.abbrev,
           a.moduleManagement.title,
           a.moduleManagement.firstname,
           a.moduleManagement.lastname,
           a.studyProgram.poAbbrev,
           a.studyProgram.version,
-          a.recommendedSemester,
           a.studyProgram.studyProgramAbbrev,
           a.studyProgram.studyProgramLabel,
           a.studyProgram.grade,
           a.studyProgram.specialization.map(_.abbrev),
-          a.studyProgram.specialization.map(_.label)
+          a.studyProgram.specialization.map(_.label),
+          a.studyProgram.recommendedSemester,
+          a.studyProgram.mandatory
         )
       )
     }

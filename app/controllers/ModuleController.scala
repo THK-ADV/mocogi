@@ -1,7 +1,11 @@
 package controllers
 
 import controllers.formats.{MetadataOutputFormat, StudyProgramAtomicFormat}
-import database.view.{MetadataViewRepository, PersonShort}
+import database.view.{
+  ModuleViewRepository,
+  PersonShort,
+  StudyProgramModuleAssociation
+}
 import play.api.libs.json.{Format, Json}
 import play.api.mvc.{AbstractController, ControllerComponents}
 import service.{Module, ModuleCompendiumService}
@@ -13,7 +17,7 @@ import scala.concurrent.ExecutionContext
 final class ModuleController @Inject() (
     cc: ControllerComponents,
     service: ModuleCompendiumService,
-    metadataViewRepository: MetadataViewRepository,
+    moduleViewRepository: ModuleViewRepository,
     implicit val ctx: ExecutionContext
 ) extends AbstractController(cc)
     with MetadataOutputFormat
@@ -25,8 +29,12 @@ final class ModuleController @Inject() (
   implicit val psFmt: Format[PersonShort] =
     Json.format[PersonShort]
 
-  implicit val viewFmt: Format[MetadataViewRepository#Entry] =
-    Json.format[MetadataViewRepository#Entry]
+  implicit val studyProgramAssocFmt
+      : Format[StudyProgramModuleAssociation[Iterable[Int]]] =
+    Json.format[StudyProgramModuleAssociation[Iterable[Int]]]
+
+  implicit val viewFmt: Format[ModuleViewRepository#Entry] =
+    Json.format[ModuleViewRepository#Entry]
 
   def allModules() =
     Action.async { request =>
@@ -42,9 +50,9 @@ final class ModuleController @Inject() (
         .map(xs => Ok(Json.toJson(xs)))
     }
 
-  def allModuleMetadataFromView() =
+  def allModulesFromView() =
     Action.async { _ =>
-      metadataViewRepository
+      moduleViewRepository
         .all()
         .map(xs => Ok(Json.toJson(xs)))
     }
