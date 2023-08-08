@@ -14,13 +14,13 @@ trait PersonFormat extends FacultyFormat {
         js + ("kind" -> JsString(Person.UnknownKind))
       )
 
-  implicit lazy val singlePersonReads: Reads[Person.Single] =
-    Json.reads[Person.Single]
+  implicit lazy val singlePersonReads: Reads[Person.Default] =
+    Json.reads[Person.Default]
 
-  implicit lazy val singlePersonWrites: Writes[Person.Single] =
+  implicit lazy val singlePersonWrites: Writes[Person.Default] =
     Json
-      .writes[Person.Single]
-      .transform((js: JsObject) => js + ("kind" -> JsString(Person.SingleKind)))
+      .writes[Person.Default]
+      .transform((js: JsObject) => js + ("kind" -> JsString(Person.DefaultKind)))
 
   implicit val groupPersonReads: Reads[Person.Group] =
     Json.reads[Person.Group]
@@ -39,16 +39,16 @@ trait PersonFormat extends FacultyFormat {
         js.\("kind")
           .validate[String]
           .flatMap {
-            case Person.SingleKind  => singlePersonReads.reads(js)
+            case Person.DefaultKind  => singlePersonReads.reads(js)
             case Person.GroupKind   => groupPersonReads.reads(js)
             case Person.UnknownKind => unknownPersonReads.reads(js)
             case other =>
               JsError(
-                s"kind must be ${Person.SingleKind}, ${Person.GroupKind} or ${Person.UnknownKind}, but was $other"
+                s"kind must be ${Person.DefaultKind}, ${Person.GroupKind} or ${Person.UnknownKind}, but was $other"
               )
           },
       {
-        case single: Person.Single =>
+        case single: Person.Default =>
           singlePersonWrites.writes(single)
         case group: Person.Group =>
           groupPersonWrites.writes(group)

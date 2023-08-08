@@ -76,12 +76,12 @@ object ModuleCompendiumMarkdownPrinter {
 
   private def fmtPeople(label: String, xs: List[Person]): Printer[Unit] = {
     def fmt(x: Person) = x match {
-      case s: Person.Single =>
+      case s: Person.Default =>
         s"${s.title} ${s.firstname} ${s.lastname} (${fmtCommaSeparated(s.faculties)(_.abbrev)})"
       case g: Person.Group =>
-        g.title
+        g.label
       case u: Person.Unknown =>
-        u.title
+        u.label
     }
 
     rows(label, xs.map(fmt))

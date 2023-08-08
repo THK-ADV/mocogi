@@ -8,13 +8,14 @@ import play.api.libs.json.{JsString, Writes}
 final class PersonFormatSpec extends AnyWordSpec with PersonFormat {
   "A Person Format Spec" should {
     "serialize back and forth student" in {
-      val student = Person.Single(
+      val student = Person.Default(
         "1",
         "lastname",
         "firstname",
         "title",
         List(Faculty("f1", "de", "en")),
         "p1",
+        "id",
         PersonStatus.Active
       )
       val studentJson = personFormat.writes(student)
@@ -28,8 +29,9 @@ final class PersonFormatSpec extends AnyWordSpec with PersonFormat {
           .writes(student.faculties)
       )
       assert((studentJson \ "abbreviation").get == JsString("p1"))
+      assert((studentJson \ "campusId").get == JsString("id"))
       assert((studentJson \ "status").get == JsString("active"))
-      assert((studentJson \ "kind").get == JsString(Person.SingleKind))
+      assert((studentJson \ "kind").get == JsString(Person.DefaultKind))
     }
 
     "serialize back and forth unknown" in {
@@ -39,7 +41,7 @@ final class PersonFormatSpec extends AnyWordSpec with PersonFormat {
       )
       val unknownJson = personFormat.writes(unknown)
       assert((unknownJson \ "id").get == JsString("1"))
-      assert((unknownJson \ "title").get == JsString("unknown user"))
+      assert((unknownJson \ "label").get == JsString("unknown user"))
       assert((unknownJson \ "kind").get == JsString(Person.UnknownKind))
     }
 
@@ -50,7 +52,7 @@ final class PersonFormatSpec extends AnyWordSpec with PersonFormat {
       )
       val groupJson = personFormat.writes(group)
       assert((groupJson \ "id").get == JsString("1"))
-      assert((groupJson \ "title").get == JsString("group user"))
+      assert((groupJson \ "label").get == JsString("group user"))
       assert((groupJson \ "kind").get == JsString(Person.GroupKind))
     }
   }

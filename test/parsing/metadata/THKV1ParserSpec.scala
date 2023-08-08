@@ -116,33 +116,36 @@ class THKV1ParserSpec
         assert(
           metadata.responsibilities == Responsibilities(
             List(
-              Person.Single(
+              Person.Default(
                 "ald",
                 "Dobrynin",
                 "Alexander",
                 "M.Sc.",
                 List(f10),
                 "ad",
+                "ald",
                 PersonStatus.Active
               )
             ),
             List(
-              Person.Single(
+              Person.Default(
                 "ald",
                 "Dobrynin",
                 "Alexander",
                 "M.Sc.",
                 List(f10),
                 "ad",
+                "ald",
                 PersonStatus.Active
               ),
-              Person.Single(
+              Person.Default(
                 "abe",
                 "Bertels",
                 "Anja",
                 "B.Sc.",
                 List(f10),
                 "ab",
+                "abe",
                 PersonStatus.Active
               )
             )
@@ -267,24 +270,26 @@ class THKV1ParserSpec
         assert(
           metadata.responsibilities == Responsibilities(
             List(
-              Person.Single(
+              Person.Default(
                 "ald",
                 "Dobrynin",
                 "Alexander",
                 "M.Sc.",
                 List(f10),
                 "ad",
+                "ald",
                 PersonStatus.Active
               )
             ),
             List(
-              Person.Single(
+              Person.Default(
                 "ald",
                 "Dobrynin",
                 "Alexander",
                 "M.Sc.",
                 List(f10),
                 "ad",
+                "ald",
                 PersonStatus.Active
               )
             )

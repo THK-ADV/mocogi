@@ -25,13 +25,14 @@ class PersonParserSpec
         val (res1, rest1) = parser.parse(input)
         assert(
           res1.value == List(
-            Person.Single(
+            Person.Default(
               "ald",
               "Dobrynin",
               "Alexander",
               "M.Sc.",
               List(f10),
               "ad",
+              "ald",
               PersonStatus.Active
             )
           )
@@ -44,13 +45,14 @@ class PersonParserSpec
         val (res3, rest3) = parser.parse(input)
         assert(
           res3.value == List(
-            Person.Single(
+            Person.Default(
               "ald",
               "Dobrynin",
               "Alexander",
               "M.Sc.",
               List(f10),
               "ad",
+              "ald",
               PersonStatus.Active
             )
           )
@@ -76,22 +78,24 @@ class PersonParserSpec
         val (res1, rest1) = parser.parse(input)
         assert(
           res1.value == List(
-            Person.Single(
+            Person.Default(
               "ald",
               "Dobrynin",
               "Alexander",
               "M.Sc.",
               List(f10),
               "ad",
+              "ald",
               PersonStatus.Active
             ),
-            Person.Single(
+            Person.Default(
               "abe",
               "Bertels",
               "Anja",
               "B.Sc.",
               List(f10),
               "ab",
+              "abe",
               PersonStatus.Active
             )
           )
@@ -108,22 +112,24 @@ class PersonParserSpec
           parser.parse(input)
         assert(
           res2.value == List(
-            Person.Single(
+            Person.Default(
               "ald",
               "Dobrynin",
               "Alexander",
               "M.Sc.",
               List(f10),
               "ad",
+              "ald",
               PersonStatus.Active
             ),
-            Person.Single(
+            Person.Default(
               "abe",
               "Bertels",
               "Anja",
               "B.Sc.",
               List(f10),
               "ab",
+              "abe",
               PersonStatus.Active
             )
           )
@@ -140,22 +146,24 @@ class PersonParserSpec
           parser.parse(input)
         assert(
           res3.value == List(
-            Person.Single(
+            Person.Default(
               "ald",
               "Dobrynin",
               "Alexander",
               "M.Sc.",
               List(f10),
               "ad",
+              "ald",
               PersonStatus.Active
             ),
-            Person.Single(
+            Person.Default(
               "abe",
               "Bertels",
               "Anja",
               "B.Sc.",
               List(f10),
               "ab",
+              "abe",
               PersonStatus.Active
             )
           )
@@ -174,22 +182,24 @@ class PersonParserSpec
         )
         assert(
           res4.value == List(
-            Person.Single(
+            Person.Default(
               "ald",
               "Dobrynin",
               "Alexander",
               "M.Sc.",
               List(f10),
               "ad",
+              "ald",
               PersonStatus.Active
             ),
-            Person.Single(
+            Person.Default(
               "abe",
               "Bertels",
               "Anja",
               "B.Sc.",
               List(f10),
               "ab",
+              "abe",
               PersonStatus.Active
             )
           )

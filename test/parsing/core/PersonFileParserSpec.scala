@@ -21,7 +21,7 @@ final class PersonFileParserSpec
     "parse a unknown person" in {
       val input =
         """nn:
-          |  title: N.N.""".stripMargin
+          |  label: N.N.""".stripMargin
       val (res1, rest1) = personParser.unknownParser.parse(input)
       assert(res1.value == Person.Unknown("nn", "N.N."))
       assert(rest1.isEmpty)
@@ -30,7 +30,7 @@ final class PersonFileParserSpec
     "parse a group" in {
       val input =
         """all:
-          |  title: alle aktiven Lehrenden der Hochschule""".stripMargin
+          |  label: alle aktiven Lehrenden der Hochschule""".stripMargin
       val (res1, rest1) = personParser.parser.parse(input)
       assert(
         res1.value == List(
@@ -43,19 +43,19 @@ final class PersonFileParserSpec
     "parse multiple groups" in {
       val input =
         """all:
-          |  title: alle aktiven Lehrenden der Hochschule
+          |  label: alle aktiven Lehrenden der Hochschule
           |all-f10:
-          |  title: alle Lehrenden der F10
+          |  label: alle Lehrenden der F10
           |all-f10-prof:
-          |  title: alle Professor:innen der F10
+          |  label: alle Professor:innen der F10
           |all-inf:
-          |  title: alle Lehrenden der Lehreinheit Informatik
+          |  label: alle Lehrenden der Lehreinheit Informatik
           |all-inf-prof:
-          |  title: alle Professor:innen der Lehreinheit Informatik
+          |  label: alle Professor:innen der Lehreinheit Informatik
           |all-ing:
-          |  title: alle Lehrenden der Lehreinheit Ingenieurswesen
+          |  label: alle Lehrenden der Lehreinheit Ingenieurswesen
           |all-ing-prof:
-          |  title: alle Professor:innen der Lehreinheit Ingenieurswesen""".stripMargin
+          |  label: alle Professor:innen der Lehreinheit Ingenieurswesen""".stripMargin
       val (res1, rest1) = personParser.parser.parse(input)
       assert(
         res1.value == List(
@@ -95,7 +95,7 @@ final class PersonFileParserSpec
       assert(rest3.isEmpty)
     }
 
-    "parse a single person" in {
+    "parse a default person" in {
       val input =
         """abc:
           |  lastname: foo
@@ -105,17 +105,19 @@ final class PersonFileParserSpec
           |    - faculty.f10
           |    - faculty.f03
           |  abbreviation: ab
+          |  campusid: abc
           |  status: active""".stripMargin
       val (res1, rest1) = personParser.parser.parse(input)
       assert(
         res1.value == List(
-          Person.Single(
+          Person.Default(
             "abc",
             "foo",
             "bar",
             "bar. baz.",
             List(f10, f03),
             "ab",
+            "abc",
             PersonStatus.Active
           )
         )
@@ -133,6 +135,7 @@ final class PersonFileParserSpec
           |    - faculty.f10
           |    - faculty.f03
           |  abbreviation: ab
+          |  campusid: abc
           |  status: active
           |def:
           |  lastname: foo
@@ -140,26 +143,29 @@ final class PersonFileParserSpec
           |  title: bar. baz.
           |  faculty: faculty.f10
           |  abbreviation: ab
+          |  campusid: def
           |  status: inactive""".stripMargin
       val (res1, rest1) = personParser.parser.parse(input)
       assert(
         res1.value == List(
-          Person.Single(
+          Person.Default(
             "abc",
             "foo",
             "bar",
             "bar. baz.",
             List(f10, f03),
             "ab",
+            "abc",
             PersonStatus.Active
           ),
-          Person.Single(
+          Person.Default(
             "def",
             "foo",
             "bar",
             "bar. baz.",
             List(f10),
             "ab",
+            "def",
             PersonStatus.Inactive
           )
         )
@@ -170,12 +176,12 @@ final class PersonFileParserSpec
     "parse mixed persons" in {
       val input =
         """nn:
-          |  title: N.N.
+          |  label: N.N.
           |
           |all:
-          |  title: alle aktiven Lehrenden der Hochschule
+          |  label: alle aktiven Lehrenden der Hochschule
           |all-f10:
-          |  title: alle Lehrenden der F10
+          |  label: alle Lehrenden der F10
           |
           |abc:
           |  lastname: foo
@@ -185,6 +191,7 @@ final class PersonFileParserSpec
           |    - faculty.f10
           |    - faculty.f03
           |  abbreviation: ab
+          |  campusid: abc
           |  status: active
           |def:
           |  lastname: foo
@@ -192,6 +199,7 @@ final class PersonFileParserSpec
           |  title: bar. baz.
           |  faculty: faculty.f10
           |  abbreviation: ab
+          |  campusid: def
           |  status: inactive""".stripMargin
       val (res1, rest1) = personParser.parser.parse(input)
       assert(
@@ -199,22 +207,24 @@ final class PersonFileParserSpec
           Person.Unknown("nn", "N.N."),
           Person.Group("all", "alle aktiven Lehrenden der Hochschule"),
           Person.Group("all-f10", "alle Lehrenden der F10"),
-          Person.Single(
+          Person.Default(
             "abc",
             "foo",
             "bar",
             "bar. baz.",
             List(f10, f03),
             "ab",
+            "abc",
             PersonStatus.Active
           ),
-          Person.Single(
+          Person.Default(
             "def",
             "foo",
             "bar",
             "bar. baz.",
             List(f10),
             "ab",
+            "def",
             PersonStatus.Inactive
           )
         )
@@ -228,7 +238,7 @@ final class PersonFileParserSpec
       assert(res1.value.size == 12)
       assert(res1.value.count(_.kind == Person.UnknownKind) == 1)
       assert(res1.value.count(_.kind == Person.GroupKind) == 7)
-      assert(res1.value.count(_.kind == Person.SingleKind) == 4)
+      assert(res1.value.count(_.kind == Person.DefaultKind) == 4)
       assert(rest1.isEmpty)
     }
   }

@@ -1,9 +1,9 @@
 package service.core
 
-import models.core.Person.{Group, Single, Unknown}
 import database.InsertOrUpdateResult
 import database.repo.PersonRepository
 import database.table.PersonDbEntry
+import models.core.Person.{Default, Group, Unknown}
 import models.core.{Person, PersonStatus}
 import parsing.core.PersonFileParser
 
@@ -53,13 +53,14 @@ final class PersonServiceImpl @Inject() (
 
   private def toDbEntry(p: Person): PersonDbEntry =
     p match {
-      case Single(
+      case Default(
             id,
             lastname,
             firstname,
             title,
             faculties,
             abbreviation,
+            campusId,
             status
           ) =>
         PersonDbEntry(
@@ -69,8 +70,9 @@ final class PersonServiceImpl @Inject() (
           title,
           faculties.map(_.abbrev),
           abbreviation,
+          Some(campusId),
           status,
-          Person.SingleKind
+          Person.DefaultKind
         )
       case Group(id, title) =>
         PersonDbEntry(
@@ -80,6 +82,7 @@ final class PersonServiceImpl @Inject() (
           title,
           Nil,
           "",
+          None,
           PersonStatus.Active,
           Person.GroupKind
         )
@@ -91,6 +94,7 @@ final class PersonServiceImpl @Inject() (
           title,
           Nil,
           "",
+          None,
           PersonStatus.Active,
           Person.UnknownKind
         )
