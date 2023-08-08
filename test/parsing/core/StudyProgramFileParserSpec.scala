@@ -2,7 +2,7 @@ package parsing.core
 
 import helper._
 import models.core
-import models.core.{Language, Location, Person, PersonStatus, RestrictedAdmission, Season, StudyForm, StudyFormScope, StudyFormType, StudyProgram}
+import models.core._
 import org.scalatest.EitherValues
 import org.scalatest.wordspec.AnyWordSpec
 import parsing.core.StudyProgramFileParser._
@@ -79,13 +79,14 @@ final class StudyProgramFileParserSpec
       val input = "program_director: person.ald"
       val (res, rest) = programDirectorParser.parse(input)
       assert(
-        res.value == Person.Single(
+        res.value == Person.Default(
           "ald",
           "Dobrynin",
           "Alexander",
           "M.Sc.",
           List(f10),
           "ad",
+          "ald",
           PersonStatus.Active
         )
       )
@@ -321,13 +322,14 @@ final class StudyProgramFileParserSpec
         "https://www.th-koeln.de/studium/digital-sciences-master_83002.php",
         "https://www.th-koeln.de/en/academics/digital-sciences-masters-program_83005.php",
         msc,
-        Person.Single(
+        Person.Default(
           "ald",
           "Dobrynin",
           "Alexander",
           "M.Sc.",
           List(f10),
           "ad",
+          "ald",
           PersonStatus.Active
         ),
         LocalDate.of(2027, 9, 30),
@@ -386,13 +388,14 @@ final class StudyProgramFileParserSpec
         "https://www.th-koeln.de/studium/informatik-bachelor_3488.php",
         "https://www.th-koeln.de/en/academics/computer-science-bachelors-program_7326.php",
         bsc,
-        Person.Single(
+        Person.Default(
           "ald",
           "Dobrynin",
           "Alexander",
           "M.Sc.",
           List(f10),
           "ad",
+          "ald",
           PersonStatus.Active
         ),
         LocalDate.of(2026, 9, 30),
@@ -442,13 +445,14 @@ final class StudyProgramFileParserSpec
         "https://www.th-koeln.de/studium/allgemeiner-maschinenbau-bachelor_2709.php",
         "https://www.th-koeln.de/en/academics/general-mechanical-engineering-bachelors-program_7323.php",
         beng,
-        Person.Single(
+        Person.Default(
           "ald",
           "Dobrynin",
           "Alexander",
           "M.Sc.",
           List(f10),
           "ad",
+          "ald",
           PersonStatus.Active
         ),
         LocalDate.of(2026, 9, 30),
@@ -523,13 +527,14 @@ final class StudyProgramFileParserSpec
         "https://www.th-koeln.de/studium/automation--it-master_3429.php",
         "https://www.th-koeln.de/en/academics/automation--it-master_6815.php",
         meng,
-        Person.Single(
+        Person.Default(
           "ald",
           "Dobrynin",
           "Alexander",
           "M.Sc.",
           List(f10),
           "ad",
+          "ald",
           PersonStatus.Active
         ),
         LocalDate.of(2026, 9, 30),

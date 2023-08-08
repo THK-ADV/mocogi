@@ -6,20 +6,21 @@ sealed trait Person {
 }
 
 object Person {
-  val SingleKind = "single"
+  val DefaultKind = "default"
   val GroupKind = "group"
   val UnknownKind = "unknown"
 
-  case class Single(
+  case class Default(
       id: String,
       lastname: String,
       firstname: String,
       title: String,
       faculties: List[Faculty],
       abbreviation: String,
+      campusId: String,
       status: PersonStatus
   ) extends Person {
-    override val kind = SingleKind
+    override val kind = DefaultKind
   }
 
   case class Group(id: String, title: String) extends Person {

@@ -3,7 +3,7 @@ package parsing.core
 import models.core.{Faculty, Person, PersonStatus}
 import parser.Parser
 import parser.Parser._
-import parser.ParserOps.{P2, P3, P4, P5, P6}
+import parser.ParserOps.{P2, P3, P4, P5, P6, P7}
 import parsing.{multipleValueParser, singleLineStringForKey}
 
 import javax.inject.Singleton
@@ -18,7 +18,7 @@ class PersonFileParser {
       .zip(singleLineStringForKey("title"))
       .map(Person.Unknown.tupled)
 
-  def groupsParser: Parser[Person] =
+  def groupParser: Parser[Person] =
     prefixTo(":")
       .skip(zeroOrMoreSpaces)
       .zip(singleLineStringForKey("title").map(s => if (s == "--") "" else s))
@@ -35,7 +35,7 @@ class PersonFileParser {
       1
     )
 
-  def singleParser(implicit
+  def defaultParser(implicit
       faculties: Seq[Faculty]
   ): Parser[Person] =
     prefixTo(":")
@@ -50,13 +50,15 @@ class PersonFileParser {
       .skip(zeroOrMoreSpaces)
       .take(singleLineStringForKey("abbreviation"))
       .skip(zeroOrMoreSpaces)
+      .take(singleLineStringForKey("campusid"))
+      .skip(zeroOrMoreSpaces)
       .take(statusParser)
-      .map(Person.Single.tupled)
+      .map(Person.Default.tupled)
 
   def parser(implicit faculties: Seq[Faculty]): Parser[List[Person]] =
     oneOf(
       unknownParser,
-      groupsParser,
-      singleParser
+      groupParser,
+      defaultParser
     ).all(zeroOrMoreSpaces)
 }

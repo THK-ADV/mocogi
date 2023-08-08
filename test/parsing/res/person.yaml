@@ -22,6 +22,7 @@ abc:
   title: bar. baz.
   faculty: faculty.f10
   abbreviation: abc
+  campusid: abc
   status: active
 def:
   lastname: foo
@@ -29,6 +30,7 @@ def:
   title: bar. baz.
   faculty: faculty.f10
   abbreviation: abc
+  campusid: def
   status: active
 ghi:
   lastname: foo
@@ -36,6 +38,7 @@ ghi:
   title: bar. baz.
   faculty: faculty.f10
   abbreviation: abc
+  campusid: ghi
   status: active
 jkl:
   lastname: foo
@@ -45,4 +48,5 @@ jkl:
     - faculty.f10
     - faculty.f03
   abbreviation: abc
+  campusid: jkl
   status: active

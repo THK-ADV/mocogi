@@ -10,6 +10,7 @@ case class PersonDbEntry(
     title: String,
     faculties: List[String],
     abbreviation: String,
+    campusId: Option[String],
     status: PersonStatus,
     kind: String
 )
@@ -30,6 +31,8 @@ final class PersonTable(tag: Tag) extends Table[PersonDbEntry](tag, "person") {
 
   def kind = column[String]("kind")
 
+  def campusId = column[Option[String]]("campus_id")
+
   override def * = (
     id,
     lastname,
@@ -37,11 +40,12 @@ final class PersonTable(tag: Tag) extends Table[PersonDbEntry](tag, "person") {
     title,
     abbreviation,
     status,
-    kind
+    kind,
+    campusId
   ) <> (mapRow, unmapRow)
 
   def mapRow: (
-      (String, String, String, String, String, String, String)
+      (String, String, String, String, String, String, String, Option[String])
   ) => PersonDbEntry = {
     case (
           id,
@@ -50,7 +54,8 @@ final class PersonTable(tag: Tag) extends Table[PersonDbEntry](tag, "person") {
           title,
           abbreviation,
           status,
-          kind
+          kind,
+          campusId
         ) =>
       PersonDbEntry(
         id,
@@ -59,13 +64,14 @@ final class PersonTable(tag: Tag) extends Table[PersonDbEntry](tag, "person") {
         title,
         Nil,
         abbreviation,
+        campusId,
         PersonStatus(status),
         kind
       )
   }
 
   def unmapRow: PersonDbEntry => Option[
-    (String, String, String, String, String, String, String)
+    (String, String, String, String, String, String, String, Option[String])
   ] = { a =>
     Option(
       (
@@ -75,7 +81,8 @@ final class PersonTable(tag: Tag) extends Table[PersonDbEntry](tag, "person") {
         a.title,
         a.abbreviation,
         a.status.toString,
-        a.kind
+        a.kind,
+        a.campusId
       )
     )
   }

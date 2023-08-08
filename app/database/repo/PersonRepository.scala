@@ -50,14 +50,15 @@ class PersonRepository @Inject() (
 
   private def toPerson(p: PersonDbEntry, faculties: List[Faculty]): Person =
     p.kind match {
-      case Person.SingleKind =>
-        Person.Single(
+      case Person.DefaultKind =>
+        Person.Default(
           p.id,
           p.lastname,
           p.firstname,
           p.title,
           faculties,
           p.abbreviation,
+          p.campusId.get,
           p.status
         )
       case Person.GroupKind =>
