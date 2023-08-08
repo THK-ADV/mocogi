@@ -23,11 +23,11 @@ object Person {
     override val kind = DefaultKind
   }
 
-  case class Group(id: String, title: String) extends Person {
+  case class Group(id: String, label: String) extends Person {
     override val kind = GroupKind
   }
 
-  case class Unknown(id: String, title: String) extends Person {
+  case class Unknown(id: String, label: String) extends Person {
     override val kind = UnknownKind
   }
 }

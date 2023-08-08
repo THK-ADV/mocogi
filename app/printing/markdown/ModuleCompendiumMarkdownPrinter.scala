@@ -79,9 +79,9 @@ object ModuleCompendiumMarkdownPrinter {
       case s: Person.Default =>
         s"${s.title} ${s.firstname} ${s.lastname} (${fmtCommaSeparated(s.faculties)(_.abbrev)})"
       case g: Person.Group =>
-        g.title
+        g.label
       case u: Person.Unknown =>
-        u.title
+        u.label
     }
 
     rows(label, xs.map(fmt))

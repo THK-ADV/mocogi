@@ -15,13 +15,13 @@ class PersonFileParser {
     literal("nn")
       .skip(prefix(":"))
       .skip(zeroOrMoreSpaces)
-      .zip(singleLineStringForKey("title"))
+      .zip(singleLineStringForKey("label"))
       .map(Person.Unknown.tupled)
 
   def groupParser: Parser[Person] =
     prefixTo(":")
       .skip(zeroOrMoreSpaces)
-      .zip(singleLineStringForKey("title").map(s => if (s == "--") "" else s))
+      .zip(singleLineStringForKey("label").map(s => if (s == "--") "" else s))
       .map(Person.Group.tupled)
 
   def statusParser: Parser[PersonStatus] =

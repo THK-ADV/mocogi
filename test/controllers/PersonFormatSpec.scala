@@ -41,7 +41,7 @@ final class PersonFormatSpec extends AnyWordSpec with PersonFormat {
       )
       val unknownJson = personFormat.writes(unknown)
       assert((unknownJson \ "id").get == JsString("1"))
-      assert((unknownJson \ "title").get == JsString("unknown user"))
+      assert((unknownJson \ "label").get == JsString("unknown user"))
       assert((unknownJson \ "kind").get == JsString(Person.UnknownKind))
     }
 
@@ -52,7 +52,7 @@ final class PersonFormatSpec extends AnyWordSpec with PersonFormat {
       )
       val groupJson = personFormat.writes(group)
       assert((groupJson \ "id").get == JsString("1"))
-      assert((groupJson \ "title").get == JsString("group user"))
+      assert((groupJson \ "label").get == JsString("group user"))
       assert((groupJson \ "kind").get == JsString(Person.GroupKind))
     }
   }

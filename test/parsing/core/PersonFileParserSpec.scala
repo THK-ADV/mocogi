@@ -21,7 +21,7 @@ final class PersonFileParserSpec
     "parse a unknown person" in {
       val input =
         """nn:
-          |  title: N.N.""".stripMargin
+          |  label: N.N.""".stripMargin
       val (res1, rest1) = personParser.unknownParser.parse(input)
       assert(res1.value == Person.Unknown("nn", "N.N."))
       assert(rest1.isEmpty)
@@ -30,7 +30,7 @@ final class PersonFileParserSpec
     "parse a group" in {
       val input =
         """all:
-          |  title: alle aktiven Lehrenden der Hochschule""".stripMargin
+          |  label: alle aktiven Lehrenden der Hochschule""".stripMargin
       val (res1, rest1) = personParser.parser.parse(input)
       assert(
         res1.value == List(
@@ -43,19 +43,19 @@ final class PersonFileParserSpec
     "parse multiple groups" in {
       val input =
         """all:
-          |  title: alle aktiven Lehrenden der Hochschule
+          |  label: alle aktiven Lehrenden der Hochschule
           |all-f10:
-          |  title: alle Lehrenden der F10
+          |  label: alle Lehrenden der F10
           |all-f10-prof:
-          |  title: alle Professor:innen der F10
+          |  label: alle Professor:innen der F10
           |all-inf:
-          |  title: alle Lehrenden der Lehreinheit Informatik
+          |  label: alle Lehrenden der Lehreinheit Informatik
           |all-inf-prof:
-          |  title: alle Professor:innen der Lehreinheit Informatik
+          |  label: alle Professor:innen der Lehreinheit Informatik
           |all-ing:
-          |  title: alle Lehrenden der Lehreinheit Ingenieurswesen
+          |  label: alle Lehrenden der Lehreinheit Ingenieurswesen
           |all-ing-prof:
-          |  title: alle Professor:innen der Lehreinheit Ingenieurswesen""".stripMargin
+          |  label: alle Professor:innen der Lehreinheit Ingenieurswesen""".stripMargin
       val (res1, rest1) = personParser.parser.parse(input)
       assert(
         res1.value == List(
@@ -176,12 +176,12 @@ final class PersonFileParserSpec
     "parse mixed persons" in {
       val input =
         """nn:
-          |  title: N.N.
+          |  label: N.N.
           |
           |all:
-          |  title: alle aktiven Lehrenden der Hochschule
+          |  label: alle aktiven Lehrenden der Hochschule
           |all-f10:
-          |  title: alle Lehrenden der F10
+          |  label: alle Lehrenden der F10
           |
           |abc:
           |  lastname: foo
