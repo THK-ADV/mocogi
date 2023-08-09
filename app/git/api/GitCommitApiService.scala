@@ -10,7 +10,7 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-final class GitCommitService @Inject() (
+final class GitCommitApiService @Inject() (
     private val ws: WSClient,
     val gitConfig: GitConfig,
     private implicit val ctx: ExecutionContext

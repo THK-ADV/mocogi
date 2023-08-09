@@ -44,8 +44,8 @@ GET           /metadata                                 controllers.ModuleContro
 # Git Workflow
 
 POST          /git/branch                               controllers.GitController.createBranch()
-GET           /git/branch/:username                     controllers.GitController.branchForUser(username)
-DELETE        /git/branch/:username                     controllers.GitController.deleteBranch(username)
+GET           /git/branch                               controllers.GitController.branchForUser()
+DELETE        /git/branch                               controllers.GitController.deleteBranch()
 
 POST          /moduleDrafts                             controllers.ModuleDraftController.addModuleDraft()
 PUT           /moduleDrafts/:moduleId                   controllers.ModuleDraftController.updateModuleDraft(moduleId: java.util.UUID)

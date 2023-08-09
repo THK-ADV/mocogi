@@ -1,6 +1,6 @@
 package git.api
 
-import git.api.GitRepositoryService.{linkParser, nextLinkParser}
+import git.api.GitRepositoryApiService.{linkParser, nextLinkParser}
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatest.{EitherValues, OptionValues}
 

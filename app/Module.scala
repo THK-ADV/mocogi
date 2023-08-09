@@ -1,3 +1,4 @@
+import auth.{Authorization, UserToken}
 import com.google.inject.{AbstractModule, TypeLiteral}
 import database.repo.{
   ModuleCompendiumRepository,
@@ -123,6 +124,9 @@ class Module() extends AbstractModule {
       .asEagerSingleton()
     bind(new TypeLiteral[KafkaPublisher[Metadata]] {})
       .toProvider(classOf[KafkaPublisherProvider])
+      .asEagerSingleton()
+    bind(new TypeLiteral[Authorization[UserToken]] {})
+      .toProvider(classOf[AuthorizationProvider])
       .asEagerSingleton()
 
     bind(classOf[ContentMarkdownPrinter]).toInstance(

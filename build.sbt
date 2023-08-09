@@ -1,6 +1,7 @@
 val playSlickVersion = "5.1.0"
 val guiceVersion = "5.1.0"
 val scalaTestVersion = "3.2.15"
+val keycloakVersion = "22.0.1"
 
 lazy val `mocogi` = (project in file("."))
   .enablePlugins(PlayScala)
@@ -11,10 +12,13 @@ lazy val `mocogi` = (project in file("."))
     scalaVersion := "2.13.10",
     resolvers += "Akka Snapshot Repository" at "https://repo.akka.io/snapshots/",
     libraryDependencies ++= play,
+    libraryDependencies ++= guiceDeps,
+    libraryDependencies ++= playJson,
     libraryDependencies ++= test,
     libraryDependencies ++= database,
     libraryDependencies += parser,
     libraryDependencies += kafka,
+    libraryDependencies ++= keycloak,
     externalResolvers ++= Seq(
       "GitHub <THK-ADV> Apache Maven Packages" at "https://maven.pkg.github.com/THK-ADV/nebulak"
     ),
@@ -29,12 +33,7 @@ lazy val `mocogi` = (project in file("."))
 lazy val play = Seq(
   specs2 % Test,
   ws,
-  guice,
-  ehcache,
-  "com.typesafe.play" %% "play-json" % "2.9.4",
-  "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.14.2",
-  "com.google.inject" % "guice" % guiceVersion,
-  "com.google.inject.extensions" % "guice-assistedinject" % guiceVersion
+  ehcache
 )
 
 lazy val test = Seq(
@@ -52,3 +51,20 @@ lazy val database = Seq(
 )
 
 lazy val kafka = "de.th-koeln.inf.adv" %% "kafka-pubsub" % "0.3"
+
+lazy val playJson = Seq(
+  "com.typesafe.play" %% "play-json" % "2.10.0-RC9",
+  "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.15.2", // jackson-databind 2.15.2
+)
+
+lazy val guiceDeps = Seq(
+  guice,
+  "com.google.inject" % "guice" % guiceVersion,
+  "com.google.inject.extensions" % "guice-assistedinject" % guiceVersion
+)
+
+val keycloak = Seq(
+  "org.keycloak" % "keycloak-core" % keycloakVersion,
+  "org.keycloak" % "keycloak-adapter-core" % keycloakVersion,
+  "org.jboss.logging" % "jboss-logging" % "3.5.1.Final"
+)

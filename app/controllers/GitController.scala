@@ -1,8 +1,9 @@
 package controllers
 
+import auth.AuthorizationAction
 import controllers.formats.UserBranchFormat
 import git.api.GitBranchService
-import play.api.libs.json.{Json, Reads}
+import play.api.libs.json.Json
 import play.api.mvc.{AbstractController, ControllerComponents}
 
 import javax.inject.{Inject, Singleton}
@@ -12,25 +13,23 @@ import scala.concurrent.ExecutionContext
 final class GitController @Inject() (
     cc: ControllerComponents,
     val service: GitBranchService,
+    val auth: AuthorizationAction,
     implicit val ctx: ExecutionContext
 ) extends AbstractController(cc)
     with UserBranchFormat {
 
-  private implicit val usernameReads: Reads[String] =
-    Reads.apply(_.\("username").validate(Reads.StringReads))
-
   def createBranch() =
-    Action.async(parse.json(usernameReads)) { r =>
-      service.createBranch(r.body).map(a => Created(Json.toJson(a)))
+    auth.async { r =>
+      service.createBranch(r.token.username).map(a => Created(Json.toJson(a)))
     }
 
-  def branchForUser(username: String) =
-    Action.async { _ =>
-      service.branchForUser(username).map(a => Ok(Json.toJson(a)))
+  def branchForUser() =
+    auth.async { r =>
+      service.branchForUser(r.token.username).map(a => Ok(Json.toJson(a)))
     }
 
-  def deleteBranch(username: String) =
-    Action.async { _ =>
-      service.deleteBranch(username).map(_ => NoContent)
+  def deleteBranch() =
+    auth.async { r =>
+      service.deleteBranch(r.token.username).map(_ => NoContent)
     }
 }
