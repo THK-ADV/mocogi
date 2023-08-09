@@ -1,21 +1,17 @@
 package git.api
 
 import database.repo.UserBranchRepository
-import git.GitConfig
-import models.{User, UserBranch}
-import play.api.libs.ws.{EmptyBody, WSClient}
-import play.mvc.Http.Status
+import models.UserBranch
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 final class GitBranchService @Inject() (
-    private val userBranchRepository: UserBranchRepository, // TODO remove (like GitCommitService SRP)
-    private val ws: WSClient,
-    val gitConfig: GitConfig,
-    private implicit val ctx: ExecutionContext
-) extends GitService {
+    private val userBranchRepository: UserBranchRepository,
+    private val apiService: GitBranchApiService,
+    implicit val ctx: ExecutionContext
+) {
   def branchForUser(username: String): Future[Option[UserBranch]] =
     userBranchRepository.branchForUser(username)
 
@@ -29,10 +25,8 @@ final class GitBranchService @Inject() (
           )
         else
           for {
-            branch <- createBranchApiRequest(user)
-            res <- userBranchRepository.create(
-              UserBranch(user, branch, None, None)
-            )
+            branch <- apiService.createBranch(user)
+            res <- userBranchRepository.create(branch)
           } yield res
     } yield res
 
@@ -46,42 +40,8 @@ final class GitBranchService @Inject() (
           )
         else
           for {
-            _ <- deleteBranchApiRequest(user)
+            _ <- apiService.deleteBranch(user)
             d <- userBranchRepository.delete(user) if d > 0
           } yield ()
     } yield res
-
-  private def createBranchApiRequest(user: String): Future[String] = {
-    val branchName = this.branchName(user)
-    ws
-      .url(this.branchUrl())
-      .withHttpHeaders(tokenHeader())
-      .withQueryStringParameters(
-        ("branch", branchName),
-        ("ref", gitConfig.mainBranch)
-      )
-      .post(EmptyBody)
-      .flatMap { res =>
-        if (res.status == Status.CREATED) Future.successful(branchName)
-        else Future.failed(parseErrorMessage(res))
-      }
-  }
-
-  private def deleteBranchApiRequest(user: String): Future[String] = {
-    val branchName = this.branchName(user)
-    ws
-      .url(s"${this.branchUrl()}/$branchName")
-      .withHttpHeaders(tokenHeader())
-      .delete()
-      .flatMap { res =>
-        if (res.status == Status.NO_CONTENT) Future.successful(branchName)
-        else Future.failed(parseErrorMessage(res))
-      }
-  }
-
-  private def branchName(user: String) =
-    user
-
-  private def branchUrl() =
-    s"${repositoryUrl()}/branches"
 }

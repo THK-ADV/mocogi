@@ -6,7 +6,7 @@ import controllers.GitWebhookController.{
 }
 import controllers.formats.ThrowableWrites
 import git._
-import git.api.GitRepositoryService
+import git.api.GitRepositoryApiService
 import git.publisher.GitFilesDownloadActor
 import git.webhook.{GitMergeEventHandlingActor, GitPushEventHandler}
 import play.api.Logging
@@ -30,7 +30,7 @@ class GitWebhookController @Inject() (
     gitConfig: GitConfig,
     gitMergeEventHandlingActor: GitMergeEventHandlingActor,
     downloadActor: GitFilesDownloadActor,
-    gitRepositoryService: GitRepositoryService,
+    gitRepositoryService: GitRepositoryApiService,
     implicit val ctx: ExecutionContext
 ) extends AbstractController(cc)
     with Logging

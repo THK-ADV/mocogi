@@ -1,7 +1,7 @@
 package service
 
 import database.repo.UserBranchRepository
-import git.api.{GitCommitService, GitMergeRequestService}
+import git.api.{GitCommitApiService, GitMergeRequestApiService}
 import git.{GitCommitAction, GitCommitActionType, GitConfig, GitFilePath}
 import models.{ModuleDraftStatus, ValidModuleDraft}
 
@@ -12,15 +12,15 @@ import scala.concurrent.{ExecutionContext, Future}
 class ModuleDraftReviewService @Inject() (
     private val moduleDraftService: ModuleDraftService,
     private val moduleCompendiumService: ModuleCompendiumService,
-    private val commitService: GitCommitService,
-    private val mergeRequestService: GitMergeRequestService,
+    private val commitService: GitCommitApiService,
+    private val mergeRequestService: GitMergeRequestApiService,
     private val userBranchRepository: UserBranchRepository,
     private implicit val gitConfig: GitConfig,
     private implicit val ctx: ExecutionContext
 ) {
 
   type ReviewResult =
-    (GitCommitService#CommitID, GitMergeRequestService#MergeRequestID)
+    (GitCommitApiService#CommitID, GitMergeRequestApiService#MergeRequestID)
 
   def createReview(
       branch: String,

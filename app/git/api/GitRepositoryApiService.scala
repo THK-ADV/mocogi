@@ -1,6 +1,6 @@
 package git.api
 
-import git.api.GitRepositoryService.nextLinkParser
+import git.api.GitRepositoryApiService.nextLinkParser
 import git.{GitConfig, GitFilePath}
 import parser.Parser.{end, prefix, prefixTo, skipFirst}
 import parser.ParserOps.P0
@@ -11,7 +11,7 @@ import play.mvc.Http.Status
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
-object GitRepositoryService {
+object GitRepositoryApiService {
   def linkParser =
     skipFirst(prefixTo("<"))
       .take(prefixTo(">"))
@@ -24,7 +24,7 @@ object GitRepositoryService {
 }
 
 @Singleton
-final class GitRepositoryService @Inject() (
+final class GitRepositoryApiService @Inject() (
     private val ws: WSClient,
     val gitConfig: GitConfig,
     private implicit val ctx: ExecutionContext
