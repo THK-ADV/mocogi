@@ -4,10 +4,8 @@ import akka.actor.ActorSystem
 import database.view.ModuleViewRepository
 import git.subscriber._
 import printing.markdown.ModuleCompendiumPrinter
-import publisher.KafkaPublisher
-import service.ModuleCompendiumService
 import service.core.StudyProgramService
-import validator.Metadata
+import service.{ModuleCompendiumService, ModuleUpdatePermissionService}
 
 import javax.inject.{Inject, Provider, Singleton}
 import scala.concurrent.ExecutionContext
@@ -18,9 +16,10 @@ class ModuleCompendiumSubscribersProvider @Inject() (
     system: ActorSystem,
     moduleCompendiumMarkdownActor: ModuleCompendiumMarkdownActor,
     metadataService: ModuleCompendiumService,
-    publisher: KafkaPublisher[Metadata],
+//    publisher: KafkaPublisher[Metadata],
     studyProgramService: StudyProgramService,
     moduleViewRepository: ModuleViewRepository,
+    moduleUpdatePermissionService: ModuleUpdatePermissionService,
     configReader: ConfigReader,
     ctx: ExecutionContext
 ) extends Provider[ModuleCompendiumSubscribers] {
@@ -38,11 +37,16 @@ class ModuleCompendiumSubscribersProvider @Inject() (
             ctx
           )
         ),
-        system.actorOf(ModuleCompendiumPublishActor.props(publisher)),
+        // system.actorOf(ModuleCompendiumPublishActor.props(publisher)),
         system.actorOf(
-          ModuleCompendiumDatabaseActor.props(
-            metadataService,
-            moduleViewRepository,
+          ModuleCompendiumDatabaseActor.props(metadataService, ctx)
+        ),
+        system.actorOf(
+          ModuleCompendiumViewUpdateActor.props(moduleViewRepository, ctx)
+        ),
+        system.actorOf(
+          ModuleCompendiumPermissionUpdateActor.props(
+            moduleUpdatePermissionService,
             ctx
           )
         )

@@ -1,8 +1,7 @@
 package git.api
 
 import git.GitConfig
-import models.UserBranch
-import play.api.libs.ws.{EmptyBody, WSClient}
+import play.api.libs.ws.WSClient
 import play.mvc.Http.Status
 
 import javax.inject.{Inject, Singleton}
@@ -15,21 +14,22 @@ final class GitBranchApiService @Inject() (
     private implicit val ctx: ExecutionContext
 ) extends GitService {
 
-  def createBranch(user: String): Future[UserBranch] = {
-    val branchName = this.branchName(user)
-    ws
-      .url(this.branchUrl())
-      .withHttpHeaders(tokenHeader())
-      .withQueryStringParameters(
-        ("branch", branchName),
-        ("ref", gitConfig.mainBranch)
-      )
-      .post(EmptyBody)
-      .flatMap { res =>
-        if (res.status == Status.CREATED)
-          Future.successful(UserBranch(user, branchName, None, None))
-        else Future.failed(parseErrorMessage(res))
-      }
+  def createBranch(user: String): Future[String] = {
+    ???
+//    val branchName = this.branchName(user)
+//    ws
+//      .url(this.branchUrl())
+//      .withHttpHeaders(tokenHeader())
+//      .withQueryStringParameters(
+//        ("branch", branchName),
+//        ("ref", gitConfig.mainBranch)
+//      )
+//      .post(EmptyBody)
+//      .flatMap { res =>
+//        if (res.status == Status.CREATED)
+//          Future.successful(UserBranch(user, branchName, None, None))
+//        else Future.failed(parseErrorMessage(res))
+//      }
   }
 
   def deleteBranch(user: String) = {

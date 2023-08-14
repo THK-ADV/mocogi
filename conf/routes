@@ -43,9 +43,9 @@ GET           /metadata                                 controllers.ModuleContro
 
 # Git Workflow
 
-POST          /git/branch                               controllers.GitController.createBranch()
+POST          /git/branch/:id                           controllers.GitController.createBranch(id: java.util.UUID)
 GET           /git/branch                               controllers.GitController.branchForUser()
-DELETE        /git/branch                               controllers.GitController.deleteBranch()
+DELETE        /git/branch/:id                           controllers.GitController.deleteBranch(id: java.util.UUID)
 
 POST          /moduleDrafts                             controllers.ModuleDraftController.addModuleDraft()
 PUT           /moduleDrafts/:moduleId                   controllers.ModuleDraftController.updateModuleDraft(moduleId: java.util.UUID)
@@ -53,6 +53,12 @@ GET           /moduleDrafts/:branch                     controllers.ModuleDraftC
 GET           /moduleDrafts/:branch/validate            controllers.ModuleDraftController.validate(branch)
 PUT           /moduleDrafts/:branch/commit              controllers.ModuleDraftController.commit(branch)
 DELETE        /moduleDrafts/:branch/revertCommit        controllers.ModuleDraftController.revertCommit(branch)
+
+# Module Update Permissions
+
+GET           /moduleUpdatePermissions                  controllers.ModuleUpdatePermissionController.all()
+POST          /moduleUpdatePermissions                  controllers.ModuleUpdatePermissionController.create()
+DELETE        /moduleUpdatePermissions                  controllers.ModuleUpdatePermissionController.delete()
 
 # Map static resources from the /public folder to the /assets URL path
 GET           /assets/*file                             controllers.Assets.versioned(path="/public", file: Asset)

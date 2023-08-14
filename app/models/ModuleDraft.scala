@@ -8,11 +8,16 @@ import java.util.UUID
 
 case class ModuleDraft(
     module: UUID,
-    data: String,
-    branch: String,
+    user: User,
+    branch: Branch,
     status: ModuleDraftStatus,
-    lastModified: LocalDateTime,
-    validation: Option[Either[JsValue, (JsValue, Print)]]
+    data: JsValue,
+    moduleCompendium: JsValue,
+    print: Print,
+    keysToBeReviewed: Option[List[String]],
+    lastCommit: Option[CommitId],
+    mergeRequest: Option[(MergeRequestId, User)],
+    lastModified: LocalDateTime
 )
 
 case class ModuleDraftProtocol(

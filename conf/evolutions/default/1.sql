@@ -90,6 +90,7 @@ create table person
     "firstname"    text not null,
     "title"        text not null,
     "abbreviation" text not null,
+    "campus_id"    text null,
     "status"       text not null,
     "kind"         text not null
 );
@@ -389,30 +390,34 @@ create table metadata_taught_with
 
 -- git handling
 
-create table user_has_branch
-(
-    "user"             text PRIMARY KEY,
-    "branch_id"        text not null,
-    "commit_id"        text null,
-    "merge_request_id" integer null
-);
-
 create table module_draft
 (
-    "module_id"                    uuid      not null,
-    "module_json"                  text      not null,
-    "branch"                       text      not null,
-    "status"                       text      not null,
-    "last_modified"                timestamp not null,
-    "valid_module_compendium_json" text null,
-    "module_compendium_print"      text null,
-    "pipeline_error"               text null,
-    PRIMARY KEY (module_id, branch)
+    "module_id"               uuid      not null PRIMARY KEY,
+    "user_id"                 text      not null,
+    "branch_id"               text      not null,
+    "status"                  text      not null,
+    "module_json"             text      not null,
+    "module_compendium_json"  text      not null,
+    "module_compendium_print" text      not null,
+    "keys_to_be_reviewed"     text null,
+    "last_commit_id"          text null,
+    "merge_request_id"        integer null,
+    "merge_request_author"    text null,
+    "last_modified"           timestamp not null,
+    FOREIGN KEY (module_id) REFERENCES metadata (id)
+);
+
+create table module_update_permission
+(
+    "module_id" uuid not null,
+    "user_id"   text not null,
+    "kind"      text not null,
+    PRIMARY KEY (module_id, user_id)
 );
 
 -- !Downs
+drop table module_update_permission if exists;
 drop table module_draft if exists;
-drop table user_has_branch if exists;
 drop table metadata_taught_with if exists;
 drop table metadata_global_criteria if exists;
 drop table metadata_competence if exists;

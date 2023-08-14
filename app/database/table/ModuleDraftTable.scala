@@ -1,6 +1,6 @@
 package database.table
 
-import models.{ModuleDraft, ModuleDraftStatus}
+import models._
 import play.api.libs.json.JsValue
 import service.Print
 import slick.jdbc.PostgresProfile.api._
@@ -12,115 +12,120 @@ final class ModuleDraftTable(tag: Tag)
     extends Table[ModuleDraft](tag, "module_draft") {
   def module = column[UUID]("module_id", O.PrimaryKey)
 
-  def data = column[String]("module_json")
+  def user = column[User]("user_id", O.PrimaryKey)
 
-  def branch = column[String]("branch")
+  def branch = column[Branch]("branch_id")
 
   def status = column[ModuleDraftStatus]("status")
 
+  def data = column[JsValue]("module_json")
+
+  def moduleCompendium =
+    column[JsValue]("module_compendium_json")
+
+  def moduleCompendiumPrint = column[Print]("module_compendium_print")
+
+  def keysToBeReviewed = column[Option[List[String]]]("keys_to_be_reviewed")
+
+  def lastCommit = column[Option[CommitId]]("last_commit_id")
+
+  def mergeRequestId = column[Option[MergeRequestId]]("merge_request_id")
+
+  def mergeRequestAuthor = column[Option[User]]("merge_request_id")
+
   def lastModified = column[LocalDateTime]("last_modified")
-
-  def moduleCompendiumJson =
-    column[Option[JsValue]]("valid_module_compendium_json")
-
-  def moduleCompendiumPrint = column[Option[Print]]("module_compendium_print")
-
-  def pipelineErrorJson = column[Option[JsValue]]("pipeline_error")
 
   override def * =
     (
       module,
-      data,
+      user,
       branch,
       status,
-      lastModified,
-      moduleCompendiumJson,
+      data,
+      moduleCompendium,
       moduleCompendiumPrint,
-      pipelineErrorJson
+      keysToBeReviewed,
+      lastCommit,
+      mergeRequestId,
+      mergeRequestAuthor,
+      lastModified
     ) <> (mapRow, unmapRow)
 
-  private def toValidation(
-      moduleCompendiumJson: Option[JsValue],
-      moduleCompendiumPrint: Option[Print],
-      pipelineError: Option[JsValue]
-  ): Option[Either[JsValue, (JsValue, Print)]] = {
-    (moduleCompendiumJson, moduleCompendiumPrint, pipelineError) match {
-      case (Some(json), Some(print), None) => Some(Right((json, print)))
-      case (None, None, Some(err))         => Some(Left(err))
-      case (None, None, None)              => None
-      case (a, b, c) =>
-        throw new Throwable(
-          s"invalid database state for 'module_draft' table. expected 'validation' to be either success or failure, but was: $a, $b, $c"
-        )
-    }
-  }
-
-  private def fromValidation(
-      e: Option[Either[JsValue, (JsValue, Print)]]
-  ): (Option[JsValue], Option[Print], Option[JsValue]) =
-    e match {
-      case Some(e) =>
-        e match {
-          case Left(err)            => (None, None, Some(err))
-          case Right((json, print)) => (Some(json), Some(print), None)
-        }
-      case None => (None, None, None)
-    }
   private def mapRow: (
       (
           UUID,
-          String,
-          String,
+          User,
+          Branch,
           ModuleDraftStatus,
-          LocalDateTime,
-          Option[JsValue],
-          Option[Print],
-          Option[JsValue]
+          JsValue,
+          JsValue,
+          Print,
+          Option[List[String]],
+          Option[CommitId],
+          Option[MergeRequestId],
+          Option[User],
+          LocalDateTime
       )
   ) => ModuleDraft = {
     case (
           module,
-          data,
+          user,
           branch,
           status,
-          lastModified,
-          json,
-          print,
-          err
+          data,
+          moduleCompendium,
+          moduleCompendiumPrint,
+          keysToBeReviewed,
+          lastCommit,
+          mergeRequestId,
+          mergeRequestAuthor,
+          lastModified
         ) =>
       ModuleDraft(
         module,
-        data,
+        user,
         branch,
         status,
-        lastModified,
-        toValidation(json, print, err)
+        data,
+        moduleCompendium,
+        moduleCompendiumPrint,
+        keysToBeReviewed,
+        lastCommit,
+        mergeRequestId.zip(mergeRequestAuthor),
+        lastModified
       )
   }
 
   private def unmapRow: ModuleDraft => Option[
     (
         UUID,
-        String,
-        String,
+        User,
+        Branch,
         ModuleDraftStatus,
-        LocalDateTime,
-        Option[JsValue],
-        Option[Print],
-        Option[JsValue]
+        JsValue,
+        JsValue,
+        Print,
+        Option[List[String]],
+        Option[CommitId],
+        Option[MergeRequestId],
+        Option[User],
+        LocalDateTime
     )
   ] = { a =>
-    val (json, print, err) = fromValidation(a.validation)
     Option(
       (
         a.module,
-        a.data,
+        a.user,
         a.branch,
         a.status,
-        a.lastModified,
-        json,
-        print,
-        err
+        a.data,
+        a.moduleCompendium,
+        a.print,
+        a.keysToBeReviewed,
+        a.lastCommit,
+        a.mergeRequest.map(_._1),
+        a.mergeRequest.map(_._2),
+        a.lastModified
       )
     )
   }

@@ -1,11 +1,10 @@
 package git.webhook
 
 import akka.actor.{Actor, ActorRef, Props}
-import database.repo.UserBranchRepository
 import git.subscriber.ModuleCompendiumSubscribers
 import git.webhook.GitMergeEventHandlingActor.HandleMergeEvent
 import git.{GitConfig, GitFilePath}
-import models.{UserBranch, ValidModuleDraft}
+import models.ValidModuleDraft
 import play.api.Logging
 import play.api.libs.json.{JsResult, JsValue}
 import service.ModuleDraftService
@@ -30,7 +29,6 @@ object GitMergeEventHandlingActor {
   private case class HandleMergeEvent(json: JsValue)
 
   def props(
-      userBranchRepository: UserBranchRepository,
       moduleDraftService: ModuleDraftService,
       subscribers: ModuleCompendiumSubscribers,
       gitConfig: GitConfig,
@@ -38,7 +36,6 @@ object GitMergeEventHandlingActor {
   ) =
     Props(
       new GitMergeEventHandlingActorImpl(
-        userBranchRepository,
         moduleDraftService,
         subscribers,
         gitConfig,
@@ -47,7 +44,6 @@ object GitMergeEventHandlingActor {
     )
 
   private final class GitMergeEventHandlingActorImpl(
-      userBranchRepository: UserBranchRepository,
       moduleDraftService: ModuleDraftService,
       subscribers: ModuleCompendiumSubscribers,
       implicit val gitConfig: GitConfig,
@@ -90,17 +86,17 @@ object GitMergeEventHandlingActor {
       }
     }
 
-    private def findMatchingBranch(
-        xs: Seq[UserBranch],
-        mergeRequestId: MergeRequestID,
-        sourceBranch: SourceBranch,
-        lastCommitId: LastCommitId
-    ): Option[UserBranch] =
-      xs.find(b =>
-        b.branch == sourceBranch &&
-          b.mergeRequestId.fold(false)(_ == mergeRequestId) &&
-          b.commitId.fold(false)(_ == lastCommitId)
-      )
+//    private def findMatchingBranch(
+//        xs: Seq[UserBranch],
+//        mergeRequestId: MergeRequestID,
+//        sourceBranch: SourceBranch,
+//        lastCommitId: LastCommitId
+//    ): Option[UserBranch] =
+//      xs.find(b =>
+//        b.branch == sourceBranch &&
+//          b.mergeRequestId.fold(false)(_ == mergeRequestId) &&
+//          b.commitId.fold(false)(_ == lastCommitId)
+//      )
 
     private def notifySubscribers(
         drafts: Seq[ValidModuleDraft],
@@ -116,25 +112,26 @@ object GitMergeEventHandlingActor {
     private def go(json: JsValue): Future[Unit] =
       Future.fromTry(parse(json)).flatMap {
         case Some((mergeRequestId, sourceBranch, lastCommitId)) =>
-          for {
-            userBranches <- userBranchRepository.allWithOpenedMergeRequests()
-            res <- findMatchingBranch(
-              userBranches,
-              mergeRequestId,
-              sourceBranch,
-              lastCommitId
-            ) match {
-              case Some(branch) =>
-                for {
-                  drafts <- moduleDraftService.validDrafts(branch.branch)
-                  _ = notifySubscribers(drafts, lastCommitId)
-                  _ <- moduleDraftService.delete(branch)
-                  _ <- userBranchRepository.delete(branch.user)
-                } yield ()
-              case None =>
-                Future.unit
-            }
-          } yield res
+          ???
+//          for {
+//            userBranches <- userBranchRepository.allWithOpenedMergeRequests()
+//            res <- findMatchingBranch(
+//              userBranches,
+//              mergeRequestId,
+//              sourceBranch,
+//              lastCommitId
+//            ) match {
+//              case Some(branch) =>
+//                for {
+//                  drafts <- moduleDraftService.validDrafts(branch.branch)
+//                  _ = notifySubscribers(drafts, lastCommitId)
+//                  _ <- moduleDraftService.delete(branch)
+//                  _ <- userBranchRepository.delete(branch.user)
+//                } yield ()
+//              case None =>
+//                Future.unit
+//            }
+//          } yield res
         case None =>
           Future.unit
       }

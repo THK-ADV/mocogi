@@ -1,7 +1,6 @@
 package providers
 
 import akka.actor.ActorSystem
-import database.repo.UserBranchRepository
 import git.GitConfig
 import git.subscriber.ModuleCompendiumSubscribers
 import git.webhook.GitMergeEventHandlingActor
@@ -12,7 +11,6 @@ import scala.concurrent.ExecutionContext
 
 final class GitMergeEventHandlingActorProvider @Inject() (
     system: ActorSystem,
-    userBranchRepository: UserBranchRepository,
     moduleDraftService: ModuleDraftService,
     subscribers: ModuleCompendiumSubscribers,
     gitConfig: GitConfig,
@@ -21,7 +19,6 @@ final class GitMergeEventHandlingActorProvider @Inject() (
   override def get() = GitMergeEventHandlingActor(
     system.actorOf(
       GitMergeEventHandlingActor.props(
-        userBranchRepository,
         moduleDraftService,
         subscribers,
         gitConfig,

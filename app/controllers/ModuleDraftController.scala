@@ -1,10 +1,6 @@
 package controllers
 
-import controllers.formats.{
-  ModuleDraftFormat,
-  PipelineErrorFormat,
-  UserBranchFormat
-}
+import controllers.formats.{ModuleDraftFormat, PipelineErrorFormat}
 import models.ModuleDraftProtocol
 import play.api.libs.json.{JsArray, JsNull, Json}
 import play.api.mvc.{AbstractController, ControllerComponents}
@@ -21,7 +17,6 @@ final class ModuleDraftController @Inject() (
     reviewService: ModuleDraftReviewService,
     implicit val ctx: ExecutionContext
 ) extends AbstractController(cc)
-    with UserBranchFormat
     with ModuleDraftFormat
     with PipelineErrorFormat {
 
@@ -66,9 +61,10 @@ final class ModuleDraftController @Inject() (
 
   def revertCommit(branch: String) =
     Action.async { _ =>
-      reviewService
-        .revertReview(branch)
-        .map(_ => NoContent)
+      ???
+//      reviewService
+//        .revertReview(branch)
+//        .map(_ => NoContent)
     }
 
   private def createOrUpdate(

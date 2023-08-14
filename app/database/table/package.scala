@@ -1,6 +1,6 @@
 package database
 
-import models.ModuleDraftStatus
+import models._
 import play.api.libs.json.{JsValue, Json}
 import service.Print
 import slick.jdbc.PostgresProfile.api._
@@ -58,4 +58,37 @@ package object table {
   implicit val jsValueColumnType: BaseColumnType[JsValue] =
     MappedColumnType
       .base[JsValue, String](Json.stringify, Json.parse)
+
+  implicit val userColumnType: BaseColumnType[User] =
+    MappedColumnType
+      .base[User, String](_.username, User.apply)
+
+  implicit val branchColumnType: BaseColumnType[Branch] =
+    MappedColumnType
+      .base[Branch, String](_.value, Branch.apply)
+
+  implicit val commitColumnType: BaseColumnType[CommitId] =
+    MappedColumnType
+      .base[CommitId, String](_.value, CommitId.apply)
+
+  implicit val mergeRequestColumnType: BaseColumnType[MergeRequestId] =
+    MappedColumnType
+      .base[MergeRequestId, Int](_.value, MergeRequestId.apply)
+
+  def listToString(xs: List[String]): String =
+    if (xs.isEmpty) "" else xs.mkString(",")
+
+  def stringToList(s: String): List[String] =
+    if (s.isEmpty) Nil
+    else
+      s.split(",").foldLeft(List.empty[String]) { case (acc, s) =>
+        s :: acc
+      }
+
+  implicit val listStringColumnType: BaseColumnType[List[String]] =
+    MappedColumnType
+      .base[List[String], String](
+        listToString,
+        stringToList
+      )
 }

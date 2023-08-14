@@ -1,6 +1,5 @@
 package service
 
-import database.repo.UserBranchRepository
 import git.api.{GitCommitApiService, GitMergeRequestApiService}
 import git.{GitCommitAction, GitCommitActionType, GitConfig, GitFilePath}
 import models.{ModuleDraftStatus, ValidModuleDraft}
@@ -14,7 +13,6 @@ class ModuleDraftReviewService @Inject() (
     private val moduleCompendiumService: ModuleCompendiumService,
     private val commitService: GitCommitApiService,
     private val mergeRequestService: GitMergeRequestApiService,
-    private val userBranchRepository: UserBranchRepository,
     private implicit val gitConfig: GitConfig,
     private implicit val ctx: ExecutionContext
 ) {
@@ -26,27 +24,28 @@ class ModuleDraftReviewService @Inject() (
       branch: String,
       username: String
   ): Future[ReviewResult] =
-    for {
-      hasCommit <- userBranchRepository.hasCommitAndMergeRequest(branch)
-      drafts <- continueIf(
-        hasCommit.isEmpty,
-        moduleDraftService.validDrafts(branch),
-        s"user $username has already committed"
-      )
-      res <- continueIf(
-        drafts.nonEmpty,
-        for {
-          actions <- commitActions(drafts)
-          commitId <- commit(branch, username, actions)
-          mergeRequestId <- createMergeRequest(
-            branch,
-            username,
-            mergeRequestDescription(actions)
-          )
-        } yield (commitId, mergeRequestId),
-        "no changes to commit"
-      )
-    } yield res
+    ???
+//    for {
+//      hasCommit <- userBranchRepository.hasCommitAndMergeRequest(branch)
+//      drafts <- continueIf(
+//        hasCommit.isEmpty,
+//        moduleDraftService.validDrafts(branch),
+//        s"user $username has already committed"
+//      )
+//      res <- continueIf(
+//        drafts.nonEmpty,
+//        for {
+//          actions <- commitActions(drafts)
+//          commitId <- commit(branch, username, actions)
+//          mergeRequestId <- createMergeRequest(
+//            branch,
+//            username,
+//            mergeRequestDescription(actions)
+//          )
+//        } yield (commitId, mergeRequestId),
+//        "no changes to commit"
+//      )
+//    } yield res
 
   private def continueIf[A](
       bool: Boolean,
@@ -65,17 +64,18 @@ class ModuleDraftReviewService @Inject() (
       username: String,
       description: String
   ) =
-    for {
-      mergeRequestId <- mergeRequestService.createMergeRequest(
-        branch,
-        username,
-        description
-      )
-      _ <- userBranchRepository.updateMergeRequestId(
-        branch,
-        Some(mergeRequestId)
-      )
-    } yield mergeRequestId
+    ???
+//    for {
+//      mergeRequestId <- mergeRequestService.createMergeRequest(
+//        branch,
+//        username,
+//        description
+//      )
+//      _ <- userBranchRepository.updateMergeRequestId(
+//        branch,
+//        Some(mergeRequestId)
+//      )
+//    } yield mergeRequestId
 
   private def commitActions(drafts: Seq[ValidModuleDraft]) =
     for {
@@ -94,28 +94,30 @@ class ModuleDraftReviewService @Inject() (
       username: String,
       actions: Seq[GitCommitAction]
   ) =
-    for {
-      commitId <- commitService.commit(branch, username, actions)
-      _ <- userBranchRepository.updateCommitId(branch, Some(commitId))
-    } yield commitId
+    ???
+//    for {
+//      commitId <- commitService.commit(branch, username, actions)
+//      _ <- userBranchRepository.updateCommitId(branch, Some(commitId))
+//    } yield commitId
 
   def revertReview(branch: String) =
-    for {
-      maybeCommit <- userBranchRepository.hasCommitAndMergeRequest(branch)
-      res <- maybeCommit match {
-        case Some((commitId, mergeRequestId)) =>
-          for {
-            _ <- commitService.revertCommit(branch, commitId)
-            _ <- userBranchRepository.updateCommitId(branch, None)
-            _ <- mergeRequestService.deleteMergeRequest(mergeRequestId)
-            _ <- userBranchRepository.updateMergeRequestId(branch, None)
-          } yield ()
-        case None =>
-          Future.failed(
-            new Throwable(
-              s"branch $branch has no commit or merge request to revert"
-            )
-          )
-      }
-    } yield res
+    ???
+//    for {
+//      maybeCommit <- userBranchRepository.hasCommitAndMergeRequest(branch)
+//      res <- maybeCommit match {
+//        case Some((commitId, mergeRequestId)) =>
+//          for {
+//            _ <- commitService.revertCommit(branch, commitId)
+//            _ <- userBranchRepository.updateCommitId(branch, None)
+//            _ <- mergeRequestService.deleteMergeRequest(mergeRequestId)
+//            _ <- userBranchRepository.updateMergeRequestId(branch, None)
+//          } yield ()
+//        case None =>
+//          Future.failed(
+//            new Throwable(
+//              s"branch $branch has no commit or merge request to revert"
+//            )
+//          )
+//      }
+//    } yield res
 }
