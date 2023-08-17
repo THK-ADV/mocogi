@@ -579,9 +579,9 @@ final class ModuleCompendiumRepositoryImpl @Inject() (
           r.relationType match {
             case ModuleRelationType.Parent =>
               ModuleRelationOutput
-                .Parent(relations.map(_.module).toList)
+                .Parent(relations.map(_.relationModule).toList)
             case ModuleRelationType.Child =>
-              ModuleRelationOutput.Child(r.module)
+              ModuleRelationOutput.Child(r.relationModule)
           }
         }
 
