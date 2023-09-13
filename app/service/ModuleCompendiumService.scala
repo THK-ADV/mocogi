@@ -25,6 +25,7 @@ trait ModuleCompendiumService {
   def allModules(filter: Map[String, Seq[String]]): Future[Seq[Module]]
   def allMetadata(filter: Map[String, Seq[String]]): Future[Seq[MetadataOutput]]
   def get(id: UUID): Future[ModuleCompendiumOutput]
+  def getOrNull(id: UUID): Future[Option[ModuleCompendiumOutput]]
   def paths(ids: Seq[UUID]): Future[Seq[(UUID, GitFilePath)]]
 }
 
@@ -47,6 +48,9 @@ final class ModuleCompendiumServiceImpl @Inject() (
 
   override def get(id: UUID) =
     repo.get(id)
+
+  override def getOrNull(id: UUID) =
+    repo.getOrNull(id)
 
   override def allModules(filter: Map[String, Seq[String]]) =
     repo.allPreview(filter).map(_.map(Module.tupled))

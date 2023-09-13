@@ -44,8 +44,8 @@ object ModuleCompendiumPublisher {
       val allPrints =
         allChanges.map(c => (Option.empty[UUID], Print(c._2.value)))
       val f = for {
-        parsed <- parsingService.parse(allPrints)
-        validates <- continue(parsed, validatingService.validate)
+        parsed <- parsingService.parseMany(allPrints)
+        validates <- continue(parsed, validatingService.validateMany)
       } yield validates.map(_.map { case (print, mc) =>
         (allChanges.find(_._2.value == print.value).get._1, normalize(mc))
       })
@@ -55,13 +55,7 @@ object ModuleCompendiumPublisher {
           s match {
             case Right(mcs) =>
               subscribers.createdOrUpdated(
-                changes.commitId,
                 mcs.map(t => (t._1, t._2, changes.timestamp))
-              )
-              subscribers.removed(
-                changes.commitId,
-                changes.timestamp,
-                changes.removed
               )
             case Left(errs) => logPipelineErrors(errs)
           }

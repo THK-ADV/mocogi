@@ -1,5 +1,6 @@
 package git
 
+import models.CommitId
 import org.scalatest.wordspec.AnyWordSpec
 
 import java.time.LocalDateTime
@@ -18,7 +19,7 @@ final class GitPushEventHandlerSpec extends AnyWordSpec {
         ),
         List(GitFilePath("core/2.mc")),
         List(GitFilePath("modules/3.mc"), GitFilePath("core/4.mc")),
-        "commidId",
+        CommitId("commidId"),
         LocalDateTime.now()
       )
       val res = removeModuleChanges(changes, "modules")

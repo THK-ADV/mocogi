@@ -24,7 +24,7 @@ final class ModuleUpdatePermissionController @Inject() (
     Writes.of[String].contramap(_.username)
 
   implicit val typeWrites: Writes[ModuleUpdatePermissionType] =
-    Writes.of[String].contramap(_.value)
+    Writes.of[String].contramap(_.id)
 
   implicit val writes: Writes[ModuleUpdatePermission] =
     Json.writes[ModuleUpdatePermission]
@@ -37,6 +37,7 @@ final class ModuleUpdatePermissionController @Inject() (
       service.getAll().map(xs => Ok(Json.toJson(xs)))
     }
 
+  // TODO add permission handling
   def create() =
     auth(parse.json[ModuleUpdatePermissionProtocol]).async { r =>
       service.createGranted(r.body.module, User(r.body.user)).map {
@@ -45,12 +46,13 @@ final class ModuleUpdatePermissionController @Inject() (
             Json.obj(
               "module" -> id,
               "user" -> user.username,
-              "moduleUpdatePermissionType" -> updateType.value
+              "moduleUpdatePermissionType" -> updateType.id
             )
           )
       }
     }
 
+  // TODO add permission handling
   def delete() =
     auth(parse.json[ModuleUpdatePermissionProtocol]).async { r =>
       service

@@ -24,7 +24,7 @@ class HomeController @Inject() (
           "lastname" -> r.token.lastname,
           "username" -> r.token.username,
           "email" -> r.token.email,
-          "roles" -> r.token.roles,
+          "roles" -> r.token.roles
         )
       )
     )

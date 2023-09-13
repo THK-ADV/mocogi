@@ -1,18 +1,21 @@
 package database.table
 
 sealed trait ResponsibilityType {
-  override def toString = this match {
-    case ResponsibilityType.ModuleManagement => "module_management"
-    case ResponsibilityType.Lecturer         => "lecturer"
-  }
+  def id: String
+  override def toString = id
 }
 
 object ResponsibilityType {
-  case object ModuleManagement extends ResponsibilityType
-  case object Lecturer extends ResponsibilityType
-
-  def apply(string: String): ResponsibilityType = string match {
-    case "lecturer"          => Lecturer
-    case "module_management" => ModuleManagement
+  case object ModuleManagement extends ResponsibilityType {
+    override val id: String = "module_management"
   }
+  case object Lecturer extends ResponsibilityType {
+    override val id: String = "lecturer"
+  }
+
+  def apply(id: String): ResponsibilityType =
+    id match {
+      case "lecturer"          => Lecturer
+      case "module_management" => ModuleManagement
+    }
 }

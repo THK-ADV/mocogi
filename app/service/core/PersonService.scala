@@ -40,7 +40,7 @@ final class PersonServiceImpl @Inject() (
 
   def createOrUpdate(
       input: String
-  ): Future[List[(InsertOrUpdateResult, Person)]] =
+  ): Future[Seq[(InsertOrUpdateResult, Person)]] =
     for {
       faculties <- facultyService.all()
       people <- parser.parser(faculties).parse(input)._1 match {

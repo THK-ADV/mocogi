@@ -1,7 +1,7 @@
 package git.subscriber
 
 import akka.actor.{Actor, Props}
-import git.subscriber.ModuleCompendiumSubscribers.{CreatedOrUpdated, Removed}
+import git.subscriber.ModuleCompendiumSubscribers.CreatedOrUpdated
 import models.core.Person
 import models.{ModuleUpdatePermissionType, User}
 import play.api.Logging
@@ -23,15 +23,11 @@ private final class ModuleCompendiumPermissionUpdateActor(
     with Logging {
 
   override def receive = {
-    case CreatedOrUpdated(_, entries) =>
+    case CreatedOrUpdated(entries) if entries.nonEmpty =>
       updatePermissions(
         entries.map(a =>
           (a._2.metadata.id, a._2.metadata.responsibilities.moduleManagement)
         )
-      )
-    case Removed(_, _, _) =>
-      logger.info(
-        "unsupported operation: ModuleCompendiumPermissionUpdateActor.Removed"
       )
   }
 

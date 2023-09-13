@@ -15,7 +15,7 @@ trait YamlService[Input, Output] {
 
   def toInput(output: Output): Input
 
-  def create(input: String): Future[List[Input]] =
+  def create(input: String): Future[Seq[Input]] =
     parser.fileParser
       .parse(input)
       ._1
@@ -23,7 +23,7 @@ trait YamlService[Input, Output] {
 
   def createOrUpdate(
       input: String
-  ): Future[List[(InsertOrUpdateResult, Input)]] =
+  ): Future[Seq[(InsertOrUpdateResult, Input)]] =
     parser.fileParser
       .parse(input)
       ._1

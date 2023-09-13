@@ -5,7 +5,11 @@ import database.view.ModuleViewRepository
 import git.subscriber._
 import printing.markdown.ModuleCompendiumPrinter
 import service.core.StudyProgramService
-import service.{ModuleCompendiumService, ModuleUpdatePermissionService}
+import service.{
+  ModuleCompendiumService,
+  ModuleDraftService,
+  ModuleUpdatePermissionService
+}
 
 import javax.inject.{Inject, Provider, Singleton}
 import scala.concurrent.ExecutionContext
@@ -20,9 +24,12 @@ class ModuleCompendiumSubscribersProvider @Inject() (
     studyProgramService: StudyProgramService,
     moduleViewRepository: ModuleViewRepository,
     moduleUpdatePermissionService: ModuleUpdatePermissionService,
+    draftService: ModuleDraftService,
     configReader: ConfigReader,
     ctx: ExecutionContext
 ) extends Provider[ModuleCompendiumSubscribers] {
+  // TODO maybe this should be one actor which does all the work transactional and
+  //  recover somehow if there is a failure
   override def get(): ModuleCompendiumSubscribers =
     ModuleCompendiumSubscribers(
       List(
@@ -39,7 +46,8 @@ class ModuleCompendiumSubscribersProvider @Inject() (
         ),
         // system.actorOf(ModuleCompendiumPublishActor.props(publisher)),
         system.actorOf(
-          ModuleCompendiumDatabaseActor.props(metadataService, ctx)
+          ModuleCompendiumDatabaseActor
+            .props(metadataService, draftService, ctx)
         ),
         system.actorOf(
           ModuleCompendiumViewUpdateActor.props(moduleViewRepository, ctx)

@@ -1,10 +1,26 @@
 package controllers
 
-import controllers.formats.{ModuleDraftFormat, PipelineErrorFormat}
-import models.ModuleDraftProtocol
-import play.api.libs.json.{JsArray, JsNull, Json}
+import auth.AuthorizationAction
+import controllers.ModuleDraftController.{
+  ModuleCompendiumPatch,
+  VersionSchemeHeader
+}
+import controllers.actions.{
+  ModuleDraftCheck,
+  ModuleUpdatePermissionCheck,
+  PermissionCheck,
+  VersionSchemeAction
+}
+import controllers.formats.{
+  JsonNullWritable,
+  ModuleCompendiumProtocolFormat,
+  ModuleFormat,
+  PipelineErrorFormat
+}
+import models.{ModuleCompendiumProtocol, User}
+import play.api.libs.json.{Json, Reads}
 import play.api.mvc.{AbstractController, ControllerComponents}
-import service.{ModuleDraftReviewService, ModuleDraftService}
+import service.{ModuleDraftService, ModuleUpdatePermissionService}
 
 import java.util.UUID
 import javax.inject.{Inject, Singleton}
@@ -13,65 +29,103 @@ import scala.concurrent.ExecutionContext
 @Singleton
 final class ModuleDraftController @Inject() (
     cc: ControllerComponents,
-    service: ModuleDraftService,
-    reviewService: ModuleDraftReviewService,
+    val moduleDraftService: ModuleDraftService,
+    val auth: AuthorizationAction,
+    val moduleUpdatePermissionService: ModuleUpdatePermissionService,
     implicit val ctx: ExecutionContext
 ) extends AbstractController(cc)
-    with ModuleDraftFormat
-    with PipelineErrorFormat {
+    with ModuleCompendiumProtocolFormat
+    with PipelineErrorFormat
+    with ModuleUpdatePermissionCheck
+    with ModuleDraftCheck
+    with PermissionCheck
+    with ModuleFormat
+    with JsonNullWritable {
 
-  def moduleDrafts(branch: String) =
-    Action.async { _ =>
-      service.allFromBranch(branch).map(a => Ok(Json.toJson(a)))
-    }
+  private implicit val mcPatchReads: Reads[ModuleCompendiumPatch] = Json.reads
 
-  def addModuleDraft() =
-    Action.async(parse.json(moduleDraftProtocolFmt)) { r =>
-      createOrUpdate(r.body, None)
-    }
-
-  def updateModuleDraft(moduleId: UUID) =
-    Action.async(parse.json(moduleDraftProtocolFmt)) { r =>
-      createOrUpdate(r.body, Some(moduleId))
-    }
-
-  def validate(branch: String) =
-    Action.async { _ =>
-      service.validateDrafts(branch).map { res =>
-        val (tag, data) = res match {
-          case Left(errs) => ("failure", JsArray(errs.map(e => Json.toJson(e))))
-          case Right(_)   => ("success", JsNull)
-        }
-        Ok(
+  // GET modulesDrafts/own
+  def moduleDrafts() =
+    auth async { r =>
+      val user = User(r.token.username)
+      for { // TODO care: business logic in controller
+        modules <- moduleUpdatePermissionService.getAllModulesFromUser(user)
+        draftsByModules <- moduleDraftService.allByModules(modules.map(_.id))
+        draftsByUser <- moduleDraftService.allByUser(user)
+      } yield {
+        val moduleWithDraft = modules.map { module =>
+          val draft = draftsByModules
+            .find(_.module == module.id)
+            .orElse(draftsByUser.find(_.module == module.id))
           Json.obj(
-            "tag" -> tag,
-            "data" -> data
+            "module" -> module,
+            "moduleDraft" -> draft,
+            "status" -> draft.status()
           )
-        )
+        }
+        Ok(Json.toJson(moduleWithDraft))
       }
     }
 
-  def commit(branch: String) =
-    Action(parse.json).async { request =>
-      val username = request.body.\("username").validate[String].get
-      reviewService
-        .createReview(branch, username)
-        .map(id => Ok(Json.obj("commitId" -> id)))
-    }
+  // POST modulesDrafts
+  def createNewModuleDraft() =
+    auth(parse.json(moduleCompendiumProtocolFormat)) andThen
+      new VersionSchemeAction(VersionSchemeHeader) async { r =>
+        moduleDraftService
+          .createNew(r.body, User(r.request.token.username), r.versionScheme)
+          .map {
+            case Left(err)    => BadRequest(Json.toJson(err))
+            case Right(draft) => Ok(Json.toJson(draft))
+          }
+      }
 
-  def revertCommit(branch: String) =
-    Action.async { _ =>
-      ???
-//      reviewService
-//        .revertReview(branch)
-//        .map(_ => NoContent)
-    }
+  // POST modulesDrafts/:id
+  def createModuleDraftFromExistingModule(moduleId: UUID) =
+    auth(parse.json[ModuleCompendiumPatch]) andThen
+      hasPermissionForModule(moduleId) andThen
+      new VersionSchemeAction(VersionSchemeHeader) async { r =>
+        moduleDraftService
+          .createFromExistingModule(
+            moduleId,
+            r.body.protocol,
+            r.body.modifiedKeys,
+            User(r.request.token.username),
+            r.versionScheme
+          )
+          .map {
+            case Left(err)    => BadRequest(Json.toJson(err))
+            case Right(draft) => Ok(Json.toJson(draft))
+          }
+      }
 
-  private def createOrUpdate(
-      protocol: ModuleDraftProtocol,
-      existingId: Option[UUID]
-  ) =
-    service
-      .createOrUpdate(existingId, protocol.data, protocol.branch)
-      .map(d => Ok(Json.toJson(d)))
+  // PATCH moduleDrafts/:id
+  def patchModuleDraft(moduleId: UUID) =
+    auth(parse.json(mcPatchReads)) andThen
+      hasPermissionToEditDraft(moduleId) andThen
+      new VersionSchemeAction(VersionSchemeHeader) async { r =>
+        moduleDraftService
+          .update(
+            moduleId,
+            r.body.protocol,
+            r.body.modifiedKeys,
+            User(r.request.token.username),
+            r.versionScheme
+          )
+          .map(_ => NoContent)
+      }
+
+  // DELETE moduleDrafts/:id
+  def deleteModuleDraft(moduleId: UUID) =
+    auth andThen hasPermissionToEditDraft(moduleId) async { _ =>
+      moduleDraftService.deleteDraftWithBranch(moduleId).map(_ => NoContent)
+    }
+}
+
+object ModuleDraftController {
+  val VersionSchemeHeader = "Mocogi-Version-Scheme"
+
+  case class ModuleCompendiumPatch(
+      protocol: ModuleCompendiumProtocol,
+      modifiedKeys: Set[String]
+  )
 }

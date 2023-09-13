@@ -3,11 +3,11 @@ package service
 import database.repo.ModuleUpdatePermissionRepository
 import models.ModuleUpdatePermissionType.{Granted, Inherited}
 import models.core.Person
-import models.{ModuleUpdatePermission, ModuleUpdatePermissionType, User}
+import models.{ModuleUpdatePermission, User}
 
 import java.util.UUID
 import javax.inject.{Inject, Singleton}
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 final class ModuleUpdatePermissionService @Inject() (
@@ -40,13 +40,8 @@ final class ModuleUpdatePermissionService @Inject() (
   def getAll() =
     repo
       .allWithModule()
-      .map(_.map { case (id, title, abbrev, user, updateType) =>
-        ModuleUpdatePermission(
-          id,
-          title,
-          abbrev,
-          user,
-          ModuleUpdatePermissionType(updateType)
-        )
-      })
+      .map(_.map(ModuleUpdatePermission.tupled))
+
+  def getAllModulesFromUser(user: User): Future[Seq[Module]] =
+    repo.allForUser(user)
 }

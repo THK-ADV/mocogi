@@ -1,12 +1,17 @@
 package git.api
 
 import git.GitConfig
-import play.api.libs.ws.WSClient
+import models.Branch
+import play.api.libs.ws.{EmptyBody, WSClient}
 import play.mvc.Http.Status
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
+/*
+  One branch per module
+  Branch naming convention: module id
+ */
 @Singleton
 final class GitBranchApiService @Inject() (
     private val ws: WSClient,
@@ -14,38 +19,30 @@ final class GitBranchApiService @Inject() (
     private implicit val ctx: ExecutionContext
 ) extends GitService {
 
-  def createBranch(user: String): Future[String] = {
-    ???
-//    val branchName = this.branchName(user)
-//    ws
-//      .url(this.branchUrl())
-//      .withHttpHeaders(tokenHeader())
-//      .withQueryStringParameters(
-//        ("branch", branchName),
-//        ("ref", gitConfig.mainBranch)
-//      )
-//      .post(EmptyBody)
-//      .flatMap { res =>
-//        if (res.status == Status.CREATED)
-//          Future.successful(UserBranch(user, branchName, None, None))
-//        else Future.failed(parseErrorMessage(res))
-//      }
-  }
-
-  def deleteBranch(user: String) = {
-    val branchName = this.branchName(user)
+  def createBranch(branch: Branch): Future[Unit] = {
     ws
-      .url(s"${this.branchUrl()}/$branchName")
+      .url(this.branchUrl())
       .withHttpHeaders(tokenHeader())
-      .delete()
+      .withQueryStringParameters(
+        ("branch", branch.value),
+        ("ref", gitConfig.mainBranch)
+      )
+      .post(EmptyBody)
       .flatMap { res =>
-        if (res.status == Status.NO_CONTENT) Future.successful(branchName)
+        if (res.status == Status.CREATED) Future.unit
         else Future.failed(parseErrorMessage(res))
       }
   }
 
-  private def branchName(user: String) =
-    user
+  def deleteBranch(branch: Branch): Future[Unit] =
+    ws
+      .url(s"${this.branchUrl()}/${branch.value}")
+      .withHttpHeaders(tokenHeader())
+      .delete()
+      .flatMap { res =>
+        if (res.status == Status.NO_CONTENT) Future.unit
+        else Future.failed(parseErrorMessage(res))
+      }
 
   private def branchUrl() =
     s"${repositoryUrl()}/branches"

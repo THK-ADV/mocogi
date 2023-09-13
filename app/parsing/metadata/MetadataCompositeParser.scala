@@ -14,12 +14,6 @@ class MetadataCompositeParser @Inject() (
     val parsers: Set[MetadataParser]
 ) extends MetadataParser {
 
-  val versionSchemeParser: Parser[VersionScheme] =
-    prefix("v")
-      .take(double)
-      .zip(prefix(_ != '\n'))
-      .map(VersionScheme.tupled)
-
   private val versionSchemePrinter: Printer[VersionScheme] = {
     import printer.PrinterOps.P0
     Printer
@@ -44,7 +38,7 @@ class MetadataCompositeParser @Inject() (
       specializations: Seq[Specialization]
   ): Parser[ParsedMetadata] =
     prefix("---")
-      .take(versionSchemeParser)
+      .take(VersionSchemeParser.parser)
       .skip(newline)
       .flatMap[ParsedMetadata] { scheme =>
         parsers.find(_.versionScheme == scheme) match {

@@ -1,20 +1,20 @@
 package models
 
 sealed trait ModuleUpdatePermissionType {
-  def value: String
-  override def toString = value
+  def id: String
+  override def toString = id
 }
 
 object ModuleUpdatePermissionType {
   case object Inherited extends ModuleUpdatePermissionType {
-    override val value: String = "inherited"
+    override val id: String = "inherited"
   }
   case object Granted extends ModuleUpdatePermissionType {
-    override val value: String = "granted"
+    override val id: String = "granted"
   }
 
-  def apply(value: String): ModuleUpdatePermissionType =
-    value.toLowerCase match {
+  def apply(id: String): ModuleUpdatePermissionType =
+    id.toLowerCase match {
       case "inherited" => Inherited
       case "granted"   => Granted
     }

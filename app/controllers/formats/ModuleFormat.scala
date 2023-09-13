@@ -1,9 +1,11 @@
 package controllers.formats
 
 import play.api.libs.json.{Format, Json}
-import validator.Module
 
 trait ModuleFormat {
-  implicit val moduleFormat: Format[Module] =
-    Json.format[Module]
+  implicit val moduleFormat: Format[validator.Module] =
+    Json.format[validator.Module]
+
+  implicit val module2Format: Format[service.Module] =
+    Json.format[service.Module]
 }

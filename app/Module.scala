@@ -2,7 +2,9 @@ import auth.{Authorization, UserToken}
 import com.google.inject.{AbstractModule, TypeLiteral}
 import database.repo.{
   ModuleCompendiumRepository,
-  ModuleCompendiumRepositoryImpl
+  ModuleCompendiumRepositoryImpl,
+  ModuleDraftRepository,
+  ModuleDraftRepositoryImpl
 }
 import git.publisher.{
   CoreDataPublisher,
@@ -15,6 +17,7 @@ import git.subscriber.{
 }
 import git.webhook.GitMergeEventHandlingActor
 import git.{GitConfig, GitFilesBroker, GitFilesBrokerImpl}
+import models.ModuleKeysToReview
 import parsing.metadata.MetadataParser
 import printing.markdown.{
   ModuleCompendiumMarkdownPrinter,
@@ -93,6 +96,12 @@ class Module() extends AbstractModule {
     bind(classOf[SpecializationService])
       .to(classOf[SpecializationServiceImpl])
       .asEagerSingleton()
+    bind(classOf[ModuleDraftService])
+      .to(classOf[ModuleDraftServiceImpl])
+      .asEagerSingleton()
+    bind(classOf[ModuleDraftRepository])
+      .to(classOf[ModuleDraftRepositoryImpl])
+      .asEagerSingleton()
 
     bind(classOf[PandocApi])
       .toProvider(classOf[MarkdownConverterProvider])
@@ -117,6 +126,9 @@ class Module() extends AbstractModule {
       .asEagerSingleton()
     bind(classOf[ModuleCompendiumPublisher])
       .toProvider(classOf[ModuleCompendiumPublisherProvider])
+      .asEagerSingleton()
+    bind(classOf[ModuleKeysToReview])
+      .toProvider(classOf[ModuleKeysToReviewProvider])
       .asEagerSingleton()
 
     bind(new TypeLiteral[Set[MetadataParser]] {})

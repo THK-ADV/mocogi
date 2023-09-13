@@ -1,18 +1,20 @@
 package database.table
 
 sealed trait ModuleRelationType {
-  override def toString = this match {
-    case ModuleRelationType.Parent => "parent"
-    case ModuleRelationType.Child  => "child"
-  }
+  def id: String
+  override def toString = id
 }
 
 object ModuleRelationType {
-  case object Parent extends ModuleRelationType
-  case object Child extends ModuleRelationType
+  case object Parent extends ModuleRelationType {
+    override val id: String = "parent"
+  }
+  case object Child extends ModuleRelationType {
+    override val id: String = "child"
+  }
 
-  def apply(string: String): ModuleRelationType =
-    string.toLowerCase match {
+  def apply(id: String): ModuleRelationType =
+    id.toLowerCase match {
       case "parent" => Parent
       case "child"  => Child
     }

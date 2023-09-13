@@ -22,7 +22,7 @@ class PersonRepository @Inject() (
 
   private val facultyTableQuery = TableQuery[FacultyTable]
 
-  override def createMany(ls: List[PersonDbEntry]) = {
+  override def createMany(ls: Seq[PersonDbEntry]) = {
     val action = for {
       _ <- tableQuery ++= ls
       _ <- personInFacultyTableQuery ++= ls.flatMap(p =>

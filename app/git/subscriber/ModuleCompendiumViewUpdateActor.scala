@@ -2,7 +2,7 @@ package git.subscriber
 
 import akka.actor.{Actor, Props}
 import database.view.ModuleViewRepository
-import git.subscriber.ModuleCompendiumSubscribers.{CreatedOrUpdated, Removed}
+import git.subscriber.ModuleCompendiumSubscribers.CreatedOrUpdated
 import play.api.Logging
 
 import scala.concurrent.ExecutionContext
@@ -18,11 +18,8 @@ private final class ModuleCompendiumViewUpdateActor(
     implicit val ctx: ExecutionContext
 ) extends Actor
     with Logging {
-  override def receive = {
-    case CreatedOrUpdated(_, _) =>
-      updateView()
-    case Removed(_, _, _) =>
-      updateView()
+  override def receive = { case CreatedOrUpdated(_) =>
+    updateView()
   }
 
   private def updateView(): Unit =

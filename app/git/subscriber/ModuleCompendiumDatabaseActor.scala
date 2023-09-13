@@ -2,10 +2,10 @@ package git.subscriber
 
 import akka.actor.{Actor, Props}
 import git.GitFilePath
-import git.subscriber.ModuleCompendiumSubscribers.{CreatedOrUpdated, Removed}
+import git.subscriber.ModuleCompendiumSubscribers.CreatedOrUpdated
 import parsing.types.ModuleCompendium
 import play.api.Logging
-import service.ModuleCompendiumService
+import service.{ModuleCompendiumService, ModuleDraftService}
 
 import java.time.LocalDateTime
 import scala.concurrent.ExecutionContext
@@ -14,11 +14,13 @@ import scala.util.{Failure, Success}
 object ModuleCompendiumDatabaseActor {
   def props(
       metadataService: ModuleCompendiumService,
+      moduleDraftService: ModuleDraftService,
       ctx: ExecutionContext
   ) =
     Props(
       new ModuleCompendiumDatabaseActor(
         metadataService,
+        moduleDraftService,
         ctx
       )
     )
@@ -26,28 +28,31 @@ object ModuleCompendiumDatabaseActor {
 
 private final class ModuleCompendiumDatabaseActor(
     metadataService: ModuleCompendiumService,
+    moduleDraftService: ModuleDraftService,
     implicit val ctx: ExecutionContext
 ) extends Actor
     with Logging {
 
   override def receive = {
-    case CreatedOrUpdated(_, entries) =>
+    case CreatedOrUpdated(entries) if entries.nonEmpty =>
       createOrUpdate(entries)
-    case Removed(_, _, entries) =>
-      delete(entries)
   }
 
   private def createOrUpdate(
       entries: Seq[(GitFilePath, ModuleCompendium, LocalDateTime)]
-  ): Unit =
-    metadataService
-      .createOrUpdateMany(entries)
-      .onComplete {
-        case Success(mcs) =>
-          logSuccess(mcs)
-        case Failure(e) =>
-          logError(e)
-      }
+  ): Unit = {
+    val res = for {
+      mcs <- metadataService.createOrUpdateMany(entries)
+      _ <- moduleDraftService.deleteDrafts(mcs.map(_.metadata.id))
+    } yield mcs
+
+    res.onComplete {
+      case Success(mcs) =>
+        logSuccess(mcs)
+      case Failure(e) =>
+        logError(e)
+    }
+  }
 
   private def logSuccess(mcs: Seq[ModuleCompendium]): Unit =
     logger.info(
@@ -55,13 +60,6 @@ private final class ModuleCompendiumDatabaseActor(
          |  - entries: ${mcs
           .map(a => (a.metadata.id, a.metadata.abbrev))
           .mkString("\n    ")}""".stripMargin
-    )
-
-  private def delete(entries: Seq[GitFilePath]): Unit =
-    logger.info(
-      s"""failed to delete metadata
-         |  - git path: ${entries.map(_.value).mkString(", ")}
-         |  - message: deleting metadata is currently not supported""".stripMargin
     )
 
   private def logError(throwable: Throwable): Unit =

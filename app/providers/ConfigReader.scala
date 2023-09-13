@@ -43,6 +43,14 @@ final class ConfigReader @Inject() (config: Configuration) {
 
   def kafkaApplicationId: String = string("kafka.applicationId")
 
+  def moduleKeysToReviewFromSgl: Seq[String] = list("moduleKeysToReview.sgl")
+
+  def moduleKeysToReviewFromPav: Seq[String] = list("moduleKeysToReview.pav")
+
+  private def list(key: String): Seq[String] =
+    if (config.has(key)) config.get[Seq[String]](key)
+    else throw new Throwable(s"key $key must be set in application.conf")
+
   private def string(key: String): String =
     config.getOptional[String](key) match {
       case Some(value) if value.nonEmpty => value

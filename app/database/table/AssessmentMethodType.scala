@@ -1,18 +1,20 @@
 package database.table
 
 sealed trait AssessmentMethodType {
-  override def toString = this match {
-    case AssessmentMethodType.Mandatory => "mandatory"
-    case AssessmentMethodType.Optional  => "optional"
-  }
+  def id: String
+  override def toString = id
 }
 
 object AssessmentMethodType {
-  case object Mandatory extends AssessmentMethodType
-  case object Optional extends AssessmentMethodType
+  case object Mandatory extends AssessmentMethodType {
+    override val id: String = "mandatory"
+  }
+  case object Optional extends AssessmentMethodType {
+    override val id: String = "optional"
+  }
 
-  def apply(string: String): AssessmentMethodType =
-    string.toLowerCase match {
+  def apply(id: String): AssessmentMethodType =
+    id.toLowerCase match {
       case "mandatory" => Mandatory
       case "optional"  => Optional
     }
