@@ -26,7 +26,7 @@ final class GitCommitService @Inject() (
       case ModuleDraftSource.Added    => GitCommitActionType.Create
       case ModuleDraftSource.Modified => GitCommitActionType.Update
     }
-    val filePath = GitFilePath(moduleId)(apiService.gitConfig)
+    val filePath = GitFilePath(moduleId)(apiService.config)
     val action = GitCommitAction(gitActionType, filePath, print.value)
     apiService.commit(branch, author, message, Seq(action))
   }

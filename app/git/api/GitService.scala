@@ -4,16 +4,16 @@ import git.GitConfig
 import play.api.libs.ws.WSResponse
 
 trait GitService {
-  def gitConfig: GitConfig
+  def config: GitConfig
 
   def projectsUrl() =
-    s"${gitConfig.baseUrl}/projects/${gitConfig.projectId}"
+    s"${config.baseUrl}/projects/${config.projectId}"
 
   def repositoryUrl() =
     s"${projectsUrl()}/repository"
 
   def tokenHeader() =
-    ("PRIVATE-TOKEN", gitConfig.accessToken)
+    ("PRIVATE-TOKEN", config.accessToken)
 
   def parseErrorMessage(res: WSResponse) =
     res.json

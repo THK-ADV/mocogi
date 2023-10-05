@@ -12,7 +12,7 @@ import scala.concurrent.{ExecutionContext, Future}
 @Singleton
 final class GitMergeRequestApiService @Inject() (
     private val ws: WSClient,
-    val gitConfig: GitConfig,
+    val config: GitConfig,
     private implicit val ctx: ExecutionContext
 ) extends GitService {
 
@@ -27,13 +27,15 @@ final class GitMergeRequestApiService @Inject() (
       .withHttpHeaders(tokenHeader())
       .withQueryStringParameters(
         "source_branch" -> sourceBranch.value,
-        "target_branch" -> gitConfig.mainBranch,
+        "target_branch" -> config.mainBranch,
         "title" -> title,
         "description" -> description,
         "remove_source_branch" -> true.toString,
         "squash_on_merge" -> true.toString,
         "squash" -> true.toString,
-        "approvals_before_merge" -> (if (needsApproval) 1 else 0).toString
+        "approvals_before_merge" -> (if (needsApproval) 1 else 0).toString,
+        "labels" -> (if (needsApproval) config.reviewApprovedLabel
+                     else config.autoApprovedLabel)
       )
       .post(EmptyBody)
       .flatMap { res =>

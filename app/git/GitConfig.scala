@@ -10,5 +10,7 @@ case class GitConfig(
     projectId: Int,
     mainBranch: String,
     modulesRootFolder: String,
-    coreRootFolder: String
+    coreRootFolder: String,
+    autoApprovedLabel: String,
+    reviewApprovedLabel: String
 )

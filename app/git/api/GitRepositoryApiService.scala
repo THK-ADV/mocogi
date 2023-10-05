@@ -26,15 +26,15 @@ object GitRepositoryApiService {
 @Singleton
 final class GitRepositoryApiService @Inject() (
     private val ws: WSClient,
-    val gitConfig: GitConfig,
+    val config: GitConfig,
     private implicit val ctx: ExecutionContext
 ) extends GitService {
 
   def listCoreFiles(): Future[List[GitFilePath]] =
-    listFileNames(treeUrl(gitConfig.coreRootFolder))
+    listFileNames(treeUrl(config.coreRootFolder))
 
   def listModuleFiles(): Future[List[GitFilePath]] =
-    listFileNames(treeUrl(gitConfig.modulesRootFolder))
+    listFileNames(treeUrl(config.modulesRootFolder))
 
   private def listFileNames(url: String): Future[List[GitFilePath]] =
     ws

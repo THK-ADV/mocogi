@@ -47,6 +47,10 @@ final class ConfigReader @Inject() (config: Configuration) {
 
   def moduleKeysToReviewFromPav: Seq[String] = list("moduleKeysToReview.pav")
 
+  def autoApprovedLabel: String = string("git.autoApprovedLabel")
+
+  def reviewApprovedLabel: String = string("git.reviewApprovedLabel")
+
   private def list(key: String): Seq[String] =
     if (config.has(key)) config.get[Seq[String]](key)
     else throw new Throwable(s"key $key must be set in application.conf")

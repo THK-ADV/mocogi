@@ -13,7 +13,7 @@ import scala.concurrent.{ExecutionContext, Future}
 @Singleton
 final class GitCommitApiService @Inject() (
     private val ws: WSClient,
-    val gitConfig: GitConfig,
+    val config: GitConfig,
     private implicit val ctx: ExecutionContext
 ) extends GitService {
 

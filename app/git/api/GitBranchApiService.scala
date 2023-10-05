@@ -15,7 +15,7 @@ import scala.concurrent.{ExecutionContext, Future}
 @Singleton
 final class GitBranchApiService @Inject() (
     private val ws: WSClient,
-    val gitConfig: GitConfig,
+    val config: GitConfig,
     private implicit val ctx: ExecutionContext
 ) extends GitService {
 
@@ -25,7 +25,7 @@ final class GitBranchApiService @Inject() (
       .withHttpHeaders(tokenHeader())
       .withQueryStringParameters(
         ("branch", branch.value),
-        ("ref", gitConfig.mainBranch)
+        ("ref", config.mainBranch)
       )
       .post(EmptyBody)
       .flatMap { res =>
