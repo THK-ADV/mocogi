@@ -39,27 +39,19 @@ trait ModuleDraftService {
       versionScheme: VersionScheme
   ): Future[Either[PipelineError, ModuleDraft]]
 
-  def createFromExistingModule(
-      moduleId: UUID,
-      protocol: ModuleCompendiumProtocol,
-      modifiedKeys: Set[String],
-      user: User,
-      versionScheme: VersionScheme
-  ): Future[Either[PipelineError, ModuleDraft]]
-
   def deleteDraftWithBranch(moduleId: UUID): Future[Unit]
 
   def deleteDraft(moduleId: UUID): Future[Unit]
 
   def deleteDrafts(moduleIds: Seq[UUID]): Future[Unit]
 
-  def update(
+  def createOrUpdate(
       moduleId: UUID,
       protocol: ModuleCompendiumProtocol,
       modifiedKeys: Set[String],
       user: User,
       versionScheme: VersionScheme
-  ): Future[Unit]
+  ): Future[Either[PipelineError, Unit]]
 
   def parseModuleCompendium(json: JsValue): ModuleCompendium
 
@@ -117,7 +109,41 @@ final class ModuleDraftServiceImpl @Inject() (
       Set.empty
     )
 
-  def createFromExistingModule(
+  def deleteDraftWithBranch(moduleId: UUID): Future[Unit] =
+    for {
+      _ <- gitBranchService.deleteBranch(moduleId)
+      _ <- deleteDraft(moduleId)
+    } yield ()
+
+  override def deleteDraft(moduleId: UUID) =
+    moduleDraftRepository.delete(moduleId).map(_ => ())
+
+  override def deleteDrafts(moduleIds: Seq[UUID]) =
+    moduleDraftRepository.deleteDrafts(moduleIds).map(_ => ())
+
+  override def createOrUpdate(
+      moduleId: UUID,
+      protocol: ModuleCompendiumProtocol,
+      modifiedKeys: Set[String],
+      user: User,
+      versionScheme: VersionScheme
+  ): Future[Either[PipelineError, Unit]] =
+    moduleDraftRepository
+      .hasModuleDraft(moduleId)
+      .flatMap(hasDraft =>
+        if (hasDraft)
+          update(moduleId, protocol, modifiedKeys, user, versionScheme)
+        else
+          createFromExistingModule(
+            moduleId,
+            protocol,
+            modifiedKeys,
+            user,
+            versionScheme
+          ).map(_.map(_ => ()))
+      )
+
+  private def createFromExistingModule(
       moduleId: UUID,
       protocol: ModuleCompendiumProtocol,
       modifiedKeys: Set[String],
@@ -133,25 +159,13 @@ final class ModuleDraftServiceImpl @Inject() (
       modifiedKeys
     )
 
-  def deleteDraftWithBranch(moduleId: UUID): Future[Unit] =
-    for {
-      _ <- gitBranchService.deleteBranch(moduleId)
-      _ <- deleteDraft(moduleId)
-    } yield ()
-
-  override def deleteDraft(moduleId: UUID) =
-    moduleDraftRepository.delete(moduleId).map(_ => ())
-
-  override def deleteDrafts(moduleIds: Seq[UUID]) =
-    moduleDraftRepository.deleteDrafts(moduleIds).map(_ => ())
-
-  def update(
+  private def update(
       moduleId: UUID,
       protocol: ModuleCompendiumProtocol,
       modifiedKeys: Set[String],
       user: User,
       versionScheme: VersionScheme
-  ): Future[Unit] =
+  ): Future[Either[PipelineError, Unit]] =
     for {
       draft <- moduleDraftRepository.getByModule(moduleId)
       origin <- moduleCompendiumService.getOrNull(draft.module)
@@ -163,7 +177,7 @@ final class ModuleDraftServiceImpl @Inject() (
         modifiedKeys
       )
       res <- pipeline(updated, versionScheme, moduleId)
-      _ <- res match {
+      res <- res match {
         case Left(err) => Future.successful(Left(err))
         case Right((mc, print)) =>
           val mergedKeysToBeReviewed =
@@ -192,9 +206,9 @@ final class ModuleDraftServiceImpl @Inject() (
               mergedModifiedKeys,
               commitId
             )
-          } yield ()
+          } yield Right(())
       }
-    } yield ()
+    } yield res
 
   private def commitMessage(updatedKeys: Set[String]) =
     s"updated keys: ${updatedKeys.mkString(", ")}"

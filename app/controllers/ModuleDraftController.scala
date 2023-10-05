@@ -18,13 +18,20 @@ import controllers.formats.{
   PipelineErrorFormat
 }
 import models.{ModuleCompendiumProtocol, User}
+import parser.ParsingError
 import play.api.libs.json.{Json, Reads}
 import play.api.mvc.{AbstractController, ControllerComponents}
-import service.{ModuleDraftService, ModuleUpdatePermissionService}
+import printer.PrintingError
+import service.{
+  ModuleDraftService,
+  ModuleUpdatePermissionService,
+  PipelineError
+}
+import validator.ValidationError
 
 import java.util.UUID
 import javax.inject.{Inject, Singleton}
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 final class ModuleDraftController @Inject() (
@@ -79,39 +86,51 @@ final class ModuleDraftController @Inject() (
           }
       }
 
-  // POST modulesDrafts/:id
-  def createModuleDraftFromExistingModule(moduleId: UUID) =
+  // PUT moduleDrafts/:id
+  def createOrUpdateModuleDraft(moduleId: UUID, fail: String) =
     auth(parse.json[ModuleCompendiumPatch]) andThen
-      hasPermissionForModule(moduleId) andThen
-      new VersionSchemeAction(VersionSchemeHeader) async { r =>
-        moduleDraftService
-          .createFromExistingModule(
-            moduleId,
-            r.body.protocol,
-            r.body.modifiedKeys,
-            User(r.request.token.username),
-            r.versionScheme
-          )
-          .map {
-            case Left(err)    => BadRequest(Json.toJson(err))
-            case Right(draft) => Ok(Json.toJson(draft))
-          }
-      }
-
-  // PATCH moduleDrafts/:id
-  def patchModuleDraft(moduleId: UUID) =
-    auth(parse.json(mcPatchReads)) andThen
       hasPermissionToEditDraft(moduleId) andThen
       new VersionSchemeAction(VersionSchemeHeader) async { r =>
-        moduleDraftService
-          .update(
-            moduleId,
-            r.body.protocol,
-            r.body.modifiedKeys,
-            User(r.request.token.username),
-            r.versionScheme
-          )
-          .map(_ => NoContent)
+        val err: Option[PipelineError] = fail match {
+          case "validator" =>
+            Some(
+              PipelineError.Validator(
+                ValidationError(List("err1", "err2", "err3")),
+                Some(moduleId)
+              )
+            )
+          case "parser" =>
+            Some(
+              PipelineError.Parser(
+                ParsingError("a string", "a number"),
+                Some(moduleId)
+              )
+            )
+          case "printer" =>
+            Some(
+              PipelineError.Printer(
+                PrintingError("a number", "a string"),
+                Some(moduleId)
+              )
+            )
+          case _ => None
+        }
+        err match {
+          case Some(err) => Future.successful(BadRequest(Json.toJson(err)))
+          case None =>
+            moduleDraftService
+              .createOrUpdate(
+                moduleId,
+                r.body.protocol,
+                r.body.modifiedKeys,
+                User(r.request.token.username),
+                r.versionScheme
+              )
+              .map {
+                case Left(err) => BadRequest(Json.toJson(err))
+                case Right(_)  => NoContent
+              }
+        }
       }
 
   // DELETE moduleDrafts/:id

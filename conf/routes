@@ -48,8 +48,7 @@ GET           /metadata                         controllers.ModuleController.all
 
 GET           /moduleDrafts/own                 controllers.ModuleDraftController.moduleDrafts()
 POST          /moduleDrafts                     controllers.ModuleDraftController.createNewModuleDraft()
-POST          /moduleDrafts/:id                 controllers.ModuleDraftController.createModuleDraftFromExistingModule(id: java.util.UUID)
-PATCH         /moduleDrafts/:id                 controllers.ModuleDraftController.patchModuleDraft(id: java.util.UUID)
+PUT           /moduleDrafts/:id/:fail           controllers.ModuleDraftController.createOrUpdateModuleDraft(id: java.util.UUID, fail: java.lang.String)
 DELETE        /moduleDrafts/:id                 controllers.ModuleDraftController.deleteModuleDraft(id: java.util.UUID)
 
 # Review

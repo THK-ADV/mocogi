@@ -37,6 +37,8 @@ trait ModuleDraftRepository {
 
   def getByModule(moduleId: UUID): Future[ModuleDraft]
 
+  def hasModuleDraft(moduleId: UUID): Future[Boolean]
+
   def getByMergeRequest(
       mergeRequestId: MergeRequestId
   ): Future[Seq[ModuleDraft]]
@@ -75,6 +77,9 @@ final class ModuleDraftRepositoryImpl @Inject() (
 
   override def deleteDrafts(moduleIds: Seq[UUID]) =
     db.run(tableQuery.filter(_.module.inSet(moduleIds)).delete)
+
+  override def hasModuleDraft(moduleId: UUID) =
+    db.run(tableQuery.filter(_.module === moduleId).exists.result)
 
   override def updateMergeRequestId(
       moduleId: UUID,
