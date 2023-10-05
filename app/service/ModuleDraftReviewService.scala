@@ -97,9 +97,14 @@ final class ModuleDraftReviewService @Inject() (
         for {
           mrId <- api.create(
             draft.branch,
+            Branch(api.config.draftBranch),
             title,
             description,
-            needsApproval
+            needsApproval,
+            List(
+              if (needsApproval) api.config.reviewApprovedLabel
+              else api.config.autoApprovedLabel
+            )
           )
           _ <- moduleDraftService.updateMergeRequestId(draft.module, Some(mrId))
         } yield mrId
@@ -133,10 +138,9 @@ final class ModuleDraftReviewService @Inject() (
       s"$acc\n- ${f(a)}"
     }
 
-  private def affectedPOs(metadata: MetadataProtocol): Set[String] = {
+  private def affectedPOs(metadata: MetadataProtocol): Set[String] =
     metadata.po.mandatory
       .map(_.po)
       .appendedAll(metadata.po.optional.map(_.po))
       .toSet
-  }
 }

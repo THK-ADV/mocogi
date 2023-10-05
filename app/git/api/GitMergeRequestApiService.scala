@@ -18,24 +18,25 @@ final class GitMergeRequestApiService @Inject() (
 
   def create(
       sourceBranch: Branch,
+      targetBranch: Branch,
       title: String,
       description: String,
-      needsApproval: Boolean
+      needsApproval: Boolean,
+      labels: List[String]
   ): Future[MergeRequestId] =
     ws
       .url(this.mergeRequestUrl)
       .withHttpHeaders(tokenHeader())
       .withQueryStringParameters(
         "source_branch" -> sourceBranch.value,
-        "target_branch" -> config.mainBranch,
+        "target_branch" -> targetBranch.value,
         "title" -> title,
         "description" -> description,
         "remove_source_branch" -> true.toString,
         "squash_on_merge" -> true.toString,
         "squash" -> true.toString,
         "approvals_before_merge" -> (if (needsApproval) 1 else 0).toString,
-        "labels" -> (if (needsApproval) config.reviewApprovedLabel
-                     else config.autoApprovedLabel)
+        "labels" -> labels.mkString(",")
       )
       .post(EmptyBody)
       .flatMap { res =>

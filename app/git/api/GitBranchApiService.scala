@@ -25,7 +25,7 @@ final class GitBranchApiService @Inject() (
       .withHttpHeaders(tokenHeader())
       .withQueryStringParameters(
         ("branch", branch.value),
-        ("ref", config.mainBranch)
+        ("ref", config.draftBranch)
       )
       .post(EmptyBody)
       .flatMap { res =>

@@ -33,6 +33,8 @@ final class ConfigReader @Inject() (config: Configuration) {
 
   def mainBranch: String = string("git.mainBranch")
 
+  def draftBranch: String = string("git.draftBranch")
+
   def modulesRootFolder: String = string("git.modulesRootFolder")
 
   def coreRootFolder: String = string("git.coreRootFolder")

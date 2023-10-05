@@ -79,7 +79,7 @@ final class ModuleDraftServiceImpl @Inject() (
     with PipelineErrorFormat
     with ModuleCompendiumFormat {
 
-  def allByModules(modules: Seq[UUID]): Future[Seq[ModuleDraft]] =
+  override def allByModules(modules: Seq[UUID]): Future[Seq[ModuleDraft]] =
     moduleDraftRepository.allByModules(modules)
 
   override def getByModule(moduleId: UUID): Future[ModuleDraft] =
@@ -100,7 +100,7 @@ final class ModuleDraftServiceImpl @Inject() (
   ) =
     moduleDraftRepository.updateMergeRequestId(moduleId, mergeRequestId)
 
-  def createNew(
+  override def createNew(
       protocol: ModuleCompendiumProtocol,
       user: User,
       versionScheme: VersionScheme
@@ -232,61 +232,52 @@ final class ModuleDraftServiceImpl @Inject() (
   ): (ModuleCompendiumProtocol, Set[String]) =
     modifiedKeys.foldLeft((existing, Set.empty[String])) {
       case ((acc, keysToRemove), key) =>
-        key match { // TODO unify keys and extend this implementation
+        def continue(
+            newAcc: ModuleCompendiumProtocol,
+            p: ModuleCompendiumOutput => Boolean
+        ) =
+          if (origin.exists(p)) {
+            (newAcc, keysToRemove + key)
+          } else {
+            (newAcc, keysToRemove)
+          }
+
+        key match {
           case "title" =>
             val newAcc = acc.copy(metadata =
               acc.metadata.copy(title = newP.metadata.title)
             )
-            if (origin.exists(_.metadata.title == newAcc.metadata.title)) {
-              (newAcc, keysToRemove + key)
-            } else {
-              (newAcc, keysToRemove)
-            }
+            continue(newAcc, _.metadata.title == newAcc.metadata.title)
           case "particularities-content-de" =>
             val newAcc = acc.copy(deContent =
               acc.deContent.copy(particularities =
                 newP.deContent.particularities
               )
             )
-            if (
-              origin.exists(
-                _.deContent.particularities == newAcc.deContent.particularities
-              )
-            ) {
-              (newAcc, keysToRemove + key)
-            } else {
-              (newAcc, keysToRemove)
-            }
+            continue(
+              newAcc,
+              _.deContent.particularities == newAcc.deContent.particularities
+            )
           case "particularities-content-en" =>
             val newAcc = acc.copy(enContent =
               acc.enContent.copy(particularities =
                 newP.enContent.particularities
               )
             )
-            if (
-              origin.exists(
-                _.enContent.particularities == newAcc.enContent.particularities
-              )
-            ) {
-              (newAcc, keysToRemove + key)
-            } else {
-              (newAcc, keysToRemove)
-            }
+            continue(
+              newAcc,
+              _.enContent.particularities == newAcc.enContent.particularities
+            )
           case "literature-content-en" =>
             val newAcc = acc.copy(enContent =
               acc.enContent.copy(recommendedReading =
                 newP.enContent.recommendedReading
               )
             )
-            if (
-              origin.exists(
-                _.enContent.recommendedReading == newAcc.enContent.recommendedReading
-              )
-            ) {
-              (newAcc, keysToRemove + key)
-            } else {
-              (newAcc, keysToRemove)
-            }
+            continue(
+              acc,
+              _.enContent.recommendedReading == newAcc.enContent.recommendedReading
+            )
           case _ => throw new Throwable(s"unsupported key $key")
         }
     }
