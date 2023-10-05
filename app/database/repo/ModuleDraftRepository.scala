@@ -37,6 +37,8 @@ trait ModuleDraftRepository {
 
   def getByModule(moduleId: UUID): Future[ModuleDraft]
 
+  def getByModuleOpt(moduleId: UUID): Future[Option[ModuleDraft]]
+
   def hasModuleDraft(moduleId: UUID): Future[Boolean]
 
   def getByMergeRequest(
@@ -57,7 +59,14 @@ final class ModuleDraftRepositoryImpl @Inject() (
     with Repository[ModuleDraft, ModuleDraft, ModuleDraftTable]
     with HasDatabaseConfigProvider[JdbcProfile] {
   import profile.api._
-  import table.{commitColumnType, jsValueColumnType, mergeRequestColumnType, printColumnType, setStringColumnType, userColumnType}
+  import table.{
+    commitColumnType,
+    jsValueColumnType,
+    mergeRequestColumnType,
+    printColumnType,
+    setStringColumnType,
+    userColumnType
+  }
 
   protected val tableQuery = TableQuery[ModuleDraftTable]
 
@@ -140,6 +149,9 @@ final class ModuleDraftRepositoryImpl @Inject() (
           )
         )
     )
+
+  override def getByModuleOpt(moduleId: UUID) =
+    db.run(tableQuery.filter(_.module === moduleId).result.map(_.headOption))
 
   override def getByMergeRequest(mergeRequestId: MergeRequestId) =
     db.run(

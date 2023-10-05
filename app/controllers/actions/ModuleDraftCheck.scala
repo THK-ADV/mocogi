@@ -20,8 +20,8 @@ trait ModuleDraftCheck { self: PermissionCheck =>
         val user = User(request.token.username)
         val hasPermission = for {
           b1 <- moduleUpdatePermissionService.hasPermission(user, moduleId)
-          b2 <- moduleDraftService.getByModule(moduleId)
-        } yield b1 || b2.user == user
+          b2 <- moduleDraftService.getByModuleOpt(moduleId)
+        } yield b1 || b2.exists(_.user == user)
         toResult(hasPermission, request)
       }
 
