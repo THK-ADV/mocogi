@@ -2,7 +2,6 @@ package service
 
 import database.repo.ModuleReviewerRepository
 import git.api.GitMergeRequestApiService
-import git.api.MergeRequestType.AutoAccept
 import models._
 
 import java.util.UUID
@@ -81,7 +80,7 @@ final class ModuleDraftReviewService @Inject() (
         needsApproval = false
       )
       _ <- api.canBeMerged(mrId)
-      _ <- api.accept(mrId, AutoAccept)
+      _ <- api.accept(mrId)
     } yield ()
 
   private def createMergeRequest(

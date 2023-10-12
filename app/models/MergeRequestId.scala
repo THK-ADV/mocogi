@@ -1,3 +1,3 @@
 package models
 
-case class MergeRequestId(value: Int)
+case class MergeRequestId(value: Int) extends AnyVal

@@ -1,7 +1,6 @@
 package git.api
 
 import git.GitConfig
-import git.api.MergeRequestType.{AutoAccept, NeedsApproval}
 import models.{Branch, MergeRequestId}
 import play.api.libs.ws.{EmptyBody, WSClient}
 import play.mvc.Http.Status
@@ -85,27 +84,18 @@ final class GitMergeRequestApiService @Inject() (
         else Future.failed(parseErrorMessage(res))
       }
 
-  def accept(
-      id: MergeRequestId,
-      mergeRequestType: MergeRequestType
-  ) = {
-    val commitMsg = mergeRequestType match {
-      case AutoAccept    => "auto accepted"
-      case NeedsApproval => "approved by reviewers"
-    }
+  def accept(id: MergeRequestId) =
     ws.url(this.acceptRequest(id))
       .withHttpHeaders(tokenHeader())
       .withQueryStringParameters(
         "squash" -> true.toString,
-        "should_remove_source_branch" -> true.toString,
-        "squash_commit_message" -> commitMsg
+        "should_remove_source_branch" -> true.toString
       )
       .put(EmptyBody)
       .flatMap { res =>
         if (res.status == Status.OK) Future.unit
         else Future.failed(parseErrorMessage(res))
       }
-  }
 
   private def mergeRequestUrl =
     s"${projectsUrl()}/merge_requests"
