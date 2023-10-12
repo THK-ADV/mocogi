@@ -10,11 +10,11 @@ import play.api.mvc.{
   Request
 }
 import providers.ConfigReader
-import service.ModuleCompendiumService
+import service.{ModuleCompendiumService, ModuleDraftService}
 
 import java.util.UUID
 import javax.inject.{Inject, Singleton}
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
 
 object ModuleCompendiumController {
   lazy val languageAttribute = "lang"
@@ -24,6 +24,7 @@ object ModuleCompendiumController {
 final class ModuleCompendiumController @Inject() (
     cc: ControllerComponents,
     service: ModuleCompendiumService,
+    draftService: ModuleDraftService,
     configReader: ConfigReader,
     implicit val ctx: ExecutionContext
 ) extends AbstractController(cc)
@@ -39,6 +40,16 @@ final class ModuleCompendiumController @Inject() (
   def get(id: UUID) =
     Action.async { _ =>
       service.get(id).map(x => Ok(Json.toJson(x)))
+    }
+
+  def getLatest(id: UUID) =
+    Action.async { _ =>
+      draftService.getByModuleOpt(id).flatMap {
+        case Some(draft) =>
+          Future.successful(Ok(draft.data))
+        case None =>
+          service.get(id).map(x => Ok(Json.toJson(x)))
+      }
     }
 
   def getFile(id: UUID) =
