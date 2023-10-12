@@ -19,6 +19,7 @@ lazy val `mocogi` = (project in file("."))
     libraryDependencies += parser,
     libraryDependencies += kafka,
     libraryDependencies ++= keycloak,
+    libraryDependencies ++= optics,
     externalResolvers ++= Seq(
       "GitHub <THK-ADV> Apache Maven Packages" at "https://maven.pkg.github.com/THK-ADV/nebulak"
     ),
@@ -68,4 +69,9 @@ val keycloak = Seq(
   "org.keycloak" % "keycloak-core" % keycloakVersion,
   "org.keycloak" % "keycloak-adapter-core" % keycloakVersion,
   "org.jboss.logging" % "jboss-logging" % "3.5.1.Final"
+)
+
+val optics = Seq(
+  "dev.optics" %% "monocle-core" % "3.2.0",
+  "dev.optics" %% "monocle-macro" % "3.2.0",
 )

@@ -1,199 +1,158 @@
 package service
 
 import database._
-import git.api.{GitBranchService, GitCommitService}
-import helper.FakeApplication
-import models._
-import models.core.{Status, _}
-import org.mockito.ArgumentMatchers.any
-import org.mockito.Mockito.{mock, when}
-import org.scalatest._
-import org.scalatest.wordspec.AsyncWordSpec
-import org.scalatestplus.play.guice.GuiceOneAppPerSuite
-import parsing.metadata.VersionScheme
-import parsing.types._
-import play.api.inject.guice.GuiceableModule
-import play.api.libs.json.JsNull
-import validator.{Metadata, POs, Prerequisites, Workload}
+import models.{MetadataProtocol, ModuleCompendiumProtocol}
+import org.scalatest.wordspec.AnyWordSpec
+import parsing.types.{Content, ParsedWorkload, Participants}
+import validator.Workload
 
-import java.time.LocalDateTime
 import java.util.UUID
-import scala.concurrent.Future
 
-final class ModuleDraftServiceSpec
-    extends TestSuite
-    with GuiceOneAppPerSuite
-    with FakeApplication {
+final class ModuleDraftServiceSpec extends AnyWordSpec {
+  import ModuleCompendiumProtocolDeltaUpdate.deltaUpdate
 
-  val branchService = mock(classOf[GitBranchService])
-  val commitService = mock(classOf[GitCommitService])
-
-  // import play.api.inject.bind
-  override def bindings: Seq[GuiceableModule] = Seq(
-    play.api.inject
-      .bind(classOf[GitBranchService])
-      .toInstance(branchService),
-    play.api.inject
-      .bind(classOf[GitCommitService])
-      .toInstance(commitService)
-  )
-
-  def fakeDraft() =
-    ModuleDraft(
-      UUID.randomUUID(),
-      User(""),
-      Branch(""),
-      ModuleDraftSource.Modified,
-      JsNull,
-      JsNull,
-      Print(""),
+  private val existing = ModuleCompendiumProtocol(
+    MetadataProtocol(
+      "title",
+      "abbrev",
+      "moduleType",
+      0.0,
+      "language",
+      0,
+      "season",
+      ParsedWorkload(0, 0, 0, 0, 0, 0),
+      "status",
+      "location",
       None,
       None,
-      None,
-      LocalDateTime.now
-    )
-
-  def fakeProtocol() = // TODO remove prod dependency
-    ModuleCompendiumProtocol(
-      MetadataProtocol(
-        "t",
-        "a",
-        "module",
-        1.0,
-        "de",
-        1,
-        "ss",
-        ParsedWorkload(0, 0, 0, 0, 0, 0),
-        "active",
-        "gm",
-        None,
-        None,
-        List("ado"),
-        List("ado"),
-        AssessmentMethodsOutput(
-          List(AssessmentMethodEntryOutput("written-exam", None, Nil)),
-          Nil
-        ),
-        PrerequisitesOutput(None, None),
-        POOutput(List(POMandatoryOutput("inf_mi4", None, List(1), Nil)), Nil),
-        Nil,
-        Nil,
+      List("a"),
+      List("a"),
+      AssessmentMethodsOutput(
+        List(AssessmentMethodEntryOutput("method", None, Nil)),
         Nil
       ),
-      fakeContent(),
-      fakeContent()
-    )
-
-  private def fakeContent() =
-    Content("", "", "", "", "")
-
-  def fakeParsedMetadata() =
-    ParsedMetadata(
-      UUID.randomUUID(),
-      "",
-      "",
-      ModuleType("", "", ""),
-      None,
-      Left(0.0),
-      Language("", "", ""),
-      0,
-      Season("", "", ""),
-      Responsibilities(Nil, Nil),
-      AssessmentMethods(Nil, Nil),
-      ParsedWorkload(0, 0, 0, 0, 0, 0),
-      ParsedPrerequisites(None, None),
-      Status("", "", ""),
-      Location("", "", ""),
-      ParsedPOs(Nil, Nil),
-      None,
+      PrerequisitesOutput(None, None),
+      POOutput(
+        List(POMandatoryOutput("po1", None, List(1), Nil)),
+        Nil
+      ),
       Nil,
       Nil,
       Nil
+    ),
+    Content(
+      "de_learningOutcome",
+      "de_content",
+      "de_teachingAndLearningMethods",
+      "de_recommendedReading",
+      "de_particularities"
+    ),
+    Content(
+      "en_learningOutcome",
+      "en_content",
+      "en_teachingAndLearningMethods",
+      "en_recommendedReading",
+      "en_particularities"
     )
+  )
 
-  def fakeMetadata() =
-    Metadata(
-      UUID.randomUUID(),
-      "",
-      "",
-      ModuleType("", "", ""),
-      None,
-      ECTS(0.0, Nil),
-      Language("", "", ""),
-      0,
-      Season("", "", ""),
-      Responsibilities(Nil, Nil),
-      AssessmentMethods(Nil, Nil),
-      Workload(0, 0, 0, 0, 0, 0, 0, 0),
-      Prerequisites(None, None),
-      Status("", "", ""),
-      Location("", "", ""),
-      POs(Nil, Nil),
-      None,
-      Nil,
-      Nil,
-      Nil
-    )
+  "A Module Draft Service" should {
+    "update a module compendium by keys" in {
+      import monocle.syntax.all._
 
-  // workaround: https://github.com/playframework/scalatestplus-play/issues/112
-  val nestedSuite: AsyncWordSpec = new AsyncWordSpec {
-    val service = app.injector.instanceOf(classOf[ModuleDraftService])
-
-    "A Module Draft Service" should {
-      "return all drafts from a given user" in {
-        withFreshDb().flatMap(_ =>
-          service.allByModules(User("alex")).map(xs => assert(xs.isEmpty))
+      val newP = existing
+        .focus(_.metadata.title)
+        .replace("new title")
+        .focus(_.metadata.ects)
+        .replace(1.0)
+        .focus(_.metadata.moduleManagement)
+        .modify(xs => xs ::: List("b"))
+        .focus(_.metadata.po.mandatory)
+        .modify(xs =>
+          xs ::: List(
+            POMandatoryOutput("po2", Some("spec"), List(1, 2, 3), Nil)
+          )
         )
-      }
+        .focus(_.metadata.participants)
+        .replace(Some(Participants(0, 10)))
+      val (updated, updatedKeys) = deltaUpdate(existing, newP, None, Set.empty)
+      assert(updatedKeys.size == 5)
+      assert(updatedKeys.contains("metadata.title"))
+      assert(updatedKeys.contains("metadata.ects"))
+      assert(updatedKeys.contains("metadata.moduleManagement"))
+      assert(updatedKeys.contains("metadata.po.mandatory"))
+      assert(updatedKeys.contains("metadata.participants"))
+      assert(updated.metadata.title == "new title")
+      assert(updated.metadata.ects == 1.0)
+      assert(updated.metadata.moduleManagement == List("a", "b"))
+      assert(
+        updated.metadata.po.mandatory == List(
+          POMandatoryOutput("po1", None, List(1), Nil),
+          POMandatoryOutput("po2", Some("spec"), List(1, 2, 3), Nil)
+        )
+      )
+      assert(updated.metadata.participants.contains(Participants(0, 10)))
+    }
 
-      "create a new draft for a new module" when {
-        "everything goes fine" in {
-//          when(printer.printer(any())).thenReturn(Printer { case (_) =>
-//            Right("ok")
-//          })
-//          when(parser.parse(any()))
-//            .thenReturn(
-//              Future.successful(
-//                Right((fakeParsedMetadata(), fakeContent(), fakeContent()))
-//              )
-//            )
-//          when(validator.validate(any()))
-//            .thenReturn(Future.successful(Right(fakeMetadata())))
-          when(branchService.createBranch(any()))
-            .thenReturn(Future.successful(Branch("")))
-          when(commitService.commit(any(), any(), any(), any(), any()))
-            .thenReturn(Future.successful(CommitId("")))
-//          when(moduleDraftRepo.create(any()))
-//            .thenReturn(Future.successful(fakeDraft()))
-
-          service
-            .createNew(fakeProtocol(), User("alex"), VersionScheme(1.0, "s"))
-            .map {
-              case Left(err) =>
-                fail(err)
-              case Right(d) =>
-                println(d)
-                succeed
-            }
-        }
-//        "printer fails" in {
-////          when(printer.printer(any()))
-////            .thenReturn(Printer[(UUID, ModuleCompendiumProtocol)] { case (_) =>
-////              Left(PrintingError("a", "b"))
-////            })
-//
-//          service
-//            .createNew(fakeProtocol(), User("alex"), VersionScheme(1.0, "s"))
-//            .map {
-//              case Left(err) =>
-//                assert(err.metadata.nonEmpty)
-//                assert(err.getMessage.nonEmpty)
-//              case Right(_) => fail()
-//            }
-//        }
-      }
+    "undo update if its changed to the origin value" in {
+      import monocle.syntax.all._
+      val existing0 = existing
+        .focus(_.metadata.title)
+        .replace("new title")
+      val newP = existing
+        .focus(_.metadata.title)
+        .replace("title")
+        .focus(_.metadata.abbrev)
+        .replace("new abbrev")
+      val (updated, updatedKeys) = deltaUpdate(
+        existing0,
+        newP,
+        Some(
+          ModuleCompendiumOutput(
+            "",
+            MetadataOutput(
+              UUID.randomUUID(),
+              "title",
+              existing0.metadata.abbrev,
+              existing0.metadata.moduleType,
+              existing0.metadata.ects,
+              existing0.metadata.language,
+              existing0.metadata.duration,
+              existing0.metadata.season,
+              Workload(
+                existing0.metadata.workload.lecture,
+                existing0.metadata.workload.seminar,
+                existing0.metadata.workload.practical,
+                existing0.metadata.workload.exercise,
+                existing0.metadata.workload.projectSupervision,
+                existing0.metadata.workload.projectWork,
+                0,
+                0
+              ),
+              existing0.metadata.status,
+              existing0.metadata.location,
+              existing0.metadata.participants,
+              existing0.metadata.moduleRelation,
+              existing0.metadata.moduleManagement,
+              existing0.metadata.lecturers,
+              existing0.metadata.assessmentMethods,
+              existing0.metadata.prerequisites,
+              existing0.metadata.po,
+              existing0.metadata.competences,
+              existing0.metadata.globalCriteria,
+              existing0.metadata.taughtWith
+            ),
+            existing0.deContent,
+            existing0.enContent
+          )
+        ),
+        Set("metadata.title", "metadata.language")
+      )
+      assert(updatedKeys.size == 2)
+      assert(updatedKeys.contains("metadata.abbrev"))
+      assert(updatedKeys.contains("metadata.language"))
+      assert(updated.metadata.title == "title")
+      assert(updated.metadata.abbrev == "new abbrev")
     }
   }
-
-  override def nestedSuites: IndexedSeq[Suite] = Vector(nestedSuite)
 }

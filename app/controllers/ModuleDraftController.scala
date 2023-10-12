@@ -1,10 +1,7 @@
 package controllers
 
 import auth.AuthorizationAction
-import controllers.ModuleDraftController.{
-  ModuleCompendiumPatch,
-  VersionSchemeHeader
-}
+import controllers.ModuleDraftController.VersionSchemeHeader
 import controllers.actions.{
   ModuleDraftCheck,
   ModuleUpdatePermissionCheck,
@@ -19,7 +16,7 @@ import controllers.formats.{
 }
 import models.{ModuleCompendiumProtocol, User}
 import parser.ParsingError
-import play.api.libs.json.{Json, Reads}
+import play.api.libs.json.Json
 import play.api.mvc.{AbstractController, ControllerComponents}
 import printer.PrintingError
 import service.{
@@ -49,8 +46,6 @@ final class ModuleDraftController @Inject() (
     with ModuleFormat
     with JsonNullWritable {
 
-  private implicit val mcPatchReads: Reads[ModuleCompendiumPatch] = Json.reads
-
   // GET modulesDrafts/own
   def moduleDrafts() =
     auth async { r =>
@@ -76,7 +71,7 @@ final class ModuleDraftController @Inject() (
 
   // POST modulesDrafts
   def createNewModuleDraft() =
-    auth(parse.json(moduleCompendiumProtocolFormat)) andThen
+    auth(parse.json[ModuleCompendiumProtocol]) andThen
       new VersionSchemeAction(VersionSchemeHeader) async { r =>
         moduleDraftService
           .createNew(r.body, User(r.request.token.username), r.versionScheme)
@@ -88,7 +83,7 @@ final class ModuleDraftController @Inject() (
 
   // PUT moduleDrafts/:id
   def createOrUpdateModuleDraft(moduleId: UUID, fail: String) =
-    auth(parse.json[ModuleCompendiumPatch]) andThen
+    auth(parse.json[ModuleCompendiumProtocol]) andThen
       hasPermissionToEditDraft(moduleId) andThen
       new VersionSchemeAction(VersionSchemeHeader) async { r =>
         val err: Option[PipelineError] = fail match {
@@ -121,8 +116,7 @@ final class ModuleDraftController @Inject() (
             moduleDraftService
               .createOrUpdate(
                 moduleId,
-                r.body.protocol,
-                r.body.modifiedKeys,
+                r.body,
                 User(r.request.token.username),
                 r.versionScheme
               )
@@ -142,9 +136,4 @@ final class ModuleDraftController @Inject() (
 
 object ModuleDraftController {
   val VersionSchemeHeader = "Mocogi-Version-Scheme"
-
-  case class ModuleCompendiumPatch(
-      protocol: ModuleCompendiumProtocol,
-      modifiedKeys: Set[String]
-  )
 }

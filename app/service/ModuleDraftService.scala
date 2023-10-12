@@ -15,6 +15,7 @@ import parsing.types._
 import play.api.libs.json._
 import printing.yaml.ModuleCompendiumYamlPrinter
 import service.ModuleCompendiumNormalizer.normalize
+import service.ModuleCompendiumProtocolDeltaUpdate.deltaUpdate
 import validator.{Metadata, ValidationError}
 
 import java.time.LocalDateTime
@@ -50,7 +51,6 @@ trait ModuleDraftService {
   def createOrUpdate(
       moduleId: UUID,
       protocol: ModuleCompendiumProtocol,
-      modifiedKeys: Set[String],
       user: User,
       versionScheme: VersionScheme
   ): Future[Either[PipelineError, Unit]]
@@ -129,7 +129,6 @@ final class ModuleDraftServiceImpl @Inject() (
   override def createOrUpdate(
       moduleId: UUID,
       protocol: ModuleCompendiumProtocol,
-      modifiedKeys: Set[String],
       user: User,
       versionScheme: VersionScheme
   ): Future[Either[PipelineError, Unit]] =
@@ -137,12 +136,11 @@ final class ModuleDraftServiceImpl @Inject() (
       .hasModuleDraft(moduleId)
       .flatMap(hasDraft =>
         if (hasDraft)
-          update(moduleId, protocol, modifiedKeys, user, versionScheme)
+          update(moduleId, protocol, user, versionScheme)
         else
           createFromExistingModule(
             moduleId,
             protocol,
-            modifiedKeys,
             user,
             versionScheme
           ).map(_.map(_ => ()))
@@ -151,23 +149,30 @@ final class ModuleDraftServiceImpl @Inject() (
   private def createFromExistingModule(
       moduleId: UUID,
       protocol: ModuleCompendiumProtocol,
-      modifiedKeys: Set[String],
       user: User,
       versionScheme: VersionScheme
   ): Future[Either[PipelineError, ModuleDraft]] =
-    create(
-      protocol,
-      ModuleDraftSource.Modified,
-      versionScheme,
-      moduleId,
-      user,
-      modifiedKeys
-    )
+    for {
+      mc <- moduleCompendiumService.get(moduleId)
+      (_, modifiedKeys) = deltaUpdate(
+        normalize(toProtocol(mc)),
+        normalize(protocol),
+        None,
+        Set.empty
+      )
+      res <- create(
+        protocol,
+        ModuleDraftSource.Modified,
+        versionScheme,
+        moduleId,
+        user,
+        modifiedKeys
+      )
+    } yield res
 
   private def update(
       moduleId: UUID,
       protocol: ModuleCompendiumProtocol,
-      modifiedKeys: Set[String],
       user: User,
       versionScheme: VersionScheme
   ): Future[Either[PipelineError, Unit]] =
@@ -175,29 +180,21 @@ final class ModuleDraftServiceImpl @Inject() (
       draft <- moduleDraftRepository.getByModule(moduleId)
       origin <- moduleCompendiumService.getOrNull(draft.module)
       existing = draft.protocol()
-      (updated, keysToRemove) = deltaUpdate(
-        existing,
-        protocol,
+      (updated, modifiedKeys) = deltaUpdate(
+        normalize(existing),
+        normalize(protocol),
         origin,
-        modifiedKeys
+        draft.modifiedKeys
       )
       res <- pipeline(updated, versionScheme, moduleId)
       res <- res match {
         case Left(err) => Future.successful(Left(err))
         case Right((mc, print)) =>
-          val mergedKeysToBeReviewed =
-            (draft.keysToBeReviewed ++ keysToBeReviewed(
-              draft.source,
-              modifiedKeys
-            )) --
-              keysToRemove
-          val mergedModifiedKeys =
-            (draft.modifiedKeys ++ modifiedKeys) -- keysToRemove
           for {
             commitId <- gitCommitService.commit(
               draft.branch,
               user,
-              commitMessage(modifiedKeys),
+              commitMessage(modifiedKeys -- draft.modifiedKeys),
               draft.module,
               draft.source,
               print
@@ -207,8 +204,8 @@ final class ModuleDraftServiceImpl @Inject() (
               toJson(updated),
               toJson(mc),
               print,
-              mergedKeysToBeReviewed,
-              mergedModifiedKeys,
+              keysToBeReviewed(draft.source, modifiedKeys),
+              modifiedKeys,
               commitId
             )
           } yield Right(())
@@ -224,63 +221,42 @@ final class ModuleDraftServiceImpl @Inject() (
   private def toJson(protocol: ModuleCompendiumProtocol) =
     Json.toJson(normalize(protocol))
 
-  private def deltaUpdate(
-      existing: ModuleCompendiumProtocol,
-      newP: ModuleCompendiumProtocol,
-      origin: Option[ModuleCompendiumOutput],
-      modifiedKeys: Set[String]
-  ): (ModuleCompendiumProtocol, Set[String]) =
-    modifiedKeys.foldLeft((existing, Set.empty[String])) {
-      case ((acc, keysToRemove), key) =>
-        def continue(
-            newAcc: ModuleCompendiumProtocol,
-            p: ModuleCompendiumOutput => Boolean
-        ) =
-          if (origin.exists(p)) {
-            (newAcc, keysToRemove + key)
-          } else {
-            (newAcc, keysToRemove)
-          }
-
-        key match {
-          case "title" =>
-            val newAcc = acc.copy(metadata =
-              acc.metadata.copy(title = newP.metadata.title)
-            )
-            continue(newAcc, _.metadata.title == newAcc.metadata.title)
-          case "particularities-content-de" =>
-            val newAcc = acc.copy(deContent =
-              acc.deContent.copy(particularities =
-                newP.deContent.particularities
-              )
-            )
-            continue(
-              newAcc,
-              _.deContent.particularities == newAcc.deContent.particularities
-            )
-          case "particularities-content-en" =>
-            val newAcc = acc.copy(enContent =
-              acc.enContent.copy(particularities =
-                newP.enContent.particularities
-              )
-            )
-            continue(
-              newAcc,
-              _.enContent.particularities == newAcc.enContent.particularities
-            )
-          case "literature-content-en" =>
-            val newAcc = acc.copy(enContent =
-              acc.enContent.copy(recommendedReading =
-                newP.enContent.recommendedReading
-              )
-            )
-            continue(
-              acc,
-              _.enContent.recommendedReading == newAcc.enContent.recommendedReading
-            )
-          case _ => throw new Throwable(s"unsupported key $key")
-        }
-    }
+  private def toProtocol(
+      mcOutput: ModuleCompendiumOutput
+  ): ModuleCompendiumProtocol =
+    ModuleCompendiumProtocol(
+      MetadataProtocol(
+        mcOutput.metadata.title,
+        mcOutput.metadata.abbrev,
+        mcOutput.metadata.moduleType,
+        mcOutput.metadata.ects,
+        mcOutput.metadata.language,
+        mcOutput.metadata.duration,
+        mcOutput.metadata.season,
+        ParsedWorkload(
+          mcOutput.metadata.workload.lecture,
+          mcOutput.metadata.workload.seminar,
+          mcOutput.metadata.workload.practical,
+          mcOutput.metadata.workload.exercise,
+          mcOutput.metadata.workload.projectSupervision,
+          mcOutput.metadata.workload.projectWork
+        ),
+        mcOutput.metadata.status,
+        mcOutput.metadata.location,
+        mcOutput.metadata.participants,
+        mcOutput.metadata.moduleRelation,
+        mcOutput.metadata.moduleManagement,
+        mcOutput.metadata.lecturers,
+        mcOutput.metadata.assessmentMethods,
+        mcOutput.metadata.prerequisites,
+        mcOutput.metadata.po,
+        mcOutput.metadata.competences,
+        mcOutput.metadata.globalCriteria,
+        mcOutput.metadata.taughtWith
+      ),
+      mcOutput.deContent,
+      mcOutput.enContent
+    )
 
   private def create(
       protocol: ModuleCompendiumProtocol,
