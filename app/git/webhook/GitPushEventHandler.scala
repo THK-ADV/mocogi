@@ -2,6 +2,7 @@ package git.webhook
 
 import git.publisher.GitFilesDownloadActor
 import git.{GitChanges, GitFilePath}
+import models.CommitId
 import play.api.libs.json.{JsArray, JsResult, JsValue}
 import play.api.mvc.Request
 
@@ -26,7 +27,7 @@ object GitPushEventHandler {
       added.map(GitFilePath.apply),
       modified.map(GitFilePath.apply),
       removed.map(GitFilePath.apply),
-      commitId,
+      CommitId(commitId),
       timestamp
     )
 

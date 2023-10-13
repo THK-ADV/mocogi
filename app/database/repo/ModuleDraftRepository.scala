@@ -1,26 +1,72 @@
 package database.repo
 
+import database.table
 import database.table.ModuleDraftTable
-import database.{Filterable, table}
-import models.ModuleDraft
+import models.{CommitId, MergeRequestId, ModuleDraft, User}
 import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfigProvider}
 import play.api.libs.json.JsValue
 import service.Print
+import slick.dbio.DBIOAction
 import slick.jdbc.JdbcProfile
 
+import java.time.LocalDateTime
 import java.util.UUID
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
+trait ModuleDraftRepository {
+  def create(moduleDraft: ModuleDraft): Future[ModuleDraft]
+
+  def allByModules(modules: Seq[UUID]): Future[Seq[ModuleDraft]]
+
+  def allByUser(user: User): Future[Seq[ModuleDraft]]
+
+  def updateDraft(
+      moduleId: UUID,
+      data: JsValue,
+      mc: JsValue,
+      print: Print,
+      keysToBeReviewed: Set[String],
+      modifiedKeys: Set[String],
+      lastCommit: CommitId
+  ): Future[Int]
+
+  def delete(moduleId: UUID): Future[Int]
+
+  def deleteDrafts(moduleIds: Seq[UUID]): Future[Int]
+
+  def getByModule(moduleId: UUID): Future[ModuleDraft]
+
+  def getByModuleOpt(moduleId: UUID): Future[Option[ModuleDraft]]
+
+  def hasModuleDraft(moduleId: UUID): Future[Boolean]
+
+  def getByMergeRequest(
+      mergeRequestId: MergeRequestId
+  ): Future[Seq[ModuleDraft]]
+
+  def updateMergeRequestId(
+      moduleId: UUID,
+      mergeRequestId: Option[MergeRequestId]
+  ): Future[Unit]
+}
+
 @Singleton
-final class ModuleDraftRepository @Inject() (
+final class ModuleDraftRepositoryImpl @Inject() (
     val dbConfigProvider: DatabaseConfigProvider,
     implicit val ctx: ExecutionContext
-) extends Repository[ModuleDraft, ModuleDraft, ModuleDraftTable]
-    with HasDatabaseConfigProvider[JdbcProfile]
-    with Filterable[ModuleDraft, ModuleDraftTable] {
+) extends ModuleDraftRepository
+    with Repository[ModuleDraft, ModuleDraft, ModuleDraftTable]
+    with HasDatabaseConfigProvider[JdbcProfile] {
   import profile.api._
-  import table.{jsValueColumnType, printColumnType}
+  import table.{
+    commitColumnType,
+    jsValueColumnType,
+    mergeRequestColumnType,
+    printColumnType,
+    setStringColumnType,
+    userColumnType
+  }
 
   protected val tableQuery = TableQuery[ModuleDraftTable]
 
@@ -29,44 +75,88 @@ final class ModuleDraftRepository @Inject() (
   ) =
     db.run(query.result)
 
-  override protected val makeFilter = { case ("branch", branch) =>
-    _.branch.toLowerCase === branch.toLowerCase
-  }
+  def allByModules(modules: Seq[UUID]): Future[Seq[ModuleDraft]] =
+    db.run(tableQuery.filter(_.module.inSet(modules)).result)
 
-  def allFromBranch(branch: String) =
-    retrieve(allWithFilter(Map(("branch", Seq(branch)))))
+  override def allByUser(user: User): Future[Seq[ModuleDraft]] =
+    db.run(tableQuery.filter(_.user === user).result)
 
-  def get(module: UUID): Future[Option[ModuleDraft]] =
-    db.run(
-      tableQuery.filter(_.module === module).take(1).result.map(_.headOption)
-    )
+  def delete(moduleId: UUID): Future[Int] =
+    db.run(tableQuery.filter(_.module === moduleId).delete)
 
-  def delete(branch: String) =
-    db.run(tableQuery.filter(_.branch === branch).delete)
+  override def deleteDrafts(moduleIds: Seq[UUID]) =
+    db.run(tableQuery.filter(_.module.inSet(moduleIds)).delete)
 
-  def update(draft: ModuleDraft) =
-    db.run(
-      tableQuery
-        .filter(_.module === draft.module)
-        .update(draft)
-        .map(_ => draft)
-    )
+  override def hasModuleDraft(moduleId: UUID) =
+    db.run(tableQuery.filter(_.module === moduleId).exists.result)
 
-  def updateValidation(
-      id: UUID,
-      e: Either[JsValue, (JsValue, Print)]
-  ): Future[Int] = {
-    def go: (Option[JsValue], Option[Print], Option[JsValue]) = e match {
-      case Left(err)            => (None, None, Some(err))
-      case Right((json, print)) => (Some(json), Some(print), None)
-    }
+  override def updateMergeRequestId(
+      moduleId: UUID,
+      mergeRequestId: Option[MergeRequestId]
+  ) =
     db.run(
       tableQuery
-        .filter(_.module === id)
+        .filter(_.module === moduleId)
+        .map(_.mergeRequestId)
+        .update(mergeRequestId)
+    ).map(_ => ())
+
+  def updateDraft(
+      moduleId: UUID,
+      data: JsValue,
+      mc: JsValue,
+      print: Print,
+      keysToBeReviewed: Set[String],
+      modifiedKeys: Set[String],
+      lastCommit: CommitId
+  ): Future[Int] =
+    db.run(
+      tableQuery
+        .filter(_.module === moduleId)
         .map(a =>
-          (a.moduleCompendiumJson, a.moduleCompendiumPrint, a.pipelineErrorJson)
+          (
+            a.data,
+            a.moduleCompendium,
+            a.moduleCompendiumPrint,
+            a.keysToBeReviewed,
+            a.modifiedKeys,
+            a.lastCommit,
+            a.lastModified
+          )
         )
-        .update(go)
+        .update(
+          (
+            data,
+            mc,
+            print,
+            keysToBeReviewed,
+            modifiedKeys,
+            Some(lastCommit),
+            LocalDateTime.now
+          )
+        )
     )
-  }
+
+  def getByModule(moduleId: UUID): Future[ModuleDraft] =
+    db.run(
+      tableQuery
+        .filter(_.module === moduleId)
+        .take(1)
+        .result
+        .flatMap(
+          _.headOption.map(DBIO.successful) getOrElse DBIOAction.failed(
+            new Throwable(s"module draft for module $moduleId not found")
+          )
+        )
+    )
+
+  override def getByModuleOpt(moduleId: UUID) =
+    db.run(tableQuery.filter(_.module === moduleId).result.map(_.headOption))
+
+  override def getByMergeRequest(mergeRequestId: MergeRequestId) =
+    db.run(
+      tableQuery
+        .filter(_.mergeRequestId === mergeRequestId)
+        .result
+    )
 }

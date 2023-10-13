@@ -90,6 +90,7 @@ create table person
     "firstname"    text not null,
     "title"        text not null,
     "abbreviation" text not null,
+    "campus_id"    text null,
     "status"       text not null,
     "kind"         text not null
 );
@@ -389,30 +390,62 @@ create table metadata_taught_with
 
 -- git handling
 
-create table user_has_branch
-(
-    "user"             text PRIMARY KEY,
-    "branch_id"        text not null,
-    "commit_id"        text null,
-    "merge_request_id" integer null
-);
-
 create table module_draft
 (
-    "module_id"                    uuid      not null,
-    "module_json"                  text      not null,
-    "branch"                       text      not null,
-    "status"                       text      not null,
-    "last_modified"                timestamp not null,
-    "valid_module_compendium_json" text null,
-    "module_compendium_print"      text null,
-    "pipeline_error"               text null,
-    PRIMARY KEY (module_id, branch)
+    "module"                  uuid      not null PRIMARY KEY,
+    "user_id"                 text      not null,
+    "branch"                  text      not null,
+    "status"                  text      not null,
+    "module_json"             text      not null,
+    "module_compendium_json"  text      not null,
+    "module_compendium_print" text      not null,
+    "keys_to_be_reviewed"     text      not null,
+    "modified_keys"           text      not null,
+    "last_commit_id"          text null,
+    "merge_request_id"        integer null,
+    "last_modified"           timestamp not null
+);
+
+create table module_update_permission
+(
+    "module"  uuid not null,
+    "user_id" text not null,
+    "kind"    text not null,
+    PRIMARY KEY (module, user_id)
+);
+
+create table module_reviewer
+(
+    "id"            uuid not null PRIMARY KEY,
+    "user_id"       text not null,
+    "study_program" text not null,
+    "role"          text not null,
+    FOREIGN KEY (study_program) REFERENCES study_program (abbrev)
+);
+
+create table module_review
+(
+    "module_draft" uuid not null PRIMARY KEY,
+    "status"       text not null,
+    FOREIGN KEY (module_draft) REFERENCES module_draft (module)
+);
+
+create table module_review_request
+(
+    "review"   uuid    not null,
+    "reviewer" uuid    not null,
+    "approved" boolean not null,
+    PRIMARY KEY (review, reviewer),
+    FOREIGN KEY (review) REFERENCES module_review (module_draft),
+    FOREIGN KEY (reviewer) REFERENCES module_reviewer (id)
 );
 
 -- !Downs
+drop table module_review_request if exists;
+drop table module_review if exists;
+drop table module_reviewer if exists;
+drop table module_update_permission if exists;
 drop table module_draft if exists;
-drop table user_has_branch if exists;
 drop table metadata_taught_with if exists;
 drop table metadata_global_criteria if exists;
 drop table metadata_competence if exists;

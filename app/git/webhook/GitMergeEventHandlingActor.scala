@@ -1,11 +1,10 @@
 package git.webhook
 
 import akka.actor.{Actor, ActorRef, Props}
-import database.repo.UserBranchRepository
 import git.subscriber.ModuleCompendiumSubscribers
 import git.webhook.GitMergeEventHandlingActor.HandleMergeEvent
 import git.{GitConfig, GitFilePath}
-import models.{UserBranch, ValidModuleDraft}
+import models.{MergeRequestId, ModuleDraft}
 import play.api.Logging
 import play.api.libs.json.{JsResult, JsValue}
 import service.ModuleDraftService
@@ -16,21 +15,22 @@ import scala.util.{Failure, Success, Try}
 
 object GitMergeEventHandlingActor {
   def parseIsMerge(json: JsValue): JsResult[Boolean] =
-    json.\("object_attributes").\("action").validate[String].map(_ == "merge")
+    json
+      .\("object_attributes")
+      .\("action")
+      .validate[String]
+      .map(_ == "merge")
 
-  def parseMergeRequestId(json: JsValue): JsResult[Int] =
-    json.\("object_attributes").\("iid").validate[Int]
-
-  def parseSourceBranch(json: JsValue): JsResult[String] =
-    json.\("object_attributes").\("source_branch").validate[String]
-
-  def parseLastCommitId(json: JsValue): JsResult[String] =
-    json.\("object_attributes").\("last_commit").\("id").validate[String]
+  def parseMergeRequestId(json: JsValue): JsResult[MergeRequestId] =
+    json
+      .\("object_attributes")
+      .\("iid")
+      .validate[Int]
+      .map(MergeRequestId.apply)
 
   private case class HandleMergeEvent(json: JsValue)
 
   def props(
-      userBranchRepository: UserBranchRepository,
       moduleDraftService: ModuleDraftService,
       subscribers: ModuleCompendiumSubscribers,
       gitConfig: GitConfig,
@@ -38,7 +38,6 @@ object GitMergeEventHandlingActor {
   ) =
     Props(
       new GitMergeEventHandlingActorImpl(
-        userBranchRepository,
         moduleDraftService,
         subscribers,
         gitConfig,
@@ -47,18 +46,12 @@ object GitMergeEventHandlingActor {
     )
 
   private final class GitMergeEventHandlingActorImpl(
-      userBranchRepository: UserBranchRepository,
       moduleDraftService: ModuleDraftService,
       subscribers: ModuleCompendiumSubscribers,
       implicit val gitConfig: GitConfig,
       implicit val ctx: ExecutionContext
   ) extends Actor
       with Logging {
-    import ops.JsResultOps._
-
-    private type MergeRequestID = Int
-    private type SourceBranch = String
-    private type LastCommitId = String
 
     override def receive: Receive = { case HandleMergeEvent(json) =>
       go(json) onComplete {
@@ -75,66 +68,38 @@ object GitMergeEventHandlingActor {
       }
     }
 
-    private def parse(
-        json: JsValue
-    ): Try[Option[(MergeRequestID, SourceBranch, LastCommitId)]] = {
+    private def parse(json: JsValue): Try[Option[MergeRequestId]] = {
       val parseRes = for {
         isMerge <- parseIsMerge(json)
         mergeRequestId <- parseMergeRequestId(json)
-        sourceBranch <- parseSourceBranch(json)
-        lastCommitId <- parseLastCommitId(json)
-      } yield (isMerge, mergeRequestId, sourceBranch, lastCommitId)
+      } yield (isMerge, mergeRequestId)
 
-      parseRes.toTry.map { case (isMerge, mrid, sb, lcid) =>
-        Option.when(isMerge)((mrid, sb, lcid))
+      JsResult.toTry(parseRes).map { case (isMerge, mrId) =>
+        Option.when(isMerge)(mrId)
       }
     }
 
-    private def findMatchingBranch(
-        xs: Seq[UserBranch],
-        mergeRequestId: MergeRequestID,
-        sourceBranch: SourceBranch,
-        lastCommitId: LastCommitId
-    ): Option[UserBranch] =
-      xs.find(b =>
-        b.branch == sourceBranch &&
-          b.mergeRequestId.fold(false)(_ == mergeRequestId) &&
-          b.commitId.fold(false)(_ == lastCommitId)
+    private def notifySubscribers(drafts: Seq[ModuleDraft]): Unit =
+      subscribers.createdOrUpdated(
+        drafts.map(d =>
+          (
+            GitFilePath(d),
+            moduleDraftService.parseModuleCompendium(d.moduleCompendium),
+            d.lastModified
+          )
+        )
       )
-
-    private def notifySubscribers(
-        drafts: Seq[ValidModuleDraft],
-        commitId: LastCommitId
-    ): Unit = {
-      val entries = drafts.map { d =>
-        val mc = moduleDraftService.parseModuleCompendium(d.json)
-        (GitFilePath(d), mc, d.lastModified)
-      }
-      subscribers.createdOrUpdated(commitId, entries)
-    }
 
     private def go(json: JsValue): Future[Unit] =
       Future.fromTry(parse(json)).flatMap {
-        case Some((mergeRequestId, sourceBranch, lastCommitId)) =>
-          for {
-            userBranches <- userBranchRepository.allWithOpenedMergeRequests()
-            res <- findMatchingBranch(
-              userBranches,
-              mergeRequestId,
-              sourceBranch,
-              lastCommitId
-            ) match {
-              case Some(branch) =>
-                for {
-                  drafts <- moduleDraftService.validDrafts(branch.branch)
-                  _ = notifySubscribers(drafts, lastCommitId)
-                  _ <- moduleDraftService.delete(branch)
-                  _ <- userBranchRepository.delete(branch.user)
-                } yield ()
-              case None =>
-                Future.unit
-            }
-          } yield res
+        case Some(mergeRequestId) =>
+          moduleDraftService.getByMergeRequest(mergeRequestId).map { drafts =>
+            if (drafts.nonEmpty) notifySubscribers(drafts)
+            else
+              throw new Throwable(
+                s"expected one draft for merge request ${mergeRequestId.value}"
+              )
+          }
         case None =>
           Future.unit
       }

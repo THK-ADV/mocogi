@@ -37,10 +37,10 @@ trait Repository[Input, Output, T <: Table[Input]] {
       }
 
   def createOrUpdateMany(
-      ls: List[Input]
-  ): Future[List[(InsertOrUpdateResult, Input)]] =
+      ls: Seq[Input]
+  ): Future[Seq[(InsertOrUpdateResult, Input)]] =
     db.run(DBIO.sequence(ls.map(l => createOrUpdateQuery(l))))
 
-  def createMany(ls: List[Input]): Future[List[Input]] =
+  def createMany(ls: Seq[Input]): Future[Seq[Input]] =
     db.run(DBIO.sequence(ls.map(l => tableQuery returning tableQuery += l)))
 }

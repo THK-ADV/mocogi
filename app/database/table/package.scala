@@ -1,6 +1,6 @@
 package database
 
-import models.ModuleDraftStatus
+import models._
 import play.api.libs.json.{JsValue, Json}
 import service.Print
 import slick.jdbc.PostgresProfile.api._
@@ -8,25 +8,25 @@ import slick.jdbc.PostgresProfile.api._
 package object table {
   implicit val moduleRelationColumnType: BaseColumnType[ModuleRelationType] =
     MappedColumnType
-      .base[ModuleRelationType, String](_.toString, ModuleRelationType.apply)
+      .base[ModuleRelationType, String](_.id, ModuleRelationType.apply)
 
   implicit val responsibilityTypeColumnType
       : BaseColumnType[ResponsibilityType] =
     MappedColumnType
-      .base[ResponsibilityType, String](_.toString, ResponsibilityType.apply)
+      .base[ResponsibilityType, String](_.id, ResponsibilityType.apply)
 
   implicit val assessmentMethodTypeColumnType
       : BaseColumnType[AssessmentMethodType] =
     MappedColumnType
       .base[AssessmentMethodType, String](
-        _.toString,
+        _.id,
         AssessmentMethodType.apply
       )
 
   implicit val prerequisiteTypeColumnType: BaseColumnType[PrerequisiteType] =
     MappedColumnType
       .base[PrerequisiteType, String](
-        _.toString,
+        _.id,
         PrerequisiteType.apply
       )
 
@@ -47,9 +47,9 @@ package object table {
         stringToInts
       )
 
-  implicit val moduleDraftStatusColumnType: BaseColumnType[ModuleDraftStatus] =
+  implicit val moduleDraftStatusColumnType: BaseColumnType[ModuleDraftSource] =
     MappedColumnType
-      .base[ModuleDraftStatus, String](_.toString, ModuleDraftStatus.apply)
+      .base[ModuleDraftSource, String](_.id, ModuleDraftSource.apply)
 
   implicit val printColumnType: BaseColumnType[Print] =
     MappedColumnType
@@ -58,4 +58,69 @@ package object table {
   implicit val jsValueColumnType: BaseColumnType[JsValue] =
     MappedColumnType
       .base[JsValue, String](Json.stringify, Json.parse)
+
+  implicit val userColumnType: BaseColumnType[User] =
+    MappedColumnType
+      .base[User, String](_.username, User.apply)
+
+  implicit val branchColumnType: BaseColumnType[Branch] =
+    MappedColumnType
+      .base[Branch, String](_.value, Branch.apply)
+
+  implicit val commitColumnType: BaseColumnType[CommitId] =
+    MappedColumnType
+      .base[CommitId, String](_.value, CommitId.apply)
+
+  implicit val mergeRequestColumnType: BaseColumnType[MergeRequestId] =
+    MappedColumnType
+      .base[MergeRequestId, Int](_.value, MergeRequestId.apply)
+
+  def iterableToString(xs: Iterable[String]): String =
+    if (xs.isEmpty) "" else xs.mkString(",")
+
+  def stringToList(s: String): List[String] =
+    if (s.isEmpty) Nil
+    else
+      s.split(",").foldLeft(List.empty[String]) { case (acc, s) =>
+        s :: acc
+      }
+
+  def stringToSet(s: String): Set[String] =
+    if (s.isEmpty) Set.empty
+    else
+      s.split(",").foldLeft(Set.empty[String]) { case (acc, s) =>
+        acc.+(s)
+      }
+
+  implicit val listStringColumnType: BaseColumnType[List[String]] =
+    MappedColumnType
+      .base[List[String], String](
+        iterableToString,
+        stringToList
+      )
+
+  implicit val setStringColumnType: BaseColumnType[Set[String]] =
+    MappedColumnType
+      .base[Set[String], String](
+        iterableToString,
+        stringToSet
+      )
+
+  implicit val moduleReviewerRoleColumnType
+      : BaseColumnType[ModuleReviewerRole] =
+    MappedColumnType
+      .base[ModuleReviewerRole, String](_.id, ModuleReviewerRole.apply)
+
+  implicit val moduleReviewStatusColumnType
+      : BaseColumnType[ModuleReviewStatus] =
+    MappedColumnType
+      .base[ModuleReviewStatus, String](_.id, ModuleReviewStatus.apply)
+
+  implicit val moduleUpdatePermissionTypeColumnType
+      : BaseColumnType[ModuleUpdatePermissionType] =
+    MappedColumnType
+      .base[ModuleUpdatePermissionType, String](
+        _.id,
+        ModuleUpdatePermissionType.apply
+      )
 }

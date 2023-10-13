@@ -1,9 +1,10 @@
 package service
 
 import models.core._
+import ops.EitherOps.EOps
 import parser.ParsingError
 import parsing.metadata.MetadataCompositeParser
-import parsing.types.ParsedMetadata
+import parsing.types.{Content, ParsedMetadata}
 import service.core._
 
 import java.util.UUID
@@ -11,7 +12,8 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 trait MetadataParsingService {
-  def parse(prints: Seq[(Option[UUID], Print)]): ParsingResult
+  def parseMany(prints: Seq[(Option[UUID], Print)]): ParsingResult
+  def parse(print: Print): Future[Either[ParsingError, (ParsedMetadata, Content, Content)]]
 }
 
 @Singleton
@@ -32,23 +34,22 @@ final class MetadataParsingServiceImpl @Inject() (
     private val specializationService: SpecializationService,
     private implicit val ctx: ExecutionContext
 ) extends MetadataParsingService {
-  import ops.EitherOps._
 
-  private def parser(
-      locations: Seq[Location],
-      languages: Seq[Language],
-      status: Seq[Status],
-      assessmentMethods: Seq[AssessmentMethod],
-      moduleTypes: Seq[ModuleType],
-      seasons: Seq[Season],
-      persons: Seq[Person],
-      focusAreas: Seq[FocusArea],
-      globalCriteria: Seq[GlobalCriteria],
-      pos: Seq[PO],
-      competences: Seq[Competence],
-      specializations: Seq[Specialization]
-  ) =
-    metadataParser
+  private def parser() =
+    for {
+      locations <- locationService.all()
+      languages <- languageService.all()
+      status <- statusService.all()
+      assessmentMethods <- assessmentMethodService.all()
+      moduleTypes <- moduleTypeService.all()
+      seasons <- seasonService.all()
+      persons <- personService.all()
+      focusAreas <- focusAreaService.all()
+      globalCriteria <- globalCriteriaService.all()
+      pos <- poService.all()
+      competences <- competenceService.all()
+      specializations <- specializationService.all()
+    } yield metadataParser
       .parser(
         locations,
         languages,
@@ -64,52 +65,15 @@ final class MetadataParsingServiceImpl @Inject() (
         specializations
       )
 
-  private def parseMany(prints: Seq[(Option[UUID], Print)]): Future[
-    Seq[(Either[(Option[UUID], ParsingError), (Print, ParsedMetadata)], Rest)]
-  ] =
-    for {
-      locations <- locationService.all()
-      languages <- languageService.all()
-      status <- statusService.all()
-      assessmentMethods <- assessmentMethodService.all()
-      moduleTypes <- moduleTypeService.all()
-      seasons <- seasonService.all()
-      persons <- personService.all()
-      focusAreas <- focusAreaService.all()
-      globalCriteria <- globalCriteriaService.all()
-      pos <- poService.all()
-      competences <- competenceService.all()
-      specializations <- specializationService.all()
-    } yield {
-      val p = parser(
-        locations,
-        languages,
-        status,
-        assessmentMethods,
-        moduleTypes,
-        seasons,
-        persons,
-        focusAreas,
-        globalCriteria,
-        pos,
-        competences,
-        specializations
-      )
-      prints.map { case (id, print) =>
-        val res = p.parse(print.value)
-        (
-          res._1.bimap(
-            (id, _),
-            (print, _)
-          ),
-          Rest(res._2)
+  def parseMany(prints: Seq[(Option[UUID], Print)]): ParsingResult =
+    parser().map { p =>
+      val (errs, parses) = prints.partitionMap { case (id, print) =>
+        val parseRes = p.parse(print.value)
+        val res = parseRes._1.bimap(
+          (id, _),
+          (print, _)
         )
-      }
-    }
-
-  def parse(prints: Seq[(Option[UUID], Print)]): ParsingResult =
-    parseMany(prints).map { res =>
-      val (errs, parses) = res.partitionMap { case (res, rest) =>
+        val rest = Rest(parseRes._2)
         res match {
           case Left((id, err)) => Left(PipelineError.Parser(err, id))
           case Right((print, parsedMetadata)) =>
@@ -121,5 +85,17 @@ final class MetadataParsingServiceImpl @Inject() (
         }
       }
       Either.cond(errs.isEmpty, parses, errs)
+    }
+
+  override def parse(
+      print: Print
+  ): Future[Either[ParsingError, (ParsedMetadata, Content, Content)]] =
+    parser().map { p =>
+      val (res, rest) = p.parse(print.value)
+      res.flatMap { parsedMetadata =>
+        contentParsingService.parse(rest)._1.map { case (de, en) =>
+          (parsedMetadata, de, en)
+        }
+      }
     }
 }

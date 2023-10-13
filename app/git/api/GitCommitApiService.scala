@@ -1,6 +1,7 @@
 package git.api
 
 import git.{GitCommitAction, GitCommitActionType, GitConfig}
+import models.{Branch, CommitId, User}
 import play.api.http.ContentTypes
 import play.api.libs.json.{JsValue, Json}
 import play.api.libs.ws.{WSClient, WSResponse}
@@ -12,65 +13,63 @@ import scala.concurrent.{ExecutionContext, Future}
 @Singleton
 final class GitCommitApiService @Inject() (
     private val ws: WSClient,
-    val gitConfig: GitConfig,
+    val config: GitConfig,
     private implicit val ctx: ExecutionContext
 ) extends GitService {
-  type CommitID = String
 
   def commit(
-      branchName: String,
-      username: String,
+      branch: Branch,
+      author: User,
+      message: String,
       actions: Seq[GitCommitAction]
-  ): Future[CommitID] =
+  ): Future[CommitId] = {
+    def body(): JsValue =
+      Json.obj(
+        "branch" -> branch.value,
+        "commit_message" -> message,
+        "author_email" -> s"${author.username}@th-koeln.de",
+        "author_name" -> author.username,
+        "actions" -> actions.map { a =>
+          a.action match {
+            case GitCommitActionType.Create =>
+              Json.obj(
+                "action" -> a.action.toString,
+                "file_path" -> a.filePath.value,
+                "content" -> a.fileContent
+              )
+            case GitCommitActionType.Delete =>
+              Json.obj(
+                "action" -> a.action.toString,
+                "file_path" -> a.filePath.value
+              )
+            case GitCommitActionType.Update =>
+              Json.obj(
+                "action" -> a.action.toString,
+                "file_path" -> a.filePath.value,
+                "content" -> a.fileContent
+              )
+          }
+        }
+      )
     ws
       .url(this.commitUrl())
       .withHttpHeaders(tokenHeader(), contentTypeJson())
-      .post(commitBody(branchName, username, actions))
+      .post(body())
       .flatMap(parseCommitResult)
+  }
 
-  def revertCommit(branchName: String, commitId: CommitID) =
+  def revertCommit(branchName: String, commitId: CommitId) =
     ws
       .url(s"${this.commitUrl()}/${commitId}/revert")
       .withHttpHeaders(tokenHeader(), contentTypeForm())
       .post(s"branch=$branchName")
       .flatMap(parseCommitResult)
 
-  private def commitBody(
-      branchName: String,
-      username: String,
-      actions: Seq[GitCommitAction]
-  ): JsValue =
-    Json.obj(
-      "branch" -> branchName,
-      "commit_message" -> "changes",
-      "author_email" -> s"$username@th-koeln.de",
-      "author_name" -> username,
-      "actions" -> actions.map { a =>
-        a.action match {
-          case GitCommitActionType.Create =>
-            Json.obj(
-              "action" -> a.action.toString,
-              "file_path" -> a.filePath.value,
-              "content" -> a.fileContent
-            )
-          case GitCommitActionType.Delete =>
-            Json.obj(
-              "action" -> a.action.toString,
-              "file_path" -> a.filePath.value
-            )
-          case GitCommitActionType.Update =>
-            Json.obj(
-              "action" -> a.action.toString,
-              "file_path" -> a.filePath.value,
-              "content" -> a.fileContent
-            )
-        }
-      }
-    )
-
   private def parseCommitResult(res: WSResponse) =
     if (res.status == Status.CREATED)
-      Future.successful(res.json.\("id").validate[CommitID].get)
+      Future.successful(
+        res.json.\("id").validate[String].map(CommitId.apply).get
+      )
     else Future.failed(parseErrorMessage(res))
 
   private def commitUrl() =

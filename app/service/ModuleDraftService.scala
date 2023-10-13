@@ -5,177 +5,348 @@ import controllers.formats.{
   ModuleCompendiumProtocolFormat,
   PipelineErrorFormat
 }
-import database.repo.{ModuleDraftRepository, UserBranchRepository}
+import database.ModuleCompendiumOutput
+import database.repo.ModuleDraftRepository
+import git.api.{GitBranchService, GitCommitService}
 import models._
+import ops.EitherOps.EOps
 import parsing.metadata.VersionScheme
 import parsing.types._
-import play.api.libs.json.{JsError, JsSuccess, JsValue, Json}
+import play.api.libs.json._
 import printing.yaml.ModuleCompendiumYamlPrinter
-import service.ModuleCompendiumNormalizer.normalize
+import service.ModuleCompendiumProtocolDeltaUpdate.deltaUpdate
+import validator.{Metadata, ValidationError}
 
 import java.time.LocalDateTime
 import java.util.UUID
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.Try
+
+trait ModuleDraftService {
+  def allByModules(modules: Seq[UUID]): Future[Seq[ModuleDraft]]
+
+  def getByModule(moduleId: UUID): Future[ModuleDraft]
+
+  def getByModuleOpt(moduleId: UUID): Future[Option[ModuleDraft]]
+
+  def getByMergeRequest(
+      mergeRequestId: MergeRequestId
+  ): Future[Seq[ModuleDraft]]
+
+  def allByUser(user: User): Future[Seq[ModuleDraft]]
+
+  def createNew(
+      protocol: ModuleCompendiumProtocol,
+      user: User,
+      versionScheme: VersionScheme
+  ): Future[Either[PipelineError, ModuleDraft]]
+
+  def deleteDraftWithBranch(moduleId: UUID): Future[Unit]
+
+  def deleteDraft(moduleId: UUID): Future[Unit]
+
+  def deleteDrafts(moduleIds: Seq[UUID]): Future[Unit]
+
+  def createOrUpdate(
+      moduleId: UUID,
+      protocol: ModuleCompendiumProtocol,
+      user: User,
+      versionScheme: VersionScheme
+  ): Future[Either[PipelineError, Unit]]
+
+  def parseModuleCompendium(json: JsValue): ModuleCompendium
+
+  def updateMergeRequestId(
+      moduleId: UUID,
+      mergeRequestId: Option[MergeRequestId]
+  ): Future[Unit]
+}
 
 @Singleton
-class ModuleDraftService @Inject() (
+final class ModuleDraftServiceImpl @Inject() (
     private val moduleDraftRepository: ModuleDraftRepository,
-    private val userBranchRepository: UserBranchRepository,
     private val metadataValidatingService: MetadataValidatingService,
     private val moduleCompendiumPrinter: ModuleCompendiumYamlPrinter,
     private val metadataParsingService: MetadataParsingService,
+    private val moduleCompendiumService: ModuleCompendiumService,
+    private val gitBranchService: GitBranchService,
+    private val gitCommitService: GitCommitService,
+    private val keysToReview: ModuleKeysToReview,
     private implicit val ctx: ExecutionContext
-) extends ModuleCompendiumProtocolFormat
+) extends ModuleDraftService
+    with ModuleCompendiumProtocolFormat
     with PipelineErrorFormat
     with ModuleCompendiumFormat {
-  import ops.EitherOps._
 
-  def allFromBranch(branch: String): Future[Seq[ModuleDraft]] =
-    moduleDraftRepository.allFromBranch(branch)
+  override def allByModules(modules: Seq[UUID]): Future[Seq[ModuleDraft]] =
+    moduleDraftRepository.allByModules(modules)
 
-  def delete(userBranch: UserBranch): Future[Int] =
-    moduleDraftRepository.delete(userBranch.branch)
+  override def getByModule(moduleId: UUID): Future[ModuleDraft] =
+    moduleDraftRepository.getByModule(moduleId)
 
-  def createOrUpdate(
-      module: Option[UUID],
-      data: ModuleCompendiumProtocol,
-      branch: String
-  ): Future[ModuleDraft] = {
-    def go(data: String) = module match {
-      case Some(id) =>
-        moduleDraftRepository.get(id).flatMap {
-          case Some(draft) =>
-            moduleDraftRepository
-              .update(draft.copy(data = data, lastModified = LocalDateTime.now))
-          case None =>
-            moduleDraftRepository.create(
-              ModuleDraft(
-                id,
-                data,
-                branch,
-                ModuleDraftStatus.Modified,
-                LocalDateTime.now(),
-                None
-              )
-            )
-        }
-      case None =>
-        moduleDraftRepository.create(
-          ModuleDraft(
-            UUID.randomUUID,
-            data,
-            branch,
-            ModuleDraftStatus.Added,
-            LocalDateTime.now(),
-            None
-          )
-        )
-    }
+  override def getByModuleOpt(moduleId: UUID) =
+    moduleDraftRepository.getByModuleOpt(moduleId)
 
+  override def getByMergeRequest(mergeRequestId: MergeRequestId) =
+    moduleDraftRepository.getByMergeRequest(mergeRequestId)
+
+  def allByUser(user: User): Future[Seq[ModuleDraft]] =
+    moduleDraftRepository.allByUser(user)
+
+  override def updateMergeRequestId(
+      moduleId: UUID,
+      mergeRequestId: Option[MergeRequestId]
+  ) =
+    moduleDraftRepository.updateMergeRequestId(moduleId, mergeRequestId)
+
+  override def createNew(
+      protocol: ModuleCompendiumProtocol,
+      user: User,
+      versionScheme: VersionScheme
+  ): Future[Either[PipelineError, ModuleDraft]] =
+    create(
+      protocol,
+      ModuleDraftSource.Added,
+      versionScheme,
+      UUID.randomUUID(),
+      user,
+      Set.empty
+    )
+
+  def deleteDraftWithBranch(moduleId: UUID): Future[Unit] =
     for {
-      branchExists <- userBranchRepository.existsByBranch(branch)
-      res <-
-        if (branchExists) go(toJson(normalize(data)))
+      _ <- gitBranchService.deleteBranch(moduleId)
+      _ <- deleteDraft(moduleId)
+    } yield ()
+
+  override def deleteDraft(moduleId: UUID) =
+    moduleDraftRepository.delete(moduleId).map(_ => ())
+
+  override def deleteDrafts(moduleIds: Seq[UUID]) =
+    moduleDraftRepository.deleteDrafts(moduleIds).map(_ => ())
+
+  override def createOrUpdate(
+      moduleId: UUID,
+      protocol: ModuleCompendiumProtocol,
+      user: User,
+      versionScheme: VersionScheme
+  ): Future[Either[PipelineError, Unit]] =
+    moduleDraftRepository
+      .hasModuleDraft(moduleId)
+      .flatMap(hasDraft =>
+        if (hasDraft)
+          update(moduleId, protocol, user, versionScheme)
         else
-          Future.failed(
-            new Throwable(s"branch $branch doesn't exist")
-          )
+          createFromExistingModule(
+            moduleId,
+            protocol,
+            user,
+            versionScheme
+          ).map(_.map(_ => ()))
+      )
+
+  private def createFromExistingModule(
+      moduleId: UUID,
+      protocol: ModuleCompendiumProtocol,
+      user: User,
+      versionScheme: VersionScheme
+  ): Future[Either[PipelineError, ModuleDraft]] =
+    for {
+      mc <- moduleCompendiumService.get(moduleId)
+      (_, modifiedKeys) = deltaUpdate(
+        toProtocol(mc).normalize(),
+        protocol.normalize(),
+        None,
+        Set.empty
+      )
+      res <- create(
+        protocol,
+        ModuleDraftSource.Modified,
+        versionScheme,
+        moduleId,
+        user,
+        modifiedKeys
+      )
     } yield res
-  }
+
+  private def update(
+      moduleId: UUID,
+      protocol: ModuleCompendiumProtocol,
+      user: User,
+      versionScheme: VersionScheme
+  ): Future[Either[PipelineError, Unit]] =
+    for {
+      draft <- moduleDraftRepository.getByModule(moduleId)
+      origin <- moduleCompendiumService.getOrNull(draft.module)
+      existing = draft.protocol()
+      (updated, modifiedKeys) = deltaUpdate(
+        existing.normalize(),
+        protocol.normalize(),
+        origin,
+        draft.modifiedKeys
+      )
+      res <- pipeline(updated, versionScheme, moduleId)
+      res <- res match {
+        case Left(err) => Future.successful(Left(err))
+        case Right((mc, print)) =>
+          for {
+            commitId <- gitCommitService.commit(
+              draft.branch,
+              user,
+              commitMessage(modifiedKeys -- draft.modifiedKeys),
+              draft.module,
+              draft.source,
+              print
+            )
+            _ <- moduleDraftRepository.updateDraft(
+              moduleId,
+              toJson(updated),
+              toJson(mc),
+              print,
+              keysToBeReviewed(draft.source, modifiedKeys),
+              modifiedKeys,
+              commitId
+            )
+          } yield Right(())
+      }
+    } yield res
+
+  private def commitMessage(updatedKeys: Set[String]) =
+    s"updated keys: ${updatedKeys.mkString(", ")}"
+
+  private def toJson(mc: ModuleCompendium) =
+    Json.toJson(mc.normalize())
 
   private def toJson(protocol: ModuleCompendiumProtocol) =
-    moduleCompendiumProtocolFormat.writes(protocol).toString()
+    Json.toJson(protocol.normalize())
 
-  private def fromJson(json: String) =
-    moduleCompendiumProtocolFormat.reads(Json.parse(json))
+  private def toProtocol(
+      mcOutput: ModuleCompendiumOutput
+  ): ModuleCompendiumProtocol =
+    ModuleCompendiumProtocol(
+      MetadataProtocol(
+        mcOutput.metadata.title,
+        mcOutput.metadata.abbrev,
+        mcOutput.metadata.moduleType,
+        mcOutput.metadata.ects,
+        mcOutput.metadata.language,
+        mcOutput.metadata.duration,
+        mcOutput.metadata.season,
+        ParsedWorkload(
+          mcOutput.metadata.workload.lecture,
+          mcOutput.metadata.workload.seminar,
+          mcOutput.metadata.workload.practical,
+          mcOutput.metadata.workload.exercise,
+          mcOutput.metadata.workload.projectSupervision,
+          mcOutput.metadata.workload.projectWork
+        ),
+        mcOutput.metadata.status,
+        mcOutput.metadata.location,
+        mcOutput.metadata.participants,
+        mcOutput.metadata.moduleRelation,
+        mcOutput.metadata.moduleManagement,
+        mcOutput.metadata.lecturers,
+        mcOutput.metadata.assessmentMethods,
+        mcOutput.metadata.prerequisites,
+        mcOutput.metadata.po,
+        mcOutput.metadata.competences,
+        mcOutput.metadata.globalCriteria,
+        mcOutput.metadata.taughtWith
+      ),
+      mcOutput.deContent,
+      mcOutput.enContent
+    )
 
-  private def print(branch: String): PrintingResult =
-    for {
-      drafts <- moduleDraftRepository.allFromBranch(branch)
-      protocols <- Future.fromTry(parseDrafts(drafts))
-      printer = moduleCompendiumPrinter.printer(VersionScheme(1, "s"))
-      (errs, prints) = protocols.partitionMap(e =>
-        printer
-          .print(e, "")
-          .bimap(
-            PipelineError.Printer(_, Some(e._1)),
-            p => (e._1, Print(p))
-          )
-      )
-    } yield Either.cond(errs.isEmpty, prints, errs)
-
-  private def parse(inputs: Seq[(UUID, Print)]): ParsingResult =
-    metadataParsingService.parse(inputs.map { case (id, p) => (Some(id), p) })
-
-  private def validate(
-      parsed: Seq[(Print, ParsedMetadata, Content, Content)]
-  ): ValidationResult =
-    metadataValidatingService.validate(parsed)
-
-  private def persist(
-      e: Either[Seq[PipelineError], Seq[(Print, ModuleCompendium)]]
-  ): Future[Unit] =
-    Future
-      .sequence(
-        e match {
-          case Left(errs) =>
-            errs.groupBy(_.metadata).map { case (id, errs) =>
-              moduleDraftRepository
-                .updateValidation(id.get, Left(Json.toJson(errs)))
-            }
-          case Right(mcs) =>
-            mcs.map { case (print, mc) =>
-              val mcJson = Json.toJson(normalize(mc))
-              moduleDraftRepository.updateValidation(
-                mc.metadata.id,
-                Right((mcJson, print))
-              )
-            }
-        }
-      )
-      .map(_ => ())
-
-  def validateDrafts(branch: String): ValidationResult =
-    for {
-      prints <- print(branch)
-      parses <- continue(prints, parse)
-      validates <- continue(parses, validate)
-      _ <- persist(validates)
-    } yield validates
-
-  def validDrafts(branch: String): Future[Seq[ValidModuleDraft]] =
-    for {
-      drafts <- moduleDraftRepository.allFromBranch(branch)
-    } yield drafts.map { d =>
-      d.validation match {
-        case Some(Right((json, print))) =>
-          ValidModuleDraft(
-            d.module,
-            d.status,
-            d.lastModified,
-            json,
+  private def create(
+      protocol: ModuleCompendiumProtocol,
+      status: ModuleDraftSource,
+      versionScheme: VersionScheme,
+      moduleId: UUID,
+      user: User,
+      updatedKeys: Set[String]
+  ) =
+    pipeline(protocol, versionScheme, moduleId).flatMap {
+      case Left(err) => Future.successful(Left(err))
+      case Right((mc, print)) =>
+        val commitMsg =
+          if (status == ModuleDraftSource.Added) "new module"
+          else commitMessage(updatedKeys)
+        for {
+          branch <- gitBranchService.createBranch(moduleId)
+          commitId <- gitCommitService.commit(
+            branch,
+            user,
+            commitMsg,
+            moduleId,
+            status,
             print
           )
-        case _ =>
-          throw new Throwable(
-            s"expected branch $branch to only contain valid drafts"
+          moduleDraft = ModuleDraft(
+            moduleId,
+            user,
+            branch,
+            status,
+            toJson(protocol),
+            toJson(mc),
+            print,
+            keysToBeReviewed(status, updatedKeys),
+            updatedKeys,
+            Some(commitId),
+            None,
+            LocalDateTime.now()
           )
-      }
+          created <- moduleDraftRepository.create(moduleDraft)
+        } yield Right(created)
     }
+
+  private def keysToBeReviewed(
+      source: ModuleDraftSource,
+      updatedKeys: Set[String]
+  ): Set[String] =
+    if (source == ModuleDraftSource.Added) Set.empty
+    else updatedKeys.filter(keysToReview.contains)
+
+  private def pipeline(
+      protocol: ModuleCompendiumProtocol,
+      versionScheme: VersionScheme,
+      moduleId: UUID
+  ): Future[Either[PipelineError, (ModuleCompendium, Print)]] = {
+    def print(): Either[PipelineError, Print] =
+      moduleCompendiumPrinter
+        .printer(versionScheme)
+        .print((moduleId, protocol), "")
+        .bimap(
+          PipelineError.Printer(_, Some(moduleId)),
+          Print.apply
+        )
+
+    def parse(
+        print: Print
+    ): Future[Either[PipelineError, (ParsedMetadata, Content, Content)]] =
+      metadataParsingService
+        .parse(print)
+        .map(_.bimap(PipelineError.Parser(_, Some(moduleId)), identity))
+
+    def validate(
+        metadata: ParsedMetadata
+    ): Future[Either[PipelineError, Metadata]] =
+      metadataValidatingService
+        .validate(metadata)
+        .map(
+          _.bimap(
+            errs =>
+              PipelineError.Validator(ValidationError(errs), Some(metadata.id)),
+            identity
+          )
+        )
+    for {
+      parsed <- continueWith(print())(parse)
+      validated <- continueWith(parsed)(a => validate(a._2._1))
+    } yield validated.map(t =>
+      (ModuleCompendium(t._2, t._1._2._2, t._1._2._3), t._1._1)
+    )
+  }
 
   def parseModuleCompendium(json: JsValue): ModuleCompendium =
     Json.fromJson[ModuleCompendium](json).get
-
-  private def parseDrafts(
-      drafts: Seq[ModuleDraft]
-  ): Try[Seq[(UUID, ModuleCompendiumProtocol)]] =
-    Try(drafts.map { draft =>
-      fromJson(draft.data) match {
-        case JsSuccess(value, _) => (draft.module, value)
-        case JsError(errors)     => throw new Throwable(errors.mkString("\n"))
-      }
-    })
-
 }

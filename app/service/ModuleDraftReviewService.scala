@@ -1,121 +1,145 @@
 package service
 
-import database.repo.UserBranchRepository
-import git.api.{GitCommitApiService, GitMergeRequestApiService}
-import git.{GitCommitAction, GitCommitActionType, GitConfig, GitFilePath}
-import models.{ModuleDraftStatus, ValidModuleDraft}
+import database.repo.ModuleReviewerRepository
+import git.api.GitMergeRequestApiService
+import models._
 
+import java.util.UUID
 import javax.inject.{Inject, Singleton}
+import scala.collection.mutable.ListBuffer
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class ModuleDraftReviewService @Inject() (
+final class ModuleDraftReviewService @Inject() (
     private val moduleDraftService: ModuleDraftService,
-    private val moduleCompendiumService: ModuleCompendiumService,
-    private val commitService: GitCommitApiService,
-    private val mergeRequestService: GitMergeRequestApiService,
-    private val userBranchRepository: UserBranchRepository,
-    private implicit val gitConfig: GitConfig,
+    private val moduleReviewService: ModuleReviewService,
+    private val moduleReviewerRepo: ModuleReviewerRepository,
+    private val api: GitMergeRequestApiService,
+    private val keysToReview: ModuleKeysToReview,
     private implicit val ctx: ExecutionContext
 ) {
 
-  type ReviewResult =
-    (GitCommitApiService#CommitID, GitMergeRequestApiService#MergeRequestID)
-
-  def createReview(
-      branch: String,
-      username: String
-  ): Future[ReviewResult] =
+  def createReview(moduleId: UUID, author: User) =
     for {
-      hasCommit <- userBranchRepository.hasCommitAndMergeRequest(branch)
-      drafts <- continueIf(
-        hasCommit.isEmpty,
-        moduleDraftService.validDrafts(branch),
-        s"user $username has already committed"
-      )
-      res <- continueIf(
-        drafts.nonEmpty,
-        for {
-          actions <- commitActions(drafts)
-          commitId <- commit(branch, username, actions)
-          mergeRequestId <- createMergeRequest(
-            branch,
-            username,
-            mergeRequestDescription(actions)
+      draft <- moduleDraftService.getByModule(moduleId)
+      _ <-
+        if (draft.modifiedKeys.isEmpty)
+          Future.failed(
+            new Throwable(s"no modifications found for module ${draft.module}")
           )
-        } yield (commitId, mergeRequestId),
-        "no changes to commit"
-      )
+        else {
+          if (draft.keysToBeReviewed.nonEmpty)
+            createApproveReview(draft, author)
+          else createAutoAcceptReview(draft, author)
+        }
+    } yield ()
+
+  def closeReview(moduleId: UUID) =
+    for {
+      draft <- moduleDraftService.getByModule(moduleId)
+      if draft.mergeRequest.isDefined
+      res <- api.delete(draft.mergeRequest.get)
+      _ <- moduleDraftService.updateMergeRequestId(draft.module, None)
     } yield res
 
-  private def continueIf[A](
-      bool: Boolean,
-      future: => Future[A],
-      err: => String
-  ) =
-    if (bool) future else Future.failed(new Throwable(err))
+  private def createApproveReview(draft: ModuleDraft, author: User) = {
+    def description(reviewer: Seq[ModuleReviewer]) =
+      s"""modified keys:
+         |${markdownList(draft.modifiedKeys)(identity)}
+         |
+         |keys to be reviewed:
+         |${markdownList(draft.keysToBeReviewed)(identity)}
+         |
+         |reviewer:
+         |${markdownList(reviewer)(r =>
+          s"@${r.user.username} ${r.role.label} ${r.studyProgram}"
+        )}""".stripMargin
+    val protocol = draft.protocol()
+    for {
+      reviewer <- moduleReviewerRepo.getAll(
+        requiredRoles(draft.keysToBeReviewed),
+        affectedPOs(protocol.metadata)
+      )
+      _ <- createMergeRequest(
+        draft,
+        title(author, protocol),
+        description(reviewer),
+        needsApproval = true
+      )
+      _ <- createReviews(draft.module, reviewer)
+    } yield ()
+  }
 
-  private def mergeRequestDescription(actions: Seq[GitCommitAction]) =
-    actions.foldLeft("") { case (acc, a) =>
-      s"$acc\n- ${a.action}s [${a.filePath.value}](${a.filePath.value})"
-    }
+  private def createAutoAcceptReview(draft: ModuleDraft, author: User) =
+    for {
+      mrId <- createMergeRequest(
+        draft,
+        title(author, draft.protocol()),
+        s"""modified keys:
+           |${markdownList(draft.modifiedKeys)(identity)}""".stripMargin,
+        needsApproval = false
+      )
+      _ <- api.canBeMerged(mrId)
+      _ <- api.accept(mrId)
+    } yield ()
 
   private def createMergeRequest(
-      branch: String,
-      username: String,
-      description: String
+      draft: ModuleDraft,
+      title: String,
+      description: String,
+      needsApproval: Boolean
   ) =
-    for {
-      mergeRequestId <- mergeRequestService.createMergeRequest(
-        branch,
-        username,
-        description
-      )
-      _ <- userBranchRepository.updateMergeRequestId(
-        branch,
-        Some(mergeRequestId)
-      )
-    } yield mergeRequestId
-
-  private def commitActions(drafts: Seq[ValidModuleDraft]) =
-    for {
-      paths <- moduleCompendiumService.paths(drafts.map(_.module))
-    } yield drafts.map { draft =>
-      val gitActionType = draft.status match {
-        case ModuleDraftStatus.Added    => GitCommitActionType.Create
-        case ModuleDraftStatus.Modified => GitCommitActionType.Update
-      }
-      val filePath = GitFilePath.apply(paths, draft)
-      GitCommitAction(gitActionType, filePath, draft.print.value)
-    }
-
-  private def commit(
-      branch: String,
-      username: String,
-      actions: Seq[GitCommitAction]
-  ) =
-    for {
-      commitId <- commitService.commit(branch, username, actions)
-      _ <- userBranchRepository.updateCommitId(branch, Some(commitId))
-    } yield commitId
-
-  def revertReview(branch: String) =
-    for {
-      maybeCommit <- userBranchRepository.hasCommitAndMergeRequest(branch)
-      res <- maybeCommit match {
-        case Some((commitId, mergeRequestId)) =>
-          for {
-            _ <- commitService.revertCommit(branch, commitId)
-            _ <- userBranchRepository.updateCommitId(branch, None)
-            _ <- mergeRequestService.deleteMergeRequest(mergeRequestId)
-            _ <- userBranchRepository.updateMergeRequestId(branch, None)
-          } yield ()
-        case None =>
-          Future.failed(
-            new Throwable(
-              s"branch $branch has no commit or merge request to revert"
+    draft.mergeRequest match {
+      case Some(mrId) =>
+        Future.successful(mrId)
+      case None =>
+        for {
+          mrId <- api.create(
+            draft.branch,
+            Branch(api.config.draftBranch),
+            title,
+            description,
+            needsApproval,
+            List(
+              if (needsApproval) api.config.reviewApprovedLabel
+              else api.config.autoApprovedLabel
             )
           )
-      }
-    } yield res
+          _ <- moduleDraftService.updateMergeRequestId(draft.module, Some(mrId))
+        } yield mrId
+    }
+
+  private def createReviews(module: UUID, reviewer: Seq[ModuleReviewer]) =
+    moduleReviewService.create(
+      ModuleReview(
+        module,
+        ModuleReviewStatus.WaitingForApproval,
+        reviewer.map(r => ModuleReviewRequest(r.id, approved = false))
+      )
+    )
+
+  private def title(author: User, protocol: ModuleCompendiumProtocol) =
+    s"@${author.username}: ${protocol.metadata.title} (${protocol.metadata.abbrev})"
+
+  private def requiredRoles(
+      keysToBeReviewed: Set[String]
+  ): Seq[ModuleReviewerRole] = {
+    val list = ListBuffer[ModuleReviewerRole]()
+    if (keysToReview.isSGLReview(keysToBeReviewed))
+      list += ModuleReviewerRole.SGL
+    if (keysToReview.isPAVReview(keysToBeReviewed))
+      list += ModuleReviewerRole.PAV
+    list.result()
+  }
+
+  private def markdownList[A](as: Iterable[A])(f: A => String): String =
+    as.foldLeft("") { case (acc, a) =>
+      s"$acc\n- ${f(a)}"
+    }
+
+  private def affectedPOs(metadata: MetadataProtocol): Set[String] =
+    metadata.po.mandatory
+      .map(_.po)
+      .appendedAll(metadata.po.optional.map(_.po))
+      .toSet
 }

@@ -3,6 +3,7 @@ package models.core
 sealed trait Person {
   def id: String
   def kind: String
+  def username: Option[String]
 }
 
 object Person {
@@ -21,14 +22,18 @@ object Person {
       status: PersonStatus
   ) extends Person {
     override val kind = DefaultKind
+    override val username: Option[String] =
+      Option.when(campusId.nonEmpty)(campusId)
   }
 
   case class Group(id: String, label: String) extends Person {
     override val kind = GroupKind
+    override val username: Option[String] = None
   }
 
   case class Unknown(id: String, label: String) extends Person {
     override val kind = UnknownKind
+    override val username: Option[String] = None
   }
 }
 

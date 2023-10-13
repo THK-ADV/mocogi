@@ -4,10 +4,12 @@ import akka.actor.ActorSystem
 import database.view.ModuleViewRepository
 import git.subscriber._
 import printing.markdown.ModuleCompendiumPrinter
-import publisher.KafkaPublisher
-import service.ModuleCompendiumService
 import service.core.StudyProgramService
-import validator.Metadata
+import service.{
+  ModuleCompendiumService,
+  ModuleDraftService,
+  ModuleUpdatePermissionService
+}
 
 import javax.inject.{Inject, Provider, Singleton}
 import scala.concurrent.ExecutionContext
@@ -18,12 +20,16 @@ class ModuleCompendiumSubscribersProvider @Inject() (
     system: ActorSystem,
     moduleCompendiumMarkdownActor: ModuleCompendiumMarkdownActor,
     metadataService: ModuleCompendiumService,
-    publisher: KafkaPublisher[Metadata],
+//    publisher: KafkaPublisher[Metadata],
     studyProgramService: StudyProgramService,
     moduleViewRepository: ModuleViewRepository,
+    moduleUpdatePermissionService: ModuleUpdatePermissionService,
+    draftService: ModuleDraftService,
     configReader: ConfigReader,
     ctx: ExecutionContext
 ) extends Provider[ModuleCompendiumSubscribers] {
+  // TODO maybe this should be one actor which does all the work transactional and
+  //  recover somehow if there is a failure
   override def get(): ModuleCompendiumSubscribers =
     ModuleCompendiumSubscribers(
       List(
@@ -38,11 +44,17 @@ class ModuleCompendiumSubscribersProvider @Inject() (
             ctx
           )
         ),
-        system.actorOf(ModuleCompendiumPublishActor.props(publisher)),
+        // system.actorOf(ModuleCompendiumPublishActor.props(publisher)),
         system.actorOf(
-          ModuleCompendiumDatabaseActor.props(
-            metadataService,
-            moduleViewRepository,
+          ModuleCompendiumDatabaseActor
+            .props(metadataService, draftService, ctx)
+        ),
+        system.actorOf(
+          ModuleCompendiumViewUpdateActor.props(moduleViewRepository, ctx)
+        ),
+        system.actorOf(
+          ModuleCompendiumPermissionUpdateActor.props(
+            moduleUpdatePermissionService,
             ctx
           )
         )

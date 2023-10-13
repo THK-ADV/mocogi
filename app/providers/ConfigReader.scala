@@ -33,6 +33,8 @@ final class ConfigReader @Inject() (config: Configuration) {
 
   def mainBranch: String = string("git.mainBranch")
 
+  def draftBranch: String = string("git.draftBranch")
+
   def modulesRootFolder: String = string("git.modulesRootFolder")
 
   def coreRootFolder: String = string("git.coreRootFolder")
@@ -42,6 +44,18 @@ final class ConfigReader @Inject() (config: Configuration) {
   def kafkaServerUrl: String = string("kafka.serverUrl")
 
   def kafkaApplicationId: String = string("kafka.applicationId")
+
+  def moduleKeysToReviewFromSgl: Seq[String] = list("moduleKeysToReview.sgl")
+
+  def moduleKeysToReviewFromPav: Seq[String] = list("moduleKeysToReview.pav")
+
+  def autoApprovedLabel: String = string("git.autoApprovedLabel")
+
+  def reviewApprovedLabel: String = string("git.reviewApprovedLabel")
+
+  private def list(key: String): Seq[String] =
+    if (config.has(key)) config.get[Seq[String]](key)
+    else throw new Throwable(s"key $key must be set in application.conf")
 
   private def string(key: String): String =
     config.getOptional[String](key) match {

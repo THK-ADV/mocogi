@@ -10,10 +10,10 @@ import scala.concurrent.{ExecutionContext, Future}
 
 trait FocusAreaService {
   def all(): Future[Seq[FocusArea]]
-  def create(input: String): Future[List[FocusArea]]
+  def create(input: String): Future[Seq[FocusArea]]
   def createOrUpdate(
       input: String
-  ): Future[List[(InsertOrUpdateResult, FocusArea)]]
+  ): Future[Seq[(InsertOrUpdateResult, FocusArea)]]
 }
 
 @Singleton
@@ -38,7 +38,7 @@ final class FocusAreaServiceImpl @Inject() (
 
   def createOrUpdate(
       input: String
-  ): Future[List[(InsertOrUpdateResult, FocusArea)]] =
+  ): Future[Seq[(InsertOrUpdateResult, FocusArea)]] =
     for {
       sps <- studyProgramService.allIds()
       pos <- FocusAreaFileParser

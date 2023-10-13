@@ -43,26 +43,27 @@ private final class ModuleCompendiumPrintingActor(
 ) extends Actor
     with Logging {
 
-  override def receive = { case CreatedOrUpdated(_, entries) =>
-    studyProgramService.allShort() onComplete {
-      case Success(sps) =>
-        entries.foreach { case (_, mc, lastModified) =>
-          print(
-            lastModified,
-            mc,
-            sp => sps.find(_.abbrev == sp)
-          )
-        }
-      case Failure(t) =>
-        logger.error(
-          s"""failed to print module compendium
+  override def receive = {
+    case CreatedOrUpdated(entries) if entries.nonEmpty =>
+      studyProgramService.allShort() onComplete {
+        case Success(sps) =>
+          entries.foreach { case (_, mc, lastModified) =>
+            print(
+              lastModified,
+              mc,
+              sp => sps.find(_.abbrev == sp)
+            )
+          }
+        case Failure(t) =>
+          logger.error(
+            s"""failed to print module compendium
              |  - cause: unable to fetch study programs from db
              |  - message: ${t.getMessage}
              |  - trace: ${t.getStackTrace.mkString(
-              "\n           "
-            )}""".stripMargin
-        )
-    }
+                "\n           "
+              )}""".stripMargin
+          )
+      }
   }
 
   private def print(

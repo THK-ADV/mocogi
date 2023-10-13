@@ -1,18 +1,21 @@
 package database.table
 
 sealed trait PrerequisiteType {
-  override def toString = this match {
-    case PrerequisiteType.Required    => "required"
-    case PrerequisiteType.Recommended => "recommended"
-  }
+  def id: String
+  override def toString = id
 }
 
 object PrerequisiteType {
-  case object Required extends PrerequisiteType
-  case object Recommended extends PrerequisiteType
-
-  def apply(string: String): PrerequisiteType = string match {
-    case "required"    => Required
-    case "recommended" => Recommended
+  case object Required extends PrerequisiteType {
+    override val id: String = "required"
   }
+  case object Recommended extends PrerequisiteType {
+    override val id: String = "recommended"
+  }
+
+  def apply(id: String): PrerequisiteType =
+    id match {
+      case "required"    => Required
+      case "recommended" => Recommended
+    }
 }

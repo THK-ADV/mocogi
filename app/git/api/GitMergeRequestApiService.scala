@@ -1,48 +1,80 @@
 package git.api
 
 import git.GitConfig
+import models.{Branch, MergeRequestId}
 import play.api.libs.ws.{EmptyBody, WSClient}
 import play.mvc.Http.Status
 
-import java.time.LocalDate
-import java.time.format.DateTimeFormatter
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 final class GitMergeRequestApiService @Inject() (
     private val ws: WSClient,
-    val gitConfig: GitConfig,
+    val config: GitConfig,
     private implicit val ctx: ExecutionContext
 ) extends GitService {
 
-  type MergeRequestID = Int
-
-  def createMergeRequest(
-      sourceBranch: String,
-      username: String,
-      description: String
-  ): Future[MergeRequestID] =
+  def create(
+      sourceBranch: Branch,
+      targetBranch: Branch,
+      title: String,
+      description: String,
+      needsApproval: Boolean,
+      labels: List[String]
+  ): Future[MergeRequestId] =
     ws
       .url(this.mergeRequestUrl)
       .withHttpHeaders(tokenHeader())
       .withQueryStringParameters(
-        "source_branch" -> sourceBranch,
-        "target_branch" -> gitConfig.mainBranch,
-        "title" -> s"$username $currentDate",
+        "source_branch" -> sourceBranch.value,
+        "target_branch" -> targetBranch.value,
+        "title" -> title,
         "description" -> description,
         "remove_source_branch" -> true.toString,
         "squash_on_merge" -> true.toString,
-        "squash" -> true.toString
+        "squash" -> true.toString,
+        "approvals_before_merge" -> (if (needsApproval) 1 else 0).toString,
+        "labels" -> labels.mkString(",")
       )
       .post(EmptyBody)
       .flatMap { res =>
         if (res.status == Status.CREATED)
-          Future.successful(res.json.\("iid").validate[Int].get)
+          Future.successful(
+            res.json.\("iid").validate[Int].map(MergeRequestId.apply).get
+          )
         else Future.failed(parseErrorMessage(res))
       }
 
-  def deleteMergeRequest(id: MergeRequestID): Future[Unit] =
+  def canBeMerged(id: MergeRequestId): Future[Unit] = {
+    def go(trys: Int): Future[Unit] =
+      ws
+        .url(s"${this.mergeRequestUrl}/${id.value}")
+        .withHttpHeaders(tokenHeader())
+        .get()
+        .flatMap { res =>
+          if (res.status != Status.OK)
+            Future.failed(parseErrorMessage(res))
+          else {
+            val mergeStatus = res.json.\("merge_status").validate[String]
+            val canBeMerged =
+              mergeStatus.map(_ == "can_be_merged").getOrElse(false)
+            if (trys <= 0)
+              Future.failed(
+                new Throwable(
+                  "timeout trying to check merge status to be mergeable"
+                )
+              )
+            else {
+              if (canBeMerged) Future.unit
+              else go(trys - 1)
+            }
+          }
+        }
+    go(15)
+  }
+
+  def delete(id: MergeRequestId): Future[Unit] =
     ws
       .url(this.deleteRequest(id))
       .withHttpHeaders(tokenHeader())
@@ -52,15 +84,25 @@ final class GitMergeRequestApiService @Inject() (
         else Future.failed(parseErrorMessage(res))
       }
 
-  private def currentDate = {
-    val now = LocalDate.now
-    val pattern = DateTimeFormatter.ofPattern("dd.MM.yyyy")
-    now.format(pattern)
-  }
+  def accept(id: MergeRequestId) =
+    ws.url(this.acceptRequest(id))
+      .withHttpHeaders(tokenHeader())
+      .withQueryStringParameters(
+        "squash" -> true.toString,
+        "should_remove_source_branch" -> true.toString
+      )
+      .put(EmptyBody)
+      .flatMap { res =>
+        if (res.status == Status.OK) Future.unit
+        else Future.failed(parseErrorMessage(res))
+      }
 
   private def mergeRequestUrl =
     s"${projectsUrl()}/merge_requests"
 
-  private def deleteRequest(id: MergeRequestID) =
-    s"$mergeRequestUrl/$id"
+  private def deleteRequest(id: MergeRequestId) =
+    s"$mergeRequestUrl/${id.value}"
+
+  private def acceptRequest(id: MergeRequestId) =
+    s"$mergeRequestUrl/${id.value}/merge"
 }
