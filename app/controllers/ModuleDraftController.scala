@@ -15,20 +15,13 @@ import controllers.formats.{
   PipelineErrorFormat
 }
 import models.{ModuleCompendiumProtocol, User}
-import parser.ParsingError
 import play.api.libs.json.Json
 import play.api.mvc.{AbstractController, ControllerComponents}
-import printer.PrintingError
-import service.{
-  ModuleDraftService,
-  ModuleUpdatePermissionService,
-  PipelineError
-}
-import validator.ValidationError
+import service.{ModuleDraftService, ModuleUpdatePermissionService}
 
 import java.util.UUID
 import javax.inject.{Inject, Singleton}
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
 
 @Singleton
 final class ModuleDraftController @Inject() (
@@ -82,49 +75,21 @@ final class ModuleDraftController @Inject() (
       }
 
   // PUT moduleDrafts/:id
-  def createOrUpdateModuleDraft(moduleId: UUID, fail: String) =
+  def createOrUpdateModuleDraft(moduleId: UUID) =
     auth(parse.json[ModuleCompendiumProtocol]) andThen
       hasPermissionToEditDraft(moduleId) andThen
       new VersionSchemeAction(VersionSchemeHeader) async { r =>
-        val err: Option[PipelineError] = fail match {
-          case "validator" =>
-            Some(
-              PipelineError.Validator(
-                ValidationError(List("err1", "err2", "err3")),
-                Some(moduleId)
-              )
-            )
-          case "parser" =>
-            Some(
-              PipelineError.Parser(
-                ParsingError("a string", "a number"),
-                Some(moduleId)
-              )
-            )
-          case "printer" =>
-            Some(
-              PipelineError.Printer(
-                PrintingError("a number", "a string"),
-                Some(moduleId)
-              )
-            )
-          case _ => None
-        }
-        err match {
-          case Some(err) => Future.successful(BadRequest(Json.toJson(err)))
-          case None =>
-            moduleDraftService
-              .createOrUpdate(
-                moduleId,
-                r.body,
-                User(r.request.token.username),
-                r.versionScheme
-              )
-              .map {
-                case Left(err) => BadRequest(Json.toJson(err))
-                case Right(_)  => NoContent
-              }
-        }
+        moduleDraftService
+          .createOrUpdate(
+            moduleId,
+            r.body,
+            User(r.request.token.username),
+            r.versionScheme
+          )
+          .map {
+            case Left(err) => BadRequest(Json.toJson(err))
+            case Right(_)  => NoContent
+          }
       }
 
   // DELETE moduleDrafts/:id

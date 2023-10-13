@@ -49,7 +49,7 @@ GET           /metadata                           controllers.ModuleController.a
 
 GET           /moduleDrafts/own                   controllers.ModuleDraftController.moduleDrafts()
 POST          /moduleDrafts                       controllers.ModuleDraftController.createNewModuleDraft()
-PUT           /moduleDrafts/:id/:fail             controllers.ModuleDraftController.createOrUpdateModuleDraft(id: java.util.UUID, fail: java.lang.String)
+PUT           /moduleDrafts/:id                   controllers.ModuleDraftController.createOrUpdateModuleDraft(id: java.util.UUID)
 DELETE        /moduleDrafts/:id                   controllers.ModuleDraftController.deleteModuleDraft(id: java.util.UUID)
 
 # Review
