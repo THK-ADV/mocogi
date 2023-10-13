@@ -14,7 +14,6 @@ import parsing.metadata.VersionScheme
 import parsing.types._
 import play.api.libs.json._
 import printing.yaml.ModuleCompendiumYamlPrinter
-import service.ModuleCompendiumNormalizer.normalize
 import service.ModuleCompendiumProtocolDeltaUpdate.deltaUpdate
 import validator.{Metadata, ValidationError}
 
@@ -155,8 +154,8 @@ final class ModuleDraftServiceImpl @Inject() (
     for {
       mc <- moduleCompendiumService.get(moduleId)
       (_, modifiedKeys) = deltaUpdate(
-        normalize(toProtocol(mc)),
-        normalize(protocol),
+        toProtocol(mc).normalize(),
+        protocol.normalize(),
         None,
         Set.empty
       )
@@ -181,8 +180,8 @@ final class ModuleDraftServiceImpl @Inject() (
       origin <- moduleCompendiumService.getOrNull(draft.module)
       existing = draft.protocol()
       (updated, modifiedKeys) = deltaUpdate(
-        normalize(existing),
-        normalize(protocol),
+        existing.normalize(),
+        protocol.normalize(),
         origin,
         draft.modifiedKeys
       )
@@ -216,10 +215,10 @@ final class ModuleDraftServiceImpl @Inject() (
     s"updated keys: ${updatedKeys.mkString(", ")}"
 
   private def toJson(mc: ModuleCompendium) =
-    Json.toJson(normalize(mc))
+    Json.toJson(mc.normalize())
 
   private def toJson(protocol: ModuleCompendiumProtocol) =
-    Json.toJson(normalize(protocol))
+    Json.toJson(protocol.normalize())
 
   private def toProtocol(
       mcOutput: ModuleCompendiumOutput

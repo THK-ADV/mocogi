@@ -8,7 +8,7 @@ import validator.Workload
 
 import java.util.UUID
 
-final class ModuleDraftServiceSpec extends AnyWordSpec {
+final class ModuleCompendiumProtocolDeltaUpdateSpec extends AnyWordSpec {
   import ModuleCompendiumProtocolDeltaUpdate.deltaUpdate
 
   private val existing = ModuleCompendiumProtocol(
@@ -56,7 +56,7 @@ final class ModuleDraftServiceSpec extends AnyWordSpec {
     )
   )
 
-  "A Module Draft Service" should {
+  "A Module Compendium Protocol Delta Update" should {
     "update a module compendium by keys" in {
       import monocle.syntax.all._
 
