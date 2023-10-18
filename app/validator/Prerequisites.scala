@@ -1,5 +1,6 @@
 package validator
 
+import models.Module
 import models.core.PO
 
 case class Prerequisites(

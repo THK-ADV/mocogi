@@ -23,10 +23,6 @@ trait ModuleCompendiumRepository {
   def allPreview(
       filter: Map[String, Seq[String]]
   ): Future[Seq[(UUID, String, String)]]
-  def allIds(): Future[Seq[(UUID, String)]]
-  def get(id: UUID): Future[ModuleCompendiumOutput]
-  def getOrNull(id: UUID): Future[Option[ModuleCompendiumOutput]]
-  def paths(ids: Seq[UUID]): Future[Seq[(UUID, GitFilePath)]]
 }
 
 @Singleton
@@ -89,11 +85,13 @@ final class ModuleCompendiumRepositoryImpl @Inject() (
   override protected val makeFilter
       : PartialFunction[(String, String), ModuleCompendiumTable => Rep[
         Boolean
-      ]] = { case ("user", value) =>
-    t =>
-      responsibilityTable
-        .filter(r => r.metadata === t.id && r.isPerson(value))
-        .exists
+      ]] = {
+    case ("user", value) =>
+      t =>
+        responsibilityTable
+          .filter(r => r.metadata === t.id && r.isPerson(value))
+          .exists
+    case ("id", value) => _.id === UUID.fromString(value)
   }
 
   override def createOrUpdateMany(
@@ -128,33 +126,11 @@ final class ModuleCompendiumRepositoryImpl @Inject() (
   override def all(filter: Map[String, Seq[String]]) =
     retrieve(allWithFilter(filter))
 
-  override def allIds() =
-    db.run(
-      tableQuery
-        .map(m => (m.id, m.abbrev))
-        .result
-    )
-
   override def allPreview(filter: Map[String, Seq[String]]) =
     db.run(
       allWithFilter(filter)
         .map(m => (m.id, m.title, m.abbrev))
         .result
-    )
-
-  override def get(id: UUID) =
-    retrieve(tableQuery.filter(_.id === id)).single
-
-  override def getOrNull(id: UUID) =
-    retrieve(tableQuery.filter(_.id === id)).map(_.headOption)
-
-  override def paths(ids: Seq[UUID]) =
-    db.run(
-      tableQuery
-        .filter(_.id.inSet(ids))
-        .map(a => (a.id, a.gitPath))
-        .result
-        .map(_.map(a => (a._1, GitFilePath(a._2))))
     )
 
   private def updateAction(

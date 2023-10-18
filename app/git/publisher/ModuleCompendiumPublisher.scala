@@ -7,21 +7,19 @@ import git.subscriber.ModuleCompendiumSubscribers
 import play.api.Logging
 import service._
 
-import java.util.UUID
 import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
-import scala.util.{Failure, Success}
 
 object ModuleCompendiumPublisher {
   def props(
       metadataParsingService: MetadataParsingService,
-      metadataValidatingService: MetadataValidatingService,
+      moduleCompendiumService: ModuleCompendiumService,
       subscribers: ModuleCompendiumSubscribers,
       ctx: ExecutionContext
   ) = Props(
     new ModuleCompendiumPublisherImpl(
       metadataParsingService,
-      metadataValidatingService,
+      moduleCompendiumService,
       subscribers,
       ctx
     )
@@ -29,39 +27,40 @@ object ModuleCompendiumPublisher {
 
   private final class ModuleCompendiumPublisherImpl(
       private val parsingService: MetadataParsingService,
-      private val validatingService: MetadataValidatingService,
+      moduleCompendiumService: ModuleCompendiumService,
       private val subscribers: ModuleCompendiumSubscribers,
       private implicit val ctx: ExecutionContext
   ) extends Actor
       with Logging {
+
     override def receive = { case NotifySubscribers(changes) =>
-      go(changes)
+//      go(changes)
     }
 
-    private def go(changes: Changes): Unit = {
-      val allChanges = changes.added ++ changes.modified
-      val allPrints =
-        allChanges.map(c => (Option.empty[UUID], Print(c._2.value)))
-      val f = for {
-        parsed <- parsingService.parseMany(allPrints)
-        validates <- continue(parsed, validatingService.validateMany)
-      } yield validates.map(_.map { case (print, mc) =>
-        (allChanges.find(_._2.value == print.value).get._1, mc.normalize())
-      })
-
-      f onComplete {
-        case Success(s) =>
-          s match {
-            case Right(mcs) =>
-              subscribers.createdOrUpdated(
-                mcs.map(t => (t._1, t._2, changes.timestamp))
-              )
-            case Left(errs) => logPipelineErrors(errs)
-          }
-        case Failure(t) =>
-          logFutureFailure(t)
-      }
-    }
+//    private def go(changes: Changes): Unit = { // TODO
+//      val allChanges = changes.added ++ changes.modified
+//      val allPrints =
+//        allChanges.map(c => (Option.empty[UUID], Print(c._2.value)))
+//      val f = for {
+//        parsed <- parsingService.parseMany(allPrints)
+//        validates <- continue(parsed, validatingService.validateMany)
+//      } yield validates.map(_.map { case (print, mc) =>
+//        (allChanges.find(_._2.value == print.value).get._1, mc.normalize())
+//      })
+//
+//      f onComplete {
+//        case Success(s) =>
+//          s match {
+//            case Right(mcs) =>
+//              subscribers.createdOrUpdated(
+//                mcs.map(t => (t._1, t._2, changes.timestamp))
+//              )
+//            case Left(errs) => logPipelineErrors(errs)
+//          }
+//        case Failure(t) =>
+//          logFutureFailure(t)
+//      }
+//    }
 
     private def logPipelineErrors(errs: Seq[PipelineError]): Unit =
       logger.error(

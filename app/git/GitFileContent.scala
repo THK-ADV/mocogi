@@ -1,3 +1,3 @@
 package git
 
-case class GitFileContent(value: String)
+case class GitFileContent(value: String) extends AnyVal

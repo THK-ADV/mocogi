@@ -65,7 +65,6 @@ trait ModuleDraftService {
 @Singleton
 final class ModuleDraftServiceImpl @Inject() (
     private val moduleDraftRepository: ModuleDraftRepository,
-    private val metadataValidatingService: MetadataValidatingService,
     private val moduleCompendiumPrinter: ModuleCompendiumYamlPrinter,
     private val metadataParsingService: MetadataParsingService,
     private val moduleCompendiumService: ModuleCompendiumService,
@@ -330,15 +329,17 @@ final class ModuleDraftServiceImpl @Inject() (
     def validate(
         metadata: ParsedMetadata
     ): Future[Either[PipelineError, Metadata]] =
-      metadataValidatingService
-        .validate(metadata)
-        .map(
-          _.bimap(
+      moduleCompendiumService.allModules(Map.empty).map { existing =>
+        MetadataValidatingService
+          .validate(existing, metadata)
+          .bimap(
             errs =>
-              PipelineError.Validator(ValidationError(errs), Some(metadata.id)),
+              PipelineError
+                .Validator(ValidationError(errs), Some(metadata.id)),
             identity
           )
-        )
+      }
+
     for {
       parsed <- continueWith(print())(parse)
       validated <- continueWith(parsed)(a => validate(a._2._1))

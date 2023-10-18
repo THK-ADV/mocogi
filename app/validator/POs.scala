@@ -1,5 +1,6 @@
 package validator
 
+import models.Module
 import models.core.{PO, Specialization}
 import parsing.types.POMandatory
 

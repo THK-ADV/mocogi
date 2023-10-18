@@ -9,7 +9,6 @@ import git._
 import git.api.GitRepositoryApiService
 import git.publisher.GitFilesDownloadActor
 import git.webhook.{GitMergeEventHandlingActor, GitPushEventHandler}
-import play.api.Logging
 import play.api.libs.json._
 import play.api.mvc._
 
@@ -33,7 +32,6 @@ class GitWebhookController @Inject() (
     gitRepositoryService: GitRepositoryApiService,
     implicit val ctx: ExecutionContext
 ) extends AbstractController(cc)
-    with Logging
     with ThrowableWrites {
 
   def onPushEvent() = isAuthenticated(

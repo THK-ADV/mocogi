@@ -12,7 +12,7 @@ import javax.inject.Singleton
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
-object GitFilesDownloadActor {
+object GitFilesDownloadActor { // TODO remove if bootstrap function is enabled
   def props(
       gitConfig: GitConfig,
       broker: GitFilesBroker,

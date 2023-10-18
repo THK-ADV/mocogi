@@ -1,12 +1,20 @@
 package controllers
 
 import auth.AuthorizationAction
-import controllers.formats.{MetadataOutputFormat, ModuleFormat, StudyProgramAtomicFormat}
-import database.view.{ModuleViewRepository, PersonShort, StudyProgramModuleAssociation}
+import controllers.formats.{
+  MetadataOutputFormat,
+  ModuleFormat,
+  StudyProgramAtomicFormat
+}
+import database.view.{
+  ModuleViewRepository,
+  PersonShort,
+  StudyProgramModuleAssociation
+}
 import models.User
 import play.api.libs.json.{Format, Json}
 import play.api.mvc.{AbstractController, ControllerComponents}
-import service.{Module, ModuleCompendiumService, ModuleUpdatePermissionService}
+import service.{ModuleCompendiumService, ModuleUpdatePermissionService}
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext

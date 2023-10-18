@@ -1,14 +1,11 @@
-import parsing.types.{Content, ModuleCompendium, ParsedMetadata}
+import parsing.types.{Content, ParsedMetadata}
 
-import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
 
 package object service {
   type Result[A] = Future[Either[Seq[PipelineError], Seq[A]]]
 
-  type PrintingResult = Result[(UUID, Print)]
   type ParsingResult = Result[(Print, ParsedMetadata, Content, Content)]
-  type ValidationResult = Result[(Print, ModuleCompendium)]
 
   def continue[A, B](
       e: Either[Seq[PipelineError], Seq[A]],
@@ -22,7 +19,7 @@ package object service {
     }
 
   def continueWith[A, B](e: Either[PipelineError, A])(
-    f: A => Future[Either[PipelineError, B]]
+      f: A => Future[Either[PipelineError, B]]
   )(implicit ctx: ExecutionContext): Future[Either[PipelineError, (A, B)]] =
     e match {
       case Left(errs) =>
