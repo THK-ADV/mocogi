@@ -139,7 +139,7 @@ final class ModuleDraftServiceImpl @Inject() (
       versionScheme: VersionScheme
   ): Future[Either[PipelineError, ModuleDraft]] =
     for {
-      mc <- moduleCompendiumService.get(moduleId)
+      mc <- moduleCompendiumService.getFromStaging(moduleId)
       (_, modifiedKeys) = deltaUpdate(
         toProtocol(mc).normalize(),
         protocol.normalize(),
@@ -164,12 +164,12 @@ final class ModuleDraftServiceImpl @Inject() (
   ): Future[Either[PipelineError, Unit]] =
     for {
       draft <- moduleDraftRepository.getByModule(moduleId)
-      origin <- moduleCompendiumService.getOrNull(draft.module)
+      origin <- moduleCompendiumService.getFromStaging(draft.module)
       existing = draft.protocol()
       (updated, modifiedKeys) = deltaUpdate(
         existing.normalize(),
         protocol.normalize(),
-        origin,
+        Some(origin),
         draft.modifiedKeys
       )
       res <- pipeline(updated, versionScheme, moduleId)
