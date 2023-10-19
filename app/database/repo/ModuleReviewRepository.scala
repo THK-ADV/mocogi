@@ -28,4 +28,7 @@ final class ModuleReviewRepository @Inject() (
       query: Query[ModuleReviewTable, (UUID, ModuleReviewStatus), Seq]
   ): Future[Seq[(UUID, ModuleReviewStatus)]] =
     db.run(query.result)
+
+  def delete(moduleId: UUID) =
+    db.run(tableQuery.filter(_.moduleDraft === moduleId).delete)
 }

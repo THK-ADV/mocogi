@@ -3,6 +3,7 @@ package service
 import database.repo.{ModuleReviewRepository, ModuleReviewRequestRepository}
 import models.{ModuleReview, User}
 
+import java.util.UUID
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -20,6 +21,12 @@ final class ModuleReviewService @Inject() (
         review.requests.map(r => (review.moduleDraft, r.reviewer, r.approved))
       )
     } yield review
+
+  def delete(moduleId: UUID) =
+    for {
+      _ <- reviewRequestRepository.delete(moduleId)
+      _ <- reviewRepository.delete(moduleId)
+    } yield ()
 
   def getForUser(user: User) =
     reviewRequestRepository.allFromUser(user)

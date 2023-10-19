@@ -19,7 +19,7 @@ final class ModuleDraftReviewService @Inject() (
     private implicit val ctx: ExecutionContext
 ) {
 
-  def createReview(moduleId: UUID, author: User) =
+  def create(moduleId: UUID, author: User) =
     for {
       draft <- moduleDraftService.getByModule(moduleId)
       _ <-
@@ -34,13 +34,20 @@ final class ModuleDraftReviewService @Inject() (
         }
     } yield ()
 
-  def closeReview(moduleId: UUID) =
+  def close(moduleId: UUID) =
     for {
       draft <- moduleDraftService.getByModule(moduleId)
       if draft.mergeRequest.isDefined
       res <- api.delete(draft.mergeRequest.get)
       _ <- moduleDraftService.updateMergeRequestId(draft.module, None)
+      _ <- moduleReviewService.delete(moduleId)
     } yield res
+
+  def delete(moduleId: UUID, mergeRequestId: MergeRequestId) =
+    for {
+      _ <- api.delete(mergeRequestId)
+      _ <- moduleReviewService.delete(moduleId)
+    } yield ()
 
   private def createApproveReview(draft: ModuleDraft, author: User) = {
     def description(reviewer: Seq[ModuleReviewer]) =

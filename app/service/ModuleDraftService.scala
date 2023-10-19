@@ -37,9 +37,7 @@ trait ModuleDraftService {
       versionScheme: VersionScheme
   ): Future[Either[PipelineError, ModuleDraft]]
 
-  def deleteDraftWithBranch(moduleId: UUID): Future[Unit]
-
-  def deleteDraft(moduleId: UUID): Future[Unit]
+  def delete(moduleId: UUID): Future[Unit]
 
   def deleteDrafts(moduleIds: Seq[UUID]): Future[Unit]
 
@@ -105,14 +103,11 @@ final class ModuleDraftServiceImpl @Inject() (
       Set.empty
     )
 
-  def deleteDraftWithBranch(moduleId: UUID): Future[Unit] =
+  def delete(moduleId: UUID): Future[Unit] =
     for {
       _ <- gitBranchService.deleteBranch(moduleId)
-      _ <- deleteDraft(moduleId)
+      _ <- moduleDraftRepository.delete(moduleId).map(_ => ())
     } yield ()
-
-  override def deleteDraft(moduleId: UUID) =
-    moduleDraftRepository.delete(moduleId).map(_ => ())
 
   override def deleteDrafts(moduleIds: Seq[UUID]) =
     moduleDraftRepository.deleteDrafts(moduleIds).map(_ => ())
