@@ -5,7 +5,7 @@ import git.GitConfig
 import git.api.GitFileDownloadService
 import git.publisher.{CoreDataPublisher, ModuleCompendiumPublisher}
 import git.webhook.GitPushEventHandlingActor
-import service.ModuleDraftService
+import service.{ModuleDraftService, ModuleReviewService}
 
 import javax.inject.{Inject, Provider}
 import scala.concurrent.ExecutionContext
@@ -16,6 +16,7 @@ final class GitMergeEventHandlingActorProvider @Inject() (
     downloadService: GitFileDownloadService,
     moduleCompendiumPublisher: ModuleCompendiumPublisher,
     coreDataPublisher: CoreDataPublisher,
+    moduleReviewService: ModuleReviewService,
     gitConfig: GitConfig,
     ctx: ExecutionContext
 ) extends Provider[GitPushEventHandlingActor] {
@@ -26,6 +27,7 @@ final class GitMergeEventHandlingActorProvider @Inject() (
         downloadService,
         moduleCompendiumPublisher,
         coreDataPublisher,
+        moduleReviewService,
         gitConfig,
         ctx
       )

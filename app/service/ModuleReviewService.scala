@@ -28,6 +28,9 @@ final class ModuleReviewService @Inject() (
       _ <- reviewRepository.delete(moduleId)
     } yield ()
 
+  def deleteMany(moduleIds: List[UUID]) =
+    Future.sequence(moduleIds.map(delete))
+
   def getForUser(user: User) =
     reviewRequestRepository.allFromUser(user)
 }

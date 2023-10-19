@@ -8,7 +8,7 @@ import git.{GitChanges, GitConfig, GitFilePath}
 import models.{Branch, CommitId}
 import play.api.Logging
 import play.api.libs.json.{JsArray, JsError, JsResult, JsValue}
-import service.ModuleDraftService
+import service.{ModuleDraftService, ModuleReviewService}
 
 import java.time.LocalDateTime
 import javax.inject.Singleton
@@ -76,6 +76,7 @@ object GitPushEventHandlingActor {
       downloadService: GitFileDownloadService,
       moduleCompendiumPublisher: ModuleCompendiumPublisher,
       coreDataPublisher: CoreDataPublisher,
+      moduleReviewService: ModuleReviewService,
       gitConfig: GitConfig,
       ctx: ExecutionContext
   ) = Props(
@@ -84,6 +85,7 @@ object GitPushEventHandlingActor {
       downloadService,
       moduleCompendiumPublisher,
       coreDataPublisher,
+      moduleReviewService,
       gitConfig,
       ctx
     )
@@ -94,6 +96,7 @@ object GitPushEventHandlingActor {
       downloadService: GitFileDownloadService,
       moduleCompendiumPublisher: ModuleCompendiumPublisher,
       coreDataPublisher: CoreDataPublisher,
+      moduleReviewService: ModuleReviewService,
       implicit val gitConfig: GitConfig,
       implicit val ctx: ExecutionContext
   ) extends Actor
@@ -186,13 +189,14 @@ object GitPushEventHandlingActor {
         .map(_.moduleId)
         .collect { case Some(module) => module }
       logger.info(s"deleting module drafts ${modules.mkString(",")} ...")
-      moduleDraftService
-        .deleteDrafts(modules)
-        .map(_ =>
-          logger.info(
-            s"successfully deleted module drafts: ${modules.mkString(",")}"
-          )
-        )
+      for {
+        _ <- moduleReviewService.deleteMany(
+          modules
+        ) // TODO replace with cascading delete
+        _ <- moduleDraftService.deleteDrafts(modules)
+      } yield logger.info(
+        s"successfully deleted module drafts: ${modules.mkString(",")}"
+      )
     }
   }
 }
