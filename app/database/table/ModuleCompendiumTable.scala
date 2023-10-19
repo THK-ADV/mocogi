@@ -94,21 +94,6 @@ final class ModuleCompendiumTable(tag: Tag)
 
   def particularitiesEn = column[String]("particularities_en")
 
-  def moduleTypeFk =
-    foreignKey("module_type", moduleType, TableQuery[ModuleTypeTable])(_.abbrev)
-
-  def languageFk =
-    foreignKey("language", language, TableQuery[LanguageTable])(_.abbrev)
-
-  def seasonFk =
-    foreignKey("season", season, TableQuery[SeasonTable])(_.abbrev)
-
-  def statusFk =
-    foreignKey("status", status, TableQuery[StatusTable])(_.abbrev)
-
-  def locationFk =
-    foreignKey("location", location, TableQuery[LocationTable])(_.abbrev)
-
   override def * = (
     id,
     gitPath,

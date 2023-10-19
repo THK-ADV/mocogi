@@ -1,8 +1,8 @@
 package validator
 
+import models.Module
 import models.core.{Competence, GlobalCriteria, Language, Location, ModuleType, Season, Status}
 import parsing.types._
-
 import java.util.UUID
 
 case class Metadata(

@@ -1,5 +1,6 @@
 package printing
 
+import models.Module
 import models.core._
 import org.scalatest.EitherValues
 import org.scalatest.wordspec.AnyWordSpec
@@ -7,14 +8,7 @@ import parsing.types._
 import parsing.withFile0
 import printing.markdown.ModuleCompendiumMarkdownPrinter
 import printing.markdown.ModuleCompendiumMarkdownPrinter.contentBlock
-import validator.{
-  Metadata,
-  Module,
-  ModuleRelation,
-  POs,
-  Prerequisites,
-  Workload
-}
+import validator.{Metadata, ModuleRelation, POs, Prerequisites, Workload}
 
 import java.time.{LocalDate, LocalDateTime}
 import java.util.UUID
@@ -32,7 +26,7 @@ final class ModuleCompendiumMarkdownPrinterSpec
         "title",
         "abbrev",
         ModuleType("module", "module", "module"),
-        Some(ModuleRelation.Child(Module(UUID.randomUUID(), "abbrev"))),
+        Some(ModuleRelation.Child(Module(UUID.randomUUID(), "title", "abbrev"))),
         ECTS(5, Nil),
         Language("lang", "lang", "lang"),
         1,

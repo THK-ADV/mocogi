@@ -7,9 +7,7 @@ import controllers.GitWebhookController.{
 import controllers.formats.ThrowableWrites
 import git._
 import git.api.GitRepositoryApiService
-import git.publisher.GitFilesDownloadActor
-import git.webhook.{GitMergeEventHandlingActor, GitPushEventHandler}
-import play.api.Logging
+import git.webhook.GitPushEventHandlingActor
 import play.api.libs.json._
 import play.api.mvc._
 
@@ -28,26 +26,13 @@ object GitWebhookController {
 class GitWebhookController @Inject() (
     cc: ControllerComponents,
     gitConfig: GitConfig,
-    gitMergeEventHandlingActor: GitMergeEventHandlingActor,
-    downloadActor: GitFilesDownloadActor,
+    gitMergeEventHandlingActor: GitPushEventHandlingActor,
     gitRepositoryService: GitRepositoryApiService,
     implicit val ctx: ExecutionContext
 ) extends AbstractController(cc)
-    with Logging
     with ThrowableWrites {
 
   def onPushEvent() = isAuthenticated(
-    Action(parse.json) { implicit r =>
-      GitPushEventHandler.handlePushEvent(
-        downloadActor,
-        moduleMode,
-        gitConfig.modulesRootFolder
-      )
-      NoContent
-    }
-  )
-
-  def onMergeEvent() = isAuthenticated(
     Action(parse.json) { implicit r =>
       gitMergeEventHandlingActor.handle(r.body)
       NoContent
@@ -62,10 +47,10 @@ class GitWebhookController @Inject() (
             core <- gitRepositoryService.listCoreFiles()
             modules <- gitRepositoryService.listModuleFiles()
           } yield {
-            downloadActor.download(
-              GitChanges(core ::: modules),
-              gitConfig.projectId
-            )
+//            downloadActor.download( // TODO
+//              GitChanges(core ::: modules),
+//              gitConfig.projectId
+//            )
             NoContent
           }
         } else

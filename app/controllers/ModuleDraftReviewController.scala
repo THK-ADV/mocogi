@@ -28,14 +28,14 @@ final class ModuleDraftReviewController @Inject() (
   def create(moduleId: UUID) =
     auth andThen hasPermissionToEditDraft(moduleId) async { r =>
       reviewService
-        .createReview(moduleId, User(r.token.username))
+        .create(moduleId, User(r.token.username))
         .map(_ => Created)
     }
 
   def delete(moduleId: UUID) =
     auth andThen hasPermissionToEditDraft(moduleId) async { r =>
       reviewService
-        .closeReview(moduleId)
+        .close(moduleId)
         .map(_ => NoContent)
     }
 }

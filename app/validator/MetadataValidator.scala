@@ -1,5 +1,6 @@
 package validator
 
+import models.Module
 import parsing.types._
 
 import java.util.UUID

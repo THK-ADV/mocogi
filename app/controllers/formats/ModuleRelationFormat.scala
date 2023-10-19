@@ -1,7 +1,8 @@
 package controllers.formats
 
+import models.Module
 import play.api.libs.json.{Format, JsError, Json, OFormat}
-import validator.{Module, ModuleRelation}
+import validator.ModuleRelation
 
 trait ModuleRelationFormat extends ModuleFormat {
   implicit val moduleRelationFormat: Format[ModuleRelation] =

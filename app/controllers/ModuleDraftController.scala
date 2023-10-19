@@ -17,16 +17,21 @@ import controllers.formats.{
 import models.{ModuleCompendiumProtocol, User}
 import play.api.libs.json.Json
 import play.api.mvc.{AbstractController, ControllerComponents}
-import service.{ModuleDraftService, ModuleUpdatePermissionService}
+import service.{
+  ModuleDraftReviewService,
+  ModuleDraftService,
+  ModuleUpdatePermissionService
+}
 
 import java.util.UUID
 import javax.inject.{Inject, Singleton}
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 final class ModuleDraftController @Inject() (
     cc: ControllerComponents,
     val moduleDraftService: ModuleDraftService,
+    val moduleDraftReviewService: ModuleDraftReviewService,
     val auth: AuthorizationAction,
     val moduleUpdatePermissionService: ModuleUpdatePermissionService,
     implicit val ctx: ExecutionContext
@@ -95,7 +100,15 @@ final class ModuleDraftController @Inject() (
   // DELETE moduleDrafts/:id
   def deleteModuleDraft(moduleId: UUID) =
     auth andThen hasPermissionToEditDraft(moduleId) async { _ =>
-      moduleDraftService.deleteDraftWithBranch(moduleId).map(_ => NoContent)
+      for {
+        draft <- moduleDraftService.getByModule(moduleId)
+        _ <- moduleDraftService.delete(moduleId)
+        _ <- draft.mergeRequest match {
+          case Some(mergeRequest) =>
+            moduleDraftReviewService.delete(moduleId, mergeRequest)
+          case None => Future.unit
+        }
+      } yield NoContent
     }
 }
 

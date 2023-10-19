@@ -3,7 +3,7 @@ package service
 import database.repo.ModuleUpdatePermissionRepository
 import models.ModuleUpdatePermissionType.{Granted, Inherited}
 import models.core.Person
-import models.{ModuleUpdatePermission, User}
+import models.{Module, ModuleUpdatePermission, User}
 
 import java.util.UUID
 import javax.inject.{Inject, Singleton}

@@ -3,13 +3,22 @@ package git
 import models.ModuleDraft
 
 import java.util.UUID
+import scala.util.Try
 
-sealed trait GitFilePath {
+sealed trait GitFilePath extends Any {
   def value: String
+  override def toString = value
 }
 
 object GitFilePath {
-  private case class GitFilePathImpl(value: String) extends GitFilePath
+  private case class GitFilePathImpl(value: String)
+      extends AnyVal
+      with GitFilePath
+
+  private def modulePrefix(implicit gitConfig: GitConfig) =
+    s"${gitConfig.modulesRootFolder}/"
+
+  private def moduleFileExt = ".md"
 
   def apply(path: String): GitFilePath =
     GitFilePathImpl(path)
@@ -18,5 +27,24 @@ object GitFilePath {
     apply(draft.module)
 
   def apply(moduleId: UUID)(implicit gitConfig: GitConfig): GitFilePath =
-    apply(s"${gitConfig.modulesRootFolder}/${moduleId.toString}.md")
+    apply(s"$modulePrefix${moduleId.toString}$moduleFileExt")
+
+  implicit class Ops(val self: GitFilePath) extends AnyVal {
+    def moduleId(implicit gitConfig: GitConfig): Option[UUID] = {
+      val prefix = modulePrefix
+      val suffix = moduleFileExt
+      if (self.value.startsWith(prefix) && self.value.endsWith(suffix)) {
+        Try(
+          UUID.fromString(
+            self.value.stripPrefix(prefix).stripSuffix(suffix)
+          )
+        ).toOption
+      } else {
+        None
+      }
+    }
+
+    def isModule(implicit gitConfig: GitConfig): Boolean =
+      self.value.startsWith(modulePrefix) && self.value.endsWith(moduleFileExt)
+  }
 }

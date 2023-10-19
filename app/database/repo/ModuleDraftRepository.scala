@@ -1,8 +1,8 @@
 package database.repo
 
 import database.table
-import database.table.ModuleDraftTable
-import models.{CommitId, MergeRequestId, ModuleDraft, User}
+import database.table.{ModuleDraftTable, branchColumnType}
+import models._
 import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfigProvider}
 import play.api.libs.json.JsValue
 import service.Print
@@ -40,10 +40,6 @@ trait ModuleDraftRepository {
   def getByModuleOpt(moduleId: UUID): Future[Option[ModuleDraft]]
 
   def hasModuleDraft(moduleId: UUID): Future[Boolean]
-
-  def getByMergeRequest(
-      mergeRequestId: MergeRequestId
-  ): Future[Seq[ModuleDraft]]
 
   def updateMergeRequestId(
       moduleId: UUID,
@@ -152,11 +148,4 @@ final class ModuleDraftRepositoryImpl @Inject() (
 
   override def getByModuleOpt(moduleId: UUID) =
     db.run(tableQuery.filter(_.module === moduleId).result.map(_.headOption))
-
-  override def getByMergeRequest(mergeRequestId: MergeRequestId) =
-    db.run(
-      tableQuery
-        .filter(_.mergeRequestId === mergeRequestId)
-        .result
-    )
 }

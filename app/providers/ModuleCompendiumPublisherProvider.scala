@@ -3,7 +3,7 @@ package providers
 import akka.actor.ActorSystem
 import git.publisher.ModuleCompendiumPublisher
 import git.subscriber.ModuleCompendiumSubscribers
-import service.{MetadataParsingService, MetadataValidatingService}
+import service.{MetadataParsingService, ModuleCompendiumService}
 
 import javax.inject.{Inject, Provider, Singleton}
 import scala.concurrent.ExecutionContext
@@ -12,7 +12,7 @@ import scala.concurrent.ExecutionContext
 final class ModuleCompendiumPublisherProvider @Inject() (
     system: ActorSystem,
     metadataParsingService: MetadataParsingService,
-    metadataValidatingService: MetadataValidatingService,
+    moduleCompendiumService: ModuleCompendiumService,
     subscribers: ModuleCompendiumSubscribers,
     ctx: ExecutionContext
 ) extends Provider[ModuleCompendiumPublisher] {
@@ -20,7 +20,7 @@ final class ModuleCompendiumPublisherProvider @Inject() (
     system.actorOf(
       ModuleCompendiumPublisher.props(
         metadataParsingService,
-        metadataValidatingService,
+        moduleCompendiumService,
         subscribers,
         ctx
       )

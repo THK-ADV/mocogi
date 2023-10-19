@@ -1,9 +1,8 @@
 package database.repo
 
 import database.table.ModuleUpdatePermissionTable
-import models.{ModuleUpdatePermissionType, User}
+import models.{Module, ModuleUpdatePermissionType, User}
 import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfigProvider}
-import service.Module
 import slick.jdbc.JdbcProfile
 
 import java.util.UUID

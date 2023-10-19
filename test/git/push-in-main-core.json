@@ -1,0 +1,77 @@
+{
+  "object_kind": "push",
+  "event_name": "push",
+  "before": "97d541c1148bc14a7d19510601446b2ac075940c",
+  "after": "f20d5fca2facddb21a2e122516d42c7918715524",
+  "ref": "refs/heads/master",
+  "checkout_sha": "f20d5fca2facddb21a2e122516d42c7918715524",
+  "message": null,
+  "user_id": 297,
+  "user_name": "Alexander Dobrynin",
+  "user_username": "adobryni",
+  "user_email": "",
+  "user_avatar": "https://git.st.archi-lab.io/uploads/-/system/user/avatar/297/avatar.png",
+  "project_id": 7983,
+  "project": {
+    "id": 7983,
+    "name": "Modulhandbuecher Test",
+    "description": "",
+    "web_url": "https://git.st.archi-lab.io/adobryni/modulhandbuecher_test",
+    "avatar_url": null,
+    "git_ssh_url": "ssh://git@git.st.archi-lab.io:22996/adobryni/modulhandbuecher_test.git",
+    "git_http_url": "https://git.st.archi-lab.io/adobryni/modulhandbuecher_test.git",
+    "namespace": "Alexander Dobrynin",
+    "visibility_level": 0,
+    "path_with_namespace": "adobryni/modulhandbuecher_test",
+    "default_branch": "master",
+    "ci_config_path": "",
+    "homepage": "https://git.st.archi-lab.io/adobryni/modulhandbuecher_test",
+    "url": "ssh://git@git.st.archi-lab.io:22996/adobryni/modulhandbuecher_test.git",
+    "ssh_url": "ssh://git@git.st.archi-lab.io:22996/adobryni/modulhandbuecher_test.git",
+    "http_url": "https://git.st.archi-lab.io/adobryni/modulhandbuecher_test.git"
+  },
+  "commits": [
+    {
+      "id": "f20d5fca2facddb21a2e122516d42c7918715524",
+      "message": "Update ap2.duda",
+      "title": "Update ap2.duda",
+      "timestamp": "2022-07-04T12:48:26+00:00",
+      "url": "https://git.st.archi-lab.io/adobryni/modulhandbuecher_test/-/commit/f20d5fca2facddb21a2e122516d42c7918715524",
+      "author": {
+        "name": "Alexander Dobrynin",
+        "email": "alexander.dobrynin@th-koeln.de"
+      },
+      "added": [],
+      "modified": [
+        "core/status.yaml",
+        "core/location.yaml",
+        "core/lang.yaml",
+        "core/module_type.yaml",
+        "core/assessment.yaml",
+        "core/season.yaml",
+        "core/person.yaml",
+        "core/program.yaml",
+        "core/global_criteria.yaml",
+        "core/focus_area.yaml",
+        "core/po.yaml",
+        "core/competence.yaml",
+        "core/study_form.yaml",
+        "core/grade.yaml",
+        "core/faculty.yaml",
+        "core/specialization.yaml"
+      ],
+      "removed": []
+    }
+  ],
+  "total_commits_count": 1,
+  "push_options": {},
+  "repository": {
+    "name": "Modulhandbuecher Test",
+    "url": "ssh://git@git.st.archi-lab.io:22996/adobryni/modulhandbuecher_test.git",
+    "description": "",
+    "homepage": "https://git.st.archi-lab.io/adobryni/modulhandbuecher_test",
+    "git_http_url": "https://git.st.archi-lab.io/adobryni/modulhandbuecher_test.git",
+    "git_ssh_url": "ssh://git@git.st.archi-lab.io:22996/adobryni/modulhandbuecher_test.git",
+    "visibility_level": 0
+  }
+}

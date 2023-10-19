@@ -40,4 +40,7 @@ final class ModuleReviewRequestRepository @Inject() (
         review <- q.reviewFk
       } yield (review.moduleDraft, review.status, q.approved)).result
     )
+
+  def delete(moduleId: UUID) =
+    db.run(tableQuery.filter(_.reviewFk.filter(_.moduleDraft === moduleId).exists).delete)
 }

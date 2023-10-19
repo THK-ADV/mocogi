@@ -29,10 +29,6 @@ trait ModuleDraftService {
 
   def getByModuleOpt(moduleId: UUID): Future[Option[ModuleDraft]]
 
-  def getByMergeRequest(
-      mergeRequestId: MergeRequestId
-  ): Future[Seq[ModuleDraft]]
-
   def allByUser(user: User): Future[Seq[ModuleDraft]]
 
   def createNew(
@@ -41,9 +37,7 @@ trait ModuleDraftService {
       versionScheme: VersionScheme
   ): Future[Either[PipelineError, ModuleDraft]]
 
-  def deleteDraftWithBranch(moduleId: UUID): Future[Unit]
-
-  def deleteDraft(moduleId: UUID): Future[Unit]
+  def delete(moduleId: UUID): Future[Unit]
 
   def deleteDrafts(moduleIds: Seq[UUID]): Future[Unit]
 
@@ -65,7 +59,6 @@ trait ModuleDraftService {
 @Singleton
 final class ModuleDraftServiceImpl @Inject() (
     private val moduleDraftRepository: ModuleDraftRepository,
-    private val metadataValidatingService: MetadataValidatingService,
     private val moduleCompendiumPrinter: ModuleCompendiumYamlPrinter,
     private val metadataParsingService: MetadataParsingService,
     private val moduleCompendiumService: ModuleCompendiumService,
@@ -86,9 +79,6 @@ final class ModuleDraftServiceImpl @Inject() (
 
   override def getByModuleOpt(moduleId: UUID) =
     moduleDraftRepository.getByModuleOpt(moduleId)
-
-  override def getByMergeRequest(mergeRequestId: MergeRequestId) =
-    moduleDraftRepository.getByMergeRequest(mergeRequestId)
 
   def allByUser(user: User): Future[Seq[ModuleDraft]] =
     moduleDraftRepository.allByUser(user)
@@ -113,14 +103,11 @@ final class ModuleDraftServiceImpl @Inject() (
       Set.empty
     )
 
-  def deleteDraftWithBranch(moduleId: UUID): Future[Unit] =
+  def delete(moduleId: UUID): Future[Unit] =
     for {
       _ <- gitBranchService.deleteBranch(moduleId)
-      _ <- deleteDraft(moduleId)
+      _ <- moduleDraftRepository.delete(moduleId).map(_ => ())
     } yield ()
-
-  override def deleteDraft(moduleId: UUID) =
-    moduleDraftRepository.delete(moduleId).map(_ => ())
 
   override def deleteDrafts(moduleIds: Seq[UUID]) =
     moduleDraftRepository.deleteDrafts(moduleIds).map(_ => ())
@@ -330,15 +317,17 @@ final class ModuleDraftServiceImpl @Inject() (
     def validate(
         metadata: ParsedMetadata
     ): Future[Either[PipelineError, Metadata]] =
-      metadataValidatingService
-        .validate(metadata)
-        .map(
-          _.bimap(
+      moduleCompendiumService.allModules(Map.empty).map { existing =>
+        MetadataValidatingService
+          .validate(existing, metadata)
+          .bimap(
             errs =>
-              PipelineError.Validator(ValidationError(errs), Some(metadata.id)),
+              PipelineError
+                .Validator(ValidationError(errs), Some(metadata.id)),
             identity
           )
-        )
+      }
+
     for {
       parsed <- continueWith(print())(parse)
       validated <- continueWith(parsed)(a => validate(a._2._1))

@@ -2,6 +2,7 @@ package controllers
 
 import controllers.formats.ModuleCompendiumOutputFormat
 import ops.FileOps
+import ops.FutureOps.OptionOps
 import play.api.libs.json.Json
 import play.api.mvc.{
   AbstractController,
@@ -14,10 +15,10 @@ import service.{ModuleCompendiumService, ModuleDraftService}
 
 import java.util.UUID
 import javax.inject.{Inject, Singleton}
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
 
 object ModuleCompendiumController {
-  lazy val languageAttribute = "lang"
+  private lazy val languageAttribute = "lang"
 }
 
 @Singleton
@@ -44,12 +45,11 @@ final class ModuleCompendiumController @Inject() (
 
   def getLatest(id: UUID) =
     Action.async { _ =>
-      draftService.getByModuleOpt(id).flatMap {
-        case Some(draft) =>
-          Future.successful(Ok(draft.data))
-        case None =>
-          service.get(id).map(x => Ok(Json.toJson(x)))
-      }
+      draftService
+        .getByModuleOpt(id)
+        .map(_.map(_.data))
+        .orElse(service.getFromStaging(id).map(mc => Json.toJson(mc)))
+        .map(j => Ok(j))
     }
 
   def getFile(id: UUID) =
