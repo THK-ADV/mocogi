@@ -5,11 +5,7 @@ import database.view.ModuleViewRepository
 import git.subscriber._
 import printing.markdown.ModuleCompendiumPrinter
 import service.core.StudyProgramService
-import service.{
-  ModuleCompendiumService,
-  ModuleDraftService,
-  ModuleUpdatePermissionService
-}
+import service.{ModuleCompendiumService, ModuleDraftService, ModuleUpdatePermissionService}
 
 import javax.inject.{Inject, Provider, Singleton}
 import scala.concurrent.ExecutionContext

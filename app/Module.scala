@@ -6,16 +6,12 @@ import database.repo.{
   ModuleDraftRepository,
   ModuleDraftRepositoryImpl
 }
-import git.publisher.{
-  CoreDataPublisher,
-  GitFilesDownloadActor,
-  ModuleCompendiumPublisher
-}
+import git.publisher.{CoreDataPublisher, ModuleCompendiumPublisher}
 import git.subscriber.{
   ModuleCompendiumMarkdownActor,
   ModuleCompendiumSubscribers
 }
-import git.webhook.GitMergeEventHandlingActor
+import git.webhook.GitPushEventHandlingActor
 import git.{GitConfig, GitFilesBroker, GitFilesBrokerImpl}
 import models.ModuleKeysToReview
 import parsing.metadata.MetadataParser
@@ -115,11 +111,8 @@ class Module() extends AbstractModule {
     bind(classOf[ModuleCompendiumMarkdownActor])
       .toProvider(classOf[ModuleCompendiumMarkdownActorProvider])
       .asEagerSingleton()
-    bind(classOf[GitMergeEventHandlingActor])
+    bind(classOf[GitPushEventHandlingActor])
       .toProvider(classOf[GitMergeEventHandlingActorProvider])
-      .asEagerSingleton()
-    bind(classOf[GitFilesDownloadActor])
-      .toProvider(classOf[GitFilesDownloadActorProvider])
       .asEagerSingleton()
     bind(classOf[CoreDataPublisher])
       .toProvider(classOf[CoreDataPublisherProvider])

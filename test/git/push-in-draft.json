@@ -1,0 +1,87 @@
+{
+  "object_kind": "push",
+  "event_name": "push",
+  "before": "8f8e601254aef4168dcd731d0415e2777f1e6db2",
+  "after": "f4c87fa7fbfaa65e4d6277833bb65ec93e1c9286",
+  "ref": "refs/heads/draft",
+  "checkout_sha": "f4c87fa7fbfaa65e4d6277833bb65ec93e1c9286",
+  "message": null,
+  "user_id": 297,
+  "user_name": "Alexander Dobrynin",
+  "user_username": "adobryni",
+  "user_email": "",
+  "user_avatar": "https://git.st.archi-lab.io/uploads/-/system/user/avatar/297/avatar.png",
+  "project_id": 7983,
+  "project": {
+    "id": 7983,
+    "name": "Modulhandbuecher Test",
+    "description": "",
+    "web_url": "https://git.st.archi-lab.io/adobryni/modulhandbuecher_test",
+    "avatar_url": null,
+    "git_ssh_url": "ssh://git@git.st.archi-lab.io:22996/adobryni/modulhandbuecher_test.git",
+    "git_http_url": "https://git.st.archi-lab.io/adobryni/modulhandbuecher_test.git",
+    "namespace": "Alexander Dobrynin",
+    "visibility_level": 0,
+    "path_with_namespace": "adobryni/modulhandbuecher_test",
+    "default_branch": "master",
+    "ci_config_path": "",
+    "homepage": "https://git.st.archi-lab.io/adobryni/modulhandbuecher_test",
+    "url": "ssh://git@git.st.archi-lab.io:22996/adobryni/modulhandbuecher_test.git",
+    "ssh_url": "ssh://git@git.st.archi-lab.io:22996/adobryni/modulhandbuecher_test.git",
+    "http_url": "https://git.st.archi-lab.io/adobryni/modulhandbuecher_test.git"
+  },
+  "commits": [
+    {
+      "id": "0ab27df12ab54ef60662bc3d4842f69bf479ff31",
+      "message": "change\n",
+      "title": "change",
+      "timestamp": "2023-10-19T10:59:38+02:00",
+      "url": "https://git.st.archi-lab.io/adobryni/modulhandbuecher_test/-/commit/0ab27df12ab54ef60662bc3d4842f69bf479ff31",
+      "author": {
+        "name": "Alexander Dobrynin",
+        "email": "info@alex-dobrynin.com"
+      },
+      "added": [
+
+      ],
+      "modified": [
+        "modules/23ce931b-4d27-47da-9158-3ab8979759cf.md"
+      ],
+      "removed": [
+
+      ]
+    },
+    {
+      "id": "f4c87fa7fbfaa65e4d6277833bb65ec93e1c9286",
+      "message": "Merge branch '23ce931b-4d27-47da-9158-3ab8979759cf' into 'draft'\n\nchange\n\nSee merge request adobryni/modulhandbuecher_test!93",
+      "title": "Merge branch '23ce931b-4d27-47da-9158-3ab8979759cf' into 'draft'",
+      "timestamp": "2023-10-19T09:03:03+00:00",
+      "url": "https://git.st.archi-lab.io/adobryni/modulhandbuecher_test/-/commit/f4c87fa7fbfaa65e4d6277833bb65ec93e1c9286",
+      "author": {
+        "name": "Alexander Dobrynin",
+        "email": "alexander.dobrynin@th-koeln.de"
+      },
+      "added": [
+
+      ],
+      "modified": [
+        "modules/23ce931b-4d27-47da-9158-3ab8979759cf.md"
+      ],
+      "removed": [
+
+      ]
+    }
+  ],
+  "total_commits_count": 2,
+  "push_options": {
+  },
+  "repository": {
+    "name": "Modulhandbuecher Test",
+    "url": "ssh://git@git.st.archi-lab.io:22996/adobryni/modulhandbuecher_test.git",
+    "description": "",
+    "homepage": "https://git.st.archi-lab.io/adobryni/modulhandbuecher_test",
+    "git_http_url": "https://git.st.archi-lab.io/adobryni/modulhandbuecher_test.git",
+    "git_ssh_url": "ssh://git@git.st.archi-lab.io:22996/adobryni/modulhandbuecher_test.git",
+    "visibility_level": 0
+  }
+}

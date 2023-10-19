@@ -29,10 +29,6 @@ trait ModuleDraftService {
 
   def getByModuleOpt(moduleId: UUID): Future[Option[ModuleDraft]]
 
-  def getByMergeRequest(
-      mergeRequestId: MergeRequestId
-  ): Future[Seq[ModuleDraft]]
-
   def allByUser(user: User): Future[Seq[ModuleDraft]]
 
   def createNew(
@@ -85,9 +81,6 @@ final class ModuleDraftServiceImpl @Inject() (
 
   override def getByModuleOpt(moduleId: UUID) =
     moduleDraftRepository.getByModuleOpt(moduleId)
-
-  override def getByMergeRequest(mergeRequestId: MergeRequestId) =
-    moduleDraftRepository.getByMergeRequest(mergeRequestId)
 
   def allByUser(user: User): Future[Seq[ModuleDraft]] =
     moduleDraftRepository.allByUser(user)

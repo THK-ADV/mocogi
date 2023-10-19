@@ -2,7 +2,7 @@ package git.api
 
 import com.google.inject.Inject
 import database._
-import git.{GitConfig, GitFilePath}
+import git.{GitConfig, GitFileContent, GitFilePath}
 import models.Branch
 import parsing.types.ParsedModuleRelation
 import service.{MetadataParsingService, Print}
@@ -20,11 +20,14 @@ final class GitFileDownloadService @Inject() (
     private implicit val ctx: ExecutionContext
 ) {
 
-  def downloadModuleFromDraftBranch(
-      id: UUID
-  ): Future[ModuleCompendiumOutput] = {
+  def downloadModuleFromDraftBranch(id: UUID): Future[ModuleCompendiumOutput] =
+    downloadModule(id, Branch(config.draftBranch))
+
+  def downloadFileContent(path: GitFilePath, branch: Branch): Future[GitFileContent] =
+    api.download(path, branch)
+
+  def downloadModule(id: UUID, branch: Branch): Future[ModuleCompendiumOutput] = {
     val path = GitFilePath(id)
-    val branch = Branch(api.config.draftBranch)
     for {
       content <- api.download(path, branch)
       parseRes <- parser.parse(Print(content.value))

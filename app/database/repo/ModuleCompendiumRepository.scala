@@ -120,7 +120,7 @@ final class ModuleCompendiumRepositoryImpl @Inject() (
         updateAction(moduleCompendium, path, timestamp)
     }
     val actions = createOrUpdateInstant.appendedAll(updateAfterCreation)
-    db.run(DBIO.sequence(actions).transactionally)
+    db.run(DBIO.sequence(actions).transactionally).map(_ => entries.map(_._2))
   }
 
   override def all(filter: Map[String, Seq[String]]) =
