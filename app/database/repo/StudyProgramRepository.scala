@@ -1,8 +1,8 @@
 package database.repo
 
 import database.table._
-import models.UniversityRole
 import models.core.{RestrictedAdmission, StudyProgram}
+import models.{UniversityRole, User}
 import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfigProvider}
 import service.core.StudyProgramShort
 import slick.jdbc.JdbcProfile
@@ -82,6 +82,24 @@ class StudyProgramRepository @Inject() (
     db.run(
       studyProgramPersonTableQuery
         .filter(a => a.studyProgram.in(sps) && a.role.inSet(roles))
+        .result
+    )
+  }
+
+  def rolesFromDirector(
+      user: User,
+      pos: Set[String]
+  ): Future[Seq[UniversityRole]] = {
+    val sps =
+      TableQuery[POTable].filter(_.abbrev.inSet(pos)).map(_.studyProgram)
+
+    db.run(
+      studyProgramPersonTableQuery
+        .filter(a =>
+          a.studyProgram
+            .in(sps) && a.personFk.filter(_.campusId === user.username).exists
+        )
+        .map(_.role)
         .result
     )
   }

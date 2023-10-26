@@ -14,9 +14,11 @@ import controllers.formats.{
   ModuleFormat,
   PipelineErrorFormat
 }
-import models.{ModuleCompendiumProtocol, User}
+import models.{ModuleCompendiumProtocol, ModuleKeysToReview, User}
+import monocle.Monocle.toAppliedFocusOps
 import play.api.libs.json.Json
 import play.api.mvc.{AbstractController, ControllerComponents}
+import service.core.StudyProgramService
 import service.{
   ModuleDraftReviewService,
   ModuleDraftService,
@@ -34,6 +36,8 @@ final class ModuleDraftController @Inject() (
     val moduleDraftReviewService: ModuleDraftReviewService,
     val auth: AuthorizationAction,
     val moduleUpdatePermissionService: ModuleUpdatePermissionService,
+    val studyProgramService: StudyProgramService,
+    val moduleKeysToReview: ModuleKeysToReview,
     implicit val ctx: ExecutionContext
 ) extends AbstractController(cc)
     with ModuleCompendiumProtocolFormat
@@ -44,7 +48,6 @@ final class ModuleDraftController @Inject() (
     with ModuleFormat
     with JsonNullWritable {
 
-  // GET modulesDrafts/own
   def moduleDrafts() =
     auth async { r =>
       val user = User(r.token.username)
@@ -67,7 +70,28 @@ final class ModuleDraftController @Inject() (
       }
     }
 
-  // POST modulesDrafts
+  def ownModuleDraftById(moduleId: UUID) =
+    auth andThen hasPermissionToEditDraft(moduleId) async { r =>
+      for {
+        draft <- moduleDraftService.getByModule(moduleId)
+        pos = moduleDraftReviewService.affectedPOs(draft.protocol().metadata)
+        roles <- studyProgramService.rolesFromDirector(
+          User(r.token.username),
+          pos
+        )
+      } yield Ok(
+        Json.toJson(
+          draft
+            .focus(_.keysToBeReviewed)
+            .modify(
+              _.filter(k =>
+                roles.exists(r => moduleKeysToReview.keyFromRole(k, r))
+              )
+            )
+        )
+      )
+    }
+
   def createNewModuleDraft() =
     auth(parse.json[ModuleCompendiumProtocol]) andThen
       new VersionSchemeAction(VersionSchemeHeader) async { r =>
@@ -79,7 +103,6 @@ final class ModuleDraftController @Inject() (
           }
       }
 
-  // PUT moduleDrafts/:id
   def createOrUpdateModuleDraft(moduleId: UUID) =
     auth(parse.json[ModuleCompendiumProtocol]) andThen
       hasPermissionToEditDraft(moduleId) andThen
@@ -97,7 +120,6 @@ final class ModuleDraftController @Inject() (
           }
       }
 
-  // DELETE moduleDrafts/:id
   def deleteModuleDraft(moduleId: UUID) =
     auth andThen hasPermissionToEditDraft(moduleId) async { _ =>
       for {

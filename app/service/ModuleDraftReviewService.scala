@@ -131,7 +131,7 @@ final class ModuleDraftReviewService @Inject() (
     list.toSet
   }
 
-  private def affectedPOs(metadata: MetadataProtocol): Set[String] =
+  def affectedPOs(metadata: MetadataProtocol): Set[String] =
     (metadata.po.mandatory.isEmpty, metadata.po.optional.isEmpty) match {
       case (true, true) =>
         Set.empty
