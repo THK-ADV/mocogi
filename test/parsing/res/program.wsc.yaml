@@ -4,6 +4,7 @@ inf_wsc:
   de_url: https://www.th-koeln.de/studium/web-science-master_3903.php
   grade: grade.msc
   program_director: person.nn
+  exam_director: person.nn
   accreditation_until: 30.09.2023
   study_form:
     - type: study_form.bbw

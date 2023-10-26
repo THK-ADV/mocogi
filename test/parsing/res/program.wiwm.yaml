@@ -5,6 +5,7 @@ ing_wiwm:
   en_url: https://www.th-koeln.de/en/academics/business-administration-and-engineering-masters-program_49280.php
   grade: grade.msc
   program_director: person.nn
+  exam_director: person.nn
   accreditation_until: 30.09.2027
   study_form:
     - type: study_form.full

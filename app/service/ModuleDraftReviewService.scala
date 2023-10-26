@@ -130,12 +130,12 @@ final class ModuleDraftReviewService @Inject() (
 
   private def requiredRoles(
       keysToBeReviewed: Set[String]
-  ): Seq[ModuleReviewerRole] = {
-    val list = ListBuffer[ModuleReviewerRole]()
+  ): Seq[UniversityRole] = {
+    val list = ListBuffer[UniversityRole]()
     if (keysToReview.isSGLReview(keysToBeReviewed))
-      list += ModuleReviewerRole.SGL
+      list += UniversityRole.SGL
     if (keysToReview.isPAVReview(keysToBeReviewed))
-      list += ModuleReviewerRole.PAV
+      list += UniversityRole.PAV
     list.result()
   }
 

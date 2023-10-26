@@ -5,6 +5,7 @@ ing_een:
   en_url: https://www.th-koeln.de/en/academics/electrical-engineering-bachelors-program-gummersbach-campus_7325.php
   grade: grade.beng
   program_director: person.nn
+  exam_director: person.nn
   accreditation_until: 30.09.2026
   study_form:
     - type: study_form.full

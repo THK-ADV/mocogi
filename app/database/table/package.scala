@@ -106,10 +106,9 @@ package object table {
         stringToSet
       )
 
-  implicit val moduleReviewerRoleColumnType
-      : BaseColumnType[ModuleReviewerRole] =
+  implicit val universityRoleColumnType: BaseColumnType[UniversityRole] =
     MappedColumnType
-      .base[ModuleReviewerRole, String](_.id, ModuleReviewerRole.apply)
+      .base[UniversityRole, String](_.id, UniversityRole.apply)
 
   implicit val moduleReviewStatusColumnType
       : BaseColumnType[ModuleReviewStatus] =

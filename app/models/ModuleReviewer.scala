@@ -5,6 +5,6 @@ import java.util.UUID
 case class ModuleReviewer(
     id: UUID,
     user: User,
-    role: ModuleReviewerRole,
+    role: UniversityRole,
     studyProgram: String
 )

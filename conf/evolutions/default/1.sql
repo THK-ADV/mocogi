@@ -114,7 +114,6 @@ create table study_program
     "de_url"                         text    not null,
     "en_url"                         text    not null,
     "grade"                          text    not null,
-    "program_director"               text    not null,
     "accreditation_until"            date    not null,
     "restricted_admission_value"     boolean not null,
     "restricted_admission_de_reason" text    not null,
@@ -123,8 +122,7 @@ create table study_program
     "de_note"                        text    not null,
     "en_description"                 text    not null,
     "en_note"                        text    not null,
-    FOREIGN KEY (grade) REFERENCES grade (abbrev),
-    FOREIGN KEY (program_director) REFERENCES person (id)
+    FOREIGN KEY (grade) REFERENCES grade (abbrev)
 );
 
 create table study_form
@@ -172,6 +170,16 @@ create table study_program_location
     "study_program" text not null,
     PRIMARY KEY (location, study_program),
     FOREIGN KEY (location) REFERENCES location (abbrev),
+    FOREIGN KEY (study_program) REFERENCES study_program (abbrev)
+);
+
+create table study_program_person
+(
+    "person"        text not null,
+    "study_program" text not null,
+    "role"          text not null,
+    PRIMARY KEY (person, study_program, role),
+    FOREIGN KEY (person) REFERENCES person (id),
     FOREIGN KEY (study_program) REFERENCES study_program (abbrev)
 );
 
@@ -464,6 +472,7 @@ drop table specialization if exists;
 drop table po_modification_date if exists;
 drop table po if exists;
 drop table focus_area if exists;
+drop table study_program_person if exists;
 drop table study_program_location if exists;
 drop table study_program_season if exists;
 drop table study_program_language if exists;

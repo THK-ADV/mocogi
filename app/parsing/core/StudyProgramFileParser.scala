@@ -3,7 +3,7 @@ package parsing.core
 import models.core.{Grade, Language, Location, Person, RestrictedAdmission, Season, StudyForm, StudyFormScope, StudyFormType, StudyProgram}
 import parser.Parser
 import parser.Parser._
-import parser.ParserOps.{P0, P10, P11, P12, P13, P14, P15, P2, P3, P4, P5, P6, P7, P8, P9}
+import parser.ParserOps.{P0, P10, P11, P12, P13, P14, P15, P16, P2, P3, P4, P5, P6, P7, P8, P9}
 import parsing._
 
 import java.time.LocalDate
@@ -32,8 +32,11 @@ object StudyProgramFileParser {
   def gradeParser(implicit grades: Seq[Grade]): Parser[Grade] =
     singleValueParser("grade", g => s"grade.${g.abbrev}")
 
-  def programDirectorParser(implicit persons: Seq[Person]): Parser[Person] =
-    singleValueParser("program_director", p => s"person.${p.id}")
+  def programDirectorParser(implicit persons: Seq[Person]): Parser[List[Person]] =
+    multipleValueParser("program_director", p => s"person.${p.id}", 1)
+
+  def examDirectorParser(implicit persons: Seq[Person]): Parser[List[Person]] =
+    multipleValueParser("exam_director", p => s"person.${p.id}", 1)
 
   def accreditationUntilParser: Parser[LocalDate] =
     dateForKey("accreditation_until")
@@ -118,6 +121,8 @@ object StudyProgramFileParser {
           .skip(zeroOrMoreSpaces)
           .take(programDirectorParser)
           .skip(zeroOrMoreSpaces)
+          .take(examDirectorParser)
+          .skip(zeroOrMoreSpaces)
           .take(accreditationUntilParser)
           .skip(zeroOrMoreSpaces)
           .take(studyFormParser)
@@ -144,7 +149,8 @@ object StudyProgramFileParser {
                   abbrev,
                   url,
                   grade,
-                  director,
+                  programDirectors,
+                  examDirectors,
                   accreditation,
                   studyForm,
                   lang,
@@ -156,7 +162,7 @@ object StudyProgramFileParser {
                   enDesc,
                   enNote
                 ) =>
-              models.core.StudyProgram(
+              StudyProgram(
                 id,
                 label._1,
                 label._2,
@@ -165,7 +171,8 @@ object StudyProgramFileParser {
                 url._1,
                 url._2,
                 grade,
-                director,
+                programDirectors,
+                examDirectors,
                 accreditation,
                 studyForm,
                 lang,

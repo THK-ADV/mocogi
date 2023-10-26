@@ -1,6 +1,6 @@
 package database.table
 
-import models.{ModuleReviewer, ModuleReviewerRole, User}
+import models.{ModuleReviewer, UniversityRole, User}
 import slick.jdbc.PostgresProfile.api._
 
 import java.util.UUID
@@ -15,7 +15,7 @@ final class ModuleReviewerTable(tag: Tag)
 
   def user = column[User]("user_id")
 
-  def role = column[ModuleReviewerRole]("role")
+  def role = column[UniversityRole]("role")
 
   def studyProgram = column[String]("study_program")
 

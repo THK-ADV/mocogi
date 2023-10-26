@@ -1,9 +1,9 @@
 package controllers.formats
 
-import models.ModuleReviewerRole
+import models.UniversityRole
 import play.api.libs.json.Format
 
 trait ModuleReviewerRoleFormat {
-  implicit val moduleReviewerRoleFormat: Format[ModuleReviewerRole] =
-    Format.of[String].bimap(ModuleReviewerRole.apply, _.id)
+  implicit val moduleReviewerRoleFormat: Format[UniversityRole] =
+    Format.of[String].bimap(UniversityRole.apply, _.id)
 }

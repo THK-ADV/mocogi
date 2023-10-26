@@ -3,7 +3,7 @@ package controllers
 import auth.AuthorizationAction
 import controllers.formats.{ModuleReviewerRoleFormat, UserFormat}
 import database.repo.ModuleReviewerRepository
-import models.{ModuleReviewer, ModuleReviewerRole, User}
+import models.{ModuleReviewer, UniversityRole, User}
 import play.api.libs.json.{Json, Reads, Writes}
 import play.api.mvc.{AbstractController, ControllerComponents}
 
@@ -23,7 +23,7 @@ final class ModuleReviewerController @Inject() (
 
   case class Protocol(
       user: User,
-      role: ModuleReviewerRole,
+      role: UniversityRole,
       studyProgram: String
   )
 

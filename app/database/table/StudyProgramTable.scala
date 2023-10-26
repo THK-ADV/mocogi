@@ -14,7 +14,6 @@ case class StudyProgramDbEntry(
     deUrl: String,
     enUrl: String,
     grade: String,
-    programDirector: String,
     accreditationUntil: LocalDate,
     restrictedAdmission: RestrictedAdmission,
     deDescription: String,
@@ -34,7 +33,6 @@ final class StudyProgramTable(tag: Tag)
   def deUrl = column[String]("de_url")
   def enUrl = column[String]("en_url")
   def grade = column[String]("grade")
-  def programDirector = column[String]("program_director")
   def accreditationUntil = column[LocalDate]("accreditation_until")
   def restrictedAdmissionValue = column[Boolean]("restricted_admission_value")
   def restrictedAdmissionDeReason =
@@ -49,11 +47,6 @@ final class StudyProgramTable(tag: Tag)
   def gradeFk =
     foreignKey("grade", grade, TableQuery[GradeTable])(_.abbrev)
 
-  def programDirectorFk =
-    foreignKey("program_director", programDirector, TableQuery[PersonTable])(
-      _.id
-    )
-
   override def * =
     (
       abbrev,
@@ -64,7 +57,6 @@ final class StudyProgramTable(tag: Tag)
       deUrl,
       enUrl,
       grade,
-      programDirector,
       accreditationUntil,
       restrictedAdmissionValue,
       restrictedAdmissionDeReason,
@@ -77,7 +69,6 @@ final class StudyProgramTable(tag: Tag)
 
   def mapRow: (
       (
-          String,
           String,
           String,
           String,
@@ -105,7 +96,6 @@ final class StudyProgramTable(tag: Tag)
           deUrl,
           enUrl,
           grade,
-          programDirector,
           accreditationUntil,
           restrictedAdmissionValue,
           restrictedAdmissionDeReason,
@@ -124,7 +114,6 @@ final class StudyProgramTable(tag: Tag)
         deUrl,
         enUrl,
         grade,
-        programDirector,
         accreditationUntil,
         RestrictedAdmission(
           restrictedAdmissionValue,
@@ -140,7 +129,6 @@ final class StudyProgramTable(tag: Tag)
 
   def unmapRow: StudyProgramDbEntry => Option[
     (
-        String,
         String,
         String,
         String,
@@ -169,7 +157,6 @@ final class StudyProgramTable(tag: Tag)
         a.deUrl,
         a.enUrl,
         a.grade,
-        a.programDirector,
         a.accreditationUntil,
         a.restrictedAdmission.value,
         a.restrictedAdmission.deReason,

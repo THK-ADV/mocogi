@@ -4,6 +4,7 @@ inf_coco:
   de_url: https://www.th-koeln.de/studium/code--context-bachelor_62103.php
   grade: grade.bsc
   program_director: person.ald
+  exam_director: person.ald
   accreditation_until: 30.09.2025
   study_form:
     - type: study_form.full

@@ -1,7 +1,7 @@
 package database.repo
 
 import database.table.{ModuleReviewerTable, POTable}
-import models.{ModuleReviewer, ModuleReviewerRole}
+import models.{ModuleReviewer, UniversityRole}
 import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfigProvider}
 import slick.jdbc.JdbcProfile
 
@@ -16,7 +16,7 @@ final class ModuleReviewerRepository @Inject() (
 ) extends Repository[ModuleReviewer, ModuleReviewer, ModuleReviewerTable]
     with HasDatabaseConfigProvider[JdbcProfile] {
 
-  import database.table.moduleReviewerRoleColumnType
+  import database.table.universityRoleColumnType
   import profile.api._
 
   protected val tableQuery = TableQuery[ModuleReviewerTable]
@@ -33,7 +33,7 @@ final class ModuleReviewerRepository @Inject() (
         .delete
     )
 
-  def getAll(roles: Seq[ModuleReviewerRole], pos: Set[String]) =
+  def getAll(roles: Seq[UniversityRole], pos: Set[String]) =
 //    tableQuery
 //      .filter(_.role === role)
 //      .join(TableQuery[POTable].filter(_.abbrev.inSet(pos)))
