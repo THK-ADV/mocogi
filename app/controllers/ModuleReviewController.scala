@@ -1,8 +1,8 @@
 package controllers
 
 import auth.AuthorizationAction
-import models.{ModuleReviewStatus, User}
-import play.api.libs.json.{Format, JsArray, Json}
+import models.ModuleReviewStatus
+import play.api.libs.json.Format
 import play.api.mvc.{AbstractController, ControllerComponents}
 import service.ModuleReviewService
 
@@ -20,18 +20,5 @@ final class ModuleReviewController @Inject() (
   implicit val mrsFmt: Format[ModuleReviewStatus] =
     Format.of[String].bimap(ModuleReviewStatus.apply, _.id)
 
-  def getAllForUser() =
-    auth async { r =>
-      service
-        .getForUser(User(r.token.username))
-        .map(xs =>
-          Ok(JsArray(xs.map { case (module, status, approved) =>
-            Json.obj(
-              "module" -> module,
-              "status" -> status,
-              "approved" -> approved
-            )
-          }))
-        )
-    }
+  // TODO
 }

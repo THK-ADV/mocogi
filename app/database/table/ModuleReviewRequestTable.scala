@@ -1,20 +1,21 @@
 package database.table
 
+import models.{ModuleReviewRequest, UniversityRole}
 import slick.jdbc.PostgresProfile.api._
 
 import java.util.UUID
 
 final class ModuleReviewRequestTable(tag: Tag)
-    extends Table[(UUID, UUID, Boolean)](
+    extends Table[ModuleReviewRequest](
       tag,
       "module_review_request"
     ) {
 
   def review = column[UUID]("review", O.PrimaryKey)
 
-  def reviewer = column[UUID]("reviewer", O.PrimaryKey)
+  def reviewer = column[String]("reviewer", O.PrimaryKey)
 
-  def approved = column[Boolean]("approved")
+  def status = column[ModuleReviewRequest.Status]("status")
 
   def reviewFk =
     foreignKey("review", review, TableQuery[ModuleReviewTable])(
@@ -22,9 +23,13 @@ final class ModuleReviewRequestTable(tag: Tag)
     )
 
   def reviewerFk =
-    foreignKey("reviewer", reviewer, TableQuery[ModuleReviewerTable])(
+    foreignKey("reviewer", reviewer, TableQuery[PersonTable])(
       _.id
     )
 
-  override def * = (review, reviewer, approved)
+  override def * = (
+    review,
+    reviewer,
+    status
+  ) <> ((ModuleReviewRequest.apply _).tupled, ModuleReviewRequest.unapply)
 }

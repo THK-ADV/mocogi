@@ -1,7 +1,13 @@
 package service
 
-import database.repo.{ModuleReviewRepository, ModuleReviewRequestRepository}
-import models.{ModuleReview, User}
+import database.repo.ModuleReviewRepository
+import models.{
+  ModuleReview,
+  ModuleReviewRequest,
+  ModuleReviewStatus,
+  UniversityRole
+}
+import service.core.StudyProgramService
 
 import java.util.UUID
 import javax.inject.{Inject, Singleton}
@@ -10,27 +16,40 @@ import scala.concurrent.{ExecutionContext, Future}
 @Singleton
 final class ModuleReviewService @Inject() (
     private val reviewRepository: ModuleReviewRepository,
-    private val reviewRequestRepository: ModuleReviewRequestRepository,
+    private val studyProgramService: StudyProgramService,
     private implicit val ctx: ExecutionContext
 ) {
 
-  def create(review: ModuleReview): Future[ModuleReview] =
+  def create(
+      moduleDraft: UUID,
+      requiredRoles: Set[UniversityRole],
+      affectedPOs: Set[String]
+  ): Future[ModuleReview] =
     for {
-      _ <- reviewRepository.create((review.moduleDraft, review.status))
-      _ <- reviewRequestRepository.createMany(
-        review.requests.map(r => (review.moduleDraft, r.reviewer, r.approved))
+      directors <- studyProgramService.allDirectorsFromPOs(
+        affectedPOs,
+        requiredRoles
       )
-    } yield review
+      res <- reviewRepository.create(
+        ModuleReview(
+          moduleDraft,
+          ModuleReviewStatus.WaitingForApproval,
+          directors
+            .map(p =>
+              ModuleReviewRequest(
+                moduleDraft,
+                p.person,
+                ModuleReviewRequest.Pending
+              )
+            )
+            .distinctBy(r => (r.review, r.reviewer))
+        )
+      )
+    } yield res
 
   def delete(moduleId: UUID) =
-    for {
-      _ <- reviewRequestRepository.delete(moduleId)
-      _ <- reviewRepository.delete(moduleId)
-    } yield ()
+    reviewRepository.delete(moduleId)
 
   def deleteMany(moduleIds: List[UUID]) =
     Future.sequence(moduleIds.map(delete))
-
-  def getForUser(user: User) =
-    reviewRequestRepository.allFromUser(user)
 }

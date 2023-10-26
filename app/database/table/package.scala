@@ -122,4 +122,12 @@ package object table {
         _.id,
         ModuleUpdatePermissionType.apply
       )
+
+  implicit val moduleReviewRequestStatusTypeColumnType
+      : BaseColumnType[ModuleReviewRequest.Status] =
+    MappedColumnType
+      .base[ModuleReviewRequest.Status, String](
+        _.id,
+        ModuleReviewRequest.Status.apply
+      )
 }

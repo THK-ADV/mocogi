@@ -65,14 +65,6 @@ GET           /moduleUpdatePermissions            controllers.ModuleUpdatePermis
 POST          /moduleUpdatePermissions            controllers.ModuleUpdatePermissionController.create()
 DELETE        /moduleUpdatePermissions            controllers.ModuleUpdatePermissionController.delete()
 
-# Module Reviewer
-
-GET           /moduleReviewers                    controllers.ModuleReviewerController.all()
-POST          /moduleReviewers                    controllers.ModuleReviewerController.create()
-DELETE        /moduleReviewers                    controllers.ModuleReviewerController.delete(id: java.util.UUID)
-
-GET           /moduleReviews/own                  controllers.ModuleReviewController.getAllForUser()
-
 # Map static resources from the /public folder to the /assets URL path
 GET           /assets/*file                       controllers.Assets.versioned(path="/public", file: Asset)
 

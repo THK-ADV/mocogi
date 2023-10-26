@@ -1,7 +1,7 @@
 package database.repo
 
-import database.table.ModuleReviewTable
-import models.ModuleReviewStatus
+import database.table.{ModuleReviewRequestTable, ModuleReviewTable}
+import models.ModuleReview
 import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfigProvider}
 import slick.jdbc.JdbcProfile
 
@@ -14,8 +14,8 @@ final class ModuleReviewRepository @Inject() (
     val dbConfigProvider: DatabaseConfigProvider,
     implicit val ctx: ExecutionContext
 ) extends Repository[
-      (UUID, ModuleReviewStatus),
-      (UUID, ModuleReviewStatus),
+      ModuleReview,
+      ModuleReview,
       ModuleReviewTable
     ]
     with HasDatabaseConfigProvider[JdbcProfile] {
@@ -24,11 +24,35 @@ final class ModuleReviewRepository @Inject() (
 
   protected val tableQuery = TableQuery[ModuleReviewTable]
 
-  override protected def retrieve(
-      query: Query[ModuleReviewTable, (UUID, ModuleReviewStatus), Seq]
-  ): Future[Seq[(UUID, ModuleReviewStatus)]] =
-    db.run(query.result)
+  private val requestTableQuery = TableQuery[ModuleReviewRequestTable]
 
   def delete(moduleId: UUID) =
-    db.run(tableQuery.filter(_.moduleDraft === moduleId).delete)
+    db.run(
+      for {
+        _ <- requestTableQuery.filter(_.review === moduleId).delete
+        _ <- tableQuery.filter(_.moduleDraft === moduleId).delete
+      } yield ()
+    )
+
+  override protected def retrieve(
+      query: Query[ModuleReviewTable, ModuleReview, Seq]
+  ): Future[Seq[ModuleReview]] = {
+    db.run(
+      query
+        .joinLeft(requestTableQuery)
+        .on(_.moduleDraft === _.review)
+        .result
+        .map(_.groupBy(_._1.moduleDraft).map { case (_, requests) =>
+          requests.head._1.copy(requests = requests.flatMap(_._2))
+        }.toSeq)
+    )
+  }
+
+  override def create(input: ModuleReview): Future[ModuleReview] =
+    db.run(
+      DBIO
+        .seq(tableQuery += input, requestTableQuery ++= input.requests)
+        .transactionally
+        .map(_ => input)
+    )
 }

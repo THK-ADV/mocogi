@@ -1,6 +1,5 @@
 package service
 
-import database.repo.ModuleReviewerRepository
 import git.api.GitMergeRequestApiService
 import models._
 
@@ -13,7 +12,6 @@ import scala.concurrent.{ExecutionContext, Future}
 final class ModuleDraftReviewService @Inject() (
     private val moduleDraftService: ModuleDraftService,
     private val moduleReviewService: ModuleReviewService,
-    private val moduleReviewerRepo: ModuleReviewerRepository,
     private val api: GitMergeRequestApiService,
     private val keysToReview: ModuleKeysToReview,
     private implicit val ctx: ExecutionContext
@@ -50,7 +48,7 @@ final class ModuleDraftReviewService @Inject() (
     } yield ()
 
   private def createApproveReview(draft: ModuleDraft, author: User) = {
-    def description(reviewer: Seq[ModuleReviewer]) =
+    def description(reviewRequests: Seq[ModuleReviewRequest]) =
       s"""modified keys:
          |${markdownList(draft.modifiedKeys)(identity)}
          |
@@ -58,22 +56,20 @@ final class ModuleDraftReviewService @Inject() (
          |${markdownList(draft.keysToBeReviewed)(identity)}
          |
          |reviewer:
-         |${markdownList(reviewer)(r =>
-          s"@${r.user.username} ${r.role.label} ${r.studyProgram}"
-        )}""".stripMargin
+         |${markdownList(reviewRequests)(_.reviewer)}""".stripMargin
     val protocol = draft.protocol()
     for {
-      reviewer <- moduleReviewerRepo.getAll(
+      review <- moduleReviewService.create(
+        draft.module,
         requiredRoles(draft.keysToBeReviewed),
         affectedPOs(protocol.metadata)
       )
       _ <- createMergeRequest(
         draft,
         title(author, protocol),
-        description(reviewer),
+        description(review.requests),
         needsApproval = true
       )
-      _ <- createReviews(draft.module, reviewer)
     } yield ()
   }
 
@@ -116,37 +112,34 @@ final class ModuleDraftReviewService @Inject() (
         } yield mrId
     }
 
-  private def createReviews(module: UUID, reviewer: Seq[ModuleReviewer]) =
-    moduleReviewService.create(
-      ModuleReview(
-        module,
-        ModuleReviewStatus.WaitingForApproval,
-        reviewer.map(r => ModuleReviewRequest(r.id, approved = false))
-      )
-    )
-
   private def title(author: User, protocol: ModuleCompendiumProtocol) =
     s"@${author.username}: ${protocol.metadata.title} (${protocol.metadata.abbrev})"
-
-  private def requiredRoles(
-      keysToBeReviewed: Set[String]
-  ): Seq[UniversityRole] = {
-    val list = ListBuffer[UniversityRole]()
-    if (keysToReview.isSGLReview(keysToBeReviewed))
-      list += UniversityRole.SGL
-    if (keysToReview.isPAVReview(keysToBeReviewed))
-      list += UniversityRole.PAV
-    list.result()
-  }
 
   private def markdownList[A](as: Iterable[A])(f: A => String): String =
     as.foldLeft("") { case (acc, a) =>
       s"$acc\n- ${f(a)}"
     }
 
+  private def requiredRoles(
+      keysToBeReviewed: Set[String]
+  ): Set[UniversityRole] = {
+    val list = ListBuffer[UniversityRole]()
+    if (keysToReview.isSGLReview(keysToBeReviewed))
+      list += UniversityRole.SGL
+    if (keysToReview.isPAVReview(keysToBeReviewed))
+      list += UniversityRole.PAV
+    list.toSet
+  }
+
   private def affectedPOs(metadata: MetadataProtocol): Set[String] =
-    metadata.po.mandatory
-      .map(_.po)
-      .appendedAll(metadata.po.optional.map(_.po))
-      .toSet
+    (metadata.po.mandatory.isEmpty, metadata.po.optional.isEmpty) match {
+      case (true, true) =>
+        Set.empty
+      case (false, false) => // Default + WPF
+        metadata.po.mandatory.map(_.po).toSet
+      case (true, false) => // WPF only
+        metadata.po.optional.map(_.po).toSet
+      case (false, true) => // Default only
+        metadata.po.mandatory.map(_.po).toSet
+    }
 }

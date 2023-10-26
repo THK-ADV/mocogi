@@ -422,15 +422,6 @@ create table module_update_permission
     PRIMARY KEY (module, user_id)
 );
 
-create table module_reviewer
-(
-    "id"            uuid not null PRIMARY KEY,
-    "user_id"       text not null,
-    "study_program" text not null,
-    "role"          text not null,
-    FOREIGN KEY (study_program) REFERENCES study_program (abbrev)
-);
-
 create table module_review
 (
     "module_draft" uuid not null PRIMARY KEY,
@@ -440,18 +431,17 @@ create table module_review
 
 create table module_review_request
 (
-    "review"   uuid    not null,
-    "reviewer" uuid    not null,
-    "approved" boolean not null,
+    "review"   uuid not null,
+    "reviewer" text not null,
+    "status"   text not null,
     PRIMARY KEY (review, reviewer),
     FOREIGN KEY (review) REFERENCES module_review (module_draft),
-    FOREIGN KEY (reviewer) REFERENCES module_reviewer (id)
+    FOREIGN KEY (reviewer) REFERENCES person (id)
 );
 
 -- !Downs
 drop table module_review_request if exists;
 drop table module_review if exists;
-drop table module_reviewer if exists;
 drop table module_update_permission if exists;
 drop table module_draft if exists;
 drop table metadata_taught_with if exists;

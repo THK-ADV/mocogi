@@ -2,6 +2,8 @@ package service.core
 
 import database.InsertOrUpdateResult
 import database.repo.{StudyProgramOutput, StudyProgramRepository}
+import database.table.StudyProgramPersonDbEntry
+import models.UniversityRole
 import models.core.{Grade, StudyProgram}
 import parsing.core.StudyProgramFileParser
 
@@ -23,6 +25,10 @@ trait StudyProgramService {
   def createOrUpdate(
       input: String
   ): Future[List[(InsertOrUpdateResult, StudyProgram)]]
+  def allDirectorsFromPOs(
+      pos: Set[String],
+      roles: Set[UniversityRole]
+  ): Future[Seq[StudyProgramPersonDbEntry]]
 }
 
 @Singleton
@@ -90,4 +96,10 @@ final class StudyProgramServiceImpl @Inject() (
         ._1
         .fold(Future.failed, createMany)
     } yield programs
+
+  override def allDirectorsFromPOs(
+      pos: Set[String],
+      roles: Set[UniversityRole]
+  ): Future[Seq[StudyProgramPersonDbEntry]] =
+    repo.allDirectorsFromPOs(pos, roles)
 }

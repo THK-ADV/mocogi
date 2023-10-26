@@ -73,6 +73,19 @@ class StudyProgramRepository @Inject() (
     db.run(query.result.map(_.map(StudyProgramShort.tupled)))
   }
 
+  def allDirectorsFromPOs(
+      pos: Set[String],
+      roles: Set[UniversityRole]
+  ): Future[Seq[StudyProgramPersonDbEntry]] = {
+    val sps =
+      TableQuery[POTable].filter(_.abbrev.inSet(pos)).map(_.studyProgram)
+    db.run(
+      studyProgramPersonTableQuery
+        .filter(a => a.studyProgram.in(sps) && a.role.inSet(roles))
+        .result
+    )
+  }
+
   def allIds(): Future[Seq[String]] =
     db.run(tableQuery.map(_.abbrev).result)
 
