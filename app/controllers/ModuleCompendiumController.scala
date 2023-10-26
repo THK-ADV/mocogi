@@ -4,12 +4,7 @@ import controllers.formats.ModuleCompendiumOutputFormat
 import ops.FileOps
 import ops.FutureOps.OptionOps
 import play.api.libs.json.Json
-import play.api.mvc.{
-  AbstractController,
-  AnyContent,
-  ControllerComponents,
-  Request
-}
+import play.api.mvc.{AbstractController, AnyContent, ControllerComponents, Request}
 import providers.ConfigReader
 import service.{ModuleCompendiumService, ModuleDraftService}
 
@@ -50,6 +45,11 @@ final class ModuleCompendiumController @Inject() (
         .map(_.map(_.data))
         .orElse(service.getFromStaging(id).map(mc => Json.toJson(mc)))
         .map(j => Ok(j))
+    }
+
+  def getStaging(id: UUID) =
+    Action.async { _ =>
+      service.getFromStaging(id).map(mc => Ok(Json.toJson(mc)))
     }
 
   def getFile(id: UUID) =

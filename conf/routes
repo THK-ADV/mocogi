@@ -3,69 +3,70 @@
 # This file defines all application routes (Higher priority routes first)
 # ~~~~
 
-GET           /                                   controllers.HomeController.index
+GET           /                                    controllers.HomeController.index
 
 # Git Webhooks
 
-POST          /webhook/onPushEvent                controllers.GitWebhookController.onPushEvent()
+POST          /webhook/onPushEvent                 controllers.GitWebhookController.onPushEvent()
 
 # Git
 
-POST          /git/coreFiles                      controllers.GitController.updateCoreFiles()
-POST          /git/moduleFiles                    controllers.GitController.updateModuleFiles()
+POST          /git/coreFiles                       controllers.GitController.updateCoreFiles()
+POST          /git/moduleFiles                     controllers.GitController.updateModuleFiles()
 
 # Core
 
-GET           /locations                          controllers.core.LocationController.all()
-GET           /languages                          controllers.core.LanguageController.all()
-GET           /status                             controllers.core.StatusController.all()
-GET           /assessmentMethods                  controllers.core.AssessmentMethodController.all()
-GET           /moduleTypes                        controllers.core.ModuleTypeController.all()
-GET           /seasons                            controllers.core.SeasonController.all()
-GET           /persons                            controllers.core.PersonController.all()
-GET           /studyFormTypes                     controllers.core.StudyFormTypeController.all()
-GET           /pos                                controllers.core.POController.all()
-GET           /grades                             controllers.core.GradeController.all()
-GET           /focusAreas                         controllers.core.FocusAreaController.all()
-GET           /faculties                          controllers.core.FacultyController.all()
-GET           /globalCriteria                     controllers.core.GlobalCriteriaController.all()
-GET           /studyPrograms                      controllers.core.StudyProgramController.all()
-GET           /studyPrograms/view                 controllers.core.StudyProgramController.allFromView()
-GET           /competences                        controllers.core.CompetenceController.all()
-GET           /specializations                    controllers.core.SpecializationController.all()
+GET           /locations                           controllers.core.LocationController.all()
+GET           /languages                           controllers.core.LanguageController.all()
+GET           /status                              controllers.core.StatusController.all()
+GET           /assessmentMethods                   controllers.core.AssessmentMethodController.all()
+GET           /moduleTypes                         controllers.core.ModuleTypeController.all()
+GET           /seasons                             controllers.core.SeasonController.all()
+GET           /persons                             controllers.core.PersonController.all()
+GET           /studyFormTypes                      controllers.core.StudyFormTypeController.all()
+GET           /pos                                 controllers.core.POController.all()
+GET           /grades                              controllers.core.GradeController.all()
+GET           /focusAreas                          controllers.core.FocusAreaController.all()
+GET           /faculties                           controllers.core.FacultyController.all()
+GET           /globalCriteria                      controllers.core.GlobalCriteriaController.all()
+GET           /studyPrograms                       controllers.core.StudyProgramController.all()
+GET           /studyPrograms/view                  controllers.core.StudyProgramController.allFromView()
+GET           /competences                         controllers.core.CompetenceController.all()
+GET           /specializations                     controllers.core.SpecializationController.all()
 
 # Module Compendium
 
-GET           /moduleCompendium                   controllers.ModuleCompendiumController.all()
-GET           /moduleCompendium/:id/file          controllers.ModuleCompendiumController.getFile(id: java.util.UUID)
-GET           /moduleCompendium/:id               controllers.ModuleCompendiumController.get(id: java.util.UUID)
-GET           /moduleCompendium/:id/latest        controllers.ModuleCompendiumController.getLatest(id: java.util.UUID)
+GET           /moduleCompendium                    controllers.ModuleCompendiumController.all()
+GET           /moduleCompendium/:id/file           controllers.ModuleCompendiumController.getFile(id: java.util.UUID)
+GET           /moduleCompendium/:id                controllers.ModuleCompendiumController.get(id: java.util.UUID)
+GET           /moduleCompendium/:id/latest         controllers.ModuleCompendiumController.getLatest(id: java.util.UUID)
+GET           /moduleCompendium/:id/staging        controllers.ModuleCompendiumController.getStaging(id: java.util.UUID)
 
 # Module
 
-GET           /modules                            controllers.ModuleController.allModules()
-GET           /modules/own                        controllers.ModuleController.allOwnModules()
-GET           /modules/view                       controllers.ModuleController.allModulesFromView()
-GET           /metadata                           controllers.ModuleController.allModuleMetadata()
+GET           /modules                             controllers.ModuleController.allModules()
+GET           /modules/own                         controllers.ModuleController.allOwnModules()
+GET           /modules/view                        controllers.ModuleController.allModulesFromView()
+GET           /metadata                            controllers.ModuleController.allModuleMetadata()
 
 # Module Draft
 
-GET           /moduleDrafts/own                   controllers.ModuleDraftController.moduleDrafts()
-POST          /moduleDrafts                       controllers.ModuleDraftController.createNewModuleDraft()
-PUT           /moduleDrafts/:id                   controllers.ModuleDraftController.createOrUpdateModuleDraft(id: java.util.UUID)
-DELETE        /moduleDrafts/:id                   controllers.ModuleDraftController.deleteModuleDraft(id: java.util.UUID)
+GET           /moduleDrafts/own                    controllers.ModuleDraftController.moduleDrafts()
+POST          /moduleDrafts                        controllers.ModuleDraftController.createNewModuleDraft()
+PUT           /moduleDrafts/:id                    controllers.ModuleDraftController.createOrUpdateModuleDraft(id: java.util.UUID)
+DELETE        /moduleDrafts/:id                    controllers.ModuleDraftController.deleteModuleDraft(id: java.util.UUID)
 
 # Review
-POST          /review/:id                         controllers.ModuleDraftReviewController.create(id: java.util.UUID)
-DELETE        /review/:id                         controllers.ModuleDraftReviewController.delete(id: java.util.UUID)
+POST          /review/:id                          controllers.ModuleDraftReviewController.create(id: java.util.UUID)
+DELETE        /review/:id                          controllers.ModuleDraftReviewController.delete(id: java.util.UUID)
 
 # Module Update Permissions
 
-GET           /moduleUpdatePermissions            controllers.ModuleUpdatePermissionController.all()
-POST          /moduleUpdatePermissions            controllers.ModuleUpdatePermissionController.create()
-DELETE        /moduleUpdatePermissions            controllers.ModuleUpdatePermissionController.delete()
+GET           /moduleUpdatePermissions             controllers.ModuleUpdatePermissionController.all()
+POST          /moduleUpdatePermissions             controllers.ModuleUpdatePermissionController.create()
+DELETE        /moduleUpdatePermissions             controllers.ModuleUpdatePermissionController.delete()
 
 # Map static resources from the /public folder to the /assets URL path
-GET           /assets/*file                       controllers.Assets.versioned(path="/public", file: Asset)
+GET           /assets/*file                        controllers.Assets.versioned(path="/public", file: Asset)
 
       
