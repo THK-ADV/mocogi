@@ -8,7 +8,11 @@ GET           /                                   controllers.HomeController.ind
 # Git Webhooks
 
 POST          /webhook/onPushEvent                controllers.GitWebhookController.onPushEvent()
-POST          /webhook/onForceUpdate              controllers.GitWebhookController.onForceUpdate()
+
+# Git
+
+POST          /git/coreFiles                      controllers.GitController.updateCoreFiles()
+POST          /git/moduleFiles                    controllers.GitController.updateModuleFiles()
 
 # Core
 

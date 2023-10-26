@@ -23,10 +23,16 @@ final class GitFileDownloadService @Inject() (
   def downloadModuleFromDraftBranch(id: UUID): Future[ModuleCompendiumOutput] =
     downloadModule(id, Branch(config.draftBranch))
 
-  def downloadFileContent(path: GitFilePath, branch: Branch): Future[GitFileContent] =
+  def downloadFileContent(
+      path: GitFilePath,
+      branch: Branch
+  ): Future[GitFileContent] =
     api.download(path, branch)
 
-  def downloadModule(id: UUID, branch: Branch): Future[ModuleCompendiumOutput] = {
+  def downloadModule(
+      id: UUID,
+      branch: Branch
+  ): Future[ModuleCompendiumOutput] = {
     val path = GitFilePath(id)
     for {
       content <- api.download(path, branch)
