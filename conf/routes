@@ -52,7 +52,7 @@ GET           /metadata                            controllers.ModuleController.
 # Module Draft
 
 GET           /moduleDrafts/own                    controllers.ModuleDraftController.moduleDrafts()
-GET           /moduleDrafts/own/:id                controllers.ModuleDraftController.ownModuleDraftById(id: java.util.UUID)
+GET           /moduleDrafts/:id/keys               controllers.ModuleDraftController.keys(id: java.util.UUID)
 POST          /moduleDrafts                        controllers.ModuleDraftController.createNewModuleDraft()
 PUT           /moduleDrafts/:id                    controllers.ModuleDraftController.createOrUpdateModuleDraft(id: java.util.UUID)
 DELETE        /moduleDrafts/:id                    controllers.ModuleDraftController.deleteModuleDraft(id: java.util.UUID)

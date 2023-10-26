@@ -86,23 +86,23 @@ class StudyProgramRepository @Inject() (
     )
   }
 
-  def rolesFromDirector(
-      user: User,
-      pos: Set[String]
-  ): Future[Seq[UniversityRole]] = {
-    val sps =
-      TableQuery[POTable].filter(_.abbrev.inSet(pos)).map(_.studyProgram)
-
-    db.run(
-      studyProgramPersonTableQuery
-        .filter(a =>
-          a.studyProgram
-            .in(sps) && a.personFk.filter(_.campusId === user.username).exists
-        )
-        .map(_.role)
-        .result
-    )
-  }
+//  def rolesFromDirector(
+//      user: User,
+//      pos: Set[String]
+//  ): Future[Seq[UniversityRole]] = {
+//    val sps =
+//      TableQuery[POTable].filter(_.abbrev.inSet(pos)).map(_.studyProgram)
+//
+//    db.run(
+//      studyProgramPersonTableQuery
+//        .filter(a =>
+//          a.studyProgram
+//            .in(sps) && a.personFk.filter(_.campusId === user.username).exists
+//        )
+//        .map(_.role)
+//        .result
+//    )
+//  }
 
   def allIds(): Future[Seq[String]] =
     db.run(tableQuery.map(_.abbrev).result)

@@ -29,7 +29,7 @@ trait StudyProgramService {
       pos: Set[String],
       roles: Set[UniversityRole]
   ): Future[Seq[StudyProgramPersonDbEntry]]
-  def rolesFromDirector(user: User, pos: Set[String]): Future[Seq[UniversityRole]]
+  //def rolesFromDirector(user: User, pos: Set[String]): Future[Seq[UniversityRole]]
 }
 
 @Singleton
@@ -104,6 +104,6 @@ final class StudyProgramServiceImpl @Inject() (
   ): Future[Seq[StudyProgramPersonDbEntry]] =
     repo.allDirectorsFromPOs(pos, roles)
 
-  override def rolesFromDirector(user: User, pos: Set[String]) =
-    repo.rolesFromDirector(user, pos)
+//  override def rolesFromDirector(user: User, pos: Set[String]) =
+//    repo.rolesFromDirector(user, pos)
 }

@@ -15,7 +15,6 @@ import controllers.formats.{
   PipelineErrorFormat
 }
 import models.{ModuleCompendiumProtocol, ModuleKeysToReview, User}
-import monocle.Monocle.toAppliedFocusOps
 import play.api.libs.json.Json
 import play.api.mvc.{AbstractController, ControllerComponents}
 import service.core.StudyProgramService
@@ -70,26 +69,16 @@ final class ModuleDraftController @Inject() (
       }
     }
 
-  def ownModuleDraftById(moduleId: UUID) =
-    auth andThen hasPermissionToEditDraft(moduleId) async { r =>
-      for {
-        draft <- moduleDraftService.getByModule(moduleId)
-        pos = moduleDraftReviewService.affectedPOs(draft.protocol().metadata)
-        roles <- studyProgramService.rolesFromDirector(
-          User(r.token.username),
-          pos
+  def keys(moduleId: UUID) =
+    auth andThen hasPermissionToEditDraft(moduleId) async { _ =>
+      moduleDraftService.getByModule(moduleId).map { draft =>
+        Ok(
+          Json.obj(
+            "keysToBeReviewed" -> draft.keysToBeReviewed,
+            "modifiedKeys" -> draft.modifiedKeys
+          )
         )
-      } yield Ok(
-        Json.toJson(
-          draft
-            .focus(_.keysToBeReviewed)
-            .modify(
-              _.filter(k =>
-                roles.exists(r => moduleKeysToReview.keyFromRole(k, r))
-              )
-            )
-        )
-      )
+      }
     }
 
   def createNewModuleDraft() =
