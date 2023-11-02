@@ -3,6 +3,19 @@ package ops
 import scala.concurrent.{ExecutionContext, Future}
 
 object FutureOps {
+
+  def abort[A](msg: String): Future[A] =
+    Future.failed(new Throwable(msg))
+
+  implicit class Ops[A](val self: Future[A]) extends AnyVal {
+    def abortIf(pred: A => Boolean, msg: => String)(implicit
+        ctx: ExecutionContext
+    ): Future[A] =
+      self.flatMap(a =>
+        if (pred(a)) Future.failed(new Throwable(msg)) else Future.successful(a)
+      )
+  }
+
   implicit class SeqOps[A](val self: Future[Seq[A]]) extends AnyVal {
     def single(implicit ctx: ExecutionContext): Future[A] =
       self.flatMap(xs =>

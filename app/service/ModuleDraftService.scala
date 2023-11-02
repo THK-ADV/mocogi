@@ -1,10 +1,6 @@
 package service
 
-import controllers.formats.{
-  ModuleCompendiumFormat,
-  ModuleCompendiumProtocolFormat,
-  PipelineErrorFormat
-}
+import controllers.formats.{ModuleCompendiumFormat, ModuleCompendiumProtocolFormat, PipelineErrorFormat}
 import database.ModuleCompendiumOutput
 import database.repo.ModuleDraftRepository
 import git.api.{GitBranchService, GitCommitService}
@@ -39,21 +35,12 @@ trait ModuleDraftService {
 
   def delete(moduleId: UUID): Future[Unit]
 
-  def deleteDrafts(moduleIds: Seq[UUID]): Future[Unit]
-
   def createOrUpdate(
       moduleId: UUID,
       protocol: ModuleCompendiumProtocol,
       user: User,
       versionScheme: VersionScheme
   ): Future[Either[PipelineError, Unit]]
-
-  def parseModuleCompendium(json: JsValue): ModuleCompendium
-
-  def updateMergeRequestId(
-      moduleId: UUID,
-      mergeRequestId: Option[MergeRequestId]
-  ): Future[Unit]
 }
 
 @Singleton
@@ -83,12 +70,6 @@ final class ModuleDraftServiceImpl @Inject() (
   def allByUser(user: User): Future[Seq[ModuleDraft]] =
     moduleDraftRepository.allByUser(user)
 
-  override def updateMergeRequestId(
-      moduleId: UUID,
-      mergeRequestId: Option[MergeRequestId]
-  ) =
-    moduleDraftRepository.updateMergeRequestId(moduleId, mergeRequestId)
-
   override def createNew(
       protocol: ModuleCompendiumProtocol,
       user: User,
@@ -108,9 +89,6 @@ final class ModuleDraftServiceImpl @Inject() (
       _ <- gitBranchService.deleteBranch(moduleId)
       _ <- moduleDraftRepository.delete(moduleId).map(_ => ())
     } yield ()
-
-  override def deleteDrafts(moduleIds: Seq[UUID]) =
-    moduleDraftRepository.deleteDrafts(moduleIds).map(_ => ())
 
   override def createOrUpdate(
       moduleId: UUID,
@@ -335,7 +313,4 @@ final class ModuleDraftServiceImpl @Inject() (
       (ModuleCompendium(t._2, t._1._2._2, t._1._2._3), t._1._1)
     )
   }
-
-  def parseModuleCompendium(json: JsValue): ModuleCompendium =
-    Json.fromJson[ModuleCompendium](json).get
 }

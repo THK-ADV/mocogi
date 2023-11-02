@@ -12,7 +12,7 @@ object UniversityRole {
     override val id: String = "sgl"
   }
   case object PAV extends UniversityRole {
-    override val label: String = "Prüfungsausschussvorsitzend"
+    override val label: String = "Prüfungsausschussvorsitz"
     override val id: String = "pav"
   }
 

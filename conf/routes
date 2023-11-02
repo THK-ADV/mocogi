@@ -58,8 +58,13 @@ PUT           /moduleDrafts/:id                    controllers.ModuleDraftContro
 DELETE        /moduleDrafts/:id                    controllers.ModuleDraftController.deleteModuleDraft(id: java.util.UUID)
 
 # Review
-POST          /review/:id                          controllers.ModuleDraftReviewController.create(id: java.util.UUID)
-DELETE        /review/:id                          controllers.ModuleDraftReviewController.delete(id: java.util.UUID)
+POST          /moduleReviews/:id                   controllers.ModuleDraftReviewController.create(id: java.util.UUID)
+DELETE        /moduleReviews/:id                   controllers.ModuleDraftReviewController.delete(id: java.util.UUID)
+
+# Approval
+GET           /moduleApprovals/own                 controllers.ModuleDraftApprovalController.getOwn()
+GET           /moduleApprovals/:id                 controllers.ModuleDraftApprovalController.get(id: java.util.UUID)
+PUT           /moduleApprovals/:id                 controllers.ModuleDraftApprovalController.update(id: java.util.UUID)
 
 # Module Update Permissions
 

@@ -1,7 +1,7 @@
 package database.repo
 
 import database.table
-import database.table.{ModuleDraftTable, branchColumnType}
+import database.table.ModuleDraftTable
 import models._
 import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfigProvider}
 import play.api.libs.json.JsValue
@@ -41,9 +41,14 @@ trait ModuleDraftRepository {
 
   def hasModuleDraft(moduleId: UUID): Future[Boolean]
 
-  def updateMergeRequestId(
+  def updateMergeRequestStatus(
       moduleId: UUID,
-      mergeRequestId: Option[MergeRequestId]
+      status: MergeRequestStatus
+  ): Future[Unit]
+
+  def updateMergeRequest(
+      moduleId: UUID,
+      mergeRequest: Option[(MergeRequestId, MergeRequestStatus)]
   ): Future[Unit]
 }
 
@@ -55,14 +60,7 @@ final class ModuleDraftRepositoryImpl @Inject() (
     with Repository[ModuleDraft, ModuleDraft, ModuleDraftTable]
     with HasDatabaseConfigProvider[JdbcProfile] {
   import profile.api._
-  import table.{
-    commitColumnType,
-    jsValueColumnType,
-    mergeRequestColumnType,
-    printColumnType,
-    setStringColumnType,
-    userColumnType
-  }
+  import table.{commitColumnType, jsValueColumnType, mergeRequestIdColumnType, mergeRequestStatusColumnType, printColumnType, setStringColumnType, userColumnType}
 
   protected val tableQuery = TableQuery[ModuleDraftTable]
 
@@ -86,16 +84,29 @@ final class ModuleDraftRepositoryImpl @Inject() (
   override def hasModuleDraft(moduleId: UUID) =
     db.run(tableQuery.filter(_.module === moduleId).exists.result)
 
-  override def updateMergeRequestId(
+  override def updateMergeRequestStatus(
       moduleId: UUID,
-      mergeRequestId: Option[MergeRequestId]
+      status: MergeRequestStatus
   ) =
     db.run(
       tableQuery
         .filter(_.module === moduleId)
-        .map(_.mergeRequestId)
-        .update(mergeRequestId)
-    ).map(_ => ())
+        .map(_.mergeRequestStatus)
+        .update(Some(status))
+        .map(_ => ())
+    )
+
+  override def updateMergeRequest(
+      moduleId: UUID,
+      mergeRequest: Option[(MergeRequestId, MergeRequestStatus)]
+  ) =
+    db.run(
+      tableQuery
+        .filter(_.module === moduleId)
+        .map(a => (a.mergeRequestId, a.mergeRequestStatus))
+        .update(mergeRequest.map(_._1), mergeRequest.map(_._2))
+        .map(_ => ())
+    )
 
   def updateDraft(
       moduleId: UUID,

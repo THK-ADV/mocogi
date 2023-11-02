@@ -14,25 +14,25 @@ import controllers.formats.{
   ModuleFormat,
   PipelineErrorFormat
 }
-import models.{ModuleCompendiumProtocol, ModuleKeysToReview, User}
+import models.{ModuleCompendiumProtocol, User}
 import play.api.libs.json.Json
 import play.api.mvc.{AbstractController, ControllerComponents}
 import service.core.StudyProgramService
 import service.{
-  ModuleDraftReviewService,
+  ModuleReviewService,
   ModuleDraftService,
   ModuleUpdatePermissionService
 }
 
 import java.util.UUID
 import javax.inject.{Inject, Singleton}
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
 
 @Singleton
 final class ModuleDraftController @Inject() (
     cc: ControllerComponents,
     val moduleDraftService: ModuleDraftService,
-    val moduleDraftReviewService: ModuleDraftReviewService,
+    val moduleDraftReviewService: ModuleReviewService,
     val auth: AuthorizationAction,
     val moduleUpdatePermissionService: ModuleUpdatePermissionService,
     val studyProgramService: StudyProgramService,
@@ -115,16 +115,18 @@ final class ModuleDraftController @Inject() (
           }
       }
 
+  /** Deletes the merge request, all reviews, the branch and module draft which
+    * are associated with the module id.
+    * @param moduleId
+    *   ID of the module draft which needs to be deleted
+    * @return
+    *   204 No Content
+    */
   def deleteModuleDraft(moduleId: UUID) =
     auth andThen hasPermissionToEditDraft(moduleId) async { _ =>
       for {
-        draft <- moduleDraftService.getByModule(moduleId)
+        _ <- moduleDraftReviewService.delete(moduleId)
         _ <- moduleDraftService.delete(moduleId)
-        _ <- draft.mergeRequest match {
-          case Some(mergeRequest) =>
-            moduleDraftReviewService.delete(moduleId, mergeRequest)
-          case None => Future.unit
-        }
       } yield NoContent
     }
 }

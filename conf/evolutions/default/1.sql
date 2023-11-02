@@ -403,7 +403,7 @@ create table module_draft
     "module"                  uuid      not null PRIMARY KEY,
     "user_id"                 text      not null,
     "branch"                  text      not null,
-    "status"                  text      not null,
+    "source"                  text      not null,
     "module_json"             text      not null,
     "module_compendium_json"  text      not null,
     "module_compendium_print" text      not null,
@@ -411,6 +411,7 @@ create table module_draft
     "modified_keys"           text      not null,
     "last_commit_id"          text null,
     "merge_request_id"        integer null,
+    "merge_request_status"    text null,
     "last_modified"           timestamp not null
 );
 
@@ -424,23 +425,19 @@ create table module_update_permission
 
 create table module_review
 (
-    "module_draft" uuid not null PRIMARY KEY,
-    "status"       text not null,
+    "id"            uuid not null PRIMARY KEY,
+    "module_draft"  uuid not null,
+    "role"          text not null,
+    "status"        text not null,
+    "study_program" text not null,
+    "comment"       text null,
+    FOREIGN KEY (study_program) REFERENCES study_program (abbrev),
     FOREIGN KEY (module_draft) REFERENCES module_draft (module)
 );
 
-create table module_review_request
-(
-    "review"   uuid not null,
-    "reviewer" text not null,
-    "status"   text not null,
-    PRIMARY KEY (review, reviewer),
-    FOREIGN KEY (review) REFERENCES module_review (module_draft),
-    FOREIGN KEY (reviewer) REFERENCES person (id)
-);
-
 -- study_program_atomic
-create materialized view study_program_atomic as
+create
+materialized view study_program_atomic as
 select study_program.de_label as sp_label,
        study_program.abbrev   as sp_abbrev,
        grade.de_label         as grade_label,
@@ -457,7 +454,8 @@ from study_program
 order by sp_label, po_abbrev, grade_label;
 
 -- metadata_atomic
-create materialized view module_atomic as
+create
+materialized view module_atomic as
 select metadata.id                       as id,
        metadata.title                    as title,
        metadata.abbrev                   as abbrev,
@@ -519,9 +517,10 @@ from metadata
                                      po_optional.specialization = specialization.abbrev;
 
 -- !Downs
-drop materialized view module_atomic;
-drop materialized view study_program_atomic;
-drop table module_review_request if exists;
+drop
+materialized view module_atomic;
+drop
+materialized view study_program_atomic;
 drop table module_review if exists;
 drop table module_update_permission if exists;
 drop table module_draft if exists;

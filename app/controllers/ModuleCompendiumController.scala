@@ -38,7 +38,7 @@ final class ModuleCompendiumController @Inject() (
       service.get(id).map(x => Ok(Json.toJson(x)))
     }
 
-  def getLatest(id: UUID) =
+  def getLatest(id: UUID) = // TODO only which can edit or which should review
     Action.async { _ =>
       draftService
         .getByModuleOpt(id)

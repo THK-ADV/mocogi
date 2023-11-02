@@ -1,7 +1,7 @@
 package git.api
 
 import git.GitConfig
-import models.{Branch, MergeRequestId}
+import models.{Branch, MergeRequestId, MergeRequestStatus}
 import play.api.libs.ws.{EmptyBody, WSClient}
 import play.mvc.Http.Status
 
@@ -22,7 +22,7 @@ final class GitMergeRequestApiService @Inject() (
       description: String,
       needsApproval: Boolean,
       labels: List[String]
-  ): Future[MergeRequestId] =
+  ): Future[(MergeRequestId, MergeRequestStatus)] =
     ws
       .url(this.mergeRequestUrl)
       .withHttpHeaders(tokenHeader())
@@ -41,7 +41,10 @@ final class GitMergeRequestApiService @Inject() (
       .flatMap { res =>
         if (res.status == Status.CREATED)
           Future.successful(
-            res.json.\("iid").validate[Int].map(MergeRequestId.apply).get
+            (
+              res.json.\("iid").validate[Int].map(MergeRequestId.apply).get,
+              MergeRequestStatus.Open
+            )
           )
         else Future.failed(parseErrorMessage(res))
       }
@@ -76,7 +79,7 @@ final class GitMergeRequestApiService @Inject() (
 
   def delete(id: MergeRequestId): Future[Unit] =
     ws
-      .url(this.deleteRequest(id))
+      .url(this.closeRequest(id))
       .withHttpHeaders(tokenHeader())
       .delete()
       .flatMap { res =>
@@ -84,7 +87,21 @@ final class GitMergeRequestApiService @Inject() (
         else Future.failed(parseErrorMessage(res))
       }
 
-  def accept(id: MergeRequestId) =
+  def close(id: MergeRequestId): Future[MergeRequestStatus] =
+    ws
+      .url(this.closeRequest(id))
+      .withHttpHeaders(tokenHeader())
+      .withQueryStringParameters(
+        "state_event" -> "close"
+      )
+      .put(EmptyBody)
+      .flatMap { res =>
+        if (res.status == Status.OK)
+          Future.successful(MergeRequestStatus.Closed)
+        else Future.failed(parseErrorMessage(res))
+      }
+
+  def accept(id: MergeRequestId): Future[MergeRequestStatus] =
     ws.url(this.acceptRequest(id))
       .withHttpHeaders(tokenHeader())
       .withQueryStringParameters(
@@ -93,14 +110,15 @@ final class GitMergeRequestApiService @Inject() (
       )
       .put(EmptyBody)
       .flatMap { res =>
-        if (res.status == Status.OK) Future.unit
+        if (res.status == Status.OK)
+          Future.successful(MergeRequestStatus.Merged)
         else Future.failed(parseErrorMessage(res))
       }
 
   private def mergeRequestUrl =
     s"${projectsUrl()}/merge_requests"
 
-  private def deleteRequest(id: MergeRequestId) =
+  private def closeRequest(id: MergeRequestId) =
     s"$mergeRequestUrl/${id.value}"
 
   private def acceptRequest(id: MergeRequestId) =

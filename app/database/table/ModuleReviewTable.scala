@@ -1,6 +1,6 @@
 package database.table
 
-import models.{ModuleReview, ModuleReviewStatus}
+import models.{ModuleReview, ModuleReviewStatus, UniversityRole}
 import slick.jdbc.PostgresProfile.api._
 
 import java.util.UUID
@@ -11,22 +11,25 @@ final class ModuleReviewTable(tag: Tag)
       "module_review"
     ) {
 
-  def moduleDraft = column[UUID]("module_draft", O.PrimaryKey)
+  def id = column[UUID]("id", O.PrimaryKey)
+
+  def moduleDraft = column[UUID]("module_draft")
+
+  def role = column[UniversityRole]("role")
 
   def status = column[ModuleReviewStatus]("status")
 
-  def moduleDraftFk =
-    foreignKey("moduleDraft", moduleDraft, TableQuery[ModuleDraftTable])(
-      _.module
-    )
+  def studyProgram = column[String]("study_program")
 
-  override def * = (moduleDraft, status) <> (mapRow, unmapRow)
+  def comment = column[Option[String]]("comment")
 
-  def mapRow: ((UUID, ModuleReviewStatus)) => ModuleReview = {
-    case (moduleDraft, status) =>
-      ModuleReview(moduleDraft, status, Nil)
-  }
-
-  def unmapRow: ModuleReview => Option[(UUID, ModuleReviewStatus)] = r =>
-    Some((r.moduleDraft, r.status))
+  override def * =
+    (
+      id,
+      moduleDraft,
+      role,
+      status,
+      studyProgram,
+      comment
+    ) <> (ModuleReview.tupled, ModuleReview.unapply)
 }

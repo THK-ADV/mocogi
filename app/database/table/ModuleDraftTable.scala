@@ -16,12 +16,11 @@ final class ModuleDraftTable(tag: Tag)
 
   def branch = column[Branch]("branch")
 
-  def status = column[ModuleDraftSource]("status")
+  def source = column[ModuleDraftSource]("source")
 
   def data = column[JsValue]("module_json")
 
-  def moduleCompendium =
-    column[JsValue]("module_compendium_json")
+  def moduleCompendium = column[JsValue]("module_compendium_json")
 
   def moduleCompendiumPrint = column[Print]("module_compendium_print")
 
@@ -33,6 +32,9 @@ final class ModuleDraftTable(tag: Tag)
 
   def mergeRequestId = column[Option[MergeRequestId]]("merge_request_id")
 
+  def mergeRequestStatus =
+    column[Option[MergeRequestStatus]]("merge_request_status")
+
   def lastModified = column[LocalDateTime]("last_modified")
 
   override def * =
@@ -40,7 +42,7 @@ final class ModuleDraftTable(tag: Tag)
       module,
       user,
       branch,
-      status,
+      source,
       data,
       moduleCompendium,
       moduleCompendiumPrint,
@@ -48,6 +50,90 @@ final class ModuleDraftTable(tag: Tag)
       modifiedKeys,
       lastCommit,
       mergeRequestId,
+      mergeRequestStatus,
       lastModified
-    ) <> ((ModuleDraft.apply _).tupled, ModuleDraft.unapply)
+    ) <> (mapRow, unmapRow)
+
+  def mapRow: (
+      (
+          UUID,
+          User,
+          Branch,
+          ModuleDraftSource,
+          JsValue,
+          JsValue,
+          Print,
+          Set[String],
+          Set[String],
+          Option[CommitId],
+          Option[MergeRequestId],
+          Option[MergeRequestStatus],
+          LocalDateTime
+      )
+  ) => ModuleDraft = {
+    case (
+          module,
+          user,
+          branch,
+          source,
+          data,
+          moduleCompendium,
+          moduleCompendiumPrint,
+          keysToBeReviewed,
+          modifiedKeys,
+          lastCommit,
+          mergeRequestId,
+          mergeRequestStatus,
+          lastModified
+        ) =>
+      ModuleDraft(
+        module,
+        user,
+        branch,
+        source,
+        data,
+        moduleCompendium,
+        moduleCompendiumPrint,
+        keysToBeReviewed,
+        modifiedKeys,
+        lastCommit,
+        mergeRequestId.zip(mergeRequestStatus),
+        lastModified
+      )
+  }
+
+  def unmapRow: ModuleDraft => Option[
+    (
+        UUID,
+        User,
+        Branch,
+        ModuleDraftSource,
+        JsValue,
+        JsValue,
+        Print,
+        Set[String],
+        Set[String],
+        Option[CommitId],
+        Option[MergeRequestId],
+        Option[MergeRequestStatus],
+        LocalDateTime
+    )
+  ] = d =>
+    Option(
+      (
+        d.module,
+        d.user,
+        d.branch,
+        d.source,
+        d.data,
+        d.moduleCompendium,
+        d.print,
+        d.keysToBeReviewed,
+        d.modifiedKeys,
+        d.lastCommit,
+        d.mergeRequest.map(_._1),
+        d.mergeRequest.map(_._2),
+        d.lastModified
+      )
+    )
 }

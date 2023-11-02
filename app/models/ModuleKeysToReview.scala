@@ -1,18 +1,19 @@
 package models
 
 case class ModuleKeysToReview(sgl: Set[String], pav: Set[String]) {
-  def contains(key: String) = sgl.contains(key) || pav.contains(key)
+  def contains(key: String) = isSGLReview(key) || isPAVReview(key)
 
-  def isSGLReview(keys: Set[String]) = keys.exists(sgl.contains)
+  def isSGLReview(key: String) = sgl.contains(key)
 
-  def isPAVReview(keys: Set[String]) = keys.exists(pav.contains)
+  def isPAVReview(key: String) = pav.contains(key)
 
-  def keyFromRole(key: String, role: UniversityRole) =
-    keysForRole(role).contains(key)
-
-  private def keysForRole(role: UniversityRole) =
-    role match {
-      case UniversityRole.SGL => sgl
-      case UniversityRole.PAV => pav
-    }
+  // TODO
+//  def keyFromRole(key: String, role: UniversityRole) =
+//    keysForRole(role).contains(key)
+//
+//  private def keysForRole(role: UniversityRole) =
+//    role match {
+//      case UniversityRole.SGL => sgl
+//      case UniversityRole.PAV => pav
+//    }
 }
