@@ -36,7 +36,6 @@ final class ModuleDraftController @Inject() (
     val auth: AuthorizationAction,
     val moduleUpdatePermissionService: ModuleUpdatePermissionService,
     val studyProgramService: StudyProgramService,
-    val moduleKeysToReview: ModuleKeysToReview,
     implicit val ctx: ExecutionContext
 ) extends AbstractController(cc)
     with ModuleCompendiumProtocolFormat
@@ -71,11 +70,18 @@ final class ModuleDraftController @Inject() (
 
   def keys(moduleId: UUID) =
     auth andThen hasPermissionToEditDraft(moduleId) async { _ =>
-      moduleDraftService.getByModule(moduleId).map { draft =>
+      moduleDraftService.getByModuleOpt(moduleId).map { draft =>
+        val keysToBeReviewed = draft
+          .map(_.keysToBeReviewed)
+          .getOrElse(Set.empty[String])
+        val modifiedKeys =
+          draft
+            .map(_.modifiedKeys)
+            .getOrElse(Set.empty[String])
         Ok(
           Json.obj(
-            "keysToBeReviewed" -> draft.keysToBeReviewed,
-            "modifiedKeys" -> draft.modifiedKeys
+            "keysToBeReviewed" -> keysToBeReviewed,
+            "modifiedKeys" -> modifiedKeys
           )
         )
       }
