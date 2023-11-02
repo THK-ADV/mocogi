@@ -2,7 +2,7 @@ package database.repo
 
 import com.google.inject.Inject
 import database.table.{ModuleDraftTable, ModuleReviewTable, PersonTable, StudyProgramPersonTable}
-import models.{ModuleReviewStatus, User}
+import models.{ModuleReview, ModuleReviewStatus, User}
 import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfigProvider}
 import slick.jdbc.JdbcProfile
 
@@ -12,16 +12,11 @@ import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 final class ModuleApprovalRepository @Inject() (
-  val dbConfigProvider: DatabaseConfigProvider,
-  implicit val ctx: ExecutionContext
-)  extends HasDatabaseConfigProvider[JdbcProfile]{
+    val dbConfigProvider: DatabaseConfigProvider,
+    implicit val ctx: ExecutionContext
+) extends HasDatabaseConfigProvider[JdbcProfile] {
 
-  import database.table.{
-    jsValueColumnType,
-    moduleReviewStatusColumnType,
-    universityRoleColumnType,
-    userColumnType
-  }
+  import database.table.{jsValueColumnType, moduleReviewStatusColumnType, universityRoleColumnType, userColumnType}
   import profile.api._
 
   private def tableQuery = TableQuery[ModuleReviewTable]
@@ -38,6 +33,9 @@ final class ModuleApprovalRepository @Inject() (
   }
 
   private def moduleDraftTable = TableQuery[ModuleDraftTable]
+
+  def getAllStatus(moduleDraftId: UUID): Future[Seq[ModuleReviewStatus]] =
+    db.run(tableQuery.filter(_.moduleDraft === moduleDraftId).map(_.status).result)
 
   def hasPendingApproval(reviewId: UUID, user: User): Future[Boolean] = {
     val pending: ModuleReviewStatus = ModuleReviewStatus.Pending

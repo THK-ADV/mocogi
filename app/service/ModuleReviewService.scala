@@ -8,9 +8,14 @@ import database.repo.{
   StudyProgramDirectorsRepository
 }
 import git.api.GitMergeRequestApiService
-import models.ModuleReviewStatus.Pending
+import models.ModuleReviewStatus.{Approved, Pending, Rejected}
 import models._
-import ops.FutureOps.abort
+import ops.FutureOps.{Ops, abort}
+import service.ModuleApprovalService.{
+  ModuleReviewSummaryStatus,
+  WaitingForChanges,
+  WaitingForReview
+}
 
 import java.util.UUID
 import javax.inject.{Inject, Singleton}
@@ -20,6 +25,7 @@ import scala.concurrent.{ExecutionContext, Future}
 final class ModuleReviewService @Inject() (
     private val draftRepo: ModuleDraftRepository, // READ UPDATE ONLY
     private val reviewRepo: ModuleReviewRepository, // CREATE READ UPDATE DELETE
+    private val approvalService: ModuleApprovalService, // READ ONLY
     private val directorsRepository: StudyProgramDirectorsRepository,
     private val api: GitMergeRequestApiService,
     private val keysToReview: ModuleKeysToReview,
@@ -69,22 +75,95 @@ final class ModuleReviewService @Inject() (
     }
   }
 
-//  /** Closes the merge request of the given module. Removes all reviews done so
-//    * far. Updates the merge requests status of the module draft to "closed"
-//    * afterwards.
-//    * @param moduleId
-//    *   ID of the module draft which needs to be closed
-//    * @return
-//    */
-//  def close(moduleId: UUID): Future[Unit] =
-//    for {
-//      draft <- draftRepo
-//        .getByModule(moduleId)
-//        .abortIf(_.mergeRequest.isEmpty, "merge request needs to be defined")
-//      status <- api.close(draft.mergeRequestId.get)
-//      _ <- reviewRepo.delete(moduleId)
-//      _ <- draftRepo.updateMergeRequestStatus(moduleId, status)
-//    } yield ()
+  /** Updates the review by changing the status to approved or rejected and
+    * setting the comment if defined. Updates the merge request associated by
+    * the underlying module with status updates. Performs the following actions
+    * based on the value of approve:
+    *   - If true, checks if all approvals are set. If so, the merge request
+    *     will be approved and merged right after. The module draft's status is
+    *     updated to merged respectively.
+    *   - If false, the merge request will be closed and the module draft's
+    *     status is updated respectively.
+    *
+    * @param id
+    *   ID of the review which will be updated
+    * @param reviewer
+    *   The reviewer
+    * @param approve
+    *   Whether the review was approved or not
+    * @param comment
+    *   Optional comment from the reviewer
+    * @return
+    */
+  def update(
+      id: UUID,
+      reviewer: User,
+      approve: Boolean,
+      comment: Option[String]
+  ): Future[Unit] = {
+    val newStatus = if (approve) Approved else Rejected
+
+    def commentBody(summaryStatus: ModuleReviewSummaryStatus) = {
+      val statusString = summaryStatus match {
+        case WaitingForChanges =>
+          summaryStatus.enLabel
+        case WaitingForReview(approved, needed) =>
+          s"${summaryStatus.enLabel} ($approved/$needed)"
+      }
+
+      val body =
+        s"""Author: ${reviewer.username}
+           |
+           |Status: $statusString
+           |
+           |Action: ${newStatus.id}""".stripMargin
+      comment.fold(body)(c => s"$body\nComment: $c")
+    }
+
+    for {
+      review <- reviewRepo
+        .get(id)
+        .abortIf(_.isEmpty, "no module review was found")
+        .map(_.get)
+      draft <- draftRepo
+        .getByModuleOpt(review.moduleDraft)
+        .abortIf(
+          _.forall(_.mergeRequestId.isEmpty),
+          "no module draft or merge request id found"
+        )
+        .map(_.get)
+      status <- approvalService
+        .summaryStatus(draft.module)
+        .abortIf(
+          _ == WaitingForChanges,
+          "can't review if the status is waiting for changes"
+        )
+      mergeRequestId = draft.mergeRequestId.get
+      _ <- reviewRepo.update(id, newStatus, comment)
+      _ <- api.comment(mergeRequestId, commentBody(status))
+      _ <-
+        if (approve) {
+          for {
+            reviews <- reviewRepo.getByModule(draft.module)
+            _ <-
+              if (reviews.forall(_.status == Approved)) {
+                for {
+                  _ <- api.approve(mergeRequestId)
+                  status <- api.accept(mergeRequestId)
+                  _ <- draftRepo.updateMergeRequestStatus(draft.module, status)
+                } yield ()
+              } else {
+                Future.unit
+              }
+          } yield ()
+        } else {
+          for {
+            status <- api.close(mergeRequestId)
+            _ <- draftRepo.updateMergeRequestStatus(draft.module, status)
+          } yield ()
+        }
+    } yield ()
+  }
 
   private def createApproveReview(
       draft: ModuleDraft,

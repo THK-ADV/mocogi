@@ -190,10 +190,10 @@ object GitPushEventHandlingActor {
         .collect { case Some(module) => module }
       logger.info(s"deleting module drafts ${modules.mkString(",")} ...")
       for { // TODO replace with cascading delete
-        _ <- moduleReviewRepository.deleteMany(modules)
-        _ <- moduleDraftRepository.deleteDrafts(modules)
+        res1 <- moduleReviewRepository.deleteMany(modules)
+        res2 <- moduleDraftRepository.deleteDrafts(modules)
       } yield logger.info(
-        s"successfully deleted module drafts: ${modules.mkString(",")}"
+        s"successfully deleted $res1 module reviews and $res2 module drafts"
       )
     }
   }

@@ -4,7 +4,7 @@ import com.google.inject.{Inject, Singleton}
 import controllers.formats.ModuleCompendiumProtocolFormat
 import database.repo.ModuleApprovalRepository
 import models.ModuleReviewStatus.{Approved, Pending, Rejected}
-import models.{UniversityRole, User}
+import models.{ModuleReviewStatus, UniversityRole, User}
 import monocle.Monocle.toAppliedFocusOps
 import play.api.libs.json.Json
 
@@ -34,7 +34,7 @@ object ModuleApprovalService {
 
     override def deLabel: String = s"Warte auf Änderungen"
 
-    override def enLabel: String = s"Waiting for changes"
+    override def enLabel: String = s"Waiting for review"
   }
 
   case class ReviewerApproval(
@@ -52,11 +52,20 @@ object ModuleApprovalService {
 
 @Singleton
 final class ModuleApprovalService @Inject() (
-    private val repo: ModuleApprovalRepository,
+    private val approvalRepository: ModuleApprovalRepository,
     private implicit val ctx: ExecutionContext
 ) extends ModuleCompendiumProtocolFormat {
 
   import ModuleApprovalService._
+
+  /** Returns the ModuleReviewSummaryStatus for the given module
+    * @param moduleId
+    *   ID of the module
+    * @return
+    *   Either Waiting For Changes or Waiting For Review with progress indicator
+    */
+  def summaryStatus(moduleId: UUID): Future[ModuleReviewSummaryStatus] =
+    approvalRepository.getAllStatus(moduleId).map(summaryStatus0)
 
   /** Returns all reviews with a corresponding review status and whether the
     * given user (reviewer) can perform a review. A review status is defined as
@@ -67,27 +76,18 @@ final class ModuleApprovalService @Inject() (
     * @return
     */
   def reviewerApprovals(user: User): Future[Iterable[ReviewerApproval]] = {
-    repo
+    approvalRepository
       .allByModulesWhereUserExists(user)
       .map(_.groupBy(_._1).flatMap { case (_, entries) =>
         entries.filter(_._7.isDefined).map {
           case (moduleId, author, mcJson, role, studyProgram, status, _, id) =>
             val protocol =
               Json.fromJson(mcJson)(moduleCompendiumProtocolFormat).get
-            val (approved, rejected) =
-              entries.foldLeft((0, 0)) { case (acc, e) =>
-                e._6 match {
-                  case Approved =>
-                    acc.focus(_._1).modify(_ + 1)
-                  case Rejected =>
-                    acc.focus(_._2).modify(_ + 1)
-                  case Pending => acc
-                }
-              }
-            val summaryStatus =
-              if (rejected > 0) WaitingForChanges
-              else WaitingForReview(approved, entries.size)
-            val canReview = status == Pending
+            val summaryStatus = summaryStatus0(entries.map(_._6))
+            val canReview = summaryStatus match {
+              case WaitingForChanges      => false
+              case WaitingForReview(_, _) => status == Pending
+            }
             ReviewerApproval(
               id,
               moduleId,
@@ -104,5 +104,22 @@ final class ModuleApprovalService @Inject() (
   }
 
   def hasPendingApproval(reviewId: UUID, user: User): Future[Boolean] =
-    repo.hasPendingApproval(reviewId, user)
+    approvalRepository.hasPendingApproval(reviewId, user)
+
+  private def summaryStatus0(
+      xs: Seq[ModuleReviewStatus]
+  ): ModuleReviewSummaryStatus = {
+    val (approved, rejected) =
+      xs.foldLeft((0, 0)) { case (acc, s) =>
+        s match {
+          case Approved =>
+            acc.focus(_._1).modify(_ + 1)
+          case Rejected =>
+            acc.focus(_._2).modify(_ + 1)
+          case Pending => acc
+        }
+      }
+    if (rejected > 0) WaitingForChanges
+    else WaitingForReview(approved, xs.size)
+  }
 }

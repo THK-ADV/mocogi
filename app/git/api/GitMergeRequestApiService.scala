@@ -24,7 +24,7 @@ final class GitMergeRequestApiService @Inject() (
       labels: List[String]
   ): Future[(MergeRequestId, MergeRequestStatus)] =
     ws
-      .url(this.mergeRequestUrl)
+      .url(mergeRequestUrl)
       .withHttpHeaders(tokenHeader())
       .withQueryStringParameters(
         "source_branch" -> sourceBranch.value,
@@ -79,7 +79,7 @@ final class GitMergeRequestApiService @Inject() (
 
   def delete(id: MergeRequestId): Future[Unit] =
     ws
-      .url(this.closeRequest(id))
+      .url(closeUrl(id))
       .withHttpHeaders(tokenHeader())
       .delete()
       .flatMap { res =>
@@ -89,7 +89,7 @@ final class GitMergeRequestApiService @Inject() (
 
   def close(id: MergeRequestId): Future[MergeRequestStatus] =
     ws
-      .url(this.closeRequest(id))
+      .url(closeUrl(id))
       .withHttpHeaders(tokenHeader())
       .withQueryStringParameters(
         "state_event" -> "close"
@@ -101,8 +101,18 @@ final class GitMergeRequestApiService @Inject() (
         else Future.failed(parseErrorMessage(res))
       }
 
+  def approve(id: MergeRequestId): Future[Unit] =
+    ws
+      .url(s"$mergeRequestUrl/${id.value}/approve")
+      .withHttpHeaders(tokenHeader())
+      .post(EmptyBody)
+      .flatMap { res =>
+        if (res.status == Status.CREATED) Future.unit
+        else Future.failed(parseErrorMessage(res))
+      }
+
   def accept(id: MergeRequestId): Future[MergeRequestStatus] =
-    ws.url(this.acceptRequest(id))
+    ws.url(s"$mergeRequestUrl/${id.value}/merge")
       .withHttpHeaders(tokenHeader())
       .withQueryStringParameters(
         "squash" -> true.toString,
@@ -115,12 +125,19 @@ final class GitMergeRequestApiService @Inject() (
         else Future.failed(parseErrorMessage(res))
       }
 
+  def comment(id: MergeRequestId, body: String): Future[Unit] =
+    ws.url(s"$mergeRequestUrl/${id.value}/notes")
+      .withHttpHeaders(tokenHeader())
+      .withQueryStringParameters("body" -> body)
+      .post(EmptyBody)
+      .flatMap { res =>
+        if (res.status == Status.CREATED) Future.unit
+        else Future.failed(parseErrorMessage(res))
+      }
+
   private def mergeRequestUrl =
     s"${projectsUrl()}/merge_requests"
 
-  private def closeRequest(id: MergeRequestId) =
+  private def closeUrl(id: MergeRequestId) =
     s"$mergeRequestUrl/${id.value}"
-
-  private def acceptRequest(id: MergeRequestId) =
-    s"$mergeRequestUrl/${id.value}/merge"
 }

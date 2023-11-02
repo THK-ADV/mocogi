@@ -4,7 +4,6 @@ import auth.AuthorizationAction
 import controllers.ModuleDraftController.VersionSchemeHeader
 import controllers.actions.{
   ModuleDraftCheck,
-  ModuleUpdatePermissionCheck,
   PermissionCheck,
   VersionSchemeAction
 }
@@ -19,8 +18,8 @@ import play.api.libs.json.Json
 import play.api.mvc.{AbstractController, ControllerComponents}
 import service.core.StudyProgramService
 import service.{
-  ModuleReviewService,
   ModuleDraftService,
+  ModuleReviewService,
   ModuleUpdatePermissionService
 }
 
@@ -40,7 +39,6 @@ final class ModuleDraftController @Inject() (
 ) extends AbstractController(cc)
     with ModuleCompendiumProtocolFormat
     with PipelineErrorFormat
-    with ModuleUpdatePermissionCheck
     with ModuleDraftCheck
     with PermissionCheck
     with ModuleFormat
