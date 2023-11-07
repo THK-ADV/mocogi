@@ -11,8 +11,8 @@ import git.api.GitMergeRequestApiService
 import models.ModuleReviewStatus.{Approved, Pending, Rejected}
 import models._
 import ops.FutureOps.{Ops, abort}
-import service.ModuleApprovalService.{
-  ModuleReviewSummaryStatus,
+import service.ModuleApprovalService.ModuleReviewSummaryStatus
+import service.ModuleApprovalService.ModuleReviewSummaryStatus.{
   WaitingForChanges,
   WaitingForReview
 }
@@ -135,12 +135,12 @@ final class ModuleReviewService @Inject() (
       status <- approvalService
         .summaryStatus(draft.module)
         .abortIf(
-          _ == WaitingForChanges,
+          a => a.forall(_ == WaitingForChanges),
           "can't review if the status is waiting for changes"
         )
       mergeRequestId = draft.mergeRequestId.get
       _ <- reviewRepo.update(id, newStatus, comment)
-      _ <- api.comment(mergeRequestId, commentBody(status))
+      _ <- api.comment(mergeRequestId, commentBody(status.get))
       _ <-
         if (approve) {
           for {

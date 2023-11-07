@@ -46,35 +46,4 @@ object ModuleDraft extends ModuleCompendiumProtocolFormat {
     def mergeRequestStatus: Option[MergeRequestStatus] =
       self.mergeRequest.map(_._2)
   }
-
-  final implicit class OptionOps(private val self: Option[ModuleDraft])
-      extends AnyVal {
-    def status(): ModuleDraftStatus =
-      self match {
-        case Some(draft)
-            if draft.lastCommit.isDefined &&
-              draft.mergeRequestId.isDefined &&
-              draft.mergeRequestStatus.contains(MergeRequestStatus.Open) =>
-          ModuleDraftStatus.Waiting_For_Approval
-        case Some(draft)
-            if draft.lastCommit.isDefined &&
-              draft.mergeRequestId.isDefined &&
-              draft.mergeRequestStatus.contains(MergeRequestStatus.Closed) =>
-          ModuleDraftStatus.Waiting_For_Changes
-        case Some(draft)
-            if draft.lastCommit.isDefined &&
-              draft.mergeRequest.isEmpty &&
-              draft.keysToBeReviewed.isEmpty =>
-          ModuleDraftStatus.Valid_For_Publication
-        case Some(draft)
-            if draft.lastCommit.isDefined &&
-              draft.mergeRequest.isEmpty &&
-              draft.keysToBeReviewed.nonEmpty =>
-          ModuleDraftStatus.Valid_For_Review
-        case None =>
-          ModuleDraftStatus.Published
-        case _ =>
-          ModuleDraftStatus.Unknown
-      }
-  }
 }

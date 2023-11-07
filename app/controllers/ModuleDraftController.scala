@@ -13,11 +13,13 @@ import controllers.formats.{
   ModuleFormat,
   PipelineErrorFormat
 }
-import models.{ModuleCompendiumProtocol, User}
+import models.{ModuleCompendiumProtocol, ModuleDraft, ModuleDraftStatus, User}
 import play.api.libs.json.Json
 import play.api.mvc.{AbstractController, ControllerComponents}
+import service.ModuleApprovalService.ModuleReviewSummaryStatus
 import service.core.StudyProgramService
 import service.{
+  ModuleApprovalService,
   ModuleDraftService,
   ModuleReviewService,
   ModuleUpdatePermissionService
@@ -25,13 +27,14 @@ import service.{
 
 import java.util.UUID
 import javax.inject.{Inject, Singleton}
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 final class ModuleDraftController @Inject() (
     cc: ControllerComponents,
     val moduleDraftService: ModuleDraftService,
     val moduleDraftReviewService: ModuleReviewService,
+    val approvalService: ModuleApprovalService,
     val auth: AuthorizationAction,
     val moduleUpdatePermissionService: ModuleUpdatePermissionService,
     val studyProgramService: StudyProgramService,
@@ -44,6 +47,29 @@ final class ModuleDraftController @Inject() (
     with ModuleFormat
     with JsonNullWritable {
 
+  private def moduleDraftStatus(
+      draft: Option[ModuleDraft]
+  ): Future[ModuleDraftStatus] =
+    draft match {
+      case Some(draft) =>
+        approvalService.summaryStatus(draft.module).map {
+          case Some(ModuleReviewSummaryStatus.WaitingForChanges) =>
+            ModuleDraftStatus.WaitingForChanges
+          case Some(ModuleReviewSummaryStatus.WaitingForReview(_, _)) =>
+            ModuleDraftStatus.WaitingForReview
+          case None =>
+            if (draft.lastCommit.isDefined && draft.mergeRequest.isEmpty) {
+              if (draft.keysToBeReviewed.isEmpty)
+                ModuleDraftStatus.ValidForPublication
+              else ModuleDraftStatus.ValidForReview
+            } else {
+              ModuleDraftStatus.Unknown
+            }
+        }
+      case None =>
+        Future.successful(ModuleDraftStatus.Published)
+    }
+
   def moduleDrafts() =
     auth async { r =>
       val user = User(r.token.username)
@@ -51,19 +77,19 @@ final class ModuleDraftController @Inject() (
         modules <- moduleUpdatePermissionService.getAllModulesFromUser(user)
         draftsByModules <- moduleDraftService.allByModules(modules.map(_.id))
         draftsByUser <- moduleDraftService.allByUser(user)
-      } yield {
-        val moduleWithDraft = modules.map { module =>
+        moduleWithDrafts <- Future.sequence(modules.map { module =>
           val draft = draftsByModules
             .find(_.module == module.id)
             .orElse(draftsByUser.find(_.module == module.id))
-          Json.obj(
-            "module" -> module,
-            "moduleDraft" -> draft,
-            "status" -> draft.status()
-          )
-        }
-        Ok(Json.toJson(moduleWithDraft))
-      }
+          moduleDraftStatus(draft).map { status =>
+            Json.obj(
+              "module" -> module,
+              "moduleDraft" -> draft,
+              "status" -> status
+            )
+          }
+        })
+      } yield Ok(Json.toJson(moduleWithDrafts))
     }
 
   def keys(moduleId: UUID) =

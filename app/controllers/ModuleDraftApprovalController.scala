@@ -6,11 +6,13 @@ import controllers.formats.{JsonNullWritable, UserFormat}
 import models.{ModuleReview, ModuleReviewStatus, UniversityRole, User}
 import play.api.libs.json._
 import play.api.mvc.{AbstractController, ControllerComponents}
-import service.ModuleApprovalService.{
-  ModuleReviewSummaryStatus,
-  ReviewerApproval,
+import service.ModuleApprovalService.ModuleReviewSummaryStatus.{
   WaitingForChanges,
   WaitingForReview
+}
+import service.ModuleApprovalService.{
+  ModuleReviewSummaryStatus,
+  ReviewerApproval
 }
 import service.{ModuleApprovalService, ModuleReviewService}
 

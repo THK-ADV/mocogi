@@ -7,6 +7,7 @@ import models.ModuleReviewStatus.{Approved, Pending, Rejected}
 import models.{ModuleReviewStatus, UniversityRole, User}
 import monocle.Monocle.toAppliedFocusOps
 import play.api.libs.json.Json
+import service.ModuleApprovalService.ModuleReviewSummaryStatus.{WaitingForChanges, WaitingForReview}
 
 import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
@@ -20,21 +21,19 @@ object ModuleApprovalService {
     def enLabel: String
   }
 
-  case object WaitingForChanges extends ModuleReviewSummaryStatus {
-    override def id: String = "waiting_for_changes"
+  object ModuleReviewSummaryStatus {
+    case object WaitingForChanges extends ModuleReviewSummaryStatus {
+      override def id: String = "waiting_for_changes"
+      override def deLabel: String = "Warte auf Änderungen"
+      override def enLabel: String = "Waiting for changes"
+    }
 
-    override def deLabel: String = "Warte auf Änderungen"
-
-    override def enLabel: String = "Waiting for changes"
-  }
-
-  case class WaitingForReview(approved: Int, needed: Int)
-      extends ModuleReviewSummaryStatus {
-    override def id: String = "waiting_for_review"
-
-    override def deLabel: String = s"Warte auf Änderungen"
-
-    override def enLabel: String = s"Waiting for review"
+    case class WaitingForReview(approved: Int, needed: Int)
+        extends ModuleReviewSummaryStatus {
+      override def id: String = "waiting_for_review"
+      override def deLabel: String = s"Warte auf Review"
+      override def enLabel: String = s"Waiting for review"
+    }
   }
 
   case class ReviewerApproval(
@@ -62,9 +61,10 @@ final class ModuleApprovalService @Inject() (
     * @param moduleId
     *   ID of the module
     * @return
-    *   Either Waiting For Changes or Waiting For Review with progress indicator
+    *   Some Waiting For Changes or Waiting For Review with progress indicator
+    *   if a review does exists for the module. None otherwise.
     */
-  def summaryStatus(moduleId: UUID): Future[ModuleReviewSummaryStatus] =
+  def summaryStatus(moduleId: UUID): Future[Option[ModuleReviewSummaryStatus]] =
     approvalRepository.getAllStatus(moduleId).map(summaryStatus0)
 
   /** Returns all reviews with a corresponding review status and whether the
@@ -83,7 +83,7 @@ final class ModuleApprovalService @Inject() (
           case (moduleId, author, mcJson, role, studyProgram, status, _, id) =>
             val protocol =
               Json.fromJson(mcJson)(moduleCompendiumProtocolFormat).get
-            val summaryStatus = summaryStatus0(entries.map(_._6))
+            val summaryStatus = summaryStatus0(entries.map(_._6)).get
             val canReview = summaryStatus match {
               case WaitingForChanges      => false
               case WaitingForReview(_, _) => status == Pending
@@ -108,18 +108,19 @@ final class ModuleApprovalService @Inject() (
 
   private def summaryStatus0(
       xs: Seq[ModuleReviewStatus]
-  ): ModuleReviewSummaryStatus = {
-    val (approved, rejected) =
-      xs.foldLeft((0, 0)) { case (acc, s) =>
-        s match {
-          case Approved =>
-            acc.focus(_._1).modify(_ + 1)
-          case Rejected =>
-            acc.focus(_._2).modify(_ + 1)
-          case Pending => acc
+  ): Option[ModuleReviewSummaryStatus] =
+    Option.when(xs.nonEmpty) {
+      val (approved, rejected) =
+        xs.foldLeft((0, 0)) { case (acc, s) =>
+          s match {
+            case Approved =>
+              acc.focus(_._1).modify(_ + 1)
+            case Rejected =>
+              acc.focus(_._2).modify(_ + 1)
+            case Pending => acc
+          }
         }
-      }
-    if (rejected > 0) WaitingForChanges
-    else WaitingForReview(approved, xs.size)
-  }
+      if (rejected > 0) WaitingForChanges
+      else WaitingForReview(approved, xs.size)
+    }
 }
