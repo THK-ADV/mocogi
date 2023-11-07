@@ -1,6 +1,15 @@
 package models
 
 import controllers.formats.ModuleCompendiumProtocolFormat
+import models.MergeRequestStatus.{Closed, Open}
+import models.ModuleDraftState.{
+  Published,
+  Unknown,
+  ValidForPublication,
+  ValidForReview,
+  WaitingForChanges,
+  WaitingForReview
+}
 import play.api.libs.json.{JsValue, Json, Writes}
 import service.Print
 
@@ -45,5 +54,32 @@ object ModuleDraft extends ModuleCompendiumProtocolFormat {
 
     def mergeRequestStatus: Option[MergeRequestStatus] =
       self.mergeRequest.map(_._2)
+  }
+
+  final implicit class OptionOps(private val self: Option[ModuleDraft])
+      extends AnyVal {
+    def state(): ModuleDraftState =
+      self match {
+        case None => Published
+        case Some(d)
+            if d.lastCommit.isDefined &&
+              d.mergeRequest.isEmpty &&
+              d.keysToBeReviewed.isEmpty =>
+          ValidForPublication
+        case Some(d)
+            if d.lastCommit.isDefined &&
+              d.mergeRequest.isEmpty &&
+              d.keysToBeReviewed.nonEmpty =>
+          ValidForReview
+        case Some(d)
+            if d.lastCommit.isDefined &&
+              d.mergeRequestStatus.contains(Open) =>
+          WaitingForReview
+        case Some(d)
+            if d.lastCommit.isDefined &&
+              d.mergeRequestStatus.contains(Closed) =>
+          WaitingForChanges
+        case _ => Unknown
+      }
   }
 }

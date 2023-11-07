@@ -111,7 +111,7 @@ final class GitMergeRequestApiService @Inject() (
         else Future.failed(parseErrorMessage(res))
       }
 
-  def accept(id: MergeRequestId): Future[MergeRequestStatus] =
+  def merge(id: MergeRequestId): Future[MergeRequestStatus] =
     ws.url(s"$mergeRequestUrl/${id.value}/merge")
       .withHttpHeaders(tokenHeader())
       .withQueryStringParameters(

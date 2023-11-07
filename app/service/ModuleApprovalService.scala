@@ -6,8 +6,11 @@ import database.repo.ModuleApprovalRepository
 import models.ModuleReviewStatus.{Approved, Pending, Rejected}
 import models.{ModuleReviewStatus, UniversityRole, User}
 import monocle.Monocle.toAppliedFocusOps
-import play.api.libs.json.Json
-import service.ModuleApprovalService.ModuleReviewSummaryStatus.{WaitingForChanges, WaitingForReview}
+import play.api.libs.json.{Json, Writes}
+import service.ModuleApprovalService.ModuleReviewSummaryStatus.{
+  WaitingForChanges,
+  WaitingForReview
+}
 
 import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
@@ -15,13 +18,28 @@ import scala.concurrent.{ExecutionContext, Future}
 object ModuleApprovalService {
   sealed trait ModuleReviewSummaryStatus {
     def id: String
-
     def deLabel: String
-
     def enLabel: String
   }
 
   object ModuleReviewSummaryStatus {
+    implicit val rsfmt: Writes[ModuleReviewSummaryStatus] = {
+      case s @ WaitingForChanges =>
+        Json.obj(
+          "id" -> s.id,
+          "deLabel" -> s.deLabel,
+          "enLabel" -> s.enLabel
+        )
+      case s @ WaitingForReview(approved, needed) =>
+        Json.obj(
+          "id" -> s.id,
+          "deLabel" -> s.deLabel,
+          "enLabel" -> s.enLabel,
+          "approved" -> approved,
+          "needed" -> needed
+        )
+    }
+
     case object WaitingForChanges extends ModuleReviewSummaryStatus {
       override def id: String = "waiting_for_changes"
       override def deLabel: String = "Warte auf Änderungen"
@@ -31,8 +49,8 @@ object ModuleApprovalService {
     case class WaitingForReview(approved: Int, needed: Int)
         extends ModuleReviewSummaryStatus {
       override def id: String = "waiting_for_review"
-      override def deLabel: String = s"Warte auf Review"
-      override def enLabel: String = s"Waiting for review"
+      override def deLabel: String = s"Warte auf Review ($approved/$needed)"
+      override def enLabel: String = s"Waiting for review ($approved/$needed)"
     }
   }
 

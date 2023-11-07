@@ -28,7 +28,8 @@ trait ModuleDraftRepository {
       print: Print,
       keysToBeReviewed: Set[String],
       modifiedKeys: Set[String],
-      lastCommit: CommitId
+      lastCommit: CommitId,
+      mergeRequest: Option[(MergeRequestId, MergeRequestStatus)]
   ): Future[Int]
 
   def delete(moduleId: UUID): Future[Int]
@@ -60,7 +61,15 @@ final class ModuleDraftRepositoryImpl @Inject() (
     with Repository[ModuleDraft, ModuleDraft, ModuleDraftTable]
     with HasDatabaseConfigProvider[JdbcProfile] {
   import profile.api._
-  import table.{commitColumnType, jsValueColumnType, mergeRequestIdColumnType, mergeRequestStatusColumnType, printColumnType, setStringColumnType, userColumnType}
+  import table.{
+    commitColumnType,
+    jsValueColumnType,
+    mergeRequestIdColumnType,
+    mergeRequestStatusColumnType,
+    printColumnType,
+    setStringColumnType,
+    userColumnType
+  }
 
   protected val tableQuery = TableQuery[ModuleDraftTable]
 
@@ -115,7 +124,8 @@ final class ModuleDraftRepositoryImpl @Inject() (
       print: Print,
       keysToBeReviewed: Set[String],
       modifiedKeys: Set[String],
-      lastCommit: CommitId
+      lastCommit: CommitId,
+      mergeRequest: Option[(MergeRequestId, MergeRequestStatus)]
   ): Future[Int] =
     db.run(
       tableQuery
@@ -128,7 +138,9 @@ final class ModuleDraftRepositoryImpl @Inject() (
             a.keysToBeReviewed,
             a.modifiedKeys,
             a.lastCommit,
-            a.lastModified
+            a.mergeRequestId,
+            a.mergeRequestStatus,
+            a.lastModified,
           )
         )
         .update(
@@ -139,6 +151,8 @@ final class ModuleDraftRepositoryImpl @Inject() (
             keysToBeReviewed,
             modifiedKeys,
             Some(lastCommit),
+            mergeRequest.map(_._1),
+            mergeRequest.map(_._2),
             LocalDateTime.now
           )
         )

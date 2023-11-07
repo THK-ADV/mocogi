@@ -30,23 +30,6 @@ object ModuleDraftApprovalController extends JsonNullWritable with UserFormat {
   implicit val fmt: Writes[ModuleReview] =
     Json.writes[ModuleReview]
 
-  implicit val rsfmt: Writes[ModuleReviewSummaryStatus] = {
-    case s @ WaitingForChanges =>
-      Json.obj(
-        "id" -> s.id,
-        "deLabel" -> s.deLabel,
-        "enLabel" -> s.enLabel
-      )
-    case s @ WaitingForReview(approved, needed) =>
-      Json.obj(
-        "id" -> s.id,
-        "deLabel" -> s.deLabel,
-        "enLabel" -> s.enLabel,
-        "approved" -> approved,
-        "needed" -> needed
-      )
-  }
-
   implicit val rfmt: Writes[ReviewerApproval] =
     Json.writes[ReviewerApproval]
 

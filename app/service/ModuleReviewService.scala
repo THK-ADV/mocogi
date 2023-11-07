@@ -12,10 +12,7 @@ import models.ModuleReviewStatus.{Approved, Pending, Rejected}
 import models._
 import ops.FutureOps.{Ops, abort}
 import service.ModuleApprovalService.ModuleReviewSummaryStatus
-import service.ModuleApprovalService.ModuleReviewSummaryStatus.{
-  WaitingForChanges,
-  WaitingForReview
-}
+import service.ModuleApprovalService.ModuleReviewSummaryStatus.WaitingForChanges
 
 import java.util.UUID
 import javax.inject.{Inject, Singleton}
@@ -34,8 +31,8 @@ final class ModuleReviewService @Inject() (
 
   private type MergeRequest = (MergeRequestId, MergeRequestStatus)
 
-  /** Either creates a merge request with reviewers based on modified keys which
-    * need to be reviewed or a merge request which is accepted and merged
+  /** Either creates a merge request with fresh reviewers based on modified keys
+    * which need to be reviewed or a merge request which is accepted and merged
     * instantly. The module draft is updated by the merge request id afterwards.
     * @param moduleId
     *   ID of the module draft
@@ -104,20 +101,13 @@ final class ModuleReviewService @Inject() (
     val newStatus = if (approve) Approved else Rejected
 
     def commentBody(summaryStatus: ModuleReviewSummaryStatus) = {
-      val statusString = summaryStatus match {
-        case WaitingForChanges =>
-          summaryStatus.enLabel
-        case WaitingForReview(approved, needed) =>
-          s"${summaryStatus.enLabel} ($approved/$needed)"
-      }
-
       val body =
         s"""Author: ${reviewer.username}
            |
-           |Status: $statusString
+           |Status: ${summaryStatus.enLabel}
            |
            |Action: ${newStatus.id}""".stripMargin
-      comment.fold(body)(c => s"$body\nComment: $c")
+      comment.fold(body)(c => s"$body\n\nComment: $c")
     }
 
     for {
@@ -135,7 +125,7 @@ final class ModuleReviewService @Inject() (
       status <- approvalService
         .summaryStatus(draft.module)
         .abortIf(
-          a => a.forall(_ == WaitingForChanges),
+          _.forall(_ == WaitingForChanges),
           "can't review if the status is waiting for changes"
         )
       mergeRequestId = draft.mergeRequestId.get
@@ -149,7 +139,7 @@ final class ModuleReviewService @Inject() (
               if (reviews.forall(_.status == Approved)) {
                 for {
                   _ <- api.approve(mergeRequestId)
-                  status <- api.accept(mergeRequestId)
+                  status <- api.merge(mergeRequestId)
                   _ <- draftRepo.updateMergeRequestStatus(draft.module, status)
                 } yield ()
               } else {
@@ -208,6 +198,7 @@ final class ModuleReviewService @Inject() (
 
     for {
       directors <- studyProgramDirectors(protocol.metadata.po, roles)
+      _ <- reviewRepo.delete(draft.module)
       _ <- reviewRepo.createMany(reviews(directors))
       mergeRequest <- createMergeRequest(
         draft,
@@ -230,7 +221,7 @@ final class ModuleReviewService @Inject() (
         needsApproval = false
       )
       _ <- api.canBeMerged(mergeRequestId)
-      status <- api.accept(mergeRequestId)
+      status <- api.merge(mergeRequestId)
     } yield (mergeRequestId, status)
 
   private def createMergeRequest(
@@ -239,22 +230,17 @@ final class ModuleReviewService @Inject() (
       description: String,
       needsApproval: Boolean
   ): Future[MergeRequest] =
-    draft.mergeRequest match {
-      case Some(mergeRequest) =>
-        Future.successful(mergeRequest)
-      case None =>
-        api.create(
-          draft.branch,
-          Branch(api.config.draftBranch),
-          title,
-          description,
-          needsApproval,
-          List(
-            if (needsApproval) api.config.reviewApprovedLabel
-            else api.config.autoApprovedLabel
-          )
-        )
-    }
+    api.create(
+      draft.branch,
+      Branch(api.config.draftBranch),
+      title,
+      description,
+      needsApproval,
+      List(
+        if (needsApproval) api.config.reviewApprovedLabel
+        else api.config.autoApprovedLabel
+      )
+    )
 
   private def mrTitle(author: User, metadata: MetadataProtocol) =
     s"${author.username}: ${metadata.title} (${metadata.abbrev})"

@@ -1,6 +1,10 @@
 package service
 
-import controllers.formats.{ModuleCompendiumFormat, ModuleCompendiumProtocolFormat, PipelineErrorFormat}
+import controllers.formats.{
+  ModuleCompendiumFormat,
+  ModuleCompendiumProtocolFormat,
+  PipelineErrorFormat
+}
 import database.ModuleCompendiumOutput
 import database.repo.ModuleDraftRepository
 import git.api.{GitBranchService, GitCommitService}
@@ -170,7 +174,8 @@ final class ModuleDraftServiceImpl @Inject() (
               print,
               keysToBeReviewed(draft.source, modifiedKeys),
               modifiedKeys,
-              commitId
+              commitId,
+              None
             )
           } yield Right(())
       }

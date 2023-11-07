@@ -25,8 +25,8 @@ final class ModuleReviewRepository @Inject() (
 
   protected val tableQuery = TableQuery[ModuleReviewTable]
 
-  def delete(moduleId: UUID): Future[Unit] =
-    db.run(tableQuery.filter(_.moduleDraft === moduleId).delete.map(_ => ()))
+  def delete(moduleId: UUID): Future[Int] =
+    db.run(tableQuery.filter(_.moduleDraft === moduleId).delete)
 
   def deleteMany(moduleIds: Seq[UUID]): Future[Int] =
     db.run(tableQuery.filter(_.moduleDraft.inSet(moduleIds)).delete)
