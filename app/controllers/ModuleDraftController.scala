@@ -4,7 +4,6 @@ import auth.AuthorizationAction
 import controllers.ModuleDraftController.VersionSchemeHeader
 import controllers.actions.{
   ModuleDraftCheck,
-  ModuleUpdatePermissionCheck,
   PermissionCheck,
   VersionSchemeAction
 }
@@ -17,34 +16,34 @@ import controllers.formats.{
 import models.{ModuleCompendiumProtocol, User}
 import play.api.libs.json.Json
 import play.api.mvc.{AbstractController, ControllerComponents}
+import service.core.StudyProgramService
 import service.{
-  ModuleDraftReviewService,
   ModuleDraftService,
+  ModuleReviewService,
   ModuleUpdatePermissionService
 }
 
 import java.util.UUID
 import javax.inject.{Inject, Singleton}
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
 
 @Singleton
 final class ModuleDraftController @Inject() (
     cc: ControllerComponents,
     val moduleDraftService: ModuleDraftService,
-    val moduleDraftReviewService: ModuleDraftReviewService,
+    val moduleDraftReviewService: ModuleReviewService,
     val auth: AuthorizationAction,
     val moduleUpdatePermissionService: ModuleUpdatePermissionService,
+    val studyProgramService: StudyProgramService,
     implicit val ctx: ExecutionContext
 ) extends AbstractController(cc)
     with ModuleCompendiumProtocolFormat
     with PipelineErrorFormat
-    with ModuleUpdatePermissionCheck
     with ModuleDraftCheck
     with PermissionCheck
     with ModuleFormat
     with JsonNullWritable {
 
-  // GET modulesDrafts/own
   def moduleDrafts() =
     auth async { r =>
       val user = User(r.token.username)
@@ -60,14 +59,32 @@ final class ModuleDraftController @Inject() (
           Json.obj(
             "module" -> module,
             "moduleDraft" -> draft,
-            "status" -> draft.status()
+            "moduleDraftState" -> draft.state()
           )
         }
         Ok(Json.toJson(moduleWithDraft))
       }
     }
 
-  // POST modulesDrafts
+  def keys(moduleId: UUID) =
+    auth andThen hasPermissionToEditDraft(moduleId) async { _ =>
+      moduleDraftService.getByModuleOpt(moduleId).map { draft =>
+        val keysToBeReviewed = draft
+          .map(_.keysToBeReviewed)
+          .getOrElse(Set.empty[String])
+        val modifiedKeys =
+          draft
+            .map(_.modifiedKeys)
+            .getOrElse(Set.empty[String])
+        Ok(
+          Json.obj(
+            "keysToBeReviewed" -> keysToBeReviewed,
+            "modifiedKeys" -> modifiedKeys
+          )
+        )
+      }
+    }
+
   def createNewModuleDraft() =
     auth(parse.json[ModuleCompendiumProtocol]) andThen
       new VersionSchemeAction(VersionSchemeHeader) async { r =>
@@ -79,7 +96,6 @@ final class ModuleDraftController @Inject() (
           }
       }
 
-  // PUT moduleDrafts/:id
   def createOrUpdateModuleDraft(moduleId: UUID) =
     auth(parse.json[ModuleCompendiumProtocol]) andThen
       hasPermissionToEditDraft(moduleId) andThen
@@ -97,17 +113,18 @@ final class ModuleDraftController @Inject() (
           }
       }
 
-  // DELETE moduleDrafts/:id
+  /** Deletes the merge request, all reviews, the branch and module draft which
+    * are associated with the module id.
+    * @param moduleId
+    *   ID of the module draft which needs to be deleted
+    * @return
+    *   204 No Content
+    */
   def deleteModuleDraft(moduleId: UUID) =
     auth andThen hasPermissionToEditDraft(moduleId) async { _ =>
       for {
-        draft <- moduleDraftService.getByModule(moduleId)
+        _ <- moduleDraftReviewService.delete(moduleId)
         _ <- moduleDraftService.delete(moduleId)
-        _ <- draft.mergeRequest match {
-          case Some(mergeRequest) =>
-            moduleDraftReviewService.delete(moduleId, mergeRequest)
-          case None => Future.unit
-        }
       } yield NoContent
     }
 }

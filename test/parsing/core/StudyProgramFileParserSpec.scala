@@ -75,19 +75,101 @@ final class StudyProgramFileParserSpec
       assert(rest.isEmpty)
     }
 
-    "parse program director" in {
+    "parse a single program director" in {
       val input = "program_director: person.ald"
       val (res, rest) = programDirectorParser.parse(input)
       assert(
-        res.value == Person.Default(
-          "ald",
-          "Dobrynin",
-          "Alexander",
-          "M.Sc.",
-          List(f10),
-          "ad",
-          "ald",
-          PersonStatus.Active
+        res.value == List(
+          Person.Default(
+            "ald",
+            "Dobrynin",
+            "Alexander",
+            "M.Sc.",
+            List(f10),
+            "ad",
+            "ald",
+            PersonStatus.Active
+          )
+        )
+      )
+      assert(rest.isEmpty)
+    }
+
+    "parse a single exam director" in {
+      val input = "exam_director: person.ald"
+      val (res, rest) = examDirectorParser.parse(input)
+      assert(
+        res.value == List(
+          Person.Default(
+            "ald",
+            "Dobrynin",
+            "Alexander",
+            "M.Sc.",
+            List(f10),
+            "ad",
+            "ald",
+            PersonStatus.Active
+          )
+        )
+      )
+      assert(rest.isEmpty)
+    }
+
+    "parse multiple program directors" in {
+      val input = "program_director:  - person.ald\n  -person.abe"
+      val (res, rest) = programDirectorParser.parse(input)
+      assert(
+        res.value == List(
+          Person.Default(
+            "ald",
+            "Dobrynin",
+            "Alexander",
+            "M.Sc.",
+            List(f10),
+            "ad",
+            "ald",
+            PersonStatus.Active
+          ),
+          Person.Default(
+            "abe",
+            "Bertels",
+            "Anja",
+            "M.Sc.",
+            List(f10),
+            "ab",
+            "abe",
+            PersonStatus.Active
+          )
+        )
+      )
+      assert(rest.isEmpty)
+    }
+
+    "parse multiple exam directors" in {
+      val input = "exam_director:  - person.ald\n  -person.abe"
+      val (res, rest) = programDirectorParser.parse(input)
+      assert(
+        res.value == List(
+          Person.Default(
+            "ald",
+            "Dobrynin",
+            "Alexander",
+            "M.Sc.",
+            List(f10),
+            "ad",
+            "ald",
+            PersonStatus.Active
+          ),
+          Person.Default(
+            "abe",
+            "Bertels",
+            "Anja",
+            "M.Sc.",
+            List(f10),
+            "ab",
+            "abe",
+            PersonStatus.Active
+          )
         )
       )
       assert(rest.isEmpty)
@@ -322,15 +404,29 @@ final class StudyProgramFileParserSpec
         "https://www.th-koeln.de/studium/digital-sciences-master_83002.php",
         "https://www.th-koeln.de/en/academics/digital-sciences-masters-program_83005.php",
         msc,
-        Person.Default(
-          "ald",
-          "Dobrynin",
-          "Alexander",
-          "M.Sc.",
-          List(f10),
-          "ad",
-          "ald",
-          PersonStatus.Active
+        List(
+          Person.Default(
+            "ald",
+            "Dobrynin",
+            "Alexander",
+            "M.Sc.",
+            List(f10),
+            "ad",
+            "ald",
+            PersonStatus.Active
+          )
+        ),
+        List(
+          Person.Default(
+            "ald",
+            "Dobrynin",
+            "Alexander",
+            "M.Sc.",
+            List(f10),
+            "ad",
+            "ald",
+            PersonStatus.Active
+          )
         ),
         LocalDate.of(2027, 9, 30),
         List(
@@ -366,7 +462,7 @@ final class StudyProgramFileParserSpec
       assert(sp1.deUrl == esp1.deUrl)
       assert(sp1.enUrl == esp1.enUrl)
       assert(sp1.grade == esp1.grade)
-      assert(sp1.programDirector == esp1.programDirector)
+      assert(sp1.programDirectors == esp1.programDirectors)
       assert(sp1.accreditationUntil == esp1.accreditationUntil)
       assert(sp1.studyForm == esp1.studyForm)
       assert(sp1.language == esp1.language)
@@ -388,15 +484,49 @@ final class StudyProgramFileParserSpec
         "https://www.th-koeln.de/studium/informatik-bachelor_3488.php",
         "https://www.th-koeln.de/en/academics/computer-science-bachelors-program_7326.php",
         bsc,
-        Person.Default(
-          "ald",
-          "Dobrynin",
-          "Alexander",
-          "M.Sc.",
-          List(f10),
-          "ad",
-          "ald",
-          PersonStatus.Active
+        List(
+          Person.Default(
+            "ald",
+            "Dobrynin",
+            "Alexander",
+            "M.Sc.",
+            List(f10),
+            "ad",
+            "ald",
+            PersonStatus.Active
+          ),
+          Person.Default(
+            "abe",
+            "Bertels",
+            "Anja",
+            "M.Sc.",
+            List(f10),
+            "ab",
+            "abe",
+            PersonStatus.Active
+          )
+        ),
+        List(
+          Person.Default(
+            "ald",
+            "Dobrynin",
+            "Alexander",
+            "M.Sc.",
+            List(f10),
+            "ad",
+            "ald",
+            PersonStatus.Active
+          ),
+          Person.Default(
+            "abe",
+            "Bertels",
+            "Anja",
+            "M.Sc.",
+            List(f10),
+            "ab",
+            "abe",
+            PersonStatus.Active
+          )
         ),
         LocalDate.of(2026, 9, 30),
         List(
@@ -423,7 +553,7 @@ final class StudyProgramFileParserSpec
       assert(sp2.deUrl == esp2.deUrl)
       assert(sp2.enUrl == esp2.enUrl)
       assert(sp2.grade == esp2.grade)
-      assert(sp2.programDirector == esp2.programDirector)
+      assert(sp2.programDirectors == esp2.programDirectors)
       assert(sp2.accreditationUntil == esp2.accreditationUntil)
       assert(sp2.studyForm == esp2.studyForm)
       assert(sp2.language == esp2.language)
@@ -445,15 +575,29 @@ final class StudyProgramFileParserSpec
         "https://www.th-koeln.de/studium/allgemeiner-maschinenbau-bachelor_2709.php",
         "https://www.th-koeln.de/en/academics/general-mechanical-engineering-bachelors-program_7323.php",
         beng,
-        Person.Default(
-          "ald",
-          "Dobrynin",
-          "Alexander",
-          "M.Sc.",
-          List(f10),
-          "ad",
-          "ald",
-          PersonStatus.Active
+        List(
+          Person.Default(
+            "ald",
+            "Dobrynin",
+            "Alexander",
+            "M.Sc.",
+            List(f10),
+            "ad",
+            "ald",
+            PersonStatus.Active
+          )
+        ),
+        List(
+          Person.Default(
+            "abe",
+            "Bertels",
+            "Anja",
+            "M.Sc.",
+            List(f10),
+            "ab",
+            "abe",
+            PersonStatus.Active
+          )
         ),
         LocalDate.of(2026, 9, 30),
         List(
@@ -504,7 +648,7 @@ final class StudyProgramFileParserSpec
       assert(sp3.deUrl == esp3.deUrl)
       assert(sp3.enUrl == esp3.enUrl)
       assert(sp3.grade == esp3.grade)
-      assert(sp3.programDirector == esp3.programDirector)
+      assert(sp3.programDirectors == esp3.programDirectors)
       assert(sp3.accreditationUntil == esp3.accreditationUntil)
       assert(sp3.studyForm == esp3.studyForm)
       assert(sp3.language == esp3.language)
@@ -527,15 +671,29 @@ final class StudyProgramFileParserSpec
         "https://www.th-koeln.de/studium/automation--it-master_3429.php",
         "https://www.th-koeln.de/en/academics/automation--it-master_6815.php",
         meng,
-        Person.Default(
-          "ald",
-          "Dobrynin",
-          "Alexander",
-          "M.Sc.",
-          List(f10),
-          "ad",
-          "ald",
-          PersonStatus.Active
+        List(
+          Person.Default(
+            "ald",
+            "Dobrynin",
+            "Alexander",
+            "M.Sc.",
+            List(f10),
+            "ad",
+            "ald",
+            PersonStatus.Active
+          )
+        ),
+        List(
+          Person.Default(
+            "ald",
+            "Dobrynin",
+            "Alexander",
+            "M.Sc.",
+            List(f10),
+            "ad",
+            "ald",
+            PersonStatus.Active
+          )
         ),
         LocalDate.of(2026, 9, 30),
         List(
@@ -567,7 +725,7 @@ final class StudyProgramFileParserSpec
       assert(sp4.deUrl == esp4.deUrl)
       assert(sp4.enUrl == esp4.enUrl)
       assert(sp4.grade == esp4.grade)
-      assert(sp4.programDirector == esp4.programDirector)
+      assert(sp4.programDirectors == esp4.programDirectors)
       assert(sp4.accreditationUntil == esp4.accreditationUntil)
       assert(sp4.studyForm == esp4.studyForm)
       assert(sp4.language == esp4.language)
@@ -594,7 +752,7 @@ final class StudyProgramFileParserSpec
       assert(sp.deUrl.nonEmpty)
       assert(sp.enUrl.nonEmpty)
       assert(sp.grade.abbrev.nonEmpty)
-      assert(sp.programDirector.id.nonEmpty)
+      assert(sp.programDirectors.nonEmpty)
       assert(sp.studyForm.size == 1)
       assert(sp.studyForm.head.scope.size == 2)
       assert(sp.language.size == 1)
@@ -622,7 +780,7 @@ final class StudyProgramFileParserSpec
       assert(sp.deUrl.nonEmpty)
       assert(sp.enUrl.nonEmpty)
       assert(sp.grade.abbrev.nonEmpty)
-      assert(sp.programDirector.id.nonEmpty)
+      assert(sp.programDirectors.nonEmpty)
       assert(sp.studyForm.size == 1)
       assert(sp.studyForm.head.scope.size == 1)
       assert(sp.studyForm.head.scope.head.deReason.nonEmpty)
@@ -652,7 +810,7 @@ final class StudyProgramFileParserSpec
       assert(sp.deUrl.nonEmpty)
       assert(sp.enUrl.nonEmpty)
       assert(sp.grade.abbrev.nonEmpty)
-      assert(sp.programDirector.id.nonEmpty)
+      assert(sp.programDirectors.nonEmpty)
       assert(sp.studyForm.size == 2)
       assert(sp.language.size == 1)
       assert(sp.seasons.size == 2)
@@ -679,7 +837,7 @@ final class StudyProgramFileParserSpec
       assert(sp.deUrl.nonEmpty)
       assert(sp.enUrl.nonEmpty)
       assert(sp.grade.abbrev.nonEmpty)
-      assert(sp.programDirector.id.nonEmpty)
+      assert(sp.programDirectors.nonEmpty)
       assert(sp.studyForm.size == 2)
       assert(sp.language.size == 1)
       assert(sp.seasons.size == 1)
@@ -706,7 +864,7 @@ final class StudyProgramFileParserSpec
       assert(sp.deUrl.nonEmpty)
       assert(sp.enUrl.isEmpty)
       assert(sp.grade.abbrev.nonEmpty)
-      assert(sp.programDirector.id.nonEmpty)
+      assert(sp.programDirectors.nonEmpty)
       assert(sp.studyForm.size == 1)
       assert(sp.studyForm.head.scope.size == 2)
       assert(sp.studyForm.head.scope(1).deReason.nonEmpty)
@@ -736,7 +894,7 @@ final class StudyProgramFileParserSpec
       assert(sp.deUrl.nonEmpty)
       assert(sp.enUrl.nonEmpty)
       assert(sp.grade.abbrev.nonEmpty)
-      assert(sp.programDirector.id.nonEmpty)
+      assert(sp.programDirectors.nonEmpty)
       assert(sp.studyForm.size == 2)
       assert(sp.language.size == 1)
       assert(sp.seasons.size == 2)
@@ -763,7 +921,7 @@ final class StudyProgramFileParserSpec
       assert(sp.deUrl.nonEmpty)
       assert(sp.enUrl.nonEmpty)
       assert(sp.grade.abbrev.nonEmpty)
-      assert(sp.programDirector.id.nonEmpty)
+      assert(sp.programDirectors.nonEmpty)
       assert(sp.studyForm.size == 1)
       assert(sp.language.size == 1)
       assert(sp.seasons.size == 1)
@@ -790,7 +948,7 @@ final class StudyProgramFileParserSpec
       assert(sp.deUrl.nonEmpty)
       assert(sp.enUrl.nonEmpty)
       assert(sp.grade.abbrev.nonEmpty)
-      assert(sp.programDirector.id.nonEmpty)
+      assert(sp.programDirectors.nonEmpty)
       assert(sp.studyForm.size == 1)
       assert(sp.studyForm.head.scope.size == 1)
       assert(sp.language.size == 1)
@@ -818,7 +976,7 @@ final class StudyProgramFileParserSpec
       assert(sp.deUrl.nonEmpty)
       assert(sp.enUrl.nonEmpty)
       assert(sp.grade.abbrev.nonEmpty)
-      assert(sp.programDirector.id.nonEmpty)
+      assert(sp.programDirectors.nonEmpty)
       assert(sp.studyForm.size == 1)
       assert(sp.studyForm.head.scope.size == 1)
       assert(sp.language.size == 1)
@@ -846,7 +1004,7 @@ final class StudyProgramFileParserSpec
       assert(sp.deUrl.nonEmpty)
       assert(sp.enUrl.nonEmpty)
       assert(sp.grade.abbrev.nonEmpty)
-      assert(sp.programDirector.id.nonEmpty)
+      assert(sp.programDirectors.nonEmpty)
       assert(sp.studyForm.size == 1)
       assert(sp.studyForm.head.scope.size == 2)
       assert(sp.language.size == 1)
@@ -874,7 +1032,7 @@ final class StudyProgramFileParserSpec
       assert(sp.deUrl.nonEmpty)
       assert(sp.enUrl.isEmpty)
       assert(sp.grade.abbrev.nonEmpty)
-      assert(sp.programDirector.id.nonEmpty)
+      assert(sp.programDirectors.nonEmpty)
       assert(sp.studyForm.size == 1)
       assert(sp.studyForm.head.scope.size == 1)
       assert(sp.language.size == 1)
@@ -902,7 +1060,7 @@ final class StudyProgramFileParserSpec
       assert(sp.deUrl.nonEmpty)
       assert(sp.enUrl.nonEmpty)
       assert(sp.grade.abbrev.nonEmpty)
-      assert(sp.programDirector.id.nonEmpty)
+      assert(sp.programDirectors.nonEmpty)
       assert(sp.studyForm.size == 1)
       assert(sp.studyForm.head.scope.size == 1)
       assert(sp.language.size == 1)
@@ -930,7 +1088,7 @@ final class StudyProgramFileParserSpec
       assert(sp.deUrl.nonEmpty)
       assert(sp.enUrl.nonEmpty)
       assert(sp.grade.abbrev.nonEmpty)
-      assert(sp.programDirector.id.nonEmpty)
+      assert(sp.programDirectors.nonEmpty)
       assert(sp.studyForm.size == 1)
       assert(sp.studyForm.head.scope.size == 1)
       assert(sp.language.size == 1)
@@ -958,7 +1116,7 @@ final class StudyProgramFileParserSpec
       assert(sp.deUrl.nonEmpty)
       assert(sp.enUrl.nonEmpty)
       assert(sp.grade.abbrev.nonEmpty)
-      assert(sp.programDirector.id.nonEmpty)
+      assert(sp.programDirectors.nonEmpty)
       assert(sp.studyForm.size == 1)
       assert(sp.studyForm.head.scope.size == 1)
       assert(sp.language.size == 1)
@@ -986,7 +1144,7 @@ final class StudyProgramFileParserSpec
       assert(sp.deUrl.nonEmpty)
       assert(sp.enUrl.nonEmpty)
       assert(sp.grade.abbrev.nonEmpty)
-      assert(sp.programDirector.id.nonEmpty)
+      assert(sp.programDirectors.nonEmpty)
       assert(sp.studyForm.size == 2)
       assert(sp.studyForm.head.scope.size == 2)
       assert(sp.studyForm.last.scope.size == 2)
@@ -1003,7 +1161,7 @@ final class StudyProgramFileParserSpec
     }
 
     "parse wiwm" in {
-      val (res, rest) = withFile0("test/parsing/res/program.wiwm.yaml")(
+      val (res, rest) = withFile0("test/parsing/res/program.wiw.yaml")(
         fileParser.parse
       )
       val sp = res.value.head
@@ -1015,7 +1173,7 @@ final class StudyProgramFileParserSpec
       assert(sp.deUrl.nonEmpty)
       assert(sp.enUrl.nonEmpty)
       assert(sp.grade.abbrev.nonEmpty)
-      assert(sp.programDirector.id.nonEmpty)
+      assert(sp.programDirectors.nonEmpty)
       assert(sp.studyForm.size == 1)
       assert(sp.studyForm.head.scope.size == 2)
       assert(sp.language.size == 1)

@@ -5,6 +5,7 @@ ing_ait:
   en_url: https://www.th-koeln.de/en/academics/automation--it-master_6815.php
   grade: grade.meng
   program_director: person.ald
+  exam_director: person.ald
   accreditation_until: 30.09.2026
   study_form:
     - type: study_form.full

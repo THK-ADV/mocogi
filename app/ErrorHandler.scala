@@ -9,17 +9,6 @@ import scala.concurrent._
 @Singleton
 class ErrorHandler extends HttpErrorHandler {
 
-  private def makeJson(
-      `type`: String,
-      request: RequestHeader,
-      message: String
-  ): JsValue =
-    Json.obj(
-      "type" -> `type`,
-      "request" -> request.toString(),
-      "message" -> message
-    )
-
   def onClientError(
       request: RequestHeader,
       statusCode: Int,
@@ -27,7 +16,11 @@ class ErrorHandler extends HttpErrorHandler {
   ): Future[Result] =
     Future.successful(
       Status(statusCode)(
-        makeJson("client error", request, message)
+        Json.obj(
+          "type" -> "client error",
+          "request" -> request.toString(),
+          "message" -> message
+        )
       )
     )
 
@@ -37,7 +30,12 @@ class ErrorHandler extends HttpErrorHandler {
   ): Future[Result] =
     Future.successful(
       InternalServerError(
-        makeJson("server error", request, exception.getMessage)
+        Json.obj(
+          "type" -> "server error",
+          "request" -> request.toString(),
+          "message" -> exception.getMessage,
+          "trace" -> exception.getStackTrace.mkString("\n")
+        )
       )
     )
 }

@@ -114,7 +114,6 @@ create table study_program
     "de_url"                         text    not null,
     "en_url"                         text    not null,
     "grade"                          text    not null,
-    "program_director"               text    not null,
     "accreditation_until"            date    not null,
     "restricted_admission_value"     boolean not null,
     "restricted_admission_de_reason" text    not null,
@@ -123,8 +122,7 @@ create table study_program
     "de_note"                        text    not null,
     "en_description"                 text    not null,
     "en_note"                        text    not null,
-    FOREIGN KEY (grade) REFERENCES grade (abbrev),
-    FOREIGN KEY (program_director) REFERENCES person (id)
+    FOREIGN KEY (grade) REFERENCES grade (abbrev)
 );
 
 create table study_form
@@ -172,6 +170,16 @@ create table study_program_location
     "study_program" text not null,
     PRIMARY KEY (location, study_program),
     FOREIGN KEY (location) REFERENCES location (abbrev),
+    FOREIGN KEY (study_program) REFERENCES study_program (abbrev)
+);
+
+create table study_program_person
+(
+    "person"        text not null,
+    "study_program" text not null,
+    "role"          text not null,
+    PRIMARY KEY (person, study_program, role),
+    FOREIGN KEY (person) REFERENCES person (id),
     FOREIGN KEY (study_program) REFERENCES study_program (abbrev)
 );
 
@@ -395,7 +403,7 @@ create table module_draft
     "module"                  uuid      not null PRIMARY KEY,
     "user_id"                 text      not null,
     "branch"                  text      not null,
-    "status"                  text      not null,
+    "source"                  text      not null,
     "module_json"             text      not null,
     "module_compendium_json"  text      not null,
     "module_compendium_print" text      not null,
@@ -403,6 +411,7 @@ create table module_draft
     "modified_keys"           text      not null,
     "last_commit_id"          text null,
     "merge_request_id"        integer null,
+    "merge_request_status"    text null,
     "last_modified"           timestamp not null
 );
 
@@ -414,36 +423,105 @@ create table module_update_permission
     PRIMARY KEY (module, user_id)
 );
 
-create table module_reviewer
-(
-    "id"            uuid not null PRIMARY KEY,
-    "user_id"       text not null,
-    "study_program" text not null,
-    "role"          text not null,
-    FOREIGN KEY (study_program) REFERENCES study_program (abbrev)
-);
-
 create table module_review
 (
-    "module_draft" uuid not null PRIMARY KEY,
-    "status"       text not null,
+    "id"            uuid not null PRIMARY KEY,
+    "module_draft"  uuid not null,
+    "role"          text not null,
+    "status"        text not null,
+    "study_program" text not null,
+    "comment"       text null,
+    FOREIGN KEY (study_program) REFERENCES study_program (abbrev),
     FOREIGN KEY (module_draft) REFERENCES module_draft (module)
 );
 
-create table module_review_request
-(
-    "review"   uuid    not null,
-    "reviewer" uuid    not null,
-    "approved" boolean not null,
-    PRIMARY KEY (review, reviewer),
-    FOREIGN KEY (review) REFERENCES module_review (module_draft),
-    FOREIGN KEY (reviewer) REFERENCES module_reviewer (id)
-);
+-- study_program_atomic
+create
+materialized view study_program_atomic as
+select study_program.de_label as sp_label,
+       study_program.abbrev   as sp_abbrev,
+       grade.de_label         as grade_label,
+       po.abbrev              as po_abbrev,
+       po.version             as po_version,
+       specialization.label   as spec_label,
+       specialization.abbrev  as spec_abbrev
+from study_program
+         join grade on study_program.grade = grade.abbrev
+         join po on po.study_program = study_program.abbrev and
+                    po.date_from <= now() and
+                    (po.date_to is null or po.date_to >= now())
+         left join specialization on specialization.po = po.abbrev
+order by sp_label, po_abbrev, grade_label;
+
+-- metadata_atomic
+create
+materialized view module_atomic as
+select metadata.id                       as id,
+       metadata.title                    as title,
+       metadata.abbrev                   as abbrev,
+       metadata.ects                     as ects,
+       person.id                         as module_management_id,
+       person.kind                       as module_management_kind,
+       person.abbreviation               as module_management_abbrev,
+       person.title                      as module_management_title,
+       person.firstname                  as module_management_firstname,
+       person.lastname                   as module_management_lastname,
+       po.abbrev                         as po_abbrev,
+       po.version                        as po_version,
+       study_program.abbrev              as sp_abbrev,
+       study_program.de_label            as sp_label,
+       grade.de_label                    as grade_label,
+       specialization.abbrev             as spec_abbrev,
+       specialization.label              as spec_label,
+       po_mandatory.recommended_semester as recommended_semester,
+       true                              as mandatory
+from metadata
+         join responsibility on metadata.id = responsibility.metadata and
+                                responsibility.responsibility_type = 'module_management'
+         join person on responsibility.person = person.id
+         join po_mandatory on metadata.id = po_mandatory.metadata
+         join po on po_mandatory.po = po.abbrev
+         join study_program on po.study_program = study_program.abbrev
+         join grade on study_program.grade = grade.abbrev
+         left join specialization on po.abbrev = specialization.po and
+                                     po_mandatory.specialization = specialization.abbrev
+union
+select metadata.id                      as id,
+       metadata.title                   as title,
+       metadata.abbrev                  as abbrev,
+       metadata.ects                    as ects,
+       person.id                        as module_management_id,
+       person.kind                      as module_management_kind,
+       person.abbreviation              as module_management_abbrev,
+       person.title                     as module_management_title,
+       person.firstname                 as module_management_firstname,
+       person.lastname                  as module_management_lastname,
+       po.abbrev                        as po_abbrev,
+       po.version                       as po_version,
+       study_program.abbrev             as sp_abbrev,
+       study_program.de_label           as sp_label,
+       grade.de_label                   as grade_label,
+       specialization.abbrev            as spec_abbrev,
+       specialization.label             as spec_label,
+       po_optional.recommended_semester as recommended_semester,
+       false                            as mandatory
+from metadata
+         join responsibility on metadata.id = responsibility.metadata and
+                                responsibility.responsibility_type = 'module_management'
+         join person on responsibility.person = person.id
+         join po_optional on metadata.id = po_optional.metadata
+         join po on po_optional.po = po.abbrev
+         join study_program on po.study_program = study_program.abbrev
+         join grade on study_program.grade = grade.abbrev
+         left join specialization on po.abbrev = specialization.po and
+                                     po_optional.specialization = specialization.abbrev;
 
 -- !Downs
-drop table module_review_request if exists;
+drop
+materialized view module_atomic;
+drop
+materialized view study_program_atomic;
 drop table module_review if exists;
-drop table module_reviewer if exists;
 drop table module_update_permission if exists;
 drop table module_draft if exists;
 drop table metadata_taught_with if exists;
@@ -464,6 +542,7 @@ drop table specialization if exists;
 drop table po_modification_date if exists;
 drop table po if exists;
 drop table focus_area if exists;
+drop table study_program_person if exists;
 drop table study_program_location if exists;
 drop table study_program_season if exists;
 drop table study_program_language if exists;

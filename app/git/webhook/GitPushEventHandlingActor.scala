@@ -1,6 +1,7 @@
 package git.webhook
 
 import akka.actor.{Actor, ActorRef, Props}
+import database.repo.{ModuleDraftRepository, ModuleReviewRepository}
 import git.api.GitFileDownloadService
 import git.publisher.{CoreDataPublisher, ModuleCompendiumPublisher}
 import git.webhook.GitPushEventHandlingActor.HandleMergeEvent
@@ -8,7 +9,6 @@ import git.{GitChanges, GitConfig, GitFilePath}
 import models.{Branch, CommitId}
 import play.api.Logging
 import play.api.libs.json.{JsArray, JsError, JsResult, JsValue}
-import service.{ModuleDraftService, ModuleReviewService}
 
 import java.time.LocalDateTime
 import javax.inject.Singleton
@@ -72,31 +72,31 @@ object GitPushEventHandlingActor {
     )
 
   def props(
-      moduleDraftService: ModuleDraftService,
       downloadService: GitFileDownloadService,
       moduleCompendiumPublisher: ModuleCompendiumPublisher,
       coreDataPublisher: CoreDataPublisher,
-      moduleReviewService: ModuleReviewService,
+      moduleReviewRepository: ModuleReviewRepository,
+      moduleDraftRepository: ModuleDraftRepository,
       gitConfig: GitConfig,
       ctx: ExecutionContext
   ) = Props(
     new Impl(
-      moduleDraftService,
       downloadService,
       moduleCompendiumPublisher,
       coreDataPublisher,
-      moduleReviewService,
+      moduleReviewRepository,
+      moduleDraftRepository,
       gitConfig,
       ctx
     )
   )
 
   private final class Impl(
-      moduleDraftService: ModuleDraftService,
       downloadService: GitFileDownloadService,
       moduleCompendiumPublisher: ModuleCompendiumPublisher,
       coreDataPublisher: CoreDataPublisher,
-      moduleReviewService: ModuleReviewService,
+      moduleReviewRepository: ModuleReviewRepository,
+      moduleDraftRepository: ModuleDraftRepository,
       implicit val gitConfig: GitConfig,
       implicit val ctx: ExecutionContext
   ) extends Actor
@@ -189,13 +189,11 @@ object GitPushEventHandlingActor {
         .map(_.moduleId)
         .collect { case Some(module) => module }
       logger.info(s"deleting module drafts ${modules.mkString(",")} ...")
-      for {
-        _ <- moduleReviewService.deleteMany(
-          modules
-        ) // TODO replace with cascading delete
-        _ <- moduleDraftService.deleteDrafts(modules)
+      for { // TODO replace with cascading delete
+        res1 <- moduleReviewRepository.deleteMany(modules)
+        res2 <- moduleDraftRepository.deleteDrafts(modules)
       } yield logger.info(
-        s"successfully deleted module drafts: ${modules.mkString(",")}"
+        s"successfully deleted $res1 module reviews and $res2 module drafts"
       )
     }
   }

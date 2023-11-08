@@ -5,6 +5,7 @@ inf_wivm:
   en_url: https://www.th-koeln.de/en/academics/business-information-systems-masters-programjoint-degree-program_7783.php
   grade: grade.msc
   program_director: person.nn
+  exam_director: person.nn
   accreditation_until: 30.09.2026
   study_form:
     - type: study_form.bbs

@@ -1,7 +1,7 @@
 package git.api
 
 import git.GitConfig
-import models.{Branch, MergeRequestId}
+import models.{Branch, MergeRequestId, MergeRequestStatus}
 import play.api.libs.ws.{EmptyBody, WSClient}
 import play.mvc.Http.Status
 
@@ -22,9 +22,9 @@ final class GitMergeRequestApiService @Inject() (
       description: String,
       needsApproval: Boolean,
       labels: List[String]
-  ): Future[MergeRequestId] =
+  ): Future[(MergeRequestId, MergeRequestStatus)] =
     ws
-      .url(this.mergeRequestUrl)
+      .url(mergeRequestUrl)
       .withHttpHeaders(tokenHeader())
       .withQueryStringParameters(
         "source_branch" -> sourceBranch.value,
@@ -41,7 +41,10 @@ final class GitMergeRequestApiService @Inject() (
       .flatMap { res =>
         if (res.status == Status.CREATED)
           Future.successful(
-            res.json.\("iid").validate[Int].map(MergeRequestId.apply).get
+            (
+              res.json.\("iid").validate[Int].map(MergeRequestId.apply).get,
+              MergeRequestStatus.Open
+            )
           )
         else Future.failed(parseErrorMessage(res))
       }
@@ -76,7 +79,7 @@ final class GitMergeRequestApiService @Inject() (
 
   def delete(id: MergeRequestId): Future[Unit] =
     ws
-      .url(this.deleteRequest(id))
+      .url(closeUrl(id))
       .withHttpHeaders(tokenHeader())
       .delete()
       .flatMap { res =>
@@ -84,8 +87,32 @@ final class GitMergeRequestApiService @Inject() (
         else Future.failed(parseErrorMessage(res))
       }
 
-  def accept(id: MergeRequestId) =
-    ws.url(this.acceptRequest(id))
+  def close(id: MergeRequestId): Future[MergeRequestStatus] =
+    ws
+      .url(closeUrl(id))
+      .withHttpHeaders(tokenHeader())
+      .withQueryStringParameters(
+        "state_event" -> "close"
+      )
+      .put(EmptyBody)
+      .flatMap { res =>
+        if (res.status == Status.OK)
+          Future.successful(MergeRequestStatus.Closed)
+        else Future.failed(parseErrorMessage(res))
+      }
+
+  def approve(id: MergeRequestId): Future[Unit] =
+    ws
+      .url(s"$mergeRequestUrl/${id.value}/approve")
+      .withHttpHeaders(tokenHeader())
+      .post(EmptyBody)
+      .flatMap { res =>
+        if (res.status == Status.CREATED) Future.unit
+        else Future.failed(parseErrorMessage(res))
+      }
+
+  def merge(id: MergeRequestId): Future[MergeRequestStatus] =
+    ws.url(s"$mergeRequestUrl/${id.value}/merge")
       .withHttpHeaders(tokenHeader())
       .withQueryStringParameters(
         "squash" -> true.toString,
@@ -93,16 +120,24 @@ final class GitMergeRequestApiService @Inject() (
       )
       .put(EmptyBody)
       .flatMap { res =>
-        if (res.status == Status.OK) Future.unit
+        if (res.status == Status.OK)
+          Future.successful(MergeRequestStatus.Merged)
+        else Future.failed(parseErrorMessage(res))
+      }
+
+  def comment(id: MergeRequestId, body: String): Future[Unit] =
+    ws.url(s"$mergeRequestUrl/${id.value}/notes")
+      .withHttpHeaders(tokenHeader())
+      .withQueryStringParameters("body" -> body)
+      .post(EmptyBody)
+      .flatMap { res =>
+        if (res.status == Status.CREATED) Future.unit
         else Future.failed(parseErrorMessage(res))
       }
 
   private def mergeRequestUrl =
     s"${projectsUrl()}/merge_requests"
 
-  private def deleteRequest(id: MergeRequestId) =
+  private def closeUrl(id: MergeRequestId) =
     s"$mergeRequestUrl/${id.value}"
-
-  private def acceptRequest(id: MergeRequestId) =
-    s"$mergeRequestUrl/${id.value}/merge"
 }

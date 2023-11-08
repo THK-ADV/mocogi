@@ -1,6 +1,15 @@
 package models
 
 import controllers.formats.ModuleCompendiumProtocolFormat
+import models.MergeRequestStatus.{Closed, Open}
+import models.ModuleDraftState.{
+  Published,
+  Unknown,
+  ValidForPublication,
+  ValidForReview,
+  WaitingForChanges,
+  WaitingForReview
+}
 import play.api.libs.json.{JsValue, Json, Writes}
 import service.Print
 
@@ -18,7 +27,7 @@ case class ModuleDraft(
     keysToBeReviewed: Set[String],
     modifiedKeys: Set[String],
     lastCommit: Option[CommitId],
-    mergeRequest: Option[MergeRequestId],
+    mergeRequest: Option[(MergeRequestId, MergeRequestStatus)],
     lastModified: LocalDateTime
 )
 
@@ -31,7 +40,7 @@ object ModuleDraft extends ModuleCompendiumProtocolFormat {
         "status" -> d.source,
         "data" -> d.data,
         "keysToBeReviewed" -> d.keysToBeReviewed,
-        "mergeRequestId" -> d.mergeRequest.map(_.value),
+        "mergeRequestId" -> d.mergeRequest.map(_._1.value),
         "lastModified" -> d.lastModified
       )
     )
@@ -39,24 +48,38 @@ object ModuleDraft extends ModuleCompendiumProtocolFormat {
   final implicit class Ops(private val self: ModuleDraft) extends AnyVal {
     def protocol(): ModuleCompendiumProtocol =
       Json.fromJson(self.data).get
+
+    def mergeRequestId: Option[MergeRequestId] =
+      self.mergeRequest.map(_._1)
+
+    def mergeRequestStatus: Option[MergeRequestStatus] =
+      self.mergeRequest.map(_._2)
   }
+
   final implicit class OptionOps(private val self: Option[ModuleDraft])
       extends AnyVal {
-    def status(): ModuleDraftStatus =
+    def state(): ModuleDraftState =
       self match {
-        case Some(draft)
-            if draft.lastCommit.isDefined && draft.mergeRequest.isDefined =>
-          ModuleDraftStatus.Waiting_For_Approval
-        case Some(draft)
-            if draft.lastCommit.isDefined && draft.mergeRequest.isEmpty && draft.keysToBeReviewed.isEmpty =>
-          ModuleDraftStatus.Valid_For_Publication
-        case Some(draft)
-            if draft.lastCommit.isDefined && draft.mergeRequest.isEmpty && draft.keysToBeReviewed.nonEmpty =>
-          ModuleDraftStatus.Valid_For_Review
-        case None =>
-          ModuleDraftStatus.Published
-        case _ =>
-          ModuleDraftStatus.Unknown
+        case None => Published
+        case Some(d)
+            if d.lastCommit.isDefined &&
+              d.mergeRequest.isEmpty &&
+              d.keysToBeReviewed.isEmpty =>
+          ValidForPublication
+        case Some(d)
+            if d.lastCommit.isDefined &&
+              d.mergeRequest.isEmpty &&
+              d.keysToBeReviewed.nonEmpty =>
+          ValidForReview
+        case Some(d)
+            if d.lastCommit.isDefined &&
+              d.mergeRequestStatus.contains(Open) =>
+          WaitingForReview
+        case Some(d)
+            if d.lastCommit.isDefined &&
+              d.mergeRequestStatus.contains(Closed) =>
+          WaitingForChanges
+        case _ => Unknown
       }
   }
 }

@@ -71,7 +71,7 @@ package object table {
     MappedColumnType
       .base[CommitId, String](_.value, CommitId.apply)
 
-  implicit val mergeRequestColumnType: BaseColumnType[MergeRequestId] =
+  implicit val mergeRequestIdColumnType: BaseColumnType[MergeRequestId] =
     MappedColumnType
       .base[MergeRequestId, Int](_.value, MergeRequestId.apply)
 
@@ -106,10 +106,9 @@ package object table {
         stringToSet
       )
 
-  implicit val moduleReviewerRoleColumnType
-      : BaseColumnType[ModuleReviewerRole] =
+  implicit val universityRoleColumnType: BaseColumnType[UniversityRole] =
     MappedColumnType
-      .base[ModuleReviewerRole, String](_.id, ModuleReviewerRole.apply)
+      .base[UniversityRole, String](_.id, UniversityRole.apply)
 
   implicit val moduleReviewStatusColumnType
       : BaseColumnType[ModuleReviewStatus] =
@@ -122,5 +121,13 @@ package object table {
       .base[ModuleUpdatePermissionType, String](
         _.id,
         ModuleUpdatePermissionType.apply
+      )
+
+  implicit val mergeRequestStatusColumnType
+      : BaseColumnType[MergeRequestStatus] =
+    MappedColumnType
+      .base[MergeRequestStatus, String](
+        _.id,
+        MergeRequestStatus.apply
       )
 }

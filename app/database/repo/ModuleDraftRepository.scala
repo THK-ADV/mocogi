@@ -1,7 +1,7 @@
 package database.repo
 
 import database.table
-import database.table.{ModuleDraftTable, branchColumnType}
+import database.table.ModuleDraftTable
 import models._
 import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfigProvider}
 import play.api.libs.json.JsValue
@@ -28,7 +28,8 @@ trait ModuleDraftRepository {
       print: Print,
       keysToBeReviewed: Set[String],
       modifiedKeys: Set[String],
-      lastCommit: CommitId
+      lastCommit: CommitId,
+      mergeRequest: Option[(MergeRequestId, MergeRequestStatus)]
   ): Future[Int]
 
   def delete(moduleId: UUID): Future[Int]
@@ -41,9 +42,14 @@ trait ModuleDraftRepository {
 
   def hasModuleDraft(moduleId: UUID): Future[Boolean]
 
-  def updateMergeRequestId(
+  def updateMergeRequestStatus(
       moduleId: UUID,
-      mergeRequestId: Option[MergeRequestId]
+      status: MergeRequestStatus
+  ): Future[Unit]
+
+  def updateMergeRequest(
+      moduleId: UUID,
+      mergeRequest: Option[(MergeRequestId, MergeRequestStatus)]
   ): Future[Unit]
 }
 
@@ -58,7 +64,8 @@ final class ModuleDraftRepositoryImpl @Inject() (
   import table.{
     commitColumnType,
     jsValueColumnType,
-    mergeRequestColumnType,
+    mergeRequestIdColumnType,
+    mergeRequestStatusColumnType,
     printColumnType,
     setStringColumnType,
     userColumnType
@@ -86,16 +93,29 @@ final class ModuleDraftRepositoryImpl @Inject() (
   override def hasModuleDraft(moduleId: UUID) =
     db.run(tableQuery.filter(_.module === moduleId).exists.result)
 
-  override def updateMergeRequestId(
+  override def updateMergeRequestStatus(
       moduleId: UUID,
-      mergeRequestId: Option[MergeRequestId]
+      status: MergeRequestStatus
   ) =
     db.run(
       tableQuery
         .filter(_.module === moduleId)
-        .map(_.mergeRequestId)
-        .update(mergeRequestId)
-    ).map(_ => ())
+        .map(_.mergeRequestStatus)
+        .update(Some(status))
+        .map(_ => ())
+    )
+
+  override def updateMergeRequest(
+      moduleId: UUID,
+      mergeRequest: Option[(MergeRequestId, MergeRequestStatus)]
+  ) =
+    db.run(
+      tableQuery
+        .filter(_.module === moduleId)
+        .map(a => (a.mergeRequestId, a.mergeRequestStatus))
+        .update(mergeRequest.map(_._1), mergeRequest.map(_._2))
+        .map(_ => ())
+    )
 
   def updateDraft(
       moduleId: UUID,
@@ -104,7 +124,8 @@ final class ModuleDraftRepositoryImpl @Inject() (
       print: Print,
       keysToBeReviewed: Set[String],
       modifiedKeys: Set[String],
-      lastCommit: CommitId
+      lastCommit: CommitId,
+      mergeRequest: Option[(MergeRequestId, MergeRequestStatus)]
   ): Future[Int] =
     db.run(
       tableQuery
@@ -117,7 +138,9 @@ final class ModuleDraftRepositoryImpl @Inject() (
             a.keysToBeReviewed,
             a.modifiedKeys,
             a.lastCommit,
-            a.lastModified
+            a.mergeRequestId,
+            a.mergeRequestStatus,
+            a.lastModified,
           )
         )
         .update(
@@ -128,6 +151,8 @@ final class ModuleDraftRepositoryImpl @Inject() (
             keysToBeReviewed,
             modifiedKeys,
             Some(lastCommit),
+            mergeRequest.map(_._1),
+            mergeRequest.map(_._2),
             LocalDateTime.now
           )
         )

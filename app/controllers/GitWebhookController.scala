@@ -1,12 +1,8 @@
 package controllers
 
-import controllers.GitWebhookController.{
-  GitlabTokenHeader,
-  ModuleModeTokenHeader
-}
+import controllers.GitWebhookController.GitlabTokenHeader
 import controllers.formats.ThrowableWrites
 import git._
-import git.api.GitRepositoryApiService
 import git.webhook.GitPushEventHandlingActor
 import play.api.libs.json._
 import play.api.mvc._
@@ -19,7 +15,6 @@ import scala.util.{Failure, Success, Try}
 
 object GitWebhookController {
   val GitlabTokenHeader = "X-Gitlab-Token"
-  val ModuleModeTokenHeader = "Mocogi-Module-Mode-Token-Header"
 }
 
 @Singleton
@@ -27,48 +22,17 @@ class GitWebhookController @Inject() (
     cc: ControllerComponents,
     gitConfig: GitConfig,
     gitMergeEventHandlingActor: GitPushEventHandlingActor,
-    gitRepositoryService: GitRepositoryApiService,
     implicit val ctx: ExecutionContext
 ) extends AbstractController(cc)
     with ThrowableWrites {
 
-  def onPushEvent() = isAuthenticated(
-    Action(parse.json) { implicit r =>
-      gitMergeEventHandlingActor.handle(r.body)
-      NoContent
-    }
-  )
-
-  def onForceUpdate() =
-    isAuthenticated( // TODO proper permission handling. move to other class
-      Action.async { implicit r =>
-        if (moduleMode(r)) {
-          for {
-            core <- gitRepositoryService.listCoreFiles()
-            modules <- gitRepositoryService.listModuleFiles()
-          } yield {
-//            downloadActor.download( // TODO
-//              GitChanges(core ::: modules),
-//              gitConfig.projectId
-//            )
-            NoContent
-          }
-        } else
-          Future.successful(
-            Forbidden(Json.obj("message" -> "unable to call this route"))
-          )
+  def onPushEvent() =
+    isAuthenticated(
+      Action(parse.json) { implicit r =>
+        gitMergeEventHandlingActor.handle(r.body)
+        NoContent
       }
     )
-
-  private def moduleMode(implicit r: Request[_]): Boolean = {
-    val moduleMode = for {
-      moduleModeToken <- gitConfig.moduleModeToken
-      headerToken <- r.headers
-        .get(ModuleModeTokenHeader)
-        .flatMap(s => Try(UUID.fromString(s)).toOption)
-    } yield moduleModeToken == headerToken
-    moduleMode getOrElse false
-  }
 
   private def isAuthenticated[A](action: Action[A]) = {
     def parseGitToken(implicit r: Request[_]): Try[UUID] =

@@ -5,6 +5,7 @@ ing_wiw:
   en_url: https://www.th-koeln.de/en/academics/business-administration-and-engineering-bachelors-program_7331.php
   grade: grade.beng
   program_director: person.nn
+  exam_director: person.nn
   accreditation_until: 30.09.2026
   study_form:
     - type: study_form.full

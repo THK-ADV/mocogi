@@ -13,6 +13,8 @@ case class GitChanges[A](
 )
 
 object GitChanges {
-  def apply(modified: List[GitFilePath]): GitChanges[List[GitFilePath]] =
+  def apply(
+      modified: List[(GitFilePath, GitFileContent)]
+  ): GitChanges[List[(GitFilePath, GitFileContent)]] =
     GitChanges(Nil, modified, Nil, CommitId.empty, LocalDateTime.now())
 }

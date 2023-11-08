@@ -8,6 +8,7 @@ inf_dsi:
   en_url: https://www.th-koeln.de/en/academics/digital-sciences-masters-program_83005.php
   grade: grade.msc
   program_director: person.ald
+  exam_director: person.ald
   accreditation_until: 30.09.2027
   study_form:
     - type: study_form.full
@@ -47,7 +48,12 @@ inf_inf:
   de_url: https://www.th-koeln.de/studium/informatik-bachelor_3488.php
   en_url: https://www.th-koeln.de/en/academics/computer-science-bachelors-program_7326.php
   grade: grade.bsc
-  program_director: person.ald
+  program_director:
+    - person.ald
+    - person.abe
+  exam_director:
+    - person.ald
+    - person.abe
   accreditation_until: 30.09.2026
   study_form:
     - type: study_form.full
@@ -81,6 +87,7 @@ ing_gme:
   en_url: https://www.th-koeln.de/en/academics/general-mechanical-engineering-bachelors-program_7323.php
   grade: grade.beng
   program_director: person.ald
+  exam_director: person.abe
   accreditation_until: 30.09.2026
   study_form:
     - type: study_form.full
@@ -130,6 +137,7 @@ ing_ait:
   en_url: https://www.th-koeln.de/en/academics/automation--it-master_6815.php
   grade: grade.meng
   program_director: person.ald
+  exam_director: person.ald
   accreditation_until: 30.09.2026
   study_form:
     - type: study_form.full

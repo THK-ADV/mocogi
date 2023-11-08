@@ -1,6 +1,7 @@
 package database.repo
 
 import database.table._
+import models.UniversityRole
 import models.core.{RestrictedAdmission, StudyProgram}
 import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfigProvider}
 import service.core.StudyProgramShort
@@ -22,7 +23,8 @@ case class StudyProgramOutput(
     deUrl: String,
     enUrl: String,
     grade: String,
-    programDirector: String,
+    programDirectors: List[String],
+    examDirectors: List[String],
     accreditationUntil: LocalDate,
     restrictedAdmission: RestrictedAdmission,
     studyForm: List[UUID],
@@ -57,6 +59,9 @@ class StudyProgramRepository @Inject() (
   protected val studyProgramLocationTableQuery =
     TableQuery[StudyProgramLocationTable]
 
+  protected val studyProgramPersonTableQuery =
+    TableQuery[StudyProgramPersonTable]
+
   def all(): Future[Seq[StudyProgramOutput]] =
     retrieve(tableQuery)
 
@@ -83,19 +88,29 @@ class StudyProgramRepository @Inject() (
       .on(_._1._1.abbrev === _.studyProgram)
       .joinLeft(studyProgramLocationTableQuery)
       .on(_._1._1._1.abbrev === _.studyProgram)
+      .joinLeft(studyProgramPersonTableQuery)
+      .on(_._1._1._1._1.abbrev === _.studyProgram)
 
     db.run(
-      res.result.map(_.groupBy(_._1._1._1._1).map { case (sp, sf) =>
+      res.result.map(_.groupBy(_._1._1._1._1._1).map { case (sp, sf) =>
         val studyForms = mutable.HashSet[UUID]()
         val studyProgramLanguages = mutable.HashSet[String]()
         val studyProgramSeasons = mutable.HashSet[String]()
         val studyProgramLocations = mutable.HashSet[String]()
+        val studyProgramDirectors = mutable.HashSet[String]()
+        val studyProgramExamDirectors = mutable.HashSet[String]()
 
-        sf.foreach { case ((((_, f), lang), s), loc) =>
+        sf.foreach { case (((((_, f), lang), s), loc), p) =>
           f.foreach(studyForms += _.id)
           lang.foreach(studyProgramLanguages += _.language)
           s.foreach(studyProgramSeasons += _.season)
           loc.foreach(studyProgramLocations += _.location)
+          p.foreach { p =>
+            p.role match {
+              case UniversityRole.SGL => studyProgramDirectors += p.person
+              case UniversityRole.PAV => studyProgramExamDirectors += p.person
+            }
+          }
         }
 
         StudyProgramOutput(
@@ -107,7 +122,8 @@ class StudyProgramRepository @Inject() (
           sp.deUrl,
           sp.enUrl,
           sp.grade,
-          sp.programDirector,
+          studyProgramDirectors.toList,
+          studyProgramExamDirectors.toList,
           sp.accreditationUntil,
           sp.restrictedAdmission,
           studyForms.toList,
@@ -130,12 +146,14 @@ class StudyProgramRepository @Inject() (
     val studyProgramLanguages = ListBuffer[StudyProgramLanguageDbEntry]()
     val studyProgramSeasons = ListBuffer[StudyProgramSeasonDbEntry]()
     val studyProgramLocations = ListBuffer[StudyProgramLocationDbEntry]()
+    val studyProgramPeople = ListBuffer[StudyProgramPersonDbEntry]()
 
     ls.foreach { sp =>
       studyPrograms += toDbEntry(sp)
       studyProgramLanguages ++= toLanguages(sp)
       studyProgramSeasons ++= toSeasons(sp)
       studyProgramLocations ++= toLocation(sp)
+      studyProgramPeople ++= toPeople(sp)
       val (sfs, sfscs) = toStudyForms(sp)
       studyForms ++= sfs
       studyFormScopes ++= sfscs
@@ -148,7 +166,8 @@ class StudyProgramRepository @Inject() (
       _ <- studyProgramLanguageTableQuery ++= studyProgramLanguages
       _ <- studyProgramSeasonTableQuery ++= studyProgramSeasons
       _ <- studyProgramLocationTableQuery ++= studyProgramLocations
-    } yield studyPrograms.toList
+      _ <- studyProgramPersonTableQuery ++= studyProgramPeople
+    } yield ()
 
     db.run(action.transactionally)
   }
@@ -162,6 +181,12 @@ class StudyProgramRepository @Inject() (
     db.run(action.transactionally)
   }
 
+  def update(sp: StudyProgram) =
+    db.run(updateAction(sp))
+
+  def exists(sp: StudyProgram): Future[Boolean] =
+    db.run(tableQuery.filter(_.abbrev === sp.abbrev).exists.result)
+
   private def toLanguages(sp: StudyProgram) =
     sp.language.map(l => StudyProgramLanguageDbEntry(l.abbrev, sp.abbrev))
 
@@ -170,6 +195,14 @@ class StudyProgramRepository @Inject() (
 
   private def toLocation(sp: StudyProgram) =
     sp.campus.map(c => StudyProgramLocationDbEntry(c.abbrev, sp.abbrev))
+
+  private def toPeople(sp: StudyProgram) =
+    sp.programDirectors.map(p =>
+      StudyProgramPersonDbEntry(p.id, sp.abbrev, UniversityRole.SGL)
+    ) :::
+      sp.examDirectors.map(p =>
+        StudyProgramPersonDbEntry(p.id, sp.abbrev, UniversityRole.PAV)
+      )
 
   private def toStudyForms(sp: StudyProgram) = {
     val studyForms = ListBuffer[StudyFormDbEntry]()
@@ -204,6 +237,7 @@ class StudyProgramRepository @Inject() (
       _ <- studyProgramLanguageTableQuery ++= toLanguages(sp)
       _ <- studyProgramSeasonTableQuery ++= toSeasons(sp)
       _ <- studyProgramLocationTableQuery ++= toLocation(sp)
+      _ <- studyProgramPersonTableQuery ++= toPeople(sp)
     } yield sp
   }
 
@@ -226,15 +260,12 @@ class StudyProgramRepository @Inject() (
         )
         .delete
       _ <- studyFormTableQuery.filter(_.studyProgram === sp.abbrev).delete
+      _ <- studyProgramPersonTableQuery
+        .filter(_.studyProgram === sp.abbrev)
+        .delete
       _ <- tableQuery.filter(_.abbrev === sp.abbrev).update(toDbEntry(sp))
       _ <- createDependencies(sp)
     } yield sp
-
-  def update(sp: StudyProgram) =
-    db.run(updateAction(sp))
-
-  def exists(sp: StudyProgram): Future[Boolean] =
-    db.run(tableQuery.filter(_.abbrev === sp.abbrev).exists.result)
 
   private def toDbEntry(sp: StudyProgram): StudyProgramDbEntry =
     StudyProgramDbEntry(
@@ -246,7 +277,6 @@ class StudyProgramRepository @Inject() (
       sp.deUrl,
       sp.enUrl,
       sp.grade.abbrev,
-      sp.programDirector.id,
       sp.accreditationUntil,
       sp.restrictedAdmission,
       sp.deDescription,
