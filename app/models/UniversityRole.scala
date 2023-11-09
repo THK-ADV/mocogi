@@ -1,19 +1,24 @@
 package models
 
+import play.api.libs.json.{Json, Writes}
+
 sealed trait UniversityRole {
-  def label: String
   def id: String
-  override def toString = label
+  def deLabel: String
+  def enLabel: String
+  override def toString = id
 }
 
 object UniversityRole {
   case object SGL extends UniversityRole {
-    override val label: String = "Studiengangsleitung"
-    override val id: String = "sgl"
+    override def id: String = "sgl"
+    override def deLabel: String = "Studiengangsleitung"
+    override def enLabel: String = "Program Director"
   }
   case object PAV extends UniversityRole {
-    override val label: String = "Prüfungsausschussvorsitz"
-    override val id: String = "pav"
+    override def id: String = "pav"
+    override def deLabel: String = "Prüfungsausschussvorsitz"
+    override def enLabel: String = "Exam Director"
   }
 
   def apply(id: String): UniversityRole =
@@ -21,4 +26,12 @@ object UniversityRole {
       case "sgl" => SGL
       case "pav" => PAV
     }
+
+  implicit def writes: Writes[UniversityRole] =
+    r =>
+      Json.obj(
+        "id" -> r.id,
+        "deLabel" -> r.deLabel,
+        "enLabel" -> r.enLabel
+      )
 }

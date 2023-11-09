@@ -1,8 +1,13 @@
 package database.repo
 
 import com.google.inject.Inject
-import database.table.{ModuleDraftTable, ModuleReviewTable, PersonTable, StudyProgramPersonTable}
-import models.{ModuleReview, ModuleReviewStatus, User}
+import database.table.{
+  ModuleDraftTable,
+  ModuleReviewTable,
+  PersonTable,
+  StudyProgramPersonTable
+}
+import models.{ModuleReviewStatus, User}
 import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfigProvider}
 import slick.jdbc.JdbcProfile
 
@@ -16,7 +21,12 @@ final class ModuleApprovalRepository @Inject() (
     implicit val ctx: ExecutionContext
 ) extends HasDatabaseConfigProvider[JdbcProfile] {
 
-  import database.table.{jsValueColumnType, moduleReviewStatusColumnType, universityRoleColumnType, userColumnType}
+  import database.table.{
+    jsValueColumnType,
+    moduleReviewStatusColumnType,
+    universityRoleColumnType,
+    userColumnType
+  }
   import profile.api._
 
   private def tableQuery = TableQuery[ModuleReviewTable]
@@ -29,17 +39,22 @@ final class ModuleApprovalRepository @Inject() (
     val personQuery = personTable
       .filter(_.campusId === user.username)
       .map(_.id)
-    studyProgramPersonTable.filter(_.person.in(personQuery))
+    for {
+      q <- studyProgramPersonTable.filter(_.person.in(personQuery))
+      sp <- q.studyProgramFk
+    } yield (q, sp)
   }
 
   private def moduleDraftTable = TableQuery[ModuleDraftTable]
 
   def getAllStatus(moduleDraftId: UUID): Future[Seq[ModuleReviewStatus]] =
-    db.run(tableQuery.filter(_.moduleDraft === moduleDraftId).map(_.status).result)
+    db.run(
+      tableQuery.filter(_.moduleDraft === moduleDraftId).map(_.status).result
+    )
 
   def hasPendingApproval(reviewId: UUID, user: User): Future[Boolean] = {
     val pending: ModuleReviewStatus = ModuleReviewStatus.Pending
-    val spp = directorsQuery(user)
+    val spp = directorsQuery(user).map(_._1)
     val query = tableQuery
       .join(spp)
       .on((r, spp) =>
@@ -55,20 +70,29 @@ final class ModuleApprovalRepository @Inject() (
     val query = tableQuery
       .joinLeft(spp)
       .on((r, spp) =>
-        r.studyProgram === spp.studyProgram && r.role === spp.role
+        r.studyProgram === spp._1.studyProgram && r.role === spp._1.role
       )
       .join(
         tableQuery
           .join(spp)
           .on((r, spp) =>
-            r.studyProgram === spp.studyProgram && r.role === spp.role
+            r.studyProgram === spp._1.studyProgram && r.role === spp._1.role
           )
       )
       .on(_._1.moduleDraft === _._1.moduleDraft)
       .join(moduleDraftTable)
       .on(_._1._1.moduleDraft === _.module)
       .map { case (((r, spp), _), d) =>
-        (d.module, d.user, d.data, r.role, r.studyProgram, r.status, spp, r.id)
+        (
+          d.module,
+          d.user,
+          d.data,
+          r.role,
+          r.studyProgram,
+          r.status,
+          spp.map(s => (s._2.abbrev, s._2.deLabel, s._2.enLabel)),
+          r.id
+        )
       }
       .distinctOn(a => (a._1, a._4, a._5))
     db.run(query.result)

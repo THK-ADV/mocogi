@@ -9,10 +9,9 @@ import database.repo.{
 }
 import git.api.GitMergeRequestApiService
 import models.ModuleReviewStatus.{Approved, Pending, Rejected}
+import models.ModuleReviewSummaryStatus.WaitingForChanges
 import models._
 import ops.FutureOps.{Ops, abort}
-import service.ModuleApprovalService.ModuleReviewSummaryStatus
-import service.ModuleApprovalService.ModuleReviewSummaryStatus.WaitingForChanges
 
 import java.util.UUID
 import javax.inject.{Inject, Singleton}
@@ -129,14 +128,14 @@ final class ModuleReviewService @Inject() (
           "can't review if the status is waiting for changes"
         )
       mergeRequestId = draft.mergeRequestId.get
-      _ <- reviewRepo.update(id, newStatus, comment)
+      _ <- reviewRepo.update(id, newStatus, comment, reviewer)
       _ <- api.comment(mergeRequestId, commentBody(status.get))
       _ <-
         if (approve) {
           for {
-            reviews <- reviewRepo.getByModule(draft.module)
+            reviews <- reviewRepo.getStatusByModule(draft.module)
             _ <-
-              if (reviews.forall(_.status == Approved)) {
+              if (reviews.forall(_ == Approved)) {
                 for {
                   _ <- api.approve(mergeRequestId)
                   status <- api.merge(mergeRequestId)
@@ -155,6 +154,9 @@ final class ModuleReviewService @Inject() (
     } yield ()
   }
 
+  def allByModule(moduleId: UUID): Future[Seq[ModuleReview.Atomic]] =
+    reviewRepo.getAtomicByModule(moduleId)
+
   private def createApproveReview(
       draft: ModuleDraft,
       author: User
@@ -162,7 +164,7 @@ final class ModuleReviewService @Inject() (
     val protocol = draft.protocol()
     val roles = requiredRoles(draft.keysToBeReviewed)
 
-    def reviews(directors: Seq[StudyProgramDirector]) =
+    def reviews(directors: Seq[StudyProgramDirector]): Seq[ModuleReview.DB] =
       roles.toSeq
         .flatMap(role =>
           directors
@@ -175,6 +177,8 @@ final class ModuleReviewService @Inject() (
                 role,
                 Pending,
                 d.studyProgramAbbrev,
+                None,
+                None,
                 None
               )
             )

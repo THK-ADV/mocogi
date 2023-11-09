@@ -431,8 +431,11 @@ create table module_review
     "status"        text not null,
     "study_program" text not null,
     "comment"       text null,
+    "responded_by"  text null,
+    "responded_at"  timestamp null,
     FOREIGN KEY (study_program) REFERENCES study_program (abbrev),
-    FOREIGN KEY (module_draft) REFERENCES module_draft (module)
+    FOREIGN KEY (module_draft) REFERENCES module_draft (module),
+    FOREIGN KEY (responded_by) REFERENCES person (id)
 );
 
 -- study_program_atomic

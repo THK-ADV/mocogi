@@ -3,10 +3,11 @@ package database.table
 import models.{ModuleReview, ModuleReviewStatus, UniversityRole}
 import slick.jdbc.PostgresProfile.api._
 
+import java.time.LocalDateTime
 import java.util.UUID
 
 final class ModuleReviewTable(tag: Tag)
-    extends Table[ModuleReview](
+    extends Table[ModuleReview.DB](
       tag,
       "module_review"
     ) {
@@ -23,6 +24,10 @@ final class ModuleReviewTable(tag: Tag)
 
   def comment = column[Option[String]]("comment")
 
+  def respondedBy = column[Option[String]]("responded_by")
+
+  def respondedAt = column[Option[LocalDateTime]]("responded_at")
+
   override def * =
     (
       id,
@@ -30,6 +35,67 @@ final class ModuleReviewTable(tag: Tag)
       role,
       status,
       studyProgram,
-      comment
-    ) <> (ModuleReview.tupled, ModuleReview.unapply)
+      comment,
+      respondedBy,
+      respondedAt
+    ) <> (mapRow, unmapRow)
+
+  def mapRow: (
+      (
+          UUID,
+          UUID,
+          UniversityRole,
+          ModuleReviewStatus,
+          String,
+          Option[String],
+          Option[String],
+          Option[LocalDateTime]
+      )
+  ) => ModuleReview.DB = {
+    case (
+          id,
+          moduleDraft,
+          role,
+          status,
+          studyProgram,
+          comment,
+          respondedBy,
+          respondedAt
+        ) =>
+      ModuleReview(
+        id,
+        moduleDraft,
+        role,
+        status,
+        studyProgram,
+        comment,
+        respondedBy,
+        respondedAt
+      )
+  }
+
+  def unmapRow(arg: ModuleReview.DB): Option[
+    (
+        UUID,
+        UUID,
+        UniversityRole,
+        ModuleReviewStatus,
+        String,
+        Option[String],
+        Option[String],
+        Option[LocalDateTime]
+    )
+  ] =
+    Some(
+      (
+        arg.id,
+        arg.moduleDraft,
+        arg.role,
+        arg.status,
+        arg.studyProgram,
+        arg.comment,
+        arg.respondedBy,
+        arg.respondedAt
+      )
+    )
 }
