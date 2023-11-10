@@ -1,10 +1,10 @@
 package controllers.actions
 
-import auth.UserTokenRequest
+import controllers.actions.PersonAction.PersonRequest
 import parsing.metadata.VersionScheme
 import play.api.mvc.WrappedRequest
 
 case class VersionSchemeRequest[A](
     versionScheme: VersionScheme,
-    request: UserTokenRequest[A]
+    request: PersonRequest[A]
 ) extends WrappedRequest[A](request)

@@ -2,7 +2,7 @@ package database.repo
 
 import database.table.{ModuleReviewTable, PersonTable, StudyProgramTable}
 import models.core.{AbbrevLabelLike, Person}
-import models.{ModuleReview, ModuleReviewStatus, User}
+import models.{ModuleReview, ModuleReviewStatus}
 import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfigProvider}
 import slick.jdbc.JdbcProfile
 
@@ -43,19 +43,13 @@ final class ModuleReviewRepository @Inject() (
       id: UUID,
       status: ModuleReviewStatus,
       comment: Option[String],
-      reviewer: User
+      person: String
   ): Future[Int] =
     db.run(
-      for {
-        p <- TableQuery[PersonTable]
-          .filter(_.campusId === reviewer.username)
-          .result
-          .single
-        u <- tableQuery
-          .filter(_.id === id)
-          .map(a => (a.status, a.comment, a.respondedBy, a.respondedAt))
-          .update((status, comment, Some(p.id), Some(LocalDateTime.now)))
-      } yield u
+      tableQuery
+        .filter(_.id === id)
+        .map(a => (a.status, a.comment, a.respondedBy, a.respondedAt))
+        .update((status, comment, Some(person), Some(LocalDateTime.now)))
     )
 
   def getAtomicByModule(moduleId: UUID): Future[Seq[ModuleReview.Atomic]] =

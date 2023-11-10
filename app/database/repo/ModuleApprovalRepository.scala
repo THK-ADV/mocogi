@@ -1,13 +1,9 @@
 package database.repo
 
 import com.google.inject.Inject
-import database.table.{
-  ModuleDraftTable,
-  ModuleReviewTable,
-  PersonTable,
-  StudyProgramPersonTable
-}
-import models.{ModuleReviewStatus, User}
+import database.table.{ModuleDraftTable, ModuleReviewTable, StudyProgramPersonTable}
+import models.ModuleReviewStatus
+import models.ModuleReviewStatus.Pending
 import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfigProvider}
 import slick.jdbc.JdbcProfile
 
@@ -21,29 +17,18 @@ final class ModuleApprovalRepository @Inject() (
     implicit val ctx: ExecutionContext
 ) extends HasDatabaseConfigProvider[JdbcProfile] {
 
-  import database.table.{
-    jsValueColumnType,
-    moduleReviewStatusColumnType,
-    universityRoleColumnType,
-    userColumnType
-  }
+  import database.table.{jsValueColumnType, moduleReviewStatusColumnType, universityRoleColumnType}
   import profile.api._
 
   private def tableQuery = TableQuery[ModuleReviewTable]
 
-  private def personTable = TableQuery[PersonTable]
-
   private def studyProgramPersonTable = TableQuery[StudyProgramPersonTable]
 
-  private def directorsQuery(user: User) = {
-    val personQuery = personTable
-      .filter(_.campusId === user.username)
-      .map(_.id)
+  private def directorsQuery(person: String) =
     for {
-      q <- studyProgramPersonTable.filter(_.person.in(personQuery))
+      q <- studyProgramPersonTable.filter(_.person === person)
       sp <- q.studyProgramFk
     } yield (q, sp)
-  }
 
   private def moduleDraftTable = TableQuery[ModuleDraftTable]
 
@@ -52,21 +37,20 @@ final class ModuleApprovalRepository @Inject() (
       tableQuery.filter(_.moduleDraft === moduleDraftId).map(_.status).result
     )
 
-  def hasPendingApproval(reviewId: UUID, user: User): Future[Boolean] = {
-    val pending: ModuleReviewStatus = ModuleReviewStatus.Pending
-    val spp = directorsQuery(user).map(_._1)
+  def hasPendingApproval(reviewId: UUID, person: String): Future[Boolean] = {
+    val pending: ModuleReviewStatus = Pending
+    val spp = directorsQuery(person).map(_._1)
     val query = tableQuery
       .join(spp)
       .on((r, spp) =>
         r.studyProgram === spp.studyProgram && r.role === spp.role && r.id === reviewId && r.status === pending
       )
       .exists
-
     db.run(query.result)
   }
 
-  def allByModulesWhereUserExists(user: User) = {
-    val spp = directorsQuery(user)
+  def allByModulesWhereUserExists(person: String) = {
+    val spp = directorsQuery(person)
     val query = tableQuery
       .joinLeft(spp)
       .on((r, spp) =>
@@ -85,7 +69,7 @@ final class ModuleApprovalRepository @Inject() (
       .map { case (((r, spp), _), d) =>
         (
           d.module,
-          d.user,
+          d.author,
           d.data,
           r.role,
           r.studyProgram,

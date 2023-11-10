@@ -11,10 +11,9 @@ import database.view.{
   PersonShort,
   StudyProgramModuleAssociation
 }
-import models.User
 import play.api.libs.json.{Format, Json}
 import play.api.mvc.{AbstractController, ControllerComponents}
-import service.{ModuleCompendiumService, ModuleUpdatePermissionService}
+import service.ModuleCompendiumService
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
@@ -24,7 +23,6 @@ final class ModuleController @Inject() (
     cc: ControllerComponents,
     service: ModuleCompendiumService,
     moduleViewRepository: ModuleViewRepository,
-    moduleUpdatePermissionService: ModuleUpdatePermissionService,
     val auth: AuthorizationAction,
     implicit val ctx: ExecutionContext
 ) extends AbstractController(cc)
@@ -46,13 +44,6 @@ final class ModuleController @Inject() (
     Action.async { request =>
       service
         .allModules(request.queryString)
-        .map(xs => Ok(Json.toJson(xs)))
-    }
-
-  def allOwnModules() =
-    auth.async { r =>
-      moduleUpdatePermissionService
-        .getAllModulesFromUser(User(r.token.username))
         .map(xs => Ok(Json.toJson(xs)))
     }
 

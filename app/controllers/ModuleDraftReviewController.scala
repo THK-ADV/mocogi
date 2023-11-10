@@ -1,8 +1,8 @@
 package controllers
 
 import auth.AuthorizationAction
-import controllers.actions.{ModuleDraftCheck, PermissionCheck}
-import models.User
+import controllers.actions.{ModuleDraftCheck, PermissionCheck, PersonAction}
+import database.repo.PersonRepository
 import play.api.mvc.{AbstractController, ControllerComponents}
 import service.{
   ModuleDraftService,
@@ -21,10 +21,12 @@ final class ModuleDraftReviewController @Inject() (
     val service: ModuleReviewService,
     val moduleUpdatePermissionService: ModuleUpdatePermissionService,
     val moduleDraftService: ModuleDraftService,
+    val personRepository: PersonRepository,
     implicit val ctx: ExecutionContext
 ) extends AbstractController(cc)
     with ModuleDraftCheck
-    with PermissionCheck {
+    with PermissionCheck
+    with PersonAction {
 
   /** Creates a full review.
     * @param moduleId
@@ -33,9 +35,11 @@ final class ModuleDraftReviewController @Inject() (
     *   201 Created
     */
   def create(moduleId: UUID) =
-    auth andThen hasPermissionToEditDraft(moduleId) async { r =>
-      service.create(moduleId, User(r.token.username)).map(_ => Created)
-    }
+    auth andThen
+      personAction andThen
+      hasPermissionToEditDraft(moduleId) async { r =>
+        service.create(moduleId, r.person).map(_ => Created)
+      }
 
   /** Deletes a full review.
     * @param moduleId
@@ -44,7 +48,9 @@ final class ModuleDraftReviewController @Inject() (
     *   204 NoContent
     */
   def delete(moduleId: UUID) =
-    auth andThen hasPermissionToEditDraft(moduleId) async { _ =>
-      service.delete(moduleId).map(_ => NoContent)
-    }
+    auth andThen
+      personAction andThen
+      hasPermissionToEditDraft(moduleId) async { _ =>
+        service.delete(moduleId).map(_ => NoContent)
+      }
 }

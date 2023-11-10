@@ -45,7 +45,6 @@ GET           /moduleCompendium/:id/staging               controllers.ModuleComp
 # Module
 
 GET           /modules                                    controllers.ModuleController.allModules()
-GET           /modules/own                                controllers.ModuleController.allOwnModules()
 GET           /modules/view                               controllers.ModuleController.allModulesFromView()
 GET           /metadata                                   controllers.ModuleController.allModuleMetadata()
 
@@ -68,7 +67,7 @@ PUT           /moduleApprovals/:moduleId/:reviewId        controllers.ModuleDraf
 
 # Module Update Permissions
 
-GET           /moduleUpdatePermissions                    controllers.ModuleUpdatePermissionController.all()
+GET           /moduleUpdatePermissions/own                controllers.ModuleUpdatePermissionController.getOwn()
 POST          /moduleUpdatePermissions                    controllers.ModuleUpdatePermissionController.create()
 DELETE        /moduleUpdatePermissions                    controllers.ModuleUpdatePermissionController.delete()
 

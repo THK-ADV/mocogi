@@ -59,9 +59,9 @@ package object table {
     MappedColumnType
       .base[JsValue, String](Json.stringify, Json.parse)
 
-  implicit val userColumnType: BaseColumnType[User] =
+  implicit val campusIdColumnType: BaseColumnType[CampusId] =
     MappedColumnType
-      .base[User, String](_.username, User.apply)
+      .base[CampusId, String](_.value, CampusId.apply)
 
   implicit val branchColumnType: BaseColumnType[Branch] =
     MappedColumnType

@@ -22,18 +22,22 @@ object Person {
       status: PersonStatus
   ) extends Person {
     override val kind = DefaultKind
-    override val username: Option[String] =
+    override def username: Option[String] =
       Option.when(campusId.nonEmpty)(campusId)
+
+    def fullName: String = s"$firstname $lastname"
+
+    def email: Option[String] = username.map(a => s"$a@th-koeln.de")
   }
 
   case class Group(id: String, label: String) extends Person {
     override val kind = GroupKind
-    override val username: Option[String] = None
+    override def username: Option[String] = None
   }
 
   case class Unknown(id: String, label: String) extends Person {
     override val kind = UnknownKind
-    override val username: Option[String] = None
+    override def username: Option[String] = None
   }
 }
 

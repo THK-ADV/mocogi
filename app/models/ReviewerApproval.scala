@@ -1,6 +1,5 @@
 package models
 
-import controllers.formats.{PersonFormat, UserFormat}
 import models.core.AbbrevLabelLike
 import play.api.libs.json.{Json, Writes}
 
@@ -11,14 +10,14 @@ case class ReviewerApproval(
     moduleId: UUID,
     moduleTitle: String,
     moduleAbbrev: String,
-    author: User,
+    author: String,
     role: UniversityRole,
     status: ModuleReviewSummaryStatus,
     studyProgram: AbbrevLabelLike,
     canReview: Boolean
 )
 
-object ReviewerApproval extends UserFormat {
+object ReviewerApproval {
   implicit def writes: Writes[ReviewerApproval] =
     Json.writes[ReviewerApproval]
 }

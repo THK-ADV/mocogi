@@ -9,8 +9,8 @@ import database.repo.{
 }
 import git.api.GitMergeRequestApiService
 import models.ModuleReviewStatus.{Approved, Pending, Rejected}
-import models.ModuleReviewSummaryStatus.WaitingForChanges
 import models._
+import models.core.Person
 import ops.FutureOps.{Ops, abort}
 
 import java.util.UUID
@@ -39,7 +39,7 @@ final class ModuleReviewService @Inject() (
     *   Author of the merge request
     * @return
     */
-  def create(moduleId: UUID, author: User): Future[Unit] =
+  def create(moduleId: UUID, author: Person.Default): Future[Unit] =
     for {
       draft <- draftRepo.getByModule(moduleId)
       mergeRequest <-
@@ -93,7 +93,7 @@ final class ModuleReviewService @Inject() (
     */
   def update(
       id: UUID,
-      reviewer: User,
+      reviewer: Person.Default,
       approve: Boolean,
       comment: Option[String]
   ): Future[Unit] = {
@@ -101,11 +101,11 @@ final class ModuleReviewService @Inject() (
 
     def commentBody(summaryStatus: ModuleReviewSummaryStatus) = {
       val body =
-        s"""Author: ${reviewer.username}
+        s"""Author: ${reviewer.fullName}
            |
            |Status: ${summaryStatus.enLabel}
            |
-           |Action: ${newStatus.id}""".stripMargin
+           |Action: ${newStatus.enLabel}""".stripMargin
       comment.fold(body)(c => s"$body\n\nComment: $c")
     }
 
@@ -117,18 +117,16 @@ final class ModuleReviewService @Inject() (
       draft <- draftRepo
         .getByModuleOpt(review.moduleDraft)
         .abortIf(
-          _.forall(_.mergeRequestId.isEmpty),
-          "no module draft or merge request id found"
+          _.forall(d =>
+            d.mergeRequestId.isEmpty || d
+              .state() != ModuleDraftState.WaitingForReview
+          ),
+          "one of the following errors occurred: no module draft found. no merge request id found. status is not waiting for review"
         )
         .map(_.get)
-      status <- approvalService
-        .summaryStatus(draft.module)
-        .abortIf(
-          _.forall(_ == WaitingForChanges),
-          "can't review if the status is waiting for changes"
-        )
       mergeRequestId = draft.mergeRequestId.get
-      _ <- reviewRepo.update(id, newStatus, comment, reviewer)
+      _ <- reviewRepo.update(id, newStatus, comment, reviewer.id)
+      status <- approvalService.summaryStatus(draft.module)
       _ <- api.comment(mergeRequestId, commentBody(status.get))
       _ <-
         if (approve) {
@@ -159,7 +157,7 @@ final class ModuleReviewService @Inject() (
 
   private def createApproveReview(
       draft: ModuleDraft,
-      author: User
+      author: Person.Default
   ): Future[MergeRequest] = {
     val protocol = draft.protocol()
     val roles = requiredRoles(draft.keysToBeReviewed)
@@ -194,9 +192,9 @@ final class ModuleReviewService @Inject() (
               .filter(d =>
                 d.role == role && d.studyProgramAbbrev == dir.studyProgramAbbrev
               )
-              .map(d => d.campusId.getOrElse(s"NOT FOUND ${d.directorId}"))
+              .map(d => s"${d.directorFirstname} ${d.directorLastname}")
               .mkString(", ")
-            s"${role.id.toUpperCase} ${dir.studyProgramLabel} ($possibleDirs)"
+            s"${role.id.toUpperCase} ${dir.studyProgramLabel} ${dir.studyProgramGradeLabel} ($possibleDirs)"
           }
       }
 
@@ -215,7 +213,7 @@ final class ModuleReviewService @Inject() (
 
   private def createAutoAcceptedReview(
       draft: ModuleDraft,
-      author: User
+      author: Person.Default
   ): Future[MergeRequest] =
     for {
       (mergeRequestId, _) <- createMergeRequest(
@@ -246,8 +244,8 @@ final class ModuleReviewService @Inject() (
       )
     )
 
-  private def mrTitle(author: User, metadata: MetadataProtocol) =
-    s"${author.username}: ${metadata.title} (${metadata.abbrev})"
+  private def mrTitle(author: Person.Default, metadata: MetadataProtocol) =
+    s"${author.fullName}: ${metadata.title} (${metadata.abbrev})"
 
   private def mrDesc(
       modifiedKeys: Iterable[String],

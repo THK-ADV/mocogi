@@ -3,7 +3,7 @@ package git.subscriber
 import akka.actor.{Actor, Props}
 import git.subscriber.ModuleCompendiumSubscribers.CreatedOrUpdated
 import models.core.Person
-import models.{ModuleUpdatePermissionType, User}
+import models.{ModuleUpdatePermissionType, CampusId}
 import play.api.Logging
 import service.ModuleUpdatePermissionService
 
@@ -40,7 +40,7 @@ private final class ModuleCompendiumPermissionUpdateActor(
     }
 
   private def logSuccess(
-      xs: Seq[(UUID, User, ModuleUpdatePermissionType)]
+      xs: Seq[(UUID, CampusId, ModuleUpdatePermissionType)]
   ): Unit =
     logger.info(
       s"""successfully created or updated module permissions

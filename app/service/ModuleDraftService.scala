@@ -9,6 +9,7 @@ import database.ModuleCompendiumOutput
 import database.repo.ModuleDraftRepository
 import git.api.{GitBranchService, GitCommitService}
 import models._
+import models.core.Person
 import ops.EitherOps.EOps
 import parsing.metadata.VersionScheme
 import parsing.types._
@@ -29,11 +30,11 @@ trait ModuleDraftService {
 
   def getByModuleOpt(moduleId: UUID): Future[Option[ModuleDraft]]
 
-  def allByUser(user: User): Future[Seq[ModuleDraft]]
+  def allByPerson(personId: String): Future[Seq[ModuleDraft]]
 
   def createNew(
       protocol: ModuleCompendiumProtocol,
-      user: User,
+      person: Person.Default,
       versionScheme: VersionScheme
   ): Future[Either[PipelineError, ModuleDraft]]
 
@@ -42,7 +43,7 @@ trait ModuleDraftService {
   def createOrUpdate(
       moduleId: UUID,
       protocol: ModuleCompendiumProtocol,
-      user: User,
+      person: Person.Default,
       versionScheme: VersionScheme
   ): Future[Either[PipelineError, Unit]]
 }
@@ -71,12 +72,12 @@ final class ModuleDraftServiceImpl @Inject() (
   override def getByModuleOpt(moduleId: UUID) =
     moduleDraftRepository.getByModuleOpt(moduleId)
 
-  def allByUser(user: User): Future[Seq[ModuleDraft]] =
-    moduleDraftRepository.allByUser(user)
+  def allByPerson(personId: String): Future[Seq[ModuleDraft]] =
+    moduleDraftRepository.allByAuthor(personId)
 
   override def createNew(
       protocol: ModuleCompendiumProtocol,
-      user: User,
+      person: Person.Default,
       versionScheme: VersionScheme
   ): Future[Either[PipelineError, ModuleDraft]] =
     create(
@@ -84,7 +85,7 @@ final class ModuleDraftServiceImpl @Inject() (
       ModuleDraftSource.Added,
       versionScheme,
       UUID.randomUUID(),
-      user,
+      person,
       Set.empty
     )
 
@@ -97,19 +98,19 @@ final class ModuleDraftServiceImpl @Inject() (
   override def createOrUpdate(
       moduleId: UUID,
       protocol: ModuleCompendiumProtocol,
-      user: User,
+      person: Person.Default,
       versionScheme: VersionScheme
   ): Future[Either[PipelineError, Unit]] =
     moduleDraftRepository
       .hasModuleDraft(moduleId)
       .flatMap(hasDraft =>
         if (hasDraft)
-          update(moduleId, protocol, user, versionScheme)
+          update(moduleId, protocol, person, versionScheme)
         else
           createFromExistingModule(
             moduleId,
             protocol,
-            user,
+            person,
             versionScheme
           ).map(_.map(_ => ()))
       )
@@ -117,7 +118,7 @@ final class ModuleDraftServiceImpl @Inject() (
   private def createFromExistingModule(
       moduleId: UUID,
       protocol: ModuleCompendiumProtocol,
-      user: User,
+      person: Person.Default,
       versionScheme: VersionScheme
   ): Future[Either[PipelineError, ModuleDraft]] =
     for {
@@ -133,7 +134,7 @@ final class ModuleDraftServiceImpl @Inject() (
         ModuleDraftSource.Modified,
         versionScheme,
         moduleId,
-        user,
+        person,
         modifiedKeys
       )
     } yield res
@@ -141,7 +142,7 @@ final class ModuleDraftServiceImpl @Inject() (
   private def update(
       moduleId: UUID,
       protocol: ModuleCompendiumProtocol,
-      user: User,
+      person: Person.Default,
       versionScheme: VersionScheme
   ): Future[Either[PipelineError, Unit]] =
     for {
@@ -161,7 +162,7 @@ final class ModuleDraftServiceImpl @Inject() (
           for {
             commitId <- gitCommitService.commit(
               draft.branch,
-              user,
+              person,
               commitMessage(modifiedKeys -- draft.modifiedKeys),
               draft.module,
               draft.source,
@@ -232,7 +233,7 @@ final class ModuleDraftServiceImpl @Inject() (
       status: ModuleDraftSource,
       versionScheme: VersionScheme,
       moduleId: UUID,
-      user: User,
+      person: Person.Default,
       updatedKeys: Set[String]
   ) =
     pipeline(protocol, versionScheme, moduleId).flatMap {
@@ -245,7 +246,7 @@ final class ModuleDraftServiceImpl @Inject() (
           branch <- gitBranchService.createBranch(moduleId)
           commitId <- gitCommitService.commit(
             branch,
-            user,
+            person,
             commitMsg,
             moduleId,
             status,
@@ -253,7 +254,7 @@ final class ModuleDraftServiceImpl @Inject() (
           )
           moduleDraft = ModuleDraft(
             moduleId,
-            user,
+            person.id,
             branch,
             status,
             toJson(protocol),

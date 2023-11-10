@@ -1,9 +1,15 @@
 package controllers
 
-import auth.{AuthorizationAction, UserTokenRequest}
-import controllers.actions.{ApprovalCheck, ModuleDraftCheck, PermissionCheck}
+import auth.AuthorizationAction
+import controllers.actions.{
+  ApprovalCheck,
+  ModuleDraftCheck,
+  PermissionCheck,
+  PersonAction
+}
 import controllers.formats.{JsonNullWritable, PersonFormat}
-import models.{ModuleReview, User}
+import database.repo.PersonRepository
+import models.ModuleReview
 import play.api.libs.json._
 import play.api.mvc.{AbstractController, ControllerComponents}
 import service.{
@@ -50,35 +56,36 @@ final class ModuleDraftApprovalController @Inject() (
     val auth: AuthorizationAction,
     val moduleDraftService: ModuleDraftService,
     val moduleUpdatePermissionService: ModuleUpdatePermissionService,
+    val personRepository: PersonRepository,
     implicit val ctx: ExecutionContext
 ) extends AbstractController(cc)
     with ApprovalCheck
     with ModuleDraftCheck
-    with PermissionCheck {
+    with PermissionCheck
+    with PersonAction {
 
   import ModuleDraftApprovalController._
 
-  // TODO DEBUG ONLY
-  private def user[A](r: UserTokenRequest[A]) =
-    r.getQueryString("user").getOrElse(r.token.username)
-
   def getOwn =
-    auth async { r =>
+    auth andThen personAction async { r =>
       approvalService
-        .reviewerApprovals(User(this.user(r)))
+        .reviewerApprovals(r.person)
         .map(xs => Ok(Json.toJson(xs)))
     }
 
   def getByModule(moduleId: UUID) =
-    auth andThen hasPermissionToEditDraft(moduleId) async { _ =>
-      reviewService.allByModule(moduleId).map(xs => Ok(Json.toJson(xs)))
-    }
+    auth andThen
+      personAction andThen
+      hasPermissionToEditDraft(moduleId) async { _ =>
+        reviewService.allByModule(moduleId).map(xs => Ok(Json.toJson(xs)))
+      }
 
   def update(moduleId: UUID, reviewId: UUID) =
     auth(parse.json(readsUpdate)) andThen
+      personAction andThen
       hasPermissionToApproveReview(reviewId) async { r =>
         reviewService
-          .update(reviewId, User(this.user(r)), r.body._1, r.body._2)
+          .update(reviewId, r.person, r.body._1, r.body._2)
           .map(_ => NoContent)
       }
 }

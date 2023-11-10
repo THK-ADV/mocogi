@@ -5,8 +5,8 @@ import controllers.formats.ModuleCompendiumProtocolFormat
 import database.repo.ModuleApprovalRepository
 import models.ModuleReviewStatus.{Approved, Pending, Rejected}
 import models.ModuleReviewSummaryStatus.{WaitingForChanges, WaitingForReview}
-import models.core.AbbrevLabelLike
-import models.{ModuleReviewStatus, ModuleReviewSummaryStatus, ReviewerApproval, User}
+import models.core.{AbbrevLabelLike, Person}
+import models.{ModuleReviewStatus, ModuleReviewSummaryStatus, ReviewerApproval}
 import monocle.Monocle.toAppliedFocusOps
 import play.api.libs.json.Json
 
@@ -30,16 +30,18 @@ final class ModuleApprovalService @Inject() (
     approvalRepository.getAllStatus(moduleId).map(summaryStatus0)
 
   /** Returns all reviews with a corresponding review status and whether the
-    * given user (reviewer) can perform a review. A review status is defined as
-    * waiting for review (with a progress indicator) or waiting for changes.
+    * given person (reviewer) can perform a review. A review status is defined
+    * as waiting for review (with a progress indicator) or waiting for changes.
     *
-    * @param user
-    *   The user which requested the reviews
+    * @param person
+    *   The person which requested the reviews
     * @return
     */
-  def reviewerApprovals(user: User): Future[Iterable[ReviewerApproval]] = {
+  def reviewerApprovals(
+      person: Person.Default
+  ): Future[Iterable[ReviewerApproval]] = {
     approvalRepository
-      .allByModulesWhereUserExists(user)
+      .allByModulesWhereUserExists(person.id)
       .map(_.groupBy(_._1).flatMap { case (_, entries) =>
         entries.filter(_._7.isDefined).map {
           case (moduleId, author, mcJson, role, _, status, sp, id) =>
@@ -65,15 +67,18 @@ final class ModuleApprovalService @Inject() (
       })
   }
 
-  /** Returns whether the given user has a pending approval for the review
+  /** Returns whether the given person has a pending approval for the review
     * @param reviewId
     *   ID of the review to check against
-    * @param user
-    *   User to check against
+    * @param Person
+    *   Person to check against
     * @return
     */
-  def hasPendingApproval(reviewId: UUID, user: User): Future[Boolean] =
-    approvalRepository.hasPendingApproval(reviewId, user)
+  def hasPendingApproval(
+      reviewId: UUID,
+      person: Person.Default
+  ): Future[Boolean] =
+    approvalRepository.hasPendingApproval(reviewId, person.id)
 
   private def summaryStatus0(
       xs: Seq[ModuleReviewStatus]

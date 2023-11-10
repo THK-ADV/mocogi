@@ -401,7 +401,7 @@ create table metadata_taught_with
 create table module_draft
 (
     "module"                  uuid      not null PRIMARY KEY,
-    "user_id"                 text      not null,
+    "author"                  text      not null,
     "branch"                  text      not null,
     "source"                  text      not null,
     "module_json"             text      not null,
@@ -412,15 +412,16 @@ create table module_draft
     "last_commit_id"          text null,
     "merge_request_id"        integer null,
     "merge_request_status"    text null,
-    "last_modified"           timestamp not null
+    "last_modified"           timestamp not null,
+    FOREIGN KEY (author) REFERENCES person (id)
 );
 
 create table module_update_permission
 (
-    "module"  uuid not null,
-    "user_id" text not null,
-    "kind"    text not null,
-    PRIMARY KEY (module, user_id)
+    "module"    uuid not null,
+    "campus_id" text not null,
+    "kind"      text not null,
+    PRIMARY KEY (module, campus_id)
 );
 
 create table module_review

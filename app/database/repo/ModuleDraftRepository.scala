@@ -19,7 +19,7 @@ trait ModuleDraftRepository {
 
   def allByModules(modules: Seq[UUID]): Future[Seq[ModuleDraft]]
 
-  def allByUser(user: User): Future[Seq[ModuleDraft]]
+  def allByAuthor(personId: String): Future[Seq[ModuleDraft]]
 
   def updateDraft(
       moduleId: UUID,
@@ -67,8 +67,7 @@ final class ModuleDraftRepositoryImpl @Inject() (
     mergeRequestIdColumnType,
     mergeRequestStatusColumnType,
     printColumnType,
-    setStringColumnType,
-    userColumnType
+    setStringColumnType
   }
 
   protected val tableQuery = TableQuery[ModuleDraftTable]
@@ -81,8 +80,8 @@ final class ModuleDraftRepositoryImpl @Inject() (
   def allByModules(modules: Seq[UUID]): Future[Seq[ModuleDraft]] =
     db.run(tableQuery.filter(_.module.inSet(modules)).result)
 
-  override def allByUser(user: User): Future[Seq[ModuleDraft]] =
-    db.run(tableQuery.filter(_.user === user).result)
+  override def allByAuthor(personId: String): Future[Seq[ModuleDraft]] =
+    db.run(tableQuery.filter(_.author === personId).result)
 
   def delete(moduleId: UUID): Future[Int] =
     db.run(tableQuery.filter(_.module === moduleId).delete)
@@ -140,7 +139,7 @@ final class ModuleDraftRepositoryImpl @Inject() (
             a.lastCommit,
             a.mergeRequestId,
             a.mergeRequestStatus,
-            a.lastModified,
+            a.lastModified
           )
         )
         .update(

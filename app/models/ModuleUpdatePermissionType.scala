@@ -1,5 +1,7 @@
 package models
 
+import play.api.libs.json.Writes
+
 sealed trait ModuleUpdatePermissionType {
   def id: String
   override def toString = id
@@ -18,4 +20,7 @@ object ModuleUpdatePermissionType {
       case "inherited" => Inherited
       case "granted"   => Granted
     }
+
+  implicit def writes: Writes[ModuleUpdatePermissionType] =
+    Writes.of[String].contramap(_.id)
 }

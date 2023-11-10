@@ -12,9 +12,11 @@ import scala.concurrent.{ExecutionContext, Future}
 object StudyProgramDirectorsRepository {
   case class StudyProgramDirector(
       directorId: String,
-      campusId: Option[String],
-      studyProgramAbbrev: String,
+      directorFirstname: String,
+      directorLastname: String,
+      studyProgramGradeLabel: String,
       studyProgramLabel: String,
+      studyProgramAbbrev: String,
       role: UniversityRole
   )
 }
@@ -38,7 +40,16 @@ final class StudyProgramDirectorsRepository @Inject() (
       if a.studyProgram.in(sps) && a.role.inSet(roles)
       p <- a.personFk
       s <- a.studyProgramFk
-    } yield (p.id, p.campusId, s.abbrev, s.deLabel, a.role)
+      g <- s.gradeFk
+    } yield (
+      p.id,
+      p.firstname,
+      p.lastname,
+      g.deLabel,
+      s.deLabel,
+      s.abbrev,
+      a.role
+    )
     db.run(query.result.map(_.map(StudyProgramDirector.tupled)))
   }
 
