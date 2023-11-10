@@ -2,9 +2,8 @@ package service.core
 
 import database.InsertOrUpdateResult
 import database.repo.PersonRepository
-import database.table.PersonDbEntry
-import models.core.Person.{Default, Group, Unknown}
-import models.core.{Person, PersonStatus}
+import models.core.Person
+import models.core.Person.toDbEntry
 import parsing.core.PersonFileParser
 
 import javax.inject.{Inject, Singleton}
@@ -50,54 +49,5 @@ final class PersonServiceImpl @Inject() (
           repo.createOrUpdateMany(xs.map(toDbEntry)).map(_.map(_._1).zip(xs))
       }
     } yield people
-
-  private def toDbEntry(p: Person): PersonDbEntry =
-    p match {
-      case Default(
-            id,
-            lastname,
-            firstname,
-            title,
-            faculties,
-            abbreviation,
-            campusId,
-            status
-          ) =>
-        PersonDbEntry(
-          id,
-          lastname,
-          firstname,
-          title,
-          faculties.map(_.abbrev),
-          abbreviation,
-          Some(campusId),
-          status,
-          Person.DefaultKind
-        )
-      case Group(id, title) =>
-        PersonDbEntry(
-          id,
-          "",
-          "",
-          title,
-          Nil,
-          "",
-          None,
-          PersonStatus.Active,
-          Person.GroupKind
-        )
-      case Unknown(id, title) =>
-        PersonDbEntry(
-          id,
-          "",
-          "",
-          title,
-          Nil,
-          "",
-          None,
-          PersonStatus.Active,
-          Person.UnknownKind
-        )
-    }
 
 }

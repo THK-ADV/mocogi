@@ -45,6 +45,8 @@ final class ModuleApprovalService @Inject() (
       .map(_.groupBy(_._1).flatMap { case (_, entries) =>
         entries.filter(_._7.isDefined).map {
           case (moduleId, author, mcJson, role, _, status, sp, id) =>
+            val studyProgram = (sp.get._1, sp.get._2, sp.get._3)
+            val grade = sp.get._4
             val protocol =
               Json.fromJson(mcJson)(moduleCompendiumProtocolFormat).get
             val summaryStatus = summaryStatus0(entries.map(_._6)).get
@@ -57,10 +59,11 @@ final class ModuleApprovalService @Inject() (
               moduleId,
               protocol.metadata.title,
               protocol.metadata.abbrev,
-              author,
+              Person.toDefaultPerson(author),
               role,
               summaryStatus,
-              AbbrevLabelLike(sp.get),
+              AbbrevLabelLike(studyProgram),
+              grade,
               canReview
             )
         }
@@ -70,7 +73,7 @@ final class ModuleApprovalService @Inject() (
   /** Returns whether the given person has a pending approval for the review
     * @param reviewId
     *   ID of the review to check against
-    * @param Person
+    * @param person
     *   Person to check against
     * @return
     */

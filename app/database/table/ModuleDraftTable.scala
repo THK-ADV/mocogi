@@ -37,6 +37,11 @@ final class ModuleDraftTable(tag: Tag)
 
   def lastModified = column[LocalDateTime]("last_modified")
 
+  def authorFk =
+    foreignKey("author", author, TableQuery[PersonTable])(
+      _.id
+    )
+
   override def * =
     (
       module,

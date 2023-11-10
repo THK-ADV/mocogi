@@ -2,7 +2,7 @@ package database.repo
 
 import database.table._
 import models.CampusId
-import models.core.{Faculty, Person}
+import models.core.Person
 import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfigProvider}
 import slick.jdbc.JdbcProfile
 
@@ -45,7 +45,7 @@ class PersonRepository @Inject() (
         .result
         .map(_.groupBy(_._1._1).map { case (person, deps) =>
           val faculties = deps.flatMap(_._2)
-          toPerson(person, faculties.toList)
+          Person.fromDbEntry(person, faculties.toList)
         }.toSeq)
     )
 
@@ -72,23 +72,4 @@ class PersonRepository @Inject() (
           }
         )
     )
-
-  private def toPerson(p: PersonDbEntry, faculties: List[Faculty]): Person =
-    p.kind match {
-      case Person.DefaultKind =>
-        Person.Default(
-          p.id,
-          p.lastname,
-          p.firstname,
-          p.title,
-          faculties,
-          p.abbreviation,
-          p.campusId.get,
-          p.status
-        )
-      case Person.GroupKind =>
-        Person.Group(p.id, p.title)
-      case Person.UnknownKind =>
-        Person.Unknown(p.id, p.title)
-    }
 }

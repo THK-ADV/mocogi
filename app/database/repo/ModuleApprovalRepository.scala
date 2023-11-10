@@ -1,9 +1,14 @@
 package database.repo
 
 import com.google.inject.Inject
-import database.table.{ModuleDraftTable, ModuleReviewTable, StudyProgramPersonTable}
+import database.table.{
+  ModuleDraftTable,
+  ModuleReviewTable,
+  StudyProgramPersonTable
+}
 import models.ModuleReviewStatus
 import models.ModuleReviewStatus.Pending
+import models.core.Person
 import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfigProvider}
 import slick.jdbc.JdbcProfile
 
@@ -17,7 +22,11 @@ final class ModuleApprovalRepository @Inject() (
     implicit val ctx: ExecutionContext
 ) extends HasDatabaseConfigProvider[JdbcProfile] {
 
-  import database.table.{jsValueColumnType, moduleReviewStatusColumnType, universityRoleColumnType}
+  import database.table.{
+    jsValueColumnType,
+    moduleReviewStatusColumnType,
+    universityRoleColumnType
+  }
   import profile.api._
 
   private def tableQuery = TableQuery[ModuleReviewTable]
@@ -28,7 +37,8 @@ final class ModuleApprovalRepository @Inject() (
     for {
       q <- studyProgramPersonTable.filter(_.person === person)
       sp <- q.studyProgramFk
-    } yield (q, sp)
+      g <- sp.gradeFk
+    } yield (q, sp, g)
 
   private def moduleDraftTable = TableQuery[ModuleDraftTable]
 
@@ -66,15 +76,18 @@ final class ModuleApprovalRepository @Inject() (
       .on(_._1.moduleDraft === _._1.moduleDraft)
       .join(moduleDraftTable)
       .on(_._1._1.moduleDraft === _.module)
-      .map { case (((r, spp), _), d) =>
+      .flatMap(a =>
+        a._2.authorFk.filter(_.kind === Person.DefaultKind).map(a -> _)
+      )
+      .map { case ((((r, spp), _), d), p) =>
         (
           d.module,
-          d.author,
+          p,
           d.data,
           r.role,
           r.studyProgram,
           r.status,
-          spp.map(s => (s._2.abbrev, s._2.deLabel, s._2.enLabel)),
+          spp.map(s => (s._2.abbrev, s._2.deLabel, s._2.enLabel, s._3)),
           r.id
         )
       }

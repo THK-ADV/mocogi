@@ -1,5 +1,7 @@
 package models.core
 
+import database.table.PersonDbEntry
+
 sealed trait Person {
   def id: String
   def kind: String
@@ -39,6 +41,87 @@ object Person {
     override val kind = UnknownKind
     override def username: Option[String] = None
   }
+
+  // unsafe
+  def toDefaultPerson(p: PersonDbEntry) =
+    Person.Default(
+      p.id,
+      p.lastname,
+      p.firstname,
+      p.title,
+      Nil,
+      p.abbreviation,
+      p.campusId.get,
+      p.status
+    )
+
+  def fromDbEntry(p: PersonDbEntry, faculties: List[Faculty]): Person =
+    p.kind match {
+      case Person.DefaultKind =>
+        Person.Default(
+          p.id,
+          p.lastname,
+          p.firstname,
+          p.title,
+          faculties,
+          p.abbreviation,
+          p.campusId.get,
+          p.status
+        )
+      case Person.GroupKind =>
+        Person.Group(p.id, p.title)
+      case Person.UnknownKind =>
+        Person.Unknown(p.id, p.title)
+    }
+
+  def toDbEntry(p: Person): PersonDbEntry =
+    p match {
+      case Default(
+            id,
+            lastname,
+            firstname,
+            title,
+            faculties,
+            abbreviation,
+            campusId,
+            status
+          ) =>
+        PersonDbEntry(
+          id,
+          lastname,
+          firstname,
+          title,
+          faculties.map(_.abbrev),
+          abbreviation,
+          Some(campusId),
+          status,
+          Person.DefaultKind
+        )
+      case Group(id, title) =>
+        PersonDbEntry(
+          id,
+          "",
+          "",
+          title,
+          Nil,
+          "",
+          None,
+          PersonStatus.Active,
+          Person.GroupKind
+        )
+      case Unknown(id, title) =>
+        PersonDbEntry(
+          id,
+          "",
+          "",
+          title,
+          Nil,
+          "",
+          None,
+          PersonStatus.Active,
+          Person.UnknownKind
+        )
+    }
 }
 
 sealed trait PersonStatus {
