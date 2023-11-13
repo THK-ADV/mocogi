@@ -11,6 +11,7 @@ import git.api.{GitBranchService, GitCommitService}
 import models._
 import models.core.Person
 import ops.EitherOps.EOps
+import ops.FutureOps.Ops
 import parsing.metadata.VersionScheme
 import parsing.types._
 import play.api.libs.json._
@@ -146,7 +147,9 @@ final class ModuleDraftServiceImpl @Inject() (
       versionScheme: VersionScheme
   ): Future[Either[PipelineError, Unit]] =
     for {
-      draft <- moduleDraftRepository.getByModule(moduleId)
+      draft <- moduleDraftRepository
+        .getByModule(moduleId)
+        .continueIf(_.state().canEdit, "can't edit module")
       origin <- moduleCompendiumService.getFromStaging(draft.module)
       existing = draft.protocol()
       (updated, modifiedKeys) = deltaUpdate(

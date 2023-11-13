@@ -11,7 +11,7 @@ import git.api.GitMergeRequestApiService
 import models.ModuleReviewStatus.{Approved, Pending, Rejected}
 import models._
 import models.core.Person
-import ops.FutureOps.{Ops, abort}
+import ops.FutureOps.Ops
 
 import java.util.UUID
 import javax.inject.{Inject, Singleton}
@@ -41,11 +41,14 @@ final class ModuleReviewService @Inject() (
     */
   def create(moduleId: UUID, author: Person.Default): Future[Unit] =
     for {
-      draft <- draftRepo.getByModule(moduleId)
+      draft <- draftRepo
+        .getByModule(moduleId)
+        .continueIf(
+          _.state().canRequestReview,
+          "can't request a review"
+        )
       mergeRequest <-
-        if (draft.modifiedKeys.isEmpty)
-          abort(s"no modifications found for module ${draft.module}")
-        else if (draft.keysToBeReviewed.nonEmpty)
+        if (draft.keysToBeReviewed.nonEmpty)
           createApproveReview(draft, author)
         else createAutoAcceptedReview(draft, author)
       _ <- draftRepo.updateMergeRequest(draft.module, Some(mergeRequest))

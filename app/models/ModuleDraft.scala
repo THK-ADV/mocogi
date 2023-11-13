@@ -59,11 +59,13 @@ object ModuleDraft extends ModuleCompendiumProtocolFormat {
       if (
         self.lastCommit.isDefined &&
         self.mergeRequest.isEmpty &&
+        self.modifiedKeys.nonEmpty &&
         self.keysToBeReviewed.isEmpty
       ) ValidForPublication
       else if (
         self.lastCommit.isDefined &&
         self.mergeRequest.isEmpty &&
+        self.modifiedKeys.nonEmpty &&
         self.keysToBeReviewed.nonEmpty
       ) ValidForReview
       else if (
