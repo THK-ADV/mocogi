@@ -1,11 +1,23 @@
 package models
 
+import models.ModuleDraftState.{ValidForPublication, ValidForReview}
 import play.api.libs.json.{Json, Writes}
 
 sealed trait ModuleDraftState {
   def id: String
   def deLabel: String
   def enLabel: String
+
+  def canRequestReview: Boolean =
+    this == ValidForReview || this == ValidForPublication
+
+  def canEdit: Boolean = this match {
+    case ModuleDraftState.Published | ModuleDraftState.ValidForReview |
+        ModuleDraftState.ValidForPublication |
+        ModuleDraftState.WaitingForChanges =>
+      true
+    case ModuleDraftState.WaitingForReview | ModuleDraftState.Unknown => false
+  }
 }
 
 object ModuleDraftState {

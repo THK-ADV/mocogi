@@ -10,7 +10,7 @@ import models.ModuleDraftState.{
   WaitingForChanges,
   WaitingForReview
 }
-import play.api.libs.json.{JsValue, Json, Writes}
+import play.api.libs.json.{JsValue, Json}
 import service.Print
 
 import java.time.LocalDateTime
@@ -18,7 +18,7 @@ import java.util.UUID
 
 case class ModuleDraft(
     module: UUID,
-    user: User,
+    author: String,
     branch: Branch,
     source: ModuleDraftSource,
     data: JsValue,
@@ -32,19 +32,6 @@ case class ModuleDraft(
 )
 
 object ModuleDraft extends ModuleCompendiumProtocolFormat {
-  implicit val moduleDraftFmt: Writes[ModuleDraft] =
-    Writes.apply(d =>
-      Json.obj(
-        "module" -> d.module,
-        "user" -> d.user.username,
-        "status" -> d.source,
-        "data" -> d.data,
-        "keysToBeReviewed" -> d.keysToBeReviewed,
-        "mergeRequestId" -> d.mergeRequest.map(_._1.value),
-        "lastModified" -> d.lastModified
-      )
-    )
-
   final implicit class Ops(private val self: ModuleDraft) extends AnyVal {
     def protocol(): ModuleCompendiumProtocol =
       Json.fromJson(self.data).get
@@ -54,32 +41,34 @@ object ModuleDraft extends ModuleCompendiumProtocolFormat {
 
     def mergeRequestStatus: Option[MergeRequestStatus] =
       self.mergeRequest.map(_._2)
+
+    def state(): ModuleDraftState =
+      if (
+        self.lastCommit.isDefined &&
+        self.mergeRequest.isEmpty &&
+        self.modifiedKeys.nonEmpty &&
+        self.keysToBeReviewed.isEmpty
+      ) ValidForPublication
+      else if (
+        self.lastCommit.isDefined &&
+        self.mergeRequest.isEmpty &&
+        self.modifiedKeys.nonEmpty &&
+        self.keysToBeReviewed.nonEmpty
+      ) ValidForReview
+      else if (
+        self.lastCommit.isDefined &&
+        self.mergeRequestStatus.contains(Open)
+      ) WaitingForReview
+      else if (
+        self.lastCommit.isDefined &&
+        self.mergeRequestStatus.contains(Closed)
+      ) WaitingForChanges
+      else Unknown
   }
 
   final implicit class OptionOps(private val self: Option[ModuleDraft])
       extends AnyVal {
-    def state(): ModuleDraftState =
-      self match {
-        case None => Published
-        case Some(d)
-            if d.lastCommit.isDefined &&
-              d.mergeRequest.isEmpty &&
-              d.keysToBeReviewed.isEmpty =>
-          ValidForPublication
-        case Some(d)
-            if d.lastCommit.isDefined &&
-              d.mergeRequest.isEmpty &&
-              d.keysToBeReviewed.nonEmpty =>
-          ValidForReview
-        case Some(d)
-            if d.lastCommit.isDefined &&
-              d.mergeRequestStatus.contains(Open) =>
-          WaitingForReview
-        case Some(d)
-            if d.lastCommit.isDefined &&
-              d.mergeRequestStatus.contains(Closed) =>
-          WaitingForChanges
-        case _ => Unknown
-      }
+    def state() =
+      self.fold[ModuleDraftState](Published)(_.state())
   }
 }

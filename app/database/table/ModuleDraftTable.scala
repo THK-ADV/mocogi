@@ -12,7 +12,7 @@ final class ModuleDraftTable(tag: Tag)
     extends Table[ModuleDraft](tag, "module_draft") {
   def module = column[UUID]("module", O.PrimaryKey)
 
-  def user = column[User]("user_id")
+  def author = column[String]("author")
 
   def branch = column[Branch]("branch")
 
@@ -37,10 +37,15 @@ final class ModuleDraftTable(tag: Tag)
 
   def lastModified = column[LocalDateTime]("last_modified")
 
+  def authorFk =
+    foreignKey("author", author, TableQuery[PersonTable])(
+      _.id
+    )
+
   override def * =
     (
       module,
-      user,
+      author,
       branch,
       source,
       data,
@@ -57,7 +62,7 @@ final class ModuleDraftTable(tag: Tag)
   def mapRow: (
       (
           UUID,
-          User,
+          String,
           Branch,
           ModuleDraftSource,
           JsValue,
@@ -73,7 +78,7 @@ final class ModuleDraftTable(tag: Tag)
   ) => ModuleDraft = {
     case (
           module,
-          user,
+          author,
           branch,
           source,
           data,
@@ -88,7 +93,7 @@ final class ModuleDraftTable(tag: Tag)
         ) =>
       ModuleDraft(
         module,
-        user,
+        author,
         branch,
         source,
         data,
@@ -105,7 +110,7 @@ final class ModuleDraftTable(tag: Tag)
   def unmapRow: ModuleDraft => Option[
     (
         UUID,
-        User,
+        String,
         Branch,
         ModuleDraftSource,
         JsValue,
@@ -122,7 +127,7 @@ final class ModuleDraftTable(tag: Tag)
     Option(
       (
         d.module,
-        d.user,
+        d.author,
         d.branch,
         d.source,
         d.data,

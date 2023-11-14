@@ -1,0 +1,270 @@
+metadata.title:
+  de_label: Modulbezeichnung
+  de_desc: --
+  en_label: --
+  en_desc: --
+metadata.abbrev:
+  de_label: Modulbeschreibung
+  de_desc: --
+  en_label: --
+  en_desc: --
+metadata.moduleType:
+  de_label: Art des Moduls
+  de_desc: --
+  en_label: --
+  en_desc: --
+metadata.ects:
+  de_label: ECTS credits
+  de_desc: --
+  en_label: --
+  en_desc: --
+metadata.language:
+  de_label: Sprache
+  de_desc: --
+  en_label: --
+  en_desc: --
+metadata.duration:
+  de_label: Dauer des Moduls
+  de_desc: --
+  en_label: --
+  en_desc: --
+metadata.season:
+  de_label: Häufigkeit des Angebots
+  de_desc: --
+  en_label: --
+  en_desc: --
+metadata.workload.lecture:
+  de_label: Workload Vorlesung
+  de_desc: --
+  en_label: --
+  en_desc: --
+metadata.workload.seminar:
+  de_label: Workload Seminar
+  de_desc: --
+  en_label: --
+  en_desc: --
+metadata.workload.practical:
+  de_label: Workload Praktikum
+  de_desc: --
+  en_label: --
+  en_desc: --
+metadata.workload.exercise:
+  de_label: Workload Übung
+  de_desc: --
+  en_label: --
+  en_desc: --
+metadata.workload.projectSupervision:
+  de_label: Workload Projektbetreuung
+  de_desc: --
+  en_label: --
+  en_desc: --
+metadata.workload.projectWork:
+  de_label: Workload Projektarbeit
+  de_desc: --
+  en_label: --
+  en_desc: --
+metadata.status:
+  de_label: Status
+  de_desc: --
+  en_label: --
+  en_desc: --
+metadata.location:
+  de_label: Ort
+  de_desc: --
+  en_label: --
+  en_desc: --
+metadata.participants.min:
+  de_label: Teilnehmer von
+  de_desc: --
+  en_label: --
+  en_desc: --
+metadata.participants.max:
+  de_label: Teilnehmer bis
+  de_desc: --
+  en_label: --
+  en_desc: --
+metadata.moduleRelation:
+  de_label: Modulbeziehung
+  de_desc: --
+  en_label: --
+  en_desc: --
+metadata.moduleManagement:
+  de_label: Modulverantwortliche*r
+  de_desc: --
+  en_label: --
+  en_desc: --
+metadata.lecturers:
+  de_label: Dozierende
+  de_desc: --
+  en_label: --
+  en_desc: --
+metadata.assessmentMethods.mandatory.method:
+  de_label: Prüfungsform
+  de_desc: --
+  en_label: --
+  en_desc: --
+metadata.assessmentMethods.mandatory.percentage:
+  de_label: Prüfungsform prozentuale Angabe
+  de_desc: --
+  en_label: --
+  en_desc: --
+metadata.assessmentMethods.mandatory.precondition:
+  de_label: Prüfungsform Vorbedingung
+  de_desc: --
+  en_label: --
+  en_desc: --
+metadata.assessmentMethods.optional.method:
+  de_label: Prüfungsform bei einem WPF
+  de_desc: --
+  en_label: --
+  en_desc: --
+metadata.assessmentMethods.optional.percentage:
+  de_label: Prüfungsform prozentuale Angabe bei einem WPF
+  de_desc: --
+  en_label: --
+  en_desc: --
+metadata.assessmentMethods.optional.precondition:
+  de_label: Prüfungsform Vorbedingung bei einem WPF
+  de_desc: --
+  en_label: --
+  en_desc: --
+metadata.prerequisites.recommended.text:
+  de_label: Empfohlene Voraussetzungen Freitext
+  de_desc: --
+  en_label: --
+  en_desc: --
+metadata.prerequisites.recommended.modules:
+  de_label: Empfohlene Voraussetzungen Module
+  de_desc: --
+  en_label: --
+  en_desc: --
+metadata.prerequisites.recommended.pos:
+  de_label: Empfohlene Voraussetzungen Studiengänge
+  de_desc: --
+  en_label: --
+  en_desc: --
+metadata.prerequisites.required.text:
+  de_label: Zwingende Voraussetzungen Freitext
+  de_desc: --
+  en_label: --
+  en_desc: --
+metadata.prerequisites.required.modules:
+  de_label: Zwingende Voraussetzungen Module
+  de_desc: --
+  en_label: --
+  en_desc: --
+metadata.prerequisites.required.pos:
+  de_label: Zwingende Voraussetzungen Studiengänge
+  de_desc: --
+  en_label: --
+  en_desc: --
+metadata.po.mandatory.po:
+  de_label: Verwendung des Moduls in Studiengängen
+  de_desc: --
+  en_label: --
+  en_desc: --
+metadata.po.mandatory.specialization:
+  de_label: Verwendung des Moduls in Studiengängen mit Spezialisierung
+  de_desc: --
+  en_label: --
+  en_desc: --
+metadata.po.mandatory.recommendedSemester:
+  de_label: Verwendung des Moduls in Studiengängen Semesterangabe
+  de_desc: --
+  en_label: --
+  en_desc: --
+metadata.po.mandatory.recommendedSemesterPartTime:
+  de_label: Verwendung des Moduls in Studiengängen Semesterangabe für Teilzeitstudium
+  de_desc: --
+  en_label: --
+  en_desc: --
+metadata.po.optional.po:
+  de_label: Verwendung des Moduls in Studiengängen als WPF
+  de_desc: --
+  en_label: --
+  en_desc: --
+metadata.po.optional.specialization:
+  de_label: Verwendung des Moduls in Studiengängen mit Spezialisierung als WPF
+  de_desc: --
+  en_label: --
+  en_desc: --
+metadata.po.optional.instanceOf:
+  de_label: Verwendung des Moduls in Studiengängen als WPF zugehörig zu
+  de_desc: --
+  en_label: --
+  en_desc: --
+metadata.po.optional.partOfCatalog:
+  de_label: Verwendung des Moduls in Studiengängen als WPF und Teil des Modulhandbuchs
+  de_desc: --
+  en_label: --
+  en_desc: --
+metadata.po.optional.recommendedSemester:
+  de_label: Verwendung des Moduls in Studiengängen Semesterangabe als WPF
+  de_desc: --
+  en_label: --
+  en_desc: --
+metadata.competences:
+  de_label: Kompetenzen
+  de_desc: --
+  en_label: --
+  en_desc: --
+metadata.globalCriteria:
+  de_label: Global Criteria
+  de_desc: --
+  en_label: --
+  en_desc: --
+metadata.taughtWith:
+  de_label: Gelehrt mit anderem Modul
+  de_desc: --
+  en_label: --
+  en_desc: --
+deContent.learningOutcome:
+  de_label: Lernziele (deutsch)
+  de_desc: --
+  en_label: --
+  en_desc: --
+deContent.content:
+  de_label: Modulinhalte (deutsch)
+  de_desc: --
+  en_label: --
+  en_desc: --
+deContent.teachingAndLearningMethods:
+  de_label: Lehr- und Lernmethoden (deutsch)
+  de_desc: --
+  en_label: --
+  en_desc: --
+deContent.recommendedReading:
+  de_label: Empfohlene Literatur (deutsch)
+  de_desc: --
+  en_label: --
+  en_desc: --
+deContent.particularities:
+  de_label: Besonderheiten (deutsch)
+  de_desc: --
+  en_label: --
+  en_desc: --
+enContent.learningOutcome:
+  de_label: Learning Outcome (english)
+  de_desc: --
+  en_label: --
+  en_desc: --
+enContent.content:
+  de_label: Module Content (english)
+  de_desc: --
+  en_label: --
+  en_desc: --
+enContent.teachingAndLearningMethods:
+  de_label: Teaching and Learning Methods (english)
+  de_desc: --
+  en_label: --
+  en_desc: --
+enContent.recommendedReading:
+  de_label: Recommended Reading (english)
+  de_desc: --
+  en_label: --
+  en_desc: --
+enContent.particularities:
+  de_label: Particularities (english)
+  de_desc: --
+  en_label: --
+  en_desc: --

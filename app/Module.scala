@@ -20,7 +20,7 @@ import printing.markdown.{
   ModuleCompendiumPrinter
 }
 import printing.pandoc.PandocApi
-import printing.yaml.{ContentMarkdownPrinter, MetadataYamlPrinter}
+import printing.yaml.MetadataYamlPrinter
 import providers._
 import publisher.KafkaPublisher
 import service._
@@ -123,6 +123,9 @@ class Module() extends AbstractModule {
     bind(classOf[ModuleKeysToReview])
       .toProvider(classOf[ModuleKeysToReviewProvider])
       .asEagerSingleton()
+    bind(classOf[ModuleKeyService])
+      .toProvider(classOf[ModuleKeyServiceProvider])
+      .asEagerSingleton()
 
     bind(new TypeLiteral[Set[MetadataParser]] {})
       .toProvider(classOf[MetadataParserProvider])
@@ -134,9 +137,6 @@ class Module() extends AbstractModule {
       .toProvider(classOf[AuthorizationProvider])
       .asEagerSingleton()
 
-    bind(classOf[ContentMarkdownPrinter]).toInstance(
-      new ContentMarkdownPrinter()
-    )
     bind(classOf[MetadataYamlPrinter]).toInstance(
       new MetadataYamlPrinter(2)
     )

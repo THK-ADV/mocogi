@@ -1,12 +1,13 @@
 package database.repo
 
 import database.table._
-import models.core.{Faculty, Person}
+import models.CampusId
+import models.core.Person
 import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfigProvider}
 import slick.jdbc.JdbcProfile
 
 import javax.inject.{Inject, Singleton}
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class PersonRepository @Inject() (
@@ -44,26 +45,31 @@ class PersonRepository @Inject() (
         .result
         .map(_.groupBy(_._1._1).map { case (person, deps) =>
           val faculties = deps.flatMap(_._2)
-          toPerson(person, faculties.toList)
+          Person.fromDbEntry(person, faculties.toList)
         }.toSeq)
     )
 
-  private def toPerson(p: PersonDbEntry, faculties: List[Faculty]): Person =
-    p.kind match {
-      case Person.DefaultKind =>
-        Person.Default(
-          p.id,
-          p.lastname,
-          p.firstname,
-          p.title,
-          faculties,
-          p.abbreviation,
-          p.campusId.get,
-          p.status
+  def getByCampusId(campusId: CampusId): Future[Option[Person.Default]] =
+    db.run(
+      tableQuery
+        .filter(a =>
+          a.campusId === campusId.value && a.kind === Person.DefaultKind
         )
-      case Person.GroupKind =>
-        Person.Group(p.id, p.title)
-      case Person.UnknownKind =>
-        Person.Unknown(p.id, p.title)
-    }
+        .result
+        .map(p =>
+          Option.when(p.size == 1) {
+            val p0 = p.head
+            Person.Default(
+              p0.id,
+              p0.lastname,
+              p0.firstname,
+              p0.title,
+              Nil,
+              p0.abbreviation,
+              p0.campusId.get,
+              p0.status
+            )
+          }
+        )
+    )
 }

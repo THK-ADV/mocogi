@@ -4,6 +4,7 @@ import database.repo.ModuleCompendiumRepository
 import database.{MetadataOutput, ModuleCompendiumOutput}
 import git.GitFilePath
 import git.api.GitFileDownloadService
+import models.Module
 import ops.FutureOps.SeqOps
 import parsing.types.ModuleCompendium
 
@@ -17,7 +18,8 @@ trait ModuleCompendiumService {
       entries: Seq[(GitFilePath, ModuleCompendium, LocalDateTime)]
   ): Future[Seq[ModuleCompendium]]
   def all(filter: Map[String, Seq[String]]): Future[Seq[ModuleCompendiumOutput]]
-  def allModules(filter: Map[String, Seq[String]]): Future[Seq[models.Module]]
+  def allModules(filter: Map[String, Seq[String]]): Future[Seq[Module]]
+  def allModulesFromPerson(personId: String): Future[Seq[Module]]
   def allMetadata(filter: Map[String, Seq[String]]): Future[Seq[MetadataOutput]]
   def get(id: UUID): Future[ModuleCompendiumOutput]
   def getFromStaging(id: UUID): Future[ModuleCompendiumOutput]
@@ -53,4 +55,7 @@ final class ModuleCompendiumServiceImpl @Inject() (
 
   override def allMetadata(filter: Map[String, Seq[String]]) =
     repo.all(filter).map(_.map(_.metadata))
+
+  override def allModulesFromPerson(personId: String) =
+    allModules(Map("user" -> Seq(personId)))
 }

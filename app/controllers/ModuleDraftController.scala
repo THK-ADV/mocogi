@@ -5,6 +5,7 @@ import controllers.ModuleDraftController.VersionSchemeHeader
 import controllers.actions.{
   ModuleDraftCheck,
   PermissionCheck,
+  PersonAction,
   VersionSchemeAction
 }
 import controllers.formats.{
@@ -13,11 +14,13 @@ import controllers.formats.{
   ModuleFormat,
   PipelineErrorFormat
 }
-import models.{ModuleCompendiumProtocol, User}
-import play.api.libs.json.Json
+import database.repo.PersonRepository
+import models.{ModuleCompendiumProtocol, ModuleDraft}
+import play.api.libs.json.{Json, Writes}
 import play.api.mvc.{AbstractController, ControllerComponents}
-import service.core.StudyProgramService
+import service.core.{ModuleKeyService, StudyProgramService}
 import service.{
+  ModuleCompendiumService,
   ModuleDraftService,
   ModuleReviewService,
   ModuleUpdatePermissionService
@@ -35,6 +38,9 @@ final class ModuleDraftController @Inject() (
     val auth: AuthorizationAction,
     val moduleUpdatePermissionService: ModuleUpdatePermissionService,
     val studyProgramService: StudyProgramService,
+    val personRepository: PersonRepository,
+    val moduleCompendiumService: ModuleCompendiumService,
+    val moduleKeyService: ModuleKeyService,
     implicit val ctx: ExecutionContext
 ) extends AbstractController(cc)
     with ModuleCompendiumProtocolFormat
@@ -42,15 +48,15 @@ final class ModuleDraftController @Inject() (
     with ModuleDraftCheck
     with PermissionCheck
     with ModuleFormat
-    with JsonNullWritable {
+    with JsonNullWritable
+    with PersonAction {
 
   def moduleDrafts() =
-    auth async { r =>
-      val user = User(r.token.username)
+    auth andThen personAction async { r =>
       for { // TODO care: business logic in controller
-        modules <- moduleUpdatePermissionService.getAllModulesFromUser(user)
+        modules <- moduleCompendiumService.allModulesFromPerson(r.person.id)
         draftsByModules <- moduleDraftService.allByModules(modules.map(_.id))
-        draftsByUser <- moduleDraftService.allByUser(user)
+        draftsByUser <- moduleDraftService.allByPerson(r.person.id)
       } yield {
         val moduleWithDraft = modules.map { module =>
           val draft = draftsByModules
@@ -67,29 +73,33 @@ final class ModuleDraftController @Inject() (
     }
 
   def keys(moduleId: UUID) =
-    auth andThen hasPermissionToEditDraft(moduleId) async { _ =>
-      moduleDraftService.getByModuleOpt(moduleId).map { draft =>
-        val keysToBeReviewed = draft
-          .map(_.keysToBeReviewed)
-          .getOrElse(Set.empty[String])
-        val modifiedKeys =
-          draft
-            .map(_.modifiedKeys)
-            .getOrElse(Set.empty[String])
-        Ok(
-          Json.obj(
-            "keysToBeReviewed" -> keysToBeReviewed,
-            "modifiedKeys" -> modifiedKeys
-          )
-        )
+    auth andThen
+      personAction andThen
+      hasPermissionToEditDraft(moduleId) async { _ =>
+        moduleDraftService
+          .getByModuleOpt(moduleId)
+          .map { draft =>
+            val reviewed = draft
+              .map(d => moduleKeyService.lookup(d.keysToBeReviewed))
+              .getOrElse(Set.empty)
+            val modified = draft
+              .map(d => moduleKeyService.lookup(d.modifiedKeys))
+              .getOrElse(Set.empty)
+            Ok(
+              Json.obj(
+                "keysToBeReviewed" -> reviewed,
+                "modifiedKeys" -> modified
+              )
+            )
+          }
       }
-    }
 
   def createNewModuleDraft() =
     auth(parse.json[ModuleCompendiumProtocol]) andThen
+      personAction andThen
       new VersionSchemeAction(VersionSchemeHeader) async { r =>
         moduleDraftService
-          .createNew(r.body, User(r.request.token.username), r.versionScheme)
+          .createNew(r.body, r.request.person, r.versionScheme)
           .map {
             case Left(err)    => BadRequest(Json.toJson(err))
             case Right(draft) => Ok(Json.toJson(draft))
@@ -98,13 +108,14 @@ final class ModuleDraftController @Inject() (
 
   def createOrUpdateModuleDraft(moduleId: UUID) =
     auth(parse.json[ModuleCompendiumProtocol]) andThen
+      personAction andThen
       hasPermissionToEditDraft(moduleId) andThen
       new VersionSchemeAction(VersionSchemeHeader) async { r =>
         moduleDraftService
           .createOrUpdate(
             moduleId,
             r.body,
-            User(r.request.token.username),
+            r.request.person,
             r.versionScheme
           )
           .map {
@@ -121,12 +132,27 @@ final class ModuleDraftController @Inject() (
     *   204 No Content
     */
   def deleteModuleDraft(moduleId: UUID) =
-    auth andThen hasPermissionToEditDraft(moduleId) async { _ =>
-      for {
-        _ <- moduleDraftReviewService.delete(moduleId)
-        _ <- moduleDraftService.delete(moduleId)
-      } yield NoContent
-    }
+    auth andThen
+      personAction andThen
+      hasPermissionToEditDraft(moduleId) async { _ =>
+        for {
+          _ <- moduleDraftReviewService.delete(moduleId)
+          _ <- moduleDraftService.delete(moduleId)
+        } yield NoContent
+      }
+
+  implicit val moduleDraftFmt: Writes[ModuleDraft] =
+    Writes.apply(d =>
+      Json.obj(
+        "module" -> d.module,
+        "author" -> d.author,
+        "status" -> d.source,
+        "data" -> d.data,
+        "keysToBeReviewed" -> moduleKeyService.lookup(d.keysToBeReviewed),
+        "mergeRequestId" -> d.mergeRequest.map(_._1.value),
+        "lastModified" -> d.lastModified
+      )
+    )
 }
 
 object ModuleDraftController {

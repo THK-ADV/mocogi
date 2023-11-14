@@ -1,7 +1,6 @@
 package controllers.actions
 
-import auth.UserTokenRequest
-import models.User
+import controllers.actions.PersonAction.PersonRequest
 import play.api.mvc.{ActionFilter, Result}
 import service.ModuleApprovalService
 
@@ -12,16 +11,14 @@ trait ApprovalCheck { self: PermissionCheck =>
   protected def approvalService: ModuleApprovalService
 
   def hasPermissionToApproveReview(id: UUID) =
-    new ActionFilter[UserTokenRequest] {
+    new ActionFilter[PersonRequest] {
       override protected def filter[A](
-          request: UserTokenRequest[A]
-      ): Future[Option[Result]] = {
-        // TODO DEBUG ONLY
-        val username =
-          request.getQueryString("user").getOrElse(request.token.username)
-        val user = User(username)
-        toResult(approvalService.hasPendingApproval(id, user), request)
-      }
+          request: PersonRequest[A]
+      ): Future[Option[Result]] =
+        toResult(
+          approvalService.hasPendingApproval(id, request.person),
+          request.request
+        )
 
       override protected def executionContext: ExecutionContext = ctx
     }

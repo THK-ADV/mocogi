@@ -1,37 +1,37 @@
 package controllers
 
-import auth.{AuthorizationAction, UserTokenRequest}
-import controllers.actions.{ApprovalCheck, PermissionCheck}
-import controllers.formats.{JsonNullWritable, UserFormat}
-import models.{ModuleReview, ModuleReviewStatus, UniversityRole, User}
+import auth.AuthorizationAction
+import controllers.actions.{
+  ApprovalCheck,
+  ModuleDraftCheck,
+  PermissionCheck,
+  PersonAction
+}
+import controllers.formats.{JsonNullWritable, PersonFormat}
+import database.repo.PersonRepository
+import models.ModuleReview
 import play.api.libs.json._
 import play.api.mvc.{AbstractController, ControllerComponents}
-import service.ModuleApprovalService.ModuleReviewSummaryStatus.{
-  WaitingForChanges,
-  WaitingForReview
+import service.{
+  ModuleApprovalService,
+  ModuleDraftService,
+  ModuleReviewService,
+  ModuleUpdatePermissionService
 }
-import service.ModuleApprovalService.{
-  ModuleReviewSummaryStatus,
-  ReviewerApproval
-}
-import service.{ModuleApprovalService, ModuleReviewService}
 
 import java.util.UUID
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 
-object ModuleDraftApprovalController extends JsonNullWritable with UserFormat {
-  implicit val urFmt: Writes[UniversityRole] =
-    Writes.of[String].contramap(_.id)
+object ModuleDraftApprovalController
+    extends JsonNullWritable
+    with PersonFormat {
 
-  implicit val sFmt: Writes[ModuleReviewStatus] =
-    Writes.of[String].contramap(_.id)
+  implicit val fmtDb: Writes[ModuleReview.DB] =
+    Json.writes[ModuleReview.DB]
 
-  implicit val fmt: Writes[ModuleReview] =
-    Json.writes[ModuleReview]
-
-  implicit val rfmt: Writes[ReviewerApproval] =
-    Json.writes[ReviewerApproval]
+  implicit val fmtAtomic: Writes[ModuleReview.Atomic] =
+    Json.writes[ModuleReview.Atomic]
 
   implicit val readsUpdate: Reads[(Boolean, Option[String])] =
     js =>
@@ -54,36 +54,38 @@ final class ModuleDraftApprovalController @Inject() (
     val approvalService: ModuleApprovalService,
     val reviewService: ModuleReviewService,
     val auth: AuthorizationAction,
+    val moduleDraftService: ModuleDraftService,
+    val moduleUpdatePermissionService: ModuleUpdatePermissionService,
+    val personRepository: PersonRepository,
     implicit val ctx: ExecutionContext
 ) extends AbstractController(cc)
     with ApprovalCheck
-    with PermissionCheck {
+    with ModuleDraftCheck
+    with PermissionCheck
+    with PersonAction {
 
   import ModuleDraftApprovalController._
 
-  // TODO DEBUG ONLY
-  private def user[A](r: UserTokenRequest[A]) =
-    r.getQueryString("user").getOrElse(r.token.username)
-
   def getOwn =
-    auth async { r =>
+    auth andThen personAction async { r =>
       approvalService
-        .reviewerApprovals(User(this.user(r)))
+        .reviewerApprovals(r.person)
         .map(xs => Ok(Json.toJson(xs)))
     }
 
-  def get(id: UUID) =
-    auth async { r =>
-      approvalService
-        .reviewerApprovals(User(this.user(r)))
-        .map(xs => Ok(Json.toJson(xs.find(_.reviewId == id))))
-    }
+  def getByModule(moduleId: UUID) =
+    auth andThen
+      personAction andThen
+      hasPermissionToEditDraft(moduleId) async { _ =>
+        reviewService.allByModule(moduleId).map(xs => Ok(Json.toJson(xs)))
+      }
 
-  def update(id: UUID) =
+  def update(moduleId: UUID, reviewId: UUID) =
     auth(parse.json(readsUpdate)) andThen
-      hasPermissionToApproveReview(id) async { r =>
+      personAction andThen
+      hasPermissionToApproveReview(reviewId) async { r =>
         reviewService
-          .update(id, User(this.user(r)), r.body._1, r.body._2)
+          .update(reviewId, r.person, r.body._1, r.body._2)
           .map(_ => NoContent)
       }
 }

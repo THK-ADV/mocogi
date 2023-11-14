@@ -1,7 +1,7 @@
 package git.api
 
 import git.{GitCommitAction, GitCommitActionType, GitConfig}
-import models.{Branch, CommitId, User}
+import models.{Branch, CommitId}
 import play.api.http.ContentTypes
 import play.api.libs.json.{JsValue, Json}
 import play.api.libs.ws.{WSClient, WSResponse}
@@ -19,7 +19,8 @@ final class GitCommitApiService @Inject() (
 
   def commit(
       branch: Branch,
-      author: User,
+      authorEmail: String,
+      authorName: String,
       message: String,
       actions: Seq[GitCommitAction]
   ): Future[CommitId] = {
@@ -27,8 +28,8 @@ final class GitCommitApiService @Inject() (
       Json.obj(
         "branch" -> branch.value,
         "commit_message" -> message,
-        "author_email" -> s"${author.username}@th-koeln.de",
-        "author_name" -> author.username,
+        "author_email" -> authorEmail,
+        "author_name" -> authorName,
         "actions" -> actions.map { a =>
           a.action match {
             case GitCommitActionType.Create =>
