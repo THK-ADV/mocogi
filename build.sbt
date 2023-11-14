@@ -10,6 +10,9 @@ lazy val `mocogi` = (project in file("."))
     maintainer := "Alexander Dobrynin <alexander.dobrynin@th-koeln.de>",
     version := "1.0",
     scalaVersion := "2.13.10",
+    semanticdbEnabled := true,
+    semanticdbVersion := scalafixSemanticdb.revision,
+    scalacOptions += "-Wunused:imports",
     resolvers += "Akka Snapshot Repository" at "https://repo.akka.io/snapshots/",
     libraryDependencies ++= play,
     libraryDependencies ++= guiceDeps,
@@ -56,7 +59,7 @@ lazy val kafka = "de.th-koeln.inf.adv" %% "kafka-pubsub" % "0.3"
 
 lazy val playJson = Seq(
   "com.typesafe.play" %% "play-json" % "2.10.0-RC9",
-  "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.15.2", // jackson-databind 2.15.2
+  "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.15.2" // jackson-databind 2.15.2
 )
 
 lazy val guiceDeps = Seq(
@@ -73,5 +76,5 @@ val keycloak = Seq(
 
 val optics = Seq(
   "dev.optics" %% "monocle-core" % "3.2.0",
-  "dev.optics" %% "monocle-macro" % "3.2.0",
+  "dev.optics" %% "monocle-macro" % "3.2.0"
 )

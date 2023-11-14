@@ -7,7 +7,7 @@ object FutureOps {
   def abort[A](msg: String): Future[A] =
     Future.failed(new Throwable(msg))
 
-  implicit class Ops[A](val self: Future[A]) extends AnyVal {
+  implicit class Ops[A](private val self: Future[A]) extends AnyVal {
     def abortIf(pred: A => Boolean, msg: => String)(implicit
         ctx: ExecutionContext
     ): Future[A] =
@@ -18,7 +18,7 @@ object FutureOps {
     ): Future[A] = self.abortIf(a => !pred(a), msg)
   }
 
-  implicit class SeqOps[A](val self: Future[Seq[A]]) extends AnyVal {
+  implicit class SeqOps[A](private val self: Future[Seq[A]]) extends AnyVal {
     def single(implicit ctx: ExecutionContext): Future[A] = {
       self.flatMap(xs =>
         if (xs.size > 1)
@@ -29,7 +29,7 @@ object FutureOps {
     }
   }
 
-  implicit class OptionOps[A](val self: Future[Option[A]]) extends AnyVal {
+  implicit class OptionOps[A](private val self: Future[Option[A]]) extends AnyVal {
     def or(
         f: Future[Option[A]]
     )(implicit ctx: ExecutionContext): Future[Option[A]] =

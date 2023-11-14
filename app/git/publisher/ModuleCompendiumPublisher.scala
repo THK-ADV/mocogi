@@ -9,7 +9,7 @@ import service._
 
 import java.util.UUID
 import javax.inject.Singleton
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
 import scala.util.{Failure, Success}
 
 object ModuleCompendiumPublisher {

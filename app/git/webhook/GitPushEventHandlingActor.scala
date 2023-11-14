@@ -165,7 +165,7 @@ object GitPushEventHandlingActor {
       } yield {
         if (modules.nonEmpty) {
           logger.info(
-            s"publishing modules to subscribers ..."
+            "publishing modules to subscribers ..."
           )
           moduleCompendiumPublisher.notifySubscribers(
             changes.copy(added = Nil, modified = modules)
@@ -173,7 +173,7 @@ object GitPushEventHandlingActor {
         }
         if (cores.nonEmpty) {
           logger.info(
-            s"publishing core files to subscribers ..."
+            "publishing core files to subscribers ..."
           )
           coreDataPublisher.notifySubscribers(
             changes.copy(added = Nil, modified = cores)

@@ -6,8 +6,6 @@ import parser.Parser._
 import parser.ParserOps.{P0, P2, P3, P4}
 import parsing.{removeIndentation, singleLineStringForKey, stringForKey}
 
-import javax.inject.Singleton
-
 object GlobalCriteriaFileParser extends FileParser[GlobalCriteria] {
   override val fileParser: Parser[List[GlobalCriteria]] =
     skipFirst(removeIndentation())
