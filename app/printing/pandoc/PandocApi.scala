@@ -4,7 +4,6 @@ import java.io.{ByteArrayInputStream, File}
 import java.nio.charset.StandardCharsets
 import java.util.UUID
 import javax.inject.Singleton
-import scala.language.{existentials, postfixOps}
 import scala.sys.process._
 import scala.util.{Failure, Success, Try}
 

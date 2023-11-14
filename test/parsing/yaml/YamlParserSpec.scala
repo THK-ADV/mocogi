@@ -2,7 +2,6 @@ package parsing.yaml
 
 import org.scalatest.EitherValues
 import org.scalatest.wordspec.AnyWordSpec
-import parser.ParsingError
 import parsing._
 
 final class YamlParserSpec

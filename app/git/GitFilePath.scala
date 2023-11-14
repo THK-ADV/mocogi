@@ -29,7 +29,7 @@ object GitFilePath {
   def apply(moduleId: UUID)(implicit gitConfig: GitConfig): GitFilePath =
     apply(s"$modulePrefix${moduleId.toString}$moduleFileExt")
 
-  implicit class Ops(val self: GitFilePath) extends AnyVal {
+  implicit class Ops(private val self: GitFilePath) extends AnyVal {
     def moduleId(implicit gitConfig: GitConfig): Option[UUID] = {
       val prefix = modulePrefix
       val suffix = moduleFileExt

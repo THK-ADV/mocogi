@@ -5,7 +5,7 @@ import slick.dbio.DBIO
 import scala.concurrent.ExecutionContext
 
 package object repo {
-  implicit class ActionSeqOps[A](val self: DBIO[Seq[A]]) extends AnyVal {
+  implicit class ActionSeqOps[A](private val self: DBIO[Seq[A]]) extends AnyVal {
     def single(implicit ctx: ExecutionContext): DBIO[A] =
       self.flatMap(xs =>
         if (xs.size > 1)
