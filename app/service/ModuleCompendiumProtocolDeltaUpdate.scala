@@ -9,7 +9,7 @@ object ModuleCompendiumProtocolDeltaUpdate {
 
   import scala.reflect.runtime.universe._
 
-  private def allFields[T: TypeTag]: List[String] = {
+  def allFields[T: TypeTag]: List[String] = {
     def rec(tpe: Type): List[List[Name]] = {
       val collected = tpe.members.collect {
         case m: MethodSymbol if m.isCaseAccessor => m

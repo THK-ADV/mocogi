@@ -10,7 +10,7 @@ import models.ModuleDraftState.{
   WaitingForChanges,
   WaitingForReview
 }
-import play.api.libs.json.{JsValue, Json, Writes}
+import play.api.libs.json.{JsValue, Json}
 import service.Print
 
 import java.time.LocalDateTime
@@ -32,19 +32,6 @@ case class ModuleDraft(
 )
 
 object ModuleDraft extends ModuleCompendiumProtocolFormat {
-  implicit val moduleDraftFmt: Writes[ModuleDraft] =
-    Writes.apply(d =>
-      Json.obj(
-        "module" -> d.module,
-        "author" -> d.author,
-        "status" -> d.source,
-        "data" -> d.data,
-        "keysToBeReviewed" -> d.keysToBeReviewed,
-        "mergeRequestId" -> d.mergeRequest.map(_._1.value),
-        "lastModified" -> d.lastModified
-      )
-    )
-
   final implicit class Ops(private val self: ModuleDraft) extends AnyVal {
     def protocol(): ModuleCompendiumProtocol =
       Json.fromJson(self.data).get

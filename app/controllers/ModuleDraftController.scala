@@ -15,10 +15,10 @@ import controllers.formats.{
   PipelineErrorFormat
 }
 import database.repo.PersonRepository
-import models.ModuleCompendiumProtocol
-import play.api.libs.json.Json
+import models.{ModuleCompendiumProtocol, ModuleDraft}
+import play.api.libs.json.{Json, Writes}
 import play.api.mvc.{AbstractController, ControllerComponents}
-import service.core.StudyProgramService
+import service.core.{ModuleKeyService, StudyProgramService}
 import service.{
   ModuleCompendiumService,
   ModuleDraftService,
@@ -40,6 +40,7 @@ final class ModuleDraftController @Inject() (
     val studyProgramService: StudyProgramService,
     val personRepository: PersonRepository,
     val moduleCompendiumService: ModuleCompendiumService,
+    val moduleKeyService: ModuleKeyService,
     implicit val ctx: ExecutionContext
 ) extends AbstractController(cc)
     with ModuleCompendiumProtocolFormat
@@ -79,10 +80,10 @@ final class ModuleDraftController @Inject() (
           .getByModuleOpt(moduleId)
           .map { draft =>
             val reviewed = draft
-              .map(_.keysToBeReviewed)
+              .map(d => moduleKeyService.lookup(d.keysToBeReviewed))
               .getOrElse(Set.empty)
             val modified = draft
-              .map(_.modifiedKeys)
+              .map(d => moduleKeyService.lookup(d.modifiedKeys))
               .getOrElse(Set.empty)
             Ok(
               Json.obj(
@@ -139,6 +140,19 @@ final class ModuleDraftController @Inject() (
           _ <- moduleDraftService.delete(moduleId)
         } yield NoContent
       }
+
+  implicit val moduleDraftFmt: Writes[ModuleDraft] =
+    Writes.apply(d =>
+      Json.obj(
+        "module" -> d.module,
+        "author" -> d.author,
+        "status" -> d.source,
+        "data" -> d.data,
+        "keysToBeReviewed" -> moduleKeyService.lookup(d.keysToBeReviewed),
+        "mergeRequestId" -> d.mergeRequest.map(_._1.value),
+        "lastModified" -> d.lastModified
+      )
+    )
 }
 
 object ModuleDraftController {
