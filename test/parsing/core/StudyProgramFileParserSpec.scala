@@ -134,7 +134,7 @@ final class StudyProgramFileParserSpec
             "abe",
             "Bertels",
             "Anja",
-            "M.Sc.",
+            "B.Sc.",
             List(f10),
             "ab",
             "abe",
@@ -147,7 +147,7 @@ final class StudyProgramFileParserSpec
 
     "parse multiple exam directors" in {
       val input = "exam_director:  - person.ald\n  -person.abe"
-      val (res, rest) = programDirectorParser.parse(input)
+      val (res, rest) = examDirectorParser.parse(input)
       assert(
         res.value == List(
           Person.Default(
@@ -164,7 +164,7 @@ final class StudyProgramFileParserSpec
             "abe",
             "Bertels",
             "Anja",
-            "M.Sc.",
+            "B.Sc.",
             List(f10),
             "ab",
             "abe",
@@ -499,7 +499,7 @@ final class StudyProgramFileParserSpec
             "abe",
             "Bertels",
             "Anja",
-            "M.Sc.",
+            "B.Sc.",
             List(f10),
             "ab",
             "abe",
@@ -521,7 +521,7 @@ final class StudyProgramFileParserSpec
             "abe",
             "Bertels",
             "Anja",
-            "M.Sc.",
+            "B.Sc.",
             List(f10),
             "ab",
             "abe",
@@ -592,7 +592,7 @@ final class StudyProgramFileParserSpec
             "abe",
             "Bertels",
             "Anja",
-            "M.Sc.",
+            "B.Sc.",
             List(f10),
             "ab",
             "abe",
@@ -753,6 +753,7 @@ final class StudyProgramFileParserSpec
       assert(sp.enUrl.nonEmpty)
       assert(sp.grade.abbrev.nonEmpty)
       assert(sp.programDirectors.nonEmpty)
+      assert(sp.examDirectors.nonEmpty)
       assert(sp.studyForm.size == 1)
       assert(sp.studyForm.head.scope.size == 2)
       assert(sp.language.size == 1)
@@ -1174,7 +1175,8 @@ final class StudyProgramFileParserSpec
       assert(sp.enUrl.nonEmpty)
       assert(sp.grade.abbrev.nonEmpty)
       assert(sp.programDirectors.nonEmpty)
-      assert(sp.studyForm.size == 1)
+      assert(sp.examDirectors.nonEmpty)
+      assert(sp.studyForm.size == 2)
       assert(sp.studyForm.head.scope.size == 2)
       assert(sp.language.size == 1)
       assert(sp.seasons.size == 2)
@@ -1182,9 +1184,9 @@ final class StudyProgramFileParserSpec
       assert(sp.restrictedAdmission.deReason.isEmpty)
       assert(sp.restrictedAdmission.enReason.isEmpty)
       assert(sp.deDescription.nonEmpty)
-      assert(sp.deNote.isEmpty)
+      assert(sp.deNote.nonEmpty)
       assert(sp.enDescription.nonEmpty)
-      assert(sp.enNote.isEmpty)
+      assert(sp.enNote.nonEmpty)
       assert(rest.isEmpty)
     }
   }
