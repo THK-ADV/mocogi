@@ -14,9 +14,6 @@ final class PersonInFacultyTable(tag: Tag)
   def personFk =
     foreignKey("person", person, TableQuery[PersonTable])(_.id)
 
-  def facultyFk =
-    foreignKey("faculty", faculty, TableQuery[FacultyTable])(_.abbrev)
-
   override def * = (
     person,
     faculty

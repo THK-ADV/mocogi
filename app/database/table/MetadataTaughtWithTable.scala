@@ -16,12 +16,6 @@ final class MetadataTaughtWithTable(tag: Tag)
 
   def module = column[UUID]("module", O.PrimaryKey)
 
-  def metadataFk =
-    foreignKey("metadata", metadata, TableQuery[ModuleCompendiumTable])(_.id)
-
-  def moduleFk =
-    foreignKey("module", module, TableQuery[ModuleCompendiumTable])(_.id)
-
   override def * = (
     metadata,
     module

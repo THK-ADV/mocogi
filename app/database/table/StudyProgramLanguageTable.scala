@@ -19,9 +19,6 @@ final class StudyProgramLanguageTable(tag: Tag)
       _.abbrev
     )
 
-  def languageFk =
-    foreignKey("language", language, TableQuery[LanguageTable])(_.abbrev)
-
   override def * =
     (
       language,

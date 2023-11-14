@@ -94,9 +94,6 @@ class PORepository @Inject() (
   def update(po: PO) =
     db.run(updateAction(po))
 
-  def updateMany(pos: List[PO]) =
-    db.run(DBIO.sequence(pos.map(updateAction)))
-
   private def toDbEntry(po: PO): PODbEntry =
     PODbEntry(
       po.abbrev,

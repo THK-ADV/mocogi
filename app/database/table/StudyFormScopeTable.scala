@@ -28,11 +28,6 @@ final class StudyFormScopeTable(tag: Tag)
 
   def enReason = column[String]("en_reason")
 
-  def studyFormFk =
-    foreignKey("study_form", studyForm, TableQuery[StudyFormTable])(
-      _.id
-    )
-
   override def * =
     (
       id,

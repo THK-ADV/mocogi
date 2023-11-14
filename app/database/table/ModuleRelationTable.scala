@@ -22,12 +22,6 @@ final class ModuleRelationTable(tag: Tag)
 
   def relationModule = column[UUID]("relation_module", O.PrimaryKey)
 
-  def moduleFk =
-    foreignKey("module", module, TableQuery[ModuleCompendiumTable])(_.id)
-
-  def relationModuleFk =
-    foreignKey("relation_module", relationModule, TableQuery[ModuleCompendiumTable])(_.id)
-
   override def * = (
     module,
     relationType,

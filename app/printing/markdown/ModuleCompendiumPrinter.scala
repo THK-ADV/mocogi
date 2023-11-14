@@ -8,6 +8,7 @@ import service.core.StudyProgramShort
 import validator.Workload
 
 import java.time.LocalDateTime
+import scala.annotation.unused
 
 trait ModuleCompendiumPrinter {
   def printer(studyProgram: String => Option[StudyProgramShort])(implicit
@@ -24,6 +25,7 @@ object ModuleCompendiumPrinter {
     def ectsLabel = "ECTS credits"
     def languageLabel = lang.fold("Sprache", "Language")
     def durationLabel = lang.fold("Dauer des Moduls", "Duration of Module")
+    @unused
     def recommendedSemesterLabel =
       lang.fold("Empfohlenes Studiensemester", "Recommended for Semester")
     def frequencyLabel = lang.fold("Häufigkeit des Angebots", "Frequency")

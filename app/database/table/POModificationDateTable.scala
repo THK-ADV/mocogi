@@ -13,9 +13,6 @@ final class POModificationDateTable(tag: Tag)
 
   def date = column[LocalDate]("date", O.PrimaryKey)
 
-  def poFk =
-    foreignKey("po", po, TableQuery[POTable])(_.abbrev)
-
   override def * = (
     po,
     date

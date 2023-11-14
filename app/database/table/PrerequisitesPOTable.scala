@@ -19,14 +19,6 @@ final class PrerequisitesPOTable(tag: Tag)
 
   def po = column[String]("po", O.PrimaryKey)
 
-  def poFk =
-    foreignKey("po", po, TableQuery[POTable])(_.abbrev)
-
-  def prerequisitesFk =
-    foreignKey("prerequisites", prerequisites, TableQuery[PrerequisitesTable])(
-      _.id
-    )
-
   override def * = (
     prerequisites,
     po

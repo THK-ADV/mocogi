@@ -24,9 +24,6 @@ final class PrerequisitesTable(tag: Tag)
   def text =
     column[String]("text")
 
-  def metadataFk =
-    foreignKey("metadata", metadata, TableQuery[ModuleCompendiumTable])(_.id)
-
   override def * = (
     id,
     metadata,

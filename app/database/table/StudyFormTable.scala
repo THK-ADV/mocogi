@@ -27,15 +27,6 @@ final class StudyFormTable(tag: Tag)
       _.abbrev
     )
 
-  def studyFormTypeFk =
-    foreignKey(
-      "study_form_type",
-      studyFormType,
-      TableQuery[StudyFormTypeTable]
-    )(
-      _.abbrev
-    )
-
   override def * =
     (
       id,

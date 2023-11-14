@@ -14,11 +14,6 @@ final class StudyProgramSeasonTable(tag: Tag)
 
   def studyProgram = column[String]("study_program", O.PrimaryKey)
 
-  def seasonFk =
-    foreignKey("season", season, TableQuery[SeasonTable])(
-      _.abbrev
-    )
-
   def studyProgramFk =
     foreignKey("study_program", studyProgram, TableQuery[StudyProgramTable])(
       _.abbrev

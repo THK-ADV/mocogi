@@ -122,8 +122,8 @@ final class GitPushEventHandlingActorSpec extends AnyWordSpec with TryValues {
         )
       )
       assert(modules2.isEmpty)
-      val moduleIds2 = changes.modified.map(_.moduleId(config))
-      assert(modules2.isEmpty)
+      val moduleIds2 = changes2.modified.flatMap(_.moduleId(config))
+      assert(moduleIds2.isEmpty)
     }
   }
 }

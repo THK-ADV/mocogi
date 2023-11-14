@@ -17,7 +17,7 @@ final class GitFileDownloadService @Inject() (
     private val api: GitFileDownloadApiService,
     private val parser: MetadataParsingService,
     private implicit val config: GitConfig,
-    private implicit val ctx: ExecutionContext
+    implicit val ctx: ExecutionContext
 ) {
 
   def downloadModuleFromDraftBranch(id: UUID): Future[ModuleCompendiumOutput] =
