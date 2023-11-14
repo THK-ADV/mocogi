@@ -7,8 +7,7 @@ import org.scalatest.wordspec.AnyWordSpec
 import parsing.types._
 import parsing.withFile0
 import printing.markdown.ModuleCompendiumMarkdownPrinter
-import printing.markdown.ModuleCompendiumMarkdownPrinter.contentBlock
-import validator.{Metadata, ModuleRelation, POs, Prerequisites, Workload}
+import validator._
 
 import java.time.{LocalDate, LocalDateTime}
 import java.util.UUID
@@ -26,7 +25,9 @@ final class ModuleCompendiumMarkdownPrinterSpec
         "title",
         "abbrev",
         ModuleType("module", "module", "module"),
-        Some(ModuleRelation.Child(Module(UUID.randomUUID(), "title", "abbrev"))),
+        Some(
+          ModuleRelation.Child(Module(UUID.randomUUID(), "title", "abbrev"))
+        ),
         ECTS(5, Nil),
         Language("lang", "lang", "lang"),
         1,
@@ -127,27 +128,27 @@ final class ModuleCompendiumMarkdownPrinterSpec
     "print content block" in {
       implicit val substituteLocalisedContent: Boolean = true
       implicit var lang: PrintingLanguage = PrintingLanguage.German
-      var p = contentBlock("Title", "de text", "en text")
+      var p = printer.contentBlock("Title", "de text", "en text")
       assert(p.print((), "").value === "## Title\n\nde text\n\n")
 
       lang = PrintingLanguage.English
-      p = contentBlock("Title", "de text", "en text")
+      p = printer.contentBlock("Title", "de text", "en text")
       assert(p.print((), "").value === "## Title\n\nen text\n\n")
 
       lang = PrintingLanguage.German
-      p = contentBlock("Title", "", "en text")
+      p = printer.contentBlock("Title", "", "en text")
       assert(p.print((), "").value === "## Title\n\nen text\n\n")
 
       lang = PrintingLanguage.English
-      p = contentBlock("Title", "de text", "")
+      p = printer.contentBlock("Title", "de text", "")
       assert(p.print((), "").value === "## Title\n\nde text\n\n")
 
       lang = PrintingLanguage.German
-      p = contentBlock("Title", "", "")
+      p = printer.contentBlock("Title", "", "")
       assert(p.print((), "").value === "## Title\n\n")
 
       lang = PrintingLanguage.English
-      p = contentBlock("Title", "", "")
+      p = printer.contentBlock("Title", "", "")
       assert(p.print((), "").value === "## Title\n\n")
     }
   }

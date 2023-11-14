@@ -5,7 +5,6 @@ import printer.Printer
 import printer.Printer.{newline, prefix}
 import printing.PrintingLanguage
 import printing.PrintingLanguage.{English, German}
-import printing.markdown.ModuleCompendiumPrinter._
 
 import javax.inject.Singleton
 

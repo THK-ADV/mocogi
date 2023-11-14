@@ -5,7 +5,7 @@ import git.subscriber.ModuleCompendiumSubscribers.CreatedOrUpdated
 import parsing.types.ModuleCompendium
 import play.api.Logging
 import printing.PrintingLanguage
-import printing.markdown.ModuleCompendiumPrinter
+import printing.markdown.ModuleCompendiumMarkdownPrinter
 import service.core.{StudyProgramService, StudyProgramShort}
 
 import java.time.LocalDateTime
@@ -14,7 +14,7 @@ import scala.util.{Failure, Success}
 
 object ModuleCompendiumPrintingActor {
   def props(
-      printer: ModuleCompendiumPrinter,
+      printer: ModuleCompendiumMarkdownPrinter,
       markdownActor: ModuleCompendiumMarkdownActor,
       studyProgramService: StudyProgramService,
       deOutputFolderPath: String,
@@ -34,7 +34,7 @@ object ModuleCompendiumPrintingActor {
 }
 
 private final class ModuleCompendiumPrintingActor(
-    private val printer: ModuleCompendiumPrinter,
+    private val printer: ModuleCompendiumMarkdownPrinter,
     private val markdownActor: ModuleCompendiumMarkdownActor,
     private val studyProgramService: StudyProgramService,
     private val deOutputFolderPath: String,

@@ -15,10 +15,7 @@ import git.webhook.GitPushEventHandlingActor
 import git.{GitConfig, GitFilesBroker, GitFilesBrokerImpl}
 import models.ModuleKeysToReview
 import parsing.metadata.MetadataParser
-import printing.markdown.{
-  ModuleCompendiumMarkdownPrinter,
-  ModuleCompendiumPrinter
-}
+import printing.markdown.ModuleCompendiumMarkdownPrinter
 import printing.pandoc.PandocApi
 import printing.yaml.MetadataYamlPrinter
 import providers._
@@ -140,7 +137,7 @@ class Module() extends AbstractModule {
     bind(classOf[MetadataYamlPrinter]).toInstance(
       new MetadataYamlPrinter(2)
     )
-    bind(classOf[ModuleCompendiumPrinter]).toInstance(
+    bind(classOf[ModuleCompendiumMarkdownPrinter]).toInstance(
       new ModuleCompendiumMarkdownPrinter(true)
     )
   }

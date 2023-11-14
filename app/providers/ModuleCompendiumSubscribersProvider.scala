@@ -3,7 +3,7 @@ package providers
 import akka.actor.ActorSystem
 import database.view.ModuleViewRepository
 import git.subscriber._
-import printing.markdown.ModuleCompendiumPrinter
+import printing.markdown.ModuleCompendiumMarkdownPrinter
 import service.core.StudyProgramService
 import service.{ModuleCompendiumService, ModuleUpdatePermissionService}
 
@@ -12,7 +12,7 @@ import scala.concurrent.ExecutionContext
 
 @Singleton
 class ModuleCompendiumSubscribersProvider @Inject() (
-    printer: ModuleCompendiumPrinter,
+    printer: ModuleCompendiumMarkdownPrinter,
     system: ActorSystem,
     moduleCompendiumMarkdownActor: ModuleCompendiumMarkdownActor,
     metadataService: ModuleCompendiumService,

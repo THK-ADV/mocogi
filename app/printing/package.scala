@@ -1,70 +1,92 @@
-package printing.markdown
-
 import models.core.{AbbrevLabelLike, Season}
-import parsing.types._
-import printer.Printer
-import printing.PrintingLanguage
-import service.core.StudyProgramShort
 import validator.Workload
 
-import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 import scala.annotation.unused
 
-trait ModuleCompendiumPrinter {
-  def printer(studyProgram: String => Option[StudyProgramShort])(implicit
-      language: PrintingLanguage,
-      lastModified: LocalDateTime
-  ): Printer[ModuleCompendium]
-}
+package object printing {
+  def localDatePattern = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm")
 
-object ModuleCompendiumPrinter {
-  implicit class LanguageOps(lang: PrintingLanguage) {
+  def fmtDouble(d: Double): String =
+    if (d % 1 == 0) d.toInt.toString
+    else d.toString.replace('.', ',')
+
+  implicit class LanguageOps(private val lang: PrintingLanguage)
+      extends AnyVal {
     def moduleCodeLabel = lang.fold("Modulnummer", "Module Code")
+
     def moduleTitleLabel = lang.fold("Modulbezeichnung", "Module Title")
+
     def moduleTypeLabel = lang.fold("Art des Moduls", "Type of Module")
+
     def ectsLabel = "ECTS credits"
+
     def languageLabel = lang.fold("Sprache", "Language")
+
     def durationLabel = lang.fold("Dauer des Moduls", "Duration of Module")
+
     @unused
     def recommendedSemesterLabel =
       lang.fold("Empfohlenes Studiensemester", "Recommended for Semester")
+
     def frequencyLabel = lang.fold("Häufigkeit des Angebots", "Frequency")
+
     def moduleCoordinatorLabel =
       lang.fold("Modulverantwortliche*r", "Module Coordinator")
+
     def lecturersLabel = lang.fold("Dozierende", "Lecturers")
+
     def assessmentMethodLabel = lang.fold("Prüfungsformen", "Assessment Method")
+
     def workloadLabel = "Workload"
+
     def contactHoursLabel = lang.fold("Präsenzzeit", "Contact hours")
+
     def selfStudyLabel = lang.fold("Selbststudium", "Self-study")
+
     def recommendedPrerequisitesLabel =
       lang.fold("Empfohlene Voraussetzungen", "Recommended Prerequisites")
+
     def requiredPrerequisitesLabel =
       lang.fold("Zwingende Voraussetzungen", "Required Prerequisites")
+
     def poLabel = lang.fold(
       "Verwendung des Moduls in weiteren Studiengängen",
       "Use of the Module in Other Degree Programs"
     )
+
     def lastModifiedLabel =
       lang.fold("Letzte Aktualisierung am", "Last update at")
+
     def parentLabel =
       lang.fold("Besteht aus den Teilmodulen", "Consists of the submodules")
+
     def childLabel = lang.fold("Gehört zum Modul", "Part of module")
+
     def noneLabel = lang.fold("Keine", "None")
+
     def prerequisitesTextLabel = lang.fold("Beschreibung", "Description")
+
     def prerequisitesModuleLabel = lang.fold("Module", "Modules")
+
     def prerequisitesStudyProgramLabel =
       lang.fold("Studiengänge", "Degree Programs")
+
     def semesterLabel = "Semester"
 
     def learningOutcomeLabel =
       lang.fold("Angestrebte Lernergebnisse", "Learning Outcome")
+
     def moduleContentLabel = lang.fold("Modulinhalte", "Module Content")
+
     def teachingAndLearningMethodsLabel = lang.fold(
       "Lehr- und Lernmethoden (Medienformen)",
       "Teaching and Learning Methods"
     )
+
     def recommendedReadingLabel =
       lang.fold("Empfohlene Literatur", "Recommended Reading")
+
     def particularitiesLabel = lang.fold("Besonderheiten", "Particularities")
 
     def value(a: AbbrevLabelLike): String =
@@ -122,7 +144,7 @@ object ModuleCompendiumPrinter {
       }
   }
 
-  implicit class StringConcatOps(s: String) {
+  implicit class StringConcatOps(private val s: String) extends AnyVal {
     def combine(other: String): String =
       if (s.isEmpty) other
       else if (other.isEmpty) s

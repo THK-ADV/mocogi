@@ -4,7 +4,13 @@ import controllers.formats.ModuleCompendiumOutputFormat
 import ops.FileOps
 import ops.FutureOps.OptionOps
 import play.api.libs.json.Json
-import play.api.mvc.{AbstractController, AnyContent, ControllerComponents, Request}
+import play.api.mvc.{
+  AbstractController,
+  AnyContent,
+  ControllerComponents,
+  Request
+}
+import printing.PrintingLanguage
 import providers.ConfigReader
 import service.{ModuleCompendiumService, ModuleDraftService}
 
@@ -57,13 +63,13 @@ final class ModuleCompendiumController @Inject() (
       val lang = parseLang
       val folder = configReader.outputFolderPath
       val filename = s"$id.html"
-      val path = s"$folder/$lang/$filename"
+      val path = s"$folder/${lang.id}/$filename"
       val file = FileOps.getFile(path).get
       Ok.sendFile(content = file, fileName = _ => Some(filename))
     }
 
-  private def parseLang(implicit r: Request[AnyContent]): String =
+  private def parseLang(implicit r: Request[AnyContent]): PrintingLanguage =
     r.getQueryString(ModuleCompendiumController.languageAttribute)
-      .filter(s => s == "de" || s == "en")
-      .getOrElse("de")
+      .flatMap(PrintingLanguage.apply)
+      .getOrElse(PrintingLanguage.German)
 }

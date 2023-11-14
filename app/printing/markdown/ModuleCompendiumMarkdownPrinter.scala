@@ -4,64 +4,17 @@ import models.core.Person
 import parsing.types._
 import printer.Printer
 import printer.Printer.{newline, prefix}
-import printing.PrintingLanguage
-import printing.markdown.ModuleCompendiumPrinter.{LanguageOps, StringConcatOps}
+import printing.{PrintingLanguage, StringConcatOps, fmtDouble, localDatePattern}
 import service.core.StudyProgramShort
 import validator.{Metadata, ModuleRelation, POs, PrerequisiteEntry}
 
 import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
 import javax.inject.Singleton
 
 @Singleton
 final class ModuleCompendiumMarkdownPrinter(
     private val substituteLocalisedContent: Boolean
-) extends ModuleCompendiumPrinter {
-  import ModuleCompendiumMarkdownPrinter._
-
-  override def printer(studyProgram: String => Option[StudyProgramShort])(
-      implicit
-      lang: PrintingLanguage,
-      localDateTime: LocalDateTime
-  ): Printer[ModuleCompendium] =
-    Printer { case (mc, input) =>
-      implicit val m: Metadata = mc.metadata
-      implicit val slc: Boolean = substituteLocalisedContent
-
-      header
-        .skip(newline.repeat(2))
-        .skip(row("", ""))
-        .skip(row("---", "---"))
-        .skip(moduleNumber)
-        .skip(moduleTitle)
-        .skip(moduleType)
-        .skipOpt(m.relation.map(fmtModuleRelation))
-        .skip(ects)
-        .skip(language)
-        .skip(duration)
-        .skip(frequency)
-        .skip(moduleCoordinator)
-        .skip(moduleLecturer)
-        .skip(assessmentMethods)
-        .skip(workload)
-        .skip(recommendedPrerequisites)
-        .skip(requiredPrerequisites)
-        .skip(pos(studyProgram))
-        .skip(newline)
-        .skip(learningOutcome(mc.deContent, mc.enContent))
-        .skip(moduleContent(mc.deContent, mc.enContent))
-        .skip(teachingAndLearningMethods(mc.deContent, mc.enContent))
-        .skip(recommendedReading(mc.deContent, mc.enContent))
-        .skip(particularities(mc.deContent, mc.enContent))
-        .skip(prefix("---"))
-        .skip(newline.repeat(2))
-        .skip(lastModified)
-        .print((), input)
-    }
-}
-
-object ModuleCompendiumMarkdownPrinter {
-  private val localDatePattern = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm")
+) {
 
   private def row(key: String, value: String): Printer[Unit] =
     prefix(s"| $key | $value |")
@@ -158,10 +111,6 @@ object ModuleCompendiumMarkdownPrinter {
       case ModuleRelation.Child(parent) =>
         row(lang.childLabel, parent.abbrev)
     }
-
-  private def fmtDouble(d: Double): String =
-    if (d % 1 == 0) d.toInt.toString
-    else d.toString.replace('.', ',')
 
   private def fmtAssessmentMethod(
       label: String,
@@ -350,4 +299,43 @@ object ModuleCompendiumMarkdownPrinter {
       de.learningOutcome,
       en.learningOutcome
     )
+
+  def printer(studyProgram: String => Option[StudyProgramShort])(implicit
+      lang: PrintingLanguage,
+      localDateTime: LocalDateTime
+  ): Printer[ModuleCompendium] =
+    Printer { case (mc, input) =>
+      implicit val m: Metadata = mc.metadata
+      implicit val slc: Boolean = substituteLocalisedContent
+
+      header
+        .skip(newline.repeat(2))
+        .skip(row("", ""))
+        .skip(row("---", "---"))
+        .skip(moduleNumber)
+        .skip(moduleTitle)
+        .skip(moduleType)
+        .skipOpt(m.relation.map(fmtModuleRelation))
+        .skip(ects)
+        .skip(language)
+        .skip(duration)
+        .skip(frequency)
+        .skip(moduleCoordinator)
+        .skip(moduleLecturer)
+        .skip(assessmentMethods)
+        .skip(workload)
+        .skip(recommendedPrerequisites)
+        .skip(requiredPrerequisites)
+        .skip(pos(studyProgram))
+        .skip(newline)
+        .skip(learningOutcome(mc.deContent, mc.enContent))
+        .skip(moduleContent(mc.deContent, mc.enContent))
+        .skip(teachingAndLearningMethods(mc.deContent, mc.enContent))
+        .skip(recommendedReading(mc.deContent, mc.enContent))
+        .skip(particularities(mc.deContent, mc.enContent))
+        .skip(prefix("---"))
+        .skip(newline.repeat(2))
+        .skip(lastModified)
+        .print((), input)
+    }
 }
