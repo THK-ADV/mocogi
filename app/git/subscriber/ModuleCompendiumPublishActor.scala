@@ -6,9 +6,12 @@ import play.api.Logging
 import publisher.{KafkaPublisher, Record}
 import validator.Metadata
 
+import scala.annotation.unused
 import scala.util.{Failure, Success}
 
+@unused
 object ModuleCompendiumPublishActor {
+  @unused
   def props(publisher: KafkaPublisher[Metadata]) = Props(
     new ModuleCompendiumPublishActor(publisher)
   )

@@ -2,10 +2,12 @@ package controllers
 
 import play.api.libs.json.{Format, JsResult, JsValue, Reads}
 
+import scala.annotation.unused
 import scala.util.Try
 
 package object formats {
   implicit class FormatOps[A](fmt: Format[A]) {
+    @unused
     def bimapTry[B](read: A => Try[B], write: B => A): Format[B] =
       new Format[B] {
         override def reads(json: JsValue): JsResult[B] =

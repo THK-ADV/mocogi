@@ -1,26 +1,17 @@
 package controllers
 
 import auth.AuthorizationAction
-import controllers.actions.{
-  ApprovalCheck,
-  ModuleDraftCheck,
-  PermissionCheck,
-  PersonAction
-}
+import controllers.actions.{ApprovalCheck, ModuleDraftCheck, PermissionCheck, PersonAction}
 import controllers.formats.{JsonNullWritable, PersonFormat}
 import database.repo.PersonRepository
 import models.ModuleReview
 import play.api.libs.json._
 import play.api.mvc.{AbstractController, ControllerComponents}
-import service.{
-  ModuleApprovalService,
-  ModuleDraftService,
-  ModuleReviewService,
-  ModuleUpdatePermissionService
-}
+import service.{ModuleApprovalService, ModuleDraftService, ModuleReviewService, ModuleUpdatePermissionService}
 
 import java.util.UUID
 import javax.inject.{Inject, Singleton}
+import scala.annotation.unused
 import scala.concurrent.ExecutionContext
 
 object ModuleDraftApprovalController
@@ -80,7 +71,7 @@ final class ModuleDraftApprovalController @Inject() (
         reviewService.allByModule(moduleId).map(xs => Ok(Json.toJson(xs)))
       }
 
-  def update(moduleId: UUID, reviewId: UUID) =
+  def update(@unused moduleId: UUID, reviewId: UUID) =
     auth(parse.json(readsUpdate)) andThen
       personAction andThen
       hasPermissionToApproveReview(reviewId) async { r =>

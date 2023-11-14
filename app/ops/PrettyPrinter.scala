@@ -1,10 +1,13 @@
 package ops
 
+import scala.annotation.unused
+
+/** https://gist.github.com/carymrobbins/7b8ed52cd6ea186dbdf8
+  */
+@unused
 object PrettyPrinter {
 
-  // https://gist.github.com/carymrobbins/7b8ed52cd6ea186dbdf8
-
-  /** Pretty prints a Scala value similar to its source represention.
+  /** Pretty prints a Scala value similar to its source representation.
     * Particularly useful for case classes.
     * @param a
     *   \- The value to pretty print.
@@ -16,6 +19,7 @@ object PrettyPrinter {
     *   \- Initial depth to pretty print indents.
     * @return
     */
+  @unused
   def prettyPrint(
       a: Any,
       indentSize: Int = 2,

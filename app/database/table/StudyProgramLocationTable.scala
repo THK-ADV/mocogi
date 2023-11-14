@@ -19,9 +19,6 @@ final class StudyProgramLocationTable(tag: Tag)
       _.abbrev
     )
 
-  def locationFk =
-    foreignKey("location", location, TableQuery[LocationTable])(_.abbrev)
-
   override def * =
     (
       location,

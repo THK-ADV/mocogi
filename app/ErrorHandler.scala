@@ -4,8 +4,10 @@ import play.api.mvc.Results._
 import play.api.mvc._
 
 import javax.inject.Singleton
+import scala.annotation.unused
 import scala.concurrent._
 
+@unused
 @Singleton
 class ErrorHandler extends HttpErrorHandler {
 

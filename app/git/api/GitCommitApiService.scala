@@ -59,13 +59,6 @@ final class GitCommitApiService @Inject() (
       .flatMap(parseCommitResult)
   }
 
-  def revertCommit(branchName: String, commitId: CommitId) =
-    ws
-      .url(s"${this.commitUrl()}/${commitId}/revert")
-      .withHttpHeaders(tokenHeader(), contentTypeForm())
-      .post(s"branch=$branchName")
-      .flatMap(parseCommitResult)
-
   private def parseCommitResult(res: WSResponse) =
     if (res.status == Status.CREATED)
       Future.successful(
@@ -78,7 +71,4 @@ final class GitCommitApiService @Inject() (
 
   private def contentTypeJson() =
     (HeaderNames.CONTENT_TYPE, ContentTypes.JSON)
-
-  private def contentTypeForm() =
-    (HeaderNames.CONTENT_TYPE, ContentTypes.FORM)
 }
