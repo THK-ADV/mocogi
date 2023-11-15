@@ -1,4 +1,5 @@
-import models.core.{AbbrevLabelLike, Season}
+import database.view.SpecializationShort
+import models.core.{AbbrevLabelDescLike, AbbrevLabelLike, Person, Season}
 import validator.Workload
 
 import java.time.format.DateTimeFormatter
@@ -11,95 +12,162 @@ package object printing {
     if (d % 1 == 0) d.toInt.toString
     else d.toString.replace('.', ',')
 
-  implicit class LanguageOps(private val lang: PrintingLanguage)
+  def fmtPerson(p: Person): String =
+    p match {
+      case s: Person.Default =>
+        s"${s.title} ${s.fullName} (${fmtCommaSeparated(s.faculties, ", ")(_.abbrev.toUpperCase)})"
+      case g: Person.Group =>
+        g.label
+      case u: Person.Unknown =>
+        u.label
+    }
+
+  def fmtCommaSeparated[A](xs: Seq[A], sep: String = ", ")(
+      f: A => String
+  ): String = {
+    val builder = new StringBuilder()
+    xs.zipWithIndex.foreach { case (a, i) =>
+      builder.append(f(a))
+      if (i < xs.size - 1)
+        builder.append(sep)
+    }
+    builder.toString()
+  }
+
+  final implicit class LanguageOps(private val self: PrintingLanguage)
       extends AnyVal {
-    def moduleCodeLabel = lang.fold("Modulnummer", "Module Code")
 
-    def moduleTitleLabel = lang.fold("Modulbezeichnung", "Module Title")
+    def moduleCompendiumHeadline = self.fold("Modulhandbuch", "Module Handbook")
 
-    def moduleTypeLabel = lang.fold("Art des Moduls", "Type of Module")
+    def prologHeadline = "Prolog"
+
+    def moduleHeadline = self.fold("Module", "Modules")
+
+    def studyPlanHeadline = self.fold("Studienverlaufspläne", "Study Plan")
+
+    def moduleCodeLabel = self.fold("Modulnummer", "Module Code")
+
+    def moduleTitleLabel = self.fold("Modulbezeichnung", "Module Title")
+
+    def moduleTypeLabel = self.fold("Art des Moduls", "Type of Module")
 
     def ectsLabel = "ECTS credits"
 
-    def languageLabel = lang.fold("Sprache", "Language")
+    def languageLabel = self.fold("Sprache", "Language")
 
-    def durationLabel = lang.fold("Dauer des Moduls", "Duration of Module")
+    def durationLabel = self.fold("Dauer des Moduls", "Duration of Module")
 
     @unused
     def recommendedSemesterLabel =
-      lang.fold("Empfohlenes Studiensemester", "Recommended for Semester")
+      self.fold("Empfohlenes Studiensemester", "Recommended for Semester")
 
-    def frequencyLabel = lang.fold("Häufigkeit des Angebots", "Frequency")
+    def frequencyLabel = self.fold("Häufigkeit des Angebots", "Frequency")
 
     def moduleCoordinatorLabel =
-      lang.fold("Modulverantwortliche*r", "Module Coordinator")
+      self.fold("Modulverantwortliche*r", "Module Coordinator")
 
-    def lecturersLabel = lang.fold("Dozierende", "Lecturers")
+    def lecturersLabel = self.fold("Dozierende", "Lecturers")
 
-    def assessmentMethodLabel = lang.fold("Prüfungsformen", "Assessment Method")
+    def assessmentMethodLabel = self.fold("Prüfungsformen", "Assessment Method")
 
     def workloadLabel = "Workload"
 
-    def contactHoursLabel = lang.fold("Präsenzzeit", "Contact hours")
+    def contactHoursLabel = self.fold("Präsenzzeit", "Contact hours")
 
-    def selfStudyLabel = lang.fold("Selbststudium", "Self-study")
+    def selfStudyLabel = self.fold("Selbststudium", "Self-study")
 
     def recommendedPrerequisitesLabel =
-      lang.fold("Empfohlene Voraussetzungen", "Recommended Prerequisites")
+      self.fold("Empfohlene Voraussetzungen", "Recommended Prerequisites")
 
     def requiredPrerequisitesLabel =
-      lang.fold("Zwingende Voraussetzungen", "Required Prerequisites")
+      self.fold("Zwingende Voraussetzungen", "Required Prerequisites")
 
-    def poLabel = lang.fold(
+    def poLabel = self.fold(
       "Verwendung des Moduls in weiteren Studiengängen",
       "Use of the Module in Other Degree Programs"
     )
 
+    def poLabelShort = self.fold(
+      "In anderen Studiengängen",
+      "Used in other Programs"
+    )
+
     def lastModifiedLabel =
-      lang.fold("Letzte Aktualisierung am", "Last update at")
+      self.fold("Letzte Aktualisierung am", "Last update at")
 
     def parentLabel =
-      lang.fold("Besteht aus den Teilmodulen", "Consists of the submodules")
+      self.fold("Besteht aus den Teilmodulen", "Consists of the submodules")
 
-    def childLabel = lang.fold("Gehört zum Modul", "Part of module")
+    def childLabel = self.fold("Gehört zum Modul", "Part of module")
 
-    def noneLabel = lang.fold("Keine", "None")
+    def noneLabel = self.fold("Keine", "None")
 
-    def prerequisitesTextLabel = lang.fold("Beschreibung", "Description")
+    def prerequisitesTextLabel = self.fold("Beschreibung", "Description")
 
-    def prerequisitesModuleLabel = lang.fold("Module", "Modules")
+    def prerequisitesModuleLabel = self.fold("Module", "Modules")
 
     def prerequisitesStudyProgramLabel =
-      lang.fold("Studiengänge", "Degree Programs")
+      self.fold("Studiengänge", "Degree Programs")
 
     def semesterLabel = "Semester"
 
     def learningOutcomeLabel =
-      lang.fold("Angestrebte Lernergebnisse", "Learning Outcome")
+      self.fold("Angestrebte Lernergebnisse", "Learning Outcome")
 
-    def moduleContentLabel = lang.fold("Modulinhalte", "Module Content")
+    def moduleContentLabel = self.fold("Modulinhalte", "Module Content")
 
-    def teachingAndLearningMethodsLabel = lang.fold(
+    def teachingAndLearningMethodsLabel = self.fold(
       "Lehr- und Lernmethoden (Medienformen)",
       "Teaching and Learning Methods"
     )
 
     def recommendedReadingLabel =
-      lang.fold("Empfohlene Literatur", "Recommended Reading")
+      self.fold("Empfohlene Literatur", "Recommended Reading")
 
-    def particularitiesLabel = lang.fold("Besonderheiten", "Particularities")
+    def particularitiesLabel = self.fold("Besonderheiten", "Particularities")
 
     def value(a: AbbrevLabelLike): String =
-      lang.fold(a.deLabel, a.enLabel)
+      self.fold(a.deLabel, a.enLabel)
 
     def frequencyValue(season: Season): String =
-      lang.fold(s"Jedes ${season.deLabel}", s"Each ${season.enLabel}")
+      self.fold(s"Jedes ${season.deLabel}", s"Each ${season.enLabel}")
+
+    def durationValue(duration: Int): String =
+      s"$duration ${self.semesterLabel}"
+
+    def workload(
+        wl: Workload
+    ): ((String, String), (String, String), (String, String)) = {
+      val contactHoursValue = wl.total - wl.selfStudy
+      val contactHoursParts = List(
+        self.lectureValue(wl),
+        self.exerciseValue(wl),
+        self.practicalValue(wl),
+        self.seminarValue(wl),
+        self.projectSupervisionValue(wl),
+        self.projectWorkValue(wl)
+      ).filter(_.nonEmpty)
+      val contactHoursParts0 = fmtCommaSeparated(contactHoursParts)(identity)
+      val totalWlLabel = s"${wl.total} h"
+      val contactHoursValueLabel =
+        if (contactHoursParts0.isEmpty) s"$contactHoursValue h"
+        else s"$contactHoursValue h ($contactHoursParts0)"
+      val selfStudyLabel =
+        if (wl.selfStudy == 0) self.noneLabel
+        else s"${wl.selfStudy} h"
+
+      (
+        (self.workloadLabel, totalWlLabel),
+        (self.contactHoursLabel, contactHoursValueLabel),
+        (self.selfStudyLabel, selfStudyLabel)
+      )
+    }
 
     def lectureValue(wl: Workload): String =
       if (wl.lecture == 0) ""
       else {
         val value = s"${wl.lecture} h"
-        val res = lang.fold("Vorlesung", "Lecture")
+        val res = self.fold("Vorlesung", "Lecture")
         s"$value $res"
       }
 
@@ -107,7 +175,7 @@ package object printing {
       if (wl.exercise == 0) ""
       else {
         val value = s"${wl.exercise} h"
-        val res = lang.fold("Übung", "Exercise")
+        val res = self.fold("Übung", "Exercise")
         s"$value $res"
       }
 
@@ -115,7 +183,7 @@ package object printing {
       if (wl.practical == 0) ""
       else {
         val value = s"${wl.practical} h"
-        val res = lang.fold("Praktikum", "Practical")
+        val res = self.fold("Praktikum", "Practical")
         s"$value $res"
       }
 
@@ -131,7 +199,7 @@ package object printing {
       if (wl.projectSupervision == 0) ""
       else {
         val value = s"${wl.projectSupervision} h"
-        val res = lang.fold("Projektbetreuung", "Project Supervision")
+        val res = self.fold("Projektbetreuung", "Project Supervision")
         s"$value $res"
       }
 
@@ -139,15 +207,28 @@ package object printing {
       if (wl.projectWork == 0) ""
       else {
         val value = s"${wl.projectWork} h"
-        val res = lang.fold("Projektarbeit", "Project Work")
+        val res = self.fold("Projektarbeit", "Project Work")
         s"$value $res"
       }
   }
 
-  implicit class StringConcatOps(private val s: String) extends AnyVal {
-    def combine(other: String): String =
-      if (s.isEmpty) other
-      else if (other.isEmpty) s
-      else s"$s, $other"
+  final implicit class AbbrevLabelLikeOps(private val self: AbbrevLabelLike)
+      extends AnyVal {
+    def localizedLabel(implicit lang: PrintingLanguage): String =
+      lang.fold(self.deLabel, self.enLabel)
+
+    def localizedLabel(
+        specialization: Option[SpecializationShort]
+    )(implicit lang: PrintingLanguage): String =
+      specialization.fold(self.localizedLabel)(s =>
+        s"${self.localizedLabel} (${s.label})"
+      )
+  }
+
+  final implicit class AbbrevLabelDescLikeOps(
+      private val self: AbbrevLabelDescLike
+  ) extends AnyVal {
+    def localizedDesc(implicit lang: PrintingLanguage): String =
+      lang.fold(self.deDesc, self.enDesc)
   }
 }

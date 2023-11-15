@@ -8,5 +8,6 @@ import javax.inject.{Inject, Provider, Singleton}
 final class MarkdownConverterProvider @Inject() (
     config: ConfigReader
 ) extends Provider[PandocApi] {
-  override def get() = new PandocApi(config.htmlCmd, config.pdfCmd)
+  override def get() =
+    new PandocApi(config.htmlCmd, config.pdfCmd, config.texCmd)
 }

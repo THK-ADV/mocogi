@@ -2,11 +2,12 @@ package git.subscriber
 
 import akka.actor.{Actor, Props}
 import git.subscriber.ModuleCompendiumSubscribers.CreatedOrUpdated
+import models.StudyProgramShort
 import parsing.types.ModuleCompendium
 import play.api.Logging
 import printing.PrintingLanguage
 import printing.markdown.ModuleCompendiumMarkdownPrinter
-import service.core.{StudyProgramService, StudyProgramShort}
+import service.core.StudyProgramService
 
 import java.time.LocalDateTime
 import scala.concurrent.ExecutionContext
@@ -73,8 +74,7 @@ private final class ModuleCompendiumPrintingActor(
   ): Unit = {
     def go(lang: PrintingLanguage, path: String): Unit =
       printer
-        .printer(studyProgram)(lang, lastModified)
-        .print(mc, "") match {
+        .print(studyProgram, lang, lastModified, mc) match {
         case Left(err) =>
           logError(mc, lang, path, err)
         case Right(print) =>

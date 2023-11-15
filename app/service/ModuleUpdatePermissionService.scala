@@ -4,7 +4,12 @@ import controllers.formats.ModuleCompendiumProtocolFormat
 import database.repo.ModuleUpdatePermissionRepository
 import models.ModuleUpdatePermissionType.{Granted, Inherited}
 import models.core.Person
-import models.{CampusId, ModuleCompendiumProtocol, ModuleUpdatePermission}
+import models.{
+  CampusId,
+  Module,
+  ModuleCompendiumProtocol,
+  ModuleUpdatePermission
+}
 import play.api.libs.json.Json
 
 import java.util.UUID
@@ -57,4 +62,7 @@ final class ModuleUpdatePermissionService @Inject() (
       module: UUID
   ): Future[Boolean] =
     repo.hasInheritedPermission(campusId, module)
+
+  def allForCampusId(campusId: CampusId): Future[Seq[Module]] =
+    repo.allForCampusId(campusId)
 }

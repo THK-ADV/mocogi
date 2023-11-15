@@ -54,7 +54,9 @@ final class ModuleDraftController @Inject() (
   def moduleDrafts() =
     auth andThen personAction async { r =>
       for { // TODO care: business logic in controller
-        modules <- moduleCompendiumService.allModulesFromPerson(r.person.id)
+        modules <- moduleUpdatePermissionService.allForCampusId(
+          r.request.campusId
+        )
         draftsByModules <- moduleDraftService.allByModules(modules.map(_.id))
         draftsByUser <- moduleDraftService.allByPerson(r.person.id)
       } yield {

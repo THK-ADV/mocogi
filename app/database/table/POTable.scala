@@ -27,6 +27,11 @@ final class POTable(tag: Tag) extends Table[PODbEntry](tag, "po") {
 
   def dateTo = column[Option[LocalDate]]("date_to")
 
+  def studyProgramFk =
+    foreignKey("study_program", studyProgram, TableQuery[StudyProgramTable])(
+      _.abbrev
+    )
+
   override def * = (
     abbrev,
     studyProgram,

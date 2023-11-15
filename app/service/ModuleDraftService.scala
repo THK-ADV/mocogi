@@ -287,8 +287,7 @@ final class ModuleDraftServiceImpl @Inject() (
   ): Future[Either[PipelineError, (ModuleCompendium, Print)]] = {
     def print(): Either[PipelineError, Print] =
       moduleCompendiumPrinter
-        .printer(versionScheme)
-        .print((moduleId, protocol), "")
+        .print(versionScheme, moduleId, protocol)
         .bimap(
           PipelineError.Printer(_, Some(moduleId)),
           Print.apply

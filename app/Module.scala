@@ -123,6 +123,9 @@ class Module() extends AbstractModule {
     bind(classOf[ModuleKeyService])
       .toProvider(classOf[ModuleKeyServiceProvider])
       .asEagerSingleton()
+    bind(classOf[ModuleCompendiumLatexActor])
+      .toProvider(classOf[ModuleCompendiumLatexActorProvider])
+      .asEagerSingleton()
 
     bind(new TypeLiteral[Set[MetadataParser]] {})
       .toProvider(classOf[MetadataParserProvider])

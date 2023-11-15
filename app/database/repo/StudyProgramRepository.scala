@@ -1,10 +1,9 @@
 package database.repo
 
 import database.table._
-import models.UniversityRole
 import models.core.{RestrictedAdmission, StudyProgram}
+import models.{StudyProgramShort, UniversityRole}
 import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfigProvider}
-import service.core.StudyProgramShort
 import slick.jdbc.JdbcProfile
 
 import java.time.LocalDate
@@ -70,7 +69,17 @@ class StudyProgramRepository @Inject() (
       q <- tableQuery
       g <- q.gradeFk
     } yield (q.abbrev, q.deLabel, q.enLabel, g)
-    db.run(query.result.map(_.map(StudyProgramShort.tupled)))
+    db.run(query.result.map(_.map((StudyProgramShort.apply _).tupled)))
+  }
+
+  def allShortFromPos(pos: Seq[String]): Future[Seq[StudyProgramShort]] = {
+    val poQuery =
+      TableQuery[POTable].filter(_.abbrev.inSet(pos)).map(_.studyProgram)
+    val query = for {
+      q <- tableQuery if q.abbrev.in(poQuery)
+      g <- q.gradeFk
+    } yield (q.abbrev, q.deLabel, q.enLabel, g)
+    db.run(query.result.map(_.map((StudyProgramShort.apply _).tupled)))
   }
 
   def allIds(): Future[Seq[String]] =

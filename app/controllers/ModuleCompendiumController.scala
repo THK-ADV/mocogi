@@ -1,7 +1,7 @@
 package controllers
 
 import controllers.formats.ModuleCompendiumOutputFormat
-import ops.FileOps
+import models.Semester
 import ops.FutureOps.OptionOps
 import play.api.libs.json.Json
 import play.api.mvc.{
@@ -12,11 +12,17 @@ import play.api.mvc.{
 }
 import printing.PrintingLanguage
 import providers.ConfigReader
-import service.{ModuleCompendiumService, ModuleDraftService}
+import service.{
+  ModuleCompendiumLatexActor,
+  ModuleCompendiumService,
+  ModuleDraftService
+}
 
+import java.nio.file.Paths
 import java.util.UUID
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
+import scala.util.control.NonFatal
 
 object ModuleCompendiumController {
   private lazy val languageAttribute = "lang"
@@ -28,6 +34,7 @@ final class ModuleCompendiumController @Inject() (
     service: ModuleCompendiumService,
     draftService: ModuleDraftService,
     configReader: ConfigReader,
+    moduleCompendiumLatexActor: ModuleCompendiumLatexActor,
     implicit val ctx: ExecutionContext
 ) extends AbstractController(cc)
     with ModuleCompendiumOutputFormat {
@@ -58,18 +65,39 @@ final class ModuleCompendiumController @Inject() (
       service.getFromStaging(id).map(mc => Ok(Json.toJson(mc)))
     }
 
-  def getFile(id: UUID) =
-    Action { implicit r =>
-      val lang = parseLang
-      val folder = configReader.outputFolderPath
-      val filename = s"$id.html"
-      val path = s"$folder/${lang.id}/$filename"
-      val file = FileOps.getFile(path).get
-      Ok.sendFile(content = file, fileName = _ => Some(filename))
+  def getModuleDescriptionFile(id: UUID) =
+    Action { implicit r => getFile(s"$id.html") }
+
+  def createModuleCompendium(sem: String, year: String) =
+    Action { _ =>
+      val semester =
+        if (sem == "sose") Semester.summer(year.toInt)
+        else Semester.winter(year.toInt)
+      moduleCompendiumLatexActor.generateLatexFiles(semester)
+      NoContent
     }
+
+  private def getFile(filename: String)(implicit r: Request[AnyContent]) = {
+    val lang = parseLang
+    val folder = outputFolderPath(lang)
+    try {
+      val path = Paths.get(s"$folder/$filename")
+      Ok.sendFile(content = path.toFile, fileName = f => Some(f.getName))
+    } catch {
+      case NonFatal(e) =>
+        ErrorHandler.internalServerError(
+          r.toString(),
+          s"file not found: ${e.getMessage}",
+          e.getStackTrace
+        )
+    }
+  }
 
   private def parseLang(implicit r: Request[AnyContent]): PrintingLanguage =
     r.getQueryString(ModuleCompendiumController.languageAttribute)
       .flatMap(PrintingLanguage.apply)
       .getOrElse(PrintingLanguage.German)
+
+  private def outputFolderPath(lang: PrintingLanguage) =
+    lang.fold(configReader.deOutputFolderPath, configReader.enOutputFolderPath)
 }

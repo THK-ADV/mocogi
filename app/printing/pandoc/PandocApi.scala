@@ -4,18 +4,31 @@ import java.io.{ByteArrayInputStream, File}
 import java.nio.charset.StandardCharsets
 import java.util.UUID
 import javax.inject.Singleton
+import scala.collection.mutable.ListBuffer
 import scala.sys.process._
 import scala.util.{Failure, Success, Try}
 
 @Singleton
 final class PandocApi(
     htmlCmd: String,
-    pdfCmd: String
+    pdfCmd: String,
+    texCmd: String
 ) {
 
   private val htmlExtension = "html"
 
   private val pdfExtension = "pdf"
+
+  def toLatex(
+      input: String
+  ): (Try[String], ListBuffer[String], ListBuffer[String]) = {
+    val inputStream = toStream(input)
+    val process = texCmd #< inputStream
+    val sdtOut = ListBuffer[String]()
+    val sdtErr = ListBuffer[String]()
+    val logger = ProcessLogger(sdtErr += _, sdtOut += _)
+    (Try(process !! logger), sdtOut, sdtErr)
+  }
 
   def run(
       id: UUID,

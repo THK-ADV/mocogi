@@ -47,7 +47,7 @@ lazy val test = Seq(
   "org.mockito" % "mockito-core" % "5.5.0" % Test
 )
 
-lazy val parser = "de.th-koeln.inf.adv" %% "nebulak" % "0.10"
+lazy val parser = "de.th-koeln.inf.adv" %% "nebulak" % "0.11"
 
 lazy val database = Seq(
   "com.typesafe.play" %% "play-slick" % playSlickVersion,

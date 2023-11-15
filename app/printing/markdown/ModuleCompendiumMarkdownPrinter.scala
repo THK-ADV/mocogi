@@ -1,11 +1,17 @@
 package printing.markdown
 
+import models.StudyProgramShort
 import models.core.Person
 import parsing.types._
 import printer.Printer
 import printer.Printer.{newline, prefix}
-import printing.{PrintingLanguage, StringConcatOps, fmtDouble, localDatePattern}
-import service.core.StudyProgramShort
+import printing.{
+  PrintingLanguage,
+  fmtCommaSeparated,
+  fmtDouble,
+  fmtPerson,
+  localDatePattern
+}
 import validator.{Metadata, ModuleRelation, POs, PrerequisiteEntry}
 
 import java.time.LocalDateTime
@@ -28,20 +34,8 @@ final class ModuleCompendiumMarkdownPrinter(
       .reduce(_ skip _)
 
   private def fmtPeople(label: String, xs: List[Person]): Printer[Unit] = {
-    def fmt(x: Person) = x match {
-      case s: Person.Default =>
-        s"${s.title} ${s.firstname} ${s.lastname} (${fmtCommaSeparated(s.faculties)(_.abbrev)})"
-      case g: Person.Group =>
-        g.label
-      case u: Person.Unknown =>
-        u.label
-    }
-
-    rows(label, xs.map(fmt))
+    rows(label, xs.map(fmtPerson))
   }
-
-  private def fmtCommaSeparated[A](xs: List[A])(f: A => String): String =
-    xs.map(f).mkString(", ")
 
   private def nonEmptyRow(
       value: String
@@ -213,35 +207,21 @@ final class ModuleCompendiumMarkdownPrinter(
       m.prerequisites.required
     )
 
+  private def workload(implicit
+      m: Metadata,
+      language: PrintingLanguage
+  ) = {
+    val (workload, contactHour, selfStudy) = language.workload(m.workload)
+    row(workload._1, workload._2)
+      .skip(row(contactHour._1, contactHour._2))
+      .skip(row(selfStudy._1, selfStudy._2))
+  }
+
   private def pos(studyProgram: String => Option[StudyProgramShort])(implicit
       m: Metadata,
       language: PrintingLanguage
   ) =
     fmtPOs(language.poLabel, m.validPOs, studyProgram)
-
-  private def workload(implicit
-      m: Metadata,
-      language: PrintingLanguage
-  ) = {
-    val wl = m.workload
-    val contactHoursValue = wl.total - wl.selfStudy
-    val parts = language
-      .lectureValue(wl)
-      .combine(language.exerciseValue(wl))
-      .combine(language.practicalValue(wl))
-      .combine(language.seminarValue(wl))
-      .combine(language.projectSupervisionValue(wl))
-      .combine(language.projectWorkValue(wl))
-    val contactHoursValueLabel =
-      if (parts.isEmpty) s"$contactHoursValue h"
-      else s"$contactHoursValue h ($parts)"
-    val selfStudyLabel =
-      if (wl.selfStudy == 0) language.noneLabel
-      else s"${wl.selfStudy} h"
-    row(language.workloadLabel, s"${wl.total} h")
-      .skip(row(language.contactHoursLabel, contactHoursValueLabel))
-      .skip(row(language.selfStudyLabel, selfStudyLabel))
-  }
 
   private def lastModified(implicit
       lang: PrintingLanguage,
@@ -299,6 +279,15 @@ final class ModuleCompendiumMarkdownPrinter(
       de.learningOutcome,
       en.learningOutcome
     )
+
+  def print(
+      studyProgram: String => Option[StudyProgramShort],
+      lang: PrintingLanguage,
+      localDateTime: LocalDateTime,
+      moduleCompendium: ModuleCompendium
+  ) = printer(studyProgram)(lang, localDateTime)
+    .print(moduleCompendium, new StringBuilder())
+    .map(_.toString())
 
   def printer(studyProgram: String => Option[StudyProgramShort])(implicit
       lang: PrintingLanguage,

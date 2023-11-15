@@ -13,6 +13,10 @@ final class ConfigReader @Inject() (config: Configuration) {
 
   def pdfCmd: String = string("pandoc.pdfCmd")
 
+  def texCmd: String = string("pandoc.texCmd")
+
+  def textBin: String = string("pandoc.textBin")
+
   def outputFolderPath: String = string("pandoc.outputFolderPath")
 
   def deOutputFolderPath: String = string("pandoc.deOutputFolderPath")

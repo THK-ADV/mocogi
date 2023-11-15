@@ -1,5 +1,6 @@
 package database.repo
 
+import database.InsertOrUpdateResult
 import database.table._
 import models.CampusId
 import models.core.Person
@@ -23,6 +24,17 @@ class PersonRepository @Inject() (
 
   private val facultyTableQuery = TableQuery[FacultyTable]
 
+  override def createOrUpdateMany(ls: Seq[PersonDbEntry]) = {
+    val action = for {
+      _ <- DBIO.sequence(ls.map(tableQuery.insertOrUpdate))
+      _ <- personInFacultyTableQuery.delete
+      _ <- personInFacultyTableQuery ++= ls.flatMap(p =>
+        p.faculties.map(f => PersonInFaculty(p.id, f))
+      )
+    } yield ls
+    db.run(action.transactionally.map(_.map(InsertOrUpdateResult.Update -> _)))
+  }
+
   override def createMany(ls: Seq[PersonDbEntry]) = {
     val action = for {
       _ <- tableQuery ++= ls
@@ -37,7 +49,7 @@ class PersonRepository @Inject() (
       query: Query[PersonTable, PersonDbEntry, Seq]
   ) =
     db.run(
-      tableQuery
+      query
         .joinLeft(personInFacultyTableQuery)
         .on(_.id === _.person)
         .joinLeft(facultyTableQuery)
