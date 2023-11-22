@@ -9,8 +9,6 @@ import monocle.macros.GenLens
 import ops.Measure
 import parsing.types.Content
 import play.api.Logging
-import printer.Printer.{always, newline, prefix}
-import printer.{Printer, PrintingError}
 import printing.pandoc.PandocApi
 import printing.{
   AbbrevLabelDescLikeOps,
@@ -22,6 +20,7 @@ import printing.{
 }
 
 import javax.inject.{Inject, Singleton}
+import scala.util.{Failure, Success}
 
 // TODO change implementation to StringBuilder or writing file directly
 
@@ -42,45 +41,39 @@ final class ModuleCompendiumLatexPrinter @Inject() (pandocApi: PandocApi)
       people: Seq[Person],
       assessmentMethods: Seq[AssessmentMethod],
       poShorts: Seq[POShort]
-  )(implicit pLang: PrintingLanguage): Either[PrintingError, String] =
+  )(implicit lang: PrintingLanguage): StringBuilder = {
+    implicit val builder: StringBuilder = new StringBuilder()
     measure(f = {
-      document(
-        title(po.studyProgram, po.specialization, po.version, semester),
-        modules(
-          po.abbrev,
-          entries,
-          moduleTypes,
-          languages,
-          seasons,
-          people,
-          assessmentMethods,
-          poShorts
-        )
-      ).print((), new StringBuilder()).map(_.toString())
+      builder.append("\\documentclass[article, 11pt, oneside]{book}\n")
+      packages
+      commands
+      builder.append("\\begin{document}\n")
+      builder.append(s"\\selectlanguage{${lang.fold("german", "english")}}\n")
+      title(po.studyProgram, po.specialization, po.version, semester)
+      builder.append("\\maketitle\n")
+      newPage
+      builder.append("\\layout*\n")
+      newPage
+      builder.append("\\tableofcontents\n")
+      headlineFormats
+      chapter(lang.prologHeadline)
+      newPage
+      chapter(lang.moduleHeadline)
+      newPage
+      modules(
+        po.abbrev,
+        entries,
+        moduleTypes,
+        languages,
+        seasons,
+        people,
+        assessmentMethods,
+        poShorts
+      )
+      chapter(lang.studyPlanHeadline)
+      builder.append("\\end{document}")
     })
-
-  private def document(
-      title: String,
-      modules: Printer[Unit]
-  )(implicit lang: PrintingLanguage): Printer[Unit] =
-    prefix(raw"\documentclass[article, 11pt, oneside]{book}")
-      .skip(prefixNewLine(packages()))
-      .skip(prefixNewLine(commands()))
-      .skip(prefixNewLine(raw"\begin{document}"))
-      .skip(setLanguage)
-      .skip(prefixNewLine(title))
-      .skip(prefixNewLine(raw"\maketitle"))
-      .skip(newPage())
-      .skip(prefixNewLine("\\layout*"))
-      .skip(newPage())
-      .skip(prefixNewLine(raw"\tableofcontents"))
-      .skip(prefixNewLine(chapterFormat()))
-      .skip(chapter(lang.prologHeadline))
-      .skip(newPage())
-      .skip(chapter(lang.moduleHeadline))
-      .skip(prefixNewLine(modules))
-      .skip(chapter(lang.studyPlanHeadline))
-      .skip(prefixNewLine(raw"\end{document}"))
+  }
 
   private def modules(
       po: String,
@@ -91,44 +84,30 @@ final class ModuleCompendiumLatexPrinter @Inject() (pandocApi: PandocApi)
       people: Seq[Person],
       assessmentMethods: Seq[AssessmentMethod],
       poShorts: Seq[POShort]
-  )(implicit lang: PrintingLanguage): Printer[Unit] = {
+  )(implicit lang: PrintingLanguage, builder: StringBuilder) = {
     def row(key: String, value: String) =
-      prefixNewLine(raw"$key & $value \\")
-
-    def table(rows: List[Printer[Unit]]): Printer[Unit] =
-      if (rows.isEmpty) always()
-      else
-        prefixNewLine(
-          raw"\begin{tabularx}{\linewidth}{@{}>{\bfseries}l@{\hspace{.5em}}X@{}}"
-        )
-          .skip(rows.reduce(_ skip _))
-          .skip(prefixNewLine(raw"\end{tabularx}"))
+      builder.append(s"$key & $value \\\\\n")
 
     def content(
         e: ModuleCompendiumOutput,
         entries: List[(String, Lens[Content, String])]
-    ): Printer[Unit] = {
-      def go(headline: String, lens: Lens[Content, String]): Printer[Unit] = {
+    ): Unit = {
+      val markdownContent = new StringBuilder()
+      entries.foreach { case (headline, lens) =>
+        markdownContent.append(s"## $headline\n")
         val content = lang.fold(lens.get(e.deContent), lens.get(e.enContent))
-        val (texContent, sdtOut, sdtErr) = pandocApi.toLatex(content)
-        if (sdtOut.nonEmpty)
-          logger.info(
-            sdtOut.mkString("\n========\n\t- ", "\n\t- ", "========")
-          )
-        if (sdtErr.nonEmpty)
-          logger.error(
-            sdtErr.mkString("\n========\n\t- ", "\n\t- ", "========")
-          )
-        prefixNewLine(raw"\subsection*{$headline}")
-          .skip(lineIfNonEmpty(texContent.fold[String](_.getMessage, identity)))
+        if (content.nonEmpty && !content.forall(_.isWhitespace))
+          markdownContent.append(content)
+        else markdownContent.append(lang.noneLabel)
+        markdownContent.append("\n\n")
       }
-
-      entries.foldLeft(always[Unit]()) { case (acc, c) =>
-        acc.skip(go(c._1, c._2))
+      pandocApi.toLatex(markdownContent.toString())._1 match {
+        case Failure(e)    => builder.append(e.getMessage)
+        case Success(text) => builder.append(text)
       }
     }
 
-    def go(e: ModuleCompendiumOutput): Printer[Unit] = {
+    def go(e: ModuleCompendiumOutput): Unit = {
       val (workload, contactHour, selfStudy) =
         lang.workload(e.metadata.workload)
       val poMandatory =
@@ -163,97 +142,94 @@ final class ModuleCompendiumLatexPrinter @Inject() (pandocApi: PandocApi)
                 builder.toString()
             }
             .mkString("\\newline ")
+
       section(e.metadata.title)
-        .skip(
-          table(
-            List(
-              row("ID", e.metadata.id.toString),
-              row(lang.moduleCodeLabel, escape(e.metadata.abbrev)),
-              row(lang.moduleTitleLabel, escape(e.metadata.title)),
-              row(
-                lang.moduleTypeLabel,
-                moduleTypes
-                  .find(_.abbrev == e.metadata.moduleType)
-                  .get
-                  .localizedLabel
-              ),
-              row(lang.ectsLabel, fmtDouble(e.metadata.ects)),
-              row(
-                lang.languageLabel,
-                languages
-                  .find(_.abbrev == e.metadata.language)
-                  .get
-                  .localizedLabel
-              ),
-              row(lang.durationLabel, lang.durationValue(e.metadata.duration)),
-              row(
-                lang.frequencyLabel,
-                seasons.find(_.abbrev == e.metadata.season).get.localizedLabel
-              ),
-              row(
-                lang.moduleCoordinatorLabel,
-                fmtCommaSeparated(
-                  people.filter(p =>
-                    e.metadata.moduleManagement.contains(p.id)
-                  ),
-                  "\\newline "
-                )(fmtPerson)
-              ),
-              row(
-                lang.lecturersLabel,
-                fmtCommaSeparated(
-                  people.filter(p => e.metadata.lecturers.contains(p.id)),
-                  "\\newline "
-                )(fmtPerson)
-              ),
-              row(
-                lang.assessmentMethodLabel,
-                fmtCommaSeparated(
-                  e.metadata.assessmentMethods.mandatory,
-                  "\\newline "
-                ) { a =>
-                  val method = assessmentMethods
-                    .find(_.abbrev == a.method)
-                    .get
-                    .localizedLabel
-                  a.percentage.fold(method)(d =>
-                    s"$method (${fmtDouble(d)} \\%)"
-                  )
-                }
-              ),
-              row(workload._1, workload._2),
-              row(contactHour._1, contactHour._2),
-              row(selfStudy._1, selfStudy._2),
-              row(
-                lang.poLabelShort,
-                poMandatory
-              )
-            )
-          )
+      builder.append(
+        "\\begin{tabularx}{\\linewidth}{@{}>{\\bfseries}l@{\\hspace{.5em}}X@{}}\n"
+      )
+      // TODO optimization
+      row("ID", e.metadata.id.toString)
+      row(lang.moduleCodeLabel, escape(e.metadata.abbrev))
+      row(lang.moduleTitleLabel, escape(e.metadata.title))
+      row(
+        lang.moduleTypeLabel,
+        moduleTypes
+          .find(_.abbrev == e.metadata.moduleType)
+          .get
+          .localizedLabel
+      )
+      row(lang.ectsLabel, fmtDouble(e.metadata.ects))
+      row(
+        lang.languageLabel,
+        languages
+          .find(_.abbrev == e.metadata.language)
+          .get
+          .localizedLabel
+      )
+      row(lang.durationLabel, lang.durationValue(e.metadata.duration))
+      row(
+        lang.frequencyLabel,
+        seasons.find(_.abbrev == e.metadata.season).get.localizedLabel
+      )
+      row(
+        lang.moduleCoordinatorLabel,
+        fmtCommaSeparated(
+          people.filter(p => e.metadata.moduleManagement.contains(p.id)),
+          "\\newline "
+        )(fmtPerson)
+      )
+      row(
+        lang.lecturersLabel,
+        fmtCommaSeparated(
+          people.filter(p => e.metadata.lecturers.contains(p.id)),
+          "\\newline "
+        )(fmtPerson)
+      )
+      row(
+        lang.assessmentMethodLabel,
+        fmtCommaSeparated(
+          e.metadata.assessmentMethods.mandatory,
+          "\\newline "
+        ) { a =>
+          val method = assessmentMethods
+            .find(_.abbrev == a.method)
+            .get
+            .localizedLabel
+          a.percentage.fold(method)(d => s"$method (${fmtDouble(d)} \\%)")
+        }
+      )
+      row(workload._1, workload._2)
+      row(contactHour._1, contactHour._2)
+      row(selfStudy._1, selfStudy._2)
+      row(
+        lang.poLabelShort,
+        poMandatory
+      )
+      builder.append("\\end{tabularx}\n")
+      content(
+        e,
+        List(
+          (lang.learningOutcomeLabel, GenLens[Content](_.learningOutcome)),
+          (lang.moduleContentLabel, GenLens[Content](_.content)),
+          (
+            lang.teachingAndLearningMethodsLabel,
+            GenLens[Content](_.teachingAndLearningMethods)
+          ),
+          (
+            lang.recommendedReadingLabel,
+            GenLens[Content](_.recommendedReading)
+          ),
+          (lang.particularitiesLabel, GenLens[Content](_.particularities))
         )
-        .skip(
-          content(
-            e,
-            List(
-              (lang.learningOutcomeLabel, GenLens[Content](_.learningOutcome)),
-              (lang.moduleContentLabel, GenLens[Content](_.content)),
-              (
-                lang.teachingAndLearningMethodsLabel,
-                GenLens[Content](_.teachingAndLearningMethods)
-              ),
-              (
-                lang.recommendedReadingLabel,
-                GenLens[Content](_.recommendedReading)
-              ),
-              (lang.particularitiesLabel, GenLens[Content](_.particularities))
-            )
-          )
-        )
+      )
     }
 
-    entries.foldLeft(always[Unit]()) { case (acc, e) =>
-      acc.skip(newPage()).skip(prefixNewLine(go(e)))
-    }
+    if (entries.isEmpty) newPage
+    else
+      entries.foreach { e =>
+        go(e)
+        newPage
+      }
   }
 
   // TODO find a better solution for this
@@ -272,76 +248,88 @@ final class ModuleCompendiumLatexPrinter @Inject() (pandocApi: PandocApi)
       specialization: Option[SpecializationShort],
       po: Int,
       semester: Semester
-  )(implicit lang: PrintingLanguage): String =
-    raw"""\title{
-         |\Huge ${lang.moduleCompendiumHeadline} \\ [1.5ex]
-         |\LARGE ${escape(sp.localizedLabel(specialization))} PO $po \\ [1ex]
-         |\LARGE ${sp.grade.localizedDesc} \\ [1ex]
-         |\LARGE ${semester.localizedLabel} ${semester.year}
-         |}
-         |\author{TH Köln, Campus Gummersbach}
-         |\date{\today}""".stripMargin
+  )(implicit lang: PrintingLanguage, builder: StringBuilder) =
+    builder
+      .append("\\title{\n")
+      .append(s"\\Huge ${lang.moduleCompendiumHeadline} \\\\ [1.5ex]\n")
+      .append(
+        s"\\LARGE ${escape(sp.localizedLabel(specialization))} PO $po \\\\ [1ex]\n"
+      )
+      .append(s"\\LARGE ${sp.grade.localizedDesc} \\\\ [1ex]\n")
+      .append(s"\\LARGE ${semester.localizedLabel} ${semester.year}\n")
+      .append("}\n")
+      .append("\\author{TH Köln, Campus Gummersbach}\n")
+      .append("\\date{\\today}\n")
 
-  private def packages(): String = {
-    val builder = new StringBuilder()
-    builder.append("% packages\n")
-    builder.append("\\usepackage[english, german]{babel}\n")
-    builder.append(
-      "\\usepackage[a4paper, total={16cm, 24cm}, left=2.5cm, right=2.5cm, top=2.5cm, bottom=2.5cm]{geometry}\n"
-    )
-    builder.append("\\usepackage{layout}\n")
-    builder.append("\\usepackage{tabularx}\n")
-    builder.append("\\usepackage{hyperref}\n")
-    builder.append("\\usepackage{titlesec}\n")
-    builder.append("\\usepackage{fancyhdr} % customize the page header\n")
-    builder.append("\\usepackage{parskip} % customize paragraph style")
-    builder.toString()
-  }
+  private def packages(implicit builder: StringBuilder) =
+    builder
+      .append("% packages\n")
+      .append("\\usepackage[english, german]{babel}\n")
+      .append(
+        "\\usepackage[a4paper, total={16cm, 24cm}, left=2.5cm, right=2.5cm, top=2.5cm, bottom=2.5cm]{geometry}\n"
+      )
+      .append("\\usepackage{layout}\n")
+      .append("\\usepackage{tabularx}\n")
+      .append("\\usepackage{hyperref}\n")
+      .append("\\usepackage{titlesec}\n")
+      .append("\\usepackage{fancyhdr} % customize the page header\n")
+      .append("\\usepackage{parskip} % customize paragraph style\n")
 
-  private def chapterFormat(): String =
-    raw"""% define the chapter format
-           |\titleformat{\chapter}[display]
-           |  {\normalfont\Huge\bfseries} % font attributes
-           |  {\vspace*{\fill}} % vertical space before the chapter title
-           |  {0pt} % horizontal space between the chapter title and the left margin
-           |  {\Huge\centering} % font size of the chapter title
-           |  [\vspace*{\fill}] % vertical space after the chapter title""".stripMargin
+  private def headlineFormats(implicit builder: StringBuilder) =
+    builder
+      .append("% define the chapter format\n")
+      .append("\\titleformat{\\chapter}[display]\n")
+      .append("{\\normalfont\\Huge\\bfseries} % font attributes\n")
+      .append(
+        "{\\vspace*{\\fill}} % vertical space before the chapter title\n"
+      )
+      .append(
+        "{0pt} % horizontal space between the chapter title and the left margin\n"
+      )
+      .append("{\\Huge\\centering} % font size of the chapter title\n")
+      .append(
+        "[\\vspace*{\\fill}] % vertical space after the chapter title\n"
+      )
+      .append("% define the subsection format\n")
+      .append("\\titleformat{name=\\subsection}\n")
+      .append("{\\normalfont\\large\\bfseries} % default font attributes\n")
+      .append("{} % remove numbers\n")
+      .append("{0pt} % no space between subsection and left margin\n")
+      .append("{} % nothing after subsection\n")
 
-  private def commands(): String =
-    raw"""% commands and settings
-           |\providecommand{\tightlist}{\setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
-           |% customize the page style
-           |\pagestyle{fancy}
-           |\fancyhf{} % clear header and footer
-           |\renewcommand{\headrulewidth}{0pt} % remove header rule
-           |\fancyfoot[C]{\thepage} % add page number to the center of the footer
-           |\setlength{\parindent}{0pt} % set paragraph indentation to zero
-           |\setlength{\parskip}{0.5\baselineskip} % set vertical space between paragraphs
-           |\setlength{\marginparwidth}{0pt} % no margin notes
-           |\setlength{\marginparsep}{0pt} % no margin notes""".stripMargin
+  private def commands(implicit builder: StringBuilder) =
+    builder
+      .append("% commands and settings\n")
+      .append(
+        "\\setcounter{tocdepth}{1} % set tocdepth to 1 (includes only chapters and sections)\n"
+      )
+      .append(
+        "\\providecommand{\\tightlist}{\\setlength{\\itemsep}{0pt}\\setlength{\\parskip}{0pt}}\n"
+      )
+      .append("% customize the page style\n")
+      .append("\\pagestyle{fancy}\n")
+      .append("\\fancyhf{} % clear header and footer\n")
+      .append(
+        "\\renewcommand{\\headrulewidth}{0pt} % remove header rule\n"
+      )
+      .append(
+        "\\fancyfoot[C]{\\thepage} % add page number to the center of the footer\n"
+      )
+      .append(
+        "\\setlength{\\parindent}{0pt} % set paragraph indentation to zero\n"
+      )
+      .append(
+        "\\setlength{\\parskip}{0.5\\baselineskip} % set vertical space between paragraphs\n"
+      )
+      .append("\\setlength{\\marginparwidth}{0pt} % no margin notes\n")
+      .append("\\setlength{\\marginparsep}{0pt} % no margin notes\n")
 
-  private def chapter(name: String): Printer[Unit] =
-    prefixNewLine(raw"\chapter{$name}")
+  private def chapter(name: String)(implicit builder: StringBuilder) =
+    builder.append(s"\\chapter{$name}\n")
 
-  private def section(text: String): Printer[Unit] =
-    prefix(raw"\section{${escape(text)}}")
+  private def section(text: String)(implicit builder: StringBuilder) =
+    builder.append(s"\\section{${escape(text)}}\n")
 
-  private def newPage(): Printer[Unit] =
-    prefixNewLine(raw"\newpage")
-
-  private def lineIfNonEmpty(
-      text: String
-  )(implicit lang: PrintingLanguage): Printer[Unit] =
-    if (text.nonEmpty && !text.forall(_.isWhitespace))
-      prefixNewLine(prefix(text))
-    else prefix(lang.noneLabel)
-
-  private def prefixNewLine(text: String): Printer[Unit] =
-    prefixNewLine(prefix(text))
-
-  private def prefixNewLine(printer: Printer[Unit]): Printer[Unit] =
-    newline.skip(printer)
-
-  private def setLanguage(implicit lang: PrintingLanguage): Printer[Unit] =
-    prefixNewLine(raw"\selectlanguage{${lang.fold("german", "english")}}")
+  private def newPage(implicit builder: StringBuilder) =
+    builder.append("\\newpage\n")
 }

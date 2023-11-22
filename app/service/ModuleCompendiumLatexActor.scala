@@ -116,13 +116,14 @@ object ModuleCompendiumLatexActor {
                       po -> PrintingLanguage.English
                     )
                   )
-//                .filter(_._1.abbrev.startsWith("inf_inf2")) // TODO DEBUG ONLY
+                  // .filter(_._1.abbrev.startsWith("inf_inf2")) // TODO DEBUG ONLY
                   .partitionMap { case (po, pLang) =>
+                    logger.info(Thread.currentThread().getName)
                     // TODO expand to optional if "partOfCatalog" is set
                     // TODO paralyze printing
                     // TODO write lines while printing
                     // TODO make pdf movement and clearing part of the compile script
-                    val (res, msg) = print(
+                    val content = print(
                       pLang,
                       po,
                       semester,
@@ -135,30 +136,25 @@ object ModuleCompendiumLatexActor {
                       people,
                       ams,
                       pos
+                    )
+                    val filename = s"${pLang.id}_${semester.id}_${po.abbrev}"
+                    val (res, msg) = measure(
+                      "create tex file",
+                      createTexFile(filename, content)
                     ) match {
                       case Left(err) =>
-                        (None, err.getMessage())
-                      case Right(content) =>
-                        val filename =
-                          s"${pLang.id}_${semester.id}_${po.abbrev}"
-                        measure(
-                          "create tex file",
-                          createTexFile(filename, content)
-                        ) match {
+                        (None, err)
+                      case Right(texFile) =>
+                        val res = for {
+                          _ <- measure("compile tex file", compile(texFile))
+                          pdf <- measure("get pdf", getPdf(texFile))
+                          res <- measure("move pdf", movePdf(pdf, filename))
+                        } yield res
+                        res match {
                           case Left(err) =>
-                            (None, err)
-                          case Right(texFile) =>
-                            val res = for {
-                              _ <- measure("compile tex file", compile(texFile))
-                              pdf <- measure("get pdf", getPdf(texFile))
-                              res <- measure("move pdf", movePdf(pdf, filename))
-                            } yield res
-                            res match {
-                              case Left(err) =>
-                                (Some(texFile, false), err)
-                              case Right(pdfFile) =>
-                                (Some(pdfFile, true), "???")
-                            }
+                            (Some(texFile, false), err)
+                          case Right(pdfFile) =>
+                            (Some(pdfFile, true), "???")
                         }
                     }
                     res match {
@@ -260,7 +256,7 @@ object ModuleCompendiumLatexActor {
 
     private def createTexFile(
         name: String,
-        content: String
+        content: StringBuilder
     ): Either[String, Path] =
       try {
         logger.debug("creating tex file")
