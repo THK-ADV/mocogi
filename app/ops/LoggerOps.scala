@@ -2,7 +2,11 @@ package ops
 
 import play.api.Logging
 
+import scala.annotation.unused
+
 trait LoggerOps { self: Logging =>
+
+  @unused
   def measure[A](ctx: String, f: => A): A = {
     val start = System.currentTimeMillis()
     logger.info(s"${Thread.currentThread().getName} start with $ctx")
@@ -14,6 +18,7 @@ trait LoggerOps { self: Logging =>
     a
   }
 
+  @unused
   def log[A](a: A): A = {
     logger.info(a.toString)
     a

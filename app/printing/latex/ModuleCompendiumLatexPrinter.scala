@@ -19,8 +19,6 @@ import printing.{
 
 import javax.inject.{Inject, Singleton}
 
-// TODO change implementation to StringBuilder or writing file directly
-
 /** Style from: https://www.overleaf.com/learn/latex/Page_size_and_margins
   */
 @Singleton
@@ -231,7 +229,6 @@ final class ModuleCompendiumLatexPrinter @Inject() (pandocApi: PandocApi)
       }
   }
 
-  // TODO find a better solution for this
   private def escape(str: String) = {
     val buf = new StringBuilder(str.length)
     str.foreach {

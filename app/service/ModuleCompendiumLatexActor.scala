@@ -1,7 +1,6 @@
 package service
 
 import akka.actor.{Actor, ActorRef, Props}
-import database.ModuleCompendiumOutput
 import database.repo.{
   AssessmentMethodRepository,
   LanguageRepository,
@@ -12,8 +11,7 @@ import database.repo.{
   PersonRepository,
   SeasonRepository
 }
-import models.core._
-import models.{ModuleCompendiumList, POShort, Semester}
+import models.{ModuleCompendiumList, Semester}
 import ops.LoggerOps
 import play.api.Logging
 import printing.PrintingLanguage
@@ -23,7 +21,6 @@ import service.ModuleCompendiumLatexActor.GenerateLatexFiles
 import java.nio.file.{Files, Path, Paths, StandardCopyOption}
 import java.time.LocalDateTime
 import javax.inject.Singleton
-import scala.collection.mutable.ListBuffer
 import scala.collection.parallel.CollectionConverters._
 import scala.concurrent.ExecutionContext
 import scala.sys.process._
@@ -94,7 +91,6 @@ object ModuleCompendiumLatexActor {
 
     private def tmpFolder = Paths.get(config.tmpFolderPath)
 
-    // TODO commit .tex file
     private def create(semester: Semester) =
       for {
         pos <- poRepository.allValidShort()
@@ -106,76 +102,66 @@ object ModuleCompendiumLatexActor {
         people <- personRepository.all()
         ams <- assessmentMethodRepository.all()
         res <- {
-          val res =
-            measure(
-              "all prints", {
-                pos.par
-                  .flatMap(po =>
-                    Seq(
-                      po -> PrintingLanguage.German,
-                      po -> PrintingLanguage.English
-                    )
-                  )
-                  .filter(_._1.abbrev.startsWith("inf_inf"))
-                  .map { case (po, pLang) =>
-                    // TODO expand to optional if "partOfCatalog" is set
-                    // TODO write lines while printing
-                    // TODO make pdf movement and clearing part of the compile script
-                    val content = print(
-                      pLang,
-                      po,
-                      semester,
-                      mcs.filter(_.metadata.po.mandatory.exists { a =>
-                        a.po == po.abbrev && a.specialization
-                          .zip(po.specialization)
-                          .fold(true)(a => a._1 == a._2.abbrev)
-                      }),
-                      mts,
-                      lang,
-                      seasons,
-                      people,
-                      ams,
-                      pos
-                    )
-                    val filename =
-                      s"${pLang.id}_${semester.id}_${po.fullAbbrev}"
-                    createTexFile(filename, content) match {
-                      case Left(err) =>
-                        Left(None, err)
-                      case Right(texFile) =>
-                        (for {
-                          _ <- compile(texFile)
-                          pdf <- getPdf(texFile)
-                          res <- movePdf(pdf, filename)
-                        } yield res) match {
-                          case Left(err) =>
-                            markFileAsBroken(texFile) match {
-                              case Left(err) =>
-                                Left(Some(texFile), err)
-                              case Right(texFile) =>
-                                Left(Some(texFile), err)
-                            }
-                          case Right(pdfFile) =>
-                            Right(
-                              (
-                                po.fullAbbrev,
-                                po.abbrev,
-                                po.version,
-                                po.studyProgram.abbrev,
-                                semester.id,
-                                pdfFile.getFileName,
-                                pLang,
-                                po.specialization.map(_.abbrev)
-                              )
-                            )
-                        }
-                    }
-                  }
-                  .seq
-              }
+          val res = pos.par
+            .flatMap(po =>
+              Seq(
+                po -> PrintingLanguage.German,
+                po -> PrintingLanguage.English
+              )
             )
+            .map { case (po, pLang) =>
+              val content = printer.print(
+                po,
+                semester,
+                mcs.filter(_.metadata.po.mandatory.exists { a =>
+                  a.po == po.abbrev && a.specialization
+                    .zip(po.specialization)
+                    .fold(true)(a => a._1 == a._2.abbrev)
+                }),
+                mts,
+                lang,
+                seasons,
+                people,
+                ams,
+                pos
+              )(pLang)
+              val filename =
+                s"${pLang.id}_${semester.id}_${po.fullAbbrev}"
+              createTexFile(filename, content) match {
+                case Left(err) =>
+                  Left(None, err)
+                case Right(texFile) =>
+                  (for {
+                    _ <- compile(texFile)
+                    pdf <- getPdf(texFile)
+                    res <- movePdf(pdf, filename)
+                  } yield res) match {
+                    case Left(err) =>
+                      markFileAsBroken(texFile) match {
+                        case Left(err) =>
+                          Left(Some(texFile), err)
+                        case Right(texFile) =>
+                          Left(Some(texFile), err)
+                      }
+                    case Right(pdfFile) =>
+                      Right(
+                        (
+                          po.fullAbbrev,
+                          po.abbrev,
+                          po.version,
+                          po.studyProgram.abbrev,
+                          semester.id,
+                          pdfFile.getFileName,
+                          pLang,
+                          po.specialization.map(_.abbrev)
+                        )
+                      )
+                  }
+              }
+            }
+            .seq
           clear(tmpFolder)
-          res.collect { case Left((file, _)) => logger.error(s"$file") }
+          res.collect { case Left((file, msg)) => logger.error(s"$file\n$msg") }
           moduleCompendiumListRepository.createOrUpdateMany(
             toModuleCompendiumList(res.collect { case Right(r) => r })
           )
@@ -215,33 +201,8 @@ object ModuleCompendiumLatexActor {
         }
         .toSeq
 
-    private def print(
-        pLang: PrintingLanguage,
-        po: POShort,
-        semester: Semester,
-        entries: Seq[ModuleCompendiumOutput],
-        moduleTypes: Seq[ModuleType],
-        languages: Seq[Language],
-        seasons: Seq[Season],
-        people: Seq[Person],
-        assessmentMethods: Seq[AssessmentMethod],
-        poShorts: Seq[POShort]
-    ) =
-      printer.print(
-        po,
-        semester,
-        entries.sortBy(_.metadata.title),
-        moduleTypes,
-        languages,
-        seasons,
-        people,
-        assessmentMethods,
-        poShorts
-      )(pLang)
-
     private def markFileAsBroken(file: Path): Either[String, Path] =
       try {
-        logger.error(s"mark file as broken $file")
         Right(
           Files.move(
             file,
@@ -255,7 +216,6 @@ object ModuleCompendiumLatexActor {
 
     private def movePdf(file: Path, newFilename: String): Either[String, Path] =
       try {
-        logger.debug(s"moving pdf $newFilename")
         val dest = Paths.get(config.publicFolderName, s"$newFilename.pdf")
         Right(Files.move(file, dest, StandardCopyOption.REPLACE_EXISTING))
       } catch {
@@ -277,7 +237,6 @@ object ModuleCompendiumLatexActor {
         content: StringBuilder
     ): Either[String, Path] =
       try {
-        logger.debug("creating tex file")
         val file = tmpFolder.resolve(s"$name.tex")
         Files.deleteIfExists(file)
         val path = Files.createFile(file)
@@ -287,9 +246,11 @@ object ModuleCompendiumLatexActor {
         case NonFatal(e) => Left(e.getMessage)
       }
 
-    private def asString(b: ListBuffer[String]): String =
-      if (b.isEmpty) ""
-      else b.mkString("\n========\n\t- ", "\n\t- ", "\n========")
+    private def mergeMut(out: StringBuilder, in: StringBuilder): String = {
+      out.appendAll(in)
+      if (out.isEmpty) ""
+      else out.mkString("\n========\n\t- ", "\n\t- ", "\n========")
+    }
 
     private def clear(path: Path): Unit = {
       val process = Process(
@@ -300,19 +261,10 @@ object ModuleCompendiumLatexActor {
         ),
         cwd = path.toAbsolutePath.toFile
       )
-      val sdtOut = ListBuffer.empty[String]
-      val sdtErr = ListBuffer.empty[String]
-      val pLogger = ProcessLogger(sdtOut += _, sdtErr += _)
-      logger.debug(s"clearing ${path.getFileName}")
-      val res = process ! pLogger
-      logger.debug(s"res is $res")
-      if (res == 0) logger.debug(asString(sdtOut.appendedAll(sdtErr)))
-      else logger.error(asString(sdtOut.appendedAll(sdtErr)))
+      exec(process)
     }
 
-    private def compile(
-        file: Path
-    ): Either[String, String] = {
+    private def compile(file: Path): Either[String, String] = {
       val process = Process(
         command = Seq(
           "/bin/sh",
@@ -322,18 +274,20 @@ object ModuleCompendiumLatexActor {
         ),
         cwd = file.getParent.toAbsolutePath.toFile
       )
+      exec(process)
+    }
 
-      val sdtOut = ListBuffer.empty[String]
-      val sdtErr = ListBuffer.empty[String]
-      val pLogger = ProcessLogger(sdtOut += _, sdtErr += _)
+    private def exec(process: ProcessBuilder) = {
+      val sdtOut = new StringBuilder()
+      val sdtErr = new StringBuilder()
+      val pLogger = ProcessLogger(sdtOut.append(_), sdtErr.append(_))
       try {
-        logger.debug(s"compiling ${file.getFileName}")
         val res = process ! pLogger
-        logger.debug(s"res is $res")
+        val msg = mergeMut(sdtOut, sdtErr)
         Either.cond(
           res == 0,
-          asString(sdtOut.appendedAll(sdtErr)),
-          asString(sdtOut.appendedAll(sdtErr))
+          msg,
+          msg
         )
       } catch {
         case NonFatal(e) => Left(e.getMessage)
