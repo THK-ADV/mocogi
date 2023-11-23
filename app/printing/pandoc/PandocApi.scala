@@ -4,8 +4,8 @@ import java.io.{ByteArrayInputStream, File}
 import java.nio.charset.StandardCharsets
 import java.util.UUID
 import javax.inject.Singleton
-import scala.collection.mutable.ListBuffer
 import scala.sys.process._
+import scala.util.control.NonFatal
 import scala.util.{Failure, Success, Try}
 
 @Singleton
@@ -21,13 +21,17 @@ final class PandocApi(
 
   def toLatex(
       input: String
-  ): (Try[String], ListBuffer[String], ListBuffer[String]) = {
+  ): (Either[(Throwable, String), String]) = {
     val inputStream = toStream(input)
     val process = texCmd #< inputStream
-    val sdtOut = ListBuffer[String]()
-    val sdtErr = ListBuffer[String]()
-    val logger = ProcessLogger(sdtErr += _, sdtOut += _)
-    (Try(process !! logger), sdtOut, sdtErr)
+    val sdtErr = new StringBuilder()
+    val logger = ProcessLogger(_ => {}, sdtErr.append(_))
+    try {
+      Right(process !! logger)
+    } catch {
+      case NonFatal(e) =>
+        Left(e, sdtErr.toString())
+    }
   }
 
   def run(

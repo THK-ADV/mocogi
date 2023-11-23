@@ -14,21 +14,21 @@ import database.repo.{
 }
 import models.core._
 import models.{ModuleCompendiumList, POShort, Semester}
-import ops.Measure
+import ops.LoggerOps
 import play.api.Logging
 import printing.PrintingLanguage
 import printing.latex.ModuleCompendiumLatexPrinter
-import providers.ConfigReader
 import service.ModuleCompendiumLatexActor.GenerateLatexFiles
 
 import java.nio.file.{Files, Path, Paths, StandardCopyOption}
 import java.time.LocalDateTime
 import javax.inject.Singleton
-import scala.annotation.unused
 import scala.collection.mutable.ListBuffer
+import scala.collection.parallel.CollectionConverters._
 import scala.concurrent.ExecutionContext
 import scala.sys.process._
 import scala.util.control.NonFatal
+import scala.util.{Failure, Success}
 
 @Singleton
 final class ModuleCompendiumLatexActor(actor: ActorRef) {
@@ -38,6 +38,15 @@ final class ModuleCompendiumLatexActor(actor: ActorRef) {
 
 object ModuleCompendiumLatexActor {
   private case class GenerateLatexFiles(semester: Semester) extends AnyVal
+
+  case class Config(
+      texBinPath: String,
+      compileScriptPath: String,
+      clearScriptPath: String,
+      tmpFolderPath: String,
+      publicFolderName: String,
+      assetsFolderName: String
+  )
 
   def props(
       printer: ModuleCompendiumLatexPrinter,
@@ -49,7 +58,7 @@ object ModuleCompendiumLatexActor {
       seasonRepository: SeasonRepository,
       personRepository: PersonRepository,
       assessmentMethodRepository: AssessmentMethodRepository,
-      config: ConfigReader,
+      config: Config,
       ctx: ExecutionContext
   ) = Props(
     new Impl(
@@ -77,24 +86,15 @@ object ModuleCompendiumLatexActor {
       private val seasonRepository: SeasonRepository,
       private val personRepository: PersonRepository,
       private val assessmentMethodRepository: AssessmentMethodRepository,
-      private val config: ConfigReader,
+      private val config: Config,
       implicit val ctx: ExecutionContext
   ) extends Actor
       with Logging
-      with Measure {
+      with LoggerOps {
 
-    private val compileScript = s"${sys.env("PWD")}/compile_latex.sh"
-
-    private val clearScript = s"${sys.env("PWD")}/clear_latex.sh"
-
-    private def tmpFolder = Paths.get("tmp")
-
-    private def publicFolderName = "public"
-
-    private def assetsFolderName = "assets"
+    private def tmpFolder = Paths.get(config.tmpFolderPath)
 
     // TODO commit .tex file
-    // TODO resolve ids in printer
     private def create(semester: Semester) =
       for {
         pos <- poRepository.allValidShort()
@@ -106,30 +106,30 @@ object ModuleCompendiumLatexActor {
         people <- personRepository.all()
         ams <- assessmentMethodRepository.all()
         res <- {
-          val (failure, success) = {
+          val res =
             measure(
               "all prints", {
-                pos
+                pos.par
                   .flatMap(po =>
                     Seq(
                       po -> PrintingLanguage.German,
                       po -> PrintingLanguage.English
                     )
                   )
-                  // .filter(_._1.abbrev.startsWith("inf_inf2")) // TODO DEBUG ONLY
-                  .partitionMap { case (po, pLang) =>
-                    logger.info(Thread.currentThread().getName)
+                  .filter(_._1.abbrev.startsWith("inf_inf"))
+                  .map { case (po, pLang) =>
                     // TODO expand to optional if "partOfCatalog" is set
-                    // TODO paralyze printing
                     // TODO write lines while printing
                     // TODO make pdf movement and clearing part of the compile script
                     val content = print(
                       pLang,
                       po,
                       semester,
-                      mcs.filter(
-                        _.metadata.po.mandatory.exists(_.po == po.abbrev)
-                      ),
+                      mcs.filter(_.metadata.po.mandatory.exists { a =>
+                        a.po == po.abbrev && a.specialization
+                          .zip(po.specialization)
+                          .fold(true)(a => a._1 == a._2.abbrev)
+                      }),
                       mts,
                       lang,
                       seasons,
@@ -137,73 +137,79 @@ object ModuleCompendiumLatexActor {
                       ams,
                       pos
                     )
-                    val filename = s"${pLang.id}_${semester.id}_${po.abbrev}"
-                    val (res, msg) = measure(
-                      "create tex file",
-                      createTexFile(filename, content)
-                    ) match {
+                    val filename =
+                      s"${pLang.id}_${semester.id}_${po.fullAbbrev}"
+                    createTexFile(filename, content) match {
                       case Left(err) =>
-                        (None, err)
+                        Left(None, err)
                       case Right(texFile) =>
-                        val res = for {
-                          _ <- measure("compile tex file", compile(texFile))
-                          pdf <- measure("get pdf", getPdf(texFile))
-                          res <- measure("move pdf", movePdf(pdf, filename))
-                        } yield res
-                        res match {
+                        (for {
+                          _ <- compile(texFile)
+                          pdf <- getPdf(texFile)
+                          res <- movePdf(pdf, filename)
+                        } yield res) match {
                           case Left(err) =>
-                            (Some(texFile, false), err)
+                            markFileAsBroken(texFile) match {
+                              case Left(err) =>
+                                Left(Some(texFile), err)
+                              case Right(texFile) =>
+                                Left(Some(texFile), err)
+                            }
                           case Right(pdfFile) =>
-                            (Some(pdfFile, true), "???")
+                            Right(
+                              (
+                                po.fullAbbrev,
+                                po.abbrev,
+                                po.version,
+                                po.studyProgram.abbrev,
+                                semester.id,
+                                pdfFile.getFileName,
+                                pLang,
+                                po.specialization.map(_.abbrev)
+                              )
+                            )
                         }
                     }
-                    res match {
-                      case Some((pdfFile, compiled)) if compiled =>
-                        Right(
-                          (
-                            po.abbrev,
-                            po.version,
-                            po.studyProgram.abbrev,
-                            semester.id,
-                            s"$assetsFolderName/${pdfFile.getFileName.toString}",
-                            pLang
-                          )
-                        )
-                      case Some((texFile, compiled)) if !compiled =>
-                        Left(Some(texFile), msg)
-                      case _ =>
-                        Left(None, msg)
-                    }
                   }
+                  .seq
               }
             )
-          }
-          measure("clearing all tex files", clear(tmpFolder))
-          failure.foreach(res => logger.error(s"${res._1}, ${res._2}"))
-          measure(
-            "creating db entries",
-            moduleCompendiumListRepository.createOrUpdateMany(
-              toModuleCompendiumList(success)
-            )
+          clear(tmpFolder)
+          res.collect { case Left((file, _)) => logger.error(s"$file") }
+          moduleCompendiumListRepository.createOrUpdateMany(
+            toModuleCompendiumList(res.collect { case Right(r) => r })
           )
         }
       } yield res
 
     private def toModuleCompendiumList(
-        xs: Seq[(String, Int, String, String, String, PrintingLanguage)]
+        xs: Seq[
+          (
+              String,
+              String,
+              Int,
+              String,
+              String,
+              Path,
+              PrintingLanguage,
+              Option[String]
+          )
+        ]
     ): Seq[ModuleCompendiumList.DB] =
       xs.groupBy(_._1)
         .map { case (_, xs) =>
           val x = xs.head
-          val de = xs.find(_._6 == PrintingLanguage.German).get._5
-          val en = xs.find(_._6 == PrintingLanguage.English).get._5
+          val de = xs.find(_._7 == PrintingLanguage.German).get._6
+          val en = xs.find(_._7 == PrintingLanguage.English).get._6
           ModuleCompendiumList(
             x._1,
             x._2,
             x._3,
+            x._8,
             x._4,
-            de,
-            en,
+            x._5,
+            s"${config.assetsFolderName}/${de.toString}",
+            s"${config.assetsFolderName}/${en.toString}",
             LocalDateTime.now()
           )
         }
@@ -233,17 +239,29 @@ object ModuleCompendiumLatexActor {
         poShorts
       )(pLang)
 
-    @unused
+    private def markFileAsBroken(file: Path): Either[String, Path] =
+      try {
+        logger.error(s"mark file as broken $file")
+        Right(
+          Files.move(
+            file,
+            file.resolveSibling(s"BROKEN_${file.getFileName}"),
+            StandardCopyOption.REPLACE_EXISTING
+          )
+        )
+      } catch {
+        case NonFatal(e) => Left(e.getMessage)
+      }
+
     private def movePdf(file: Path, newFilename: String): Either[String, Path] =
       try {
         logger.debug(s"moving pdf $newFilename")
-        val dest = Paths.get(publicFolderName, s"$newFilename.pdf")
+        val dest = Paths.get(config.publicFolderName, s"$newFilename.pdf")
         Right(Files.move(file, dest, StandardCopyOption.REPLACE_EXISTING))
       } catch {
         case NonFatal(e) => Left(e.getMessage)
       }
 
-    @unused
     private def getPdf(file: Path): Either[String, Path] =
       try {
         val pdf = file.resolveSibling(
@@ -277,8 +295,8 @@ object ModuleCompendiumLatexActor {
       val process = Process(
         command = Seq(
           "/bin/sh",
-          clearScript,
-          config.textBin
+          config.clearScriptPath,
+          config.texBinPath
         ),
         cwd = path.toAbsolutePath.toFile
       )
@@ -298,8 +316,8 @@ object ModuleCompendiumLatexActor {
       val process = Process(
         command = Seq(
           "/bin/sh",
-          compileScript,
-          config.textBin,
+          config.compileScriptPath,
+          config.texBinPath,
           file.getFileName.toString
         ),
         cwd = file.getParent.toAbsolutePath.toFile
@@ -323,7 +341,11 @@ object ModuleCompendiumLatexActor {
     }
 
     override def receive: Receive = { case GenerateLatexFiles(semester) =>
-      create(semester)
+      create(semester) onComplete {
+        case Success(value) =>
+          logSuccess(s"created ${value.size} module compendium list entries")
+        case Failure(e) => logFailure(e)
+      }
     }
   }
 }

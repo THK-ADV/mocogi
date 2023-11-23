@@ -7,9 +7,8 @@ import database.table.{
   POTable,
   SpecializationTable
 }
-import database.view.SpecializationShort
 import models.core.PO
-import models.{POShort, StudyProgramShort}
+import models.{POShort, SpecializationShort, StudyProgramShort}
 import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfigProvider}
 import slick.jdbc.JdbcProfile
 

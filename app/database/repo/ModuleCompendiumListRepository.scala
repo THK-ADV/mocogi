@@ -1,6 +1,6 @@
 package database.repo
 
-import database.table.ModuleCompendiumListTable
+import database.table.{ModuleCompendiumListTable, SpecializationTable}
 import models.{ModuleCompendiumList, Semester, StudyProgramShort}
 import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfigProvider}
 import slick.jdbc.JdbcProfile
@@ -36,12 +36,16 @@ final class ModuleCompendiumListRepository @Inject() (
     } yield (q, (sp.abbrev, sp.deLabel, sp.enLabel), g)
 
     db.run(
-      q.result.map(_.map { case (mcl, sp, g) =>
-        mcl.copy(
-          studyProgram = StudyProgramShort(sp._1, sp._2, sp._3, g),
-          semester = Semester(mcl.semester)
-        )
-      })
+      q.joinLeft(TableQuery[SpecializationTable])
+        .on(_._1.poAbbrev === _.po)
+        .result
+        .map(_.map { case ((mcl, sp, g), spec) =>
+          mcl.copy(
+            studyProgram = StudyProgramShort(sp._1, sp._2, sp._3, g),
+            semester = Semester(mcl.semester),
+            specialization = spec.map(_.toShort())
+          )
+        })
     )
   }
 

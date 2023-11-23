@@ -23,6 +23,7 @@ lazy val `mocogi` = (project in file("."))
     libraryDependencies += kafka,
     libraryDependencies ++= keycloak,
     libraryDependencies ++= optics,
+    libraryDependencies += "org.scala-lang.modules" %% "scala-parallel-collections" % "1.0.4",
     externalResolvers ++= Seq(
       "GitHub <THK-ADV> Apache Maven Packages" at "https://maven.pkg.github.com/THK-ADV/nebulak"
     ),

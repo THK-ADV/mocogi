@@ -10,13 +10,17 @@ final class ModuleCompendiumListTable(tag: Tag)
       "module_compendium_list"
     ) {
 
-  def poAbbrev = column[String]("po", O.PrimaryKey)
+  def fullPo = column[String]("full_po", O.PrimaryKey)
+
+  def poAbbrev = column[String]("po")
 
   def poNumber = column[Int]("po_number")
 
+  def specialization = column[Option[String]]("specialization")
+
   def studyProgram = column[String]("study_program")
 
-  def semester = column[String]("semester", O.PrimaryKey)
+  def semester = column[String]("semester")
 
   def deUrl = column[String]("de_url")
 
@@ -30,8 +34,10 @@ final class ModuleCompendiumListTable(tag: Tag)
     )
 
   override def * = (
+    fullPo,
     poAbbrev,
     poNumber,
+    specialization,
     studyProgram,
     semester,
     deUrl,
@@ -42,7 +48,9 @@ final class ModuleCompendiumListTable(tag: Tag)
   private def mapRow: (
       (
           String,
+          String,
           Int,
+          Option[String],
           String,
           String,
           String,
@@ -51,8 +59,10 @@ final class ModuleCompendiumListTable(tag: Tag)
       )
   ) => ModuleCompendiumList.DB = {
     case (
+          fullPo,
           poAbbrev,
           poNumber,
+          specialization,
           studyProgram,
           semester,
           deUrl,
@@ -60,8 +70,10 @@ final class ModuleCompendiumListTable(tag: Tag)
           generated
         ) =>
       ModuleCompendiumList(
+        fullPo,
         poAbbrev,
         poNumber,
+        specialization,
         studyProgram,
         semester,
         deUrl,
@@ -73,7 +85,9 @@ final class ModuleCompendiumListTable(tag: Tag)
   private def unmapRow(arg: ModuleCompendiumList.DB): Option[
     (
         String,
+        String,
         Int,
+        Option[String],
         String,
         String,
         String,
@@ -83,8 +97,10 @@ final class ModuleCompendiumListTable(tag: Tag)
   ] =
     Some(
       (
+        arg.fullPo,
         arg.poAbbrev,
         arg.poNumber,
+        arg.specialization,
         arg.studyProgram,
         arg.semester,
         arg.deUrl,

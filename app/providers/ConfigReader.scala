@@ -15,7 +15,17 @@ final class ConfigReader @Inject() (config: Configuration) {
 
   def texCmd: String = string("pandoc.texCmd")
 
-  def textBin: String = string("pandoc.textBin")
+  def textBinPath: String = string("latex.texbinPath")
+
+  def compileScriptPath: String = string("latex.compileScriptPath")
+
+  def clearScriptPath: String = string("latex.clearScriptPath")
+
+  def publicFolderName: String = string("latex.publicFolderName")
+
+  def assetsFolderName: String = string("latex.assetsFolderName")
+
+  def tmpFolderPath: String = string("play.temporaryFile.dir")
 
   def outputFolderPath: String = string("pandoc.outputFolderPath")
 

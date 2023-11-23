@@ -1,4 +1,4 @@
-import database.view.SpecializationShort
+import models.SpecializationShort
 import models.core.{AbbrevLabelDescLike, AbbrevLabelLike, Person, Season}
 import validator.Workload
 

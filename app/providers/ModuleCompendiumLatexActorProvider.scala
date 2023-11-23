@@ -13,6 +13,7 @@ import database.repo.{
 }
 import printing.latex.ModuleCompendiumLatexPrinter
 import service.ModuleCompendiumLatexActor
+import service.ModuleCompendiumLatexActor.Config
 
 import javax.inject.{Inject, Provider, Singleton}
 import scala.concurrent.ExecutionContext
@@ -44,7 +45,14 @@ final class ModuleCompendiumLatexActorProvider @Inject() (
         seasonRepository,
         personRepository,
         assessmentMethodRepository,
-        config,
+        Config(
+          config.textBinPath,
+          config.compileScriptPath,
+          config.clearScriptPath,
+          config.tmpFolderPath,
+          config.publicFolderName,
+          config.assetsFolderName
+        ),
         ctx
       )
     )

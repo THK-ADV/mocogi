@@ -1,12 +1,10 @@
 package printing.latex
 
 import database.ModuleCompendiumOutput
-import database.view.SpecializationShort
 import models.core._
-import models.{POShort, Semester, StudyProgramShort}
+import models.{POShort, Semester, SpecializationShort, StudyProgramShort}
 import monocle.Lens
 import monocle.macros.GenLens
-import ops.Measure
 import parsing.types.Content
 import play.api.Logging
 import printing.pandoc.PandocApi
@@ -20,7 +18,6 @@ import printing.{
 }
 
 import javax.inject.{Inject, Singleton}
-import scala.util.{Failure, Success}
 
 // TODO change implementation to StringBuilder or writing file directly
 
@@ -28,8 +25,7 @@ import scala.util.{Failure, Success}
   */
 @Singleton
 final class ModuleCompendiumLatexPrinter @Inject() (pandocApi: PandocApi)
-    extends Logging
-    with Measure {
+    extends Logging {
 
   def print(
       po: POShort,
@@ -43,36 +39,34 @@ final class ModuleCompendiumLatexPrinter @Inject() (pandocApi: PandocApi)
       poShorts: Seq[POShort]
   )(implicit lang: PrintingLanguage): StringBuilder = {
     implicit val builder: StringBuilder = new StringBuilder()
-    measure(f = {
-      builder.append("\\documentclass[article, 11pt, oneside]{book}\n")
-      packages
-      commands
-      builder.append("\\begin{document}\n")
-      builder.append(s"\\selectlanguage{${lang.fold("german", "english")}}\n")
-      title(po.studyProgram, po.specialization, po.version, semester)
-      builder.append("\\maketitle\n")
-      newPage
-      builder.append("\\layout*\n")
-      newPage
-      builder.append("\\tableofcontents\n")
-      headlineFormats
-      chapter(lang.prologHeadline)
-      newPage
-      chapter(lang.moduleHeadline)
-      newPage
-      modules(
-        po.abbrev,
-        entries,
-        moduleTypes,
-        languages,
-        seasons,
-        people,
-        assessmentMethods,
-        poShorts
-      )
-      chapter(lang.studyPlanHeadline)
-      builder.append("\\end{document}")
-    })
+    builder.append("\\documentclass[article, 11pt, oneside]{book}\n")
+    packages
+    commands
+    builder.append("\\begin{document}\n")
+    builder.append(s"\\selectlanguage{${lang.fold("german", "english")}}\n")
+    title(po.studyProgram, po.specialization, po.version, semester)
+    builder.append("\\maketitle\n")
+    newPage
+    builder.append("\\layout*\n")
+    newPage
+    builder.append("\\tableofcontents\n")
+    headlineFormats
+    chapter(lang.prologHeadline)
+    newPage
+    chapter(lang.moduleHeadline)
+    newPage
+    modules(
+      po.abbrev,
+      entries,
+      moduleTypes,
+      languages,
+      seasons,
+      people,
+      assessmentMethods,
+      poShorts
+    )
+    chapter(lang.studyPlanHeadline)
+    builder.append("\\end{document}")
   }
 
   private def modules(
@@ -89,21 +83,27 @@ final class ModuleCompendiumLatexPrinter @Inject() (pandocApi: PandocApi)
       builder.append(s"$key & $value \\\\\n")
 
     def content(
-        e: ModuleCompendiumOutput,
+        mc: ModuleCompendiumOutput,
         entries: List[(String, Lens[Content, String])]
     ): Unit = {
       val markdownContent = new StringBuilder()
       entries.foreach { case (headline, lens) =>
         markdownContent.append(s"## $headline\n")
-        val content = lang.fold(lens.get(e.deContent), lens.get(e.enContent))
+        val content = lang.fold(lens.get(mc.deContent), lens.get(mc.enContent))
         if (content.nonEmpty && !content.forall(_.isWhitespace))
           markdownContent.append(content)
         else markdownContent.append(lang.noneLabel)
         markdownContent.append("\n\n")
       }
-      pandocApi.toLatex(markdownContent.toString())._1 match {
-        case Failure(e)    => builder.append(e.getMessage)
-        case Success(text) => builder.append(text)
+      pandocApi.toLatex(markdownContent.toString()) match {
+        case Left((e, stdErr)) =>
+          logger.error(
+            s"""content conversation from markdown to latex failed on ${mc.metadata.id}:
+               |  - throwable: ${e.getMessage}
+               |  - sdtErr: $stdErr""".stripMargin
+          )
+          builder.append("ERROR\n\n")
+        case Right(text) => builder.append(text)
       }
     }
 
@@ -147,7 +147,6 @@ final class ModuleCompendiumLatexPrinter @Inject() (pandocApi: PandocApi)
       builder.append(
         "\\begin{tabularx}{\\linewidth}{@{}>{\\bfseries}l@{\\hspace{.5em}}X@{}}\n"
       )
-      // TODO optimization
       row("ID", e.metadata.id.toString)
       row(lang.moduleCodeLabel, escape(e.metadata.abbrev))
       row(lang.moduleTitleLabel, escape(e.metadata.title))

@@ -442,14 +442,15 @@ create table module_review
 -- module compendium list
 create table module_compendium_list
 (
-    "po"            text      not null,
-    "po_number"     smallint  not null,
-    "study_program" text      not null,
-    "semester"      text      not null,
-    "de_url"        text      not null,
-    "en_url"        text      not null,
-    "generated"     timestamp not null,
-    PRIMARY KEY (po, semester),
+    "full_po"        text      not null PRIMARY KEY,
+    "po"             text      not null,
+    "po_number"      smallint  not null,
+    "specialization" text null,
+    "study_program"  text      not null,
+    "semester"       text      not null,
+    "de_url"         text      not null,
+    "en_url"         text      not null,
+    "generated"      timestamp not null,
     FOREIGN KEY (study_program) REFERENCES study_program (abbrev),
     FOREIGN KEY (po) REFERENCES po (abbrev)
 );

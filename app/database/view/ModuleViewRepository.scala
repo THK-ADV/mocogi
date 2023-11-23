@@ -1,6 +1,7 @@
 package database.view
 
 import database.table.stringToInts
+import models.SpecializationShort
 import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfigProvider}
 import slick.jdbc.JdbcProfile
 
@@ -189,7 +190,7 @@ final class ModuleViewRepository @Inject() (
             poVersion,
             specializationAbbrev
               .zip(specializationLabel)
-              .map(SpecializationShort.tupled),
+              .map((SpecializationShort.apply _).tupled),
             mandatory,
             recommendedSemester
           )
