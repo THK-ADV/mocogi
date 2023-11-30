@@ -349,7 +349,11 @@ final class MetadataYamlPrinterSpec extends AnyWordSpec with PrinterSpec {
       )
       val id = UUID.randomUUID
       val version: VersionScheme = VersionScheme(1, "s")
-      val print = printer.printer(version).print((id, metadata), "").value
+      val print = printer
+        .printer(version)
+        .print((id, metadata), new StringBuilder())
+        .value
+        .toString()
       val res =
         s"""---v1.0s
           |id: $id

@@ -156,7 +156,13 @@ final class ContentMarkdownPrinterSpec extends AnyWordSpec with PrinterSpec {
           |## (en) Particularities:
           |
           |nothing\n""".stripMargin
-      assert(printer.printer().print((de, en), "").value == res)
+      assert(
+        printer
+          .printer()
+          .print((de, en), new StringBuilder())
+          .value
+          .toString() == res
+      )
     }
   }
 }
