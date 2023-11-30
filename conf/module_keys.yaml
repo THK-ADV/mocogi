@@ -73,13 +73,8 @@ metadata.location:
   de_desc: --
   en_label: --
   en_desc: --
-metadata.participants.min:
-  de_label: Teilnehmer von
-  de_desc: --
-  en_label: --
-  en_desc: --
-metadata.participants.max:
-  de_label: Teilnehmer bis
+metadata.participants:
+  de_label: Teilnehmer
   de_desc: --
   en_label: --
   en_desc: --
@@ -98,108 +93,33 @@ metadata.lecturers:
   de_desc: --
   en_label: --
   en_desc: --
-metadata.assessmentMethods.mandatory.method:
+metadata.assessmentMethods.mandatory:
   de_label: Prüfungsform
   de_desc: --
   en_label: --
   en_desc: --
-metadata.assessmentMethods.mandatory.percentage:
-  de_label: Prüfungsform prozentuale Angabe
-  de_desc: --
-  en_label: --
-  en_desc: --
-metadata.assessmentMethods.mandatory.precondition:
-  de_label: Prüfungsform Vorbedingung
-  de_desc: --
-  en_label: --
-  en_desc: --
-metadata.assessmentMethods.optional.method:
+metadata.assessmentMethods.optional:
   de_label: Prüfungsform bei einem WPF
   de_desc: --
   en_label: --
   en_desc: --
-metadata.assessmentMethods.optional.percentage:
-  de_label: Prüfungsform prozentuale Angabe bei einem WPF
+metadata.prerequisites.recommended:
+  de_label: Empfohlene Voraussetzungen
   de_desc: --
   en_label: --
   en_desc: --
-metadata.assessmentMethods.optional.precondition:
-  de_label: Prüfungsform Vorbedingung bei einem WPF
+metadata.prerequisites.required:
+  de_label: Zwingende Voraussetzungen
   de_desc: --
   en_label: --
   en_desc: --
-metadata.prerequisites.recommended.text:
-  de_label: Empfohlene Voraussetzungen Freitext
-  de_desc: --
-  en_label: --
-  en_desc: --
-metadata.prerequisites.recommended.modules:
-  de_label: Empfohlene Voraussetzungen Module
-  de_desc: --
-  en_label: --
-  en_desc: --
-metadata.prerequisites.recommended.pos:
-  de_label: Empfohlene Voraussetzungen Studiengänge
-  de_desc: --
-  en_label: --
-  en_desc: --
-metadata.prerequisites.required.text:
-  de_label: Zwingende Voraussetzungen Freitext
-  de_desc: --
-  en_label: --
-  en_desc: --
-metadata.prerequisites.required.modules:
-  de_label: Zwingende Voraussetzungen Module
-  de_desc: --
-  en_label: --
-  en_desc: --
-metadata.prerequisites.required.pos:
-  de_label: Zwingende Voraussetzungen Studiengänge
-  de_desc: --
-  en_label: --
-  en_desc: --
-metadata.po.mandatory.po:
+metadata.po.mandatory:
   de_label: Verwendung des Moduls in Studiengängen
   de_desc: --
   en_label: --
   en_desc: --
-metadata.po.mandatory.specialization:
-  de_label: Verwendung des Moduls in Studiengängen mit Spezialisierung
-  de_desc: --
-  en_label: --
-  en_desc: --
-metadata.po.mandatory.recommendedSemester:
-  de_label: Verwendung des Moduls in Studiengängen Semesterangabe
-  de_desc: --
-  en_label: --
-  en_desc: --
-metadata.po.mandatory.recommendedSemesterPartTime:
-  de_label: Verwendung des Moduls in Studiengängen Semesterangabe für Teilzeitstudium
-  de_desc: --
-  en_label: --
-  en_desc: --
-metadata.po.optional.po:
+metadata.po.optional:
   de_label: Verwendung des Moduls in Studiengängen als WPF
-  de_desc: --
-  en_label: --
-  en_desc: --
-metadata.po.optional.specialization:
-  de_label: Verwendung des Moduls in Studiengängen mit Spezialisierung als WPF
-  de_desc: --
-  en_label: --
-  en_desc: --
-metadata.po.optional.instanceOf:
-  de_label: Verwendung des Moduls in Studiengängen als WPF zugehörig zu
-  de_desc: --
-  en_label: --
-  en_desc: --
-metadata.po.optional.partOfCatalog:
-  de_label: Verwendung des Moduls in Studiengängen als WPF und Teil des Modulhandbuchs
-  de_desc: --
-  en_label: --
-  en_desc: --
-metadata.po.optional.recommendedSemester:
-  de_label: Verwendung des Moduls in Studiengängen Semesterangabe als WPF
   de_desc: --
   en_label: --
   en_desc: --

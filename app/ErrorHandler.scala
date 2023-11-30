@@ -1,3 +1,4 @@
+import controllers.ErrorHandler
 import play.api.http.HttpErrorHandler
 import play.api.libs.json.Json
 import play.api.mvc.Results._
@@ -31,13 +32,10 @@ class ErrorHandler extends HttpErrorHandler {
       exception: Throwable
   ): Future[Result] =
     Future.successful(
-      InternalServerError(
-        Json.obj(
-          "type" -> "server error",
-          "request" -> request.toString(),
-          "message" -> exception.getMessage,
-          "trace" -> exception.getStackTrace.mkString("\n")
-        )
+      ErrorHandler.internalServerError(
+        request.toString(),
+        exception.getMessage,
+        exception.getStackTrace
       )
     )
 }

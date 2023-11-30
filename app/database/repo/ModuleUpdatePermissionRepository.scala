@@ -6,7 +6,7 @@ import database.table.{
   ModuleUpdatePermissionTable
 }
 import models.ModuleUpdatePermissionType.Inherited
-import models.{CampusId, ModuleUpdatePermissionType}
+import models.{CampusId, Module, ModuleUpdatePermissionType}
 import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfigProvider}
 import slick.jdbc.JdbcProfile
 
@@ -108,4 +108,12 @@ final class ModuleUpdatePermissionRepository @Inject() (
         .result
     )
   }
+
+  def allForCampusId(campusId: CampusId): Future[Seq[Module]] =
+    db.run(
+      (for {
+        q <- tableQuery if q.campusId === campusId
+        m <- q.moduleFk
+      } yield (m.id, m.title, m.abbrev)).result.map(_.map(Module.tupled))
+    )
 }

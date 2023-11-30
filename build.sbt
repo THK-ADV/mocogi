@@ -23,6 +23,7 @@ lazy val `mocogi` = (project in file("."))
     libraryDependencies += kafka,
     libraryDependencies ++= keycloak,
     libraryDependencies ++= optics,
+    libraryDependencies += "org.scala-lang.modules" %% "scala-parallel-collections" % "1.0.4",
     externalResolvers ++= Seq(
       "GitHub <THK-ADV> Apache Maven Packages" at "https://maven.pkg.github.com/THK-ADV/nebulak"
     ),
@@ -30,7 +31,10 @@ lazy val `mocogi` = (project in file("."))
       "GitHub Package Registry",
       "maven.pkg.github.com",
       "THK-ADV",
-      ""
+      sys.env.getOrElse("GITHUB_TOKEN", "")
+    ),
+    (Universal / javaOptions) ++= Seq(
+      "-Dpidfile.path=/dev/null"
     )
   )
 
@@ -47,7 +51,7 @@ lazy val test = Seq(
   "org.mockito" % "mockito-core" % "5.5.0" % Test
 )
 
-lazy val parser = "de.th-koeln.inf.adv" %% "nebulak" % "0.10"
+lazy val parser = "de.th-koeln.inf.adv" %% "nebulak" % "0.11"
 
 lazy val database = Seq(
   "com.typesafe.play" %% "play-slick" % playSlickVersion,

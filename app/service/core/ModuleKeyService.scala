@@ -1,9 +1,9 @@
 package service.core
 
-import models.{ModuleCompendiumProtocol, ModuleKey}
+import models.ModuleKey
 import parsing.modulekeys.ModuleKeyParser
 import parsing.withFile0
-import service.ModuleCompendiumProtocolDeltaUpdate.allFields
+import service.ModuleCompendiumProtocolDeltaUpdate.moduleCompendiumProtocolFields
 
 /** Provides a lookup function for resolving module keys into a localized
   * representation
@@ -31,10 +31,10 @@ object ModuleKeyService {
     */
   private def validate(xs: List[ModuleKey]): Unit = {
     val moduleKeys = xs.map(_.abbrev)
-    val keys = allFields[ModuleCompendiumProtocol]
+    val keys = moduleCompendiumProtocolFields
     val unmatched = moduleKeys.filterNot(keys.contains)
     if (unmatched.nonEmpty)
-      throw new Throwable(s"unmatched module keys: ${unmatched.mkString("")}")
+      throw new Throwable(s"unmatched module keys: ${unmatched.mkString(", ")}")
   }
 
   /** Parses all module keys defined in path.

@@ -1,12 +1,11 @@
 package database.view
 
+import models.SpecializationShort
 import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfigProvider}
 import slick.jdbc.JdbcProfile
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
-
-case class SpecializationShort(abbrev: String, label: String)
 
 case class StudyProgramAtomic(
     poAbbrev: String,
@@ -80,7 +79,7 @@ final class StudyProgramViewRepository @Inject() (
         version,
         specializationAbbrev
           .zip(specializationLabel)
-          .map(SpecializationShort.tupled)
+          .map((SpecializationShort.apply _).tupled)
       )
   }
 

@@ -1,16 +1,23 @@
 package controllers
 
 import controllers.formats.ModuleCompendiumOutputFormat
-import ops.FileOps
 import ops.FutureOps.OptionOps
 import play.api.libs.json.Json
-import play.api.mvc.{AbstractController, AnyContent, ControllerComponents, Request}
+import play.api.mvc.{
+  AbstractController,
+  AnyContent,
+  ControllerComponents,
+  Request
+}
+import printing.PrintingLanguage
 import providers.ConfigReader
 import service.{ModuleCompendiumService, ModuleDraftService}
 
+import java.nio.file.Paths
 import java.util.UUID
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
+import scala.util.control.NonFatal
 
 object ModuleCompendiumController {
   private lazy val languageAttribute = "lang"
@@ -52,18 +59,30 @@ final class ModuleCompendiumController @Inject() (
       service.getFromStaging(id).map(mc => Ok(Json.toJson(mc)))
     }
 
-  def getFile(id: UUID) =
-    Action { implicit r =>
-      val lang = parseLang
-      val folder = configReader.outputFolderPath
-      val filename = s"$id.html"
-      val path = s"$folder/$lang/$filename"
-      val file = FileOps.getFile(path).get
-      Ok.sendFile(content = file, fileName = _ => Some(filename))
-    }
+  def getModuleDescriptionFile(id: UUID) =
+    Action { implicit r => getFile(s"$id.html") }
 
-  private def parseLang(implicit r: Request[AnyContent]): String =
+  private def getFile(filename: String)(implicit r: Request[AnyContent]) = {
+    val lang = parseLang
+    val folder = outputFolderPath(lang)
+    try {
+      val path = Paths.get(s"$folder/$filename")
+      Ok.sendFile(content = path.toFile, fileName = f => Some(f.getName))
+    } catch {
+      case NonFatal(e) =>
+        ErrorHandler.internalServerError(
+          r.toString(),
+          s"file not found: ${e.getMessage}",
+          e.getStackTrace
+        )
+    }
+  }
+
+  private def parseLang(implicit r: Request[AnyContent]): PrintingLanguage =
     r.getQueryString(ModuleCompendiumController.languageAttribute)
-      .filter(s => s == "de" || s == "en")
-      .getOrElse("de")
+      .flatMap(PrintingLanguage.apply)
+      .getOrElse(PrintingLanguage.German)
+
+  private def outputFolderPath(lang: PrintingLanguage) =
+    lang.fold(configReader.deOutputFolderPath, configReader.enOutputFolderPath)
 }

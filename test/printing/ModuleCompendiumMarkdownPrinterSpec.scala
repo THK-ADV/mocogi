@@ -7,8 +7,7 @@ import org.scalatest.wordspec.AnyWordSpec
 import parsing.types._
 import parsing.withFile0
 import printing.markdown.ModuleCompendiumMarkdownPrinter
-import printing.markdown.ModuleCompendiumMarkdownPrinter.contentBlock
-import validator.{Metadata, ModuleRelation, POs, Prerequisites, Workload}
+import validator._
 
 import java.time.{LocalDate, LocalDateTime}
 import java.util.UUID
@@ -26,7 +25,9 @@ final class ModuleCompendiumMarkdownPrinterSpec
         "title",
         "abbrev",
         ModuleType("module", "module", "module"),
-        Some(ModuleRelation.Child(Module(UUID.randomUUID(), "title", "abbrev"))),
+        Some(
+          ModuleRelation.Child(Module(UUID.randomUUID(), "title", "abbrev"))
+        ),
         ECTS(5, Nil),
         Language("lang", "lang", "lang"),
         1,
@@ -86,7 +87,12 @@ final class ModuleCompendiumMarkdownPrinterSpec
         printer.printer(_ => None)(PrintingLanguage.German, LocalDateTime.now())
       val deFile = withFile0("test/printing/res/de-print.md")(identity)
       assert(
-        dePrinter.print(mc, "").value.dropRight(16) == deFile.dropRight(16)
+        dePrinter
+          .print(mc, new StringBuilder())
+          .value
+          .toString()
+          .dropRight(16) == deFile
+          .dropRight(16)
       )
 
       val enPrinter =
@@ -94,7 +100,12 @@ final class ModuleCompendiumMarkdownPrinterSpec
           .printer(_ => None)(PrintingLanguage.English, LocalDateTime.now())
       val enFile = withFile0("test/printing/res/en-print.md")(identity)
       assert(
-        enPrinter.print(mc, "").value.dropRight(16) == enFile.dropRight(16)
+        enPrinter
+          .print(mc, new StringBuilder())
+          .value
+          .toString()
+          .dropRight(16) == enFile
+          .dropRight(16)
       )
 
       val deFile2 = withFile0("test/printing/res/de-print2.md")(identity)
@@ -107,7 +118,12 @@ final class ModuleCompendiumMarkdownPrinterSpec
         )
       )
       assert(
-        dePrinter.print(mc2, "").value.dropRight(16) == deFile2.dropRight(16)
+        dePrinter
+          .print(mc2, new StringBuilder())
+          .value
+          .toString()
+          .dropRight(16) == deFile2
+          .dropRight(16)
       )
 
       val deFile3 = withFile0("test/printing/res/de-print3.md")(identity)
@@ -120,35 +136,60 @@ final class ModuleCompendiumMarkdownPrinterSpec
         )
       )
       assert(
-        dePrinter.print(mc3, "").value.dropRight(16) == deFile3.dropRight(16)
+        dePrinter
+          .print(mc3, new StringBuilder())
+          .value
+          .toString()
+          .dropRight(16) == deFile3
+          .dropRight(16)
       )
     }
 
     "print content block" in {
       implicit val substituteLocalisedContent: Boolean = true
       implicit var lang: PrintingLanguage = PrintingLanguage.German
-      var p = contentBlock("Title", "de text", "en text")
-      assert(p.print((), "").value === "## Title\n\nde text\n\n")
+      var p = printer.contentBlock("Title", "de text", "en text")
+      assert(
+        p.print((), new StringBuilder())
+          .value
+          .toString() === "## Title\n\nde text\n\n"
+      )
 
       lang = PrintingLanguage.English
-      p = contentBlock("Title", "de text", "en text")
-      assert(p.print((), "").value === "## Title\n\nen text\n\n")
+      p = printer.contentBlock("Title", "de text", "en text")
+      assert(
+        p.print((), new StringBuilder())
+          .value
+          .toString() === "## Title\n\nen text\n\n"
+      )
 
       lang = PrintingLanguage.German
-      p = contentBlock("Title", "", "en text")
-      assert(p.print((), "").value === "## Title\n\nen text\n\n")
+      p = printer.contentBlock("Title", "", "en text")
+      assert(
+        p.print((), new StringBuilder())
+          .value
+          .toString() === "## Title\n\nen text\n\n"
+      )
 
       lang = PrintingLanguage.English
-      p = contentBlock("Title", "de text", "")
-      assert(p.print((), "").value === "## Title\n\nde text\n\n")
+      p = printer.contentBlock("Title", "de text", "")
+      assert(
+        p.print((), new StringBuilder())
+          .value
+          .toString() === "## Title\n\nde text\n\n"
+      )
 
       lang = PrintingLanguage.German
-      p = contentBlock("Title", "", "")
-      assert(p.print((), "").value === "## Title\n\n")
+      p = printer.contentBlock("Title", "", "")
+      assert(
+        p.print((), new StringBuilder()).value.toString() === "## Title\n\n"
+      )
 
       lang = PrintingLanguage.English
-      p = contentBlock("Title", "", "")
-      assert(p.print((), "").value === "## Title\n\n")
+      p = printer.contentBlock("Title", "", "")
+      assert(
+        p.print((), new StringBuilder()).value.toString() === "## Title\n\n"
+      )
     }
   }
 }

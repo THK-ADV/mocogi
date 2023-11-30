@@ -47,7 +47,8 @@ class MetadataCompositeParser @Inject() (
           case None =>
             never(
               versionSchemePrinter
-                .print(scheme, "unknown version scheme ")
+                .print(scheme, new StringBuilder("unknown version scheme "))
+                .map(_.toString())
                 .getOrElse(s"unknown version scheme $scheme")
             )
         }

@@ -1,7 +1,14 @@
 package database.repo
 
-import database.table.{PODbEntry, POModificationDateDbEntry, POModificationDateTable, POTable}
+import database.table.{
+  PODbEntry,
+  POModificationDateDbEntry,
+  POModificationDateTable,
+  POTable,
+  SpecializationTable
+}
 import models.core.PO
+import models.{POShort, SpecializationShort, StudyProgramShort}
 import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfigProvider}
 import slick.jdbc.JdbcProfile
 
@@ -104,10 +111,49 @@ class PORepository @Inject() (
       po.dateTo
     )
 
-  def allValid(date: LocalDate = LocalDate.now) =
-    retrieve(
-      tableQuery.filter(a =>
-        a.dateFrom <= date && a.dateTo.map(_ >= date).getOrElse(true)
-      )
+  def allValid(date: LocalDate = LocalDate.now): Future[Seq[PO]] =
+    retrieve(tableQuery.filter(validQuery(date)))
+
+  def allValidShort(date: LocalDate = LocalDate.now): Future[Seq[POShort]] = {
+    val query = for {
+      q <- tableQuery.filter(validQuery(date))
+      sp <- q.studyProgramFk
+      g <- sp.gradeFk
+    } yield (q.abbrev, q.version, sp.abbrev, sp.deLabel, sp.enLabel, g)
+
+    db.run(
+      query
+        .joinLeft(TableQuery[SpecializationTable])
+        .on(_._1 === _.po)
+        .result
+        .map(
+          _.map(a =>
+            POShort(
+              a._1._1,
+              a._1._2,
+              a._2.map(s => SpecializationShort(s.abbrev, s.label)),
+              StudyProgramShort(a._1._3, a._1._4, a._1._5, a._1._6)
+            )
+          )
+        )
     )
+  }
+
+  private def validQuery(date: LocalDate): POTable => Rep[Boolean] =
+    a => a.dateFrom <= date && a.dateTo.map(_ >= date).getOrElse(true)
+
+  def getByAbbrev(abbrev: String): Future[(Int, StudyProgramShort)] = {
+    val query = for {
+      q <- tableQuery.filter(_.abbrev === abbrev)
+      sp <- q.studyProgramFk
+      g <- sp.gradeFk
+    } yield (q.version, (sp.abbrev, sp.deLabel, sp.enLabel), g)
+    db.run(
+      query.result
+        .map(_.map { case (po, sp, g) =>
+          (po, StudyProgramShort(sp._1, sp._2, sp._3, g))
+        })
+        .single
+    )
+  }
 }

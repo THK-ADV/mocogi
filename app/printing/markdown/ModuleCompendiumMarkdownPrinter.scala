@@ -1,67 +1,26 @@
 package printing.markdown
 
+import models.StudyProgramShort
 import models.core.Person
 import parsing.types._
 import printer.Printer
 import printer.Printer.{newline, prefix}
-import printing.PrintingLanguage
-import printing.markdown.ModuleCompendiumPrinter.{LanguageOps, StringConcatOps}
-import service.core.StudyProgramShort
+import printing.{
+  PrintingLanguage,
+  fmtCommaSeparated,
+  fmtDouble,
+  fmtPerson,
+  localDatePattern
+}
 import validator.{Metadata, ModuleRelation, POs, PrerequisiteEntry}
 
 import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
 import javax.inject.Singleton
 
 @Singleton
 final class ModuleCompendiumMarkdownPrinter(
     private val substituteLocalisedContent: Boolean
-) extends ModuleCompendiumPrinter {
-  import ModuleCompendiumMarkdownPrinter._
-
-  override def printer(studyProgram: String => Option[StudyProgramShort])(
-      implicit
-      lang: PrintingLanguage,
-      localDateTime: LocalDateTime
-  ): Printer[ModuleCompendium] =
-    Printer { case (mc, input) =>
-      implicit val m: Metadata = mc.metadata
-      implicit val slc: Boolean = substituteLocalisedContent
-
-      header
-        .skip(newline.repeat(2))
-        .skip(row("", ""))
-        .skip(row("---", "---"))
-        .skip(moduleNumber)
-        .skip(moduleTitle)
-        .skip(moduleType)
-        .skipOpt(m.relation.map(fmtModuleRelation))
-        .skip(ects)
-        .skip(language)
-        .skip(duration)
-        .skip(frequency)
-        .skip(moduleCoordinator)
-        .skip(moduleLecturer)
-        .skip(assessmentMethods)
-        .skip(workload)
-        .skip(recommendedPrerequisites)
-        .skip(requiredPrerequisites)
-        .skip(pos(studyProgram))
-        .skip(newline)
-        .skip(learningOutcome(mc.deContent, mc.enContent))
-        .skip(moduleContent(mc.deContent, mc.enContent))
-        .skip(teachingAndLearningMethods(mc.deContent, mc.enContent))
-        .skip(recommendedReading(mc.deContent, mc.enContent))
-        .skip(particularities(mc.deContent, mc.enContent))
-        .skip(prefix("---"))
-        .skip(newline.repeat(2))
-        .skip(lastModified)
-        .print((), input)
-    }
-}
-
-object ModuleCompendiumMarkdownPrinter {
-  private val localDatePattern = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm")
+) {
 
   private def row(key: String, value: String): Printer[Unit] =
     prefix(s"| $key | $value |")
@@ -75,20 +34,8 @@ object ModuleCompendiumMarkdownPrinter {
       .reduce(_ skip _)
 
   private def fmtPeople(label: String, xs: List[Person]): Printer[Unit] = {
-    def fmt(x: Person) = x match {
-      case s: Person.Default =>
-        s"${s.title} ${s.firstname} ${s.lastname} (${fmtCommaSeparated(s.faculties)(_.abbrev)})"
-      case g: Person.Group =>
-        g.label
-      case u: Person.Unknown =>
-        u.label
-    }
-
-    rows(label, xs.map(fmt))
+    rows(label, xs.map(fmtPerson))
   }
-
-  private def fmtCommaSeparated[A](xs: List[A])(f: A => String): String =
-    xs.map(f).mkString(", ")
 
   private def nonEmptyRow(
       value: String
@@ -158,10 +105,6 @@ object ModuleCompendiumMarkdownPrinter {
       case ModuleRelation.Child(parent) =>
         row(lang.childLabel, parent.abbrev)
     }
-
-  private def fmtDouble(d: Double): String =
-    if (d % 1 == 0) d.toInt.toString
-    else d.toString.replace('.', ',')
 
   private def fmtAssessmentMethod(
       label: String,
@@ -264,35 +207,21 @@ object ModuleCompendiumMarkdownPrinter {
       m.prerequisites.required
     )
 
+  private def workload(implicit
+      m: Metadata,
+      language: PrintingLanguage
+  ) = {
+    val (workload, contactHour, selfStudy) = language.workload(m.workload)
+    row(workload._1, workload._2)
+      .skip(row(contactHour._1, contactHour._2))
+      .skip(row(selfStudy._1, selfStudy._2))
+  }
+
   private def pos(studyProgram: String => Option[StudyProgramShort])(implicit
       m: Metadata,
       language: PrintingLanguage
   ) =
     fmtPOs(language.poLabel, m.validPOs, studyProgram)
-
-  private def workload(implicit
-      m: Metadata,
-      language: PrintingLanguage
-  ) = {
-    val wl = m.workload
-    val contactHoursValue = wl.total - wl.selfStudy
-    val parts = language
-      .lectureValue(wl)
-      .combine(language.exerciseValue(wl))
-      .combine(language.practicalValue(wl))
-      .combine(language.seminarValue(wl))
-      .combine(language.projectSupervisionValue(wl))
-      .combine(language.projectWorkValue(wl))
-    val contactHoursValueLabel =
-      if (parts.isEmpty) s"$contactHoursValue h"
-      else s"$contactHoursValue h ($parts)"
-    val selfStudyLabel =
-      if (wl.selfStudy == 0) language.noneLabel
-      else s"${wl.selfStudy} h"
-    row(language.workloadLabel, s"${wl.total} h")
-      .skip(row(language.contactHoursLabel, contactHoursValueLabel))
-      .skip(row(language.selfStudyLabel, selfStudyLabel))
-  }
 
   private def lastModified(implicit
       lang: PrintingLanguage,
@@ -350,4 +279,52 @@ object ModuleCompendiumMarkdownPrinter {
       de.learningOutcome,
       en.learningOutcome
     )
+
+  def print(
+      studyProgram: String => Option[StudyProgramShort],
+      lang: PrintingLanguage,
+      localDateTime: LocalDateTime,
+      moduleCompendium: ModuleCompendium
+  ) = printer(studyProgram)(lang, localDateTime)
+    .print(moduleCompendium, new StringBuilder())
+    .map(_.toString())
+
+  def printer(studyProgram: String => Option[StudyProgramShort])(implicit
+      lang: PrintingLanguage,
+      localDateTime: LocalDateTime
+  ): Printer[ModuleCompendium] =
+    Printer { case (mc, input) =>
+      implicit val m: Metadata = mc.metadata
+      implicit val slc: Boolean = substituteLocalisedContent
+
+      header
+        .skip(newline.repeat(2))
+        .skip(row("", ""))
+        .skip(row("---", "---"))
+        .skip(moduleNumber)
+        .skip(moduleTitle)
+        .skip(moduleType)
+        .skipOpt(m.relation.map(fmtModuleRelation))
+        .skip(ects)
+        .skip(language)
+        .skip(duration)
+        .skip(frequency)
+        .skip(moduleCoordinator)
+        .skip(moduleLecturer)
+        .skip(assessmentMethods)
+        .skip(workload)
+        .skip(recommendedPrerequisites)
+        .skip(requiredPrerequisites)
+        .skip(pos(studyProgram))
+        .skip(newline)
+        .skip(learningOutcome(mc.deContent, mc.enContent))
+        .skip(moduleContent(mc.deContent, mc.enContent))
+        .skip(teachingAndLearningMethods(mc.deContent, mc.enContent))
+        .skip(recommendedReading(mc.deContent, mc.enContent))
+        .skip(particularities(mc.deContent, mc.enContent))
+        .skip(prefix("---"))
+        .skip(newline.repeat(2))
+        .skip(lastModified)
+        .print((), input)
+    }
 }

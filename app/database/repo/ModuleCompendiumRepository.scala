@@ -23,6 +23,7 @@ trait ModuleCompendiumRepository {
   def allPreview(
       filter: Map[String, Seq[String]]
   ): Future[Seq[(UUID, String, String)]]
+  def allFromPos(pos: Seq[String]): Future[Seq[ModuleCompendiumOutput]]
 }
 
 @Singleton
@@ -132,6 +133,12 @@ final class ModuleCompendiumRepositoryImpl @Inject() (
         .map(m => (m.id, m.title, m.abbrev))
         .result
     )
+
+  override def allFromPos(pos: Seq[String]) = {
+    // TODO expand to optional if "partOfCatalog" is set
+    val isMandatoryPO = poMandatoryTable.filter(_.po.inSet(pos)).map(_.metadata)
+    retrieve(tableQuery.filter(_.id.in(isMandatoryPO)))
+  }
 
   private def updateAction(
       moduleCompendium: ModuleCompendium,

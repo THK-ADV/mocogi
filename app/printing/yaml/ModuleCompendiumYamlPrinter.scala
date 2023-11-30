@@ -2,8 +2,8 @@ package printing.yaml
 
 import models.ModuleCompendiumProtocol
 import parsing.metadata.VersionScheme
-import printer.Printer
 import printer.Printer.newline
+import printer.{Printer, PrintingError}
 
 import java.util.UUID
 import javax.inject.{Inject, Singleton}
@@ -23,4 +23,13 @@ final class ModuleCompendiumYamlPrinter @Inject() (
       .contraMapSuccess(a =>
         ((a._1, a._2.metadata), (a._2.deContent, a._2.enContent))
       )
+
+  def print(
+      version: VersionScheme,
+      moduleId: UUID,
+      protocol: ModuleCompendiumProtocol
+  ): Either[PrintingError, String] =
+    printer(version)
+      .print((moduleId, protocol), new StringBuilder())
+      .map(_.toString())
 }

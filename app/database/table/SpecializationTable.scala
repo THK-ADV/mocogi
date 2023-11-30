@@ -16,5 +16,5 @@ final class SpecializationTable(tag: Tag)
     abbrev,
     label,
     po
-  ) <> (Specialization.tupled, Specialization.unapply)
+  ) <> ((Specialization.apply _).tupled, Specialization.unapply)
 }

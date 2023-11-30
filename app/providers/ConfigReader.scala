@@ -9,15 +9,19 @@ import scala.util.Try
 @Singleton
 final class ConfigReader @Inject() (config: Configuration) {
 
-  def htmlCmd: String = string("pandoc.htmlCmd")
+  def htmlCmd: String = nonEmptyString("pandoc.htmlCmd")
 
-  def pdfCmd: String = string("pandoc.pdfCmd")
+  def pdfCmd: String = nonEmptyString("pandoc.pdfCmd")
 
-  def outputFolderPath: String = string("pandoc.outputFolderPath")
+  def texCmd: String = nonEmptyString("pandoc.texCmd")
 
-  def deOutputFolderPath: String = string("pandoc.deOutputFolderPath")
+  def tmpFolderPath: String = nonEmptyString("play.temporaryFile.dir")
 
-  def enOutputFolderPath: String = string("pandoc.enOutputFolderPath")
+  def outputFolderPath: String = nonEmptyString("pandoc.outputFolderPath")
+
+  def deOutputFolderPath: String = nonEmptyString("pandoc.deOutputFolderPath")
+
+  def enOutputFolderPath: String = nonEmptyString("pandoc.enOutputFolderPath")
 
   def gitToken: Option[UUID] = config
     .getOptional[String]("git.token")
@@ -27,40 +31,52 @@ final class ConfigReader @Inject() (config: Configuration) {
     .getOptional[String]("git.moduleModeToken")
     .flatMap(s => Try(UUID.fromString(s)).toOption)
 
-  def accessToken: String = string("git.accessToken")
+  def accessToken: String = nonEmptyString("git.accessToken")
 
-  def baseUrl: String = string("git.baseUrl")
+  def baseUrl: String = nonEmptyString("git.baseUrl")
 
-  def mainBranch: String = string("git.mainBranch")
+  def mainBranch: String = nonEmptyString("git.mainBranch")
 
-  def draftBranch: String = string("git.draftBranch")
+  def draftBranch: String = nonEmptyString("git.draftBranch")
 
-  def modulesRootFolder: String = string("git.modulesRootFolder")
+  def modulesRootFolder: String = nonEmptyString("git.modulesRootFolder")
 
-  def coreRootFolder: String = string("git.coreRootFolder")
+  def coreRootFolder: String = nonEmptyString("git.coreRootFolder")
 
   def projectId: Int = int("git.projectId")
 
-  def kafkaServerUrl: String = string("kafka.serverUrl")
+  def kafkaServerUrl: String = nonEmptyString("kafka.serverUrl")
 
-  def kafkaApplicationId: String = string("kafka.applicationId")
+  def kafkaApplicationId: String = nonEmptyString("kafka.applicationId")
 
   def moduleKeysToReviewFromSgl: Seq[String] = list("moduleKeysToReview.sgl")
 
   def moduleKeysToReviewFromPav: Seq[String] = list("moduleKeysToReview.pav")
 
-  def autoApprovedLabel: String = string("git.autoApprovedLabel")
+  def autoApprovedLabel: String = nonEmptyString("git.autoApprovedLabel")
 
-  def reviewApprovedLabel: String = string("git.reviewApprovedLabel")
+  def reviewApprovedLabel: String = nonEmptyString("git.reviewApprovedLabel")
+
+  def repoPath: Option[String] = emptyString("glab.repoPath")
+
+  def mcPath: Option[String] = emptyString("glab.mcPath")
+
+  def pushScriptPath: Option[String] = emptyString("glab.pushScriptPath")
 
   private def list(key: String): Seq[String] =
     if (config.has(key)) config.get[Seq[String]](key)
     else throw new Throwable(s"key $key must be set in application.conf")
 
-  private def string(key: String): String =
+  private def nonEmptyString(key: String): String =
     config.getOptional[String](key) match {
       case Some(value) if value.nonEmpty => value
       case _ => throw new Throwable(s"$key must be set")
+    }
+
+  private def emptyString(key: String): Option[String] =
+    config.getOptional[String](key) match {
+      case Some(value) if value.nonEmpty => Some(value)
+      case _                             => None
     }
 
   private def int(key: String): Int =

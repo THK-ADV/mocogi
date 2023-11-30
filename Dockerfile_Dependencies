@@ -1,0 +1,22 @@
+# This Dockerfile provides all cli tools and dependencies for the mocogi backend.
+# It will be used as a base image in the production environment
+FROM openjdk:17.0.2-slim
+# Linux platform
+#ARG pandoc_platform_suffix=amd64
+#ARG glab_platform_suffix=x86_64
+# ARM platform
+ARG pandoc_platform_suffix=arm64
+ARG glab_platform_suffix=arm64
+RUN apt-get update && apt-get install -y \
+  latexmk \
+  texlive-xetex \
+  texlive-lang-german \
+  wget \
+  vim \
+  git
+RUN wget https://github.com/jgm/pandoc/releases/download/3.1.2/pandoc-3.1.2-1-$pandoc_platform_suffix.deb  \
+  && dpkg -i pandoc-3.1.2-1-$pandoc_platform_suffix.deb  \
+  && rm pandoc-3.1.2-1-$pandoc_platform_suffix.deb
+RUN wget https://gitlab.com/gitlab-org/cli/-/releases/v1.35.0/downloads/glab_1.35.0_Linux_$glab_platform_suffix.deb \
+  && dpkg -i glab_1.35.0_Linux_$glab_platform_suffix.deb  \
+  && rm glab_1.35.0_Linux_$glab_platform_suffix.deb

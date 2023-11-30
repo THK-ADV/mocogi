@@ -2,18 +2,12 @@ package service.core
 
 import database.InsertOrUpdateResult
 import database.repo.{StudyProgramOutput, StudyProgramRepository}
-import models.core.{Grade, StudyProgram}
+import models.StudyProgramShort
+import models.core.StudyProgram
 import parsing.core.StudyProgramFileParser
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
-
-case class StudyProgramShort(
-    abbrev: String,
-    deLabel: String,
-    enLabel: String,
-    grade: Grade
-)
 
 trait StudyProgramService {
   def all(): Future[Seq[StudyProgramOutput]]

@@ -17,5 +17,8 @@ final class ModuleUpdatePermissionTable(tag: Tag)
 
   def kind = column[ModuleUpdatePermissionType]("kind")
 
+  def moduleFk =
+    foreignKey("module", module, TableQuery[ModuleCompendiumTable])(_.id)
+
   def * = (module, campusId, kind)
 }

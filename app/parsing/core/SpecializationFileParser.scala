@@ -15,6 +15,6 @@ object SpecializationFileParser {
         singleValueParser[String]("po", p => s"po.$p")(pos.sorted.reverse)
       )
       .skip(zeroOrMoreSpaces)
-      .map(Specialization.tupled)
+      .map((Specialization.apply _).tupled)
       .all()
 }

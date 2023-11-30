@@ -37,10 +37,14 @@ GET           /specializations                            controllers.core.Speci
 # Module Compendium
 
 GET           /moduleCompendium                           controllers.ModuleCompendiumController.all()
-GET           /moduleCompendium/:id/file                  controllers.ModuleCompendiumController.getFile(id: java.util.UUID)
+GET           /moduleCompendium/:id/file                  controllers.ModuleCompendiumController.getModuleDescriptionFile(id: java.util.UUID)
 GET           /moduleCompendium/:id                       controllers.ModuleCompendiumController.get(id: java.util.UUID)
 GET           /moduleCompendium/:id/latest                controllers.ModuleCompendiumController.getLatest(id: java.util.UUID)
 GET           /moduleCompendium/:id/staging               controllers.ModuleCompendiumController.getStaging(id: java.util.UUID)
+
+# Module Compendium List
+POST          /moduleCompendiumLists/:semester            controllers.ModuleCompendiumListController.generate(semester: java.lang.String)
+GET           /moduleCompendiumLists/:semester            controllers.ModuleCompendiumListController.allFromSemester(semester: java.lang.String)
 
 # Module
 
@@ -73,5 +77,4 @@ DELETE        /moduleUpdatePermissions                    controllers.ModuleUpda
 
 # Map static resources from the /public folder to the /assets URL path
 GET           /assets/*file                               controllers.Assets.versioned(path="/public", file: Asset)
-
-      
+GET           /files/*file                                controllers.FileController.get(file: Asset)

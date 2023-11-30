@@ -5,5 +5,5 @@ import printer.Printer
 
 trait PrinterSpec extends EitherValues {
   def run(printer: Printer[Unit]): String =
-    printer.print((), "").value
+    printer.print((), new StringBuilder()).value.toString()
 }

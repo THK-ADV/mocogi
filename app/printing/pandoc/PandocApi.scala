@@ -5,17 +5,34 @@ import java.nio.charset.StandardCharsets
 import java.util.UUID
 import javax.inject.Singleton
 import scala.sys.process._
+import scala.util.control.NonFatal
 import scala.util.{Failure, Success, Try}
 
 @Singleton
 final class PandocApi(
     htmlCmd: String,
-    pdfCmd: String
+    pdfCmd: String,
+    texCmd: String
 ) {
 
   private val htmlExtension = "html"
 
   private val pdfExtension = "pdf"
+
+  def toLatex(
+      input: String
+  ): (Either[(Throwable, String), String]) = {
+    val inputStream = toStream(input)
+    val process = texCmd #< inputStream
+    val sdtErr = new StringBuilder()
+    val logger = ProcessLogger(_ => {}, sdtErr.append(_))
+    try {
+      Right(process !! logger)
+    } catch {
+      case NonFatal(e) =>
+        Left(e, sdtErr.toString())
+    }
+  }
 
   def run(
       id: UUID,

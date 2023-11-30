@@ -13,3 +13,4 @@ README.md
 .dockerignore
 .scalafmt.conf
 .DS_Store
+tmp

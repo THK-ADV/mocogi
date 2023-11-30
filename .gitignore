@@ -50,3 +50,5 @@ conf/keycloak.json
 tmp/
 output/
 logs/
+public/
+!public/style.css
