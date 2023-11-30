@@ -4,6 +4,7 @@ import akka.actor.ActorSystem
 import database.view.ModuleViewRepository
 import git.subscriber._
 import printing.markdown.ModuleCompendiumMarkdownPrinter
+import printing.pandoc.{PandocApi, PrinterOutputType}
 import service.core.StudyProgramService
 import service.{ModuleCompendiumService, ModuleUpdatePermissionService}
 
@@ -14,12 +15,12 @@ import scala.concurrent.ExecutionContext
 class ModuleCompendiumSubscribersProvider @Inject() (
     printer: ModuleCompendiumMarkdownPrinter,
     system: ActorSystem,
-    moduleCompendiumMarkdownActor: ModuleCompendiumMarkdownActor,
     metadataService: ModuleCompendiumService,
 //    publisher: KafkaPublisher[Metadata],
     studyProgramService: StudyProgramService,
     moduleViewRepository: ModuleViewRepository,
     moduleUpdatePermissionService: ModuleUpdatePermissionService,
+    pandocApi: PandocApi,
     configReader: ConfigReader,
     ctx: ExecutionContext
 ) extends Provider[ModuleCompendiumSubscribers] {
@@ -28,11 +29,11 @@ class ModuleCompendiumSubscribersProvider @Inject() (
   override def get(): ModuleCompendiumSubscribers =
     ModuleCompendiumSubscribers(
       List(
-        system.actorOf(ModuleCompendiumLoggingActor.props),
         system.actorOf(
           ModuleCompendiumPrintingActor.props(
             printer,
-            moduleCompendiumMarkdownActor,
+            pandocApi,
+            PrinterOutputType.HTMLStandaloneFile,
             studyProgramService,
             configReader.deOutputFolderPath,
             configReader.enOutputFolderPath,
@@ -42,16 +43,12 @@ class ModuleCompendiumSubscribersProvider @Inject() (
         // system.actorOf(ModuleCompendiumPublishActor.props(publisher)),
         system.actorOf(
           ModuleCompendiumDatabaseActor
-            .props(metadataService, ctx)
-        ),
-        system.actorOf(
-          ModuleCompendiumViewUpdateActor.props(moduleViewRepository, ctx)
-        ),
-        system.actorOf(
-          ModuleCompendiumPermissionUpdateActor.props(
-            moduleUpdatePermissionService,
-            ctx
-          )
+            .props(
+              metadataService,
+              moduleViewRepository,
+              moduleUpdatePermissionService,
+              ctx
+            )
         )
       )
     )

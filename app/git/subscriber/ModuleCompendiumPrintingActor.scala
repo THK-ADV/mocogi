@@ -7,16 +7,20 @@ import parsing.types.ModuleCompendium
 import play.api.Logging
 import printing.PrintingLanguage
 import printing.markdown.ModuleCompendiumMarkdownPrinter
+import printing.pandoc.{PandocApi, PrinterOutput, PrinterOutputType}
 import service.core.StudyProgramService
 
 import java.time.LocalDateTime
+import java.util.UUID
+import scala.collection.parallel.CollectionConverters.seqIsParallelizable
 import scala.concurrent.ExecutionContext
 import scala.util.{Failure, Success}
 
 object ModuleCompendiumPrintingActor {
   def props(
       printer: ModuleCompendiumMarkdownPrinter,
-      markdownActor: ModuleCompendiumMarkdownActor,
+      pandocApi: PandocApi,
+      outputType: PrinterOutputType,
       studyProgramService: StudyProgramService,
       deOutputFolderPath: String,
       enOutputFolderPath: String,
@@ -25,7 +29,8 @@ object ModuleCompendiumPrintingActor {
     Props(
       new ModuleCompendiumPrintingActor(
         printer,
-        markdownActor,
+        pandocApi,
+        outputType,
         studyProgramService,
         deOutputFolderPath,
         enOutputFolderPath,
@@ -36,7 +41,8 @@ object ModuleCompendiumPrintingActor {
 
 private final class ModuleCompendiumPrintingActor(
     private val printer: ModuleCompendiumMarkdownPrinter,
-    private val markdownActor: ModuleCompendiumMarkdownActor,
+    private val pandocApi: PandocApi,
+    private val outputType: PrinterOutputType,
     private val studyProgramService: StudyProgramService,
     private val deOutputFolderPath: String,
     private val enOutputFolderPath: String,
@@ -48,7 +54,7 @@ private final class ModuleCompendiumPrintingActor(
     case CreatedOrUpdated(entries) if entries.nonEmpty =>
       studyProgramService.allShort() onComplete {
         case Success(sps) =>
-          entries.foreach { case (_, mc, lastModified) =>
+          entries.par.foreach { case (_, mc, lastModified) =>
             print(
               lastModified,
               mc,
@@ -79,11 +85,62 @@ private final class ModuleCompendiumPrintingActor(
           logError(mc, lang, path, err)
         case Right(print) =>
           logSuccess(mc, lang, path)
-          markdownActor.convert(mc.metadata.title, mc.metadata.id, print, path)
+          val moduleId = mc.metadata.id
+          val moduleTitle = mc.metadata.title
+          pandocApi.run(moduleId, outputType, print, path) match {
+            case Left(err) =>
+              logErrorConvert(moduleTitle, moduleId, err)
+            case Right(output) =>
+              output match {
+                case PrinterOutput.Text(content, _, consoleOutput) =>
+                  logText(moduleTitle, moduleId, content, consoleOutput)
+                case PrinterOutput.File(path, consoleOutput) =>
+                  logFile(moduleTitle, moduleId, path, consoleOutput)
+              }
+          }
       }
     go(PrintingLanguage.German, deOutputFolderPath)
     go(PrintingLanguage.English, enOutputFolderPath)
   }
+
+  private def logErrorConvert(title: String, id: UUID, t: Throwable): Unit =
+    logger.error(
+      s"""failed to convert module compendium to $outputType
+         |  - title: $title
+         |  - id: $id
+         |  - message: ${t.getMessage}
+         |  - trace: ${t.getStackTrace.mkString(
+          "\n           "
+        )}""".stripMargin
+    )
+
+  private def logText(
+      title: String,
+      id: UUID,
+      content: String,
+      consoleOutput: String
+  ): Unit =
+    logger.info(
+      s"""successfully converted module compendium to $outputType
+         |  - title: $title
+         |  - id: $id
+         |  - content: ${content.length}
+         |  - console output: $consoleOutput""".stripMargin
+    )
+
+  private def logFile(
+      title: String,
+      id: UUID,
+      path: String,
+      consoleOutput: String
+  ): Unit =
+    logger.info(
+      s"""successfully converted module compendium to $outputType
+         |  - title: $title
+         |  - id: $id
+         |  - path: $path
+         |  - console output: $consoleOutput""".stripMargin
+    )
 
   private def logSuccess(
       mc: ModuleCompendium,

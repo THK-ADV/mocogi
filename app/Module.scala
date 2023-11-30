@@ -7,10 +7,7 @@ import database.repo.{
   ModuleDraftRepositoryImpl
 }
 import git.publisher.{CoreDataPublisher, ModuleCompendiumPublisher}
-import git.subscriber.{
-  ModuleCompendiumMarkdownActor,
-  ModuleCompendiumSubscribers
-}
+import git.subscriber.ModuleCompendiumSubscribers
 import git.webhook.GitPushEventHandlingActor
 import git.{GitConfig, GitFilesBroker, GitFilesBrokerImpl}
 import models.ModuleKeysToReview
@@ -104,9 +101,6 @@ class Module() extends AbstractModule {
       .asEagerSingleton()
     bind(classOf[ModuleCompendiumSubscribers])
       .toProvider(classOf[ModuleCompendiumSubscribersProvider])
-      .asEagerSingleton()
-    bind(classOf[ModuleCompendiumMarkdownActor])
-      .toProvider(classOf[ModuleCompendiumMarkdownActorProvider])
       .asEagerSingleton()
     bind(classOf[GitPushEventHandlingActor])
       .toProvider(classOf[GitMergeEventHandlingActorProvider])
