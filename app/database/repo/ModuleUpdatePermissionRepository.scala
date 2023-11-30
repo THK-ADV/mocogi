@@ -1,5 +1,6 @@
 package database.repo
 
+import database.Filterable
 import database.table.{
   ModuleCompendiumTable,
   ModuleDraftTable,
@@ -14,6 +15,11 @@ import java.util.UUID
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
+object ModuleUpdatePermissionRepository {
+  val campusIdFilter = "campusId"
+  val moduleFilter = "module"
+}
+
 @Singleton
 final class ModuleUpdatePermissionRepository @Inject() (
     val dbConfigProvider: DatabaseConfigProvider,
@@ -23,7 +29,11 @@ final class ModuleUpdatePermissionRepository @Inject() (
       (UUID, CampusId, ModuleUpdatePermissionType),
       ModuleUpdatePermissionTable
     ]
-    with HasDatabaseConfigProvider[JdbcProfile] {
+    with HasDatabaseConfigProvider[JdbcProfile]
+    with Filterable[
+      (UUID, CampusId, ModuleUpdatePermissionType),
+      ModuleUpdatePermissionTable
+    ] {
 
   import database.table.{
     campusIdColumnType,
@@ -55,21 +65,20 @@ final class ModuleUpdatePermissionRepository @Inject() (
 
   def delete(
       module: UUID,
-      campusId: CampusId,
+      campusIds: List[CampusId],
       kind: ModuleUpdatePermissionType
   ): Future[Int] =
     db.run(
       tableQuery
         .filter(a =>
-          a.module === module && a.campusId === campusId && a.kind === kind
+          a.module === module && a.campusId.inSet(campusIds) && a.kind === kind
         )
         .delete
     )
 
-  def allWithModule(campusId: CampusId) =
+  def allWithModule(filter: Filter) =
     db.run(
-      tableQuery
-        .filter(_.campusId === campusId)
+      allWithFilter(filter)
         .joinLeft(
           TableQuery[ModuleCompendiumTable].map(a => (a.id, a.title, a.abbrev))
         )
@@ -116,4 +125,11 @@ final class ModuleUpdatePermissionRepository @Inject() (
         m <- q.moduleFk
       } yield (m.id, m.title, m.abbrev)).result.map(_.map(Module.tupled))
     )
+
+  override protected val makeFilter: PartialFunction[(String, String), Pred] = {
+    case (ModuleUpdatePermissionRepository.campusIdFilter, value) =>
+      _.campusId === CampusId(value)
+    case (ModuleUpdatePermissionRepository.moduleFilter, value) =>
+      _.module === UUID.fromString(value)
+  }
 }

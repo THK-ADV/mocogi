@@ -1,6 +1,7 @@
 package controllers
 
 import auth.AuthorizationAction
+import controllers.ModuleUpdatePermissionController.Replace
 import controllers.actions.{ModuleUpdatePermissionCheck, PermissionCheck}
 import models.CampusId
 import play.api.libs.json.{Json, Reads}
@@ -12,10 +13,8 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 
 object ModuleUpdatePermissionController {
-  case class ModuleUpdatePermissionProtocol(module: UUID, campusId: CampusId)
-
-  implicit val reads: Reads[ModuleUpdatePermissionProtocol] =
-    Json.reads[ModuleUpdatePermissionProtocol]
+  case class Replace(permissions: List[CampusId]) extends AnyVal
+  implicit def reads: Reads[Replace] = Json.reads
 }
 
 @Singleton
@@ -28,28 +27,26 @@ final class ModuleUpdatePermissionController @Inject() (
     with ModuleUpdatePermissionCheck
     with PermissionCheck {
 
-  import ModuleUpdatePermissionController._
-
   def getOwn =
     auth async { r =>
       moduleUpdatePermissionService
-        .all(r.campusId)
+        .allFromUser(r.campusId)
         .map(xs => Ok(Json.toJson(xs)))
     }
 
-  def create() =
-    auth(parse.json[ModuleUpdatePermissionProtocol]) andThen
-      hasPermissionToGrantPermission async { r =>
+  def allByModule(moduleId: UUID) =
+    auth andThen
+      hasPermissionToGrantPermission(moduleId) async { _ =>
         moduleUpdatePermissionService
-          .createGranted(r.body.module, r.body.campusId)
-          .map(_ => NoContent)
+          .allFromModule(moduleId)
+          .map(xs => Ok(Json.toJson(xs)))
       }
 
-  def delete() =
-    auth(parse.json[ModuleUpdatePermissionProtocol]) andThen
-      hasPermissionToGrantPermission async { r =>
+  def replace(moduleId: UUID) =
+    auth(parse.json[Replace]) andThen
+      hasPermissionToGrantPermission(moduleId) async { r =>
         moduleUpdatePermissionService
-          .removeGranted(r.body.module, r.body.campusId)
+          .replace(moduleId, r.body.permissions)
           .map(_ => NoContent)
       }
 }

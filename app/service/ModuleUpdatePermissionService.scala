@@ -2,15 +2,20 @@ package service
 
 import controllers.formats.ModuleCompendiumProtocolFormat
 import database.repo.ModuleUpdatePermissionRepository
+import database.repo.ModuleUpdatePermissionRepository.{
+  campusIdFilter,
+  moduleFilter
+}
 import models.ModuleUpdatePermissionType.{Granted, Inherited}
 import models.core.Person
 import models.{
   CampusId,
   Module,
   ModuleCompendiumProtocol,
-  ModuleUpdatePermission
+  ModuleUpdatePermission,
+  ModuleUpdatePermissionType
 }
-import play.api.libs.json.Json
+import play.api.libs.json.{JsValue, Json}
 
 import java.util.UUID
 import javax.inject.{Inject, Singleton}
@@ -35,27 +40,44 @@ final class ModuleUpdatePermissionService @Inject() (
     } yield created
   }
 
-  def createGranted(module: UUID, campusId: CampusId) =
-    repo.create((module, campusId, Granted))
-
-  def removeGranted(module: UUID, campusId: CampusId) =
-    repo.delete(module, campusId, Granted)
+  def replace(module: UUID, campusIds: List[CampusId]) =
+    for {
+      _ <- repo.deleteByModules(Seq(module), Granted)
+      _ <- repo.createMany(campusIds.map(c => (module, c, Granted)))
+    } yield ()
 
   def hasPermission(campusId: CampusId, module: UUID) =
     repo.hasPermission(campusId, module)
 
-  def all(campusId: CampusId): Future[Seq[ModuleUpdatePermission]] =
+  private def toModuleUpdatePermission(
+      xs: Seq[
+        (
+            UUID,
+            CampusId,
+            ModuleUpdatePermissionType,
+            Either[(String, String), JsValue]
+        )
+      ]
+  ) =
+    xs.map { case (id, campusId, kind, module) =>
+      val (title, abbrev) = module match {
+        case Left(value) => value
+        case Right(js) =>
+          val p = Json.fromJson[ModuleCompendiumProtocol](js).get
+          (p.metadata.title, p.metadata.abbrev)
+      }
+      ModuleUpdatePermission(id, title, abbrev, campusId, kind)
+    }
+
+  def allFromUser(campusId: CampusId): Future[Seq[ModuleUpdatePermission]] =
     repo
-      .allWithModule(campusId)
-      .map(_.map { case (id, campusId, kind, module) =>
-        val (title, abbrev) = module match {
-          case Left(value) => value
-          case Right(js) =>
-            val p = Json.fromJson[ModuleCompendiumProtocol](js).get
-            (p.metadata.title, p.metadata.abbrev)
-        }
-        ModuleUpdatePermission(id, title, abbrev, campusId, kind)
-      })
+      .allWithModule(Map(campusIdFilter -> Seq(campusId.value)))
+      .map(toModuleUpdatePermission)
+
+  def allFromModule(moduleId: UUID) =
+    repo
+      .allWithModule(Map(moduleFilter -> Seq(moduleId.toString)))
+      .map(toModuleUpdatePermission)
 
   def hasInheritedPermission(
       campusId: CampusId,
