@@ -1,4 +1,6 @@
 FROM sbtscala/scala-sbt:eclipse-temurin-jammy-17.0.5_8_1.8.3_2.13.10 as sbt
+ARG GITHUB_TOKEN
+ENV GITHUB_TOKEN=$GITHUB_TOKEN
 WORKDIR /mocogi
 COPY . .
 RUN sbt clean stage

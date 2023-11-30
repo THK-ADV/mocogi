@@ -31,7 +31,7 @@ lazy val `mocogi` = (project in file("."))
       "GitHub Package Registry",
       "maven.pkg.github.com",
       "THK-ADV",
-      ""
+      sys.env.getOrElse("GITHUB_TOKEN", "")
     ),
     (Universal / javaOptions) ++= Seq(
       "-Dpidfile.path=/dev/null"
