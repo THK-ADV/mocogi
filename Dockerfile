@@ -3,20 +3,22 @@ WORKDIR /mocogi
 COPY . .
 RUN sbt clean stage
 
-FROM openjdk:17.0.2-slim
-ARG pandoc_platform_suffix=amd64
-# ARG pandoc_platform_suffix=arm64
+FROM mocogi-core:latest
+ARG GIT_EMAIL
+ARG GIT_USERNAME
+ARG GIT_HOST
+ARG GIT_ACCESS_TOKEN
+ARG GIT_REPO
 WORKDIR /mocogi
 COPY --from=sbt /mocogi/target/universal/stage .
-RUN apt-get update && apt-get install -y \
-  # texlive-xetex \
-  wget \
-  vim
-RUN wget https://github.com/jgm/pandoc/releases/download/3.1.2/pandoc-3.1.2-1-$pandoc_platform_suffix.deb  \
-  && dpkg -i pandoc-3.1.2-1-$pandoc_platform_suffix.deb  \
-  && rm pandoc-3.1.2-1-$pandoc_platform_suffix.deb
+COPY --from=sbt /mocogi/gitlab-init.sh .
+COPY --from=sbt /mocogi/gitlab-push.sh .
+RUN chmod +x gitlab-push.sh
+RUN mkdir -p tmp
 RUN mkdir -p logs
 RUN mkdir -p output
 RUN mkdir -p output/de
 RUN mkdir -p output/en
+RUN ./gitlab-init.sh $GIT_EMAIL $GIT_USERNAME $GIT_HOST $GIT_ACCESS_TOKEN $GIT_REPO
+RUN rm gitlab-init.sh
 CMD bin/mocogi -Dconfig.file=conf/application-prod.conf

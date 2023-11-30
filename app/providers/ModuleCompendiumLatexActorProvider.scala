@@ -13,7 +13,7 @@ import database.repo.{
 }
 import printing.latex.ModuleCompendiumLatexPrinter
 import service.ModuleCompendiumLatexActor
-import service.ModuleCompendiumLatexActor.Config
+import service.ModuleCompendiumLatexActor.{Config, GlabConfig}
 
 import javax.inject.{Inject, Provider, Singleton}
 import scala.concurrent.ExecutionContext
@@ -46,12 +46,12 @@ final class ModuleCompendiumLatexActorProvider @Inject() (
         personRepository,
         assessmentMethodRepository,
         Config(
-          config.textBinPath,
-          config.compileScriptPath,
-          config.clearScriptPath,
           config.tmpFolderPath,
-          config.publicFolderName,
-          config.assetsFolderName
+          config.outputFolderPath,
+          config.repoPath
+            .zip(config.mcPath)
+            .zip(config.pushScriptPath)
+            .map(a => GlabConfig(a._1._1, a._1._2, a._2, config.mainBranch))
         ),
         ctx
       )

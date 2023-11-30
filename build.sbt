@@ -32,6 +32,9 @@ lazy val `mocogi` = (project in file("."))
       "maven.pkg.github.com",
       "THK-ADV",
       ""
+    ),
+    (Universal / javaOptions) ++= Seq(
+      "-Dpidfile.path=/dev/null"
     )
   )
 

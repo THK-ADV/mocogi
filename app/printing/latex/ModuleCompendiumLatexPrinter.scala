@@ -41,7 +41,7 @@ final class ModuleCompendiumLatexPrinter @Inject() (pandocApi: PandocApi)
     packages
     commands
     builder.append("\\begin{document}\n")
-    builder.append(s"\\selectlanguage{${lang.fold("german", "english")}}\n")
+    builder.append(s"\\selectlanguage{${lang.fold("ngerman", "english")}}\n")
     title(po.studyProgram, po.specialization, po.version, semester)
     builder.append("\\maketitle\n")
     newPage
@@ -260,7 +260,7 @@ final class ModuleCompendiumLatexPrinter @Inject() (pandocApi: PandocApi)
   private def packages(implicit builder: StringBuilder) =
     builder
       .append("% packages\n")
-      .append("\\usepackage[english, german]{babel}\n")
+      .append("\\usepackage[english, ngerman]{babel}\n")
       .append(
         "\\usepackage[a4paper, total={16cm, 24cm}, left=2.5cm, right=2.5cm, top=2.5cm, bottom=2.5cm]{geometry}\n"
       )

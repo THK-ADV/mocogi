@@ -34,15 +34,31 @@ final class ModuleCompendiumLatexActor(actor: ActorRef) {
 }
 
 object ModuleCompendiumLatexActor {
+  private type FileEntry = (
+      String, // ModuleCompendiumList.DB.fullPo
+      String, // ModuleCompendiumList.DB.poAbbrev
+      Int, // ModuleCompendiumList.DB.poNumber
+      String, // ModuleCompendiumList.DB.studyProgram
+      Semester, // ModuleCompendiumList.DB.semester
+      Path, // Path of Tex File
+      Path, // Path of PDF
+      PrintingLanguage, // PrintingLanguage
+      Option[String] // ModuleCompendiumList.DB.specialization
+  )
+
   private case class GenerateLatexFiles(semester: Semester) extends AnyVal
 
   case class Config(
-      texBinPath: String,
-      compileScriptPath: String,
-      clearScriptPath: String,
       tmpFolderPath: String,
-      publicFolderName: String,
-      assetsFolderName: String
+      outputFolderName: String,
+      glabConfig: Option[GlabConfig]
+  )
+
+  case class GlabConfig(
+      repoPath: String,
+      mcPath: String,
+      pushScriptPath: String,
+      mainBranch: String
   )
 
   def props(
@@ -91,7 +107,9 @@ object ModuleCompendiumLatexActor {
 
     private def tmpFolder = Paths.get(config.tmpFolderPath)
 
-    private def create(semester: Semester) =
+    private def assetsPath = "files"
+
+    private def go(semester: Semester) =
       for {
         pos <- poRepository.allValidShort()
         poIds = pos.map(_.abbrev)
@@ -150,8 +168,9 @@ object ModuleCompendiumLatexActor {
                           po.abbrev,
                           po.version,
                           po.studyProgram.abbrev,
-                          semester.id,
-                          pdfFile.getFileName,
+                          semester,
+                          texFile,
+                          pdfFile,
                           pLang,
                           po.specialization.map(_.abbrev)
                         )
@@ -162,44 +181,81 @@ object ModuleCompendiumLatexActor {
             .seq
           clear(tmpFolder)
           res.collect { case Left((file, msg)) => logger.error(s"$file\n$msg") }
-          moduleCompendiumListRepository.createOrUpdateMany(
-            toModuleCompendiumList(res.collect { case Right(r) => r })
-          )
+          val fileEntries = res.collect { case Right(r) => r }
+          commit(fileEntries).fold(logger.error(_), logger.info(_))
+          create(fileEntries)
         }
       } yield res
 
-    private def toModuleCompendiumList(
-        xs: Seq[
-          (
-              String,
-              String,
-              Int,
-              String,
-              String,
-              Path,
-              PrintingLanguage,
-              Option[String]
+    private def commit(xs: Seq[FileEntry]): Either[String, String] =
+      config.glabConfig match {
+        case Some(glabConfig) if xs.nonEmpty =>
+          xs.foreach { x =>
+            val src = x._6.toAbsolutePath
+            val destDir = Paths.get(glabConfig.mcPath)
+            val dest = destDir.resolve(src.getFileName)
+            try {
+              Right(
+                Files.move(
+                  src,
+                  dest,
+                  StandardCopyOption.REPLACE_EXISTING
+                )
+              )
+            } catch {
+              case NonFatal(_) =>
+                logger.error(
+                  s"failed to move file from ${src.toAbsolutePath} to ${dest.toAbsolutePath} "
+                )
+            }
+          }
+          val semester = xs.head._5
+          val branchName = semester.id
+          val process = Process(
+            command = Seq(
+              "/bin/bash",
+              glabConfig.pushScriptPath,
+              glabConfig.mainBranch,
+              branchName,
+              s"Module Compendium Entries for ${semester.enLabel} ${semester.year}",
+              s"Module Handbook for ${semester.enLabel} ${semester.year}"
+            ),
+            cwd = Paths.get(glabConfig.repoPath).toAbsolutePath.toFile
           )
-        ]
-    ): Seq[ModuleCompendiumList.DB] =
-      xs.groupBy(_._1)
+          exec(process)
+        case _ =>
+          Left("repo path must be set for commit")
+      }
+
+    private def create(xs: Seq[FileEntry]) = {
+      val normalized = xs
+        .groupBy(_._1)
         .map { case (_, xs) =>
+          def getFilename(lang: PrintingLanguage): String =
+            xs
+              .find(_._8 == lang)
+              .get
+              ._7
+              .getFileName
+              .toString
           val x = xs.head
-          val de = xs.find(_._7 == PrintingLanguage.German).get._6
-          val en = xs.find(_._7 == PrintingLanguage.English).get._6
+          val de = getFilename(PrintingLanguage.German)
+          val en = getFilename(PrintingLanguage.English)
           ModuleCompendiumList(
             x._1,
             x._2,
             x._3,
-            x._8,
+            x._9,
             x._4,
-            x._5,
-            s"${config.assetsFolderName}/${de.toString}",
-            s"${config.assetsFolderName}/${en.toString}",
+            x._5.id,
+            s"$assetsPath/$de",
+            s"$assetsPath/$en",
             LocalDateTime.now()
           )
         }
         .toSeq
+      moduleCompendiumListRepository.createOrUpdateMany(normalized)
+    }
 
     private def markFileAsBroken(file: Path): Either[String, Path] =
       try {
@@ -216,18 +272,24 @@ object ModuleCompendiumLatexActor {
 
     private def movePdf(file: Path, newFilename: String): Either[String, Path] =
       try {
-        val dest = Paths.get(config.publicFolderName, s"$newFilename.pdf")
-        Right(Files.move(file, dest, StandardCopyOption.REPLACE_EXISTING))
+        Right(
+          Files.move(
+            file,
+            Paths.get(config.outputFolderName, s"$newFilename.pdf"),
+            StandardCopyOption.REPLACE_EXISTING
+          )
+        )
       } catch {
         case NonFatal(e) => Left(e.getMessage)
       }
 
     private def getPdf(file: Path): Either[String, Path] =
       try {
-        val pdf = file.resolveSibling(
-          file.getFileName.toString.replace(".tex", ".pdf")
+        Right(
+          file.resolveSibling(
+            file.getFileName.toString.replace(".tex", ".pdf")
+          )
         )
-        Right(pdf)
       } catch {
         case NonFatal(e) => Left(e.getMessage)
       }
@@ -243,51 +305,43 @@ object ModuleCompendiumLatexActor {
         Files.writeString(path, content)
         Right(path)
       } catch {
-        case NonFatal(e) => Left(e.getMessage)
+        case NonFatal(e) =>
+          Left(e.getMessage)
       }
-
-    private def mergeMut(out: StringBuilder, in: StringBuilder): String = {
-      out.appendAll(in)
-      if (out.isEmpty) ""
-      else out.mkString("\n========\n\t- ", "\n\t- ", "\n========")
-    }
 
     private def clear(path: Path): Unit = {
       val process = Process(
-        command = Seq(
-          "/bin/sh",
-          config.clearScriptPath,
-          config.texBinPath
-        ),
+        command = "latexmk -c",
         cwd = path.toAbsolutePath.toFile
       )
       exec(process)
     }
 
     private def compile(file: Path): Either[String, String] = {
+      logger.info(
+        s"[${Thread.currentThread().getName}] compiling ${file.toAbsolutePath}..."
+      )
       val process = Process(
-        command = Seq(
-          "/bin/sh",
-          config.compileScriptPath,
-          config.texBinPath,
-          file.getFileName.toString
-        ),
+        command =
+          s"latexmk -xelatex -halt-on-error ${file.getFileName.toString}",
         cwd = file.getParent.toAbsolutePath.toFile
       )
       exec(process)
     }
 
     private def exec(process: ProcessBuilder) = {
-      val sdtOut = new StringBuilder()
-      val sdtErr = new StringBuilder()
-      val pLogger = ProcessLogger(sdtOut.append(_), sdtErr.append(_))
+      val builder = new StringBuilder()
+      val pLogger =
+        ProcessLogger(
+          a => builder.append(s"$a\n"),
+          a => builder.append(s"${Console.RED}$a${Console.RESET}\n")
+        )
       try {
         val res = process ! pLogger
-        val msg = mergeMut(sdtOut, sdtErr)
         Either.cond(
           res == 0,
-          msg,
-          msg
+          builder.toString(),
+          builder.toString()
         )
       } catch {
         case NonFatal(e) => Left(e.getMessage)
@@ -295,9 +349,9 @@ object ModuleCompendiumLatexActor {
     }
 
     override def receive: Receive = { case GenerateLatexFiles(semester) =>
-      create(semester) onComplete {
+      go(semester) onComplete {
         case Success(value) =>
-          logSuccess(s"created ${value.size} module compendium list entries")
+          logSuccess(s"created ${value.size} module compendium list normalized")
         case Failure(e) => logFailure(e)
       }
     }

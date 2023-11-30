@@ -23,6 +23,15 @@ services:
     volumes:
       - backend_logs_vol:/mocogi/logs
       - app_vol:/mocogi/output
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        GIT_EMAIL: ${GIT_EMAIL}
+        GIT_USERNAME: ${GIT_USERNAME}
+        GIT_HOST: ${GIT_HOST}
+        GIT_ACCESS_TOKEN: ${GIT_ACCESS_TOKEN}
+        GIT_REPO: ${GIT_REPO}
 
   frontend:
     container_name: mocogi-frontend
@@ -32,13 +41,33 @@ services:
       - "8080:80"
       - "4433:443"
     volumes:
-      - nginx_cert_vol:/etc/cert
-      - nginx_config_vol:/etc/nginx/conf.d
       - app_vol:/usr/share/nginx/html/public
+    build:
+      context: ../mocogi-ui
+      dockerfile: Dockerfile
+    configs:
+      - source: nginx_conf
+        target: /etc/nginx/conf.d/default.conf
+        mode: 0440
+    secrets:
+      - source: server_cert_pem
+        target: /etc/cert/cert.pem
+        mode: 0440
+      - source: server_cert_key
+        target: /etc/cert/cert.key
+        mode: 0440
 
 volumes:
   backend_logs_vol:
   psql_vol:
-  nginx_cert_vol:
-  nginx_config_vol:
   app_vol:
+
+configs:
+  nginx_conf:
+    file: ../mocogi-ui/conf/default.conf
+
+secrets:
+  server_cert_pem:
+    file: ../mocogi-ui/cert/cert.pem
+  server_cert_key:
+    file: ../mocogi-ui/cert/cert.key
