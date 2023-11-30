@@ -1,7 +1,6 @@
 package controllers
 
 import controllers.formats.ModuleCompendiumOutputFormat
-import models.Semester
 import ops.FutureOps.OptionOps
 import play.api.libs.json.Json
 import play.api.mvc.{
@@ -12,11 +11,7 @@ import play.api.mvc.{
 }
 import printing.PrintingLanguage
 import providers.ConfigReader
-import service.{
-  ModuleCompendiumLatexActor,
-  ModuleCompendiumService,
-  ModuleDraftService
-}
+import service.{ModuleCompendiumService, ModuleDraftService}
 
 import java.nio.file.Paths
 import java.util.UUID
@@ -34,7 +29,6 @@ final class ModuleCompendiumController @Inject() (
     service: ModuleCompendiumService,
     draftService: ModuleDraftService,
     configReader: ConfigReader,
-    moduleCompendiumLatexActor: ModuleCompendiumLatexActor,
     implicit val ctx: ExecutionContext
 ) extends AbstractController(cc)
     with ModuleCompendiumOutputFormat {
@@ -67,15 +61,6 @@ final class ModuleCompendiumController @Inject() (
 
   def getModuleDescriptionFile(id: UUID) =
     Action { implicit r => getFile(s"$id.html") }
-
-  def createModuleCompendium(sem: String, year: String) =
-    Action { _ =>
-      val semester =
-        if (sem == "sose") Semester.summer(year.toInt)
-        else Semester.winter(year.toInt)
-      moduleCompendiumLatexActor.generateLatexFiles(semester)
-      NoContent
-    }
 
   private def getFile(filename: String)(implicit r: Request[AnyContent]) = {
     val lang = parseLang

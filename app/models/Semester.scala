@@ -33,8 +33,8 @@ object Semester {
   def apply(id: String): Semester = {
     val Array(abbrev, year) = id.split("_")
     abbrev match {
-      case "wise" => Semester.winter(year.toInt)
-      case "sose" => Semester.summer(year.toInt)
+      case "wise" => winter(year.toInt)
+      case "sose" => summer(year.toInt)
     }
   }
 

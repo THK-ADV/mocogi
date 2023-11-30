@@ -41,9 +41,9 @@ GET           /moduleCompendium/:id/file                  controllers.ModuleComp
 GET           /moduleCompendium/:id                       controllers.ModuleCompendiumController.get(id: java.util.UUID)
 GET           /moduleCompendium/:id/latest                controllers.ModuleCompendiumController.getLatest(id: java.util.UUID)
 GET           /moduleCompendium/:id/staging               controllers.ModuleCompendiumController.getStaging(id: java.util.UUID)
-POST          /moduleCompendium/:s/:y                     controllers.ModuleCompendiumController.createModuleCompendium(s: java.lang.String, y:java.lang.String)
 
 # Module Compendium List
+POST          /moduleCompendiumLists/:semester            controllers.ModuleCompendiumListController.generate(semester: java.lang.String)
 GET           /moduleCompendiumLists/:semester            controllers.ModuleCompendiumListController.allFromSemester(semester: java.lang.String)
 
 # Module
