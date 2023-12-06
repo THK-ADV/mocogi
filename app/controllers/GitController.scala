@@ -25,8 +25,10 @@ final class GitController @Inject() (
     for {
       paths <- gitRepositoryApiService.listCoreFiles()
       contents <- Future.sequence(
-        paths.map(p =>
-          downloadService.downloadFileContent(p, mainBranch).map(p -> _)
+        paths.map(path =>
+          downloadService.downloadFileContent(path, mainBranch).collect {
+            case Some(content) => path -> content
+          }
         )
       )
     } yield {
@@ -40,8 +42,10 @@ final class GitController @Inject() (
     for {
       paths <- gitRepositoryApiService.listModuleFiles()
       contents <- Future.sequence(
-        paths.map(p =>
-          downloadService.downloadFileContent(p, mainBranch).map(p -> _)
+        paths.map(path =>
+          downloadService.downloadFileContent(path, mainBranch).collect {
+            case Some(content) => path -> content
+          }
         )
       )
     } yield {

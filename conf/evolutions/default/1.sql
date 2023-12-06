@@ -401,6 +401,8 @@ create table metadata_taught_with
 create table module_draft
 (
     "module"                  uuid      not null PRIMARY KEY,
+    "module_title"            text      not null,
+    "module_abbrev"           text      not null,
     "author"                  text      not null,
     "branch"                  text      not null,
     "source"                  text      not null,

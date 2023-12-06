@@ -1,13 +1,14 @@
 package database.repo
 
 import database.Filterable
-import database.table.{
-  ModuleCompendiumTable,
-  ModuleDraftTable,
-  ModuleUpdatePermissionTable
-}
+import database.table.{ModuleCompendiumTable, ModuleUpdatePermissionTable}
 import models.ModuleUpdatePermissionType.Inherited
-import models.{CampusId, Module, ModuleUpdatePermissionType}
+import models.{
+  CampusId,
+  Module,
+  ModuleUpdatePermission,
+  ModuleUpdatePermissionType
+}
 import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfigProvider}
 import slick.jdbc.JdbcProfile
 
@@ -37,7 +38,6 @@ final class ModuleUpdatePermissionRepository @Inject() (
 
   import database.table.{
     campusIdColumnType,
-    jsValueColumnType,
     moduleUpdatePermissionTypeColumnType
   }
   import profile.api._
@@ -79,19 +79,13 @@ final class ModuleUpdatePermissionRepository @Inject() (
   def allWithModule(filter: Filter) =
     db.run(
       allWithFilter(filter)
-        .joinLeft(
+        .join(
           TableQuery[ModuleCompendiumTable].map(a => (a.id, a.title, a.abbrev))
         )
         .on(_.module === _._1)
-        .joinLeft(TableQuery[ModuleDraftTable].map(a => (a.module, a.data)))
-        .on(_._1.module === _._1)
         .result
-        .map(_.map { case (((id, campusId, kind), m), d) =>
-          val module = m
-            .map(a => Left(a._2, a._3))
-            .orElse(d.map(a => Right(a._2)))
-            .get // either of them must be defined
-          (id, campusId, kind, module)
+        .map(_.map { case ((id, campusId, kind), (_, title, abbrev)) =>
+          ModuleUpdatePermission(id, title, abbrev, campusId, kind)
         })
     )
 

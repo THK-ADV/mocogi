@@ -14,9 +14,10 @@ import ops.EitherOps.EOps
 import ops.FutureOps.Ops
 import parsing.metadata.VersionScheme
 import parsing.types._
+import play.api.Logging
 import play.api.libs.json._
 import printing.yaml.ModuleCompendiumYamlPrinter
-import service.ModuleCompendiumProtocolDeltaUpdate.deltaUpdate
+import service.ModuleCompendiumProtocolDeltaUpdate.{deltaUpdate, nonEmptyKeys}
 import validator.{Metadata, ValidationError}
 
 import java.time.LocalDateTime
@@ -25,11 +26,11 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 trait ModuleDraftService {
-  def allByModules(modules: Seq[UUID]): Future[Seq[ModuleDraft]]
-
   def getByModule(moduleId: UUID): Future[ModuleDraft]
 
   def getByModuleOpt(moduleId: UUID): Future[Option[ModuleDraft]]
+
+  def isAuthorOf(moduleId: UUID, personId: String): Future[Boolean]
 
   def allByPerson(personId: String): Future[Seq[ModuleDraft]]
 
@@ -62,10 +63,8 @@ final class ModuleDraftServiceImpl @Inject() (
 ) extends ModuleDraftService
     with ModuleCompendiumProtocolFormat
     with PipelineErrorFormat
-    with ModuleCompendiumFormat {
-
-  override def allByModules(modules: Seq[UUID]): Future[Seq[ModuleDraft]] =
-    moduleDraftRepository.allByModules(modules)
+    with ModuleCompendiumFormat
+    with Logging {
 
   override def getByModule(moduleId: UUID): Future[ModuleDraft] =
     moduleDraftRepository.getByModule(moduleId)
@@ -75,6 +74,9 @@ final class ModuleDraftServiceImpl @Inject() (
 
   def allByPerson(personId: String): Future[Seq[ModuleDraft]] =
     moduleDraftRepository.allByAuthor(personId)
+
+  override def isAuthorOf(moduleId: UUID, personId: String) =
+    moduleDraftRepository.isAuthorOf(moduleId, personId)
 
   override def createNew(
       protocol: ModuleCompendiumProtocol,
@@ -87,7 +89,7 @@ final class ModuleDraftServiceImpl @Inject() (
       versionScheme,
       UUID.randomUUID(),
       person,
-      Set.empty
+      nonEmptyKeys(protocol)
     )
 
   def delete(moduleId: UUID): Future[Unit] =
@@ -104,7 +106,7 @@ final class ModuleDraftServiceImpl @Inject() (
   ): Future[Either[PipelineError, Unit]] =
     moduleDraftRepository
       .hasModuleDraft(moduleId)
-      .flatMap(hasDraft =>
+      .flatMap(hasDraft => {
         if (hasDraft)
           update(moduleId, protocol, person, versionScheme)
         else
@@ -114,7 +116,7 @@ final class ModuleDraftServiceImpl @Inject() (
             person,
             versionScheme
           ).map(_.map(_ => ()))
-      )
+      })
 
   private def createFromExistingModule(
       moduleId: UUID,
@@ -123,9 +125,14 @@ final class ModuleDraftServiceImpl @Inject() (
       versionScheme: VersionScheme
   ): Future[Either[PipelineError, ModuleDraft]] =
     for {
-      mc <- moduleCompendiumService.getFromStaging(moduleId)
+      mc <- moduleCompendiumService
+        .getFromStaging(moduleId)
+        .continueIf(
+          _.isDefined,
+          s"file for module $moduleId does not existing in git"
+        )
       (_, modifiedKeys) = deltaUpdate(
-        toProtocol(mc).normalize(),
+        toProtocol(mc.get).normalize(),
         protocol.normalize(),
         None,
         Set.empty
@@ -150,14 +157,17 @@ final class ModuleDraftServiceImpl @Inject() (
       draft <- moduleDraftRepository
         .getByModule(moduleId)
         .continueIf(_.state().canEdit, "can't edit module")
+      _ = logger.info(s"${draft.module}, ${draft.source}")
       origin <- moduleCompendiumService.getFromStaging(draft.module)
+      _ = logger.info(origin.isDefined.toString)
       existing = draft.protocol()
       (updated, modifiedKeys) = deltaUpdate(
         existing.normalize(),
         protocol.normalize(),
-        Some(origin),
+        origin,
         draft.modifiedKeys
       )
+      _ = logger.info(modifiedKeys.toString())
       res <- pipeline(updated, versionScheme, moduleId)
       res <- res match {
         case Left(err) => Future.successful(Left(err))
@@ -173,10 +183,12 @@ final class ModuleDraftServiceImpl @Inject() (
             )
             _ <- moduleDraftRepository.updateDraft(
               moduleId,
+              mc.metadata.title,
+              mc.metadata.abbrev,
               toJson(updated),
               toJson(mc),
               print,
-              keysToBeReviewed(draft.source, modifiedKeys),
+              keysToBeReviewed(modifiedKeys),
               modifiedKeys,
               commitId,
               None
@@ -257,13 +269,15 @@ final class ModuleDraftServiceImpl @Inject() (
           )
           moduleDraft = ModuleDraft(
             moduleId,
+            mc.metadata.title,
+            mc.metadata.abbrev,
             person.id,
             branch,
             status,
             toJson(protocol),
             toJson(mc),
             print,
-            keysToBeReviewed(status, updatedKeys),
+            keysToBeReviewed(updatedKeys),
             updatedKeys,
             Some(commitId),
             None,
@@ -273,12 +287,8 @@ final class ModuleDraftServiceImpl @Inject() (
         } yield Right(created)
     }
 
-  private def keysToBeReviewed(
-      source: ModuleDraftSource,
-      updatedKeys: Set[String]
-  ): Set[String] =
-    if (source == ModuleDraftSource.Added) Set.empty
-    else updatedKeys.filter(keysToReview.contains)
+  private def keysToBeReviewed(updatedKeys: Set[String]): Set[String] =
+    updatedKeys.filter(keysToReview.contains)
 
   private def pipeline(
       protocol: ModuleCompendiumProtocol,

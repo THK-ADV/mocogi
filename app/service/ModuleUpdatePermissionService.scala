@@ -8,14 +8,7 @@ import database.repo.ModuleUpdatePermissionRepository.{
 }
 import models.ModuleUpdatePermissionType.{Granted, Inherited}
 import models.core.Person
-import models.{
-  CampusId,
-  Module,
-  ModuleCompendiumProtocol,
-  ModuleUpdatePermission,
-  ModuleUpdatePermissionType
-}
-import play.api.libs.json.{JsValue, Json}
+import models.{CampusId, Module, ModuleUpdatePermission}
 
 import java.util.UUID
 import javax.inject.{Inject, Singleton}
@@ -49,35 +42,13 @@ final class ModuleUpdatePermissionService @Inject() (
   def hasPermission(campusId: CampusId, module: UUID) =
     repo.hasPermission(campusId, module)
 
-  private def toModuleUpdatePermission(
-      xs: Seq[
-        (
-            UUID,
-            CampusId,
-            ModuleUpdatePermissionType,
-            Either[(String, String), JsValue]
-        )
-      ]
-  ) =
-    xs.map { case (id, campusId, kind, module) =>
-      val (title, abbrev) = module match {
-        case Left(value) => value
-        case Right(js) =>
-          val p = Json.fromJson[ModuleCompendiumProtocol](js).get
-          (p.metadata.title, p.metadata.abbrev)
-      }
-      ModuleUpdatePermission(id, title, abbrev, campusId, kind)
-    }
-
   def allFromUser(campusId: CampusId): Future[Seq[ModuleUpdatePermission]] =
     repo
       .allWithModule(Map(campusIdFilter -> Seq(campusId.value)))
-      .map(toModuleUpdatePermission)
 
   def allFromModule(moduleId: UUID) =
     repo
       .allWithModule(Map(moduleFilter -> Seq(moduleId.toString)))
-      .map(toModuleUpdatePermission)
 
   def hasInheritedPermission(
       campusId: CampusId,

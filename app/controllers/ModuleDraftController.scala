@@ -15,7 +15,8 @@ import controllers.formats.{
   PipelineErrorFormat
 }
 import database.repo.PersonRepository
-import models.{ModuleCompendiumProtocol, ModuleDraft}
+import models.{ModuleCompendiumProtocol, ModuleDraft, ModuleDraftSource}
+import play.api.Logging
 import play.api.libs.json.{Json, Writes}
 import play.api.mvc.{AbstractController, ControllerComponents}
 import service.core.{ModuleKeyService, StudyProgramService}
@@ -49,7 +50,8 @@ final class ModuleDraftController @Inject() (
     with PermissionCheck
     with ModuleFormat
     with JsonNullWritable
-    with PersonAction {
+    with PersonAction
+    with Logging {
 
   def moduleDrafts() =
     auth andThen personAction async { r =>
@@ -57,20 +59,27 @@ final class ModuleDraftController @Inject() (
         modules <- moduleUpdatePermissionService.allForCampusId(
           r.request.campusId
         )
-        draftsByModules <- moduleDraftService.allByModules(modules.map(_.id))
-        draftsByUser <- moduleDraftService.allByPerson(r.person.id)
+        drafts <- moduleDraftService.allByPerson(r.person.id)
       } yield {
-        val moduleWithDraft = modules.map { module =>
-          val draft = draftsByModules
-            .find(_.module == module.id)
-            .orElse(draftsByUser.find(_.module == module.id))
+        val (added, modified) =
+          drafts.partition(_.source == ModuleDraftSource.Added)
+        val liveModules = modules.map { module =>
+          val draft = modified.find(_.module == module.id)
           Json.obj(
             "module" -> module,
             "moduleDraft" -> draft,
             "moduleDraftState" -> draft.state()
           )
         }
-        Ok(Json.toJson(moduleWithDraft))
+        val createdModules = added.map { draft =>
+          Json.obj(
+            "module" -> models
+              .Module(draft.module, draft.moduleTitle, draft.moduleAbbrev),
+            "moduleDraft" -> draft,
+            "moduleDraftState" -> draft.state()
+          )
+        }
+        Ok(Json.toJson(liveModules ++ createdModules))
       }
     }
 

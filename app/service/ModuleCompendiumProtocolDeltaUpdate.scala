@@ -4,8 +4,9 @@ import database.ModuleCompendiumOutput
 import models.ModuleCompendiumProtocol
 import monocle.Lens
 import monocle.macros.GenLens
+import play.api.Logging
 
-object ModuleCompendiumProtocolDeltaUpdate {
+object ModuleCompendiumProtocolDeltaUpdate extends Logging {
 
   import scala.reflect.runtime.universe._
 
@@ -62,6 +63,94 @@ object ModuleCompendiumProtocolDeltaUpdate {
         acc + simplified
     }
 
+  def nonEmptyKeys(p: ModuleCompendiumProtocol): Set[String] =
+    moduleCompendiumProtocolFields.foldLeft(Set.empty[String]) {
+      case (acc, field) =>
+        def takeIf(p: Boolean): Set[String] = if (p) acc + field else acc
+
+        field match {
+          case "enContent.particularities" =>
+            takeIf(p.enContent.particularities.nonEmpty)
+          case "enContent.recommendedReading" =>
+            takeIf(p.enContent.recommendedReading.nonEmpty)
+          case "enContent.teachingAndLearningMethods" =>
+            takeIf(p.enContent.teachingAndLearningMethods.nonEmpty)
+          case "enContent.content" =>
+            takeIf(p.enContent.content.nonEmpty)
+          case "enContent.learningOutcome" =>
+            takeIf(p.enContent.learningOutcome.nonEmpty)
+          case "deContent.particularities" =>
+            takeIf(p.deContent.particularities.nonEmpty)
+          case "deContent.recommendedReading" =>
+            takeIf(p.deContent.recommendedReading.nonEmpty)
+          case "deContent.teachingAndLearningMethods" =>
+            takeIf(p.deContent.teachingAndLearningMethods.nonEmpty)
+          case "deContent.content" =>
+            takeIf(p.deContent.content.nonEmpty)
+          case "deContent.learningOutcome" =>
+            takeIf(p.deContent.learningOutcome.nonEmpty)
+          case "metadata.taughtWith" =>
+            takeIf(p.metadata.taughtWith.nonEmpty)
+          case "metadata.globalCriteria" =>
+            takeIf(p.metadata.globalCriteria.nonEmpty)
+          case "metadata.competences" =>
+            takeIf(p.metadata.competences.nonEmpty)
+          case "metadata.po.optional" =>
+            takeIf(p.metadata.po.optional.nonEmpty)
+          case "metadata.po.mandatory" =>
+            takeIf(p.metadata.po.mandatory.nonEmpty)
+          case "metadata.prerequisites.required" =>
+            takeIf(p.metadata.prerequisites.required.nonEmpty)
+          case "metadata.prerequisites.recommended" =>
+            takeIf(p.metadata.prerequisites.recommended.nonEmpty)
+          case "metadata.assessmentMethods.optional" =>
+            takeIf(p.metadata.assessmentMethods.optional.nonEmpty)
+          case "metadata.assessmentMethods.mandatory" =>
+            takeIf(p.metadata.assessmentMethods.mandatory.nonEmpty)
+          case "metadata.lecturers" =>
+            takeIf(p.metadata.lecturers.nonEmpty)
+          case "metadata.moduleManagement" =>
+            takeIf(p.metadata.moduleManagement.nonEmpty)
+          case "metadata.moduleRelation" =>
+            takeIf(p.metadata.moduleRelation.nonEmpty)
+          case "metadata.participants" =>
+            takeIf(p.metadata.participants.nonEmpty)
+          case "metadata.location" =>
+            takeIf(p.metadata.location.nonEmpty)
+          case "metadata.status" =>
+            takeIf(p.metadata.status.nonEmpty)
+          case "metadata.workload.projectWork" =>
+            takeIf(p.metadata.workload.projectWork != 0)
+          case "metadata.workload.projectSupervision" =>
+            takeIf(p.metadata.workload.projectSupervision != 0)
+          case "metadata.workload.exercise" =>
+            takeIf(p.metadata.workload.exercise != 0)
+          case "metadata.workload.practical" =>
+            takeIf(p.metadata.workload.practical != 0)
+          case "metadata.workload.seminar" =>
+            takeIf(p.metadata.workload.seminar != 0)
+          case "metadata.workload.lecture" =>
+            takeIf(p.metadata.workload.lecture != 0)
+          case "metadata.season" =>
+            takeIf(p.metadata.season.nonEmpty)
+          case "metadata.duration" =>
+            takeIf(p.metadata.duration != 0)
+          case "metadata.language" =>
+            takeIf(p.metadata.language.nonEmpty)
+          case "metadata.ects" =>
+            takeIf(p.metadata.ects.isPosInfinity)
+          case "metadata.moduleType" =>
+            takeIf(p.metadata.moduleType.nonEmpty)
+          case "metadata.abbrev" =>
+            takeIf(p.metadata.abbrev.nonEmpty)
+          case "metadata.title" =>
+            takeIf(p.metadata.title.nonEmpty)
+          case other =>
+            logger.error(s"unsupported key: $other")
+            acc
+        }
+    }
+
   def deltaUpdate(
       existing: ModuleCompendiumProtocol,
       newP: ModuleCompendiumProtocol,
@@ -76,7 +165,7 @@ object ModuleCompendiumProtocolDeltaUpdate {
           lens2: Lens[ModuleCompendiumOutput, A]
       ) =
         if (lens.get(existing) != lens.get(newP)) {
-          println(
+          logger.info(
             s"""update of $field
                |from:\t${lens.get(existing)}
                |to:\t${lens.get(newP)}""".stripMargin
@@ -394,7 +483,7 @@ object ModuleCompendiumProtocolDeltaUpdate {
             GenLens[ModuleCompendiumOutput].apply(_.metadata.title)
           )
         case other =>
-          println(s"unsupported key: $other")
+          logger.error(s"unsupported key: $other")
           (existing, existingUpdatedKeys)
       }
     }

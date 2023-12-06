@@ -22,7 +22,7 @@ trait ModuleCompendiumService {
   def allModulesFromPerson(personId: String): Future[Seq[Module]]
   def allMetadata(filter: Map[String, Seq[String]]): Future[Seq[MetadataOutput]]
   def get(id: UUID): Future[ModuleCompendiumOutput]
-  def getFromStaging(id: UUID): Future[ModuleCompendiumOutput]
+  def getFromStaging(id: UUID): Future[Option[ModuleCompendiumOutput]]
   def getOrNull(id: UUID): Future[Option[ModuleCompendiumOutput]]
 }
 

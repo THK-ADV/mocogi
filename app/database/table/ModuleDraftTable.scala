@@ -12,6 +12,10 @@ final class ModuleDraftTable(tag: Tag)
     extends Table[ModuleDraft](tag, "module_draft") {
   def module = column[UUID]("module", O.PrimaryKey)
 
+  def moduleTitle = column[String]("module_title")
+
+  def moduleAbbrev = column[String]("module_abbrev")
+
   def author = column[String]("author")
 
   def branch = column[Branch]("branch")
@@ -45,6 +49,8 @@ final class ModuleDraftTable(tag: Tag)
   override def * =
     (
       module,
+      moduleTitle,
+      moduleAbbrev,
       author,
       branch,
       source,
@@ -63,6 +69,8 @@ final class ModuleDraftTable(tag: Tag)
       (
           UUID,
           String,
+          String,
+          String,
           Branch,
           ModuleDraftSource,
           JsValue,
@@ -78,6 +86,8 @@ final class ModuleDraftTable(tag: Tag)
   ) => ModuleDraft = {
     case (
           module,
+          moduleTitle,
+          moduleAbbrev,
           author,
           branch,
           source,
@@ -93,6 +103,8 @@ final class ModuleDraftTable(tag: Tag)
         ) =>
       ModuleDraft(
         module,
+        moduleTitle,
+        moduleAbbrev,
         author,
         branch,
         source,
@@ -111,6 +123,8 @@ final class ModuleDraftTable(tag: Tag)
     (
         UUID,
         String,
+        String,
+        String,
         Branch,
         ModuleDraftSource,
         JsValue,
@@ -127,6 +141,8 @@ final class ModuleDraftTable(tag: Tag)
     Option(
       (
         d.module,
+        d.moduleTitle,
+        d.moduleAbbrev,
         d.author,
         d.branch,
         d.source,

@@ -50,8 +50,11 @@ final class ModuleCompendiumController @Inject() (
       draftService
         .getByModuleOpt(id)
         .map(_.map(_.data))
-        .orElse(service.getFromStaging(id).map(mc => Json.toJson(mc)))
-        .map(j => Ok(j))
+        .or(service.getFromStaging(id).map(_.map(mc => Json.toJson(mc))))
+        .map {
+          case Some(js) => Ok(js)
+          case None     => NotFound
+        }
     }
 
   def getStaging(id: UUID) =

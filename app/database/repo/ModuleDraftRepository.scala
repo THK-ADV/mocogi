@@ -17,12 +17,14 @@ import scala.concurrent.{ExecutionContext, Future}
 trait ModuleDraftRepository {
   def create(moduleDraft: ModuleDraft): Future[ModuleDraft]
 
-  def allByModules(modules: Seq[UUID]): Future[Seq[ModuleDraft]]
+  def isAuthorOf(moduleId: UUID, personId: String): Future[Boolean]
 
   def allByAuthor(personId: String): Future[Seq[ModuleDraft]]
 
   def updateDraft(
       moduleId: UUID,
+      moduleTitle: String,
+      moduleAbbrev: String,
       data: JsValue,
       mc: JsValue,
       print: Print,
@@ -77,9 +79,6 @@ final class ModuleDraftRepositoryImpl @Inject() (
   ) =
     db.run(query.result)
 
-  def allByModules(modules: Seq[UUID]): Future[Seq[ModuleDraft]] =
-    db.run(tableQuery.filter(_.module.inSet(modules)).result)
-
   override def allByAuthor(personId: String): Future[Seq[ModuleDraft]] =
     db.run(tableQuery.filter(_.author === personId).result)
 
@@ -118,6 +117,8 @@ final class ModuleDraftRepositoryImpl @Inject() (
 
   def updateDraft(
       moduleId: UUID,
+      moduleTitle: String,
+      moduleAbbrev: String,
       data: JsValue,
       mc: JsValue,
       print: Print,
@@ -131,6 +132,8 @@ final class ModuleDraftRepositoryImpl @Inject() (
         .filter(_.module === moduleId)
         .map(a =>
           (
+            a.moduleTitle,
+            a.moduleAbbrev,
             a.data,
             a.moduleCompendium,
             a.moduleCompendiumPrint,
@@ -144,6 +147,8 @@ final class ModuleDraftRepositoryImpl @Inject() (
         )
         .update(
           (
+            moduleTitle,
+            moduleAbbrev,
             data,
             mc,
             print,
@@ -172,4 +177,12 @@ final class ModuleDraftRepositoryImpl @Inject() (
 
   override def getByModuleOpt(moduleId: UUID) =
     db.run(tableQuery.filter(_.module === moduleId).result.map(_.headOption))
+
+  override def isAuthorOf(moduleId: UUID, personId: String) =
+    db.run(
+      tableQuery
+        .filter(a => a.module === moduleId && a.author === personId)
+        .exists
+        .result
+    )
 }

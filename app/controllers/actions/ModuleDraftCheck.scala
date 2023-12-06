@@ -16,12 +16,12 @@ trait ModuleDraftCheck { self: PermissionCheck =>
       override protected def filter[A](
           request: PersonRequest[A]
       ): Future[Option[Result]] = {
+        val campusId = request.request.campusId
         val person = request.person
-        val user = request.request.campusId
         val hasPermission = for {
-          b1 <- moduleUpdatePermissionService.hasPermission(user, moduleId)
-          b2 <- moduleDraftService.getByModuleOpt(moduleId)
-        } yield b1 || b2.exists(a => person.username.contains(a.author))
+          b1 <- moduleUpdatePermissionService.hasPermission(campusId, moduleId)
+          b2 <- moduleDraftService.isAuthorOf(moduleId, person.id)
+        } yield b1 || b2
         toResult(hasPermission, request.request)
       }
 

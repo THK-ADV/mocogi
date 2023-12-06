@@ -22,11 +22,7 @@ final class ModuleApprovalRepository @Inject() (
     implicit val ctx: ExecutionContext
 ) extends HasDatabaseConfigProvider[JdbcProfile] {
 
-  import database.table.{
-    jsValueColumnType,
-    moduleReviewStatusColumnType,
-    universityRoleColumnType
-  }
+  import database.table.{moduleReviewStatusColumnType, universityRoleColumnType}
   import profile.api._
 
   private def tableQuery = TableQuery[ModuleReviewTable]
@@ -82,8 +78,9 @@ final class ModuleApprovalRepository @Inject() (
       .map { case ((((r, spp), _), d), p) =>
         (
           d.module,
+          d.moduleTitle,
+          d.moduleAbbrev,
           p,
-          d.data,
           r.role,
           r.studyProgram,
           r.status,

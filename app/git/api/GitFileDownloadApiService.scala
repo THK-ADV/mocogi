@@ -16,23 +16,30 @@ final class GitFileDownloadApiService @Inject() (
     private implicit val ctx: ExecutionContext
 ) extends GitService {
 
-  def download(path: GitFilePath, branch: Branch): Future[GitFileContent] =
+  def download(
+      path: GitFilePath,
+      branch: Branch
+  ): Future[Option[GitFileContent]] =
     ws
       .url(url(path, branch))
       .addHttpHeaders(tokenHeader())
       .get()
       .flatMap { r =>
-        if (r.status == 200)
-          Future.successful(GitFileContent(r.bodyAsBytes.utf8String))
-        else
-          Future.failed(
-            new Throwable(
-              r.json
-                .\("message")
-                .validate[String]
-                .getOrElse("unknown response message")
+        r.status match {
+          case 200 =>
+            Future.successful(Some(GitFileContent(r.bodyAsBytes.utf8String)))
+          case 404 =>
+            Future.successful(None)
+          case _ =>
+            Future.failed(
+              new Throwable(
+                r.json
+                  .\("message")
+                  .validate[String]
+                  .getOrElse("unknown response message")
+              )
             )
-          )
+        }
       }
 
   private def urlEncoded(path: GitFilePath) =
