@@ -1,21 +1,15 @@
 package controllers
 
 import auth.AuthorizationAction
-import controllers.ModuleUpdatePermissionController.Replace
 import controllers.actions.{ModuleUpdatePermissionCheck, PermissionCheck}
 import models.CampusId
-import play.api.libs.json.{Json, Reads}
+import play.api.libs.json.Json
 import play.api.mvc.{AbstractController, ControllerComponents}
 import service.ModuleUpdatePermissionService
 
 import java.util.UUID
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
-
-object ModuleUpdatePermissionController {
-  case class Replace(permissions: List[CampusId]) extends AnyVal
-  implicit def reads: Reads[Replace] = Json.reads
-}
 
 @Singleton
 final class ModuleUpdatePermissionController @Inject() (
@@ -38,15 +32,15 @@ final class ModuleUpdatePermissionController @Inject() (
     auth andThen
       hasPermissionToGrantPermission(moduleId) async { _ =>
         moduleUpdatePermissionService
-          .allFromModule(moduleId)
+          .allGrantedFromModule(moduleId)
           .map(xs => Ok(Json.toJson(xs)))
       }
 
   def replace(moduleId: UUID) =
-    auth(parse.json[Replace]) andThen
+    auth(parse.json[List[CampusId]]) andThen
       hasPermissionToGrantPermission(moduleId) async { r =>
         moduleUpdatePermissionService
-          .replace(moduleId, r.body.permissions)
+          .replace(moduleId, r.body)
           .map(_ => NoContent)
       }
 }

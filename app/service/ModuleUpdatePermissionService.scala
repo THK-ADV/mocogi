@@ -2,10 +2,6 @@ package service
 
 import controllers.formats.ModuleCompendiumProtocolFormat
 import database.repo.ModuleUpdatePermissionRepository
-import database.repo.ModuleUpdatePermissionRepository.{
-  campusIdFilter,
-  moduleFilter
-}
 import models.ModuleUpdatePermissionType.{Granted, Inherited}
 import models.core.Person
 import models.{
@@ -48,12 +44,10 @@ final class ModuleUpdatePermissionService @Inject() (
     repo.hasPermission(campusId, module)
 
   def allFromUser(campusId: CampusId): Future[Seq[ModuleUpdatePermission]] =
-    repo
-      .allWithModule(Map(campusIdFilter -> Seq(campusId.value)))
+    repo.allFromUser(campusId)
 
-  def allFromModule(moduleId: UUID) =
-    repo
-      .allWithModule(Map(moduleFilter -> Seq(moduleId.toString)))
+  def allGrantedFromModule(moduleId: UUID): Future[Seq[CampusId]] =
+    repo.allGrantedFromModule(moduleId)
 
   def hasInheritedPermission(
       campusId: CampusId,

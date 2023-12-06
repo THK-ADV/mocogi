@@ -1,8 +1,6 @@
 package database.repo
 
-import database.Filterable
 import database.table.{ModuleCompendiumTable, ModuleUpdatePermissionTable}
-import models.ModuleUpdatePermissionType.Inherited
 import models.{
   CampusId,
   Module,
@@ -16,11 +14,6 @@ import java.util.UUID
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
-object ModuleUpdatePermissionRepository {
-  val campusIdFilter = "campusId"
-  val moduleFilter = "module"
-}
-
 @Singleton
 final class ModuleUpdatePermissionRepository @Inject() (
     val dbConfigProvider: DatabaseConfigProvider,
@@ -30,11 +23,7 @@ final class ModuleUpdatePermissionRepository @Inject() (
       (UUID, CampusId, ModuleUpdatePermissionType),
       ModuleUpdatePermissionTable
     ]
-    with HasDatabaseConfigProvider[JdbcProfile]
-    with Filterable[
-      (UUID, CampusId, ModuleUpdatePermissionType),
-      ModuleUpdatePermissionTable
-    ] {
+    with HasDatabaseConfigProvider[JdbcProfile] {
 
   import database.table.{
     campusIdColumnType,
@@ -76,9 +65,10 @@ final class ModuleUpdatePermissionRepository @Inject() (
         .delete
     )
 
-  def allWithModule(filter: Filter) =
+  def allFromUser(campusId: CampusId) =
     db.run(
-      allWithFilter(filter)
+      tableQuery
+        .filter(_.campusId === campusId)
         .join(
           TableQuery[ModuleCompendiumTable].map(a => (a.id, a.title, a.abbrev))
         )
@@ -87,6 +77,14 @@ final class ModuleUpdatePermissionRepository @Inject() (
         .map(_.map { case ((id, campusId, kind), (_, title, abbrev)) =>
           ModuleUpdatePermission(id, title, abbrev, campusId, kind)
         })
+    )
+
+  def allGrantedFromModule(module: UUID) =
+    db.run(
+      tableQuery
+        .filter(a => a.module === module && a.isGranted)
+        .map(_.campusId)
+        .result
     )
 
   def hasPermission(campusId: CampusId, module: UUID): Future[Boolean] =
@@ -100,17 +98,15 @@ final class ModuleUpdatePermissionRepository @Inject() (
   def hasInheritedPermission(
       campusId: CampusId,
       module: UUID
-  ): Future[Boolean] = {
-    val inherited: ModuleUpdatePermissionType = Inherited
+  ): Future[Boolean] =
     db.run(
       tableQuery
         .filter(a =>
-          a.module === module && a.campusId === campusId && a.kind === inherited
+          a.module === module && a.campusId === campusId && a.isInherited
         )
         .exists
         .result
     )
-  }
 
   def allForCampusId(
       campusId: CampusId
@@ -120,12 +116,5 @@ final class ModuleUpdatePermissionRepository @Inject() (
       m <- q.moduleFk
     } yield (q.kind, (m.id, m.title, m.abbrev))
     db.run(query.result.map(_.map(a => (a._1, Module.tupled(a._2)))))
-  }
-
-  override protected val makeFilter: PartialFunction[(String, String), Pred] = {
-    case (ModuleUpdatePermissionRepository.campusIdFilter, value) =>
-      _.campusId === CampusId(value)
-    case (ModuleUpdatePermissionRepository.moduleFilter, value) =>
-      _.module === UUID.fromString(value)
   }
 }
