@@ -7,6 +7,7 @@ import git.api.GitFileDownloadService
 import models.Module
 import ops.FutureOps.SeqOps
 import parsing.types.ModuleCompendium
+import printing.PrintingLanguage
 
 import java.time.LocalDateTime
 import java.util.UUID
@@ -24,6 +25,9 @@ trait ModuleCompendiumService {
   def get(id: UUID): Future[ModuleCompendiumOutput]
   def getFromStaging(id: UUID): Future[Option[ModuleCompendiumOutput]]
   def getOrNull(id: UUID): Future[Option[ModuleCompendiumOutput]]
+  def getHTMLFromStaging(id: UUID)(implicit
+      lang: PrintingLanguage
+  ): Future[Option[String]]
 }
 
 @Singleton
@@ -58,4 +62,12 @@ final class ModuleCompendiumServiceImpl @Inject() (
 
   override def allModulesFromPerson(personId: String) =
     allModules(Map("user" -> Seq(personId)))
+
+  override def getHTMLFromStaging(id: UUID)(implicit
+      lang: PrintingLanguage
+  ): Future[Option[String]] =
+    allModules(Map.empty)
+      .flatMap(
+        gitFileDownloadService.downloadModuleFromDraftBranchAsHTML(id, _)
+      )
 }

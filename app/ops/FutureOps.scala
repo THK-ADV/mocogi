@@ -43,4 +43,13 @@ object FutureOps {
     )(implicit ctx: ExecutionContext): Future[A] =
       self.flatMap(_.fold(f)(a => Future.successful(a)))
   }
+
+  implicit class EitherOps[A](private val self: Future[Either[Throwable, A]])
+      extends AnyVal {
+    def unwrap(implicit ctx: ExecutionContext): Future[A] =
+      self.flatMap {
+        case Left(value)  => Future.failed(value)
+        case Right(value) => Future.successful(value)
+      }
+  }
 }

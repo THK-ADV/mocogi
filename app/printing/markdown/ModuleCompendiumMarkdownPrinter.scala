@@ -280,18 +280,9 @@ final class ModuleCompendiumMarkdownPrinter(
       en.learningOutcome
     )
 
-  def print(
-      studyProgram: String => Option[StudyProgramShort],
-      lang: PrintingLanguage,
-      localDateTime: LocalDateTime,
-      moduleCompendium: ModuleCompendium
-  ) = printer(studyProgram)(lang, localDateTime)
-    .print(moduleCompendium, new StringBuilder())
-    .map(_.toString())
-
   def printer(studyProgram: String => Option[StudyProgramShort])(implicit
       lang: PrintingLanguage,
-      localDateTime: LocalDateTime
+      localDateTime: Option[LocalDateTime]
   ): Printer[ModuleCompendium] =
     Printer { case (mc, input) =>
       implicit val m: Metadata = mc.metadata
@@ -322,9 +313,11 @@ final class ModuleCompendiumMarkdownPrinter(
         .skip(teachingAndLearningMethods(mc.deContent, mc.enContent))
         .skip(recommendedReading(mc.deContent, mc.enContent))
         .skip(particularities(mc.deContent, mc.enContent))
-        .skip(prefix("---"))
-        .skip(newline.repeat(2))
-        .skip(lastModified)
+        .skipOpt(
+          localDateTime.map(d =>
+            prefix("---").skip(newline.repeat(2)).skip(lastModified(lang, d))
+          )
+        )
         .print((), input)
     }
 }

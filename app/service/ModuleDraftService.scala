@@ -30,6 +30,8 @@ trait ModuleDraftService {
 
   def getByModuleOpt(moduleId: UUID): Future[Option[ModuleDraft]]
 
+  def hasModuleDraft(moduleId: UUID): Future[Boolean]
+
   def isAuthorOf(moduleId: UUID, personId: String): Future[Boolean]
 
   def allByPerson(personId: String): Future[Seq[ModuleDraft]]
@@ -71,6 +73,9 @@ final class ModuleDraftServiceImpl @Inject() (
 
   override def getByModuleOpt(moduleId: UUID) =
     moduleDraftRepository.getByModuleOpt(moduleId)
+
+  override def hasModuleDraft(moduleId: UUID) =
+    moduleDraftRepository.hasModuleDraft(moduleId)
 
   def allByPerson(personId: String): Future[Seq[ModuleDraft]] =
     moduleDraftRepository.allByAuthor(personId)

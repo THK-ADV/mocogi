@@ -6,8 +6,8 @@ import models.StudyProgramShort
 import parsing.types.ModuleCompendium
 import play.api.Logging
 import printing.PrintingLanguage
-import printing.markdown.ModuleCompendiumMarkdownPrinter
-import printing.pandoc.{PandocApi, PrinterOutput, PrinterOutputType}
+import printing.html.ModuleCompendiumHTMLPrinter
+import printing.pandoc.{PrinterOutput, PrinterOutputType}
 import service.core.StudyProgramService
 
 import java.time.LocalDateTime
@@ -18,34 +18,25 @@ import scala.util.{Failure, Success}
 
 object ModuleCompendiumPrintingActor {
   def props(
-      printer: ModuleCompendiumMarkdownPrinter,
-      pandocApi: PandocApi,
+      printer: ModuleCompendiumHTMLPrinter,
       outputType: PrinterOutputType,
       studyProgramService: StudyProgramService,
-      deOutputFolderPath: String,
-      enOutputFolderPath: String,
       ctx: ExecutionContext
   ) =
     Props(
       new ModuleCompendiumPrintingActor(
         printer,
-        pandocApi,
         outputType,
         studyProgramService,
-        deOutputFolderPath,
-        enOutputFolderPath,
         ctx
       )
     )
 }
 
 private final class ModuleCompendiumPrintingActor(
-    private val printer: ModuleCompendiumMarkdownPrinter,
-    private val pandocApi: PandocApi,
+    private val printer: ModuleCompendiumHTMLPrinter,
     private val outputType: PrinterOutputType,
     private val studyProgramService: StudyProgramService,
-    private val deOutputFolderPath: String,
-    private val enOutputFolderPath: String,
     private implicit val ctx: ExecutionContext
 ) extends Actor
     with Logging {
@@ -78,41 +69,25 @@ private final class ModuleCompendiumPrintingActor(
       mc: ModuleCompendium,
       studyProgram: String => Option[StudyProgramShort]
   ): Unit = {
-    def go(lang: PrintingLanguage, path: String): Unit =
+    def go(lang: PrintingLanguage): Unit =
       printer
-        .print(studyProgram, lang, lastModified, mc) match {
+        .print(mc, lang, Some(lastModified), outputType, studyProgram) match {
         case Left(err) =>
-          logError(mc, lang, path, err)
-        case Right(print) =>
-          logSuccess(mc, lang, path)
+          logError(mc, lang, err)
+        case Right(output) =>
+          logSuccess(mc, lang)
           val moduleId = mc.metadata.id
           val moduleTitle = mc.metadata.title
-          pandocApi.run(moduleId, outputType, print, path) match {
-            case Left(err) =>
-              logErrorConvert(moduleTitle, moduleId, err)
-            case Right(output) =>
-              output match {
-                case PrinterOutput.Text(content, _, consoleOutput) =>
-                  logText(moduleTitle, moduleId, content, consoleOutput)
-                case PrinterOutput.File(path, consoleOutput) =>
-                  logFile(moduleTitle, moduleId, path, consoleOutput)
-              }
+          output match {
+            case PrinterOutput.Text(content, _, consoleOutput) =>
+              logText(moduleTitle, moduleId, content, consoleOutput)
+            case PrinterOutput.File(path, consoleOutput) =>
+              logFile(moduleTitle, moduleId, path, consoleOutput)
           }
       }
-    go(PrintingLanguage.German, deOutputFolderPath)
-    go(PrintingLanguage.English, enOutputFolderPath)
+    go(PrintingLanguage.German)
+    go(PrintingLanguage.English)
   }
-
-  private def logErrorConvert(title: String, id: UUID, t: Throwable): Unit =
-    logger.error(
-      s"""failed to convert module compendium to $outputType
-         |  - title: $title
-         |  - id: $id
-         |  - message: ${t.getMessage}
-         |  - trace: ${t.getStackTrace.mkString(
-          "\n           "
-        )}""".stripMargin
-    )
 
   private def logText(
       title: String,
@@ -144,11 +119,10 @@ private final class ModuleCompendiumPrintingActor(
 
   private def logSuccess(
       mc: ModuleCompendium,
-      language: PrintingLanguage,
-      path: String
+      language: PrintingLanguage
   ): Unit =
     logger.info(
-      s"""successfully printed module compendium in $language to $path
+      s"""successfully printed module compendium in $language
          |  - id: ${mc.metadata.id}
          |  - title: ${mc.metadata.title}""".stripMargin
     )
@@ -156,11 +130,10 @@ private final class ModuleCompendiumPrintingActor(
   private def logError(
       mc: ModuleCompendium,
       language: PrintingLanguage,
-      path: String,
       t: Throwable
   ): Unit =
     logger.error(
-      s"""failed to print module compendium in $language to $path
+      s"""failed to print module compendium in $language
          |  - id: ${mc.metadata.id}
          |  - message: ${t.getMessage}
          |  - trace: ${t.getStackTrace.mkString("\n           ")}""".stripMargin

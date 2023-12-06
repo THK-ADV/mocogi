@@ -1,7 +1,9 @@
 package controllers
 
+import auth.AuthorizationAction
 import controllers.formats.ModuleCompendiumOutputFormat
 import ops.FutureOps.OptionOps
+import play.api.libs.Files.DefaultTemporaryFileCreator
 import play.api.libs.json.Json
 import play.api.mvc.{
   AbstractController,
@@ -13,10 +15,10 @@ import printing.PrintingLanguage
 import providers.ConfigReader
 import service.{ModuleCompendiumService, ModuleDraftService}
 
-import java.nio.file.Paths
+import java.nio.file.{Files, Paths}
 import java.util.UUID
 import javax.inject.{Inject, Singleton}
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
 
 object ModuleCompendiumController {
@@ -29,6 +31,8 @@ final class ModuleCompendiumController @Inject() (
     service: ModuleCompendiumService,
     draftService: ModuleDraftService,
     configReader: ConfigReader,
+    auth: AuthorizationAction,
+    fileCreator: DefaultTemporaryFileCreator,
     implicit val ctx: ExecutionContext
 ) extends AbstractController(cc)
     with ModuleCompendiumOutputFormat {
@@ -45,8 +49,13 @@ final class ModuleCompendiumController @Inject() (
       service.get(id).map(x => Ok(Json.toJson(x)))
     }
 
+  def getStaging(id: UUID) =
+    auth.async { _ =>
+      service.getFromStaging(id).map(mc => Ok(Json.toJson(mc)))
+    }
+
   def getLatest(id: UUID) = // TODO only which can edit or which should review
-    Action.async { _ =>
+    auth.async { _ =>
       draftService
         .getByModuleOpt(id)
         .map(_.map(_.data))
@@ -57,15 +66,44 @@ final class ModuleCompendiumController @Inject() (
         }
     }
 
-  def getStaging(id: UUID) =
-    Action.async { _ =>
-      service.getFromStaging(id).map(mc => Ok(Json.toJson(mc)))
+  def getModuleDescriptionFile(id: UUID) =
+    Action { implicit r => getFile(id) }
+
+  def getStagingModuleDescriptionFile(id: UUID) =
+    auth.async { implicit r => getFileFromStaging(id) }
+
+  def getLatestModuleDescriptionFile(id: UUID) =
+    auth.async { implicit r =>
+      draftService.hasModuleDraft(id).flatMap {
+        case true  => Future.successful(getFile(id))
+        case false => getFileFromStaging(id)
+      }
     }
 
-  def getModuleDescriptionFile(id: UUID) =
-    Action { implicit r => getFile(s"$id.html") }
+  private def getFileFromStaging(
+      moduleId: UUID
+  )(implicit r: Request[AnyContent]) = {
+    val lang = parseLang(r)
+    service.getHTMLFromStaging(moduleId)(lang).map {
+      case Some(content) =>
+        try {
+          val file = fileCreator.create()
+          val path = Files.writeString(file, content)
+          Ok.sendPath(path, onClose = () => fileCreator.delete(file))
+        } catch {
+          case NonFatal(e) =>
+            ErrorHandler.internalServerError(
+              r.toString(),
+              e.getMessage,
+              e.getStackTrace
+            )
+        }
+      case None => NotFound
+    }
+  }
 
-  private def getFile(filename: String)(implicit r: Request[AnyContent]) = {
+  private def getFile(moduleId: UUID)(implicit r: Request[AnyContent]) = {
+    val filename = s"$moduleId.html"
     val lang = parseLang
     val folder = outputFolderPath(lang)
     try {

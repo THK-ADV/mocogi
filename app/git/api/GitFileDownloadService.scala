@@ -3,10 +3,15 @@ package git.api
 import com.google.inject.Inject
 import database._
 import git.{GitConfig, GitFileContent, GitFilePath}
-import models.Branch
-import parsing.types.ParsedModuleRelation
-import service.{MetadataParsingService, Print}
-import validator.Workload
+import models.{Branch, Module}
+import ops.EitherOps.{EOps, EThrowableOps}
+import ops.FutureOps.EitherOps
+import parsing.types.{ModuleCompendium, ParsedModuleRelation}
+import printing.PrintingLanguage
+import printing.html.ModuleCompendiumHTMLPrinter
+import printing.pandoc.{PrinterOutput, PrinterOutputType}
+import service._
+import validator.{ValidationError, Workload}
 
 import java.util.UUID
 import javax.inject.Singleton
@@ -16,28 +21,17 @@ import scala.concurrent.{ExecutionContext, Future}
 final class GitFileDownloadService @Inject() (
     private val api: GitFileDownloadApiService,
     private val parser: MetadataParsingService,
+    private val printer: ModuleCompendiumHTMLPrinter,
     private implicit val config: GitConfig,
     implicit val ctx: ExecutionContext
 ) {
 
   def downloadModuleFromDraftBranch(
       id: UUID
-  ): Future[Option[ModuleCompendiumOutput]] =
-    downloadModule(id, Branch(config.draftBranch))
-
-  def downloadFileContent(
-      path: GitFilePath,
-      branch: Branch
-  ): Future[Option[GitFileContent]] =
-    api.download(path, branch)
-
-  def downloadModule(
-      id: UUID,
-      branch: Branch
   ): Future[Option[ModuleCompendiumOutput]] = {
     val path = GitFilePath(id)
     for {
-      content <- downloadFileContent(path, branch)
+      content <- downloadFileContent(path, Branch(config.draftBranch))
       res <- content match {
         case Some(content) =>
           parser.parse(Print(content.value)).flatMap {
@@ -141,6 +135,52 @@ final class GitFileDownloadService @Inject() (
               )
             case Left(value) => Future.failed(value)
           }
+        case None =>
+          Future.successful(None)
+      }
+    } yield res
+  }
+
+  def downloadFileContent(
+      path: GitFilePath,
+      branch: Branch
+  ): Future[Option[GitFileContent]] =
+    api.download(path, branch)
+
+  def downloadModuleFromDraftBranchAsHTML(
+      id: UUID,
+      existingModules: Seq[Module]
+  )(implicit lang: PrintingLanguage): Future[Option[String]] = {
+    val path = GitFilePath(id)
+    for {
+      content <- downloadFileContent(path, Branch(config.draftBranch))
+      res <- content match {
+        case Some(content) =>
+          for {
+            (metadata, de, en) <- parser.parse(Print(content.value)).unwrap
+            metadata <- MetadataValidatingService
+              .validate(existingModules, metadata)
+              .mapErr(errs =>
+                PipelineError
+                  .Validator(ValidationError(errs), Some(metadata.id))
+              )
+              .toFuture()
+            output <- printer
+              .print(
+                ModuleCompendium(metadata, de, en),
+                lang,
+                None,
+                PrinterOutputType.HTMLStandalone
+              )
+            res <- output match {
+              case Left(err)                          => Future.failed(err)
+              case Right(PrinterOutput.Text(c, _, _)) => Future.successful(c)
+              case Right(PrinterOutput.File(_, _)) =>
+                Future.failed(
+                  new Throwable("expected standalone HTML, but was a file")
+                )
+            }
+          } yield Some(res)
         case None =>
           Future.successful(None)
       }

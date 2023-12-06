@@ -3,8 +3,8 @@ package providers
 import akka.actor.ActorSystem
 import database.view.ModuleViewRepository
 import git.subscriber._
-import printing.markdown.ModuleCompendiumMarkdownPrinter
-import printing.pandoc.{PandocApi, PrinterOutputType}
+import printing.html.ModuleCompendiumHTMLPrinter
+import printing.pandoc.PrinterOutputType
 import service.core.StudyProgramService
 import service.{ModuleCompendiumService, ModuleUpdatePermissionService}
 
@@ -13,14 +13,13 @@ import scala.concurrent.ExecutionContext
 
 @Singleton
 class ModuleCompendiumSubscribersProvider @Inject() (
-    printer: ModuleCompendiumMarkdownPrinter,
+    printer: ModuleCompendiumHTMLPrinter,
     system: ActorSystem,
     metadataService: ModuleCompendiumService,
 //    publisher: KafkaPublisher[Metadata],
     studyProgramService: StudyProgramService,
     moduleViewRepository: ModuleViewRepository,
     moduleUpdatePermissionService: ModuleUpdatePermissionService,
-    pandocApi: PandocApi,
     configReader: ConfigReader,
     ctx: ExecutionContext
 ) extends Provider[ModuleCompendiumSubscribers] {
@@ -32,11 +31,11 @@ class ModuleCompendiumSubscribersProvider @Inject() (
         system.actorOf(
           ModuleCompendiumPrintingActor.props(
             printer,
-            pandocApi,
-            PrinterOutputType.HTMLStandaloneFile,
+            PrinterOutputType.HTMLStandaloneFile(
+              configReader.deOutputFolderPath,
+              configReader.enOutputFolderPath
+            ),
             studyProgramService,
-            configReader.deOutputFolderPath,
-            configReader.enOutputFolderPath,
             ctx
           )
         ),
