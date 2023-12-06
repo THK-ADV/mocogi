@@ -82,15 +82,19 @@ final class ModuleDraftServiceImpl @Inject() (
       protocol: ModuleCompendiumProtocol,
       person: Person.Default,
       versionScheme: VersionScheme
-  ): Future[Either[PipelineError, ModuleDraft]] =
-    create(
-      protocol,
-      ModuleDraftSource.Added,
-      versionScheme,
-      UUID.randomUUID(),
-      person,
-      nonEmptyKeys(protocol)
-    )
+  ): Future[Either[PipelineError, ModuleDraft]] = {
+    val updatedKeys = nonEmptyKeys(protocol)
+    if (updatedKeys.isEmpty) abortNoChanges
+    else
+      create(
+        protocol,
+        ModuleDraftSource.Added,
+        versionScheme,
+        UUID.randomUUID(),
+        person,
+        updatedKeys
+      )
+  }
 
   def delete(moduleId: UUID): Future[Unit] =
     for {
@@ -118,6 +122,9 @@ final class ModuleDraftServiceImpl @Inject() (
           ).map(_.map(_ => ()))
       })
 
+  private def abortNoChanges =
+    Future.failed(new Throwable("no changes to the module could be found"))
+
   private def createFromExistingModule(
       moduleId: UUID,
       protocol: ModuleCompendiumProtocol,
@@ -137,14 +144,17 @@ final class ModuleDraftServiceImpl @Inject() (
         None,
         Set.empty
       )
-      res <- create(
-        protocol,
-        ModuleDraftSource.Modified,
-        versionScheme,
-        moduleId,
-        person,
-        modifiedKeys
-      )
+      res <-
+        if (modifiedKeys.isEmpty) abortNoChanges
+        else
+          create(
+            protocol,
+            ModuleDraftSource.Modified,
+            versionScheme,
+            moduleId,
+            person,
+            modifiedKeys
+          )
     } yield res
 
   private def update(
@@ -157,9 +167,7 @@ final class ModuleDraftServiceImpl @Inject() (
       draft <- moduleDraftRepository
         .getByModule(moduleId)
         .continueIf(_.state().canEdit, "can't edit module")
-      _ = logger.info(s"${draft.module}, ${draft.source}")
       origin <- moduleCompendiumService.getFromStaging(draft.module)
-      _ = logger.info(origin.isDefined.toString)
       existing = draft.protocol()
       (updated, modifiedKeys) = deltaUpdate(
         existing.normalize(),
@@ -167,8 +175,9 @@ final class ModuleDraftServiceImpl @Inject() (
         origin,
         draft.modifiedKeys
       )
-      _ = logger.info(modifiedKeys.toString())
-      res <- pipeline(updated, versionScheme, moduleId)
+      res <-
+        if (modifiedKeys.removedAll(draft.modifiedKeys).isEmpty) abortNoChanges
+        else pipeline(updated, versionScheme, moduleId)
       res <- res match {
         case Left(err) => Future.successful(Left(err))
         case Right((mc, print)) =>
