@@ -17,7 +17,7 @@ import scala.concurrent.{ExecutionContext, Future}
 @Singleton
 final class ModuleUpdatePermissionService @Inject() (
     private val repo: ModuleUpdatePermissionRepository,
-    private implicit val ctx: ExecutionContext
+    implicit val ctx: ExecutionContext
 ) extends ModuleCompendiumProtocolFormat {
   def createOrUpdateInherited(modules: Seq[(UUID, List[Person])]) = {
     def entries() =

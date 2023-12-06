@@ -1,5 +1,6 @@
 package ops
 
+import scala.annotation.unused
 import scala.concurrent.{ExecutionContext, Future}
 
 object FutureOps {
@@ -29,12 +30,14 @@ object FutureOps {
     }
   }
 
-  implicit class OptionOps[A](private val self: Future[Option[A]]) extends AnyVal {
+  implicit class OptionOps[A](private val self: Future[Option[A]])
+      extends AnyVal {
     def or(
         f: Future[Option[A]]
     )(implicit ctx: ExecutionContext): Future[Option[A]] =
       self.flatMap(_.fold(f)(a => Future.successful(Some(a))))
 
+    @unused
     def orElse(
         f: Future[A]
     )(implicit ctx: ExecutionContext): Future[A] =

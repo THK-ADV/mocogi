@@ -1,8 +1,8 @@
 package database.repo
 
 import database.table.{ModuleReviewTable, PersonTable, StudyProgramTable}
-import models.core.{AbbrevLabelLike, Person}
-import models.{ModuleReview, ModuleReviewStatus}
+import models.core.Person
+import models.{ModuleReview, ModuleReviewStatus, StudyProgramShort}
 import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfigProvider}
 import slick.jdbc.JdbcProfile
 
@@ -52,22 +52,23 @@ final class ModuleReviewRepository @Inject() (
         .update((status, comment, Some(person), Some(LocalDateTime.now)))
     )
 
-  def getAtomicByModule(moduleId: UUID): Future[Seq[ModuleReview.Atomic]] =
+  def getAtomicByModule(moduleId: UUID): Future[Seq[ModuleReview.Atomic]] = {
+    val spQuery = for {
+      sp <- TableQuery[StudyProgramTable]
+      g <- sp.gradeFk
+    } yield (sp.abbrev, sp.deLabel, sp.enLabel, g)
+
     db.run(
       tableQuery
         .filter(_.moduleDraft === moduleId)
-        .join(
-          TableQuery[StudyProgramTable].map(a =>
-            (a.abbrev, a.deLabel, a.enLabel)
-          )
-        )
+        .join(spQuery)
         .on(_.studyProgram === _._1)
         .joinLeft(TableQuery[PersonTable])
         .on(_._1.respondedBy === _.id)
         .result
         .map(_.map { case ((r, sp), p) =>
           r.copy(
-            studyProgram = AbbrevLabelLike(sp),
+            studyProgram = StudyProgramShort(sp),
             respondedBy = p.collect {
               case p if p.kind == Person.DefaultKind =>
                 Person.Default(
@@ -84,6 +85,7 @@ final class ModuleReviewRepository @Inject() (
           )
         })
     )
+  }
 
   override protected def retrieve(
       query: Query[ModuleReviewTable, ModuleReview.DB, Seq]

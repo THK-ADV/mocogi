@@ -119,7 +119,7 @@ class PORepository @Inject() (
       q <- tableQuery.filter(validQuery(date))
       sp <- q.studyProgramFk
       g <- sp.gradeFk
-    } yield (q.abbrev, q.version, sp.abbrev, sp.deLabel, sp.enLabel, g)
+    } yield (q.abbrev, q.version, (sp.abbrev, sp.deLabel, sp.enLabel, g))
 
     db.run(
       query
@@ -132,7 +132,7 @@ class PORepository @Inject() (
               a._1._1,
               a._1._2,
               a._2.map(s => SpecializationShort(s.abbrev, s.label)),
-              StudyProgramShort(a._1._3, a._1._4, a._1._5, a._1._6)
+              StudyProgramShort(a._1._3)
             )
           )
         )
@@ -141,19 +141,4 @@ class PORepository @Inject() (
 
   private def validQuery(date: LocalDate): POTable => Rep[Boolean] =
     a => a.dateFrom <= date && a.dateTo.map(_ >= date).getOrElse(true)
-
-  def getByAbbrev(abbrev: String): Future[(Int, StudyProgramShort)] = {
-    val query = for {
-      q <- tableQuery.filter(_.abbrev === abbrev)
-      sp <- q.studyProgramFk
-      g <- sp.gradeFk
-    } yield (q.version, (sp.abbrev, sp.deLabel, sp.enLabel), g)
-    db.run(
-      query.result
-        .map(_.map { case (po, sp, g) =>
-          (po, StudyProgramShort(sp._1, sp._2, sp._3, g))
-        })
-        .single
-    )
-  }
 }
