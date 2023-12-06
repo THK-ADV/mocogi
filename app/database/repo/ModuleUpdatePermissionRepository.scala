@@ -112,13 +112,15 @@ final class ModuleUpdatePermissionRepository @Inject() (
     )
   }
 
-  def allForCampusId(campusId: CampusId): Future[Seq[Module]] =
-    db.run(
-      (for {
-        q <- tableQuery if q.campusId === campusId
-        m <- q.moduleFk
-      } yield (m.id, m.title, m.abbrev)).result.map(_.map(Module.tupled))
-    )
+  def allForCampusId(
+      campusId: CampusId
+  ): Future[Seq[(ModuleUpdatePermissionType, Module)]] = {
+    val query = for {
+      q <- tableQuery if q.campusId === campusId
+      m <- q.moduleFk
+    } yield (q.kind, (m.id, m.title, m.abbrev))
+    db.run(query.result.map(_.map(a => (a._1, Module.tupled(a._2)))))
+  }
 
   override protected val makeFilter: PartialFunction[(String, String), Pred] = {
     case (ModuleUpdatePermissionRepository.campusIdFilter, value) =>

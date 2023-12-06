@@ -6,6 +6,7 @@ sealed trait ModuleUpdatePermissionType {
   def id: String
   def deLabel: String
   def enLabel: String
+  def isInherited = this == ModuleUpdatePermissionType.Inherited
   override def toString = id
 }
 

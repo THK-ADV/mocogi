@@ -8,7 +8,12 @@ import database.repo.ModuleUpdatePermissionRepository.{
 }
 import models.ModuleUpdatePermissionType.{Granted, Inherited}
 import models.core.Person
-import models.{CampusId, Module, ModuleUpdatePermission}
+import models.{
+  CampusId,
+  Module,
+  ModuleUpdatePermission,
+  ModuleUpdatePermissionType
+}
 
 import java.util.UUID
 import javax.inject.{Inject, Singleton}
@@ -56,6 +61,8 @@ final class ModuleUpdatePermissionService @Inject() (
   ): Future[Boolean] =
     repo.hasInheritedPermission(campusId, module)
 
-  def allForCampusId(campusId: CampusId): Future[Seq[Module]] =
+  def allForCampusId(
+      campusId: CampusId
+  ): Future[Seq[(ModuleUpdatePermissionType, Module)]] =
     repo.allForCampusId(campusId)
 }
