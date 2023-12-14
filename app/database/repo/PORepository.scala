@@ -114,9 +114,12 @@ class PORepository @Inject() (
   def allValid(date: LocalDate = LocalDate.now): Future[Seq[PO]] =
     retrieve(tableQuery.filter(validQuery(date)))
 
-  def allValidShort(date: LocalDate = LocalDate.now): Future[Seq[POShort]] = {
+  def allValidShort(date: LocalDate = LocalDate.now): Future[Seq[POShort]] =
+    allShortQuery(tableQuery.filter(validQuery(date)))
+
+  private def allShortQuery(base: Query[POTable, PODbEntry, Seq]) = {
     val query = for {
-      q <- tableQuery.filter(validQuery(date))
+      q <- base
       sp <- q.studyProgramFk
       g <- sp.gradeFk
     } yield (q.abbrev, q.version, (sp.abbrev, sp.deLabel, sp.enLabel, g))

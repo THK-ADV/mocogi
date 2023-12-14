@@ -22,4 +22,17 @@ trait ApprovalCheck { self: PermissionCheck =>
 
       override protected def executionContext: ExecutionContext = ctx
     }
+
+  def isDirector(studyProgram: String) =
+    new ActionFilter[PersonRequest] {
+      override protected def filter[A](
+          request: PersonRequest[A]
+      ): Future[Option[Result]] =
+        toResult(
+          approvalService.isDirector(request.person.id, studyProgram),
+          request.request
+        )
+
+      override protected def executionContext: ExecutionContext = ctx
+    }
 }

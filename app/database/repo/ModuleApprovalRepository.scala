@@ -6,7 +6,7 @@ import database.table.{
   ModuleReviewTable,
   StudyProgramPersonTable
 }
-import models.ModuleReviewStatus
+import models.{ModuleReviewStatus, UniversityRole}
 import models.ModuleReviewStatus.Pending
 import models.core.Person
 import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfigProvider}
@@ -37,6 +37,20 @@ final class ModuleApprovalRepository @Inject() (
     } yield (q, sp, g)
 
   private def moduleDraftTable = TableQuery[ModuleDraftTable]
+
+  def hasRole(
+      person: String,
+      studyProgram: String,
+      role: UniversityRole
+  ): Future[Boolean] =
+    db.run(
+      studyProgramPersonTable
+        .filter(a =>
+          a.person === person && a.studyProgram === studyProgram && a.role === role
+        )
+        .exists
+        .result
+    )
 
   def getAllStatus(moduleDraftId: UUID): Future[Seq[ModuleReviewStatus]] =
     db.run(

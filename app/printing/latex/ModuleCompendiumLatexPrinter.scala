@@ -1,11 +1,12 @@
 package printing.latex
 
-import database.ModuleCompendiumOutput
+import database._
 import models.core._
 import models.{POShort, Semester, SpecializationShort, StudyProgramShort}
 import monocle.Lens
 import monocle.macros.GenLens
-import parsing.types.Content
+import ops.StringBuilderOps.SBOps
+import parsing.types.{Content, ModuleCompendium}
 import play.api.Logging
 import printing.pandoc.PandocApi
 import printing.{
@@ -16,7 +17,9 @@ import printing.{
   fmtDouble,
   fmtPerson
 }
+import validator.ModuleRelation
 
+import java.util.UUID
 import javax.inject.{Inject, Singleton}
 
 /** Style from: https://www.overleaf.com/learn/latex/Page_size_and_margins
@@ -25,9 +28,127 @@ import javax.inject.{Inject, Singleton}
 final class ModuleCompendiumLatexPrinter @Inject() (pandocApi: PandocApi)
     extends Logging {
 
+  def print(po: POShort, mcs: Seq[ModuleCompendium], poShorts: Seq[POShort])(
+      implicit language: PrintingLanguage
+  ): StringBuilder = {
+    // TODO this is a bad implementation
+    val entries = List.newBuilder[ModuleCompendiumOutput]
+    val moduleTypes = Set.newBuilder[ModuleType]
+    val languages = Set.newBuilder[Language]
+    val seasons = Set.newBuilder[Season]
+    val people = Set.newBuilder[Person]
+    val assessmentMethods = Set.newBuilder[AssessmentMethod]
+
+    mcs.foreach { mc =>
+      moduleTypes += mc.metadata.kind
+      languages += mc.metadata.language
+      seasons += mc.metadata.season
+      people ++= mc.metadata.responsibilities.moduleManagement
+      people ++= mc.metadata.responsibilities.lecturers
+      assessmentMethods ++= mc.metadata.assessmentMethods.mandatory
+        .map(_.method)
+      assessmentMethods ++= mc.metadata.assessmentMethods.optional
+        .map(_.method)
+
+      entries += ModuleCompendiumOutput(
+        "",
+        MetadataOutput(
+          mc.metadata.id,
+          mc.metadata.title,
+          mc.metadata.abbrev,
+          mc.metadata.kind.abbrev,
+          mc.metadata.ects.value,
+          mc.metadata.language.abbrev,
+          mc.metadata.duration,
+          mc.metadata.season.abbrev,
+          mc.metadata.workload,
+          mc.metadata.status.abbrev,
+          mc.metadata.location.abbrev,
+          mc.metadata.participants,
+          mc.metadata.relation.map {
+            case ModuleRelation.Parent(children) =>
+              ModuleRelationOutput.Parent(children.map(_.id))
+            case ModuleRelation.Child(parent) =>
+              ModuleRelationOutput.Child(parent.id)
+          },
+          mc.metadata.responsibilities.moduleManagement.map(_.id),
+          mc.metadata.responsibilities.lecturers.map(_.id),
+          AssessmentMethodsOutput(
+            mc.metadata.assessmentMethods.mandatory.map(a =>
+              AssessmentMethodEntryOutput(
+                a.method.abbrev,
+                a.percentage,
+                a.precondition.map(_.abbrev)
+              )
+            ),
+            mc.metadata.assessmentMethods.optional.map(a =>
+              AssessmentMethodEntryOutput(
+                a.method.abbrev,
+                a.percentage,
+                a.precondition.map(_.abbrev)
+              )
+            )
+          ),
+          PrerequisitesOutput(
+            mc.metadata.prerequisites.recommended.map(e =>
+              PrerequisiteEntryOutput(
+                e.text,
+                e.modules.map(_.id),
+                e.pos.map(_.abbrev)
+              )
+            ),
+            mc.metadata.prerequisites.required.map(e =>
+              PrerequisiteEntryOutput(
+                e.text,
+                e.modules.map(_.id),
+                e.pos.map(_.abbrev)
+              )
+            )
+          ),
+          POOutput(
+            mc.metadata.validPOs.mandatory.map(a =>
+              POMandatoryOutput(
+                a.po.abbrev,
+                a.specialization.map(_.abbrev),
+                a.recommendedSemester,
+                a.recommendedSemesterPartTime
+              )
+            ),
+            mc.metadata.validPOs.optional.map(a =>
+              POOptionalOutput(
+                a.po.abbrev,
+                a.specialization.map(_.abbrev),
+                a.instanceOf.id,
+                a.partOfCatalog,
+                a.recommendedSemester
+              )
+            )
+          ),
+          mc.metadata.competences.map(_.abbrev),
+          mc.metadata.globalCriteria.map(_.abbrev),
+          mc.metadata.taughtWith.map(_.id)
+        ),
+        mc.deContent,
+        mc.enContent
+      )
+    }
+
+    print(
+      po,
+      None,
+      entries.result(),
+      moduleTypes.result().toSeq,
+      languages.result().toSeq,
+      seasons.result().toSeq,
+      people.result().toSeq,
+      assessmentMethods.result().toSeq,
+      poShorts
+    )
+  }
+
   def print(
       po: POShort,
-      semester: Semester,
+      semester: Option[Semester],
       entries: Seq[ModuleCompendiumOutput],
       moduleTypes: Seq[ModuleType],
       languages: Seq[Language],
@@ -38,7 +159,7 @@ final class ModuleCompendiumLatexPrinter @Inject() (pandocApi: PandocApi)
   )(implicit lang: PrintingLanguage): StringBuilder = {
     implicit val builder: StringBuilder = new StringBuilder()
     builder.append("\\documentclass[article, 11pt, oneside]{book}\n")
-    packages
+    packages(semester.isEmpty)
     commands
     builder.append("\\begin{document}\n")
     builder.append(s"\\selectlanguage{${lang.fold("ngerman", "english")}}\n")
@@ -81,13 +202,15 @@ final class ModuleCompendiumLatexPrinter @Inject() (pandocApi: PandocApi)
       builder.append(s"$key & $value \\\\\n")
 
     def content(
-        mc: ModuleCompendiumOutput,
+        id: UUID,
+        deContent: Content,
+        enContent: Content,
         entries: List[(String, Lens[Content, String])]
     ): Unit = {
       val markdownContent = new StringBuilder()
       entries.foreach { case (headline, lens) =>
         markdownContent.append(s"## $headline\n")
-        val content = lang.fold(lens.get(mc.deContent), lens.get(mc.enContent))
+        val content = lang.fold(lens.get(deContent), lens.get(enContent))
         if (content.nonEmpty && !content.forall(_.isWhitespace))
           markdownContent.append(content)
         else markdownContent.append(lang.noneLabel)
@@ -96,7 +219,7 @@ final class ModuleCompendiumLatexPrinter @Inject() (pandocApi: PandocApi)
       pandocApi.toLatex(markdownContent.toString()) match {
         case Left((e, stdErr)) =>
           logger.error(
-            s"""content conversation from markdown to latex failed on ${mc.metadata.id}:
+            s"""content conversation from markdown to latex failed on $id:
                |  - throwable: ${e.getMessage}
                |  - sdtErr: $stdErr""".stripMargin
           )
@@ -204,7 +327,9 @@ final class ModuleCompendiumLatexPrinter @Inject() (pandocApi: PandocApi)
       )
       builder.append("\\end{tabularx}\n")
       content(
-        e,
+        e.metadata.id,
+        e.deContent,
+        e.enContent,
         List(
           (lang.learningOutcomeLabel, GenLens[Content](_.learningOutcome)),
           (lang.moduleContentLabel, GenLens[Content](_.content)),
@@ -223,10 +348,12 @@ final class ModuleCompendiumLatexPrinter @Inject() (pandocApi: PandocApi)
 
     if (entries.isEmpty) newPage
     else
-      entries.foreach { e =>
-        go(e)
-        newPage
-      }
+      entries
+        .sortBy(_.metadata.title)
+        .foreach { e =>
+          go(e)
+          newPage
+        }
   }
 
   private def escape(str: String) = {
@@ -243,7 +370,7 @@ final class ModuleCompendiumLatexPrinter @Inject() (pandocApi: PandocApi)
       sp: StudyProgramShort,
       specialization: Option[SpecializationShort],
       po: Int,
-      semester: Semester
+      semester: Option[Semester]
   )(implicit lang: PrintingLanguage, builder: StringBuilder) =
     builder
       .append("\\title{\n")
@@ -252,12 +379,18 @@ final class ModuleCompendiumLatexPrinter @Inject() (pandocApi: PandocApi)
         s"\\LARGE ${escape(sp.localizedLabel(specialization))} PO $po \\\\ [1ex]\n"
       )
       .append(s"\\LARGE ${sp.grade.localizedDesc} \\\\ [1ex]\n")
-      .append(s"\\LARGE ${semester.localizedLabel} ${semester.year}\n")
+      .append(
+        semester.fold(lang.previewLabel)(s =>
+          s"\\LARGE ${s.localizedLabel} ${s.year}\n"
+        )
+      )
       .append("}\n")
       .append("\\author{TH Köln, Campus Gummersbach}\n")
       .append("\\date{\\today}\n")
 
-  private def packages(implicit builder: StringBuilder) =
+  private def packages(
+      draft: Boolean
+  )(implicit lang: PrintingLanguage, builder: StringBuilder) =
     builder
       .append("% packages\n")
       .append("\\usepackage[english, ngerman]{babel}\n")
@@ -270,6 +403,11 @@ final class ModuleCompendiumLatexPrinter @Inject() (pandocApi: PandocApi)
       .append("\\usepackage{titlesec}\n")
       .append("\\usepackage{fancyhdr} % customize the page header\n")
       .append("\\usepackage{parskip} % customize paragraph style\n")
+      .appendOpt(
+        Option.when(draft)(
+          s"\\usepackage[colorspec=0.9,text=${lang.previewLabel}]{draftwatermark}\n"
+        )
+      )
 
   private def headlineFormats(implicit builder: StringBuilder) =
     builder

@@ -9,8 +9,8 @@ import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 @unused
-final class AccessLoggingAction @Inject() (parser: BodyParsers.Default)(implicit
-    ec: ExecutionContext
+final class AccessLoggingAction @Inject() (@unused parser: BodyParsers.Default)(
+    implicit ec: ExecutionContext
 ) extends ActionBuilderImpl(parser)
     with Logging {
 

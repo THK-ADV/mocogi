@@ -30,7 +30,7 @@ final class ModuleUpdatePermissionController @Inject() (
 
   def allByModule(moduleId: UUID) =
     auth andThen
-      hasPermissionToGrantPermission(moduleId) async { _ =>
+      hasInheritedPermission(moduleId) async { _ =>
         moduleUpdatePermissionService
           .allGrantedFromModule(moduleId)
           .map(xs => Ok(Json.toJson(xs)))
@@ -38,7 +38,7 @@ final class ModuleUpdatePermissionController @Inject() (
 
   def replace(moduleId: UUID) =
     auth(parse.json[List[CampusId]]) andThen
-      hasPermissionToGrantPermission(moduleId) async { r =>
+      hasInheritedPermission(moduleId) async { r =>
         moduleUpdatePermissionService
           .replace(moduleId, r.body)
           .map(_ => NoContent)

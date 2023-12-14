@@ -7,7 +7,7 @@ import controllers.formats.{
 }
 import database.ModuleCompendiumOutput
 import database.repo.ModuleDraftRepository
-import git.api.{GitBranchService, GitCommitService}
+import git.api.{GitBranchService, GitCommitService, GitFileDownloadService}
 import models._
 import models.core.Person
 import ops.EitherOps.EOps
@@ -61,6 +61,7 @@ final class ModuleDraftServiceImpl @Inject() (
     private val gitBranchService: GitBranchService,
     private val gitCommitService: GitCommitService,
     private val keysToReview: ModuleKeysToReview,
+    private val gitFileDownloadService: GitFileDownloadService,
     private implicit val ctx: ExecutionContext
 ) extends ModuleDraftService
     with ModuleCompendiumProtocolFormat
@@ -130,6 +131,9 @@ final class ModuleDraftServiceImpl @Inject() (
   private def abortNoChanges =
     Future.failed(new Throwable("no changes to the module could be found"))
 
+  private def getFromStaging(uuid: UUID) =
+    gitFileDownloadService.downloadModuleFromDraftBranch(uuid)
+
   private def createFromExistingModule(
       moduleId: UUID,
       protocol: ModuleCompendiumProtocol,
@@ -137,8 +141,7 @@ final class ModuleDraftServiceImpl @Inject() (
       versionScheme: VersionScheme
   ): Future[Either[PipelineError, ModuleDraft]] =
     for {
-      mc <- moduleCompendiumService
-        .getFromStaging(moduleId)
+      mc <- getFromStaging(moduleId)
         .continueIf(
           _.isDefined,
           s"file for module $moduleId does not existing in git"
@@ -172,7 +175,7 @@ final class ModuleDraftServiceImpl @Inject() (
       draft <- moduleDraftRepository
         .getByModule(moduleId)
         .continueIf(_.state().canEdit, "can't edit module")
-      origin <- moduleCompendiumService.getFromStaging(draft.module)
+      origin <- getFromStaging(draft.module)
       existing = draft.protocol()
       (updated, modifiedKeys) = deltaUpdate(
         existing.normalize(),

@@ -10,7 +10,7 @@ import scala.concurrent.{ExecutionContext, Future}
 trait ModuleUpdatePermissionCheck { self: PermissionCheck =>
   implicit def moduleUpdatePermissionService: ModuleUpdatePermissionService
 
-  def hasPermissionToGrantPermission(moduleId: UUID) =
+  def hasInheritedPermission(moduleId: UUID) =
     new ActionFilter[UserTokenRequest] {
       override protected def filter[A](
           request: UserTokenRequest[A]
