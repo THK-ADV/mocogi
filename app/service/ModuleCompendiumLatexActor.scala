@@ -105,11 +105,13 @@ object ModuleCompendiumLatexActor {
       with Logging
       with LoggerOps {
 
+    import LatexCompiler._
+
     private def tmpFolder = Paths.get(config.tmpFolderPath)
 
     private def assetsPath = "files"
 
-    private def go(semester: Semester) =
+    private def generate(semester: Semester) =
       for {
         pos <- poRepository.allValidShort()
         poIds = pos.map(_.abbrev)
@@ -130,7 +132,7 @@ object ModuleCompendiumLatexActor {
             .map { case (po, pLang) =>
               val content = printer.print(
                 po,
-                semester,
+                Some(semester),
                 mcs.filter(_.metadata.po.mandatory.exists { a =>
                   a.po == po.abbrev && a.specialization
                     .zip(po.specialization)
@@ -151,6 +153,7 @@ object ModuleCompendiumLatexActor {
                 case Right(texFile) =>
                   (for {
                     _ <- compile(texFile)
+                    _ = clear(texFile)
                     pdf <- getPdf(texFile)
                     res <- movePdf(pdf, filename)
                   } yield res) match {
@@ -179,7 +182,6 @@ object ModuleCompendiumLatexActor {
               }
             }
             .seq
-          clear(tmpFolder)
           res.collect { case Left((file, msg)) => logger.error(s"$file\n$msg") }
           val fileEntries = res.collect { case Right(r) => r }
           commit(fileEntries).fold(logger.error(_), logger.info(_))
@@ -257,43 +259,6 @@ object ModuleCompendiumLatexActor {
       moduleCompendiumListRepository.createOrUpdateMany(normalized)
     }
 
-    private def markFileAsBroken(file: Path): Either[String, Path] =
-      try {
-        Right(
-          Files.move(
-            file,
-            file.resolveSibling(s"BROKEN_${file.getFileName}"),
-            StandardCopyOption.REPLACE_EXISTING
-          )
-        )
-      } catch {
-        case NonFatal(e) => Left(e.getMessage)
-      }
-
-    private def movePdf(file: Path, newFilename: String): Either[String, Path] =
-      try {
-        Right(
-          Files.move(
-            file,
-            Paths.get(config.outputFolderName, s"$newFilename.pdf"),
-            StandardCopyOption.REPLACE_EXISTING
-          )
-        )
-      } catch {
-        case NonFatal(e) => Left(e.getMessage)
-      }
-
-    private def getPdf(file: Path): Either[String, Path] =
-      try {
-        Right(
-          file.resolveSibling(
-            file.getFileName.toString.replace(".tex", ".pdf")
-          )
-        )
-      } catch {
-        case NonFatal(e) => Left(e.getMessage)
-      }
-
     private def createTexFile(
         name: String,
         content: StringBuilder
@@ -309,49 +274,25 @@ object ModuleCompendiumLatexActor {
           Left(e.getMessage)
       }
 
-    private def clear(path: Path): Unit = {
-      val process = Process(
-        command = "latexmk -c",
-        cwd = path.toAbsolutePath.toFile
-      )
-      exec(process)
-    }
-
-    private def compile(file: Path): Either[String, String] = {
-      logger.info(
-        s"[${Thread.currentThread().getName}] compiling ${file.toAbsolutePath}..."
-      )
-      val process = Process(
-        command =
-          s"latexmk -xelatex -halt-on-error ${file.getFileName.toString}",
-        cwd = file.getParent.toAbsolutePath.toFile
-      )
-      exec(process)
-    }
-
-    private def exec(process: ProcessBuilder) = {
-      val builder = new StringBuilder()
-      val pLogger =
-        ProcessLogger(
-          a => builder.append(s"$a\n"),
-          a => builder.append(s"${Console.RED}$a${Console.RESET}\n")
-        )
+    private def movePdf(file: Path, newFilename: String): Either[String, Path] =
       try {
-        val res = process ! pLogger
-        Either.cond(
-          res == 0,
-          builder.toString(),
-          builder.toString()
+        Right(
+          Files.move(
+            file,
+            Paths.get(config.outputFolderName, s"$newFilename.pdf"),
+            StandardCopyOption.REPLACE_EXISTING
+          )
         )
       } catch {
         case NonFatal(e) => Left(e.getMessage)
       }
-    }
 
     override def receive: Receive = { case GenerateLatexFiles(semester) =>
-      go(semester) onComplete {
+      generate(semester) onComplete {
         case Success(value) =>
-          logSuccess(s"created ${value.size} module compendium list normalized")
+          logSuccess(
+            s"created ${value.size} module compendium list normalized"
+          )
         case Failure(e) => logFailure(e)
       }
     }

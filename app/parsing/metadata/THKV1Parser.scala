@@ -90,7 +90,8 @@ final class THKV1Parser @Inject() (
       .take(locationParser.parser)
       .skip(optional(newline))
       .take(
-        mandatoryPOParser
+        mandatoryPOParser.option
+          .map(_.getOrElse(Nil))
           .zip(optionalPOParser.option.map(_.getOrElse(Nil)))
           .map(ParsedPOs.tupled)
       )

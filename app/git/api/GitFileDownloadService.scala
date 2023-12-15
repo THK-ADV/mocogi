@@ -4,9 +4,10 @@ import com.google.inject.Inject
 import database._
 import git.{GitConfig, GitFileContent, GitFilePath}
 import models.Branch
-import parsing.types.ParsedModuleRelation
-import service.{MetadataParsingService, Print}
-import validator.Workload
+import printing.PrintingLanguage
+import printing.html.ModuleCompendiumHTMLPrinter
+import printing.pandoc.{PrinterOutput, PrinterOutputType}
+import service._
 
 import java.util.UUID
 import javax.inject.Singleton
@@ -15,124 +16,62 @@ import scala.concurrent.{ExecutionContext, Future}
 @Singleton
 final class GitFileDownloadService @Inject() (
     private val api: GitFileDownloadApiService,
-    private val parser: MetadataParsingService,
+    private val pipeline: MetadataPipeline,
+    private val printer: ModuleCompendiumHTMLPrinter,
     private implicit val config: GitConfig,
     implicit val ctx: ExecutionContext
 ) {
 
-  def downloadModuleFromDraftBranch(id: UUID): Future[ModuleCompendiumOutput] =
-    downloadModule(id, Branch(config.draftBranch))
+  def downloadModuleFromDraftBranch(
+      id: UUID
+  ): Future[Option[ModuleCompendiumOutput]] = {
+    val path = GitFilePath(id)
+    for {
+      content <- downloadFileContent(path, Branch(config.draftBranch))
+      res <- content match {
+        case Some(content) =>
+          pipeline.parse(Print(content.value), path).map(Some.apply)
+        case None =>
+          Future.successful(None)
+      }
+    } yield res
+  }
 
   def downloadFileContent(
       path: GitFilePath,
       branch: Branch
-  ): Future[GitFileContent] =
+  ): Future[Option[GitFileContent]] =
     api.download(path, branch)
 
-  def downloadModule(
-      id: UUID,
-      branch: Branch
-  ): Future[ModuleCompendiumOutput] = {
+  def downloadModuleFromDraftBranchAsHTML(
+      id: UUID
+  )(implicit lang: PrintingLanguage): Future[Option[String]] = {
     val path = GitFilePath(id)
     for {
-      content <- api.download(path, branch)
-      parseRes <- parser.parse(Print(content.value))
-      (metadata, de, en) <- parseRes match {
-        case Right(value) => Future.successful(value)
-        case Left(value)  => Future.failed(value)
+      content <- downloadFileContent(path, Branch(config.draftBranch))
+      res <- content match {
+        case Some(content) =>
+          for {
+            mc <- pipeline.parseValidate(Print(content.value))
+            output <- printer
+              .print(
+                mc,
+                lang,
+                None,
+                PrinterOutputType.HTMLStandalone
+              )
+            res <- output match {
+              case Left(err)                          => Future.failed(err)
+              case Right(PrinterOutput.Text(c, _, _)) => Future.successful(c)
+              case Right(PrinterOutput.File(_, _)) =>
+                Future.failed(
+                  new Throwable("expected standalone HTML, but was a file")
+                )
+            }
+          } yield Some(res)
+        case None =>
+          Future.successful(None)
       }
-    } yield ModuleCompendiumOutput(
-      path.value,
-      MetadataOutput(
-        metadata.id,
-        metadata.title,
-        metadata.abbrev,
-        metadata.kind.abbrev,
-        metadata.credits.fold(
-          identity,
-          _.foldLeft(0.0) { case (acc, e) => acc + e.ectsValue }
-        ),
-        metadata.language.abbrev,
-        metadata.duration,
-        metadata.season.abbrev,
-        Workload(
-          metadata.workload.lecture,
-          metadata.workload.seminar,
-          metadata.workload.practical,
-          metadata.workload.exercise,
-          metadata.workload.projectSupervision,
-          metadata.workload.projectWork,
-          0,
-          0
-        ),
-        metadata.status.abbrev,
-        metadata.location.abbrev,
-        metadata.participants,
-        metadata.relation.map {
-          case ParsedModuleRelation.Parent(children) =>
-            ModuleRelationOutput.Parent(children)
-          case ParsedModuleRelation.Child(parent) =>
-            ModuleRelationOutput.Child(parent)
-        },
-        metadata.responsibilities.moduleManagement.map(_.id),
-        metadata.responsibilities.lecturers.map(_.id),
-        AssessmentMethodsOutput(
-          metadata.assessmentMethods.mandatory.map(a =>
-            AssessmentMethodEntryOutput(
-              a.method.abbrev,
-              a.percentage,
-              a.precondition.map(_.abbrev)
-            )
-          ),
-          metadata.assessmentMethods.optional.map(a =>
-            AssessmentMethodEntryOutput(
-              a.method.abbrev,
-              a.percentage,
-              a.precondition.map(_.abbrev)
-            )
-          )
-        ),
-        PrerequisitesOutput(
-          metadata.prerequisites.recommended.map(e =>
-            PrerequisiteEntryOutput(
-              e.text,
-              e.modules,
-              e.studyPrograms.map(_.abbrev)
-            )
-          ),
-          metadata.prerequisites.required.map(e =>
-            PrerequisiteEntryOutput(
-              e.text,
-              e.modules,
-              e.studyPrograms.map(_.abbrev)
-            )
-          )
-        ),
-        POOutput(
-          metadata.pos.mandatory.map(a =>
-            POMandatoryOutput(
-              a.po.abbrev,
-              a.specialization.map(_.abbrev),
-              a.recommendedSemester,
-              a.recommendedSemesterPartTime
-            )
-          ),
-          metadata.pos.optional.map(a =>
-            POOptionalOutput(
-              a.po.abbrev,
-              a.specialization.map(_.abbrev),
-              a.instanceOf,
-              a.partOfCatalog,
-              a.recommendedSemester
-            )
-          )
-        ),
-        metadata.competences.map(_.abbrev),
-        metadata.globalCriteria.map(_.abbrev),
-        metadata.taughtWith
-      ),
-      de.normalize(),
-      en.normalize()
-    )
+    } yield res
   }
 }

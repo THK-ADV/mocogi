@@ -3,7 +3,8 @@ package providers
 import akka.actor.ActorSystem
 import database.view.ModuleViewRepository
 import git.subscriber._
-import printing.markdown.ModuleCompendiumMarkdownPrinter
+import printing.html.ModuleCompendiumHTMLPrinter
+import printing.pandoc.PrinterOutputType
 import service.core.StudyProgramService
 import service.{ModuleCompendiumService, ModuleUpdatePermissionService}
 
@@ -12,9 +13,8 @@ import scala.concurrent.ExecutionContext
 
 @Singleton
 class ModuleCompendiumSubscribersProvider @Inject() (
-    printer: ModuleCompendiumMarkdownPrinter,
+    printer: ModuleCompendiumHTMLPrinter,
     system: ActorSystem,
-    moduleCompendiumMarkdownActor: ModuleCompendiumMarkdownActor,
     metadataService: ModuleCompendiumService,
 //    publisher: KafkaPublisher[Metadata],
     studyProgramService: StudyProgramService,
@@ -28,30 +28,26 @@ class ModuleCompendiumSubscribersProvider @Inject() (
   override def get(): ModuleCompendiumSubscribers =
     ModuleCompendiumSubscribers(
       List(
-        system.actorOf(ModuleCompendiumLoggingActor.props),
         system.actorOf(
           ModuleCompendiumPrintingActor.props(
             printer,
-            moduleCompendiumMarkdownActor,
+            PrinterOutputType.HTMLStandaloneFile(
+              configReader.deOutputFolderPath,
+              configReader.enOutputFolderPath
+            ),
             studyProgramService,
-            configReader.deOutputFolderPath,
-            configReader.enOutputFolderPath,
             ctx
           )
         ),
         // system.actorOf(ModuleCompendiumPublishActor.props(publisher)),
         system.actorOf(
           ModuleCompendiumDatabaseActor
-            .props(metadataService, ctx)
-        ),
-        system.actorOf(
-          ModuleCompendiumViewUpdateActor.props(moduleViewRepository, ctx)
-        ),
-        system.actorOf(
-          ModuleCompendiumPermissionUpdateActor.props(
-            moduleUpdatePermissionService,
-            ctx
-          )
+            .props(
+              metadataService,
+              moduleViewRepository,
+              moduleUpdatePermissionService,
+              ctx
+            )
         )
       )
     )

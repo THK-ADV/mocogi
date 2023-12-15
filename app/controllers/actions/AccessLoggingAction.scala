@@ -4,11 +4,13 @@ import play.api.Logging
 import play.api.mvc.{ActionBuilderImpl, BodyParsers, Request, Result}
 
 import javax.inject.{Inject, Singleton}
+import scala.annotation.unused
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-final class AccessLoggingAction @Inject() (parser: BodyParsers.Default)(implicit
-    ec: ExecutionContext
+@unused
+final class AccessLoggingAction @Inject() (@unused parser: BodyParsers.Default)(
+    implicit ec: ExecutionContext
 ) extends ActionBuilderImpl(parser)
     with Logging {
 

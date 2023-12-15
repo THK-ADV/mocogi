@@ -1,5 +1,7 @@
 package printing.pandoc
 
+import printing.PrintingLanguage
+
 import java.io.{ByteArrayInputStream, File}
 import java.nio.charset.StandardCharsets
 import java.util.UUID
@@ -38,7 +40,7 @@ final class PandocApi(
       id: UUID,
       outputType: PrinterOutputType,
       input: String,
-      outputFolderPath: String
+      lang: PrintingLanguage
   ): Either[Throwable, PrinterOutput] = {
     val inputStream = toStream(input)
     val res = outputType match {
@@ -46,25 +48,25 @@ final class PandocApi(
         createText(htmlCmd, htmlExtension, inputStream)
       case PrinterOutputType.HTMLStandalone =>
         createText(standalone(htmlCmd), htmlExtension, inputStream)
-      case PrinterOutputType.HTMLFile =>
-        createFile(id, htmlExtension, htmlCmd, inputStream, outputFolderPath)
-      case PrinterOutputType.HTMLStandaloneFile =>
+      case PrinterOutputType.HTMLFile(de, en) =>
+        createFile(id, htmlExtension, htmlCmd, inputStream, lang.fold(de, en))
+      case PrinterOutputType.HTMLStandaloneFile(de, en) =>
         createFile(
           id,
           htmlExtension,
           standalone(htmlCmd),
           inputStream,
-          outputFolderPath
+          lang.fold(de, en)
         )
-      case PrinterOutputType.PDFFile =>
-        createFile(id, pdfExtension, pdfCmd, inputStream, outputFolderPath)
-      case PrinterOutputType.PDFStandaloneFile =>
+      case PrinterOutputType.PDFFile(de, en) =>
+        createFile(id, pdfExtension, pdfCmd, inputStream, lang.fold(de, en))
+      case PrinterOutputType.PDFStandaloneFile(de, en) =>
         createFile(
           id,
           pdfExtension,
           standalone(pdfCmd),
           inputStream,
-          outputFolderPath
+          lang.fold(de, en)
         )
     }
     inputStream.close()

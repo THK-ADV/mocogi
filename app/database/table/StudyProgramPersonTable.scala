@@ -22,7 +22,9 @@ final class StudyProgramPersonTable(tag: Tag)
     foreignKey("person", person, TableQuery[PersonTable])(_.id)
 
   def studyProgramFk =
-    foreignKey("studyProgram", studyProgram, TableQuery[StudyProgramTable])(_.abbrev)
+    foreignKey("studyProgram", studyProgram, TableQuery[StudyProgramTable])(
+      _.abbrev
+    )
 
   override def * =
     (

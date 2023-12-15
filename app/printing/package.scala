@@ -41,6 +41,8 @@ package object printing {
 
     def prologHeadline = "Prolog"
 
+    def previewLabel = self.fold("Vorschau", "Preview")
+
     def moduleHeadline = self.fold("Module", "Modules")
 
     def studyPlanHeadline = self.fold("Studienverlaufspläne", "Study Plan")

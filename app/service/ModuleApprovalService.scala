@@ -1,14 +1,12 @@
 package service
 
 import com.google.inject.{Inject, Singleton}
-import controllers.formats.ModuleCompendiumProtocolFormat
 import database.repo.ModuleApprovalRepository
 import models.ModuleReviewStatus.{Approved, Pending, Rejected}
 import models.ModuleReviewSummaryStatus.{WaitingForChanges, WaitingForReview}
 import models.core.{AbbrevLabelLike, Person}
 import models.{ModuleReviewStatus, ModuleReviewSummaryStatus, ReviewerApproval}
 import monocle.Monocle.toAppliedFocusOps
-import play.api.libs.json.Json
 
 import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
@@ -17,7 +15,7 @@ import scala.concurrent.{ExecutionContext, Future}
 final class ModuleApprovalService @Inject() (
     private val approvalRepository: ModuleApprovalRepository,
     private implicit val ctx: ExecutionContext
-) extends ModuleCompendiumProtocolFormat {
+) {
 
   /** Returns the ModuleReviewSummaryStatus for the given module
     * @param moduleId
@@ -43,13 +41,21 @@ final class ModuleApprovalService @Inject() (
     approvalRepository
       .allByModulesWhereUserExists(person.id)
       .map(_.groupBy(_._1).flatMap { case (_, entries) =>
-        entries.filter(_._7.isDefined).map {
-          case (moduleId, author, mcJson, role, _, status, sp, id) =>
+        entries.filter(_._8.isDefined).map {
+          case (
+                moduleId,
+                moduleTitle,
+                moduleAbbrev,
+                author,
+                role,
+                _,
+                status,
+                sp,
+                id
+              ) =>
             val studyProgram = (sp.get._1, sp.get._2, sp.get._3)
             val grade = sp.get._4
-            val protocol =
-              Json.fromJson(mcJson)(moduleCompendiumProtocolFormat).get
-            val summaryStatus = summaryStatus0(entries.map(_._6)).get
+            val summaryStatus = summaryStatus0(entries.map(_._7)).get
             val canReview = summaryStatus match {
               case WaitingForChanges      => false
               case WaitingForReview(_, _) => status == Pending
@@ -57,8 +63,8 @@ final class ModuleApprovalService @Inject() (
             ReviewerApproval(
               id,
               moduleId,
-              protocol.metadata.title,
-              protocol.metadata.abbrev,
+              moduleTitle,
+              moduleAbbrev,
               Person.toDefaultPerson(author),
               role,
               summaryStatus,

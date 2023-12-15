@@ -15,7 +15,6 @@ trait PersonAction {
   implicit def ctx: ExecutionContext
   implicit def personRepository: PersonRepository
 
-  // TODO DEBUG ONLY
   private def campusIdProxy[A](r: UserTokenRequest[A]): CampusId =
     r.getQueryString("campusId").fold(r.campusId)(CampusId.apply)
 
@@ -25,11 +24,15 @@ trait PersonAction {
     override protected def refine[A](
         request: UserTokenRequest[A]
     ): Future[Either[Result, PersonRequest[A]]] = {
+      // TODO DEBUG ONLY
       val campusId = campusIdProxy(request)
+      // TODO DEBUG ONLY
+      val newRequest =
+        request.copy(token = request.token.copy(username = campusId.value))
       personRepository
         .getByCampusId(campusId)
         .map {
-          case Some(p) => Right(PersonRequest(p, request))
+          case Some(p) => Right(PersonRequest(p, newRequest))
           case None =>
             Left(
               BadRequest(

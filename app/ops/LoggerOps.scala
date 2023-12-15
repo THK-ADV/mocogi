@@ -7,14 +7,12 @@ import scala.annotation.unused
 trait LoggerOps { self: Logging =>
 
   @unused
-  def measure[A](ctx: String, f: => A): A = {
+  def measure[A](tag: String, f: => A): A = {
     val start = System.currentTimeMillis()
-    logger.info(s"${Thread.currentThread().getName} start with $ctx")
     val a = f
-    logger.info(s"${Thread.currentThread().getName} end with $ctx")
     val end = System.currentTimeMillis()
     val time = end - start
-    logger.info(s"${Thread.currentThread().getName} $ctx: $time")
+    logger.info(s"Time Consumed by $tag is: $time")
     a
   }
 

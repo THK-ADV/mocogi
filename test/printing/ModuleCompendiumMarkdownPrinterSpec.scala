@@ -84,7 +84,10 @@ final class ModuleCompendiumMarkdownPrinterSpec
         Content("", "", "", "", "")
       )
       val dePrinter =
-        printer.printer(_ => None)(PrintingLanguage.German, LocalDateTime.now())
+        printer.printer(_ => None)(
+          PrintingLanguage.German,
+          Some(LocalDateTime.now())
+        )
       val deFile = withFile0("test/printing/res/de-print.md")(identity)
       assert(
         dePrinter
@@ -97,7 +100,10 @@ final class ModuleCompendiumMarkdownPrinterSpec
 
       val enPrinter =
         printer
-          .printer(_ => None)(PrintingLanguage.English, LocalDateTime.now())
+          .printer(_ => None)(
+            PrintingLanguage.English,
+            Some(LocalDateTime.now())
+          )
       val enFile = withFile0("test/printing/res/en-print.md")(identity)
       assert(
         enPrinter

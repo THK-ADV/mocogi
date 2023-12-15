@@ -152,14 +152,14 @@ object GitPushEventHandlingActor {
           modules.map(path =>
             downloadService
               .downloadFileContent(path, branch)
-              .map(path -> _)
+              .collect { case Some(content) => path -> content }
           )
         )
         cores <- Future.sequence(
           cores.map(path =>
             downloadService
               .downloadFileContent(path, branch)
-              .map(path -> _)
+              .collect { case Some(content) => path -> content }
           )
         )
       } yield {

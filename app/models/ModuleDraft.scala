@@ -18,6 +18,8 @@ import java.util.UUID
 
 case class ModuleDraft(
     module: UUID,
+    moduleTitle: String,
+    moduleAbbrev: String,
     author: String,
     branch: Branch,
     source: ModuleDraftSource,

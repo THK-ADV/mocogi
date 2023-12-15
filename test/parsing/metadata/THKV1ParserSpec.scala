@@ -342,6 +342,20 @@ class THKV1ParserSpec
         )
         assert(rest.isEmpty)
       }
+
+      "thkv1metadata3.yaml" in {
+        val (res, rest) =
+          withFile0("test/parsing/res/thkv1metadata3.yaml")(
+            metadataParser.parse
+          )
+        val metadata = res.value
+        assert(
+          metadata.id == UUID.fromString("00895144-30e4-4bd2-b800-bb706686d950")
+        )
+        assert(res.value.pos.mandatory.isEmpty)
+        assert(res.value.pos.optional.size == 1)
+        assert(rest.isEmpty)
+      }
     }
   }
 }

@@ -57,11 +57,19 @@ final class ConfigReader @Inject() (config: Configuration) {
 
   def reviewApprovedLabel: String = nonEmptyString("git.reviewApprovedLabel")
 
-  def repoPath: Option[String] = emptyString("glab.repoPath")
+  def repoPath: String = nonEmptyString("glab.repoPath")
 
-  def mcPath: Option[String] = emptyString("glab.mcPath")
+  def mcPath: String = nonEmptyString("glab.mcPath")
 
   def pushScriptPath: Option[String] = emptyString("glab.pushScriptPath")
+
+  def switchBranchScriptPath: String = nonEmptyString(
+    "glab.switchBranchScriptPath"
+  )
+
+  def diffPreviewScriptPath: String = nonEmptyString(
+    "glab.diffPreviewScriptPath"
+  )
 
   private def list(key: String): Seq[String] =
     if (config.has(key)) config.get[Seq[String]](key)

@@ -1,11 +1,7 @@
 package database.repo
 
 import com.google.inject.Inject
-import database.table.{
-  ModuleDraftTable,
-  ModuleReviewTable,
-  StudyProgramPersonTable
-}
+import database.table.{ModuleDraftTable, ModuleReviewTable}
 import models.ModuleReviewStatus
 import models.ModuleReviewStatus.Pending
 import models.core.Person
@@ -19,26 +15,14 @@ import scala.concurrent.{ExecutionContext, Future}
 @Singleton
 final class ModuleApprovalRepository @Inject() (
     val dbConfigProvider: DatabaseConfigProvider,
+    val studyProgramPersonRepository: StudyProgramPersonRepository,
     implicit val ctx: ExecutionContext
 ) extends HasDatabaseConfigProvider[JdbcProfile] {
 
-  import database.table.{
-    jsValueColumnType,
-    moduleReviewStatusColumnType,
-    universityRoleColumnType
-  }
+  import database.table.{moduleReviewStatusColumnType, universityRoleColumnType}
   import profile.api._
 
   private def tableQuery = TableQuery[ModuleReviewTable]
-
-  private def studyProgramPersonTable = TableQuery[StudyProgramPersonTable]
-
-  private def directorsQuery(person: String) =
-    for {
-      q <- studyProgramPersonTable.filter(_.person === person)
-      sp <- q.studyProgramFk
-      g <- sp.gradeFk
-    } yield (q, sp, g)
 
   private def moduleDraftTable = TableQuery[ModuleDraftTable]
 
@@ -49,7 +33,7 @@ final class ModuleApprovalRepository @Inject() (
 
   def hasPendingApproval(reviewId: UUID, person: String): Future[Boolean] = {
     val pending: ModuleReviewStatus = Pending
-    val spp = directorsQuery(person).map(_._1)
+    val spp = studyProgramPersonRepository.directorsQuery(person).map(_._1)
     val query = tableQuery
       .join(spp)
       .on((r, spp) =>
@@ -60,7 +44,7 @@ final class ModuleApprovalRepository @Inject() (
   }
 
   def allByModulesWhereUserExists(person: String) = {
-    val spp = directorsQuery(person)
+    val spp = studyProgramPersonRepository.directorsQuery(person)
     val query = tableQuery
       .joinLeft(spp)
       .on((r, spp) =>
@@ -82,8 +66,9 @@ final class ModuleApprovalRepository @Inject() (
       .map { case ((((r, spp), _), d), p) =>
         (
           d.module,
+          d.moduleTitle,
+          d.moduleAbbrev,
           p,
-          d.data,
           r.role,
           r.studyProgram,
           r.status,

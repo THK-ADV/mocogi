@@ -48,10 +48,9 @@ final class ModuleCompendiumLatexActorProvider @Inject() (
         Config(
           config.tmpFolderPath,
           config.outputFolderPath,
-          config.repoPath
-            .zip(config.mcPath)
-            .zip(config.pushScriptPath)
-            .map(a => GlabConfig(a._1._1, a._1._2, a._2, config.mainBranch))
+          config.pushScriptPath.map(
+            GlabConfig(config.repoPath, config.mcPath, _, config.mainBranch)
+          )
         ),
         ctx
       )

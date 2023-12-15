@@ -15,7 +15,8 @@ import controllers.formats.{
   PipelineErrorFormat
 }
 import database.repo.PersonRepository
-import models.{ModuleCompendiumProtocol, ModuleDraft}
+import models.{Module, ModuleCompendiumProtocol, ModuleDraft, ModuleDraftSource}
+import play.api.Logging
 import play.api.libs.json.{Json, Writes}
 import play.api.mvc.{AbstractController, ControllerComponents}
 import service.core.{ModuleKeyService, StudyProgramService}
@@ -49,28 +50,38 @@ final class ModuleDraftController @Inject() (
     with PermissionCheck
     with ModuleFormat
     with JsonNullWritable
-    with PersonAction {
+    with PersonAction
+    with Logging {
 
   def moduleDrafts() =
     auth andThen personAction async { r =>
-      for { // TODO care: business logic in controller
-        modules <- moduleUpdatePermissionService.allForCampusId(
-          r.request.campusId
+      def toJson(m: Module, d: Option[ModuleDraft], isPrivileged: Boolean) =
+        Json.obj(
+          "module" -> m,
+          "moduleDraft" -> d,
+          "moduleDraftState" -> d.state(),
+          "privilegedForModule" -> isPrivileged
         )
-        draftsByModules <- moduleDraftService.allByModules(modules.map(_.id))
-        draftsByUser <- moduleDraftService.allByPerson(r.person.id)
+
+      for { // TODO care: business logic in controller
+        modules <- moduleUpdatePermissionService
+          .allForCampusId(r.request.campusId)
+        drafts <- moduleDraftService.allByPerson(r.person.id)
       } yield {
-        val moduleWithDraft = modules.map { module =>
-          val draft = draftsByModules
-            .find(_.module == module.id)
-            .orElse(draftsByUser.find(_.module == module.id))
-          Json.obj(
-            "module" -> module,
-            "moduleDraft" -> draft,
-            "moduleDraftState" -> draft.state()
+        val (added, modified) =
+          drafts.partition(_.source == ModuleDraftSource.Added)
+        val liveModules = modules.map { case (kind, module) =>
+          val draft = modified.find(_.module == module.id)
+          toJson(module, draft, isPrivileged = kind.isInherited)
+        }
+        val createdModules = added.map { draft =>
+          toJson(
+            Module(draft.module, draft.moduleTitle, draft.moduleAbbrev),
+            Some(draft),
+            draft.author == r.person.id
           )
         }
-        Ok(Json.toJson(moduleWithDraft))
+        Ok(Json.toJson(liveModules ++ createdModules))
       }
     }
 

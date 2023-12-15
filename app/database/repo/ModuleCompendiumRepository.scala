@@ -3,6 +3,7 @@ package database.repo
 import database._
 import database.table.{PrerequisiteType, PrerequisitesTable, _}
 import git.GitFilePath
+import models.Module
 import parsing.types._
 import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfigProvider}
 import slick.jdbc.JdbcProfile
@@ -20,10 +21,9 @@ trait ModuleCompendiumRepository {
       entries: Seq[(GitFilePath, ModuleCompendium, LocalDateTime)]
   ): Future[Seq[ModuleCompendium]]
   def all(filter: Map[String, Seq[String]]): Future[Seq[ModuleCompendiumOutput]]
-  def allPreview(
-      filter: Map[String, Seq[String]]
-  ): Future[Seq[(UUID, String, String)]]
+  def allPreview(filter: Map[String, Seq[String]]): Future[Seq[Module]]
   def allFromPos(pos: Seq[String]): Future[Seq[ModuleCompendiumOutput]]
+  def allIdsFromPo(po: String): Future[Seq[UUID]]
 }
 
 @Singleton
@@ -93,6 +93,11 @@ final class ModuleCompendiumRepositoryImpl @Inject() (
           .filter(r => r.metadata === t.id && r.isPerson(value))
           .exists
     case ("id", value) => _.id === UUID.fromString(value)
+    case ("po_mandatory", value) =>
+      t =>
+        poMandatoryTable
+          .filter(a => a.metadata === t.id && a.po === value)
+          .exists
   }
 
   override def createOrUpdateMany(
@@ -132,13 +137,22 @@ final class ModuleCompendiumRepositoryImpl @Inject() (
       allWithFilter(filter)
         .map(m => (m.id, m.title, m.abbrev))
         .result
+        .map(_.map(Module.tupled))
     )
 
   override def allFromPos(pos: Seq[String]) = {
     // TODO expand to optional if "partOfCatalog" is set
-    val isMandatoryPO = poMandatoryTable.filter(_.po.inSet(pos)).map(_.metadata)
+    val isMandatoryPO = isMandatoryPOQuery(pos)
     retrieve(tableQuery.filter(_.id.in(isMandatoryPO)))
   }
+
+  override def allIdsFromPo(po: String) = {
+    val isMandatoryPO = isMandatoryPOQuery(Seq(po))
+    db.run(tableQuery.filter(_.id.in(isMandatoryPO)).map(_.id).result)
+  }
+
+  private def isMandatoryPOQuery(pos: Seq[String]) =
+    poMandatoryTable.filter(_.po.inSet(pos)).map(_.metadata)
 
   private def updateAction(
       moduleCompendium: ModuleCompendium,

@@ -3,7 +3,6 @@ package service
 import database.repo.ModuleCompendiumRepository
 import database.{MetadataOutput, ModuleCompendiumOutput}
 import git.GitFilePath
-import git.api.GitFileDownloadService
 import models.Module
 import ops.FutureOps.SeqOps
 import parsing.types.ModuleCompendium
@@ -22,14 +21,12 @@ trait ModuleCompendiumService {
   def allModulesFromPerson(personId: String): Future[Seq[Module]]
   def allMetadata(filter: Map[String, Seq[String]]): Future[Seq[MetadataOutput]]
   def get(id: UUID): Future[ModuleCompendiumOutput]
-  def getFromStaging(id: UUID): Future[ModuleCompendiumOutput]
   def getOrNull(id: UUID): Future[Option[ModuleCompendiumOutput]]
 }
 
 @Singleton
 final class ModuleCompendiumServiceImpl @Inject() (
     private val repo: ModuleCompendiumRepository,
-    private val gitFileDownloadService: GitFileDownloadService,
     private implicit val ctx: ExecutionContext
 ) extends ModuleCompendiumService {
 
@@ -47,11 +44,8 @@ final class ModuleCompendiumServiceImpl @Inject() (
   override def getOrNull(id: UUID) =
     repo.all(Map("id" -> Seq(id.toString))).map(_.headOption)
 
-  override def getFromStaging(id: UUID) =
-    gitFileDownloadService.downloadModuleFromDraftBranch(id)
-
   override def allModules(filter: Map[String, Seq[String]]) =
-    repo.allPreview(filter).map(_.map(models.Module.tupled))
+    repo.allPreview(filter)
 
   override def allMetadata(filter: Map[String, Seq[String]]) =
     repo.all(filter).map(_.map(_.metadata))

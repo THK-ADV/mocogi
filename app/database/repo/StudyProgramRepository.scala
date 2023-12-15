@@ -69,17 +69,7 @@ class StudyProgramRepository @Inject() (
       q <- tableQuery
       g <- q.gradeFk
     } yield (q.abbrev, q.deLabel, q.enLabel, g)
-    db.run(query.result.map(_.map((StudyProgramShort.apply _).tupled)))
-  }
-
-  def allShortFromPos(pos: Seq[String]): Future[Seq[StudyProgramShort]] = {
-    val poQuery =
-      TableQuery[POTable].filter(_.abbrev.inSet(pos)).map(_.studyProgram)
-    val query = for {
-      q <- tableQuery if q.abbrev.in(poQuery)
-      g <- q.gradeFk
-    } yield (q.abbrev, q.deLabel, q.enLabel, g)
-    db.run(query.result.map(_.map((StudyProgramShort.apply _).tupled)))
+    db.run(query.result.map(_.map(StudyProgramShort.apply)))
   }
 
   def allIds(): Future[Seq[String]] =

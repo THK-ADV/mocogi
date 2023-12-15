@@ -13,4 +13,7 @@ case class StudyProgramShort(
 
 object StudyProgramShort extends GradesFormat {
   implicit def writes: Writes[StudyProgramShort] = Json.writes
+
+  def apply(t: (String, String, String, Grade)): StudyProgramShort =
+    StudyProgramShort(t._1, t._2, t._3, t._4)
 }

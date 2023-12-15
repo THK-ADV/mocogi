@@ -1,12 +1,12 @@
 package database.repo
 
-import database.table.{
-  ModuleCompendiumTable,
-  ModuleDraftTable,
-  ModuleUpdatePermissionTable
+import database.table.{ModuleCompendiumTable, ModuleUpdatePermissionTable}
+import models.{
+  CampusId,
+  Module,
+  ModuleUpdatePermission,
+  ModuleUpdatePermissionType
 }
-import models.ModuleUpdatePermissionType.Inherited
-import models.{CampusId, Module, ModuleUpdatePermissionType}
 import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfigProvider}
 import slick.jdbc.JdbcProfile
 
@@ -27,7 +27,6 @@ final class ModuleUpdatePermissionRepository @Inject() (
 
   import database.table.{
     campusIdColumnType,
-    jsValueColumnType,
     moduleUpdatePermissionTypeColumnType
   }
   import profile.api._
@@ -55,35 +54,37 @@ final class ModuleUpdatePermissionRepository @Inject() (
 
   def delete(
       module: UUID,
-      campusId: CampusId,
+      campusIds: List[CampusId],
       kind: ModuleUpdatePermissionType
   ): Future[Int] =
     db.run(
       tableQuery
         .filter(a =>
-          a.module === module && a.campusId === campusId && a.kind === kind
+          a.module === module && a.campusId.inSet(campusIds) && a.kind === kind
         )
         .delete
     )
 
-  def allWithModule(campusId: CampusId) =
+  def allFromUser(campusId: CampusId) =
     db.run(
       tableQuery
         .filter(_.campusId === campusId)
-        .joinLeft(
+        .join(
           TableQuery[ModuleCompendiumTable].map(a => (a.id, a.title, a.abbrev))
         )
         .on(_.module === _._1)
-        .joinLeft(TableQuery[ModuleDraftTable].map(a => (a.module, a.data)))
-        .on(_._1.module === _._1)
         .result
-        .map(_.map { case (((id, campusId, kind), m), d) =>
-          val module = m
-            .map(a => Left(a._2, a._3))
-            .orElse(d.map(a => Right(a._2)))
-            .get // either of them must be defined
-          (id, campusId, kind, module)
+        .map(_.map { case ((id, campusId, kind), (_, title, abbrev)) =>
+          ModuleUpdatePermission(id, title, abbrev, campusId, kind)
         })
+    )
+
+  def allGrantedFromModule(module: UUID) =
+    db.run(
+      tableQuery
+        .filter(a => a.module === module && a.isGranted)
+        .map(_.campusId)
+        .result
     )
 
   def hasPermission(campusId: CampusId, module: UUID): Future[Boolean] =
@@ -97,23 +98,23 @@ final class ModuleUpdatePermissionRepository @Inject() (
   def hasInheritedPermission(
       campusId: CampusId,
       module: UUID
-  ): Future[Boolean] = {
-    val inherited: ModuleUpdatePermissionType = Inherited
+  ): Future[Boolean] =
     db.run(
       tableQuery
         .filter(a =>
-          a.module === module && a.campusId === campusId && a.kind === inherited
+          a.module === module && a.campusId === campusId && a.isInherited
         )
         .exists
         .result
     )
-  }
 
-  def allForCampusId(campusId: CampusId): Future[Seq[Module]] =
-    db.run(
-      (for {
-        q <- tableQuery if q.campusId === campusId
-        m <- q.moduleFk
-      } yield (m.id, m.title, m.abbrev)).result.map(_.map(Module.tupled))
-    )
+  def allForCampusId(
+      campusId: CampusId
+  ): Future[Seq[(ModuleUpdatePermissionType, Module)]] = {
+    val query = for {
+      q <- tableQuery if q.campusId === campusId
+      m <- q.moduleFk
+    } yield (q.kind, (m.id, m.title, m.abbrev))
+    db.run(query.result.map(_.map(a => (a._1, Module.tupled(a._2)))))
+  }
 }

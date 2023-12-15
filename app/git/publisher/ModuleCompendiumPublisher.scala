@@ -14,22 +14,19 @@ import scala.util.{Failure, Success}
 
 object ModuleCompendiumPublisher {
   def props(
-      metadataParsingService: MetadataParsingService,
-      moduleCompendiumService: ModuleCompendiumService,
+      pipeline: MetadataPipeline,
       subscribers: ModuleCompendiumSubscribers,
       ctx: ExecutionContext
   ) = Props(
     new ModuleCompendiumPublisherImpl(
-      metadataParsingService,
-      moduleCompendiumService,
+      pipeline,
       subscribers,
       ctx
     )
   )
 
   private final class ModuleCompendiumPublisherImpl(
-      private val parsingService: MetadataParsingService,
-      moduleCompendiumService: ModuleCompendiumService,
+      private val pipeline: MetadataPipeline,
       private val subscribers: ModuleCompendiumSubscribers,
       private implicit val ctx: ExecutionContext
   ) extends Actor
@@ -41,21 +38,16 @@ object ModuleCompendiumPublisher {
 
     private def go(changes: Changes): Unit = {
       val allChanges = changes.added ++ changes.modified
-      val allPrints = allChanges.map(c => (Option.empty[UUID], Print(c._2.value)))
-      val f = for {
-        parsed <- parsingService.parseMany(allPrints)
-        existing <- moduleCompendiumService.allModules(Map.empty)
-        validates = parsed match {
-          case Left(value) => Left(value)
-          case Right(parsed) => MetadataValidatingService.validateMany(existing, parsed)
-        }
-      } yield validates.map(_.map { case (print, mc) =>
-        (allChanges.find(_._2.value == print.value).get._1, mc.normalize())
-      })
+      val allPrints =
+        allChanges.map(c => (Option.empty[UUID], Print(c._2.value)))
 
-      f onComplete {
-        case Success(s) =>
-          s match {
+      pipeline.parseValidateMany(allPrints) onComplete {
+        case Success(validates) =>
+          val res = validates.map(_.map { case (print, mc) =>
+            (allChanges.find(_._2.value == print.value).get._1, mc.normalize())
+          })
+
+          res match {
             case Right(mcs) =>
               subscribers.createdOrUpdated(
                 mcs.map(t => (t._1, t._2, changes.timestamp))

@@ -7,7 +7,7 @@
 # $5 $GIT_REPO
 git config --global pull.rebase false &&
 git config --global user.email $1 &&
-git config --global user.name $$2 &&
+git config --global user.name $2 &&
 glab config set -g editor vim &&
 glab config set -g host $3 &&
 glab config set -g token $4 &&

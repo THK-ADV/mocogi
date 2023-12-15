@@ -1,6 +1,6 @@
 package models
 
-import models.core.{AbbrevLabelLike, Person}
+import models.core.Person
 
 import java.time.LocalDateTime
 import java.util.UUID
@@ -18,5 +18,5 @@ case class ModuleReview[StudyProgram, Person](
 
 object ModuleReview {
   type DB = ModuleReview[String, String]
-  type Atomic = ModuleReview[AbbrevLabelLike, Person.Default]
+  type Atomic = ModuleReview[StudyProgramShort, Person.Default]
 }
