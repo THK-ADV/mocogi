@@ -5,6 +5,8 @@
 
 GET           /                                                   controllers.HomeController.index
 
+GET           /me                                                 controllers.MeController.me()
+
 # Git Webhooks
 
 POST          /webhook/onPushEvent                                controllers.GitWebhookController.onPushEvent()

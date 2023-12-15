@@ -43,7 +43,7 @@ final class ModuleCompendiumListRepository @Inject() (
           mcl.copy(
             studyProgram = StudyProgramShort(sp),
             semester = Semester(mcl.semester),
-            specialization = spec.map(_.toShort())
+            specialization = spec.map(_.toShort)
           )
         })
     )

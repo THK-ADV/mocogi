@@ -1,12 +1,8 @@
 package database.repo
 
 import com.google.inject.Inject
-import database.table.{
-  ModuleDraftTable,
-  ModuleReviewTable,
-  StudyProgramPersonTable
-}
-import models.{ModuleReviewStatus, UniversityRole}
+import database.table.{ModuleDraftTable, ModuleReviewTable}
+import models.ModuleReviewStatus
 import models.ModuleReviewStatus.Pending
 import models.core.Person
 import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfigProvider}
@@ -19,6 +15,7 @@ import scala.concurrent.{ExecutionContext, Future}
 @Singleton
 final class ModuleApprovalRepository @Inject() (
     val dbConfigProvider: DatabaseConfigProvider,
+    val studyProgramPersonRepository: StudyProgramPersonRepository,
     implicit val ctx: ExecutionContext
 ) extends HasDatabaseConfigProvider[JdbcProfile] {
 
@@ -27,30 +24,7 @@ final class ModuleApprovalRepository @Inject() (
 
   private def tableQuery = TableQuery[ModuleReviewTable]
 
-  private def studyProgramPersonTable = TableQuery[StudyProgramPersonTable]
-
-  private def directorsQuery(person: String) =
-    for {
-      q <- studyProgramPersonTable.filter(_.person === person)
-      sp <- q.studyProgramFk
-      g <- sp.gradeFk
-    } yield (q, sp, g)
-
   private def moduleDraftTable = TableQuery[ModuleDraftTable]
-
-  def hasRole(
-      person: String,
-      studyProgram: String,
-      role: UniversityRole
-  ): Future[Boolean] =
-    db.run(
-      studyProgramPersonTable
-        .filter(a =>
-          a.person === person && a.studyProgram === studyProgram && a.role === role
-        )
-        .exists
-        .result
-    )
 
   def getAllStatus(moduleDraftId: UUID): Future[Seq[ModuleReviewStatus]] =
     db.run(
@@ -59,7 +33,7 @@ final class ModuleApprovalRepository @Inject() (
 
   def hasPendingApproval(reviewId: UUID, person: String): Future[Boolean] = {
     val pending: ModuleReviewStatus = Pending
-    val spp = directorsQuery(person).map(_._1)
+    val spp = studyProgramPersonRepository.directorsQuery(person).map(_._1)
     val query = tableQuery
       .join(spp)
       .on((r, spp) =>
@@ -70,7 +44,7 @@ final class ModuleApprovalRepository @Inject() (
   }
 
   def allByModulesWhereUserExists(person: String) = {
-    val spp = directorsQuery(person)
+    val spp = studyProgramPersonRepository.directorsQuery(person)
     val query = tableQuery
       .joinLeft(spp)
       .on((r, spp) =>

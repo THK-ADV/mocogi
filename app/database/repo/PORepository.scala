@@ -112,10 +112,10 @@ class PORepository @Inject() (
     )
 
   def allValid(date: LocalDate = LocalDate.now): Future[Seq[PO]] =
-    retrieve(tableQuery.filter(validQuery(date)))
+    retrieve(tableQuery.filter(_.isValid(date)))
 
   def allValidShort(date: LocalDate = LocalDate.now): Future[Seq[POShort]] =
-    allShortQuery(tableQuery.filter(validQuery(date)))
+    allShortQuery(tableQuery.filter(_.isValid(date)))
 
   private def allShortQuery(base: Query[POTable, PODbEntry, Seq]) = {
     val query = for {
@@ -141,7 +141,4 @@ class PORepository @Inject() (
         )
     )
   }
-
-  private def validQuery(date: LocalDate): POTable => Rep[Boolean] =
-    a => a.dateFrom <= date && a.dateTo.map(_ >= date).getOrElse(true)
 }

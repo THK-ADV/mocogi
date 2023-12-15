@@ -1,20 +1,20 @@
 package controllers
 
 import auth.AuthorizationAction
-import controllers.actions.{ApprovalCheck, PermissionCheck, PersonAction}
+import controllers.actions.{DirectorCheck, PermissionCheck, PersonAction}
 import controllers.formats.ModuleFormat
-import database.repo.{ModuleCompendiumListRepository, PersonRepository}
+import database.repo.{
+  ModuleCompendiumListRepository,
+  PersonRepository,
+  StudyProgramPersonRepository
+}
 import models.Semester
 import ops.FileOps.FileOps0
 import play.api.libs.Files.DefaultTemporaryFileCreator
 import play.api.libs.json.Json
 import play.api.mvc.{AbstractController, ControllerComponents}
 import play.mvc.Http.HeaderNames
-import service.{
-  ModuleApprovalService,
-  ModuleCompendiumLatexActor,
-  ModuleCompendiumPreviewService
-}
+import service.{ModuleCompendiumLatexActor, ModuleCompendiumPreviewService}
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
@@ -27,11 +27,11 @@ final class ModuleCompendiumListController @Inject() (
     fileCreator: DefaultTemporaryFileCreator,
     previewService: ModuleCompendiumPreviewService,
     auth: AuthorizationAction,
-    val approvalService: ModuleApprovalService,
     val personRepository: PersonRepository,
+    val studyProgramPersonRepository: StudyProgramPersonRepository,
     implicit val ctx: ExecutionContext
 ) extends AbstractController(cc)
-    with ApprovalCheck
+    with DirectorCheck
     with PermissionCheck
     with PersonAction
     with ModuleFormat {
@@ -75,7 +75,7 @@ final class ModuleCompendiumListController @Inject() (
                   onClose = () => file.getParentFile.toPath.deleteDirectory()
                 ).as(MimeTypes.PDF)
               )
-          case None =>
+          case _ =>
             Future.successful(
               UnsupportedMediaType(
                 s"expected media type: ${MimeTypes.JSON} or ${MimeTypes.PDF}"

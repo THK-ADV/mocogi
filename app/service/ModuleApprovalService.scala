@@ -5,12 +5,7 @@ import database.repo.ModuleApprovalRepository
 import models.ModuleReviewStatus.{Approved, Pending, Rejected}
 import models.ModuleReviewSummaryStatus.{WaitingForChanges, WaitingForReview}
 import models.core.{AbbrevLabelLike, Person}
-import models.{
-  ModuleReviewStatus,
-  ModuleReviewSummaryStatus,
-  ReviewerApproval,
-  UniversityRole
-}
+import models.{ModuleReviewStatus, ModuleReviewSummaryStatus, ReviewerApproval}
 import monocle.Monocle.toAppliedFocusOps
 
 import java.util.UUID
@@ -93,18 +88,6 @@ final class ModuleApprovalService @Inject() (
       person: Person.Default
   ): Future[Boolean] =
     approvalRepository.hasPendingApproval(reviewId, person.id)
-
-  /** Return whether the given person is the director for the given study
-    * program
-    * @param person
-    *   Person to check against
-    * @param studyProgram
-    *   Study Program to check against
-    * @return
-    *   true if director, false otherwise
-    */
-  def isDirector(person: String, studyProgram: String): Future[Boolean] =
-    approvalRepository.hasRole(person, studyProgram, UniversityRole.SGL)
 
   private def summaryStatus0(
       xs: Seq[ModuleReviewStatus]

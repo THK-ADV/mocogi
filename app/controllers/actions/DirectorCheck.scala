@@ -1,22 +1,23 @@
 package controllers.actions
 
 import controllers.actions.PersonAction.PersonRequest
+import database.repo.StudyProgramPersonRepository
+import models.UniversityRole
 import play.api.mvc.{ActionFilter, Result}
-import service.ModuleApprovalService
 
-import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
 
-trait ApprovalCheck { self: PermissionCheck =>
-  protected def approvalService: ModuleApprovalService
+trait DirectorCheck { self: PermissionCheck =>
+  protected def studyProgramPersonRepository: StudyProgramPersonRepository
 
-  def hasPermissionToApproveReview(id: UUID) =
+  def isDirector(studyProgram: String) =
     new ActionFilter[PersonRequest] {
       override protected def filter[A](
           request: PersonRequest[A]
       ): Future[Option[Result]] =
         toResult(
-          approvalService.hasPendingApproval(id, request.person),
+          studyProgramPersonRepository
+            .hasRole(request.person.id, studyProgram, UniversityRole.SGL),
           request.request
         )
 

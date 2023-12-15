@@ -27,6 +27,9 @@ final class POTable(tag: Tag) extends Table[PODbEntry](tag, "po") {
 
   def dateTo = column[Option[LocalDate]]("date_to")
 
+  def isValid(date: LocalDate = LocalDate.now): Rep[Boolean] =
+    this.dateFrom <= date && this.dateTo.map(_ >= date).getOrElse(true)
+
   def studyProgramFk =
     foreignKey("study_program", studyProgram, TableQuery[StudyProgramTable])(
       _.abbrev
