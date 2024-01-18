@@ -11,6 +11,7 @@ import database.repo.{
   PersonRepository,
   SeasonRepository
 }
+import git.api.GitAvailabilityChecker
 import printing.latex.ModuleCompendiumLatexPrinter
 import service.ModuleCompendiumLatexActor
 import service.ModuleCompendiumLatexActor.{Config, GlabConfig}
@@ -21,6 +22,7 @@ import scala.concurrent.ExecutionContext
 @Singleton
 final class ModuleCompendiumLatexActorProvider @Inject() (
     system: ActorSystem,
+    gitAvailabilityChecker: GitAvailabilityChecker,
     printer: ModuleCompendiumLatexPrinter,
     moduleCompendiumRepository: ModuleCompendiumRepository,
     moduleCompendiumListRepository: ModuleCompendiumListRepository,
@@ -36,6 +38,7 @@ final class ModuleCompendiumLatexActorProvider @Inject() (
   override def get() = new ModuleCompendiumLatexActor(
     system.actorOf(
       ModuleCompendiumLatexActor.props(
+        gitAvailabilityChecker,
         printer,
         moduleCompendiumRepository,
         moduleCompendiumListRepository,
@@ -47,7 +50,7 @@ final class ModuleCompendiumLatexActorProvider @Inject() (
         assessmentMethodRepository,
         Config(
           config.tmpFolderPath,
-          config.outputFolderPath,
+          config.moduleCompendiumFolderPath,
           config.pushScriptPath.map(
             GlabConfig(config.repoPath, config.mcPath, _, config.mainBranch)
           )

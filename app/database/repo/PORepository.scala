@@ -7,8 +7,8 @@ import database.table.{
   POTable,
   SpecializationTable
 }
+import models.POShort
 import models.core.PO
-import models.{POShort, SpecializationShort, StudyProgramShort}
 import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfigProvider}
 import slick.jdbc.JdbcProfile
 
@@ -129,16 +129,7 @@ class PORepository @Inject() (
         .joinLeft(TableQuery[SpecializationTable])
         .on(_._1 === _.po)
         .result
-        .map(
-          _.map(a =>
-            POShort(
-              a._1._1,
-              a._1._2,
-              a._2.map(s => SpecializationShort(s.abbrev, s.label)),
-              StudyProgramShort(a._1._3)
-            )
-          )
-        )
+        .map(_.map(a => POShort(a._1, a._2)))
     )
   }
 }

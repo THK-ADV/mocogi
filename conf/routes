@@ -80,6 +80,10 @@ GET           /moduleUpdatePermissions/own                        controllers.Mo
 GET           /moduleUpdatePermissions/:moduleId                  controllers.ModuleUpdatePermissionController.allByModule(moduleId: java.util.UUID)
 POST          /moduleUpdatePermissions/:moduleId                  controllers.ModuleUpdatePermissionController.replace(moduleId: java.util.UUID)
 
+# WPF
+POST          /wpfs/:semester                                     controllers.WPFCatalogueController.generate(semester: java.lang.String)
+GET           /wpfs                                               controllers.WPFCatalogueController.all()
+
 # Map static resources from the /public folder to the /assets URL path
 GET           /assets/*file                                       controllers.Assets.versioned(path="/public", file: Asset)
 GET           /files/*file                                        controllers.FileController.get(file: Asset)

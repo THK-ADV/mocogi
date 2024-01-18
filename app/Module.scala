@@ -120,6 +120,9 @@ class Module() extends AbstractModule {
     bind(classOf[ModuleCompendiumLatexActor])
       .toProvider(classOf[ModuleCompendiumLatexActorProvider])
       .asEagerSingleton()
+    bind(classOf[WPFCatalogueGeneratorActor])
+      .toProvider(classOf[WPFCatalogueGeneratorActorProvider])
+      .asEagerSingleton()
 
     bind(new TypeLiteral[Set[MetadataParser]] {})
       .toProvider(classOf[MetadataParserProvider])
