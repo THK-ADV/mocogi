@@ -5,7 +5,6 @@ import play.api.libs.json.{Json, Writes}
 
 trait Semester extends AbbrevLabelLike {
   def year: Int
-
   def id: String = s"${abbrev}_$year"
 }
 

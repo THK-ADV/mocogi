@@ -1,4 +1,5 @@
 import auth.{Authorization, UserToken}
+import com.google.inject.name.Names
 import com.google.inject.{AbstractModule, TypeLiteral}
 import database.repo.{
   ModuleCompendiumRepository,
@@ -11,7 +12,9 @@ import git.subscriber.ModuleCompendiumSubscribers
 import git.webhook.GitPushEventHandlingActor
 import git.{GitConfig, GitFilesBroker, GitFilesBrokerImpl}
 import models.ModuleKeysToReview
+import ops.ConfigurationOps.Ops
 import parsing.metadata.MetadataParser
+import play.api.{Configuration, Environment}
 import printing.markdown.ModuleCompendiumMarkdownPrinter
 import printing.pandoc.PandocApi
 import printing.yaml.MetadataYamlPrinter
@@ -21,7 +24,10 @@ import service._
 import service.core._
 import validator.Metadata
 
-class Module() extends AbstractModule {
+import scala.annotation.unused
+
+class Module(@unused environment: Environment, configuration: Configuration)
+    extends AbstractModule {
 
   override def configure(): Unit = {
     super.configure()
@@ -120,6 +126,9 @@ class Module() extends AbstractModule {
     bind(classOf[ModuleCompendiumLatexActor])
       .toProvider(classOf[ModuleCompendiumLatexActorProvider])
       .asEagerSingleton()
+    bind(classOf[WPFCatalogueGeneratorActor])
+      .toProvider(classOf[WPFCatalogueGeneratorActorProvider])
+      .asEagerSingleton()
 
     bind(new TypeLiteral[Set[MetadataParser]] {})
       .toProvider(classOf[MetadataParserProvider])
@@ -137,5 +146,10 @@ class Module() extends AbstractModule {
     bind(classOf[ModuleCompendiumMarkdownPrinter]).toInstance(
       new ModuleCompendiumMarkdownPrinter(true)
     )
+
+    // TODO use more constant bindings
+    bind(classOf[String])
+      .annotatedWith(Names.named("gitHost"))
+      .toInstance(configuration.nonEmptyString("git.host"))
   }
 }

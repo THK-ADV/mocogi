@@ -7,3 +7,7 @@ case class Grade(
     enLabel: String,
     enDesc: String
 ) extends AbbrevLabelDescLike
+
+object Grade {
+  implicit def ord: Ordering[Grade] = Ordering.by[Grade, String](_.abbrev)
+}

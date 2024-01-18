@@ -1,6 +1,7 @@
 package service
 
 import akka.actor.{Actor, ActorRef, Props}
+import controllers.FileController
 import database.repo.{
   AssessmentMethodRepository,
   LanguageRepository,
@@ -11,7 +12,9 @@ import database.repo.{
   PersonRepository,
   SeasonRepository
 }
+import git.api.GitAvailabilityChecker
 import models.{ModuleCompendiumList, Semester}
+import ops.FileOps.FileOps0
 import ops.LoggerOps
 import play.api.Logging
 import printing.PrintingLanguage
@@ -50,7 +53,7 @@ object ModuleCompendiumLatexActor {
 
   case class Config(
       tmpFolderPath: String,
-      outputFolderName: String,
+      moduleCompendiumFolderPath: String,
       glabConfig: Option[GlabConfig]
   )
 
@@ -62,6 +65,7 @@ object ModuleCompendiumLatexActor {
   )
 
   def props(
+      gitAvailabilityChecker: GitAvailabilityChecker,
       printer: ModuleCompendiumLatexPrinter,
       moduleCompendiumRepository: ModuleCompendiumRepository,
       moduleCompendiumListRepository: ModuleCompendiumListRepository,
@@ -75,6 +79,7 @@ object ModuleCompendiumLatexActor {
       ctx: ExecutionContext
   ) = Props(
     new Impl(
+      gitAvailabilityChecker,
       printer,
       moduleCompendiumRepository,
       moduleCompendiumListRepository,
@@ -90,6 +95,7 @@ object ModuleCompendiumLatexActor {
   )
 
   private final class Impl(
+      private val apiAvailableService: GitAvailabilityChecker,
       private val printer: ModuleCompendiumLatexPrinter,
       private val moduleCompendiumRepository: ModuleCompendiumRepository,
       private val moduleCompendiumListRepository: ModuleCompendiumListRepository,
@@ -109,10 +115,9 @@ object ModuleCompendiumLatexActor {
 
     private def tmpFolder = Paths.get(config.tmpFolderPath)
 
-    private def assetsPath = "files"
-
     private def generate(semester: Semester) =
       for {
+        _ <- apiAvailableService.checkAvailability()
         pos <- poRepository.allValidShort()
         poIds = pos.map(_.abbrev)
         mcs <- moduleCompendiumRepository.allFromPos(poIds)
@@ -230,6 +235,9 @@ object ModuleCompendiumLatexActor {
       }
 
     private def create(xs: Seq[FileEntry]) = {
+      val moduleCompendiumFolder =
+        Paths.get(config.moduleCompendiumFolderPath).getFileName
+
       val normalized = xs
         .groupBy(_._1)
         .map { case (_, xs) =>
@@ -250,8 +258,8 @@ object ModuleCompendiumLatexActor {
             x._9,
             x._4,
             x._5.id,
-            s"$assetsPath/$de",
-            s"$assetsPath/$en",
+            FileController.makeURI(moduleCompendiumFolder.toString, de),
+            FileController.makeURI(moduleCompendiumFolder.toString, en),
             LocalDateTime.now()
           )
         }
@@ -262,24 +270,14 @@ object ModuleCompendiumLatexActor {
     private def createTexFile(
         name: String,
         content: StringBuilder
-    ): Either[String, Path] =
-      try {
-        val file = tmpFolder.resolve(s"$name.tex")
-        Files.deleteIfExists(file)
-        val path = Files.createFile(file)
-        Files.writeString(path, content)
-        Right(path)
-      } catch {
-        case NonFatal(e) =>
-          Left(e.getMessage)
-      }
+    ): Either[String, Path] = tmpFolder.createFile(s"$name.tex", content)
 
     private def movePdf(file: Path, newFilename: String): Either[String, Path] =
       try {
         Right(
           Files.move(
             file,
-            Paths.get(config.outputFolderName, s"$newFilename.pdf"),
+            Paths.get(config.moduleCompendiumFolderPath, s"$newFilename.pdf"),
             StandardCopyOption.REPLACE_EXISTING
           )
         )

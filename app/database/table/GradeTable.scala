@@ -12,5 +12,5 @@ final class GradeTable(tag: Tag)
     deDesc,
     enLabel,
     enDesc
-  ) <> (Grade.tupled, Grade.unapply)
+  ) <> ((Grade.apply _).tupled, Grade.unapply)
 }

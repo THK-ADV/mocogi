@@ -6,6 +6,7 @@ sealed trait Person {
   def id: String
   def kind: String
   def username: Option[String]
+  def fullName: String
 }
 
 object Person {
@@ -35,11 +36,13 @@ object Person {
   case class Group(id: String, label: String) extends Person {
     override val kind = GroupKind
     override def username: Option[String] = None
+    override def fullName: String = label
   }
 
   case class Unknown(id: String, label: String) extends Person {
     override val kind = UnknownKind
     override def username: Option[String] = None
+    override def fullName: String = label
   }
 
   // unsafe

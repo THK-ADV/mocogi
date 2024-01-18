@@ -1,5 +1,6 @@
 package providers
 
+import ops.ConfigurationOps.Ops
 import play.api.Configuration
 
 import java.util.UUID
@@ -9,19 +10,30 @@ import scala.util.Try
 @Singleton
 final class ConfigReader @Inject() (config: Configuration) {
 
-  def htmlCmd: String = nonEmptyString("pandoc.htmlCmd")
+  def htmlCmd: String = config.nonEmptyString("pandoc.htmlCmd")
 
-  def pdfCmd: String = nonEmptyString("pandoc.pdfCmd")
+  def pdfCmd: String = config.nonEmptyString("pandoc.pdfCmd")
 
-  def texCmd: String = nonEmptyString("pandoc.texCmd")
+  def texCmd: String = config.nonEmptyString("pandoc.texCmd")
 
-  def tmpFolderPath: String = nonEmptyString("play.temporaryFile.dir")
+  def tmpFolderPath: String = config.nonEmptyString("play.temporaryFile.dir")
 
-  def outputFolderPath: String = nonEmptyString("pandoc.outputFolderPath")
+  def outputFolderPath: String =
+    config.nonEmptyString("pandoc.outputFolderPath")
 
-  def deOutputFolderPath: String = nonEmptyString("pandoc.deOutputFolderPath")
+  def deOutputFolderPath: String =
+    config.nonEmptyString("pandoc.deOutputFolderPath")
 
-  def enOutputFolderPath: String = nonEmptyString("pandoc.enOutputFolderPath")
+  def enOutputFolderPath: String =
+    config.nonEmptyString("pandoc.enOutputFolderPath")
+
+  def moduleCompendiumFolderPath: String = config.nonEmptyString(
+    "pandoc.moduleCompendiumFolderPath"
+  )
+
+  def wpfCatalogueFolderPath: String = config.nonEmptyString(
+    "pandoc.wpfCatalogueFolderPath"
+  )
 
   def gitToken: Option[UUID] = config
     .getOptional[String]("git.token")
@@ -31,65 +43,46 @@ final class ConfigReader @Inject() (config: Configuration) {
     .getOptional[String]("git.moduleModeToken")
     .flatMap(s => Try(UUID.fromString(s)).toOption)
 
-  def accessToken: String = nonEmptyString("git.accessToken")
+  def accessToken: String = config.nonEmptyString("git.accessToken")
 
-  def baseUrl: String = nonEmptyString("git.baseUrl")
+  def baseUrl: String = config.nonEmptyString("git.baseUrl")
 
-  def mainBranch: String = nonEmptyString("git.mainBranch")
+  def mainBranch: String = config.nonEmptyString("git.mainBranch")
 
-  def draftBranch: String = nonEmptyString("git.draftBranch")
+  def draftBranch: String = config.nonEmptyString("git.draftBranch")
 
-  def modulesRootFolder: String = nonEmptyString("git.modulesRootFolder")
+  def modulesRootFolder: String = config.nonEmptyString("git.modulesRootFolder")
 
-  def coreRootFolder: String = nonEmptyString("git.coreRootFolder")
+  def coreRootFolder: String = config.nonEmptyString("git.coreRootFolder")
 
-  def projectId: Int = int("git.projectId")
+  def projectId: Int = config.int("git.projectId")
 
-  def kafkaServerUrl: String = nonEmptyString("kafka.serverUrl")
+  def kafkaServerUrl: String = config.nonEmptyString("kafka.serverUrl")
 
-  def kafkaApplicationId: String = nonEmptyString("kafka.applicationId")
+  def kafkaApplicationId: String = config.nonEmptyString("kafka.applicationId")
 
-  def moduleKeysToReviewFromSgl: Seq[String] = list("moduleKeysToReview.sgl")
+  def moduleKeysToReviewFromSgl: Seq[String] =
+    config.list("moduleKeysToReview.sgl")
 
-  def moduleKeysToReviewFromPav: Seq[String] = list("moduleKeysToReview.pav")
+  def moduleKeysToReviewFromPav: Seq[String] =
+    config.list("moduleKeysToReview.pav")
 
-  def autoApprovedLabel: String = nonEmptyString("git.autoApprovedLabel")
+  def autoApprovedLabel: String = config.nonEmptyString("git.autoApprovedLabel")
 
-  def reviewApprovedLabel: String = nonEmptyString("git.reviewApprovedLabel")
+  def reviewApprovedLabel: String =
+    config.nonEmptyString("git.reviewApprovedLabel")
 
-  def repoPath: String = nonEmptyString("glab.repoPath")
+  def repoPath: String = config.nonEmptyString("glab.repoPath")
 
-  def mcPath: String = nonEmptyString("glab.mcPath")
+  def mcPath: String = config.nonEmptyString("glab.mcPath")
 
-  def pushScriptPath: Option[String] = emptyString("glab.pushScriptPath")
+  def pushScriptPath: String = config.nonEmptyString("glab.pushScriptPath")
 
-  def switchBranchScriptPath: String = nonEmptyString(
+  def switchBranchScriptPath: String = config.nonEmptyString(
     "glab.switchBranchScriptPath"
   )
 
-  def diffPreviewScriptPath: String = nonEmptyString(
+  def diffPreviewScriptPath: String = config.nonEmptyString(
     "glab.diffPreviewScriptPath"
   )
-
-  private def list(key: String): Seq[String] =
-    if (config.has(key)) config.get[Seq[String]](key)
-    else throw new Throwable(s"key $key must be set in application.conf")
-
-  private def nonEmptyString(key: String): String =
-    config.getOptional[String](key) match {
-      case Some(value) if value.nonEmpty => value
-      case _ => throw new Throwable(s"$key must be set")
-    }
-
-  private def emptyString(key: String): Option[String] =
-    config.getOptional[String](key) match {
-      case Some(value) if value.nonEmpty => Some(value)
-      case _                             => None
-    }
-
-  private def int(key: String): Int =
-    config.getOptional[Int](key) match {
-      case Some(value) => value
-      case _           => throw new Throwable(s"$key must be set")
-    }
 }
