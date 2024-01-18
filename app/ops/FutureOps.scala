@@ -17,6 +17,10 @@ object FutureOps {
     def continueIf(pred: A => Boolean, msg: => String)(implicit
         ctx: ExecutionContext
     ): Future[A] = self.abortIf(a => !pred(a), msg)
+
+    @unused
+    def measure(tag: String)(implicit ctx: ExecutionContext): Future[A] =
+      new FutureTimeTracker[A](self).track(tag)
   }
 
   implicit class SeqOps[A](private val self: Future[Seq[A]]) extends AnyVal {

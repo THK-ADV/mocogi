@@ -1,20 +1,22 @@
 package service
 
 import database.repo.{ModuleCompendiumRepository, PORepository}
+import models.Module
 import ops.EitherOps.EStringThrowOps
-import ops.FileOps.FileOps0
+import ops.LoggerOps
 import play.api.Logging
 import play.api.libs.Files.TemporaryFile
 import printing.PrintingLanguage
 import printing.latex.ModuleCompendiumLatexPrinter
 import providers.ConfigReader
 import service.LatexCompiler.{compile, exec, getPdf}
-import models.Module
+import service.ModuleCompendiumPreviewService.containsPO
 
 import java.nio.file.{Files, Path, Paths}
 import java.util.UUID
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
+import scala.jdk.CollectionConverters.IteratorHasAsScala
 import scala.sys.process.Process
 
 @Singleton
@@ -25,7 +27,8 @@ final class ModuleCompendiumPreviewService @Inject() (
     pipeline: MetadataPipeline,
     configReader: ConfigReader,
     implicit val ctx: ExecutionContext
-) extends Logging {
+) extends Logging
+    with LoggerOps {
 
   // Left: Preview, Right: Published
   def previewModules(poAbbrev: String): Future[(Seq[Module], Seq[Module])] =
@@ -40,7 +43,7 @@ final class ModuleCompendiumPreviewService @Inject() (
       poAbbrev: String,
       pLang: PrintingLanguage,
       latexFile: TemporaryFile
-  ): Future[Path] =
+  ): Future[Path] = {
     for {
       pos <- poRepository.allValidShort()
       po <- pos.find(_.abbrev == poAbbrev) match {
@@ -49,11 +52,9 @@ final class ModuleCompendiumPreviewService @Inject() (
         case None =>
           Future.failed(new Throwable(s"po $poAbbrev needs to be valid"))
       }
-      _ = switchToStagingBranch()
-      // TODO does not consider created modules which are in staging only
-      mcIds <- moduleCompendiumRepository.allIdsFromPo(poAbbrev)
-      prints = matchPrints(mcIds)
-      mcs <- pipeline.parseValidateMany(prints)
+      _ <- switchToStagingBranch().toFuture
+      modules = getAllModulesFromPreview(po.abbrev)
+      mcs <- pipeline.parseValidateMany(modules)
       pdf <- mcs match {
         case Left(errs) =>
           Future.failed(new Throwable(errs.map(_.getMessage).mkString("\n")))
@@ -73,15 +74,23 @@ final class ModuleCompendiumPreviewService @Inject() (
           compile(path).flatMap(_ => getPdf(path)).toFuture
       }
     } yield pdf
+  }
 
-  private def matchPrints(moduleIds: Seq[UUID]): Seq[(Option[UUID], Print)] =
-    Paths
-      .get(configReader.repoPath)
-      .resolve(configReader.modulesRootFolder)
-      .allFiles(p =>
-        moduleIds.exists(id => p.getFileName.toString.startsWith(id.toString))
-      )
-      .map(p => None -> Print(Files.readString(p)))
+  private def getAllModulesFromPreview(
+      po: String
+  ): Seq[(Option[UUID], Print)] = {
+    val folder =
+      Paths.get(configReader.repoPath).resolve(configReader.modulesRootFolder)
+    Files
+      .walk(folder)
+      .iterator()
+      .asScala
+      .drop(1) // drop root directory
+      .map(Files.readString)
+      .filter(containsPO(_, po))
+      .map(None -> Print(_))
+      .toSeq
+  }
 
   private def switchToStagingBranch(): Either[String, String] =
     exec(
@@ -120,5 +129,16 @@ final class ModuleCompendiumPreviewService @Inject() (
         cwd = Paths.get(configReader.repoPath).toAbsolutePath.toFile
       )
     ).map(parse)
+  }
+}
+
+object ModuleCompendiumPreviewService {
+  def containsPO(input: String, po: String): Boolean = {
+    val start = input.indexOf("po_mandatory:\n")
+    if (start < 0) return false
+    val end = input.lastIndexOf("---")
+    if (end < 0) return false
+    val input0 = input.slice(start, end)
+    input0.contains(s"- study_program: study_program.$po")
   }
 }
