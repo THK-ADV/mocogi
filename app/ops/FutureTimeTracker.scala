@@ -13,19 +13,10 @@ class FutureTimeTracker[T](body: => Future[T])(implicit
 ) extends Logging {
   private val start = System.currentTimeMillis()
 
-  @unused
   def track(tag: String): Future[T] = {
     body.andThen { case _ =>
       val end = System.currentTimeMillis()
       logger.info(s"Time Consumed by $tag is: ${end - start} millis")
     }
   }
-}
-
-@unused
-object FutureTimeTracker {
-  def apply[T](body: => Future[T])(implicit
-      executionContext: ExecutionContext
-  ): FutureTimeTracker[T] =
-    new FutureTimeTracker(body)
 }
