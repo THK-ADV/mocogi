@@ -2,7 +2,6 @@ package ops
 
 import play.api.Logging
 
-import scala.annotation.unused
 import scala.concurrent.{ExecutionContext, Future}
 
 /*

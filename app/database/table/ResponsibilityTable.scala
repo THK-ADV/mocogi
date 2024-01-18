@@ -17,14 +17,19 @@ final class ResponsibilityTable(tag: Tag)
 
   def person = column[String]("person", O.PrimaryKey)
 
-  def isPerson(person: String) =
-    this.person.toLowerCase === person.toLowerCase
-
   def responsibilityType =
     column[ResponsibilityType]("responsibility_type", O.PrimaryKey)
 
   def personFk =
     foreignKey("person", person, TableQuery[PersonTable])(_.id)
+
+  def isModuleManager = {
+    val moduleManger: ResponsibilityType = ResponsibilityType.ModuleManagement
+    this.responsibilityType === moduleManger
+  }
+
+  def isPerson(person: String) =
+    this.person.toLowerCase === person.toLowerCase
 
   override def * = (
     metadata,
