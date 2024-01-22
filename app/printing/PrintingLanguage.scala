@@ -27,4 +27,6 @@ object PrintingLanguage {
       case "en" => Some(English)
       case _    => None
     }
+
+  def all(): Seq[PrintingLanguage] = List(German, English)
 }
