@@ -20,6 +20,10 @@ object GitFilePath {
 
   private def moduleFileExt = ".md"
 
+  private def coreFileExt = ".yaml"
+
+  private def mcsFileExt = ".tex"
+
   def apply(path: String): GitFilePath =
     GitFilePathImpl(path)
 
@@ -45,6 +49,17 @@ object GitFilePath {
     }
 
     def isModule(implicit gitConfig: GitConfig): Boolean =
-      self.value.startsWith(modulePrefix) && self.value.endsWith(moduleFileExt)
+      self.value.startsWith(gitConfig.modulesRootFolder) && self.value.endsWith(
+        moduleFileExt
+      )
+
+    def isCore(implicit gitConfig: GitConfig): Boolean =
+      self.value.startsWith(gitConfig.coreRootFolder) && self.value.endsWith(
+        coreFileExt
+      )
+
+    def isModuleCompendium(implicit gitConfig: GitConfig): Boolean =
+      self.value.startsWith(gitConfig.moduleCompendiumRootFolder) && self.value
+        .endsWith(mcsFileExt)
   }
 }
