@@ -35,6 +35,14 @@ final class ConfigReader @Inject() (config: Configuration) {
     "pandoc.wpfCatalogueFolderPath"
   )
 
+  def moduleCompendiumFolderPath: String = nonEmptyString(
+    "pandoc.moduleCompendiumFolderPath"
+  )
+
+  def wpfCatalogueFolderPath: String = nonEmptyString(
+    "pandoc.wpfCatalogueFolderPath"
+  )
+
   def gitToken: Option[UUID] = config
     .getOptional[String]("git.token")
     .flatMap(s => Try(UUID.fromString(s)).toOption)
