@@ -1,18 +1,10 @@
-package service
+package compendium
 
 import akka.actor.{Actor, ActorRef, Props}
+import compendium.ModuleCompendiumLatexActor.GenerateLatexFiles
 import controllers.FileController
 import database.ModuleCompendiumOutput
-import database.repo.{
-  AssessmentMethodRepository,
-  LanguageRepository,
-  ModuleCompendiumListRepository,
-  ModuleCompendiumRepository,
-  ModuleTypeRepository,
-  PORepository,
-  PersonRepository,
-  SeasonRepository
-}
+import database.repo.{AssessmentMethodRepository, LanguageRepository, ModuleCompendiumListRepository, ModuleCompendiumRepository, ModuleTypeRepository, PORepository, PersonRepository, SeasonRepository}
 import git.api.GitAvailabilityChecker
 import models.core._
 import models.{ModuleCompendiumList, POShort, Semester}
@@ -22,7 +14,7 @@ import ops.LoggerOps
 import play.api.Logging
 import printing.PrintingLanguage
 import printing.latex.ModuleCompendiumLatexPrinter
-import service.ModuleCompendiumLatexActor.GenerateLatexFiles
+import service.LatexCompiler
 
 import java.nio.file.{Files, Path, Paths, StandardCopyOption}
 import java.time.LocalDateTime

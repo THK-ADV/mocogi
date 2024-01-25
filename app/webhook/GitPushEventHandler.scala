@@ -1,24 +1,27 @@
-package git.webhook
+package webhook
 
 import akka.actor.{Actor, ActorRef, Props}
-import database.repo.{ModuleDraftRepository, ModuleReviewRepository}
 import git.GitChanges.CategorizedGitFilePaths
 import git.api.GitFileDownloadService
 import git.publisher.{CoreDataPublisher, ModuleCompendiumPublisher}
-import git.webhook.GitPushEventHandlingActor.HandleMergeEvent
 import git.{GitChanges, GitConfig, GitFilePath}
 import models.{Branch, CommitId}
+import ops.LoggerOps
 import play.api.Logging
-import play.api.libs.json.{JsArray, JsError, JsResult, JsValue}
+import play.api.libs.json._
 
 import java.time.LocalDateTime
 import javax.inject.Singleton
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
-object GitPushEventHandlingActor {
-  private case class HandleMergeEvent(json: JsValue) extends AnyVal
+@Singleton
+case class GitPushEventHandler(private val value: ActorRef) {
+  def handle(json: JsValue): Unit =
+    value ! HandleEvent(json)
+}
 
+object GitPushEventHandler {
   private def invalidCommitId = "0000000000000000000000000000000000000000"
 
   def parseCommit(json: JsValue, key: String): JsResult[CommitId] =
@@ -67,27 +70,23 @@ object GitPushEventHandlingActor {
     } yield mergeCommit
 
   def parse(json: JsValue) =
-    JsResult.toTry(
-      for {
-        branch <- parseBranch(json)
-        afterCommit <- parseCommit(json, "after")
-        _ <- parseCommit(json, "before")
-        (added, modified, deleted, timestamp) <- parseFilesOfLastCommit(
-          json,
-          afterCommit
-        )
-      } yield (
-        branch,
-        GitChanges(added, modified, deleted, afterCommit, timestamp)
+    for {
+      branch <- parseBranch(json)
+      afterCommit <- parseCommit(json, "after")
+      _ <- parseCommit(json, "before")
+      (added, modified, deleted, timestamp) <- parseFilesOfLastCommit(
+        json,
+        afterCommit
       )
+    } yield (
+      branch,
+      GitChanges(added, modified, deleted, afterCommit, timestamp)
     )
 
   def props(
       downloadService: GitFileDownloadService,
       moduleCompendiumPublisher: ModuleCompendiumPublisher,
       coreDataPublisher: CoreDataPublisher,
-      moduleReviewRepository: ModuleReviewRepository,
-      moduleDraftRepository: ModuleDraftRepository,
       gitConfig: GitConfig,
       ctx: ExecutionContext
   ) = Props(
@@ -95,8 +94,6 @@ object GitPushEventHandlingActor {
       downloadService,
       moduleCompendiumPublisher,
       coreDataPublisher,
-      moduleReviewRepository,
-      moduleDraftRepository,
       gitConfig,
       ctx
     )
@@ -106,42 +103,29 @@ object GitPushEventHandlingActor {
       downloadService: GitFileDownloadService,
       moduleCompendiumPublisher: ModuleCompendiumPublisher,
       coreDataPublisher: CoreDataPublisher,
-      moduleReviewRepository: ModuleReviewRepository,
-      moduleDraftRepository: ModuleDraftRepository,
       implicit val gitConfig: GitConfig,
       implicit val ctx: ExecutionContext
   ) extends Actor
-      with Logging {
+      with Logging
+      with LoggerOps {
 
-    override def receive: Receive = { case HandleMergeEvent(json) =>
-      go(json) onComplete {
-        case Success(_) =>
-          logger.info("successfully handled git push event")
-        case Failure(t) =>
-          logger.error(
-            s"""failed to handle git merge event
-                 |  - message: ${t.getMessage}
-                 |  - trace: ${t.getStackTrace.mkString(
-                "\n           "
-              )}""".stripMargin
-          )
+    override def receive: Receive = { case HandleEvent(json) =>
+      logger.info("start handling git push event")
+      parse(json) match {
+        case JsSuccess((branch, changes), _) =>
+          branch.value match {
+            case gitConfig.mainBranch.value =>
+              downloadAndUpdateDatabase(branch, changes).onComplete {
+                case Success(_) => logger.info("finished!")
+                case Failure(e) => logFailure(e)
+              }
+            case _ =>
+              logger.info(s"no action for branch $branch")
+          }
+        case JsError(errors) =>
+          logUnhandedEvent(logger, errors)
       }
     }
-
-    private def mkString[A](xs: Seq[A]): String =
-      xs.mkString("\n\t- ", "\n\t- ", "")
-
-    private def go(json: JsValue): Future[Unit] =
-      Future.fromTry(parse(json)).flatMap { case (branch, changes) =>
-        branch.value match {
-          case gitConfig.draftBranch => removeDrafts(changes)
-          case gitConfig.mainBranch =>
-            downloadAndUpdateDatabase(branch, changes)
-          case _ =>
-            logger.info(s"no action for branch $branch")
-            Future.unit
-        }
-      }
 
     private def downloadAndUpdateDatabase(
         branch: Branch,
@@ -190,26 +174,5 @@ object GitPushEventHandlingActor {
         }
       }
     }
-
-    private def removeDrafts(
-        changes: GitChanges[List[GitFilePath]]
-    ): Future[Unit] = {
-      val modules = (changes.added ::: changes.modified)
-        .map(_.moduleId)
-        .collect { case Some(module) => module }
-      logger.info(s"deleting module drafts ${modules.mkString(",")} ...")
-      for { // TODO replace with cascading delete
-        res1 <- moduleReviewRepository.deleteMany(modules)
-        res2 <- moduleDraftRepository.deleteDrafts(modules)
-      } yield logger.info(
-        s"successfully deleted $res1 module reviews and $res2 module drafts"
-      )
-    }
   }
-}
-
-@Singleton
-case class GitPushEventHandlingActor(private val value: ActorRef) {
-  def handle(json: JsValue): Unit =
-    value ! HandleMergeEvent(json)
 }

@@ -8,6 +8,7 @@ import models.ModuleDraftState.{
   ValidForPublication,
   ValidForReview,
   WaitingForChanges,
+  WaitingForPublication,
   WaitingForReview
 }
 import play.api.libs.json.{JsValue, Json}
@@ -59,8 +60,14 @@ object ModuleDraft extends ModuleCompendiumProtocolFormat {
       ) ValidForReview
       else if (
         self.lastCommit.isDefined &&
+        self.keysToBeReviewed.nonEmpty &&
         self.mergeRequestStatus.contains(Open)
       ) WaitingForReview
+      else if (
+        self.lastCommit.isDefined &&
+        self.keysToBeReviewed.isEmpty &&
+        self.mergeRequestStatus.contains(Open)
+      ) WaitingForPublication
       else if (
         self.lastCommit.isDefined &&
         self.mergeRequestStatus.contains(Closed)

@@ -27,7 +27,7 @@ final class GitFileDownloadService @Inject() (
   ): Future[Option[ModuleCompendiumOutput]] = {
     val path = GitFilePath(id)
     for {
-      content <- downloadFileContent(path, Branch(config.draftBranch))
+      content <- downloadFileContent(path, config.draftBranch)
       res <- content match {
         case Some(content) =>
           pipeline.parse(Print(content.value), path).map(Some.apply)
@@ -48,7 +48,7 @@ final class GitFileDownloadService @Inject() (
   )(implicit lang: PrintingLanguage): Future[Option[String]] = {
     val path = GitFilePath(id)
     for {
-      content <- downloadFileContent(path, Branch(config.draftBranch))
+      content <- downloadFileContent(path, config.draftBranch)
       res <- content match {
         case Some(content) =>
           for {

@@ -16,7 +16,9 @@ sealed trait ModuleDraftState {
         ModuleDraftState.ValidForPublication |
         ModuleDraftState.WaitingForChanges =>
       true
-    case ModuleDraftState.WaitingForReview | ModuleDraftState.Unknown => false
+    case ModuleDraftState.WaitingForReview | ModuleDraftState.Unknown |
+        ModuleDraftState.WaitingForPublication =>
+      false
   }
 }
 
@@ -57,6 +59,12 @@ object ModuleDraftState {
     override def id: String = "waiting_for_review"
     override def deLabel: String = "Warte auf Review"
     override def enLabel: String = "Waiting for review"
+  }
+
+  case object WaitingForPublication extends ModuleDraftState {
+    override def id: String = "waiting_for_publication"
+    override def deLabel: String = "Warte auf Veröffentlichung"
+    override def enLabel: String = "Waiting for publication"
   }
 
   case object Unknown extends ModuleDraftState {

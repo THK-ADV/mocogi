@@ -1,9 +1,9 @@
 package providers
 
 import akka.actor.ActorSystem
+import compendium.WPFCatalogueGeneratorActor
 import database.repo.{PORepository, WPFRepository}
 import git.api.GitAvailabilityChecker
-import service.WPFCatalogueGeneratorActor
 
 import javax.inject.{Inject, Provider, Singleton}
 import scala.concurrent.ExecutionContext

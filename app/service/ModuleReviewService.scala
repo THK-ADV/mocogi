@@ -12,6 +12,7 @@ import models.ModuleReviewStatus.{Approved, Pending, Rejected}
 import models._
 import models.core.Person
 import ops.FutureOps.Ops
+import play.api.Logging
 
 import java.util.UUID
 import javax.inject.{Inject, Singleton}
@@ -26,7 +27,7 @@ final class ModuleReviewService @Inject() (
     private val api: GitMergeRequestApiService,
     private val keysToReview: ModuleKeysToReview,
     private implicit val ctx: ExecutionContext
-) {
+) extends Logging {
 
   private type MergeRequest = (MergeRequestId, MergeRequestStatus)
 
@@ -219,14 +220,12 @@ final class ModuleReviewService @Inject() (
       author: Person.Default
   ): Future[MergeRequest] =
     for {
-      (mergeRequestId, _) <- createMergeRequest(
+      (mergeRequestId, status) <- createMergeRequest(
         draft,
         mrTitle(author, draft.protocol().metadata),
         mrDesc(draft.modifiedKeys, Nil, Nil),
         needsApproval = false
       )
-      _ <- api.canBeMerged(mergeRequestId)
-      status <- api.merge(mergeRequestId)
     } yield (mergeRequestId, status)
 
   private def createMergeRequest(
@@ -237,7 +236,7 @@ final class ModuleReviewService @Inject() (
   ): Future[MergeRequest] =
     api.create(
       draft.branch,
-      Branch(api.config.draftBranch),
+      api.config.draftBranch,
       title,
       description,
       needsApproval,

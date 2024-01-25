@@ -1,6 +1,7 @@
-package service
+package compendium
 
 import akka.actor.{Actor, ActorRef, Props}
+import compendium.WPFCatalogueGeneratorActor.Generate
 import database.repo.{PORepository, WPFRepository}
 import git.api.GitAvailabilityChecker
 import models.Semester
@@ -8,7 +9,6 @@ import ops.EitherOps.EStringThrowOps
 import ops.FileOps.FileOps0
 import ops.LoggerOps
 import play.api.Logging
-import service.WPFCatalogueGeneratorActor.Generate
 
 import java.nio.file.{Files, Path, Paths, StandardCopyOption}
 import javax.inject.Singleton

@@ -1,6 +1,7 @@
 package providers
 
 import akka.actor.ActorSystem
+import compendium.ModuleCompendiumLatexActor
 import database.repo.{
   AssessmentMethodRepository,
   LanguageRepository,
@@ -13,8 +14,7 @@ import database.repo.{
 }
 import git.api.GitAvailabilityChecker
 import printing.latex.ModuleCompendiumLatexPrinter
-import service.ModuleCompendiumLatexActor
-import service.ModuleCompendiumLatexActor.{Config, GlabConfig}
+import ModuleCompendiumLatexActor.{Config, GlabConfig}
 
 import javax.inject.{Inject, Provider, Singleton}
 import scala.concurrent.ExecutionContext

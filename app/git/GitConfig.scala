@@ -1,5 +1,7 @@
 package git
 
+import models.Branch
+
 import java.util.UUID
 
 case class GitConfig(
@@ -8,8 +10,8 @@ case class GitConfig(
     moduleModeToken: Option[UUID],
     baseUrl: String,
     projectId: Int,
-    mainBranch: String,
-    draftBranch: String,
+    mainBranch: Branch,
+    draftBranch: Branch,
     modulesRootFolder: String,
     coreRootFolder: String,
     moduleCompendiumRootFolder: String,

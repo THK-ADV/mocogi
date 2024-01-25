@@ -1,6 +1,7 @@
 package providers
 
 import git.GitConfig
+import models.Branch
 
 import javax.inject.{Inject, Provider, Singleton}
 
@@ -14,8 +15,8 @@ final class GitConfigProvider @Inject() (config: ConfigReader)
       config.moduleModeToken,
       config.baseUrl,
       config.projectId,
-      config.mainBranch,
-      config.draftBranch,
+      Branch(config.mainBranch),
+      Branch(config.draftBranch),
       config.modulesRootFolder,
       config.coreRootFolder,
       config.moduleCompendiumRootFolder,

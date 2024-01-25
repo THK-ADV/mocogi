@@ -1,15 +1,10 @@
 import auth.{Authorization, UserToken}
 import com.google.inject.name.Names
 import com.google.inject.{AbstractModule, TypeLiteral}
-import database.repo.{
-  ModuleCompendiumRepository,
-  ModuleCompendiumRepositoryImpl,
-  ModuleDraftRepository,
-  ModuleDraftRepositoryImpl
-}
+import compendium.{ModuleCompendiumLatexActor, WPFCatalogueGeneratorActor}
+import database.repo.{ModuleCompendiumRepository, ModuleCompendiumRepositoryImpl, ModuleDraftRepository, ModuleDraftRepositoryImpl}
 import git.publisher.{CoreDataPublisher, ModuleCompendiumPublisher}
 import git.subscriber.ModuleCompendiumSubscribers
-import git.webhook.GitPushEventHandlingActor
 import git.{GitConfig, GitFilesBroker, GitFilesBrokerImpl}
 import models.ModuleKeysToReview
 import ops.ConfigurationOps.Ops
@@ -23,6 +18,7 @@ import publisher.KafkaPublisher
 import service._
 import service.core._
 import validator.Metadata
+import webhook.GitPushEventHandler
 
 import scala.annotation.unused
 
@@ -108,7 +104,7 @@ class Module(@unused environment: Environment, configuration: Configuration)
     bind(classOf[ModuleCompendiumSubscribers])
       .toProvider(classOf[ModuleCompendiumSubscribersProvider])
       .asEagerSingleton()
-    bind(classOf[GitPushEventHandlingActor])
+    bind(classOf[GitPushEventHandler])
       .toProvider(classOf[GitMergeEventHandlingActorProvider])
       .asEagerSingleton()
     bind(classOf[CoreDataPublisher])

@@ -10,7 +10,8 @@ ARG GIT_EMAIL
 ARG GIT_USERNAME
 ARG GIT_HOST
 ARG GIT_ACCESS_TOKEN
-ARG GIT_REPO
+ARG GIT_REPO_PATH
+ARG GIT_REPO_NAME
 WORKDIR /mocogi
 COPY --from=sbt /mocogi/target/universal/stage .
 COPY --from=sbt /mocogi/gitlab-init.sh .

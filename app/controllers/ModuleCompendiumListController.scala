@@ -1,6 +1,7 @@
 package controllers
 
 import auth.AuthorizationAction
+import compendium.ModuleCompendiumLatexActor
 import controllers.actions.{DirectorCheck, PermissionCheck, PersonAction}
 import controllers.formats.ModuleFormat
 import database.repo.{
@@ -14,7 +15,7 @@ import play.api.libs.Files.DefaultTemporaryFileCreator
 import play.api.libs.json.Json
 import play.api.mvc.{AbstractController, ControllerComponents}
 import play.mvc.Http.HeaderNames
-import service.{ModuleCompendiumLatexActor, ModuleCompendiumPreviewService}
+import service.ModuleCompendiumPreviewService
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}

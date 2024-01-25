@@ -10,6 +10,7 @@ GET           /me                                                 controllers.Me
 # Git Webhooks
 
 POST          /webhook/onPushEvent                                controllers.GitWebhookController.onPushEvent()
+POST          /webhook/onMergeEvent                               controllers.GitWebhookController.onMergeEvent()
 
 # Git
 

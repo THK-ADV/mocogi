@@ -11,8 +11,8 @@ import java.time.format.DateTimeFormatter
 import java.util.UUID
 import scala.io.Source
 
-final class GitPushEventHandlingActorSpec extends AnyWordSpec with TryValues {
-  import git.webhook.GitPushEventHandlingActor._
+final class GitPushEventHandlerSpec extends AnyWordSpec with TryValues {
+  import webhook.GitPushEventHandler._
 
   def parseJson(name: String): JsValue = {
     val s = Source.fromFile(new File(s"test/git/$name"))

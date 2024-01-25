@@ -1,10 +1,10 @@
 package controllers
 
+import compendium.WPFCatalogueGeneratorActor
 import models.Semester
 import play.api.libs.json.{JsArray, Json}
 import play.api.mvc.{AbstractController, ControllerComponents}
 import providers.ConfigReader
-import service.WPFCatalogueGeneratorActor
 
 import java.nio.file.{Files, Paths}
 import javax.inject.{Inject, Singleton}

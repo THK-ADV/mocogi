@@ -32,7 +32,8 @@ services:
         GIT_USERNAME: ${GIT_USERNAME}
         GIT_HOST: ${GIT_HOST}
         GIT_ACCESS_TOKEN: ${GIT_ACCESS_TOKEN}
-        GIT_REPO: ${GIT_REPO}
+        GIT_REPO_PATH: ${GIT_REPO_PATH}
+        GIT_REPO_NAME: ${GIT_REPO_NAME}
 
   frontend:
     container_name: mocogi-frontend
