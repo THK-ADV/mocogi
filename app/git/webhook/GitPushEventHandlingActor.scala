@@ -21,10 +21,7 @@ object GitPushEventHandlingActor {
 
   private def invalidCommitId = "0000000000000000000000000000000000000000"
 
-  def parseCommit(
-      json: JsValue,
-      key: String
-  ): JsResult[CommitId] = // TODO test other use cases
+  def parseCommit(json: JsValue, key: String): JsResult[CommitId] =
     json
       .\(key)
       .validate[String]
