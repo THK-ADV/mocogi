@@ -64,7 +64,9 @@ object WPFCatalogueGeneratorActor {
       csv.append("Modulname,Modulabkürzung,Modulverantwortliche")
       for {
         _ <- gitAvailabilityChecker.checkAvailability()
-        allPos <- poRepo.allValidShort()
+        allPos <- poRepo
+          .allValidShort()
+          .map(_.sortBy(a => (a.studyProgram.grade, a.fullAbbrev, a.version)))
         entries <- wpfRepo.all()
         file <- {
           allPos.foreach(p => {

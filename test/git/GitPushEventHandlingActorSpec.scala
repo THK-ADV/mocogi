@@ -3,7 +3,7 @@ package git
 import models.{Branch, CommitId}
 import org.scalatest.TryValues
 import org.scalatest.wordspec.AnyWordSpec
-import play.api.libs.json.{JsValue, Json}
+import play.api.libs.json.{JsError, JsSuccess, JsValue, Json}
 
 import java.io.File
 import java.time.LocalDateTime
@@ -25,17 +25,26 @@ final class GitPushEventHandlingActorSpec extends AnyWordSpec with TryValues {
     "parse after commit" in {
       val draft = parseJson("push-in-draft.json")
       assert(
-        parseAfterCommit(draft).get == CommitId(
+        parseCommit(draft, "after").get == CommitId(
           "f4c87fa7fbfaa65e4d6277833bb65ec93e1c9286"
         )
       )
 
       val main = parseJson("push-in-main.json")
       assert(
-        parseAfterCommit(main).get == CommitId(
+        parseCommit(main, "after").get == CommitId(
           "3d2a3763792b4ea95bde4cb3fad9ab344e65102e"
         )
       )
+    }
+
+    "abort parsing if commit id is invalid" in {
+      val draft = parseJson("push-because-new-branch.json")
+      parseCommit(draft, "after") match {
+        case JsSuccess(cid, _) =>
+          fail(s"commit id should be invalid, but was $cid")
+        case JsError(_) => succeed
+      }
     }
 
     "parse target branch" in {
@@ -75,7 +84,20 @@ final class GitPushEventHandlingActorSpec extends AnyWordSpec with TryValues {
 
     "separate modules from core entries" in {
       val config =
-        GitConfig(None, "", None, "", 0, "", "", "modules", "core", "", "")
+        GitConfig(
+          None,
+          "",
+          None,
+          "",
+          0,
+          "",
+          "",
+          "modules",
+          "core",
+          "mcs",
+          "",
+          ""
+        )
       val main = parseJson("push-in-main.json")
       val changes = parse(main).success.value._2
       assert(changes.added.isEmpty)

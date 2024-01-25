@@ -41,7 +41,7 @@ object LatexCompiler {
     exec(process)
   }
 
-  def exec(process: ProcessBuilder) = {
+  def exec(process: ProcessBuilder): Either[String, String] = {
     val builder = new StringBuilder()
     val pLogger =
       ProcessLogger(
@@ -57,6 +57,29 @@ object LatexCompiler {
       )
     } catch {
       case NonFatal(e) => Left(e.getMessage)
+    }
+  }
+
+  def execRes(
+      process: ProcessBuilder
+  )(
+      statusErrMsg: PartialFunction[Int, String]
+  ): Either[(String, Option[String]), String] = {
+    val builder = new StringBuilder()
+    val pLogger =
+      ProcessLogger(
+        a => builder.append(s"$a\n"),
+        a => builder.append(s"${Console.RED}$a${Console.RESET}\n")
+      )
+    try {
+      val status = process ! pLogger
+      if (status == 0) Right(builder.toString())
+      else if (status < 0) Left((builder.toString(), None))
+      else if (statusErrMsg.isDefinedAt(status))
+        Left((builder.toString(), Some(statusErrMsg(status))))
+      else Left((builder.toString(), None))
+    } catch {
+      case NonFatal(e) => Left((e.getMessage, None))
     }
   }
 }

@@ -2,6 +2,7 @@ package git.webhook
 
 import akka.actor.{Actor, ActorRef, Props}
 import database.repo.{ModuleDraftRepository, ModuleReviewRepository}
+import git.GitChanges.CategorizedGitFilePaths
 import git.api.GitFileDownloadService
 import git.publisher.{CoreDataPublisher, ModuleCompendiumPublisher}
 import git.webhook.GitPushEventHandlingActor.HandleMergeEvent
@@ -18,10 +19,19 @@ import scala.util.{Failure, Success}
 object GitPushEventHandlingActor {
   private case class HandleMergeEvent(json: JsValue) extends AnyVal
 
-  def parseAfterCommit(json: JsValue): JsResult[CommitId] =
+  private def invalidCommitId = "0000000000000000000000000000000000000000"
+
+  def parseCommit(json: JsValue, key: String): JsResult[CommitId] =
     json
-      .\("after")
+      .\(key)
       .validate[String]
+      .filter(
+        JsError(
+          s"expected a real commit id for key '$key', but was: '$invalidCommitId'"
+        )
+      )(
+        _ != invalidCommitId
+      )
       .map(CommitId.apply)
 
   def parseBranch(json: JsValue): JsResult[Branch] =
@@ -60,7 +70,8 @@ object GitPushEventHandlingActor {
     JsResult.toTry(
       for {
         branch <- parseBranch(json)
-        afterCommit <- parseAfterCommit(json)
+        afterCommit <- parseCommit(json, "after")
+        _ <- parseCommit(json, "before")
         (added, modified, deleted, timestamp) <- parseFilesOfLastCommit(
           json,
           afterCommit
@@ -136,15 +147,13 @@ object GitPushEventHandlingActor {
         branch: Branch,
         changes: GitChanges[List[GitFilePath]]
     ) = {
-      val (modules, cores) =
-        (changes.added ::: changes.modified).partition(_.isModule)
+      val CategorizedGitFilePaths(modules, core, _) = changes.categorized
 
       if (modules.nonEmpty) {
         logger.info(s"downloading modules files ${mkString(modules)}")
       }
-
-      if (cores.nonEmpty) {
-        logger.info(s"downloading core files ${mkString(cores)}")
+      if (core.nonEmpty) {
+        logger.info(s"downloading core files ${mkString(core)}")
       }
 
       for {
@@ -156,7 +165,7 @@ object GitPushEventHandlingActor {
           )
         )
         cores <- Future.sequence(
-          cores.map(path =>
+          core.map(path =>
             downloadService
               .downloadFileContent(path, branch)
               .collect { case Some(content) => path -> content }

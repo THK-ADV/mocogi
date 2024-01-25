@@ -2,6 +2,7 @@ package service
 
 import akka.actor.{Actor, ActorRef, Props}
 import controllers.FileController
+import database.ModuleCompendiumOutput
 import database.repo.{
   AssessmentMethodRepository,
   LanguageRepository,
@@ -13,7 +14,9 @@ import database.repo.{
   SeasonRepository
 }
 import git.api.GitAvailabilityChecker
-import models.{ModuleCompendiumList, Semester}
+import models.core._
+import models.{ModuleCompendiumList, POShort, Semester}
+import ops.EitherOps.{EOps, EStringThrowOps}
 import ops.FileOps.FileOps0
 import ops.LoggerOps
 import play.api.Logging
@@ -54,7 +57,7 @@ object ModuleCompendiumLatexActor {
   case class Config(
       tmpFolderPath: String,
       moduleCompendiumFolderPath: String,
-      glabConfig: Option[GlabConfig]
+      glabConfig: GlabConfig
   )
 
   case class GlabConfig(
@@ -126,30 +129,22 @@ object ModuleCompendiumLatexActor {
         seasons <- seasonRepository.all()
         people <- personRepository.all()
         ams <- assessmentMethodRepository.all()
-        res <- {
+        files <- {
           val res = pos.par
-            .flatMap(po =>
-              Seq(
-                po -> PrintingLanguage.German,
-                po -> PrintingLanguage.English
-              )
-            )
+            .flatMap(po => PrintingLanguage.all().map(po -> _))
             .map { case (po, pLang) =>
-              val content = printer.print(
-                po,
-                Some(semester),
-                mcs.filter(_.metadata.po.mandatory.exists { a =>
-                  a.po == po.abbrev && a.specialization
-                    .zip(po.specialization)
-                    .fold(true)(a => a._1 == a._2.abbrev)
-                }),
+              val content = print(
+                semester,
+                pos,
+                mcs,
                 mts,
                 lang,
                 seasons,
                 people,
                 ams,
-                pos
-              )(pLang)
+                po,
+                pLang
+              )
               val filename =
                 s"${pLang.id}_${semester.id}_${po.fullAbbrev}"
               createTexFile(filename, content) match {
@@ -188,51 +183,99 @@ object ModuleCompendiumLatexActor {
             }
             .seq
           res.collect { case Left((file, msg)) => logger.error(s"$file\n$msg") }
-          val fileEntries = res.collect { case Right(r) => r }
-          commit(fileEntries).fold(logger.error(_), logger.info(_))
-          create(fileEntries)
+          val files = res.collect { case Right(r) => r }
+          moveToGitFolder(files).toFuture
         }
+        _ <- commit(semester).toFuture
+        res <- create(files)
       } yield res
 
-    private def commit(xs: Seq[FileEntry]): Either[String, String] =
-      config.glabConfig match {
-        case Some(glabConfig) if xs.nonEmpty =>
-          xs.foreach { x =>
-            val src = x._6.toAbsolutePath
-            val destDir = Paths.get(glabConfig.mcPath)
-            val dest = destDir.resolve(src.getFileName)
-            try {
-              Right(
-                Files.move(
-                  src,
-                  dest,
-                  StandardCopyOption.REPLACE_EXISTING
-                )
-              )
-            } catch {
-              case NonFatal(_) =>
-                logger.error(
-                  s"failed to move file from ${src.toAbsolutePath} to ${dest.toAbsolutePath} "
-                )
-            }
-          }
-          val semester = xs.head._5
-          val branchName = semester.id
-          val process = Process(
-            command = Seq(
-              "/bin/bash",
-              glabConfig.pushScriptPath,
-              glabConfig.mainBranch,
-              branchName,
-              s"Module Compendium Entries for ${semester.enLabel} ${semester.year}",
-              s"Module Handbook for ${semester.enLabel} ${semester.year}"
-            ),
-            cwd = Paths.get(glabConfig.repoPath).toAbsolutePath.toFile
+    private def print(
+        semester: Semester,
+        pos: Seq[POShort],
+        mcs: Seq[ModuleCompendiumOutput],
+        mts: Seq[ModuleType],
+        lang: Seq[Language],
+        seasons: Seq[Season],
+        people: Seq[Person],
+        ams: Seq[AssessmentMethod],
+        po: POShort,
+        pLang: PrintingLanguage
+    ): StringBuilder =
+      printer.print(
+        po,
+        Some(semester),
+        mcs
+          .filter(_.metadata.po.mandatory.exists { a =>
+            a.po == po.abbrev && a.specialization
+              .zip(po.specialization)
+              .fold(true)(a => a._1 == a._2.abbrev)
+          }),
+        mts,
+        lang,
+        seasons,
+        people,
+        ams,
+        pos
+      )(pLang)
+
+    private def moveToGitFolder(
+        files: Seq[FileEntry]
+    ): Either[String, Seq[FileEntry]] = {
+      logger.info(s"moving ${files.size} files to git folder...")
+      val destDir = Paths.get(config.glabConfig.mcPath)
+      val (failure, success) = files.partitionMap { x =>
+        val src = x._6.toAbsolutePath
+        val dest = destDir.resolve(src.getFileName)
+        try {
+          Files.move(
+            src,
+            dest,
+            StandardCopyOption.REPLACE_EXISTING
           )
-          exec(process)
-        case _ =>
-          Left("repo path must be set for commit")
+          Right(x.copy(_6 = dest))
+        } catch {
+          case NonFatal(_) =>
+            logger.error(
+              s"failed to move file from ${src.toAbsolutePath} to ${dest.toAbsolutePath} "
+            )
+            Left(x)
+        }
       }
+
+      if (failure.nonEmpty) {
+        logger.error("abort! deleting all files...")
+        failure.foreach(a => Files.delete(a._6))
+        success.foreach(a => Files.delete(a._6))
+        val errFiles = failure.map(_._6.toAbsolutePath).mkString(", ")
+        Left(s"failed moving files: $errFiles")
+      } else {
+        logger.info("finished moving files!")
+        Right(success)
+      }
+    }
+
+    private def commit(semester: Semester): Either[String, String] = {
+      val branchName = semester.id
+      val process = Process(
+        command = Seq(
+          "/bin/bash",
+          config.glabConfig.pushScriptPath,
+          config.glabConfig.mainBranch,
+          branchName,
+          s"Module Compendium Entries for ${semester.enLabel} ${semester.year}",
+          s"Module Handbook for ${semester.enLabel} ${semester.year}"
+        ),
+        cwd = Paths.get(config.glabConfig.repoPath).toAbsolutePath.toFile
+      )
+      val res = execRes(process) {
+        case 1 => "failed to commit"
+        case 2 => "failed to create the merge request"
+        case 3 => "failed to merge the merge request"
+      }
+      res.fold(a => logger.error(a._1), logger.info(_))
+      res.mapErr(a => a._2.getOrElse(a._1))
+    }
 
     private def create(xs: Seq[FileEntry]) = {
       val moduleCompendiumFolder =
@@ -286,6 +329,7 @@ object ModuleCompendiumLatexActor {
       }
 
     override def receive: Receive = { case GenerateLatexFiles(semester) =>
+      logger.info("start generating module compendium list")
       generate(semester) onComplete {
         case Success(value) =>
           logSuccess(
