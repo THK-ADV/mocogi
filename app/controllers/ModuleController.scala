@@ -1,11 +1,8 @@
 package controllers
 
 import auth.AuthorizationAction
-import database.view.{
-  ModuleManagement,
-  ModuleViewRepository,
-  StudyProgramModuleAssociation
-}
+import database.view.ModuleViewRepository
+import models.{ModuleManagement, StudyProgramModuleAssociation}
 import play.api.libs.json.{Json, Writes}
 import play.api.mvc.{AbstractController, ControllerComponents}
 import service.ModuleCompendiumService

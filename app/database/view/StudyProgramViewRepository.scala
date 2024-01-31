@@ -1,6 +1,6 @@
 package database.view
 
-import models.{SpecializationShort, StudyProgramAtomic}
+import models.{SpecializationShort, StudyProgramView}
 import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfigProvider}
 import slick.jdbc.JdbcProfile
 
@@ -15,10 +15,10 @@ final class StudyProgramViewRepository @Inject() (
     with MaterializedView {
   import profile.api._
 
-  override def name: String = "study_program_atomic"
+  override def name: String = "study_program_view"
 
-  final class StudyProgramView(tag: Tag)
-      extends Table[StudyProgramAtomic](tag, name) {
+  final class StudyProgramViewTable(tag: Tag)
+      extends Table[StudyProgramView](tag, name) {
 
     def poId = column[String]("po_id")
 
@@ -43,50 +43,50 @@ final class StudyProgramViewRepository @Inject() (
       specializationId,
       specializationLabel
     ) <> (mapRow, unmapRow)
-  }
 
-  val tableQuery = TableQuery[StudyProgramView]
-
-  def all(): Future[Seq[StudyProgramAtomic]] =
-    db.run(tableQuery.result)
-
-  def mapRow: (
-      (String, String, String, String, Int, Option[String], Option[String])
-  ) => StudyProgramAtomic = {
-    case (
+    private def mapRow: (
+        (String, String, String, String, Int, Option[String], Option[String])
+    ) => StudyProgramView = {
+      case (
+            poId,
+            studyProgramId,
+            studyProgramLabel,
+            grade,
+            poVersion,
+            specializationId,
+            specializationLabel
+          ) =>
+        StudyProgramView(
           poId,
+          poVersion,
           studyProgramId,
           studyProgramLabel,
           grade,
-          poVersion,
-          specializationId,
-          specializationLabel
-        ) =>
-      StudyProgramAtomic(
-        poId,
-        poVersion,
-        studyProgramId,
-        studyProgramLabel,
-        grade,
-        specializationId
-          .zip(specializationLabel)
-          .map((SpecializationShort.apply _).tupled)
+          specializationId
+            .zip(specializationLabel)
+            .map((SpecializationShort.apply _).tupled)
+        )
+    }
+
+    private def unmapRow: StudyProgramView => Option[
+      (String, String, String, String, Int, Option[String], Option[String])
+    ] = { a =>
+      Option(
+        (
+          a.poId,
+          a.studyProgramId,
+          a.studyProgramLabel,
+          a.gradeLabel,
+          a.poVersion,
+          a.specialization.map(_.id),
+          a.specialization.map(_.label)
+        )
       )
+    }
   }
 
-  def unmapRow: StudyProgramAtomic => Option[
-    (String, String, String, String, Int, Option[String], Option[String])
-  ] = { a =>
-    Option(
-      (
-        a.poId,
-        a.studyProgramId,
-        a.studyProgramLabel,
-        a.gradeLabel,
-        a.poVersion,
-        a.specialization.map(_.id),
-        a.specialization.map(_.label)
-      )
-    )
-  }
+  val tableQuery = TableQuery[StudyProgramViewTable]
+
+  def all(): Future[Seq[StudyProgramView]] =
+    db.run(tableQuery.result)
 }

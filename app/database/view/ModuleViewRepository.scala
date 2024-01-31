@@ -1,7 +1,12 @@
 package database.view
 
 import database.table.stringToInts
-import models.SpecializationShort
+import models.{
+  ModuleManagement,
+  ModuleView,
+  SpecializationShort,
+  StudyProgramModuleAssociation
+}
 import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfigProvider}
 import slick.jdbc.JdbcProfile
 
@@ -10,34 +15,6 @@ import javax.inject.{Inject, Singleton}
 import scala.collection.mutable
 import scala.concurrent.{ExecutionContext, Future}
 
-case class StudyProgramModuleAssociation[Semester](
-    poId: String,
-    studyProgramId: String,
-    studyProgramLabel: String,
-    gradeLabel: String,
-    version: Int,
-    specialization: Option[SpecializationShort],
-    mandatory: Boolean,
-    recommendedSemester: Semester
-)
-
-case class ModuleManagement(
-    id: String,
-    abbrev: String,
-    kind: String,
-    title: String,
-    firstname: String,
-    lastname: String
-)
-
-case class ModuleAtomic[ModuleManagement, StudyProgram](
-    id: UUID,
-    title: String,
-    abbrev: String,
-    ects: Double,
-    moduleManagement: ModuleManagement,
-    studyProgram: StudyProgram
-)
 @Singleton
 final class ModuleViewRepository @Inject() (
     val dbConfigProvider: DatabaseConfigProvider,
@@ -46,19 +23,19 @@ final class ModuleViewRepository @Inject() (
     with MaterializedView {
   import profile.api._
 
-  private type DbEntry = ModuleAtomic[
+  private type DbEntry = ModuleView[
     ModuleManagement,
     StudyProgramModuleAssociation[String]
   ]
 
-  type Entry = ModuleAtomic[
+  type Entry = ModuleView[
     Iterable[ModuleManagement],
     Iterable[StudyProgramModuleAssociation[Iterable[Int]]]
   ]
 
-  override def name: String = "module_atomic"
+  override def name: String = "module_view"
 
-  private val tableQuery = TableQuery[ModuleView]
+  private val tableQuery = TableQuery[ModuleViewTable]
 
   def all(): Future[Iterable[Entry]] =
     db.run(
@@ -82,7 +59,8 @@ final class ModuleViewRepository @Inject() (
       })
     )
 
-  private final class ModuleView(tag: Tag) extends Table[DbEntry](tag, name) {
+  private final class ModuleViewTable(tag: Tag)
+      extends Table[DbEntry](tag, name) {
     private def id = column[UUID]("id")
     private def title = column[String]("title")
     private def abbrev = column[String]("abbrev")
@@ -173,7 +151,7 @@ final class ModuleViewRepository @Inject() (
             recommendedSemester,
             mandatory
           ) =>
-        ModuleAtomic[ModuleManagement, StudyProgramModuleAssociation[String]](
+        ModuleView[ModuleManagement, StudyProgramModuleAssociation[String]](
           id,
           title,
           abbrev,

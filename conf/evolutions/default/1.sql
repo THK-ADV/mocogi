@@ -457,9 +457,9 @@ create table module_compendium_list
     FOREIGN KEY (po) REFERENCES po (id)
 );
 
--- study_program_atomic
+-- study_program_view
 create
-materialized view study_program_atomic as
+materialized view study_program_view as
 select study_program.de_label as sp_label,
        study_program.id       as sp_id,
        grade.de_label         as grade_label,
@@ -475,9 +475,9 @@ from study_program
          left join specialization on specialization.po = po.id
 order by sp_label, po_id, grade_label;
 
--- metadata_atomic
+-- module_view
 create
-materialized view module_atomic as
+materialized view module_view as
 select metadata.id                       as id,
        metadata.title                    as title,
        metadata.abbrev                   as abbrev,
@@ -540,9 +540,9 @@ from metadata
 
 -- !Downs
 drop
-materialized view module_atomic;
+materialized view module_view;
 drop
-materialized view study_program_atomic;
+materialized view study_program_view;
 drop table module_compendium_list if exists;
 drop table module_review if exists;
 drop table module_update_permission if exists;
