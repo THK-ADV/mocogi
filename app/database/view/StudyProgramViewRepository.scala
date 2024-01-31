@@ -26,7 +26,7 @@ final class StudyProgramViewRepository @Inject() (
 
     def studyProgramLabel = column[String]("sp_label")
 
-    def gradeLabel = column[String]("grade_label")
+    def degreeLabel = column[String]("degree_label")
 
     def poVersion = column[Int]("po_version")
 
@@ -38,7 +38,7 @@ final class StudyProgramViewRepository @Inject() (
       poId,
       studyProgramId,
       studyProgramLabel,
-      gradeLabel,
+      degreeLabel,
       poVersion,
       specializationId,
       specializationLabel
@@ -51,7 +51,7 @@ final class StudyProgramViewRepository @Inject() (
             poId,
             studyProgramId,
             studyProgramLabel,
-            grade,
+            degreeLabel,
             poVersion,
             specializationId,
             specializationLabel
@@ -61,7 +61,7 @@ final class StudyProgramViewRepository @Inject() (
           poVersion,
           studyProgramId,
           studyProgramLabel,
-          grade,
+          degreeLabel,
           specializationId
             .zip(specializationLabel)
             .map((SpecializationShort.apply _).tupled)
@@ -76,7 +76,7 @@ final class StudyProgramViewRepository @Inject() (
           a.poId,
           a.studyProgramId,
           a.studyProgramLabel,
-          a.gradeLabel,
+          a.degreeLabel,
           a.poVersion,
           a.specialization.map(_.id),
           a.specialization.map(_.label)

@@ -29,7 +29,7 @@ final class WPFRepository @Inject() (
     val poQuery = for {
       q <- TableQuery[POTable] if q.isValid()
       sp <- q.studyProgramFk
-      g <- sp.gradeFk
+      g <- sp.degreeFk
     } yield (q.id, q.version, (sp.id, sp.deLabel, sp.enLabel, g))
 
     db.run(

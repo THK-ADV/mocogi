@@ -80,8 +80,8 @@ final class ModuleCompendiumMarkdownPrinter(
       val studyProgramWithPO = studyProgram(p.po.program) match {
         case Some(sp) =>
           val spLabel = lang.fold(sp.deLabel, sp.enLabel)
-          val gradeLabel = lang.fold(sp.grade.deLabel, sp.grade.enLabel)
-          s"$gradeLabel: $spLabel PO ${p.po.version}"
+          val degreeLabel = lang.fold(sp.degree.deLabel, sp.degree.enLabel)
+          s"$degreeLabel: $spLabel PO ${p.po.version}"
         case None =>
           p.po.id
       }

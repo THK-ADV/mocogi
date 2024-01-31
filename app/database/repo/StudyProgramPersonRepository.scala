@@ -23,7 +23,7 @@ final class StudyProgramPersonRepository @Inject() (
     for {
       q <- studyProgramPersonTable.filter(_.person === person)
       sp <- q.studyProgramFk
-      g <- sp.gradeFk
+      g <- sp.degreeFk
     } yield (q, sp, g)
 
   def hasRole(
@@ -44,7 +44,7 @@ final class StudyProgramPersonRepository @Inject() (
     val query = for {
       q <- studyProgramPersonTable.filter(_.person === person)
       sp <- q.studyProgramFk
-      g <- sp.gradeFk
+      g <- sp.degreeFk
     } yield (q.role, (sp.id, sp.deLabel, sp.enLabel, g))
     val action = query
       .join(

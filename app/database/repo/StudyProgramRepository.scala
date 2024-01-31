@@ -43,7 +43,7 @@ class StudyProgramRepository @Inject() (
   def allShort(): Future[Seq[StudyProgramShort]] = {
     val query = for {
       q <- tableQuery
-      g <- q.gradeFk
+      g <- q.degreeFk
     } yield (q.id, q.deLabel, q.enLabel, g)
     db.run(query.result.map(_.map(StudyProgramShort.apply)))
   }
@@ -96,7 +96,7 @@ class StudyProgramRepository @Inject() (
           sp.externalAbbreviation,
           sp.deUrl,
           sp.enUrl,
-          sp.grade,
+          sp.degree,
           studyProgramDirectors.toList,
           studyProgramExamDirectors.toList,
           sp.accreditationUntil,
@@ -251,7 +251,7 @@ class StudyProgramRepository @Inject() (
       sp.externalAbbreviation,
       sp.deUrl,
       sp.enUrl,
-      sp.grade.id,
+      sp.degree.id,
       sp.accreditationUntil,
       sp.restrictedAdmission,
       sp.deDescription,

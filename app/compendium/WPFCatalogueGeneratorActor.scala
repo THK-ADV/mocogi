@@ -66,16 +66,16 @@ object WPFCatalogueGeneratorActor {
         _ <- gitAvailabilityChecker.checkAvailability()
         allPos <- poRepo
           .allValidShort()
-          .map(_.sortBy(a => (a.studyProgram.grade, a.fullId, a.version)))
+          .map(_.sortBy(a => (a.studyProgram.degree, a.fullId, a.version)))
         entries <- wpfRepo.all()
         file <- {
           allPos.foreach(p => {
             csv.append(
               p.specialization match {
                 case Some(spec) =>
-                  s",${p.studyProgram.deLabel}-${spec.label}-${p.version}-${p.studyProgram.grade.deLabel}"
+                  s",${p.studyProgram.deLabel}-${spec.label}-${p.version}-${p.studyProgram.degree.deLabel}"
                 case None =>
-                  s",${p.studyProgram.deLabel}-${p.version}-${p.studyProgram.grade.deLabel}"
+                  s",${p.studyProgram.deLabel}-${p.version}-${p.studyProgram.degree.deLabel}"
               }
             )
           })

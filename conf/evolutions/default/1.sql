@@ -58,7 +58,7 @@ create table faculty
     "en_label" text not null
 );
 
-create table grade
+create table degree
 (
     "id"       text PRIMARY KEY,
     "de_label" text not null,
@@ -113,7 +113,7 @@ create table study_program
     "external_abbreviation"          text    not null,
     "de_url"                         text    not null,
     "en_url"                         text    not null,
-    "grade"                          text    not null,
+    "degree"                         text    not null,
     "accreditation_until"            date    not null,
     "restricted_admission_value"     boolean not null,
     "restricted_admission_de_reason" text    not null,
@@ -122,7 +122,7 @@ create table study_program
     "de_note"                        text    not null,
     "en_description"                 text    not null,
     "en_note"                        text    not null,
-    FOREIGN KEY (grade) REFERENCES grade (id)
+    FOREIGN KEY (degree) REFERENCES degree (id)
 );
 
 create table study_form
@@ -462,18 +462,18 @@ create
 materialized view study_program_view as
 select study_program.de_label as sp_label,
        study_program.id       as sp_id,
-       grade.de_label         as grade_label,
+       degree.de_label        as degree_label,
        po.id                  as po_id,
        po.version             as po_version,
        specialization.label   as spec_label,
        specialization.id      as spec_id
 from study_program
-         join grade on study_program.grade = grade.id
+         join degree on study_program.degree = degree.id
          join po on po.study_program = study_program.id and
                     po.date_from <= now() and
                     (po.date_to is null or po.date_to >= now())
          left join specialization on specialization.po = po.id
-order by sp_label, po_id, grade_label;
+order by sp_label, po_id, degree_label;
 
 -- module_view
 create
@@ -492,7 +492,7 @@ select metadata.id                       as id,
        po.version                        as po_version,
        study_program.id                  as sp_id,
        study_program.de_label            as sp_label,
-       grade.de_label                    as grade_label,
+       degree.de_label                   as degree_label,
        specialization.id                 as spec_id,
        specialization.label              as spec_label,
        po_mandatory.recommended_semester as recommended_semester,
@@ -504,7 +504,7 @@ from metadata
          join po_mandatory on metadata.id = po_mandatory.metadata
          join po on po_mandatory.po = po.id
          join study_program on po.study_program = study_program.id
-         join grade on study_program.grade = grade.id
+         join degree on study_program.degree = degree.id
          left join specialization on po.id = specialization.po and
                                      po_mandatory.specialization = specialization.id
 union
@@ -522,7 +522,7 @@ select metadata.id                       as id,
        po.version                        as po_version,
        study_program.id                  as sp_id,
        study_program.de_label            as sp_label,
-       grade.de_label                    as grade_label,
+       degree.de_label                   as degree_label,
        specialization.id                 as spec_id,
        specialization.label              as spec_label,
        po_mandatory.recommended_semester as recommended_semester,
@@ -534,7 +534,7 @@ from metadata
          join po_optional on metadata.id = po_optional.metadata
          join po on po_optional.po = po.id
          join study_program on po.study_program = study_program.id
-         join grade on study_program.grade = grade.id
+         join degree on study_program.degree = degree.id
          left join specialization on po.id = specialization.po and
                                      po_optional.specialization = specialization.id;
 
@@ -576,7 +576,7 @@ drop table person_in_faculty if exists;
 drop table identity if exists;
 drop table global_criteria if exists;
 drop table study_form_type if exists;
-drop table grade if exists;
+drop table degree if exists;
 drop table faculty if exists;
 drop table competence if exists;
 drop table season if exists;

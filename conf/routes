@@ -28,7 +28,7 @@ GET           /seasons                                            controllers.Se
 GET           /identities                                         controllers.IdentityController.all()
 GET           /studyFormTypes                                     controllers.StudyFormTypeController.all()
 GET           /pos                                                controllers.POController.all()
-GET           /grades                                             controllers.GradeController.all()
+GET           /degrees                                            controllers.DegreeController.all()
 GET           /focusAreas                                         controllers.FocusAreaController.all()
 GET           /faculties                                          controllers.FacultyController.all()
 GET           /globalCriteria                                     controllers.GlobalCriteriaController.all()

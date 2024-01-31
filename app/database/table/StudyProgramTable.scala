@@ -13,7 +13,7 @@ case class StudyProgramDbEntry(
     externalAbbreviation: String,
     deUrl: String,
     enUrl: String,
-    grade: String,
+    degree: String,
     accreditationUntil: LocalDate,
     restrictedAdmission: RestrictedAdmission,
     deDescription: String,
@@ -30,7 +30,7 @@ final class StudyProgramTable(tag: Tag)
   def externalAbbreviation = column[String]("external_abbreviation")
   def deUrl = column[String]("de_url")
   def enUrl = column[String]("en_url")
-  def grade = column[String]("grade")
+  def degree = column[String]("degree")
   def accreditationUntil = column[LocalDate]("accreditation_until")
   def restrictedAdmissionValue = column[Boolean]("restricted_admission_value")
   def restrictedAdmissionDeReason =
@@ -42,8 +42,8 @@ final class StudyProgramTable(tag: Tag)
   def enDescription = column[String]("en_description")
   def enNote = column[String]("en_note")
 
-  def gradeFk =
-    foreignKey("grade", grade, TableQuery[GradeTable])(_.id)
+  def degreeFk =
+    foreignKey("degree", degree, TableQuery[DegreeTable])(_.id)
 
   override def * =
     (
@@ -54,7 +54,7 @@ final class StudyProgramTable(tag: Tag)
       externalAbbreviation,
       deUrl,
       enUrl,
-      grade,
+      degree,
       accreditationUntil,
       restrictedAdmissionValue,
       restrictedAdmissionDeReason,
@@ -93,7 +93,7 @@ final class StudyProgramTable(tag: Tag)
           externalAbbreviation,
           deUrl,
           enUrl,
-          grade,
+          degree,
           accreditationUntil,
           restrictedAdmissionValue,
           restrictedAdmissionDeReason,
@@ -111,7 +111,7 @@ final class StudyProgramTable(tag: Tag)
         externalAbbreviation,
         deUrl,
         enUrl,
-        grade,
+        degree,
         accreditationUntil,
         RestrictedAdmission(
           restrictedAdmissionValue,
@@ -154,7 +154,7 @@ final class StudyProgramTable(tag: Tag)
         a.externalAbbreviation,
         a.deUrl,
         a.enUrl,
-        a.grade,
+        a.degree,
         a.accreditationUntil,
         a.restrictedAdmission.value,
         a.restrictedAdmission.deReason,

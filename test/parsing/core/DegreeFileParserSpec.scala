@@ -1,20 +1,20 @@
 package parsing.core
 
-import helper.FakeGrades
-import models.core.Grade
+import helper.FakeDegrees
+import models.core.Degree
 import org.scalatest.EitherValues
 import org.scalatest.wordspec.AnyWordSpec
-import parsing.core.GradeFileParser.fileParser
+import parsing.core.DegreeFileParser.fileParser
 import parsing.{ParserSpecHelper, withFile0}
 
-final class GradeFileParserSpec
+final class DegreeFileParserSpec
     extends AnyWordSpec
     with ParserSpecHelper
     with EitherValues
-    with FakeGrades {
+    with FakeDegrees {
 
-  "A Grade File Parser" should {
-    "parse a single grade" in {
+  "A Degree File Parser" should {
+    "parse a single degree" in {
       val input =
         """bsc:
           |  de_label: B.Sc.
@@ -24,7 +24,7 @@ final class GradeFileParserSpec
       val (res, rest) = fileParser.parse(input)
       assert(
         res.value == List(
-          Grade(
+          Degree(
             "bsc",
             "B.Sc.",
             "Bachelor of Science",
@@ -36,7 +36,7 @@ final class GradeFileParserSpec
       assert(rest.isEmpty)
     }
 
-    "parse multiple grades" in {
+    "parse multiple degrees" in {
       val input =
         """bsc:
           |  de_label: B.Sc.
@@ -52,14 +52,14 @@ final class GradeFileParserSpec
       val (res, rest) = fileParser.parse(input)
       assert(
         res.value == List(
-          Grade(
+          Degree(
             "bsc",
             "B.Sc.",
             "Bachelor of Science",
             "B.Sc.",
             "Bachelor of Science"
           ),
-          Grade(
+          Degree(
             "beng",
             "B.Eng.",
             "Bachelor of Engineering",

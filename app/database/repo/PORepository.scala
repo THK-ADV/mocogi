@@ -121,7 +121,7 @@ class PORepository @Inject() (
     val query = for {
       q <- base
       sp <- q.studyProgramFk
-      g <- sp.gradeFk
+      g <- sp.degreeFk
     } yield (q.id, q.version, (sp.id, sp.deLabel, sp.enLabel, g))
 
     db.run(

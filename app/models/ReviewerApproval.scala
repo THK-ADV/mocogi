@@ -1,6 +1,6 @@
 package models
 
-import models.core.{Grade, IDLabel, Identity}
+import models.core.{Degree, IDLabel, Identity}
 import play.api.libs.json.{Json, Writes}
 
 import java.util.UUID
@@ -14,7 +14,7 @@ case class ReviewerApproval(
     role: UniversityRole,
     status: ModuleReviewSummaryStatus,
     studyProgram: IDLabel,
-    grade: Grade,
+    degree: Degree,
     canReview: Boolean
 )
 

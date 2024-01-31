@@ -1,6 +1,6 @@
 package models
 
-import models.core.{Grade, Specialization}
+import models.core.{Degree, Specialization}
 
 case class POShort(
     id: String,
@@ -13,7 +13,7 @@ case class POShort(
 
 object POShort {
   def apply(
-      t: (String, Int, (String, String, String, Grade)),
+      t: (String, Int, (String, String, String, Degree)),
       s: Option[Specialization]
   ): POShort =
     POShort(

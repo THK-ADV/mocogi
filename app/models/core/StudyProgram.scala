@@ -12,7 +12,7 @@ case class StudyProgram(
     externalAbbreviation: String,
     deUrl: String,
     enUrl: String,
-    grade: Grade,
+    degree: Degree,
     programDirectors: List[Identity],
     examDirectors: List[Identity],
     accreditationUntil: LocalDate,

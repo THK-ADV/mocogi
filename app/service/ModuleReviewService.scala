@@ -198,7 +198,7 @@ final class ModuleReviewService @Inject() (
               )
               .map(d => s"${d.directorFirstname} ${d.directorLastname}")
               .mkString(", ")
-            s"${role.id.toUpperCase} ${dir.studyProgramLabel} ${dir.studyProgramGradeLabel} ($possibleDirs)"
+            s"${role.id.toUpperCase} ${dir.studyProgramLabel} ${dir.studyProgramDegreeLabel} ($possibleDirs)"
           }
       }
 

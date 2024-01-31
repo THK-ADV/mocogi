@@ -54,7 +54,7 @@ final class ModuleApprovalService @Inject() (
                 id
               ) =>
             val studyProgram = (sp.get._1, sp.get._2, sp.get._3)
-            val grade = sp.get._4
+            val degree = sp.get._4
             val summaryStatus = summaryStatus0(entries.map(_._7)).get
             val canReview = summaryStatus match {
               case WaitingForChanges      => false
@@ -69,7 +69,7 @@ final class ModuleApprovalService @Inject() (
               role,
               summaryStatus,
               IDLabel(studyProgram),
-              grade,
+              degree,
               canReview
             )
         }

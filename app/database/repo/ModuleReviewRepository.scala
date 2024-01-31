@@ -55,7 +55,7 @@ final class ModuleReviewRepository @Inject() (
   def getAtomicByModule(moduleId: UUID): Future[Seq[ModuleReview.Atomic]] = {
     val spQuery = for {
       sp <- TableQuery[StudyProgramTable]
-      g <- sp.gradeFk
+      g <- sp.degreeFk
     } yield (sp.id, sp.deLabel, sp.enLabel, g)
 
     db.run(

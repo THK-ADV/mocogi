@@ -14,7 +14,7 @@ object StudyProgramDirectorsRepository {
       directorId: String,
       directorFirstname: String,
       directorLastname: String,
-      studyProgramGradeLabel: String,
+      studyProgramDegreeLabel: String,
       studyProgramLabel: String,
       studyProgramId: String,
       role: UniversityRole
@@ -40,12 +40,12 @@ final class StudyProgramDirectorsRepository @Inject() (
       if a.studyProgram.in(sps) && a.role.inSet(roles)
       p <- a.personFk
       s <- a.studyProgramFk
-      g <- s.gradeFk
+      d <- s.degreeFk
     } yield (
       p.id,
       p.firstname,
       p.lastname,
-      g.deLabel,
+      d.deLabel,
       s.deLabel,
       s.id,
       a.role

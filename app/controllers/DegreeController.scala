@@ -1,19 +1,19 @@
 package controllers
 
-import models.core.Grade
+import models.core.Degree
 import play.api.libs.json.Writes
 import play.api.mvc.{AbstractController, ControllerComponents}
-import service.core.GradeService
+import service.core.DegreeService
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 
 @Singleton
-final class GradeController @Inject() (
+final class DegreeController @Inject() (
     cc: ControllerComponents,
-    val service: GradeService,
+    val service: DegreeService,
     implicit val ctx: ExecutionContext
 ) extends AbstractController(cc)
-    with SimpleYamlController[Grade] {
-  override implicit val writes: Writes[Grade] = Grade.writes
+    with SimpleYamlController[Degree] {
+  override implicit val writes: Writes[Degree] = Degree.writes
 }

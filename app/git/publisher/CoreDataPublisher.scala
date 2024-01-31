@@ -27,7 +27,7 @@ object CoreDataPublisher {
       poService: POService,
       competenceService: CompetenceService,
       facultyService: FacultyService,
-      gradeService: GradeService,
+      degreeService: DegreeService,
       studyProgramService: StudyProgramService,
       studyFormTypeService: StudyFormTypeService,
       specializationService: SpecializationService,
@@ -50,7 +50,7 @@ object CoreDataPublisher {
         poService,
         competenceService,
         facultyService,
-        gradeService,
+        degreeService,
         studyProgramService,
         studyFormTypeService,
         specializationService,
@@ -74,7 +74,7 @@ object CoreDataPublisher {
       private val poService: POService,
       private val competenceService: CompetenceService,
       private val facultyService: FacultyService,
-      private val gradeService: GradeService,
+      private val degreeService: DegreeService,
       private val studyProgramService: StudyProgramService,
       private val studyFormTypeService: StudyFormTypeService,
       private val specializationService: SpecializationService,
@@ -146,7 +146,7 @@ object CoreDataPublisher {
             case "faculty" =>
               facultyService.createOrUpdate(content.value)
             case "grade" =>
-              gradeService.createOrUpdate(content.value)
+              degreeService.createOrUpdate(content.value)
             case "program" =>
               studyProgramService.createOrUpdate(content.value)
             case "study_form" =>

@@ -79,7 +79,7 @@ final class ModuleViewRepository @Inject() (
     private def poVersion = column[Int]("po_version")
     private def studyProgramId = column[String]("sp_id")
     private def studyProgramDeLabel = column[String]("sp_label")
-    private def gradeDeLabel = column[String]("grade_label")
+    private def degreeDeLabel = column[String]("degree_label")
     private def specializationId = column[Option[String]]("spec_id")
     private def specializationLabel = column[Option[String]]("spec_label")
     private def recommendedSemester = column[String]("recommended_semester")
@@ -100,7 +100,7 @@ final class ModuleViewRepository @Inject() (
       poVersion,
       studyProgramId,
       studyProgramDeLabel,
-      gradeDeLabel,
+      degreeDeLabel,
       specializationId,
       specializationLabel,
       recommendedSemester,
@@ -145,7 +145,7 @@ final class ModuleViewRepository @Inject() (
             poVersion,
             studyProgramId,
             studyProgramDeLabel,
-            gradeDeLabel,
+            degreeDeLabel,
             specializationId,
             specializationLabel,
             recommendedSemester,
@@ -168,7 +168,7 @@ final class ModuleViewRepository @Inject() (
             poId,
             studyProgramId,
             studyProgramDeLabel,
-            gradeDeLabel,
+            degreeDeLabel,
             poVersion,
             specializationId
               .zip(specializationLabel)
@@ -218,7 +218,7 @@ final class ModuleViewRepository @Inject() (
           a.studyProgram.version,
           a.studyProgram.studyProgramId,
           a.studyProgram.studyProgramLabel,
-          a.studyProgram.gradeLabel,
+          a.studyProgram.degreeLabel,
           a.studyProgram.specialization.map(_.id),
           a.studyProgram.specialization.map(_.label),
           a.studyProgram.recommendedSemester,

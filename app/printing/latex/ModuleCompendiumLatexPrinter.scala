@@ -251,7 +251,7 @@ final class ModuleCompendiumLatexPrinter @Inject() (pandocApi: PandocApi)
                 }
                 builder
                   .append(
-                    s"${poShort.studyProgram.grade.localizedLabel}: "
+                    s"${poShort.studyProgram.degree.localizedLabel}: "
                   )
                   .append(spLabel)
                   .append(s" PO ${poShort.version}")
@@ -378,7 +378,7 @@ final class ModuleCompendiumLatexPrinter @Inject() (pandocApi: PandocApi)
       .append(
         s"\\LARGE ${escape(sp.localizedLabel(specialization))} PO $po \\\\ [1ex]\n"
       )
-      .append(s"\\LARGE ${sp.grade.localizedDesc} \\\\ [1ex]\n")
+      .append(s"\\LARGE ${sp.degree.localizedDesc} \\\\ [1ex]\n")
       .append(
         semester.fold(lang.previewLabel)(s =>
           s"\\LARGE ${s.localizedLabel} ${s.year}\n"

@@ -2,8 +2,8 @@ package service.core
 
 import database.InsertOrUpdateResult
 import database.repo.StudyProgramRepository
-import models.{StudyProgramOutput, StudyProgramShort}
 import models.core.StudyProgram
+import models.{StudyProgramOutput, StudyProgramShort}
 import parsing.core.StudyProgramFileParser
 
 import javax.inject.{Inject, Singleton}
@@ -22,7 +22,7 @@ trait StudyProgramService {
 @Singleton
 final class StudyProgramServiceImpl @Inject() (
     val repo: StudyProgramRepository,
-    val gradeService: GradeService,
+    val degreeService: DegreeService,
     val personService: IdentityService,
     val studyFormTypeService: StudyFormTypeService,
     val languageService: LanguageService,
@@ -65,7 +65,7 @@ final class StudyProgramServiceImpl @Inject() (
       createMany: List[StudyProgram] => Future[List[A]]
   ): Future[List[A]] =
     for {
-      grades <- gradeService.all()
+      degrees <- degreeService.all()
       people <- personService.all()
       studyFormTypes <- studyFormTypeService.all()
       languages <- languageService.all()
@@ -73,7 +73,7 @@ final class StudyProgramServiceImpl @Inject() (
       locations <- locationService.all()
       programs <- StudyProgramFileParser
         .fileParser(
-          grades,
+          degrees,
           people,
           studyFormTypes,
           languages,

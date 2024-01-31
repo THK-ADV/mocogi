@@ -46,7 +46,7 @@ object StudyProgramFileParser {
       .skip(zeroOrMoreSpaces)
       .zip(singleLineStringForKey("en_url").option.map(_.getOrElse("")))
 
-  def gradeParser(implicit grades: Seq[Grade]): Parser[Grade] =
+  def degreeParser(implicit degrees: Seq[Degree]): Parser[Degree] =
     singleValueParser("grade", g => s"grade.${g.id}")
 
   def programDirectorParser(implicit
@@ -121,7 +121,7 @@ object StudyProgramFileParser {
       .map((RestrictedAdmission.apply _).tupled)
 
   def fileParser(implicit
-      grades: Seq[Grade],
+      degrees: Seq[Degree],
       persons: Seq[Identity],
       studyForms: Seq[StudyFormType],
       langs: Seq[Language],
@@ -138,7 +138,7 @@ object StudyProgramFileParser {
           .skip(zeroOrMoreSpaces)
           .take(urlParser)
           .skip(zeroOrMoreSpaces)
-          .take(gradeParser)
+          .take(degreeParser)
           .skip(zeroOrMoreSpaces)
           .take(programDirectorParser)
           .skip(zeroOrMoreSpaces)
@@ -169,7 +169,7 @@ object StudyProgramFileParser {
                   label,
                   abbrev,
                   url,
-                  grade,
+                  degree,
                   programDirectors,
                   examDirectors,
                   accreditation,
@@ -191,7 +191,7 @@ object StudyProgramFileParser {
                 abbrev._2,
                 url._1,
                 url._2,
-                grade,
+                degree,
                 programDirectors,
                 examDirectors,
                 accreditation,

@@ -8,7 +8,7 @@ case class StudyProgramView(
     poVersion: Int,
     studyProgramId: String,
     studyProgramLabel: String,
-    gradeLabel: String,
+    degreeLabel: String,
     specialization: Option[SpecializationShort]
 )
 

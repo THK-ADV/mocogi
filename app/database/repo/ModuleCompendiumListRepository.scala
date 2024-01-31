@@ -32,7 +32,7 @@ final class ModuleCompendiumListRepository @Inject() (
     val q = for {
       q <- query
       sp <- q.studyProgramFk
-      g <- sp.gradeFk
+      g <- sp.degreeFk
     } yield (q, (sp.id, sp.deLabel, sp.enLabel, g))
 
     db.run(

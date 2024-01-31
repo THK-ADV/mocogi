@@ -15,7 +15,7 @@ case class StudyProgramModuleAssociation[Semester](
     poId: String,
     studyProgramId: String,
     studyProgramLabel: String,
-    gradeLabel: String,
+    degreeLabel: String,
     version: Int,
     specialization: Option[SpecializationShort],
     mandatory: Boolean,

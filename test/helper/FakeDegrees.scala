@@ -1,9 +1,9 @@
 package helper
 
-import models.core.Grade
+import models.core.Degree
 
-trait FakeGrades {
-  lazy val bsc = Grade(
+trait FakeDegrees {
+  lazy val bsc = Degree(
     "bsc",
     "B.Sc.",
     "Bachelor of Science",
@@ -12,9 +12,9 @@ trait FakeGrades {
   )
 
   lazy val msc =
-    Grade("msc", "M.Sc.", "Master of Science", "M.Sc.", "Master of Science")
+    Degree("msc", "M.Sc.", "Master of Science", "M.Sc.", "Master of Science")
 
-  lazy val beng = Grade(
+  lazy val beng = Degree(
     "beng",
     "B.Eng.",
     "Bachelor of Engineering",
@@ -22,7 +22,7 @@ trait FakeGrades {
     "Bachelor of Engineering"
   )
 
-  lazy val meng = Grade(
+  lazy val meng = Degree(
     "meng",
     "M.Eng.",
     "Master of Engineering",
@@ -30,6 +30,6 @@ trait FakeGrades {
     "Master of Engineering"
   )
 
-  implicit def fakeGrades: Seq[Grade] =
+  implicit def fakeDegrees: Seq[Degree] =
     Seq(bsc, msc, beng, meng)
 }
