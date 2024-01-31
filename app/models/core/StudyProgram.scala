@@ -1,9 +1,11 @@
 package models.core
 
+import play.api.libs.json.{Json, Writes}
+
 import java.time.LocalDate
 
 case class StudyProgram(
-    abbrev: String,
+    id: String,
     deLabel: String,
     enLabel: String,
     internalAbbreviation: String,
@@ -11,8 +13,8 @@ case class StudyProgram(
     deUrl: String,
     enUrl: String,
     grade: Grade,
-    programDirectors: List[Person],
-    examDirectors: List[Person],
+    programDirectors: List[Identity],
+    examDirectors: List[Identity],
     accreditationUntil: LocalDate,
     studyForm: List[StudyForm],
     language: List[Language],
@@ -25,11 +27,19 @@ case class StudyProgram(
     enNote: String
 )
 
+object StudyProgram {
+  implicit def writes: Writes[StudyProgram] = Json.writes
+}
+
 case class StudyForm(
     kind: StudyFormType,
     workloadPerEcts: Int,
     scope: List[StudyFormScope]
 )
+
+object StudyForm {
+  implicit def writes: Writes[StudyForm] = Json.writes
+}
 
 case class StudyFormScope(
     programDuration: Int,
@@ -38,8 +48,16 @@ case class StudyFormScope(
     enReason: String
 )
 
+object StudyFormScope {
+  implicit def writes: Writes[StudyFormScope] = Json.writes
+}
+
 case class RestrictedAdmission(
     value: Boolean,
     deReason: String,
     enReason: String
 )
+
+object RestrictedAdmission {
+  implicit def writes: Writes[RestrictedAdmission] = Json.writes
+}

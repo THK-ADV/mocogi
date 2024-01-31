@@ -115,6 +115,6 @@ final class ModuleUpdatePermissionRepository @Inject() (
       q <- tableQuery if q.campusId === campusId
       m <- q.moduleFk
     } yield (q.kind, (m.id, m.title, m.abbrev))
-    db.run(query.result.map(_.map(a => (a._1, Module.tupled(a._2)))))
+    db.run(query.result.map(_.map(a => (a._1, (Module.apply _).tupled(a._2)))))
   }
 }

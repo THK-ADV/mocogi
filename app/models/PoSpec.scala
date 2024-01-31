@@ -3,7 +3,7 @@ package models
 import play.api.libs.json.{Json, Writes}
 
 case class PoSpec(
-    abbrev: String,
+    id: String,
     version: Int,
     specialization: Option[SpecializationShort]
 )

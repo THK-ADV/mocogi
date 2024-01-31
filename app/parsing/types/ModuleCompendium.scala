@@ -3,6 +3,7 @@ package parsing.types
 import monocle.Monocle.toAppliedFocusOps
 import monocle.Traversal
 import monocle.macros.GenLens
+import play.api.libs.json.{Json, Writes}
 import validator.Metadata
 
 case class ModuleCompendium(
@@ -12,6 +13,9 @@ case class ModuleCompendium(
 )
 
 object ModuleCompendium {
+
+  implicit def writes: Writes[ModuleCompendium] = Json.writes
+
   final implicit class Ops(private val self: ModuleCompendium) extends AnyVal {
     private def string = Traversal
       .applyN(
@@ -36,7 +40,7 @@ object ModuleCompendium {
             .focus(_.modules)
             .modify(_.sortBy(_.id))
             .focus(_.pos)
-            .modify(_.sortBy(_.abbrev))
+            .modify(_.sortBy(_.id))
         )
       )
 
@@ -50,8 +54,8 @@ object ModuleCompendium {
         )
       )
       .modify(
-        _.map(_.focus(_.precondition).modify(_.sortBy(_.abbrev)))
-          .sortBy(_.method.abbrev)
+        _.map(_.focus(_.precondition).modify(_.sortBy(_.id)))
+          .sortBy(_.method.id)
       )
 
     private def poMandatory =
@@ -62,7 +66,7 @@ object ModuleCompendium {
               .modify(_.sorted)
               .focus(_.recommendedSemesterPartTime)
               .modify(_.sorted)
-          ).sortBy(_.po.abbrev)
+          ).sortBy(_.po.id)
         )
 
     private def poOptional =
@@ -71,10 +75,10 @@ object ModuleCompendium {
           _.map(
             _.focus(_.recommendedSemester)
               .modify(_.sorted)
-          ).sortBy(_.po.abbrev)
+          ).sortBy(_.po.id)
         )
 
-    private def persons = Traversal
+    private def identities = Traversal
       .applyN(
         GenLens[ModuleCompendium](_.metadata.responsibilities.moduleManagement),
         GenLens[ModuleCompendium](_.metadata.responsibilities.lecturers)
@@ -83,11 +87,11 @@ object ModuleCompendium {
 
     private def competences =
       GenLens[ModuleCompendium](_.metadata.competences)
-        .modify(_.sortBy(_.abbrev))
+        .modify(_.sortBy(_.id))
 
     private def globalCriteria =
       GenLens[ModuleCompendium](_.metadata.globalCriteria)
-        .modify(_.sortBy(_.abbrev))
+        .modify(_.sortBy(_.id))
 
     private def taughtWith =
       GenLens[ModuleCompendium](_.metadata.taughtWith).modify(_.sortBy(_.id))
@@ -105,7 +109,7 @@ object ModuleCompendium {
         assessmentMethods andThen
         poMandatory andThen
         poOptional andThen
-        persons andThen
+        identities andThen
         competences andThen
         globalCriteria andThen
         taughtWith andThen

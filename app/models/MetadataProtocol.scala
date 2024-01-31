@@ -1,5 +1,6 @@
 package models
 
+import controllers.JsonNullWritable
 import database.{
   AssessmentMethodsOutput,
   ModuleRelationOutput,
@@ -7,6 +8,7 @@ import database.{
   PrerequisitesOutput
 }
 import parsing.types.{ParsedWorkload, Participants}
+import play.api.libs.json.{Format, Json}
 
 import java.util.UUID
 
@@ -32,3 +34,7 @@ case class MetadataProtocol(
     globalCriteria: List[String],
     taughtWith: List[UUID]
 )
+
+object MetadataProtocol extends JsonNullWritable {
+  implicit def format: Format[MetadataProtocol] = Json.format
+}

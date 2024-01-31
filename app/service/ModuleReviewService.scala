@@ -10,7 +10,7 @@ import database.repo.{
 import git.api.GitMergeRequestApiService
 import models.ModuleReviewStatus.{Approved, Pending, Rejected}
 import models._
-import models.core.Person
+import models.core.Identity
 import ops.FutureOps.Ops
 import play.api.Logging
 
@@ -40,7 +40,7 @@ final class ModuleReviewService @Inject() (
     *   Author of the merge request
     * @return
     */
-  def create(moduleId: UUID, author: Person.Default): Future[Unit] =
+  def create(moduleId: UUID, author: Identity.Person): Future[Unit] =
     for {
       draft <- draftRepo
         .getByModule(moduleId)
@@ -97,7 +97,7 @@ final class ModuleReviewService @Inject() (
     */
   def update(
       id: UUID,
-      reviewer: Person.Default,
+      reviewer: Identity.Person,
       approve: Boolean,
       comment: Option[String]
   ): Future[Unit] = {
@@ -161,7 +161,7 @@ final class ModuleReviewService @Inject() (
 
   private def createApproveReview(
       draft: ModuleDraft,
-      author: Person.Default
+      author: Identity.Person
   ): Future[MergeRequest] = {
     val protocol = draft.protocol()
     val roles = requiredRoles(draft.keysToBeReviewed)
@@ -171,14 +171,14 @@ final class ModuleReviewService @Inject() (
         .flatMap(role =>
           directors
             .filter(_.role == role)
-            .distinctBy(_.studyProgramAbbrev)
+            .distinctBy(_.studyProgramId)
             .map(d =>
               ModuleReview(
                 UUID.randomUUID,
                 draft.module,
                 role,
                 Pending,
-                d.studyProgramAbbrev,
+                d.studyProgramId,
                 None,
                 None,
                 None
@@ -190,11 +190,11 @@ final class ModuleReviewService @Inject() (
       directors.groupBy(_.role).flatMap { case (role, dirs) =>
         dirs
           .filter(_.role == role)
-          .distinctBy(_.studyProgramAbbrev)
+          .distinctBy(_.studyProgramId)
           .map { dir =>
             val possibleDirs = dirs
               .filter(d =>
-                d.role == role && d.studyProgramAbbrev == dir.studyProgramAbbrev
+                d.role == role && d.studyProgramId == dir.studyProgramId
               )
               .map(d => s"${d.directorFirstname} ${d.directorLastname}")
               .mkString(", ")
@@ -217,7 +217,7 @@ final class ModuleReviewService @Inject() (
 
   private def createAutoAcceptedReview(
       draft: ModuleDraft,
-      author: Person.Default
+      author: Identity.Person
   ): Future[MergeRequest] =
     for {
       (mergeRequestId, status) <- createMergeRequest(
@@ -246,7 +246,7 @@ final class ModuleReviewService @Inject() (
       )
     )
 
-  private def mrTitle(author: Person.Default, metadata: MetadataProtocol) =
+  private def mrTitle(author: Identity.Person, metadata: MetadataProtocol) =
     s"${author.fullName}: ${metadata.title} (${metadata.abbrev})"
 
   private def mrDesc(

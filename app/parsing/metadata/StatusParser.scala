@@ -11,7 +11,7 @@ final class StatusParser extends SingleValueParser[Status] {
   def parser(implicit status: Seq[Status]): Parser[Status] =
     itemParser(
       "status",
-      status.sortBy(_.abbrev).reverse,
-      x => s"status.${x.abbrev}"
+      status.sortBy(_.id).reverse,
+      x => s"status.${x.id}"
     )
 }

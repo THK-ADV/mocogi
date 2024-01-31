@@ -1,7 +1,6 @@
 package controllers
 
 import auth.AuthorizationAction
-import controllers.formats.ModuleCompendiumOutputFormat
 import git.api.GitFileDownloadService
 import ops.FutureOps.OptionOps
 import play.api.libs.Files.DefaultTemporaryFileCreator
@@ -32,8 +31,7 @@ final class ModuleCompendiumController @Inject() (
     fileCreator: DefaultTemporaryFileCreator,
     gitFileDownloadService: GitFileDownloadService,
     implicit val ctx: ExecutionContext
-) extends AbstractController(cc)
-    with ModuleCompendiumOutputFormat {
+) extends AbstractController(cc) {
 
   def all() =
     Action.async { request =>

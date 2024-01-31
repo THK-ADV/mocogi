@@ -10,9 +10,9 @@ final class ModuleCompendiumListTable(tag: Tag)
       "module_compendium_list"
     ) {
 
-  def fullPo = column[String]("full_po", O.PrimaryKey)
+  def fullPoId = column[String]("full_po", O.PrimaryKey)
 
-  def poAbbrev = column[String]("po")
+  def poId = column[String]("po")
 
   def poNumber = column[Int]("po_number")
 
@@ -30,12 +30,12 @@ final class ModuleCompendiumListTable(tag: Tag)
 
   def studyProgramFk =
     foreignKey("study_program", studyProgram, TableQuery[StudyProgramTable])(
-      _.abbrev
+      _.id
     )
 
   override def * = (
-    fullPo,
-    poAbbrev,
+    fullPoId,
+    poId,
     poNumber,
     specialization,
     studyProgram,
@@ -59,8 +59,8 @@ final class ModuleCompendiumListTable(tag: Tag)
       )
   ) => ModuleCompendiumList.DB = {
     case (
-          fullPo,
-          poAbbrev,
+          fullPoId,
+          poId,
           poNumber,
           specialization,
           studyProgram,
@@ -70,8 +70,8 @@ final class ModuleCompendiumListTable(tag: Tag)
           generated
         ) =>
       ModuleCompendiumList(
-        fullPo,
-        poAbbrev,
+        fullPoId,
+        poId,
         poNumber,
         specialization,
         studyProgram,
@@ -97,8 +97,8 @@ final class ModuleCompendiumListTable(tag: Tag)
   ] =
     Some(
       (
-        arg.fullPo,
-        arg.poAbbrev,
+        arg.fullPoId,
+        arg.poId,
         arg.poNumber,
         arg.specialization,
         arg.studyProgram,

@@ -5,10 +5,10 @@ import slick.jdbc.PostgresProfile.api._
 
 final class FacultyTable(tag: Tag)
     extends Table[Faculty](tag, "faculty")
-    with AbbrevLabelColumn[Faculty] {
+    with IDLabelColumn[Faculty] {
   override def * = (
-    abbrev,
+    id,
     deLabel,
     enLabel
-  ) <> (Faculty.tupled, Faculty.unapply)
+  ) <> ((Faculty.apply _).tupled, Faculty.unapply)
 }

@@ -1,6 +1,6 @@
 package parsing.metadata
 
-import helper.{FakeApplication, FakePersons}
+import helper.{FakeApplication, FakeIdentities}
 import org.scalatest.EitherValues
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
@@ -12,7 +12,7 @@ class ResponsibilitiesParserSpec
     with EitherValues
     with GuiceOneAppPerSuite
     with FakeApplication
-    with FakePersons {
+    with FakeIdentities {
 
   val parser = app.injector.instanceOf(classOf[ResponsibilitiesParser]).parser
 

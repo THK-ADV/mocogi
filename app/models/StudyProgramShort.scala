@@ -1,17 +1,16 @@
 package models
 
-import controllers.formats.GradesFormat
-import models.core.{AbbrevLabelLike, Grade}
+import models.core.{Grade, IDLabel}
 import play.api.libs.json.{Json, Writes}
 
 case class StudyProgramShort(
-    abbrev: String,
+    id: String,
     deLabel: String,
     enLabel: String,
     grade: Grade
-) extends AbbrevLabelLike
+) extends IDLabel
 
-object StudyProgramShort extends GradesFormat {
+object StudyProgramShort {
   implicit def writes: Writes[StudyProgramShort] = Json.writes
 
   def apply(t: (String, String, String, Grade)): StudyProgramShort =

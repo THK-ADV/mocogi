@@ -11,7 +11,7 @@ final class ModuleTypeParser extends SingleValueParser[ModuleType] {
   def parser(implicit moduleTypes: Seq[ModuleType]): Parser[ModuleType] =
     itemParser(
       "type",
-      moduleTypes.sortBy(_.abbrev).reverse,
-      x => s"type.${x.abbrev}"
+      moduleTypes.sortBy(_.id).reverse,
+      x => s"type.${x.id}"
     )
 }

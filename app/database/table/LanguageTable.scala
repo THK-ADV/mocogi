@@ -5,10 +5,10 @@ import slick.jdbc.PostgresProfile.api._
 
 final class LanguageTable(tag: Tag)
     extends Table[Language](tag, "language")
-    with AbbrevLabelColumn[Language] {
+    with IDLabelColumn[Language] {
   override def * = (
-    abbrev,
+    id,
     deLabel,
     enLabel
-  ) <> (Language.tupled, Language.unapply)
+  ) <> ((Language.apply _).tupled, Language.unapply)
 }

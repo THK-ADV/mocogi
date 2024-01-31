@@ -33,8 +33,8 @@ final class ModuleCompendiumMarkdownPrinterSpec
         1,
         Season("season", "season", "season"),
         Responsibilities(
-          List(Person.Unknown("unknown", "unknown")),
-          List(Person.Unknown("unknown", "unknown"))
+          List(Identity.Unknown("unknown", "unknown")),
+          List(Identity.Unknown("unknown", "unknown"))
         ),
         AssessmentMethods(
           List(

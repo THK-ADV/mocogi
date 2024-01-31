@@ -42,7 +42,7 @@ final class SpecializationServiceImpl @Inject() (
     def go(xs: List[Specialization]) =
       Future.sequence(
         xs.map(x =>
-          repo.exists(x.abbrev).flatMap {
+          repo.exists(x.id).flatMap {
             case true  => repo.update(x).map(InsertOrUpdateResult.Update -> _)
             case false => repo.create(x).map(InsertOrUpdateResult.Insert -> _)
           }

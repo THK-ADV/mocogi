@@ -1,9 +1,15 @@
 package database.repo
 
 import database._
-import database.table.{PrerequisiteType, PrerequisitesTable, _}
+import database.table._
 import git.GitFilePath
-import models.Module
+import models.{
+  AssessmentMethodType,
+  Module,
+  ModuleRelationType,
+  PrerequisiteType,
+  ResponsibilityType
+}
 import parsing.types._
 import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfigProvider}
 import slick.jdbc.JdbcProfile
@@ -90,7 +96,7 @@ final class ModuleCompendiumRepositoryImpl @Inject() (
     case ("user", value) =>
       t =>
         responsibilityTable
-          .filter(r => r.metadata === t.id && r.isPerson(value))
+          .filter(r => r.metadata === t.id && r.isIdentity(value))
           .exists
     case ("id", value) => _.id === UUID.fromString(value)
     case ("po_mandatory", value) =>
@@ -137,7 +143,7 @@ final class ModuleCompendiumRepositoryImpl @Inject() (
       allWithFilter(filter)
         .map(m => (m.id, m.title, m.abbrev))
         .result
-        .map(_.map(Module.tupled))
+        .map(_.map((Module.apply _).tupled))
     )
 
   override def allFromPos(pos: Seq[String]) = {
@@ -251,14 +257,14 @@ final class ModuleCompendiumRepositoryImpl @Inject() (
       timestamp,
       moduleCompendium.metadata.title,
       moduleCompendium.metadata.abbrev,
-      moduleCompendium.metadata.kind.abbrev,
+      moduleCompendium.metadata.kind.id,
       moduleCompendium.metadata.ects.value,
-      moduleCompendium.metadata.language.abbrev,
+      moduleCompendium.metadata.language.id,
       moduleCompendium.metadata.duration,
-      moduleCompendium.metadata.season.abbrev,
+      moduleCompendium.metadata.season.id,
       moduleCompendium.metadata.workload,
-      moduleCompendium.metadata.status.abbrev,
-      moduleCompendium.metadata.location.abbrev,
+      moduleCompendium.metadata.status.id,
+      moduleCompendium.metadata.location.id,
       moduleCompendium.metadata.participants.map(_.min),
       moduleCompendium.metadata.participants.map(_.max),
       moduleCompendium.deContent,
@@ -274,15 +280,13 @@ final class ModuleCompendiumRepositoryImpl @Inject() (
       metadata: Metadata
   ): List[MetadataGlobalCriteriaDbEntry] =
     metadata.globalCriteria.map(gc =>
-      MetadataGlobalCriteriaDbEntry(metadata.id, gc.abbrev)
+      MetadataGlobalCriteriaDbEntry(metadata.id, gc.id)
     )
 
   private def metadataCompetences(
       metadata: Metadata
   ): List[MetadataCompetenceDbEntry] =
-    metadata.competences.map(c =>
-      MetadataCompetenceDbEntry(metadata.id, c.abbrev)
-    )
+    metadata.competences.map(c => MetadataCompetenceDbEntry(metadata.id, c.id))
 
   private def pos(
       metadata: Metadata
@@ -292,8 +296,8 @@ final class ModuleCompendiumRepositoryImpl @Inject() (
         POMandatoryDbEntry(
           UUID.randomUUID(),
           metadata.id,
-          po.po.abbrev,
-          po.specialization.map(_.abbrev),
+          po.po.id,
+          po.specialization.map(_.id),
           po.recommendedSemester,
           po.recommendedSemesterPartTime
         )
@@ -302,8 +306,8 @@ final class ModuleCompendiumRepositoryImpl @Inject() (
         POOptionalDbEntry(
           UUID.randomUUID(),
           metadata.id,
-          po.po.abbrev,
-          po.specialization.map(_.abbrev),
+          po.po.id,
+          po.specialization.map(_.id),
           po.instanceOf.id,
           po.partOfCatalog,
           po.recommendedSemester
@@ -331,7 +335,7 @@ final class ModuleCompendiumRepositoryImpl @Inject() (
         PrerequisitesModuleDbEntry(prerequisites.id, m.id)
       )
       pos ++= entry.pos.map(po =>
-        PrerequisitesPODbEntry(prerequisites.id, po.abbrev)
+        PrerequisitesPODbEntry(prerequisites.id, po.id)
       )
     }
 
@@ -375,7 +379,7 @@ final class ModuleCompendiumRepositoryImpl @Inject() (
     metadata.ects.contributionsToFocusAreas.map(c =>
       ECTSFocusAreaContributionDbEntry(
         metadata.id,
-        c.focusArea.abbrev,
+        c.focusArea.id,
         c.ectsValue,
         c.deDesc,
         c.enDesc
@@ -415,14 +419,14 @@ final class ModuleCompendiumRepositoryImpl @Inject() (
         val metadataAssessmentMethod = MetadataAssessmentMethodDbEntry(
           UUID.randomUUID,
           metadata.id,
-          m.method.abbrev,
+          m.method.id,
           `type`,
           m.percentage
         )
         metadataAssessmentMethods += metadataAssessmentMethod
         m.precondition.foreach { m2 =>
           val precondition = MetadataAssessmentMethodPreconditionDbEntry(
-            m2.abbrev,
+            m2.id,
             metadataAssessmentMethod.id
           )
           metadataAssessmentMethodPreconditions += precondition
@@ -543,8 +547,8 @@ final class ModuleCompendiumRepositoryImpl @Inject() (
               mr.foreach(relations += _)
               r.responsibilityType match {
                 case ResponsibilityType.ModuleManagement =>
-                  moduleManagement += r.person
-                case ResponsibilityType.Lecturer => lecturer += r.person
+                  moduleManagement += r.identity
+                case ResponsibilityType.Lecturer => lecturer += r.identity
               }
               am.foreach {
                 case (am, amp) =>

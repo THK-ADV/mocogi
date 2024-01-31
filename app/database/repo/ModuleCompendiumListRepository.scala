@@ -33,11 +33,11 @@ final class ModuleCompendiumListRepository @Inject() (
       q <- query
       sp <- q.studyProgramFk
       g <- sp.gradeFk
-    } yield (q, (sp.abbrev, sp.deLabel, sp.enLabel, g))
+    } yield (q, (sp.id, sp.deLabel, sp.enLabel, g))
 
     db.run(
       q.joinLeft(TableQuery[SpecializationTable])
-        .on(_._1.poAbbrev === _.po)
+        .on(_._1.poId === _.po)
         .result
         .map(_.map { case ((mcl, sp), spec) =>
           mcl.copy(

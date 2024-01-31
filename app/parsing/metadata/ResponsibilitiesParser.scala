@@ -1,6 +1,6 @@
 package parsing.metadata
 
-import models.core.Person
+import models.core.Identity
 import parser.Parser
 import parser.Parser._
 import parser.ParserOps._
@@ -9,10 +9,10 @@ import parsing.types.Responsibilities
 import javax.inject.{Inject, Singleton}
 
 @Singleton
-class ResponsibilitiesParser @Inject() (personParser: PersonParser) {
+class ResponsibilitiesParser @Inject() (identityParser: IdentityParser) {
 
-  def parser(implicit persons: Seq[Person]): Parser[Responsibilities] = {
-    val parser0 = personParser.parser(persons)
+  def parser(implicit identities: Seq[Identity]): Parser[Responsibilities] = {
+    val parser0 = identityParser.parser(identities)
     prefix("responsibilities:")
       .skip(zeroOrMoreSpaces)
       .skip(optional(newline))
@@ -28,6 +28,6 @@ class ResponsibilitiesParser @Inject() (personParser: PersonParser) {
       .skip(optional(newline))
       .skip(zeroOrMoreSpaces)
       .zip(parser0)
-      .map(Responsibilities.tupled)
+      .map((Responsibilities.apply _).tupled)
   }
 }

@@ -3,12 +3,12 @@ package models
 import models.core.{Grade, Specialization}
 
 case class POShort(
-    abbrev: String,
+    id: String,
     version: Int,
     specialization: Option[SpecializationShort],
     studyProgram: StudyProgramShort
 ) {
-  def fullAbbrev = specialization.fold(abbrev)(_.abbrev)
+  def fullId = specialization.fold(id)(_.id)
 }
 
 object POShort {
@@ -19,7 +19,7 @@ object POShort {
     POShort(
       t._1,
       t._2,
-      s.map(s => SpecializationShort(s.abbrev, s.label)),
+      s.map(s => SpecializationShort(s.id, s.label)),
       StudyProgramShort(t._3)
     )
 }

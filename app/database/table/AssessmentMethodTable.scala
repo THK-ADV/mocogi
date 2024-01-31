@@ -4,17 +4,12 @@ import models.core.AssessmentMethod
 import slick.jdbc.PostgresProfile.api._
 
 final class AssessmentMethodTable(tag: Tag)
-    extends Table[AssessmentMethod](tag, "assessment_method") {
-
-  def abbrev = column[String]("abbrev", O.PrimaryKey)
-
-  def deLabel = column[String]("de_label")
-
-  def enLabel = column[String]("en_label")
+    extends Table[AssessmentMethod](tag, "assessment_method")
+    with IDLabelColumn[AssessmentMethod] {
 
   override def * = (
-    abbrev,
+    id,
     deLabel,
     enLabel
-  ) <> (AssessmentMethod.tupled, AssessmentMethod.unapply)
+  ) <> ((AssessmentMethod.apply _).tupled, AssessmentMethod.unapply)
 }

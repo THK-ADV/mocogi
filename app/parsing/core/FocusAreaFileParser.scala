@@ -30,7 +30,7 @@ object FocusAreaFileParser {
           .take(stringForKey("de_desc").option.map(_.getOrElse("")))
           .skip(zeroOrMoreSpaces)
           .take(stringForKey("en_desc").option.map(_.getOrElse("")))
-          .map(FocusArea.tupled)
+          .map((FocusArea.apply _).tupled)
           .all(zeroOrMoreSpaces)
       )
 }

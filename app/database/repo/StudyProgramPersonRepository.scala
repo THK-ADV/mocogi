@@ -45,12 +45,12 @@ final class StudyProgramPersonRepository @Inject() (
       q <- studyProgramPersonTable.filter(_.person === person)
       sp <- q.studyProgramFk
       g <- sp.gradeFk
-    } yield (q.role, (sp.abbrev, sp.deLabel, sp.enLabel, g))
+    } yield (q.role, (sp.id, sp.deLabel, sp.enLabel, g))
     val action = query
       .join(
         TableQuery[POTable]
           .filter(_.isValid())
-          .map(a => (a.abbrev, a.version, a.studyProgram))
+          .map(a => (a.id, a.version, a.studyProgram))
       )
       .on(_._2._1 === _._3)
       .joinLeft(TableQuery[SpecializationTable])

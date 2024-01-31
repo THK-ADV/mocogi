@@ -1,5 +1,5 @@
 import models.SpecializationShort
-import models.core.{AbbrevLabelDescLike, AbbrevLabelLike, Person, Season}
+import models.core._
 import validator.Workload
 
 import java.time.format.DateTimeFormatter
@@ -12,13 +12,13 @@ package object printing {
     if (d % 1 == 0) d.toInt.toString
     else d.toString.replace('.', ',')
 
-  def fmtPerson(p: Person): String =
+  def fmtIdentity(p: Identity): String =
     p match {
-      case s: Person.Default =>
-        s"${s.title} ${s.fullName} (${fmtCommaSeparated(s.faculties, ", ")(_.abbrev.toUpperCase)})"
-      case g: Person.Group =>
+      case s: Identity.Person =>
+        s"${s.title} ${s.fullName} (${fmtCommaSeparated(s.faculties, ", ")(_.id.toUpperCase)})"
+      case g: Identity.Group =>
         g.label
-      case u: Person.Unknown =>
+      case u: Identity.Unknown =>
         u.label
     }
 
@@ -128,7 +128,7 @@ package object printing {
 
     def particularitiesLabel = self.fold("Besonderheiten", "Particularities")
 
-    def value(a: AbbrevLabelLike): String =
+    def value(a: IDLabel): String =
       self.fold(a.deLabel, a.enLabel)
 
     def frequencyValue(season: Season): String =
@@ -214,8 +214,7 @@ package object printing {
       }
   }
 
-  final implicit class AbbrevLabelLikeOps(private val self: AbbrevLabelLike)
-      extends AnyVal {
+  final implicit class LabelOps(private val self: Label) extends AnyVal {
     def localizedLabel(implicit lang: PrintingLanguage): String =
       lang.fold(self.deLabel, self.enLabel)
 
@@ -227,8 +226,8 @@ package object printing {
       )
   }
 
-  final implicit class AbbrevLabelDescLikeOps(
-      private val self: AbbrevLabelDescLike
+  final implicit class IDLabelDescOps(
+      private val self: IDLabelDesc
   ) extends AnyVal {
     def localizedDesc(implicit lang: PrintingLanguage): String =
       lang.fold(self.deDesc, self.enDesc)

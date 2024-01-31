@@ -1,9 +1,8 @@
 package service
 
-import controllers.formats.ModuleCompendiumProtocolFormat
 import database.repo.ModuleUpdatePermissionRepository
 import models.ModuleUpdatePermissionType.{Granted, Inherited}
-import models.core.Person
+import models.core.Identity
 import models.{
   CampusId,
   Module,
@@ -19,12 +18,12 @@ import scala.concurrent.{ExecutionContext, Future}
 final class ModuleUpdatePermissionService @Inject() (
     private val repo: ModuleUpdatePermissionRepository,
     implicit val ctx: ExecutionContext
-) extends ModuleCompendiumProtocolFormat {
-  def createOrUpdateInherited(modules: Seq[(UUID, List[Person])]) = {
+) {
+  def createOrUpdateInherited(modules: Seq[(UUID, List[Identity])]) = {
     def entries() =
       modules.flatMap { case (module, management) =>
         management.collect {
-          case p: Person.Default if p.username.isDefined =>
+          case p: Identity.Person if p.username.isDefined =>
             (module, CampusId(p.username.get), Inherited)
         }
       }

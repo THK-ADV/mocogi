@@ -1,9 +1,12 @@
 package models.core
 
+import controllers.JsonNullWritable
+import play.api.libs.json.{Json, Writes}
+
 import java.time.LocalDate
 
 case class PO(
-    abbrev: String,
+    id: String,
     version: Int,
     date: LocalDate,
     dateFrom: LocalDate,
@@ -11,3 +14,7 @@ case class PO(
     modificationDates: List[LocalDate],
     program: String
 )
+
+object PO extends JsonNullWritable {
+  implicit def writes: Writes[PO] = Json.writes
+}

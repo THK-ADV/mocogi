@@ -5,12 +5,12 @@ import slick.jdbc.PostgresProfile.api._
 
 final class CompetenceTable(tag: Tag)
     extends Table[Competence](tag, "competence")
-    with AbbrevLabelDescColumn[Competence] {
+    with IDLabelDescColumn[Competence] {
   override def * = (
-    abbrev,
+    id,
     deLabel,
     deDesc,
     enLabel,
     enDesc
-  ) <> (Competence.tupled, Competence.unapply)
+  ) <> ((Competence.apply _).tupled, Competence.unapply)
 }

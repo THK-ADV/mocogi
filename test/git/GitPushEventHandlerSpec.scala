@@ -90,8 +90,8 @@ final class GitPushEventHandlerSpec extends AnyWordSpec with TryValues {
           None,
           "",
           0,
-          "",
-          "",
+          Branch(""),
+          Branch(""),
           "modules",
           "core",
           "mcs",
@@ -99,53 +99,64 @@ final class GitPushEventHandlerSpec extends AnyWordSpec with TryValues {
           ""
         )
       val main = parseJson("push-in-main.json")
-      val changes = parse(main).success.value._2
-      assert(changes.added.isEmpty)
-      assert(changes.removed.isEmpty)
-      val (modules, cores) = changes.modified.partition(_.isModule(config))
-      assert(
-        modules == List(
-          GitFilePath("modules/23ce931b-4d27-47da-9158-3ab8979759cf.md"),
-          GitFilePath("modules/e37c5af9-6076-4f15-8c8b-d206b7091bc0.md")
-        )
-      )
-      assert(cores.isEmpty)
-      val moduleIds = changes.modified.map(_.moduleId(config))
-      assert(
-        moduleIds == List(
-          Some(UUID.fromString("23ce931b-4d27-47da-9158-3ab8979759cf")),
-          Some(UUID.fromString("e37c5af9-6076-4f15-8c8b-d206b7091bc0"))
-        )
-      )
+      parse(main) match {
+        case JsSuccess((branch, changes), _) =>
+          assert(branch.value == "master")
+          assert(changes.added.isEmpty)
+          assert(changes.removed.isEmpty)
+          val (modules, cores) = changes.modified.partition(_.isModule(config))
+          assert(
+            modules == List(
+              GitFilePath("modules/23ce931b-4d27-47da-9158-3ab8979759cf.md"),
+              GitFilePath("modules/e37c5af9-6076-4f15-8c8b-d206b7091bc0.md")
+            )
+          )
+          assert(cores.isEmpty)
+          val moduleIds = changes.modified.map(_.moduleId(config))
+          assert(
+            moduleIds == List(
+              Some(UUID.fromString("23ce931b-4d27-47da-9158-3ab8979759cf")),
+              Some(UUID.fromString("e37c5af9-6076-4f15-8c8b-d206b7091bc0"))
+            )
+          )
+        case JsError(errors) =>
+          fail(s"expected parsing to succeed, but failed with: $errors")
+      }
 
       val mainCore = parseJson("push-in-main-core.json")
-      val changes2 = parse(mainCore).success.value._2
-      assert(changes2.added.isEmpty)
-      assert(changes2.removed.isEmpty)
-      val (modules2, cores2) = changes2.modified.partition(_.isModule(config))
-      assert(
-        cores2 == List(
-          GitFilePath("core/status.yaml"),
-          GitFilePath("core/location.yaml"),
-          GitFilePath("core/lang.yaml"),
-          GitFilePath("core/module_type.yaml"),
-          GitFilePath("core/assessment.yaml"),
-          GitFilePath("core/season.yaml"),
-          GitFilePath("core/person.yaml"),
-          GitFilePath("core/program.yaml"),
-          GitFilePath("core/global_criteria.yaml"),
-          GitFilePath("core/focus_area.yaml"),
-          GitFilePath("core/po.yaml"),
-          GitFilePath("core/competence.yaml"),
-          GitFilePath("core/study_form.yaml"),
-          GitFilePath("core/grade.yaml"),
-          GitFilePath("core/faculty.yaml"),
-          GitFilePath("core/specialization.yaml")
-        )
-      )
-      assert(modules2.isEmpty)
-      val moduleIds2 = changes2.modified.flatMap(_.moduleId(config))
-      assert(moduleIds2.isEmpty)
+      parse(mainCore) match {
+        case JsSuccess((branch, changes), _) =>
+          assert(branch.value == "master")
+          assert(changes.added.isEmpty)
+          assert(changes.removed.isEmpty)
+          val (modules2, cores2) =
+            changes.modified.partition(_.isModule(config))
+          assert(
+            cores2 == List(
+              GitFilePath("core/status.yaml"),
+              GitFilePath("core/location.yaml"),
+              GitFilePath("core/lang.yaml"),
+              GitFilePath("core/module_type.yaml"),
+              GitFilePath("core/assessment.yaml"),
+              GitFilePath("core/season.yaml"),
+              GitFilePath("core/person.yaml"),
+              GitFilePath("core/program.yaml"),
+              GitFilePath("core/global_criteria.yaml"),
+              GitFilePath("core/focus_area.yaml"),
+              GitFilePath("core/po.yaml"),
+              GitFilePath("core/competence.yaml"),
+              GitFilePath("core/study_form.yaml"),
+              GitFilePath("core/grade.yaml"),
+              GitFilePath("core/faculty.yaml"),
+              GitFilePath("core/specialization.yaml")
+            )
+          )
+          assert(modules2.isEmpty)
+          val moduleIds2 = changes.modified.flatMap(_.moduleId(config))
+          assert(moduleIds2.isEmpty)
+        case JsError(errors) =>
+          fail(s"expected parsing to succeed, but failed with: $errors")
+      }
     }
   }
 }

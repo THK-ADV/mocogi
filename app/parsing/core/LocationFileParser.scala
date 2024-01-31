@@ -5,5 +5,5 @@ import javax.inject.Singleton
 
 @Singleton
 final class LocationFileParser extends LabelFileParser[Location] {
-  override protected def makeType = Location.tupled
+  override protected def makeType = (Location.apply _).tupled
 }

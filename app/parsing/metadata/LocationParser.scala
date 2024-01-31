@@ -11,7 +11,7 @@ final class LocationParser extends SingleValueParser[Location] {
   def parser(implicit locations: Seq[Location]): Parser[Location] =
     itemParser(
       "location",
-      locations.sortBy(_.abbrev).reverse,
-      m => s"location.${m.abbrev}"
+      locations.sortBy(_.id).reverse,
+      m => s"location.${m.id}"
     )
 }

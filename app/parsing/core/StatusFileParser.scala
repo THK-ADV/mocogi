@@ -5,5 +5,5 @@ import javax.inject.Singleton
 
 @Singleton
 final class StatusFileParser extends LabelFileParser[Status] {
-  override protected def makeType = Status.tupled
+  override protected def makeType = (Status.apply _).tupled
 }

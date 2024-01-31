@@ -28,25 +28,25 @@ class PORepository @Inject() (
 
   private val poModificationDateTableQuery = TableQuery[POModificationDateTable]
 
-  def exists(abbrev: String): Future[Boolean] =
-    db.run(tableQuery.filter(_.abbrev === abbrev).exists.result)
+  def exists(id: String): Future[Boolean] =
+    db.run(tableQuery.filter(_.id === id).exists.result)
 
   def all(): Future[Seq[PO]] =
     retrieve(tableQuery)
 
   def allIds(): Future[Seq[String]] =
-    db.run(tableQuery.map(_.abbrev).result)
+    db.run(tableQuery.map(_.id).result)
 
   def retrieve(query: Query[POTable, PODbEntry, Seq]) =
     db.run(
       query
         .joinLeft(poModificationDateTableQuery)
-        .on(_.abbrev === _.po)
+        .on(_.id === _.po)
         .result
         .map(_.groupBy(_._1).map { case (po, deps) =>
           val dates = deps.flatMap(_._2.map(_.date)).toList
           PO(
-            po.abbrev,
+            po.id,
             po.version,
             po.date,
             po.dateFrom,
@@ -61,7 +61,7 @@ class PORepository @Inject() (
     val action = for {
       _ <- tableQuery += toDbEntry(po)
       _ <- poModificationDateTableQuery ++= po.modificationDates.map(date =>
-        POModificationDateDbEntry(po.abbrev, date)
+        POModificationDateDbEntry(po.id, date)
       )
     } yield po
 
@@ -75,7 +75,7 @@ class PORepository @Inject() (
     xs.foreach { po =>
       pos += toDbEntry(po)
       po.modificationDates.foreach { date =>
-        poModificationDates += POModificationDateDbEntry(po.abbrev, date)
+        poModificationDates += POModificationDateDbEntry(po.id, date)
       }
     }
 
@@ -90,10 +90,10 @@ class PORepository @Inject() (
   private def updateAction(po: PO) =
     (
       for {
-        _ <- poModificationDateTableQuery.filter(_.po === po.abbrev).delete
-        _ <- tableQuery.filter(_.abbrev === po.abbrev).update(toDbEntry(po))
+        _ <- poModificationDateTableQuery.filter(_.po === po.id).delete
+        _ <- tableQuery.filter(_.id === po.id).update(toDbEntry(po))
         _ <- poModificationDateTableQuery ++= po.modificationDates.map(date =>
-          POModificationDateDbEntry(po.abbrev, date)
+          POModificationDateDbEntry(po.id, date)
         )
       } yield po
     ).transactionally
@@ -103,7 +103,7 @@ class PORepository @Inject() (
 
   private def toDbEntry(po: PO): PODbEntry =
     PODbEntry(
-      po.abbrev,
+      po.id,
       po.program,
       po.version,
       po.date,
@@ -122,7 +122,7 @@ class PORepository @Inject() (
       q <- base
       sp <- q.studyProgramFk
       g <- sp.gradeFk
-    } yield (q.abbrev, q.version, (sp.abbrev, sp.deLabel, sp.enLabel, g))
+    } yield (q.id, q.version, (sp.id, sp.deLabel, sp.enLabel, g))
 
     db.run(
       query

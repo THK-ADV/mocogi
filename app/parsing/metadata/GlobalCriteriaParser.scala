@@ -10,7 +10,7 @@ object GlobalCriteriaParser {
   ): Parser[List[GlobalCriteria]] =
     multipleValueParser(
       "global_criteria",
-      (g: GlobalCriteria) => s"global_criteria.${g.abbrev}",
+      (g: GlobalCriteria) => s"global_criteria.${g.id}",
       0
-    )(globalCriteria.sortBy(_.abbrev).reverse)
+    )(globalCriteria.sortBy(_.id).reverse)
 }

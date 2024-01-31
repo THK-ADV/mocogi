@@ -1,7 +1,7 @@
 package printing.markdown
 
 import models.StudyProgramShort
-import models.core.Person
+import models.core.Identity
 import parsing.types._
 import printer.Printer
 import printer.Printer.{newline, prefix}
@@ -9,7 +9,7 @@ import printing.{
   PrintingLanguage,
   fmtCommaSeparated,
   fmtDouble,
-  fmtPerson,
+  fmtIdentity,
   localDatePattern
 }
 import validator.{Metadata, ModuleRelation, POs, PrerequisiteEntry}
@@ -33,8 +33,8 @@ final class ModuleCompendiumMarkdownPrinter(
       }
       .reduce(_ skip _)
 
-  private def fmtPeople(label: String, xs: List[Person]): Printer[Unit] = {
-    rows(label, xs.map(fmtPerson))
+  private def fmtPeople(label: String, xs: List[Identity]): Printer[Unit] = {
+    rows(label, xs.map(fmtIdentity))
   }
 
   private def nonEmptyRow(
@@ -58,7 +58,7 @@ final class ModuleCompendiumMarkdownPrinter(
         val modules = nonEmptyRow(fmtCommaSeparated(e.modules)(_.abbrev))(s =>
           s"${lang.prerequisitesModuleLabel}: $s"
         )
-        val pos = nonEmptyRow(fmtCommaSeparated(e.pos)(_.abbrev))(s =>
+        val pos = nonEmptyRow(fmtCommaSeparated(e.pos)(_.id))(s =>
           s"${lang.prerequisitesStudyProgramLabel}: $s"
         )
         text
@@ -83,7 +83,7 @@ final class ModuleCompendiumMarkdownPrinter(
           val gradeLabel = lang.fold(sp.grade.deLabel, sp.grade.enLabel)
           s"$gradeLabel: $spLabel PO ${p.po.version}"
         case None =>
-          p.po.abbrev
+          p.po.id
       }
       semester.fold(studyProgramWithPO)(s => s"$studyProgramWithPO $s")
     }

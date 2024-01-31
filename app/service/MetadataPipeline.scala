@@ -27,14 +27,14 @@ final class MetadataPipeline @Inject() (
               metadata.id,
               metadata.title,
               metadata.abbrev,
-              metadata.kind.abbrev,
+              metadata.kind.id,
               metadata.credits.fold(
                 identity,
                 _.foldLeft(0.0) { case (acc, e) => acc + e.ectsValue }
               ),
-              metadata.language.abbrev,
+              metadata.language.id,
               metadata.duration,
-              metadata.season.abbrev,
+              metadata.season.id,
               Workload(
                 metadata.workload.lecture,
                 metadata.workload.seminar,
@@ -45,8 +45,8 @@ final class MetadataPipeline @Inject() (
                 0,
                 0
               ),
-              metadata.status.abbrev,
-              metadata.location.abbrev,
+              metadata.status.id,
+              metadata.location.id,
               metadata.participants,
               metadata.relation.map {
                 case ParsedModuleRelation.Parent(children) =>
@@ -59,16 +59,16 @@ final class MetadataPipeline @Inject() (
               AssessmentMethodsOutput(
                 metadata.assessmentMethods.mandatory.map(a =>
                   AssessmentMethodEntryOutput(
-                    a.method.abbrev,
+                    a.method.id,
                     a.percentage,
-                    a.precondition.map(_.abbrev)
+                    a.precondition.map(_.id)
                   )
                 ),
                 metadata.assessmentMethods.optional.map(a =>
                   AssessmentMethodEntryOutput(
-                    a.method.abbrev,
+                    a.method.id,
                     a.percentage,
-                    a.precondition.map(_.abbrev)
+                    a.precondition.map(_.id)
                   )
                 )
               ),
@@ -77,38 +77,38 @@ final class MetadataPipeline @Inject() (
                   PrerequisiteEntryOutput(
                     e.text,
                     e.modules,
-                    e.studyPrograms.map(_.abbrev)
+                    e.studyPrograms.map(_.id)
                   )
                 ),
                 metadata.prerequisites.required.map(e =>
                   PrerequisiteEntryOutput(
                     e.text,
                     e.modules,
-                    e.studyPrograms.map(_.abbrev)
+                    e.studyPrograms.map(_.id)
                   )
                 )
               ),
               POOutput(
                 metadata.pos.mandatory.map(a =>
                   POMandatoryOutput(
-                    a.po.abbrev,
-                    a.specialization.map(_.abbrev),
+                    a.po.id,
+                    a.specialization.map(_.id),
                     a.recommendedSemester,
                     a.recommendedSemesterPartTime
                   )
                 ),
                 metadata.pos.optional.map(a =>
                   POOptionalOutput(
-                    a.po.abbrev,
-                    a.specialization.map(_.abbrev),
+                    a.po.id,
+                    a.specialization.map(_.id),
                     a.instanceOf,
                     a.partOfCatalog,
                     a.recommendedSemester
                   )
                 )
               ),
-              metadata.competences.map(_.abbrev),
-              metadata.globalCriteria.map(_.abbrev),
+              metadata.competences.map(_.id),
+              metadata.globalCriteria.map(_.id),
               metadata.taughtWith
             ),
             de.normalize(),

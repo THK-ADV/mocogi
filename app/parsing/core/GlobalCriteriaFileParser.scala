@@ -21,6 +21,6 @@ object GlobalCriteriaFileParser extends FileParser[GlobalCriteria] {
           .skip(zeroOrMoreSpaces)
           .take(stringForKey("en_desc").option.map(_.getOrElse("")))
           .all(zeroOrMoreSpaces)
-          .map(_.map(GlobalCriteria.tupled))
+          .map(_.map((GlobalCriteria.apply _).tupled))
       )
 }

@@ -8,17 +8,12 @@ import controllers.actions.{
   PersonAction,
   VersionSchemeAction
 }
-import controllers.formats.{
-  JsonNullWritable,
-  ModuleCompendiumProtocolFormat,
-  ModuleFormat,
-  PipelineErrorFormat
-}
-import database.repo.PersonRepository
+import database.repo.IdentityRepository
 import models.{Module, ModuleCompendiumProtocol, ModuleDraft, ModuleDraftSource}
 import play.api.Logging
 import play.api.libs.json.{Json, Writes}
 import play.api.mvc.{AbstractController, ControllerComponents}
+import service.PipelineError.parsingErrorWrites
 import service.core.{ModuleKeyService, StudyProgramService}
 import service.{
   ModuleCompendiumService,
@@ -39,18 +34,15 @@ final class ModuleDraftController @Inject() (
     val auth: AuthorizationAction,
     val moduleUpdatePermissionService: ModuleUpdatePermissionService,
     val studyProgramService: StudyProgramService,
-    val personRepository: PersonRepository,
+    val identityRepository: IdentityRepository,
     val moduleCompendiumService: ModuleCompendiumService,
     val moduleKeyService: ModuleKeyService,
     implicit val ctx: ExecutionContext
 ) extends AbstractController(cc)
-    with ModuleCompendiumProtocolFormat
-    with PipelineErrorFormat
     with ModuleDraftCheck
     with PermissionCheck
-    with ModuleFormat
-    with JsonNullWritable
     with PersonAction
+    with JsonNullWritable
     with Logging {
 
   def moduleDrafts() =

@@ -2,7 +2,7 @@ package git.api
 
 import git.{GitCommitAction, GitCommitActionType, GitFilePath}
 import models._
-import models.core.Person
+import models.core.Identity
 import service.Print
 
 import java.util.UUID
@@ -17,7 +17,7 @@ final class GitCommitService @Inject() (
 ) {
   def commit(
       branch: Branch,
-      author: Person.Default,
+      author: Identity.Person,
       message: String,
       moduleId: UUID,
       status: ModuleDraftSource,

@@ -1,6 +1,7 @@
 package parsing.types
 
 import models.core.{PO, Specialization}
+import play.api.libs.json.{Json, Writes}
 
 import java.util.UUID
 
@@ -23,3 +24,7 @@ case class POMandatory(
     recommendedSemester: List[Int],
     recommendedSemesterPartTime: List[Int]
 )
+
+object POMandatory {
+  implicit def writes: Writes[POMandatory] = Json.writes
+}

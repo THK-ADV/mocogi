@@ -11,7 +11,7 @@ final class SeasonParser extends SingleValueParser[Season] {
   def parser(implicit seasons: Seq[Season]): Parser[Season] =
     itemParser(
       "frequency",
-      seasons.sortBy(_.abbrev).reverse,
-      x => s"season.${x.abbrev}"
+      seasons.sortBy(_.id).reverse,
+      x => s"season.${x.id}"
     )
 }

@@ -1,6 +1,5 @@
 package models
 
-import controllers.formats.ModuleCompendiumProtocolFormat
 import models.MergeRequestStatus.{Closed, Open}
 import models.ModuleDraftState.{
   Published,
@@ -11,7 +10,7 @@ import models.ModuleDraftState.{
   WaitingForPublication,
   WaitingForReview
 }
-import play.api.libs.json.{JsValue, Json}
+import play.api.libs.json.JsValue
 import service.Print
 
 import java.time.LocalDateTime
@@ -34,10 +33,10 @@ case class ModuleDraft(
     lastModified: LocalDateTime
 )
 
-object ModuleDraft extends ModuleCompendiumProtocolFormat {
+object ModuleDraft {
   final implicit class Ops(private val self: ModuleDraft) extends AnyVal {
     def protocol(): ModuleCompendiumProtocol =
-      Json.fromJson(self.data).get
+      ModuleCompendiumProtocol.format.reads(self.data).get
 
     def mergeRequestId: Option[MergeRequestId] =
       self.mergeRequest.map(_._1)

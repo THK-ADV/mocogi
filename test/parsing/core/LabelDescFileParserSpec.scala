@@ -10,8 +10,8 @@ final class LabelDescFileParserSpec
     with ParserSpecHelper
     with EitherValues {
 
-  val parser = new LabelDescFileParser[AbbrevLabelDescImpl] {
-    override protected def makeType = AbbrevLabelDescImpl.tupled
+  val parser = new LabelDescFileParser[IDLabelDescImpl] {
+    override protected def makeType = IDLabelDescImpl.tupled
   }.fileParser
 
   "A Label Desc File Parser" should {
@@ -29,7 +29,7 @@ final class LabelDescFileParserSpec
       val (res, rest) = parser.parse(input)
       assert(
         res.value == List(
-          AbbrevLabelDescImpl(
+          IDLabelDescImpl(
             "entry1",
             "Entry 1",
             "Text1\nText2\n",
@@ -64,14 +64,14 @@ final class LabelDescFileParserSpec
       val (res, rest) = parser.parse(input)
       assert(
         res.value == List(
-          AbbrevLabelDescImpl(
+          IDLabelDescImpl(
             "entry1",
             "Entry 1",
             "Text1\nText2\n",
             "Entry 1",
             "Text1 Text2\n"
           ),
-          AbbrevLabelDescImpl(
+          IDLabelDescImpl(
             "entry2",
             "Entry 2",
             "Text1 Text2",
@@ -88,28 +88,28 @@ final class LabelDescFileParserSpec
         withFile0("test/parsing/res/label_desc.yaml")(parser.parse)
       assert(
         res.value == List(
-          AbbrevLabelDescImpl(
+          IDLabelDescImpl(
             "develop-visions",
             "Develop Visions",
             "Desc1\nDesc2\nDesc3\n",
             "Develop Visions",
             "Desc1\nDesc2\n"
           ),
-          AbbrevLabelDescImpl(
+          IDLabelDescImpl(
             "analyze-domains",
             "Analyze Domains",
             "Desc1\nDesc2\n",
             "Analyze Domains",
             "Desc1\nDesc2\n"
           ),
-          AbbrevLabelDescImpl(
+          IDLabelDescImpl(
             "digitization",
             "Digitalisierung",
             "Desc1",
             "Digitization",
             ""
           ),
-          AbbrevLabelDescImpl(
+          IDLabelDescImpl(
             "internationalization",
             "Internationalisierung",
             "Desc1",

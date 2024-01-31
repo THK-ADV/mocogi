@@ -1,40 +1,16 @@
 package database.repo
 
 import database.table._
-import models.core.{RestrictedAdmission, StudyProgram}
-import models.{StudyProgramShort, UniversityRole}
+import models.core.StudyProgram
+import models.{StudyProgramOutput, StudyProgramShort, UniversityRole}
 import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfigProvider}
 import slick.jdbc.JdbcProfile
 
-import java.time.LocalDate
 import java.util.UUID
 import javax.inject.{Inject, Singleton}
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.{ExecutionContext, Future}
-
-case class StudyProgramOutput(
-    abbrev: String,
-    deLabel: String,
-    enLabel: String,
-    internalAbbreviation: String,
-    externalAbbreviation: String,
-    deUrl: String,
-    enUrl: String,
-    grade: String,
-    programDirectors: List[String],
-    examDirectors: List[String],
-    accreditationUntil: LocalDate,
-    restrictedAdmission: RestrictedAdmission,
-    studyForm: List[UUID],
-    language: List[String],
-    seasons: List[String],
-    campus: List[String],
-    deDescription: String,
-    deNote: String,
-    enDescription: String,
-    enNote: String
-)
 
 @Singleton
 class StudyProgramRepository @Inject() (
@@ -68,27 +44,27 @@ class StudyProgramRepository @Inject() (
     val query = for {
       q <- tableQuery
       g <- q.gradeFk
-    } yield (q.abbrev, q.deLabel, q.enLabel, g)
+    } yield (q.id, q.deLabel, q.enLabel, g)
     db.run(query.result.map(_.map(StudyProgramShort.apply)))
   }
 
   def allIds(): Future[Seq[String]] =
-    db.run(tableQuery.map(_.abbrev).result)
+    db.run(tableQuery.map(_.id).result)
 
   protected def retrieve(
       query: Query[StudyProgramTable, StudyProgramDbEntry, Seq]
   ) = {
     val res = query
       .joinLeft(studyFormTableQuery)
-      .on(_.abbrev === _.studyProgram)
+      .on(_.id === _.studyProgram)
       .joinLeft(studyProgramLanguageTableQuery)
-      .on(_._1.abbrev === _.studyProgram)
+      .on(_._1.id === _.studyProgram)
       .joinLeft(studyProgramSeasonTableQuery)
-      .on(_._1._1.abbrev === _.studyProgram)
+      .on(_._1._1.id === _.studyProgram)
       .joinLeft(studyProgramLocationTableQuery)
-      .on(_._1._1._1.abbrev === _.studyProgram)
+      .on(_._1._1._1.id === _.studyProgram)
       .joinLeft(studyProgramPersonTableQuery)
-      .on(_._1._1._1._1.abbrev === _.studyProgram)
+      .on(_._1._1._1._1.id === _.studyProgram)
 
     db.run(
       res.result.map(_.groupBy(_._1._1._1._1._1).map { case (sp, sf) =>
@@ -112,8 +88,8 @@ class StudyProgramRepository @Inject() (
           }
         }
 
-        StudyProgramOutput(
-          sp.abbrev,
+        models.StudyProgramOutput(
+          sp.id,
           sp.deLabel,
           sp.enLabel,
           sp.internalAbbreviation,
@@ -184,23 +160,23 @@ class StudyProgramRepository @Inject() (
     db.run(updateAction(sp))
 
   def exists(sp: StudyProgram): Future[Boolean] =
-    db.run(tableQuery.filter(_.abbrev === sp.abbrev).exists.result)
+    db.run(tableQuery.filter(_.id === sp.id).exists.result)
 
   private def toLanguages(sp: StudyProgram) =
-    sp.language.map(l => StudyProgramLanguageDbEntry(l.abbrev, sp.abbrev))
+    sp.language.map(l => StudyProgramLanguageDbEntry(l.id, sp.id))
 
   private def toSeasons(sp: StudyProgram) =
-    sp.seasons.map(s => StudyProgramSeasonDbEntry(s.abbrev, sp.abbrev))
+    sp.seasons.map(s => StudyProgramSeasonDbEntry(s.id, sp.id))
 
   private def toLocation(sp: StudyProgram) =
-    sp.campus.map(c => StudyProgramLocationDbEntry(c.abbrev, sp.abbrev))
+    sp.campus.map(c => StudyProgramLocationDbEntry(c.id, sp.id))
 
   private def toPeople(sp: StudyProgram) =
     sp.programDirectors.map(p =>
-      StudyProgramPersonDbEntry(p.id, sp.abbrev, UniversityRole.SGL)
+      StudyProgramPersonDbEntry(p.id, sp.id, UniversityRole.SGL)
     ) :::
       sp.examDirectors.map(p =>
-        StudyProgramPersonDbEntry(p.id, sp.abbrev, UniversityRole.PAV)
+        StudyProgramPersonDbEntry(p.id, sp.id, UniversityRole.PAV)
       )
 
   private def toStudyForms(sp: StudyProgram) = {
@@ -210,8 +186,8 @@ class StudyProgramRepository @Inject() (
       val sfId = UUID.randomUUID()
       studyForms += StudyFormDbEntry(
         sfId,
-        sp.abbrev,
-        sf.kind.abbrev,
+        sp.id,
+        sf.kind.id,
         sf.workloadPerEcts
       )
       sf.scope.foreach { sfs =>
@@ -243,39 +219,39 @@ class StudyProgramRepository @Inject() (
   private def updateAction(sp: StudyProgram) =
     for {
       _ <- studyProgramLocationTableQuery
-        .filter(_.studyProgram === sp.abbrev)
+        .filter(_.studyProgram === sp.id)
         .delete
       _ <- studyProgramSeasonTableQuery
-        .filter(_.studyProgram === sp.abbrev)
+        .filter(_.studyProgram === sp.id)
         .delete
       _ <- studyProgramLanguageTableQuery
-        .filter(_.studyProgram === sp.abbrev)
+        .filter(_.studyProgram === sp.id)
         .delete
       _ <- studyFormScopeTableQuery
         .filter(s =>
           s.studyForm in studyFormTableQuery
-            .filter(_.studyProgram === sp.abbrev)
+            .filter(_.studyProgram === sp.id)
             .map(_.id)
         )
         .delete
-      _ <- studyFormTableQuery.filter(_.studyProgram === sp.abbrev).delete
+      _ <- studyFormTableQuery.filter(_.studyProgram === sp.id).delete
       _ <- studyProgramPersonTableQuery
-        .filter(_.studyProgram === sp.abbrev)
+        .filter(_.studyProgram === sp.id)
         .delete
-      _ <- tableQuery.filter(_.abbrev === sp.abbrev).update(toDbEntry(sp))
+      _ <- tableQuery.filter(_.id === sp.id).update(toDbEntry(sp))
       _ <- createDependencies(sp)
     } yield sp
 
   private def toDbEntry(sp: StudyProgram): StudyProgramDbEntry =
     StudyProgramDbEntry(
-      sp.abbrev,
+      sp.id,
       sp.deLabel,
       sp.enLabel,
       sp.internalAbbreviation,
       sp.externalAbbreviation,
       sp.deUrl,
       sp.enUrl,
-      sp.grade.abbrev,
+      sp.grade.id,
       sp.accreditationUntil,
       sp.restrictedAdmission,
       sp.deDescription,

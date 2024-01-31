@@ -1,5 +1,6 @@
 package database.table
 
+import models.PrerequisiteType
 import slick.jdbc.PostgresProfile.api._
 
 import java.util.UUID

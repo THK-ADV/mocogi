@@ -1,7 +1,7 @@
 package database.repo
 
-import database.table.{ModuleReviewTable, PersonTable, StudyProgramTable}
-import models.core.Person
+import database.table.{ModuleReviewTable, IdentityTable, StudyProgramTable}
+import models.core.Identity
 import models.{ModuleReview, ModuleReviewStatus, StudyProgramShort}
 import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfigProvider}
 import slick.jdbc.JdbcProfile
@@ -56,22 +56,22 @@ final class ModuleReviewRepository @Inject() (
     val spQuery = for {
       sp <- TableQuery[StudyProgramTable]
       g <- sp.gradeFk
-    } yield (sp.abbrev, sp.deLabel, sp.enLabel, g)
+    } yield (sp.id, sp.deLabel, sp.enLabel, g)
 
     db.run(
       tableQuery
         .filter(_.moduleDraft === moduleId)
         .join(spQuery)
         .on(_.studyProgram === _._1)
-        .joinLeft(TableQuery[PersonTable])
+        .joinLeft(TableQuery[IdentityTable])
         .on(_._1.respondedBy === _.id)
         .result
         .map(_.map { case ((r, sp), p) =>
           r.copy(
             studyProgram = StudyProgramShort(sp),
             respondedBy = p.collect {
-              case p if p.kind == Person.DefaultKind =>
-                Person.Default(
+              case p if p.kind == Identity.DefaultKind =>
+                Identity.Person(
                   p.id,
                   p.lastname,
                   p.firstname,

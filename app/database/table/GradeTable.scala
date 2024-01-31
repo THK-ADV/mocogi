@@ -5,9 +5,9 @@ import slick.jdbc.PostgresProfile.api._
 
 final class GradeTable(tag: Tag)
     extends Table[Grade](tag, "grade")
-    with AbbrevLabelDescColumn[Grade] {
+    with IDLabelDescColumn[Grade] {
   override def * = (
-    abbrev,
+    id,
     deLabel,
     deDesc,
     enLabel,

@@ -31,7 +31,7 @@ class POFileParserSpec
           |  program: program.inf_inf""".stripMargin
       val (res, rest) = fileParser.parse(input)
       val po1 = res.value.head
-      assert(po1.abbrev == "ing_inf1")
+      assert(po1.id == "ing_inf1")
       assert(po1.version == 1)
       assert(po1.date == LocalDate.of(2009, 3, 10))
       assert(po1.dateFrom == LocalDate.of(2007, 9, 1))
@@ -59,7 +59,7 @@ class POFileParserSpec
           |  program: program.inf_mim""".stripMargin
       val (res, rest) = fileParser.parse(input)
       val po1 = res.value.head
-      assert(po1.abbrev == "inf_mim2")
+      assert(po1.id == "inf_mim2")
       assert(po1.version == 2)
       assert(po1.date == LocalDate.of(2007, 4, 5))
       assert(po1.dateFrom == LocalDate.of(2001, 9, 1))
@@ -94,7 +94,7 @@ class POFileParserSpec
           |  program: program.inf_inf""".stripMargin
       val (res, rest) = fileParser.parse(input)
       val po1 = res.value.head
-      assert(po1.abbrev == "ing_inf1")
+      assert(po1.id == "ing_inf1")
       assert(po1.version == 1)
       assert(po1.date == LocalDate.of(2009, 3, 10))
       assert(po1.dateFrom == LocalDate.of(2007, 9, 1))
@@ -108,7 +108,7 @@ class POFileParserSpec
       )
       assert(po1.program == "inf_inf")
       val po2 = res.value(1)
-      assert(po2.abbrev == "ing_gme4")
+      assert(po2.id == "ing_gme4")
       assert(po2.version == 4)
       assert(po2.date == LocalDate.of(2021, 1, 5))
       assert(po2.dateFrom == LocalDate.of(2021, 3, 1))

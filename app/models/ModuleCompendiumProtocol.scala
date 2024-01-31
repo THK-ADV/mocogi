@@ -4,6 +4,7 @@ import monocle.Traversal
 import monocle.macros.GenLens
 import monocle.syntax.all._
 import parsing.types.Content
+import play.api.libs.json.{Format, Json}
 
 case class ModuleCompendiumProtocol(
     metadata: MetadataProtocol,
@@ -12,6 +13,8 @@ case class ModuleCompendiumProtocol(
 )
 
 object ModuleCompendiumProtocol {
+
+  implicit def format: Format[ModuleCompendiumProtocol] = Json.format
 
   final implicit class Ops(private val self: ModuleCompendiumProtocol)
       extends AnyVal {

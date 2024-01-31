@@ -1,12 +1,13 @@
 package database.table
 
+import models.ResponsibilityType
 import slick.jdbc.PostgresProfile.api._
 
 import java.util.UUID
 
 case class ResponsibilityDbEntry(
     metadata: UUID,
-    person: String,
+    identity: String,
     responsibilityType: ResponsibilityType
 )
 
@@ -15,25 +16,22 @@ final class ResponsibilityTable(tag: Tag)
 
   def metadata = column[UUID]("metadata", O.PrimaryKey)
 
-  def person = column[String]("person", O.PrimaryKey)
+  def identity = column[String]("identity", O.PrimaryKey)
 
   def responsibilityType =
     column[ResponsibilityType]("responsibility_type", O.PrimaryKey)
-
-  def personFk =
-    foreignKey("person", person, TableQuery[PersonTable])(_.id)
 
   def isModuleManager = {
     val moduleManger: ResponsibilityType = ResponsibilityType.ModuleManagement
     this.responsibilityType === moduleManger
   }
 
-  def isPerson(person: String) =
-    this.person.toLowerCase === person.toLowerCase
+  def isIdentity(identity: String) =
+    this.identity.toLowerCase === identity.toLowerCase
 
   override def * = (
     metadata,
-    person,
+    identity,
     responsibilityType
   ) <> (ResponsibilityDbEntry.tupled, ResponsibilityDbEntry.unapply)
 }

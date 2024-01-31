@@ -22,7 +22,7 @@ class POParserSpec
       val input = "- study_program: study_program.wi1"
       val (res1, rest1) = studyProgramParser.parse(input)
       assert(rest1.isEmpty)
-      assert(res1.value._1.abbrev == "wi1")
+      assert(res1.value._1.id == "wi1")
       assert(res1.value._2.isEmpty)
     }
 
@@ -30,8 +30,8 @@ class POParserSpec
       val input = "- study_program: study_program.wi1.wi1_vi"
       val (res1, rest1) = studyProgramParser.parse(input)
       assert(rest1.isEmpty)
-      assert(res1.value._1.abbrev == "wi1")
-      assert(res1.value._2.value.abbrev == "wi1_vi")
+      assert(res1.value._1.id == "wi1")
+      assert(res1.value._2.value.id == "wi1_vi")
     }
 
     "parse a study program with no specialization if specialization is not found in po" in {

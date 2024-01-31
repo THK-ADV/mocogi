@@ -43,7 +43,7 @@ final class ModuleCompendiumHTMLPrinter @Inject() (
         lang,
         localDateTime,
         outputType,
-        sp => sps.find(_.abbrev == sp)
+        sp => sps.find(_.id == sp)
       )
     }
 }

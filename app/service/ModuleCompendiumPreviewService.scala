@@ -31,29 +31,29 @@ final class ModuleCompendiumPreviewService @Inject() (
     with LoggerOps {
 
   // Left: Preview, Right: Published
-  def previewModules(poAbbrev: String): Future[(Seq[Module], Seq[Module])] =
+  def previewModules(poId: String): Future[(Seq[Module], Seq[Module])] =
     for {
       modules <- moduleCompendiumRepository.allPreview(
-        Map("po_mandatory" -> Seq(poAbbrev))
+        Map("po_mandatory" -> Seq(poId))
       )
       modulePreviews <- modifiedInPreview().toFuture
     } yield modules.partition(m => modulePreviews.contains(m.id))
 
   def previewCompendium(
-      poAbbrev: String,
+      poId: String,
       pLang: PrintingLanguage,
       latexFile: TemporaryFile
   ): Future[Path] = {
     for {
       pos <- poRepository.allValidShort()
-      po <- pos.find(_.abbrev == poAbbrev) match {
+      po <- pos.find(_.id == poId) match {
         case Some(value) =>
           Future.successful(value)
         case None =>
-          Future.failed(new Throwable(s"po $poAbbrev needs to be valid"))
+          Future.failed(new Throwable(s"po $poId needs to be valid"))
       }
       _ <- switchToStagingBranch().toFuture
-      modules = getAllModulesFromPreview(po.abbrev)
+      modules = getAllModulesFromPreview(po.id)
       mcs <- pipeline.parseValidateMany(modules)
       pdf <- mcs match {
         case Left(errs) =>
@@ -64,9 +64,9 @@ final class ModuleCompendiumPreviewService @Inject() (
             mcs
               .map(_._2)
               .filter(_.metadata.validPOs.mandatory.exists { a =>
-                a.po.abbrev == po.abbrev && a.specialization
+                a.po.id == po.id && a.specialization
                   .zip(po.specialization)
-                  .fold(true)(a => a._1.abbrev == a._2.abbrev)
+                  .fold(true)(a => a._1.id == a._2.id)
               }),
             pos
           )(pLang)
@@ -77,7 +77,7 @@ final class ModuleCompendiumPreviewService @Inject() (
   }
 
   private def getAllModulesFromPreview(
-      po: String
+      poId: String
   ): Seq[(Option[UUID], Print)] = {
     val folder =
       Paths.get(configReader.repoPath).resolve(configReader.modulesRootFolder)
@@ -87,7 +87,7 @@ final class ModuleCompendiumPreviewService @Inject() (
       .asScala
       .drop(1) // drop root directory
       .map(Files.readString)
-      .filter(containsPO(_, po))
+      .filter(containsPO(_, poId))
       .map(None -> Print(_))
       .toSeq
   }
@@ -133,12 +133,12 @@ final class ModuleCompendiumPreviewService @Inject() (
 }
 
 object ModuleCompendiumPreviewService {
-  def containsPO(input: String, po: String): Boolean = {
+  def containsPO(input: String, poId: String): Boolean = {
     val start = input.indexOf("po_mandatory:\n")
     if (start < 0) return false
     val end = input.lastIndexOf("---")
     if (end < 0) return false
     val input0 = input.slice(start, end)
-    input0.contains(s"- study_program: study_program.$po")
+    input0.contains(s"- study_program: study_program.$poId")
   }
 }

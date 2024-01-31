@@ -3,10 +3,9 @@ package controllers
 import auth.AuthorizationAction
 import compendium.ModuleCompendiumLatexActor
 import controllers.actions.{DirectorCheck, PermissionCheck, PersonAction}
-import controllers.formats.ModuleFormat
 import database.repo.{
   ModuleCompendiumListRepository,
-  PersonRepository,
+  IdentityRepository,
   StudyProgramPersonRepository
 }
 import models.Semester
@@ -28,14 +27,13 @@ final class ModuleCompendiumListController @Inject() (
     fileCreator: DefaultTemporaryFileCreator,
     previewService: ModuleCompendiumPreviewService,
     auth: AuthorizationAction,
-    val personRepository: PersonRepository,
+    val identityRepository: IdentityRepository,
     val studyProgramPersonRepository: StudyProgramPersonRepository,
     implicit val ctx: ExecutionContext
 ) extends AbstractController(cc)
     with DirectorCheck
     with PermissionCheck
-    with PersonAction
-    with ModuleFormat {
+    with PersonAction {
 
   def allFromSemester(semester: String) =
     Action.async(_ =>

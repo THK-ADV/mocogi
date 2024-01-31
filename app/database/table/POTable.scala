@@ -5,7 +5,7 @@ import slick.jdbc.PostgresProfile.api._
 import java.time.LocalDate
 
 case class PODbEntry(
-    abbrev: String,
+    id: String,
     studyProgram: String,
     version: Int,
     date: LocalDate,
@@ -15,7 +15,7 @@ case class PODbEntry(
 
 final class POTable(tag: Tag) extends Table[PODbEntry](tag, "po") {
 
-  def abbrev = column[String]("abbrev", O.PrimaryKey)
+  def id = column[String]("id", O.PrimaryKey)
 
   def studyProgram = column[String]("study_program")
 
@@ -32,11 +32,11 @@ final class POTable(tag: Tag) extends Table[PODbEntry](tag, "po") {
 
   def studyProgramFk =
     foreignKey("study_program", studyProgram, TableQuery[StudyProgramTable])(
-      _.abbrev
+      _.id
     )
 
   override def * = (
-    abbrev,
+    id,
     studyProgram,
     version,
     date,

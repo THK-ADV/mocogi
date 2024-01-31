@@ -45,7 +45,7 @@ final class POServiceImpl @Inject() (
     def go(xs: List[PO]) =
       Future.sequence(
         xs.map(po =>
-          repo.exists(po.abbrev).flatMap {
+          repo.exists(po.id).flatMap {
             case true  => repo.update(po).map(InsertOrUpdateResult.Update -> _)
             case false => repo.create(po).map(InsertOrUpdateResult.Insert -> _)
           }

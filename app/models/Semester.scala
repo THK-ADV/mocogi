@@ -1,32 +1,33 @@
 package models
 
-import models.core.AbbrevLabelLike
+import models.core.Label
 import play.api.libs.json.{Json, Writes}
 
-trait Semester extends AbbrevLabelLike {
+trait Semester extends Label {
+  def id: String = s"${id}_$year"
   def year: Int
-  def id: String = s"${abbrev}_$year"
+  def abbrev: String
 }
 
 object Semester {
   def winter(_year: Int): Semester = new Semester {
     override def year: Int = _year
 
-    override def abbrev: String = "wise"
+    def abbrev: String = "wise"
 
-    override def deLabel: String = "Wintersemester"
+    def deLabel: String = "Wintersemester"
 
-    override def enLabel: String = "Winter semester"
+    def enLabel: String = "Winter semester"
   }
 
   def summer(_year: Int): Semester = new Semester {
     override def year: Int = _year
 
-    override def abbrev: String = "sose"
+    def abbrev: String = "sose"
 
-    override def deLabel: String = "Sommersemester"
+    def deLabel: String = "Sommersemester"
 
-    override def enLabel: String = "Summer semester"
+    def enLabel: String = "Summer semester"
   }
 
   def apply(id: String): Semester = {
@@ -41,8 +42,8 @@ object Semester {
     s =>
       Json.obj(
         "id" -> s.id,
-        "year" -> s.year,
         "abbrev" -> s.abbrev,
+        "year" -> s.year,
         "deLabel" -> s.deLabel,
         "enLabel" -> s.enLabel
       )

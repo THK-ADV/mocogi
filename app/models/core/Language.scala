@@ -1,4 +1,10 @@
 package models.core
 
-case class Language(abbrev: String, deLabel: String, enLabel: String)
-    extends AbbrevLabelLike
+import play.api.libs.json.{Json, Writes}
+
+case class Language(id: String, deLabel: String, enLabel: String)
+    extends IDLabel
+
+object Language {
+  implicit def writes: Writes[Language] = Json.writes
+}

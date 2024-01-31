@@ -49,7 +49,7 @@ private final class ModuleCompendiumPrintingActor(
             print(
               lastModified,
               mc,
-              sp => sps.find(_.abbrev == sp)
+              sp => sps.find(_.id == sp)
             )
           }
         case Failure(t) =>

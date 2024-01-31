@@ -23,7 +23,7 @@ class THKV1ParserSpec
     with FakeAssessmentMethod
     with FakeModuleTypes
     with FakeSeasons
-    with FakePersons
+    with FakeIdentities
     with FakeFocusAreas
     with FakeGlobalCriteria
     with FakeCompetences
@@ -116,7 +116,7 @@ class THKV1ParserSpec
         assert(
           metadata.responsibilities == Responsibilities(
             List(
-              Person.Default(
+              Identity.Person(
                 "ald",
                 "Dobrynin",
                 "Alexander",
@@ -128,7 +128,7 @@ class THKV1ParserSpec
               )
             ),
             List(
-              Person.Default(
+              Identity.Person(
                 "ald",
                 "Dobrynin",
                 "Alexander",
@@ -138,7 +138,7 @@ class THKV1ParserSpec
                 "ald",
                 PersonStatus.Active
               ),
-              Person.Default(
+              Identity.Person(
                 "abe",
                 "Bertels",
                 "Anja",
@@ -270,7 +270,7 @@ class THKV1ParserSpec
         assert(
           metadata.responsibilities == Responsibilities(
             List(
-              Person.Default(
+              Identity.Person(
                 "ald",
                 "Dobrynin",
                 "Alexander",
@@ -282,7 +282,7 @@ class THKV1ParserSpec
               )
             ),
             List(
-              Person.Default(
+              Identity.Person(
                 "ald",
                 "Dobrynin",
                 "Alexander",

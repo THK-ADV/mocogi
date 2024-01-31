@@ -66,7 +66,7 @@ object WPFCatalogueGeneratorActor {
         _ <- gitAvailabilityChecker.checkAvailability()
         allPos <- poRepo
           .allValidShort()
-          .map(_.sortBy(a => (a.studyProgram.grade, a.fullAbbrev, a.version)))
+          .map(_.sortBy(a => (a.studyProgram.grade, a.fullId, a.version)))
         entries <- wpfRepo.all()
         file <- {
           allPos.foreach(p => {
@@ -83,7 +83,7 @@ object WPFCatalogueGeneratorActor {
           entries.foreach { case (module, person, pos) =>
             val po = allPos
               .map(p =>
-                if (pos.exists(_.fullAbbrev == p.fullAbbrev)) "X" else ""
+                if (pos.exists(_.fullId == p.fullId)) "X" else ""
               )
               .mkString(",")
             csv.append(

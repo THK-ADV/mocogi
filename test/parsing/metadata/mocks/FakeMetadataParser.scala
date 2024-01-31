@@ -17,7 +17,7 @@ class FakeMetadataParser extends MetadataParser {
       assessmentMethods: Seq[AssessmentMethod],
       moduleTypes: Seq[ModuleType],
       seasons: Seq[Season],
-      persons: Seq[Person],
+      identities: Seq[Identity],
       focusAreas: Seq[FocusAreaPreview],
       competences: Seq[Competence],
       globalCriteria: Seq[GlobalCriteria],

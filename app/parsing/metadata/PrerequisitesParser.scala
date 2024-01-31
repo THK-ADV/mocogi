@@ -31,7 +31,7 @@ object PrerequisitesParser {
       "study_programs",
       oneOf(
         pos.map(s =>
-          literal(s"study_program.${s.abbrev}")
+          literal(s"study_program.${s.id}")
             .map(_ => s)
         ): _*
       )
@@ -45,7 +45,7 @@ object PrerequisitesParser {
       .skip(removeIndentation())
       .take(textParser)
       .zip(modulesParser)
-      .take(studyProgramsParser(pos.sortBy(_.abbrev).reverse))
+      .take(studyProgramsParser(pos.sortBy(_.id).reverse))
       .map(ParsedPrerequisiteEntry.tupled)
 
   def recommendedPrerequisitesParser(implicit

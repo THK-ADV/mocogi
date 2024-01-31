@@ -1,20 +1,11 @@
 package database.view
 
-import models.SpecializationShort
+import models.{SpecializationShort, StudyProgramAtomic}
 import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfigProvider}
 import slick.jdbc.JdbcProfile
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
-
-case class StudyProgramAtomic(
-    poAbbrev: String,
-    studyProgramAbbrev: String,
-    studyProgramLabel: String,
-    grade: String,
-    version: Int,
-    specialization: Option[SpecializationShort]
-)
 
 @Singleton
 final class StudyProgramViewRepository @Inject() (
@@ -29,27 +20,27 @@ final class StudyProgramViewRepository @Inject() (
   final class StudyProgramView(tag: Tag)
       extends Table[StudyProgramAtomic](tag, name) {
 
-    def poAbbrev = column[String]("po_abbrev")
+    def poId = column[String]("po_id")
 
-    def studyProgramAbbrev = column[String]("sp_abbrev")
+    def studyProgramId = column[String]("sp_id")
 
     def studyProgramLabel = column[String]("sp_label")
 
-    def grade = column[String]("grade_label")
+    def gradeLabel = column[String]("grade_label")
 
-    def version = column[Int]("po_version")
+    def poVersion = column[Int]("po_version")
 
-    def specializationAbbrev = column[Option[String]]("spec_abbrev")
+    def specializationId = column[Option[String]]("spec_id")
 
     def specializationLabel = column[Option[String]]("spec_label")
 
     override def * = (
-      poAbbrev,
-      studyProgramAbbrev,
+      poId,
+      studyProgramId,
       studyProgramLabel,
-      grade,
-      version,
-      specializationAbbrev,
+      gradeLabel,
+      poVersion,
+      specializationId,
       specializationLabel
     ) <> (mapRow, unmapRow)
   }
@@ -63,21 +54,21 @@ final class StudyProgramViewRepository @Inject() (
       (String, String, String, String, Int, Option[String], Option[String])
   ) => StudyProgramAtomic = {
     case (
-          poAbbrev,
-          studyProgramAbbrev,
+          poId,
+          studyProgramId,
           studyProgramLabel,
           grade,
-          version,
-          specializationAbbrev,
+          poVersion,
+          specializationId,
           specializationLabel
         ) =>
       StudyProgramAtomic(
-        poAbbrev,
-        studyProgramAbbrev,
+        poId,
+        poVersion,
+        studyProgramId,
         studyProgramLabel,
         grade,
-        version,
-        specializationAbbrev
+        specializationId
           .zip(specializationLabel)
           .map((SpecializationShort.apply _).tupled)
       )
@@ -88,12 +79,12 @@ final class StudyProgramViewRepository @Inject() (
   ] = { a =>
     Option(
       (
-        a.poAbbrev,
-        a.studyProgramAbbrev,
+        a.poId,
+        a.studyProgramId,
         a.studyProgramLabel,
-        a.grade,
-        a.version,
-        a.specialization.map(_.abbrev),
+        a.gradeLabel,
+        a.poVersion,
+        a.specialization.map(_.id),
         a.specialization.map(_.label)
       )
     )

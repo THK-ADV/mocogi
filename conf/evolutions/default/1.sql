@@ -2,49 +2,49 @@
 
 create table location
 (
-    "abbrev"   text PRIMARY KEY,
+    "id"       text PRIMARY KEY,
     "de_label" text not null,
     "en_label" text not null
 );
 
 create table language
 (
-    "abbrev"   text PRIMARY KEY,
+    "id"       text PRIMARY KEY,
     "de_label" text not null,
     "en_label" text not null
 );
 
 create table status
 (
-    "abbrev"   text PRIMARY KEY,
+    "id"       text PRIMARY KEY,
     "de_label" text not null,
     "en_label" text not null
 );
 
 create table assessment_method
 (
-    "abbrev"   text PRIMARY KEY,
+    "id"       text PRIMARY KEY,
     "de_label" text not null,
     "en_label" text not null
 );
 
 create table module_type
 (
-    "abbrev"   text PRIMARY KEY,
+    "id"       text PRIMARY KEY,
     "de_label" text not null,
     "en_label" text not null
 );
 
 create table season
 (
-    "abbrev"   text PRIMARY KEY,
+    "id"       text PRIMARY KEY,
     "de_label" text not null,
     "en_label" text not null
 );
 
 create table competence
 (
-    "abbrev"   text PRIMARY KEY,
+    "id"       text PRIMARY KEY,
     "de_label" text not null,
     "de_desc"  text not null,
     "en_label" text not null,
@@ -53,14 +53,14 @@ create table competence
 
 create table faculty
 (
-    "abbrev"   text PRIMARY KEY,
+    "id"       text PRIMARY KEY,
     "de_label" text not null,
     "en_label" text not null
 );
 
 create table grade
 (
-    "abbrev"   text PRIMARY KEY,
+    "id"       text PRIMARY KEY,
     "de_label" text not null,
     "de_desc"  text not null,
     "en_label" text not null,
@@ -69,21 +69,21 @@ create table grade
 
 create table study_form_type
 (
-    "abbrev"   text PRIMARY KEY,
+    "id"       text PRIMARY KEY,
     "de_label" text not null,
     "en_label" text not null
 );
 
 create table global_criteria
 (
-    "abbrev"   text PRIMARY KEY,
+    "id"       text PRIMARY KEY,
     "de_label" text not null,
     "de_desc"  text not null,
     "en_label" text not null,
     "en_desc"  text not null
 );
 
-create table person
+create table identity
 (
     "id"           text PRIMARY KEY,
     "lastname"     text not null,
@@ -100,13 +100,13 @@ create table person_in_faculty
     "person"  text not null,
     "faculty" text not null,
     PRIMARY KEY (person, faculty),
-    FOREIGN KEY (person) REFERENCES person (id),
-    FOREIGN KEY (faculty) REFERENCES faculty (abbrev)
+    FOREIGN KEY (person) REFERENCES identity (id),
+    FOREIGN KEY (faculty) REFERENCES faculty (id)
 );
 
 create table study_program
 (
-    "abbrev"                         text PRIMARY KEY,
+    "id"                             text PRIMARY KEY,
     "de_label"                       text    not null,
     "en_label"                       text    not null,
     "internal_abbreviation"          text    not null,
@@ -122,7 +122,7 @@ create table study_program
     "de_note"                        text    not null,
     "en_description"                 text    not null,
     "en_note"                        text    not null,
-    FOREIGN KEY (grade) REFERENCES grade (abbrev)
+    FOREIGN KEY (grade) REFERENCES grade (id)
 );
 
 create table study_form
@@ -131,8 +131,8 @@ create table study_form
     "study_program"     text     not null,
     "study_form_type"   text     not null,
     "workload_per_ects" smallint not null,
-    FOREIGN KEY (study_program) REFERENCES study_program (abbrev),
-    FOREIGN KEY (study_form_type) REFERENCES study_form_type (abbrev)
+    FOREIGN KEY (study_program) REFERENCES study_program (id),
+    FOREIGN KEY (study_form_type) REFERENCES study_form_type (id)
 );
 
 create table study_form_scope
@@ -151,8 +151,8 @@ create table study_program_language
     "language"      text not null,
     "study_program" text not null,
     PRIMARY KEY (language, study_program),
-    FOREIGN KEY (language) REFERENCES language (abbrev),
-    FOREIGN KEY (study_program) REFERENCES study_program (abbrev)
+    FOREIGN KEY (language) REFERENCES language (id),
+    FOREIGN KEY (study_program) REFERENCES study_program (id)
 );
 
 create table study_program_season
@@ -160,8 +160,8 @@ create table study_program_season
     "season"        text not null,
     "study_program" text not null,
     PRIMARY KEY (season, study_program),
-    FOREIGN KEY (season) REFERENCES season (abbrev),
-    FOREIGN KEY (study_program) REFERENCES study_program (abbrev)
+    FOREIGN KEY (season) REFERENCES season (id),
+    FOREIGN KEY (study_program) REFERENCES study_program (id)
 );
 
 create table study_program_location
@@ -169,8 +169,8 @@ create table study_program_location
     "location"      text not null,
     "study_program" text not null,
     PRIMARY KEY (location, study_program),
-    FOREIGN KEY (location) REFERENCES location (abbrev),
-    FOREIGN KEY (study_program) REFERENCES study_program (abbrev)
+    FOREIGN KEY (location) REFERENCES location (id),
+    FOREIGN KEY (study_program) REFERENCES study_program (id)
 );
 
 create table study_program_person
@@ -179,30 +179,30 @@ create table study_program_person
     "study_program" text not null,
     "role"          text not null,
     PRIMARY KEY (person, study_program, role),
-    FOREIGN KEY (person) REFERENCES person (id),
-    FOREIGN KEY (study_program) REFERENCES study_program (abbrev)
+    FOREIGN KEY (person) REFERENCES identity (id),
+    FOREIGN KEY (study_program) REFERENCES study_program (id)
 );
 
 create table focus_area
 (
-    "abbrev"        text PRIMARY KEY,
+    "id"            text PRIMARY KEY,
     "study_program" text not null,
     "de_label"      text not null,
     "de_desc"       text not null,
     "en_label"      text not null,
     "en_desc"       text not null,
-    FOREIGN KEY (study_program) REFERENCES study_program (abbrev)
+    FOREIGN KEY (study_program) REFERENCES study_program (id)
 );
 
 create table po
 (
-    "abbrev"        text PRIMARY KEY,
+    "id"            text PRIMARY KEY,
     "study_program" text     not null,
     "version"       smallint not null,
     "date"          date     not null,
     "date_from"     date     not null,
     "date_to"       date,
-    FOREIGN KEY (study_program) REFERENCES study_program (abbrev)
+    FOREIGN KEY (study_program) REFERENCES study_program (id)
 );
 
 create table po_modification_date
@@ -210,15 +210,15 @@ create table po_modification_date
     "po"   text not null,
     "date" date not null,
     PRIMARY KEY (po, date),
-    FOREIGN KEY (po) REFERENCES po (abbrev)
+    FOREIGN KEY (po) REFERENCES po (id)
 );
 
 create table specialization
 (
-    "abbrev" text PRIMARY KEY,
-    "po"     text not null,
-    "label"  text not null,
-    FOREIGN KEY (po) REFERENCES po (abbrev)
+    "id"    text PRIMARY KEY,
+    "po"    text not null,
+    "label" text not null,
+    FOREIGN KEY (po) REFERENCES po (id)
 );
 
 create table metadata
@@ -255,11 +255,11 @@ create table metadata
     "literature_en"                text          not null,
     "particularities_de"           text          not null,
     "particularities_en"           text          not null,
-    FOREIGN KEY (module_type) REFERENCES module_type (abbrev),
-    FOREIGN KEY (language) REFERENCES language (abbrev),
-    FOREIGN KEY (season) REFERENCES season (abbrev),
-    FOREIGN KEY (status) REFERENCES status (abbrev),
-    FOREIGN KEY (location) REFERENCES location (abbrev)
+    FOREIGN KEY (module_type) REFERENCES module_type (id),
+    FOREIGN KEY (language) REFERENCES language (id),
+    FOREIGN KEY (season) REFERENCES season (id),
+    FOREIGN KEY (status) REFERENCES status (id),
+    FOREIGN KEY (location) REFERENCES location (id)
 );
 
 create table ects_focus_area_contribution
@@ -270,7 +270,7 @@ create table ects_focus_area_contribution
     "de_desc"    text          not null,
     "en_desc"    text          not null,
     PRIMARY KEY (focus_area, metadata),
-    FOREIGN KEY (focus_area) REFERENCES focus_area (abbrev),
+    FOREIGN KEY (focus_area) REFERENCES focus_area (id),
     FOREIGN KEY (metadata) REFERENCES metadata (id)
 );
 
@@ -287,11 +287,11 @@ create table module_relation
 create table responsibility
 (
     "metadata"            uuid not null,
-    "person"              text not null,
+    "identity"            text not null,
     "responsibility_type" text not null,
-    PRIMARY KEY (metadata, person, responsibility_type),
+    PRIMARY KEY (metadata, identity, responsibility_type),
     FOREIGN KEY (metadata) REFERENCES metadata (id),
-    FOREIGN KEY (person) REFERENCES person (id)
+    FOREIGN KEY (identity) REFERENCES identity (id)
 );
 
 create table metadata_assessment_method
@@ -301,7 +301,7 @@ create table metadata_assessment_method
     "assessment_method"      text not null,
     "assessment_method_type" text not null,
     "percentage"             numeric(5, 2) null,
-    FOREIGN KEY (assessment_method) REFERENCES assessment_method (abbrev),
+    FOREIGN KEY (assessment_method) REFERENCES assessment_method (id),
     FOREIGN KEY (metadata) REFERENCES metadata (id)
 );
 
@@ -310,7 +310,7 @@ create table metadata_assessment_method_precondition
     "assessment_method"          text not null,
     "metadata_assessment_method" uuid not null,
     PRIMARY KEY (assessment_method, metadata_assessment_method),
-    FOREIGN KEY (assessment_method) REFERENCES assessment_method (abbrev),
+    FOREIGN KEY (assessment_method) REFERENCES assessment_method (id),
     FOREIGN KEY (metadata_assessment_method) REFERENCES metadata_assessment_method (id)
 );
 
@@ -338,7 +338,7 @@ create table prerequisites_po
     "po"            text not null,
     PRIMARY KEY (prerequisites, po),
     FOREIGN KEY (prerequisites) REFERENCES prerequisites (id),
-    FOREIGN KEY (po) REFERENCES po (abbrev)
+    FOREIGN KEY (po) REFERENCES po (id)
 );
 
 create table po_mandatory
@@ -349,9 +349,9 @@ create table po_mandatory
     "recommended_semester"           text not null,
     "recommended_semester_part_time" text not null,
     "specialization"                 text null,
-    FOREIGN KEY (specialization) REFERENCES specialization (abbrev),
+    FOREIGN KEY (specialization) REFERENCES specialization (id),
     FOREIGN KEY (metadata) REFERENCES metadata (id),
-    FOREIGN KEY (po) REFERENCES po (abbrev)
+    FOREIGN KEY (po) REFERENCES po (id)
 );
 
 create table po_optional
@@ -363,9 +363,9 @@ create table po_optional
     "part_of_catalog"      boolean not null,
     "recommended_semester" text    not null,
     "specialization"       text null,
-    FOREIGN KEY (specialization) REFERENCES specialization (abbrev),
+    FOREIGN KEY (specialization) REFERENCES specialization (id),
     FOREIGN KEY (metadata) REFERENCES metadata (id),
-    FOREIGN KEY (po) REFERENCES po (abbrev),
+    FOREIGN KEY (po) REFERENCES po (id),
     FOREIGN KEY (instance_of) REFERENCES metadata (id)
 );
 
@@ -375,7 +375,7 @@ create table metadata_competence
     "competence" text not null,
     PRIMARY KEY (metadata, competence),
     FOREIGN KEY (metadata) REFERENCES metadata (id),
-    FOREIGN KEY (competence) REFERENCES competence (abbrev)
+    FOREIGN KEY (competence) REFERENCES competence (id)
 );
 
 create table metadata_global_criteria
@@ -384,7 +384,7 @@ create table metadata_global_criteria
     "global_criteria" text not null,
     PRIMARY KEY (metadata, global_criteria),
     FOREIGN KEY (metadata) REFERENCES metadata (id),
-    FOREIGN KEY (global_criteria) REFERENCES global_criteria (abbrev)
+    FOREIGN KEY (global_criteria) REFERENCES global_criteria (id)
 );
 
 create table metadata_taught_with
@@ -415,7 +415,7 @@ create table module_draft
     "merge_request_id"        integer null,
     "merge_request_status"    text null,
     "last_modified"           timestamp not null,
-    FOREIGN KEY (author) REFERENCES person (id)
+    FOREIGN KEY (author) REFERENCES identity (id)
 );
 
 create table module_update_permission
@@ -436,9 +436,9 @@ create table module_review
     "comment"       text null,
     "responded_by"  text null,
     "responded_at"  timestamp null,
-    FOREIGN KEY (study_program) REFERENCES study_program (abbrev),
+    FOREIGN KEY (study_program) REFERENCES study_program (id),
     FOREIGN KEY (module_draft) REFERENCES module_draft (module),
-    FOREIGN KEY (responded_by) REFERENCES person (id)
+    FOREIGN KEY (responded_by) REFERENCES identity (id)
 );
 
 -- module compendium list
@@ -453,27 +453,27 @@ create table module_compendium_list
     "de_url"         text      not null,
     "en_url"         text      not null,
     "generated"      timestamp not null,
-    FOREIGN KEY (study_program) REFERENCES study_program (abbrev),
-    FOREIGN KEY (po) REFERENCES po (abbrev)
+    FOREIGN KEY (study_program) REFERENCES study_program (id),
+    FOREIGN KEY (po) REFERENCES po (id)
 );
 
 -- study_program_atomic
 create
 materialized view study_program_atomic as
 select study_program.de_label as sp_label,
-       study_program.abbrev   as sp_abbrev,
+       study_program.id       as sp_id,
        grade.de_label         as grade_label,
-       po.abbrev              as po_abbrev,
+       po.id                  as po_id,
        po.version             as po_version,
        specialization.label   as spec_label,
-       specialization.abbrev  as spec_abbrev
+       specialization.id      as spec_id
 from study_program
-         join grade on study_program.grade = grade.abbrev
-         join po on po.study_program = study_program.abbrev and
+         join grade on study_program.grade = grade.id
+         join po on po.study_program = study_program.id and
                     po.date_from <= now() and
                     (po.date_to is null or po.date_to >= now())
-         left join specialization on specialization.po = po.abbrev
-order by sp_label, po_abbrev, grade_label;
+         left join specialization on specialization.po = po.id
+order by sp_label, po_id, grade_label;
 
 -- metadata_atomic
 create
@@ -482,61 +482,61 @@ select metadata.id                       as id,
        metadata.title                    as title,
        metadata.abbrev                   as abbrev,
        metadata.ects                     as ects,
-       person.id                         as module_management_id,
-       person.kind                       as module_management_kind,
-       person.abbreviation               as module_management_abbrev,
-       person.title                      as module_management_title,
-       person.firstname                  as module_management_firstname,
-       person.lastname                   as module_management_lastname,
-       po.abbrev                         as po_abbrev,
+       identity.id                       as module_management_id,
+       identity.kind                     as module_management_kind,
+       identity.abbreviation             as module_management_abbrev,
+       identity.title                    as module_management_title,
+       identity.firstname                as module_management_firstname,
+       identity.lastname                 as module_management_lastname,
+       po.id                             as po_id,
        po.version                        as po_version,
-       study_program.abbrev              as sp_abbrev,
+       study_program.id                  as sp_id,
        study_program.de_label            as sp_label,
        grade.de_label                    as grade_label,
-       specialization.abbrev             as spec_abbrev,
+       specialization.id                 as spec_id,
        specialization.label              as spec_label,
        po_mandatory.recommended_semester as recommended_semester,
        true                              as mandatory
 from metadata
          join responsibility on metadata.id = responsibility.metadata and
                                 responsibility.responsibility_type = 'module_management'
-         join person on responsibility.person = person.id
+         join identity on responsibility.identity = identity.id
          join po_mandatory on metadata.id = po_mandatory.metadata
-         join po on po_mandatory.po = po.abbrev
-         join study_program on po.study_program = study_program.abbrev
-         join grade on study_program.grade = grade.abbrev
-         left join specialization on po.abbrev = specialization.po and
-                                     po_mandatory.specialization = specialization.abbrev
+         join po on po_mandatory.po = po.id
+         join study_program on po.study_program = study_program.id
+         join grade on study_program.grade = grade.id
+         left join specialization on po.id = specialization.po and
+                                     po_mandatory.specialization = specialization.id
 union
-select metadata.id                      as id,
-       metadata.title                   as title,
-       metadata.abbrev                  as abbrev,
-       metadata.ects                    as ects,
-       person.id                        as module_management_id,
-       person.kind                      as module_management_kind,
-       person.abbreviation              as module_management_abbrev,
-       person.title                     as module_management_title,
-       person.firstname                 as module_management_firstname,
-       person.lastname                  as module_management_lastname,
-       po.abbrev                        as po_abbrev,
-       po.version                       as po_version,
-       study_program.abbrev             as sp_abbrev,
-       study_program.de_label           as sp_label,
-       grade.de_label                   as grade_label,
-       specialization.abbrev            as spec_abbrev,
-       specialization.label             as spec_label,
-       po_optional.recommended_semester as recommended_semester,
-       false                            as mandatory
+select metadata.id                       as id,
+       metadata.title                    as title,
+       metadata.abbrev                   as abbrev,
+       metadata.ects                     as ects,
+       identity.id                       as module_management_id,
+       identity.kind                     as module_management_kind,
+       identity.abbreviation             as module_management_abbrev,
+       identity.title                    as module_management_title,
+       identity.firstname                as module_management_firstname,
+       identity.lastname                 as module_management_lastname,
+       po.id                             as po_id,
+       po.version                        as po_version,
+       study_program.id                  as sp_id,
+       study_program.de_label            as sp_label,
+       grade.de_label                    as grade_label,
+       specialization.id                 as spec_id,
+       specialization.label              as spec_label,
+       po_mandatory.recommended_semester as recommended_semester,
+       false                             as mandatory
 from metadata
          join responsibility on metadata.id = responsibility.metadata and
                                 responsibility.responsibility_type = 'module_management'
-         join person on responsibility.person = person.id
+         join identity on responsibility.identity = identity.id
          join po_optional on metadata.id = po_optional.metadata
-         join po on po_optional.po = po.abbrev
-         join study_program on po.study_program = study_program.abbrev
-         join grade on study_program.grade = grade.abbrev
-         left join specialization on po.abbrev = specialization.po and
-                                     po_optional.specialization = specialization.abbrev;
+         join po on po_optional.po = po.id
+         join study_program on po.study_program = study_program.id
+         join grade on study_program.grade = grade.id
+         left join specialization on po.id = specialization.po and
+                                     po_optional.specialization = specialization.id;
 
 -- !Downs
 drop
@@ -573,7 +573,7 @@ drop table study_form_scope if exists;
 drop table study_form if exists;
 drop table study_program if exists;
 drop table person_in_faculty if exists;
-drop table person if exists;
+drop table identity if exists;
 drop table global_criteria if exists;
 drop table study_form_type if exists;
 drop table grade if exists;

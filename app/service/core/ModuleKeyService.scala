@@ -30,7 +30,7 @@ object ModuleKeyService {
     *   If at least one key does not match
     */
   private def validate(xs: List[ModuleKey]): Unit = {
-    val moduleKeys = xs.map(_.abbrev)
+    val moduleKeys = xs.map(_.id)
     val keys = moduleCompendiumProtocolFields
     val unmatched = moduleKeys.filterNot(keys.contains)
     if (unmatched.nonEmpty)
@@ -53,7 +53,7 @@ object ModuleKeyService {
     def lookup(keys: Set[String]): Set[ModuleKey] =
       keys.map(k =>
         moduleKeys
-          .find(_.abbrev == k)
+          .find(_.id == k)
           .getOrElse(throw new Throwable(s"key not found: $k"))
       )
   }

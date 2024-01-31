@@ -18,9 +18,8 @@ final class SpecializationRepository @Inject() (
 
   protected val tableQuery = TableQuery[SpecializationTable]
 
-  // TODO add this to repository
-  def exists(abbrev: String): Future[Boolean] =
-    db.run(tableQuery.filter(_.abbrev === abbrev).exists.result)
+  def exists(id: String): Future[Boolean] =
+    db.run(tableQuery.filter(_.id === id).exists.result)
 
   override protected def retrieve(
       query: Query[SpecializationTable, Specialization, Seq]
@@ -28,5 +27,5 @@ final class SpecializationRepository @Inject() (
     db.run(query.result)
 
   def update(s: Specialization) =
-    db.run(tableQuery.filter(_.abbrev === s.abbrev).update(s).map(_ => s))
+    db.run(tableQuery.filter(_.id === s.id).update(s).map(_ => s))
 }

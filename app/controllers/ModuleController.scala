@@ -1,17 +1,12 @@
 package controllers
 
 import auth.AuthorizationAction
-import controllers.formats.{
-  MetadataOutputFormat,
-  ModuleFormat,
-  StudyProgramAtomicFormat
-}
 import database.view.{
+  ModuleManagement,
   ModuleViewRepository,
-  PersonShort,
   StudyProgramModuleAssociation
 }
-import play.api.libs.json.{Format, Json}
+import play.api.libs.json.{Json, Writes}
 import play.api.mvc.{AbstractController, ControllerComponents}
 import service.ModuleCompendiumService
 
@@ -25,20 +20,16 @@ final class ModuleController @Inject() (
     moduleViewRepository: ModuleViewRepository,
     val auth: AuthorizationAction,
     implicit val ctx: ExecutionContext
-) extends AbstractController(cc)
-    with MetadataOutputFormat
-    with StudyProgramAtomicFormat
-    with ModuleFormat {
+) extends AbstractController(cc) {
 
-  implicit val psFmt: Format[PersonShort] =
-    Json.format[PersonShort]
+  implicit def moduleManagementWrites: Writes[ModuleManagement] = Json.writes
 
-  implicit val studyProgramAssocFmt
-      : Format[StudyProgramModuleAssociation[Iterable[Int]]] =
-    Json.format[StudyProgramModuleAssociation[Iterable[Int]]]
+  implicit def studyProgramAssocWrites
+      : Writes[StudyProgramModuleAssociation[Iterable[Int]]] =
+    Json.writes
 
-  implicit val viewFmt: Format[ModuleViewRepository#Entry] =
-    Json.format[ModuleViewRepository#Entry]
+  implicit def moduleViewWrites: Writes[ModuleViewRepository#Entry] =
+    Json.writes[ModuleViewRepository#Entry]
 
   def allModules() =
     Action.async { request =>

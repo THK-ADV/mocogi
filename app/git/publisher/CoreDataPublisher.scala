@@ -21,7 +21,7 @@ object CoreDataPublisher {
       assessmentMethodService: AssessmentMethodService,
       moduleTypeService: ModuleTypeService,
       seasonService: SeasonService,
-      personService: PersonService,
+      identityService: IdentityService,
       focusAreaService: FocusAreaService,
       globalCriteriaService: GlobalCriteriaService,
       poService: POService,
@@ -44,7 +44,7 @@ object CoreDataPublisher {
         assessmentMethodService,
         moduleTypeService,
         seasonService,
-        personService,
+        identityService,
         focusAreaService,
         globalCriteriaService,
         poService,
@@ -68,7 +68,7 @@ object CoreDataPublisher {
       private val assessmentMethodService: AssessmentMethodService,
       private val moduleTypeService: ModuleTypeService,
       private val seasonService: SeasonService,
-      private val personService: PersonService,
+      private val identityService: IdentityService,
       private val focusAreaService: FocusAreaService,
       private val globalCriteriaService: GlobalCriteriaService,
       private val poService: POService,
@@ -134,7 +134,7 @@ object CoreDataPublisher {
             case "season" =>
               seasonService.createOrUpdate(content.value)
             case "person" =>
-              personService.createOrUpdate(content.value)
+              identityService.createOrUpdate(content.value)
             case "focus_area" =>
               focusAreaService.createOrUpdate(content.value)
             case "global_criteria" =>

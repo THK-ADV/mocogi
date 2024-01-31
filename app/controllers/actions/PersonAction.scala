@@ -2,9 +2,9 @@ package controllers.actions
 
 import auth.UserTokenRequest
 import controllers.actions.PersonAction.PersonRequest
-import database.repo.PersonRepository
+import database.repo.IdentityRepository
 import models.CampusId
-import models.core.Person
+import models.core.Identity
 import play.api.libs.json.Json
 import play.api.mvc.Results.BadRequest
 import play.api.mvc.{ActionRefiner, Result, WrappedRequest}
@@ -13,7 +13,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 trait PersonAction {
   implicit def ctx: ExecutionContext
-  implicit def personRepository: PersonRepository
+  implicit def identityRepository: IdentityRepository
 
   private def campusIdProxy[A](r: UserTokenRequest[A]): CampusId =
     r.getQueryString("campusId").fold(r.campusId)(CampusId.apply)
@@ -29,7 +29,7 @@ trait PersonAction {
       // TODO DEBUG ONLY
       val newRequest =
         request.copy(token = request.token.copy(username = campusId.value))
-      personRepository
+      identityRepository
         .getByCampusId(campusId)
         .map {
           case Some(p) => Right(PersonRequest(p, newRequest))
@@ -48,7 +48,7 @@ trait PersonAction {
 
 object PersonAction {
   case class PersonRequest[A](
-      person: Person.Default,
+      person: Identity.Person,
       request: UserTokenRequest[A]
   ) extends WrappedRequest[A](request)
 }

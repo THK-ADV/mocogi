@@ -5,10 +5,10 @@ import slick.jdbc.PostgresProfile.api._
 
 final class StatusTable(tag: Tag)
     extends Table[Status](tag, "status")
-    with AbbrevLabelColumn[Status] {
+    with IDLabelColumn[Status] {
   override def * = (
-    abbrev,
+    id,
     deLabel,
     enLabel
-  ) <> (Status.tupled, Status.unapply)
+  ) <> ((Status.apply _).tupled, Status.unapply)
 }

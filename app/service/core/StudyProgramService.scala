@@ -1,8 +1,8 @@
 package service.core
 
 import database.InsertOrUpdateResult
-import database.repo.{StudyProgramOutput, StudyProgramRepository}
-import models.StudyProgramShort
+import database.repo.StudyProgramRepository
+import models.{StudyProgramOutput, StudyProgramShort}
 import models.core.StudyProgram
 import parsing.core.StudyProgramFileParser
 
@@ -23,7 +23,7 @@ trait StudyProgramService {
 final class StudyProgramServiceImpl @Inject() (
     val repo: StudyProgramRepository,
     val gradeService: GradeService,
-    val personService: PersonService,
+    val personService: IdentityService,
     val studyFormTypeService: StudyFormTypeService,
     val languageService: LanguageService,
     val seasonService: SeasonService,

@@ -14,7 +14,7 @@ object AssessmentMethodParser {
   ): Parser[AssessmentMethod] =
     oneOf(
       assessmentMethods
-        .map(a => prefix(s"assessment.${a.abbrev}").map(_ => a)): _*
+        .map(a => prefix(s"assessment.${a.id}").map(_ => a)): _*
     )
 
   private def methodParser(implicit
@@ -48,20 +48,20 @@ object AssessmentMethodParser {
           .skip(zeroOrMoreSpaces)
           .take(preconditionParser)
           .many(zeroOrMoreSpaces)
-          .map(_.map(AssessmentMethodEntry.tupled))
+          .map(_.map((AssessmentMethodEntry.apply _).tupled))
       )
 
   def assessmentMethodsMandatoryParser(implicit
       assessmentMethods: Seq[AssessmentMethod]
   ): Parser[List[AssessmentMethodEntry]] =
     parser("assessment_methods_mandatory")(
-      assessmentMethods.sortBy(_.abbrev).reverse
+      assessmentMethods.sortBy(_.id).reverse
     )
 
   def assessmentMethodsOptionalParser(implicit
       assessmentMethods: Seq[AssessmentMethod]
   ): Parser[List[AssessmentMethodEntry]] =
     parser("assessment_methods_optional")(
-      assessmentMethods.sortBy(_.abbrev).reverse
+      assessmentMethods.sortBy(_.id).reverse
     )
 }

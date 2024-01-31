@@ -6,14 +6,14 @@ import slick.jdbc.PostgresProfile.api._
 final class SpecializationTable(tag: Tag)
     extends Table[Specialization](tag, "specialization") {
 
-  def abbrev = column[String]("abbrev", O.PrimaryKey)
+  def id = column[String]("id", O.PrimaryKey)
 
   def label = column[String]("label")
 
   def po = column[String]("po")
 
   override def * = (
-    abbrev,
+    id,
     label,
     po
   ) <> ((Specialization.apply _).tupled, Specialization.unapply)

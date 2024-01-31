@@ -5,10 +5,10 @@ import slick.jdbc.PostgresProfile.api._
 
 final class SeasonTable(tag: Tag)
     extends Table[Season](tag, "season")
-    with AbbrevLabelColumn[Season] {
+    with IDLabelColumn[Season] {
   override def * = (
-    abbrev,
+    id,
     deLabel,
     enLabel
-  ) <> (Season.tupled, Season.unapply)
+  ) <> ((Season.apply _).tupled, Season.unapply)
 }

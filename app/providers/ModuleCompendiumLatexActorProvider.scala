@@ -2,19 +2,19 @@ package providers
 
 import akka.actor.ActorSystem
 import compendium.ModuleCompendiumLatexActor
+import compendium.ModuleCompendiumLatexActor.{Config, GlabConfig}
 import database.repo.{
   AssessmentMethodRepository,
+  IdentityRepository,
   LanguageRepository,
   ModuleCompendiumListRepository,
   ModuleCompendiumRepository,
   ModuleTypeRepository,
   PORepository,
-  PersonRepository,
   SeasonRepository
 }
 import git.api.GitAvailabilityChecker
 import printing.latex.ModuleCompendiumLatexPrinter
-import ModuleCompendiumLatexActor.{Config, GlabConfig}
 
 import javax.inject.{Inject, Provider, Singleton}
 import scala.concurrent.ExecutionContext
@@ -30,7 +30,7 @@ final class ModuleCompendiumLatexActorProvider @Inject() (
     moduleTypeRepository: ModuleTypeRepository,
     languageRepository: LanguageRepository,
     seasonRepository: SeasonRepository,
-    personRepository: PersonRepository,
+    identityRepository: IdentityRepository,
     assessmentMethodRepository: AssessmentMethodRepository,
     config: ConfigReader,
     ctx: ExecutionContext
@@ -46,7 +46,7 @@ final class ModuleCompendiumLatexActorProvider @Inject() (
         moduleTypeRepository,
         languageRepository,
         seasonRepository,
-        personRepository,
+        identityRepository,
         assessmentMethodRepository,
         Config(
           config.tmpFolderPath,

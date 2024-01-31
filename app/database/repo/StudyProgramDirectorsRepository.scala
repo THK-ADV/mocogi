@@ -16,7 +16,7 @@ object StudyProgramDirectorsRepository {
       directorLastname: String,
       studyProgramGradeLabel: String,
       studyProgramLabel: String,
-      studyProgramAbbrev: String,
+      studyProgramId: String,
       role: UniversityRole
   )
 }
@@ -34,7 +34,7 @@ final class StudyProgramDirectorsRepository @Inject() (
       roles: Set[UniversityRole]
   ): Future[Seq[StudyProgramDirector]] = {
     val sps =
-      TableQuery[POTable].filter(_.abbrev.inSet(pos)).map(_.studyProgram)
+      TableQuery[POTable].filter(_.id.inSet(pos)).map(_.studyProgram)
     val query = for {
       a <- TableQuery[StudyProgramPersonTable]
       if a.studyProgram.in(sps) && a.role.inSet(roles)
@@ -47,27 +47,9 @@ final class StudyProgramDirectorsRepository @Inject() (
       p.lastname,
       g.deLabel,
       s.deLabel,
-      s.abbrev,
+      s.id,
       a.role
     )
     db.run(query.result.map(_.map(StudyProgramDirector.tupled)))
   }
-
-  //  def rolesFromDirector(
-  //      user: User,
-  //      pos: Set[String]
-  //  ): Future[Seq[UniversityRole]] = {
-  //    val sps =
-  //      TableQuery[POTable].filter(_.abbrev.inSet(pos)).map(_.studyProgram)
-  //
-  //    db.run(
-  //      studyProgramPersonTableQuery
-  //        .filter(a =>
-  //          a.studyProgram
-  //            .in(sps) && a.personFk.filter(_.campusId === user.username).exists
-  //        )
-  //        .map(_.role)
-  //        .result
-  //    )
-  //  }
 }

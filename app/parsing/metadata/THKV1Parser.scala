@@ -54,7 +54,7 @@ final class THKV1Parser @Inject() (
       assessmentMethods: Seq[AssessmentMethod],
       moduleTypes: Seq[ModuleType],
       seasons: Seq[Season],
-      persons: Seq[Person],
+      identities: Seq[Identity],
       focusAreas: Seq[FocusAreaPreview],
       competences: Seq[Competence],
       globalCriteria: Seq[GlobalCriteria],
@@ -76,7 +76,7 @@ final class THKV1Parser @Inject() (
       .take(
         assessmentMethodsMandatoryParser
           .zip(assessmentMethodsOptionalParser.option.map(_.getOrElse(Nil)))
-          .map(AssessmentMethods.tupled)
+          .map((AssessmentMethods.apply _).tupled)
       )
       .take(workloadParser)
       .skip(newline)

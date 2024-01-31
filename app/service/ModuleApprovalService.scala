@@ -4,7 +4,7 @@ import com.google.inject.{Inject, Singleton}
 import database.repo.ModuleApprovalRepository
 import models.ModuleReviewStatus.{Approved, Pending, Rejected}
 import models.ModuleReviewSummaryStatus.{WaitingForChanges, WaitingForReview}
-import models.core.{AbbrevLabelLike, Person}
+import models.core.{IDLabel, Identity}
 import models.{ModuleReviewStatus, ModuleReviewSummaryStatus, ReviewerApproval}
 import monocle.Monocle.toAppliedFocusOps
 
@@ -36,7 +36,7 @@ final class ModuleApprovalService @Inject() (
     * @return
     */
   def reviewerApprovals(
-      person: Person.Default
+      person: Identity.Person
   ): Future[Iterable[ReviewerApproval]] = {
     approvalRepository
       .allByModulesWhereUserExists(person.id)
@@ -65,10 +65,10 @@ final class ModuleApprovalService @Inject() (
               moduleId,
               moduleTitle,
               moduleAbbrev,
-              Person.toDefaultPerson(author),
+              Identity.toPerson(author),
               role,
               summaryStatus,
-              AbbrevLabelLike(studyProgram),
+              IDLabel(studyProgram),
               grade,
               canReview
             )
@@ -85,7 +85,7 @@ final class ModuleApprovalService @Inject() (
     */
   def hasPendingApproval(
       reviewId: UUID,
-      person: Person.Default
+      person: Identity.Person
   ): Future[Boolean] =
     approvalRepository.hasPendingApproval(reviewId, person.id)
 

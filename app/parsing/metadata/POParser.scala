@@ -13,15 +13,15 @@ object POParser {
       specializations: Seq[Specialization]
   ): Parser[(PO, Option[Specialization])] = {
     val pos0 = pos.sortBy(_.program).reverse
-    val specializations0 = specializations.sortBy(_.abbrev).reverse
+    val specializations0 = specializations.sortBy(_.id).reverse
     val poParser = oneOf(
-      pos0.map(s => prefix(s"study_program.${s.abbrev}").map(_ => s)): _*
+      pos0.map(s => prefix(s"study_program.${s.id}").map(_ => s)): _*
     )
     val specializationsParser: Parser[Option[Specialization]] =
       (char.map(_.toString) or Parser.rest)
         .flatMap { c =>
           if (c == ".")
-            oneOf(specializations0.map(s => prefix(s.abbrev).map(_ => s)): _*)
+            oneOf(specializations0.map(s => prefix(s.id).map(_ => s)): _*)
               .map(Some.apply)
           else always(None)
         }

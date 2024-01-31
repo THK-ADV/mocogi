@@ -6,7 +6,7 @@ import slick.jdbc.PostgresProfile.api._
 import java.time.LocalDate
 
 case class StudyProgramDbEntry(
-    abbrev: String,
+    id: String,
     deLabel: String,
     enLabel: String,
     internalAbbreviation: String,
@@ -23,11 +23,9 @@ case class StudyProgramDbEntry(
 )
 
 final class StudyProgramTable(tag: Tag)
-    extends Table[StudyProgramDbEntry](tag, "study_program") {
+    extends Table[StudyProgramDbEntry](tag, "study_program")
+    with IDLabelColumn[StudyProgramDbEntry] {
 
-  def abbrev = column[String]("abbrev", O.PrimaryKey)
-  def deLabel = column[String]("de_label")
-  def enLabel = column[String]("en_label")
   def internalAbbreviation = column[String]("internal_abbreviation")
   def externalAbbreviation = column[String]("external_abbreviation")
   def deUrl = column[String]("de_url")
@@ -45,11 +43,11 @@ final class StudyProgramTable(tag: Tag)
   def enNote = column[String]("en_note")
 
   def gradeFk =
-    foreignKey("grade", grade, TableQuery[GradeTable])(_.abbrev)
+    foreignKey("grade", grade, TableQuery[GradeTable])(_.id)
 
   override def * =
     (
-      abbrev,
+      id,
       deLabel,
       enLabel,
       internalAbbreviation,
@@ -149,7 +147,7 @@ final class StudyProgramTable(tag: Tag)
   ] = { a =>
     Option(
       (
-        a.abbrev,
+        a.id,
         a.deLabel,
         a.enLabel,
         a.internalAbbreviation,

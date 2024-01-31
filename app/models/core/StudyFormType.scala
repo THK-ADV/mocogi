@@ -1,4 +1,10 @@
 package models.core
 
-case class StudyFormType(abbrev: String, deLabel: String, enLabel: String)
-    extends AbbrevLabelLike
+import play.api.libs.json.{Json, Writes}
+
+case class StudyFormType(id: String, deLabel: String, enLabel: String)
+    extends IDLabel
+
+object StudyFormType {
+  implicit def writes: Writes[StudyFormType] = Json.writes
+}

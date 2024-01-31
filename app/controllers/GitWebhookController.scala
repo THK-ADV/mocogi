@@ -1,11 +1,10 @@
 package controllers
 
 import controllers.GitWebhookController.GitlabTokenHeader
-import controllers.formats.ThrowableWrites
 import git._
 import play.api.libs.json._
 import play.api.mvc._
-import webhook.GitPushEventHandler
+import _root_.webhook.GitPushEventHandler
 
 import java.util.UUID
 import javax.inject.{Inject, Singleton}
@@ -22,8 +21,7 @@ class GitWebhookController @Inject() (
     gitConfig: GitConfig,
     gitMergeEventHandlingActor: GitPushEventHandler,
     implicit val ctx: ExecutionContext
-) extends AbstractController(cc)
-    with ThrowableWrites {
+) extends AbstractController(cc) {
 
   def onPushEvent() =
     isAuthenticated(

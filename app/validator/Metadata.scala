@@ -1,8 +1,10 @@
 package validator
 
 import models.Module
-import models.core.{Competence, GlobalCriteria, Language, Location, ModuleType, Season, Status}
+import models.core._
 import parsing.types._
+import play.api.libs.json.{Json, Writes}
+
 import java.util.UUID
 
 case class Metadata(
@@ -27,3 +29,7 @@ case class Metadata(
     globalCriteria: List[GlobalCriteria],
     taughtWith: List[Module]
 )
+
+object Metadata {
+  implicit def writes: Writes[Metadata] = Json.writes
+}

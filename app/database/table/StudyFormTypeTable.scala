@@ -5,10 +5,10 @@ import slick.jdbc.PostgresProfile.api._
 
 final class StudyFormTypeTable(tag: Tag)
     extends Table[StudyFormType](tag, "study_form_type")
-    with AbbrevLabelColumn[StudyFormType] {
+    with IDLabelColumn[StudyFormType] {
   override def * = (
-    abbrev,
+    id,
     deLabel,
     enLabel
-  ) <> (StudyFormType.tupled, StudyFormType.unapply)
+  ) <> ((StudyFormType.apply _).tupled, StudyFormType.unapply)
 }

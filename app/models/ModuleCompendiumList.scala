@@ -5,8 +5,8 @@ import play.api.libs.json.{Json, Writes}
 import java.time.LocalDateTime
 
 case class ModuleCompendiumList[StudyProgram, Semester, Specialization](
-    fullPo: String,
-    poAbbrev: String,
+    fullPoId: String,
+    poId: String,
     poNumber: Int,
     specialization: Option[Specialization],
     studyProgram: StudyProgram,

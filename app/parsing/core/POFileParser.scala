@@ -36,6 +36,6 @@ object POFileParser {
         )(programs.sorted.reverse)
       )
       .skip(zeroOrMoreSpaces)
-      .map(PO.tupled)
+      .map((PO.apply _).tupled)
       .all()
 }

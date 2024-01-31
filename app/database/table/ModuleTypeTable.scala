@@ -5,10 +5,10 @@ import slick.jdbc.PostgresProfile.api._
 
 final class ModuleTypeTable(tag: Tag)
     extends Table[ModuleType](tag, "module_type")
-    with AbbrevLabelColumn[ModuleType] {
+    with IDLabelColumn[ModuleType] {
   override def * = (
-    abbrev,
+    id,
     deLabel,
     enLabel
-  ) <> (ModuleType.tupled, ModuleType.unapply)
+  ) <> ((ModuleType.apply _).tupled, ModuleType.unapply)
 }

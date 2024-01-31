@@ -19,11 +19,11 @@ final class StudyProgramPersonTable(tag: Tag)
   def role = column[UniversityRole]("role", O.PrimaryKey)
 
   def personFk =
-    foreignKey("person", person, TableQuery[PersonTable])(_.id)
+    foreignKey("person", person, TableQuery[IdentityTable])(_.id)
 
   def studyProgramFk =
     foreignKey("studyProgram", studyProgram, TableQuery[StudyProgramTable])(
-      _.abbrev
+      _.id
     )
 
   override def * =

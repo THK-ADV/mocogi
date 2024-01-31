@@ -135,7 +135,7 @@ object MetadataValidator {
         prerequisitesEntryValidator("required prerequisites", lookup)
           .pullback(_.required)
       )
-      .map((_, p) => Prerequisites.tupled(p))
+      .map((_, p) => (Prerequisites.apply _).tupled(p))
 
   def poOptionalValidator(
       lookup: Lookup

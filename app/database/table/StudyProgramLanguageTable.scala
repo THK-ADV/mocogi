@@ -16,7 +16,7 @@ final class StudyProgramLanguageTable(tag: Tag)
 
   def studyProgramFk =
     foreignKey("study_program", studyProgram, TableQuery[StudyProgramTable])(
-      _.abbrev
+      _.id
     )
 
   override def * =

@@ -5,10 +5,10 @@ import slick.jdbc.PostgresProfile.api._
 
 final class LocationTable(tag: Tag)
     extends Table[Location](tag, "location")
-    with AbbrevLabelColumn[Location] {
+    with IDLabelColumn[Location] {
   override def * = (
-    abbrev,
+    id,
     deLabel,
     enLabel
-  ) <> (Location.tupled, Location.unapply)
+  ) <> ((Location.apply _).tupled, Location.unapply)
 }

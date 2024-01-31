@@ -18,7 +18,7 @@ object ECTSParser {
     val focusAreaParser: Parser[ECTSFocusAreaContribution] =
       oneOf(
         focusAreas.map { f =>
-          prefix(f.abbrev)
+          prefix(f.id)
             .skip(prefix(":"))
             .skip(zeroOrMoreSpaces)
             .skip(prefix("num:"))
@@ -46,7 +46,7 @@ object ECTSParser {
   ): Parser[Either[Double, List[ECTSFocusAreaContribution]]] = {
     oneOf(
       ectsValueParser.map(Left.apply),
-      ectsContributionsToFocusAreasParser(focusAreas.sortBy(_.abbrev).reverse)
+      ectsContributionsToFocusAreasParser(focusAreas.sortBy(_.id).reverse)
         .map(Right.apply)
     )
   }

@@ -2,6 +2,7 @@ package parsing.types
 
 import monocle.Traversal
 import monocle.macros.GenLens
+import play.api.libs.json.{Format, Json}
 
 case class Content(
     learningOutcome: String,
@@ -12,6 +13,8 @@ case class Content(
 )
 
 object Content {
+  implicit def format: Format[Content] = Json.format
+
   final implicit class Ops(private val self: Content) extends AnyVal {
     private def trimAllProperties = Traversal
       .applyN(

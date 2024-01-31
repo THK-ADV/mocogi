@@ -10,12 +10,12 @@ import parsing.types.{Content, ModuleCompendium}
 import play.api.Logging
 import printing.pandoc.PandocApi
 import printing.{
-  AbbrevLabelDescLikeOps,
-  AbbrevLabelLikeOps,
+  IDLabelDescOps,
+  LabelOps,
   PrintingLanguage,
   fmtCommaSeparated,
   fmtDouble,
-  fmtPerson
+  fmtIdentity
 }
 import validator.ModuleRelation
 
@@ -36,7 +36,7 @@ final class ModuleCompendiumLatexPrinter @Inject() (pandocApi: PandocApi)
     val moduleTypes = Set.newBuilder[ModuleType]
     val languages = Set.newBuilder[Language]
     val seasons = Set.newBuilder[Season]
-    val people = Set.newBuilder[Person]
+    val people = Set.newBuilder[Identity]
     val assessmentMethods = Set.newBuilder[AssessmentMethod]
 
     mcs.foreach { mc =>
@@ -56,14 +56,14 @@ final class ModuleCompendiumLatexPrinter @Inject() (pandocApi: PandocApi)
           mc.metadata.id,
           mc.metadata.title,
           mc.metadata.abbrev,
-          mc.metadata.kind.abbrev,
+          mc.metadata.kind.id,
           mc.metadata.ects.value,
-          mc.metadata.language.abbrev,
+          mc.metadata.language.id,
           mc.metadata.duration,
-          mc.metadata.season.abbrev,
+          mc.metadata.season.id,
           mc.metadata.workload,
-          mc.metadata.status.abbrev,
-          mc.metadata.location.abbrev,
+          mc.metadata.status.id,
+          mc.metadata.location.id,
           mc.metadata.participants,
           mc.metadata.relation.map {
             case ModuleRelation.Parent(children) =>
@@ -76,16 +76,16 @@ final class ModuleCompendiumLatexPrinter @Inject() (pandocApi: PandocApi)
           AssessmentMethodsOutput(
             mc.metadata.assessmentMethods.mandatory.map(a =>
               AssessmentMethodEntryOutput(
-                a.method.abbrev,
+                a.method.id,
                 a.percentage,
-                a.precondition.map(_.abbrev)
+                a.precondition.map(_.id)
               )
             ),
             mc.metadata.assessmentMethods.optional.map(a =>
               AssessmentMethodEntryOutput(
-                a.method.abbrev,
+                a.method.id,
                 a.percentage,
-                a.precondition.map(_.abbrev)
+                a.precondition.map(_.id)
               )
             )
           ),
@@ -94,38 +94,38 @@ final class ModuleCompendiumLatexPrinter @Inject() (pandocApi: PandocApi)
               PrerequisiteEntryOutput(
                 e.text,
                 e.modules.map(_.id),
-                e.pos.map(_.abbrev)
+                e.pos.map(_.id)
               )
             ),
             mc.metadata.prerequisites.required.map(e =>
               PrerequisiteEntryOutput(
                 e.text,
                 e.modules.map(_.id),
-                e.pos.map(_.abbrev)
+                e.pos.map(_.id)
               )
             )
           ),
           POOutput(
             mc.metadata.validPOs.mandatory.map(a =>
               POMandatoryOutput(
-                a.po.abbrev,
-                a.specialization.map(_.abbrev),
+                a.po.id,
+                a.specialization.map(_.id),
                 a.recommendedSemester,
                 a.recommendedSemesterPartTime
               )
             ),
             mc.metadata.validPOs.optional.map(a =>
               POOptionalOutput(
-                a.po.abbrev,
-                a.specialization.map(_.abbrev),
+                a.po.id,
+                a.specialization.map(_.id),
                 a.instanceOf.id,
                 a.partOfCatalog,
                 a.recommendedSemester
               )
             )
           ),
-          mc.metadata.competences.map(_.abbrev),
-          mc.metadata.globalCriteria.map(_.abbrev),
+          mc.metadata.competences.map(_.id),
+          mc.metadata.globalCriteria.map(_.id),
           mc.metadata.taughtWith.map(_.id)
         ),
         mc.deContent,
@@ -153,7 +153,7 @@ final class ModuleCompendiumLatexPrinter @Inject() (pandocApi: PandocApi)
       moduleTypes: Seq[ModuleType],
       languages: Seq[Language],
       seasons: Seq[Season],
-      people: Seq[Person],
+      people: Seq[Identity],
       assessmentMethods: Seq[AssessmentMethod],
       poShorts: Seq[POShort]
   )(implicit lang: PrintingLanguage): StringBuilder = {
@@ -175,7 +175,7 @@ final class ModuleCompendiumLatexPrinter @Inject() (pandocApi: PandocApi)
     chapter(lang.moduleHeadline)
     newPage
     modules(
-      po.abbrev,
+      po.id,
       entries,
       moduleTypes,
       languages,
@@ -194,7 +194,7 @@ final class ModuleCompendiumLatexPrinter @Inject() (pandocApi: PandocApi)
       moduleTypes: Seq[ModuleType],
       languages: Seq[Language],
       seasons: Seq[Season],
-      people: Seq[Person],
+      people: Seq[Identity],
       assessmentMethods: Seq[AssessmentMethod],
       poShorts: Seq[POShort]
   )(implicit lang: PrintingLanguage, builder: StringBuilder) = {
@@ -239,14 +239,14 @@ final class ModuleCompendiumLatexPrinter @Inject() (pandocApi: PandocApi)
             .collect {
               case p if p.po != po =>
                 val builder = new StringBuilder()
-                val poShort = poShorts.find(_.abbrev == p.po).get
+                val poShort = poShorts.find(_.id == p.po).get
                 val spLabel = {
                   val spLabel = escape(
                     poShort.studyProgram
                       .localizedLabel(poShort.specialization)
                   )
                   // TODO Workaround
-                  if (poShort.abbrev.endsWith("flex")) s"$spLabel-Flex"
+                  if (poShort.id.endsWith("flex")) s"$spLabel-Flex"
                   else spLabel
                 }
                 builder
@@ -274,7 +274,7 @@ final class ModuleCompendiumLatexPrinter @Inject() (pandocApi: PandocApi)
       row(
         lang.moduleTypeLabel,
         moduleTypes
-          .find(_.abbrev == e.metadata.moduleType)
+          .find(_.id == e.metadata.moduleType)
           .get
           .localizedLabel
       )
@@ -282,28 +282,28 @@ final class ModuleCompendiumLatexPrinter @Inject() (pandocApi: PandocApi)
       row(
         lang.languageLabel,
         languages
-          .find(_.abbrev == e.metadata.language)
+          .find(_.id == e.metadata.language)
           .get
           .localizedLabel
       )
       row(lang.durationLabel, lang.durationValue(e.metadata.duration))
       row(
         lang.frequencyLabel,
-        seasons.find(_.abbrev == e.metadata.season).get.localizedLabel
+        seasons.find(_.id == e.metadata.season).get.localizedLabel
       )
       row(
         lang.moduleCoordinatorLabel,
         fmtCommaSeparated(
           people.filter(p => e.metadata.moduleManagement.contains(p.id)),
           "\\newline "
-        )(fmtPerson)
+        )(fmtIdentity)
       )
       row(
         lang.lecturersLabel,
         fmtCommaSeparated(
           people.filter(p => e.metadata.lecturers.contains(p.id)),
           "\\newline "
-        )(fmtPerson)
+        )(fmtIdentity)
       )
       row(
         lang.assessmentMethodLabel,
@@ -312,7 +312,7 @@ final class ModuleCompendiumLatexPrinter @Inject() (pandocApi: PandocApi)
           "\\newline "
         ) { a =>
           val method = assessmentMethods
-            .find(_.abbrev == a.method)
+            .find(_.id == a.method)
             .get
             .localizedLabel
           a.percentage.fold(method)(d => s"$method (${fmtDouble(d)} \\%)")

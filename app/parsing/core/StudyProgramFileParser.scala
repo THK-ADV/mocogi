@@ -1,9 +1,26 @@
 package parsing.core
 
-import models.core.{Grade, Language, Location, Person, RestrictedAdmission, Season, StudyForm, StudyFormScope, StudyFormType, StudyProgram}
+import models.core._
 import parser.Parser
 import parser.Parser._
-import parser.ParserOps.{P0, P10, P11, P12, P13, P14, P15, P16, P2, P3, P4, P5, P6, P7, P8, P9}
+import parser.ParserOps.{
+  P0,
+  P10,
+  P11,
+  P12,
+  P13,
+  P14,
+  P15,
+  P16,
+  P2,
+  P3,
+  P4,
+  P5,
+  P6,
+  P7,
+  P8,
+  P9
+}
 import parsing._
 
 import java.time.LocalDate
@@ -30,12 +47,16 @@ object StudyProgramFileParser {
       .zip(singleLineStringForKey("en_url").option.map(_.getOrElse("")))
 
   def gradeParser(implicit grades: Seq[Grade]): Parser[Grade] =
-    singleValueParser("grade", g => s"grade.${g.abbrev}")
+    singleValueParser("grade", g => s"grade.${g.id}")
 
-  def programDirectorParser(implicit persons: Seq[Person]): Parser[List[Person]] =
+  def programDirectorParser(implicit
+      persons: Seq[Identity]
+  ): Parser[List[Identity]] =
     multipleValueParser("program_director", p => s"person.${p.id}", 1)
 
-  def examDirectorParser(implicit persons: Seq[Person]): Parser[List[Person]] =
+  def examDirectorParser(implicit
+      persons: Seq[Identity]
+  ): Parser[List[Identity]] =
     multipleValueParser("exam_director", p => s"person.${p.id}", 1)
 
   def accreditationUntilParser: Parser[LocalDate] =
@@ -51,7 +72,7 @@ object StudyProgramFileParser {
       .take(singleLineStringForKey("de_reason").option.map(_.getOrElse("")))
       .skip(zeroOrMoreSpaces)
       .take(singleLineStringForKey("en_reason").option.map(_.getOrElse("")))
-      .map(StudyFormScope.tupled)
+      .map((StudyFormScope.apply _).tupled)
 
   def studyFormEntryParser(implicit
       studyForms: Seq[StudyFormType]
@@ -59,7 +80,7 @@ object StudyProgramFileParser {
     prefix("-")
       .skip(zeroOrMoreSpaces)
       .take(
-        singleValueParser[StudyFormType]("type", t => s"study_form.${t.abbrev}")
+        singleValueParser[StudyFormType]("type", t => s"study_form.${t.id}")
       )
       .skip(zeroOrMoreSpaces)
       .zip(posIntForKey("workload_per_ects"))
@@ -69,7 +90,7 @@ object StudyProgramFileParser {
           .skip(zeroOrMoreSpaces)
           .take(studyFormScopeParser.many())
       )
-      .map(StudyForm.tupled)
+      .map((StudyForm.apply _).tupled)
 
   def studyFormParser(implicit
       studyForms: Seq[StudyFormType]
@@ -79,13 +100,13 @@ object StudyProgramFileParser {
       .take(studyFormEntryParser.many(zeroOrMoreSpaces))
 
   def languageParser(implicit langs: Seq[Language]): Parser[List[Language]] =
-    multipleValueParser("language_of_instruction", l => s"lang.${l.abbrev}", 1)
+    multipleValueParser("language_of_instruction", l => s"lang.${l.id}", 1)
 
   def seasonParser(implicit seasons: Seq[Season]): Parser[List[Season]] =
-    multipleValueParser("beginning_of_program", s => s"season.${s.abbrev}", 1)
+    multipleValueParser("beginning_of_program", s => s"season.${s.id}", 1)
 
   def campusParser(implicit locations: Seq[Location]): Parser[List[Location]] =
-    multipleValueParser("campus", l => s"location.${l.abbrev}", 1)
+    multipleValueParser("campus", l => s"location.${l.id}", 1)
 
   def restrictedAdmissionParser(): Parser[RestrictedAdmission] =
     prefix("restricted_admission:")
@@ -97,11 +118,11 @@ object StudyProgramFileParser {
       .zip(singleLineStringForKey("de_reason").option.map(_.getOrElse("")))
       .skip(zeroOrMoreSpaces)
       .take(singleLineStringForKey("en_reason").option.map(_.getOrElse("")))
-      .map(RestrictedAdmission.tupled)
+      .map((RestrictedAdmission.apply _).tupled)
 
   def fileParser(implicit
       grades: Seq[Grade],
-      persons: Seq[Person],
+      persons: Seq[Identity],
       studyForms: Seq[StudyFormType],
       langs: Seq[Language],
       seasons: Seq[Season],

@@ -1,15 +1,10 @@
 package service
 
-import controllers.formats.{
-  ModuleCompendiumFormat,
-  ModuleCompendiumProtocolFormat,
-  PipelineErrorFormat
-}
 import database.ModuleCompendiumOutput
 import database.repo.ModuleDraftRepository
 import git.api.{GitBranchService, GitCommitService, GitFileDownloadService}
 import models._
-import models.core.Person
+import models.core.Identity
 import ops.EitherOps.EOps
 import ops.FutureOps.Ops
 import parsing.metadata.VersionScheme
@@ -38,7 +33,7 @@ trait ModuleDraftService {
 
   def createNew(
       protocol: ModuleCompendiumProtocol,
-      person: Person.Default,
+      person: Identity.Person,
       versionScheme: VersionScheme
   ): Future[Either[PipelineError, ModuleDraft]]
 
@@ -47,7 +42,7 @@ trait ModuleDraftService {
   def createOrUpdate(
       moduleId: UUID,
       protocol: ModuleCompendiumProtocol,
-      person: Person.Default,
+      person: Identity.Person,
       versionScheme: VersionScheme
   ): Future[Either[PipelineError, Unit]]
 }
@@ -64,9 +59,6 @@ final class ModuleDraftServiceImpl @Inject() (
     private val gitFileDownloadService: GitFileDownloadService,
     private implicit val ctx: ExecutionContext
 ) extends ModuleDraftService
-    with ModuleCompendiumProtocolFormat
-    with PipelineErrorFormat
-    with ModuleCompendiumFormat
     with Logging {
 
   override def getByModule(moduleId: UUID): Future[ModuleDraft] =
@@ -86,7 +78,7 @@ final class ModuleDraftServiceImpl @Inject() (
 
   override def createNew(
       protocol: ModuleCompendiumProtocol,
-      person: Person.Default,
+      person: Identity.Person,
       versionScheme: VersionScheme
   ): Future[Either[PipelineError, ModuleDraft]] = {
     val updatedKeys = nonEmptyKeys(protocol)
@@ -111,7 +103,7 @@ final class ModuleDraftServiceImpl @Inject() (
   override def createOrUpdate(
       moduleId: UUID,
       protocol: ModuleCompendiumProtocol,
-      person: Person.Default,
+      person: Identity.Person,
       versionScheme: VersionScheme
   ): Future[Either[PipelineError, Unit]] =
     moduleDraftRepository
@@ -137,7 +129,7 @@ final class ModuleDraftServiceImpl @Inject() (
   private def createFromExistingModule(
       moduleId: UUID,
       protocol: ModuleCompendiumProtocol,
-      person: Person.Default,
+      person: Identity.Person,
       versionScheme: VersionScheme
   ): Future[Either[PipelineError, ModuleDraft]] =
     for {
@@ -168,7 +160,7 @@ final class ModuleDraftServiceImpl @Inject() (
   private def update(
       moduleId: UUID,
       protocol: ModuleCompendiumProtocol,
-      person: Person.Default,
+      person: Identity.Person,
       versionScheme: VersionScheme
   ): Future[Either[PipelineError, Unit]] =
     for {
@@ -265,7 +257,7 @@ final class ModuleDraftServiceImpl @Inject() (
       status: ModuleDraftSource,
       versionScheme: VersionScheme,
       moduleId: UUID,
-      person: Person.Default,
+      person: Identity.Person,
       updatedKeys: Set[String]
   ) =
     pipeline(protocol, versionScheme, moduleId).flatMap {

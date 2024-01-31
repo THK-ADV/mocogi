@@ -15,7 +15,7 @@ final class StudyProgramFileParserSpec
     with ParserSpecHelper
     with EitherValues
     with FakeGrades
-    with FakePersons
+    with FakeIdentities
     with FakeStudyFormType
     with FakeLanguages
     with FakeSeasons
@@ -80,7 +80,7 @@ final class StudyProgramFileParserSpec
       val (res, rest) = programDirectorParser.parse(input)
       assert(
         res.value == List(
-          Person.Default(
+          Identity.Person(
             "ald",
             "Dobrynin",
             "Alexander",
@@ -100,7 +100,7 @@ final class StudyProgramFileParserSpec
       val (res, rest) = examDirectorParser.parse(input)
       assert(
         res.value == List(
-          Person.Default(
+          Identity.Person(
             "ald",
             "Dobrynin",
             "Alexander",
@@ -120,7 +120,7 @@ final class StudyProgramFileParserSpec
       val (res, rest) = programDirectorParser.parse(input)
       assert(
         res.value == List(
-          Person.Default(
+          Identity.Person(
             "ald",
             "Dobrynin",
             "Alexander",
@@ -130,7 +130,7 @@ final class StudyProgramFileParserSpec
             "ald",
             PersonStatus.Active
           ),
-          Person.Default(
+          Identity.Person(
             "abe",
             "Bertels",
             "Anja",
@@ -150,7 +150,7 @@ final class StudyProgramFileParserSpec
       val (res, rest) = examDirectorParser.parse(input)
       assert(
         res.value == List(
-          Person.Default(
+          Identity.Person(
             "ald",
             "Dobrynin",
             "Alexander",
@@ -160,7 +160,7 @@ final class StudyProgramFileParserSpec
             "ald",
             PersonStatus.Active
           ),
-          Person.Default(
+          Identity.Person(
             "abe",
             "Bertels",
             "Anja",
@@ -405,7 +405,7 @@ final class StudyProgramFileParserSpec
         "https://www.th-koeln.de/en/academics/digital-sciences-masters-program_83005.php",
         msc,
         List(
-          Person.Default(
+          Identity.Person(
             "ald",
             "Dobrynin",
             "Alexander",
@@ -417,7 +417,7 @@ final class StudyProgramFileParserSpec
           )
         ),
         List(
-          Person.Default(
+          Identity.Person(
             "ald",
             "Dobrynin",
             "Alexander",
@@ -454,7 +454,7 @@ final class StudyProgramFileParserSpec
         "a\n",
         "b"
       )
-      assert(sp1.abbrev == esp1.abbrev)
+      assert(sp1.id == esp1.id)
       assert(sp1.deLabel == esp1.deLabel)
       assert(sp1.enLabel == esp1.enLabel)
       assert(sp1.internalAbbreviation == esp1.internalAbbreviation)
@@ -485,7 +485,7 @@ final class StudyProgramFileParserSpec
         "https://www.th-koeln.de/en/academics/computer-science-bachelors-program_7326.php",
         bsc,
         List(
-          Person.Default(
+          Identity.Person(
             "ald",
             "Dobrynin",
             "Alexander",
@@ -495,7 +495,7 @@ final class StudyProgramFileParserSpec
             "ald",
             PersonStatus.Active
           ),
-          Person.Default(
+          Identity.Person(
             "abe",
             "Bertels",
             "Anja",
@@ -507,7 +507,7 @@ final class StudyProgramFileParserSpec
           )
         ),
         List(
-          Person.Default(
+          Identity.Person(
             "ald",
             "Dobrynin",
             "Alexander",
@@ -517,7 +517,7 @@ final class StudyProgramFileParserSpec
             "ald",
             PersonStatus.Active
           ),
-          Person.Default(
+          Identity.Person(
             "abe",
             "Bertels",
             "Anja",
@@ -545,7 +545,7 @@ final class StudyProgramFileParserSpec
         "b\n",
         ""
       )
-      assert(sp2.abbrev == esp2.abbrev)
+      assert(sp2.id == esp2.id)
       assert(sp2.deLabel == esp2.deLabel)
       assert(sp2.enLabel == esp2.enLabel)
       assert(sp2.internalAbbreviation == esp2.internalAbbreviation)
@@ -576,7 +576,7 @@ final class StudyProgramFileParserSpec
         "https://www.th-koeln.de/en/academics/general-mechanical-engineering-bachelors-program_7323.php",
         beng,
         List(
-          Person.Default(
+          Identity.Person(
             "ald",
             "Dobrynin",
             "Alexander",
@@ -588,7 +588,7 @@ final class StudyProgramFileParserSpec
           )
         ),
         List(
-          Person.Default(
+          Identity.Person(
             "abe",
             "Bertels",
             "Anja",
@@ -640,7 +640,7 @@ final class StudyProgramFileParserSpec
         "e",
         "f\ng\nh\n"
       )
-      assert(sp3.abbrev == esp3.abbrev)
+      assert(sp3.id == esp3.id)
       assert(sp3.deLabel == esp3.deLabel)
       assert(sp3.enLabel == esp3.enLabel)
       assert(sp3.internalAbbreviation == esp3.internalAbbreviation)
@@ -672,7 +672,7 @@ final class StudyProgramFileParserSpec
         "https://www.th-koeln.de/en/academics/automation--it-master_6815.php",
         meng,
         List(
-          Person.Default(
+          Identity.Person(
             "ald",
             "Dobrynin",
             "Alexander",
@@ -684,7 +684,7 @@ final class StudyProgramFileParserSpec
           )
         ),
         List(
-          Person.Default(
+          Identity.Person(
             "ald",
             "Dobrynin",
             "Alexander",
@@ -717,7 +717,7 @@ final class StudyProgramFileParserSpec
         "c\n",
         "d\n"
       )
-      assert(sp4.abbrev == esp4.abbrev)
+      assert(sp4.id == esp4.id)
       assert(sp4.deLabel == esp4.deLabel)
       assert(sp4.enLabel == esp4.enLabel)
       assert(sp4.internalAbbreviation == esp4.internalAbbreviation)
@@ -744,14 +744,14 @@ final class StudyProgramFileParserSpec
         fileParser.parse
       )
       val sp = res.value.head
-      assert(sp.abbrev.nonEmpty)
+      assert(sp.id.nonEmpty)
       assert(sp.deLabel.nonEmpty)
       assert(sp.enLabel.nonEmpty)
       assert(sp.internalAbbreviation.isEmpty)
       assert(sp.externalAbbreviation.nonEmpty)
       assert(sp.deUrl.nonEmpty)
       assert(sp.enUrl.nonEmpty)
-      assert(sp.grade.abbrev.nonEmpty)
+      assert(sp.grade.id.nonEmpty)
       assert(sp.programDirectors.nonEmpty)
       assert(sp.examDirectors.nonEmpty)
       assert(sp.studyForm.size == 1)
@@ -773,14 +773,14 @@ final class StudyProgramFileParserSpec
         fileParser.parse
       )
       val sp = res.value.head
-      assert(sp.abbrev.nonEmpty)
+      assert(sp.id.nonEmpty)
       assert(sp.deLabel.nonEmpty)
       assert(sp.enLabel.nonEmpty)
       assert(sp.internalAbbreviation.isEmpty)
       assert(sp.externalAbbreviation.isEmpty)
       assert(sp.deUrl.nonEmpty)
       assert(sp.enUrl.nonEmpty)
-      assert(sp.grade.abbrev.nonEmpty)
+      assert(sp.grade.id.nonEmpty)
       assert(sp.programDirectors.nonEmpty)
       assert(sp.studyForm.size == 1)
       assert(sp.studyForm.head.scope.size == 1)
@@ -803,14 +803,14 @@ final class StudyProgramFileParserSpec
         fileParser.parse
       )
       val sp = res.value.head
-      assert(sp.abbrev.nonEmpty)
+      assert(sp.id.nonEmpty)
       assert(sp.deLabel.nonEmpty)
       assert(sp.enLabel.nonEmpty)
       assert(sp.internalAbbreviation.isEmpty)
       assert(sp.externalAbbreviation.isEmpty)
       assert(sp.deUrl.nonEmpty)
       assert(sp.enUrl.nonEmpty)
-      assert(sp.grade.abbrev.nonEmpty)
+      assert(sp.grade.id.nonEmpty)
       assert(sp.programDirectors.nonEmpty)
       assert(sp.studyForm.size == 2)
       assert(sp.language.size == 1)
@@ -830,14 +830,14 @@ final class StudyProgramFileParserSpec
         fileParser.parse
       )
       val sp = res.value.head
-      assert(sp.abbrev.nonEmpty)
+      assert(sp.id.nonEmpty)
       assert(sp.deLabel.nonEmpty)
       assert(sp.enLabel.nonEmpty)
       assert(sp.internalAbbreviation.isEmpty)
       assert(sp.externalAbbreviation.isEmpty)
       assert(sp.deUrl.nonEmpty)
       assert(sp.enUrl.nonEmpty)
-      assert(sp.grade.abbrev.nonEmpty)
+      assert(sp.grade.id.nonEmpty)
       assert(sp.programDirectors.nonEmpty)
       assert(sp.studyForm.size == 2)
       assert(sp.language.size == 1)
@@ -857,14 +857,14 @@ final class StudyProgramFileParserSpec
         fileParser.parse
       )
       val sp = res.value.head
-      assert(sp.abbrev.nonEmpty)
+      assert(sp.id.nonEmpty)
       assert(sp.deLabel.nonEmpty)
       assert(sp.enLabel.nonEmpty)
       assert(sp.internalAbbreviation.isEmpty)
       assert(sp.externalAbbreviation.isEmpty)
       assert(sp.deUrl.nonEmpty)
       assert(sp.enUrl.isEmpty)
-      assert(sp.grade.abbrev.nonEmpty)
+      assert(sp.grade.id.nonEmpty)
       assert(sp.programDirectors.nonEmpty)
       assert(sp.studyForm.size == 1)
       assert(sp.studyForm.head.scope.size == 2)
@@ -887,14 +887,14 @@ final class StudyProgramFileParserSpec
         fileParser.parse
       )
       val sp = res.value.head
-      assert(sp.abbrev.nonEmpty)
+      assert(sp.id.nonEmpty)
       assert(sp.deLabel.nonEmpty)
       assert(sp.enLabel.nonEmpty)
       assert(sp.internalAbbreviation.isEmpty)
       assert(sp.externalAbbreviation.isEmpty)
       assert(sp.deUrl.nonEmpty)
       assert(sp.enUrl.nonEmpty)
-      assert(sp.grade.abbrev.nonEmpty)
+      assert(sp.grade.id.nonEmpty)
       assert(sp.programDirectors.nonEmpty)
       assert(sp.studyForm.size == 2)
       assert(sp.language.size == 1)
@@ -914,14 +914,14 @@ final class StudyProgramFileParserSpec
         fileParser.parse
       )
       val sp = res.value.head
-      assert(sp.abbrev.nonEmpty)
+      assert(sp.id.nonEmpty)
       assert(sp.deLabel.nonEmpty)
       assert(sp.enLabel.nonEmpty)
       assert(sp.internalAbbreviation.isEmpty)
       assert(sp.externalAbbreviation.isEmpty)
       assert(sp.deUrl.nonEmpty)
       assert(sp.enUrl.nonEmpty)
-      assert(sp.grade.abbrev.nonEmpty)
+      assert(sp.grade.id.nonEmpty)
       assert(sp.programDirectors.nonEmpty)
       assert(sp.studyForm.size == 1)
       assert(sp.language.size == 1)
@@ -941,14 +941,14 @@ final class StudyProgramFileParserSpec
         fileParser.parse
       )
       val sp = res.value.head
-      assert(sp.abbrev.nonEmpty)
+      assert(sp.id.nonEmpty)
       assert(sp.deLabel.nonEmpty)
       assert(sp.enLabel.nonEmpty)
       assert(sp.internalAbbreviation.isEmpty)
       assert(sp.externalAbbreviation.isEmpty)
       assert(sp.deUrl.nonEmpty)
       assert(sp.enUrl.nonEmpty)
-      assert(sp.grade.abbrev.nonEmpty)
+      assert(sp.grade.id.nonEmpty)
       assert(sp.programDirectors.nonEmpty)
       assert(sp.studyForm.size == 1)
       assert(sp.studyForm.head.scope.size == 1)
@@ -969,14 +969,14 @@ final class StudyProgramFileParserSpec
         fileParser.parse
       )
       val sp = res.value.head
-      assert(sp.abbrev.nonEmpty)
+      assert(sp.id.nonEmpty)
       assert(sp.deLabel.nonEmpty)
       assert(sp.enLabel.nonEmpty)
       assert(sp.internalAbbreviation.isEmpty)
       assert(sp.externalAbbreviation.isEmpty)
       assert(sp.deUrl.nonEmpty)
       assert(sp.enUrl.nonEmpty)
-      assert(sp.grade.abbrev.nonEmpty)
+      assert(sp.grade.id.nonEmpty)
       assert(sp.programDirectors.nonEmpty)
       assert(sp.studyForm.size == 1)
       assert(sp.studyForm.head.scope.size == 1)
@@ -997,14 +997,14 @@ final class StudyProgramFileParserSpec
         fileParser.parse
       )
       val sp = res.value.head
-      assert(sp.abbrev.nonEmpty)
+      assert(sp.id.nonEmpty)
       assert(sp.deLabel.nonEmpty)
       assert(sp.enLabel.nonEmpty)
       assert(sp.internalAbbreviation.isEmpty)
       assert(sp.externalAbbreviation.isEmpty)
       assert(sp.deUrl.nonEmpty)
       assert(sp.enUrl.nonEmpty)
-      assert(sp.grade.abbrev.nonEmpty)
+      assert(sp.grade.id.nonEmpty)
       assert(sp.programDirectors.nonEmpty)
       assert(sp.studyForm.size == 1)
       assert(sp.studyForm.head.scope.size == 2)
@@ -1025,14 +1025,14 @@ final class StudyProgramFileParserSpec
         fileParser.parse
       )
       val sp = res.value.head
-      assert(sp.abbrev.nonEmpty)
+      assert(sp.id.nonEmpty)
       assert(sp.deLabel.nonEmpty)
       assert(sp.enLabel.nonEmpty)
       assert(sp.internalAbbreviation.isEmpty)
       assert(sp.externalAbbreviation.isEmpty)
       assert(sp.deUrl.nonEmpty)
       assert(sp.enUrl.isEmpty)
-      assert(sp.grade.abbrev.nonEmpty)
+      assert(sp.grade.id.nonEmpty)
       assert(sp.programDirectors.nonEmpty)
       assert(sp.studyForm.size == 1)
       assert(sp.studyForm.head.scope.size == 1)
@@ -1053,14 +1053,14 @@ final class StudyProgramFileParserSpec
         fileParser.parse
       )
       val sp = res.value.head
-      assert(sp.abbrev.nonEmpty)
+      assert(sp.id.nonEmpty)
       assert(sp.deLabel.nonEmpty)
       assert(sp.enLabel.nonEmpty)
       assert(sp.internalAbbreviation.isEmpty)
       assert(sp.externalAbbreviation.isEmpty)
       assert(sp.deUrl.nonEmpty)
       assert(sp.enUrl.nonEmpty)
-      assert(sp.grade.abbrev.nonEmpty)
+      assert(sp.grade.id.nonEmpty)
       assert(sp.programDirectors.nonEmpty)
       assert(sp.studyForm.size == 1)
       assert(sp.studyForm.head.scope.size == 1)
@@ -1081,14 +1081,14 @@ final class StudyProgramFileParserSpec
         fileParser.parse
       )
       val sp = res.value.head
-      assert(sp.abbrev.nonEmpty)
+      assert(sp.id.nonEmpty)
       assert(sp.deLabel.nonEmpty)
       assert(sp.enLabel.nonEmpty)
       assert(sp.internalAbbreviation.isEmpty)
       assert(sp.externalAbbreviation.isEmpty)
       assert(sp.deUrl.nonEmpty)
       assert(sp.enUrl.nonEmpty)
-      assert(sp.grade.abbrev.nonEmpty)
+      assert(sp.grade.id.nonEmpty)
       assert(sp.programDirectors.nonEmpty)
       assert(sp.studyForm.size == 1)
       assert(sp.studyForm.head.scope.size == 1)
@@ -1109,14 +1109,14 @@ final class StudyProgramFileParserSpec
         fileParser.parse
       )
       val sp = res.value.head
-      assert(sp.abbrev.nonEmpty)
+      assert(sp.id.nonEmpty)
       assert(sp.deLabel.nonEmpty)
       assert(sp.enLabel.nonEmpty)
       assert(sp.internalAbbreviation.isEmpty)
       assert(sp.externalAbbreviation.isEmpty)
       assert(sp.deUrl.nonEmpty)
       assert(sp.enUrl.nonEmpty)
-      assert(sp.grade.abbrev.nonEmpty)
+      assert(sp.grade.id.nonEmpty)
       assert(sp.programDirectors.nonEmpty)
       assert(sp.studyForm.size == 1)
       assert(sp.studyForm.head.scope.size == 1)
@@ -1137,14 +1137,14 @@ final class StudyProgramFileParserSpec
         fileParser.parse
       )
       val sp = res.value.head
-      assert(sp.abbrev.nonEmpty)
+      assert(sp.id.nonEmpty)
       assert(sp.deLabel.nonEmpty)
       assert(sp.enLabel.nonEmpty)
       assert(sp.internalAbbreviation.isEmpty)
       assert(sp.externalAbbreviation.isEmpty)
       assert(sp.deUrl.nonEmpty)
       assert(sp.enUrl.nonEmpty)
-      assert(sp.grade.abbrev.nonEmpty)
+      assert(sp.grade.id.nonEmpty)
       assert(sp.programDirectors.nonEmpty)
       assert(sp.studyForm.size == 2)
       assert(sp.studyForm.head.scope.size == 2)
@@ -1166,14 +1166,14 @@ final class StudyProgramFileParserSpec
         fileParser.parse
       )
       val sp = res.value.head
-      assert(sp.abbrev.nonEmpty)
+      assert(sp.id.nonEmpty)
       assert(sp.deLabel.nonEmpty)
       assert(sp.enLabel.nonEmpty)
       assert(sp.internalAbbreviation.isEmpty)
       assert(sp.externalAbbreviation.isEmpty)
       assert(sp.deUrl.nonEmpty)
       assert(sp.enUrl.nonEmpty)
-      assert(sp.grade.abbrev.nonEmpty)
+      assert(sp.grade.id.nonEmpty)
       assert(sp.programDirectors.nonEmpty)
       assert(sp.examDirectors.nonEmpty)
       assert(sp.studyForm.size == 2)

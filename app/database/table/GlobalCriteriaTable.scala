@@ -5,12 +5,12 @@ import slick.jdbc.PostgresProfile.api._
 
 final class GlobalCriteriaTable(tag: Tag)
     extends Table[GlobalCriteria](tag, "global_criteria")
-    with AbbrevLabelDescColumn[GlobalCriteria] {
+    with IDLabelDescColumn[GlobalCriteria] {
   override def * = (
-    abbrev,
+    id,
     deLabel,
     deDesc,
     enLabel,
     enDesc
-  ) <> (GlobalCriteria.tupled, GlobalCriteria.unapply)
+  ) <> ((GlobalCriteria.apply _).tupled, GlobalCriteria.unapply)
 }
