@@ -2,13 +2,15 @@ package service.core
 
 import database.InsertOrUpdateResult
 import database.repo.Repository
-import parsing.core.FileParser
+import ops.EitherOps.EThrowableOps
+import parser.Parser
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 trait YamlService[Input, Output] {
   def repo: Repository[Input, Output, _]
-  def parser: FileParser[Output]
+  def parser: Future[Parser[List[Output]]]
+  implicit def ctx: ExecutionContext
 
   def all(): Future[Seq[Output]] =
     repo.all()
@@ -16,16 +18,18 @@ trait YamlService[Input, Output] {
   def toInput(output: Output): Input
 
   def create(input: String): Future[Seq[Input]] =
-    parser.fileParser
-      .parse(input)
-      ._1
-      .fold(Future.failed, xs => repo.createMany(xs.map(toInput)))
+    for {
+      parser <- parser
+      res <- parser.parse(input)._1.toFuture
+      res <- repo.createMany(res.map(toInput))
+    } yield res
 
   def createOrUpdate(
       input: String
   ): Future[Seq[(InsertOrUpdateResult, Input)]] =
-    parser.fileParser
-      .parse(input)
-      ._1
-      .fold(Future.failed, xs => repo.createOrUpdateMany(xs.map(toInput)))
+    for {
+      parser <- parser
+      res <- parser.parse(input)._1.toFuture
+      res <- repo.createOrUpdateMany(res.map(toInput))
+    } yield res
 }

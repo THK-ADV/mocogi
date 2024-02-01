@@ -8,11 +8,9 @@ import java.time.LocalDate
 case class PO(
     id: String,
     version: Int,
-    date: LocalDate,
+    program: String,
     dateFrom: LocalDate,
-    dateTo: Option[LocalDate],
-    modificationDates: List[LocalDate],
-    program: String
+    dateTo: Option[LocalDate]
 )
 
 object PO extends JsonNullWritable {

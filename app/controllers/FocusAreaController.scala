@@ -1,6 +1,7 @@
 package controllers
 
-import play.api.libs.json.Json
+import models.core.FocusArea
+import play.api.libs.json.Writes
 import play.api.mvc.{AbstractController, ControllerComponents}
 import service.core.FocusAreaService
 
@@ -12,9 +13,7 @@ final class FocusAreaController @Inject() (
     cc: ControllerComponents,
     val service: FocusAreaService,
     implicit val ctx: ExecutionContext
-) extends AbstractController(cc) {
-  def all() =
-    Action.async { _ =>
-      service.all().map(xs => Ok(Json.toJson(xs)))
-    }
+) extends AbstractController(cc)
+    with SimpleYamlController[FocusArea] {
+  override implicit val writes: Writes[FocusArea] = FocusArea.writes
 }

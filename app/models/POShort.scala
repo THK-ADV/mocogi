@@ -2,6 +2,7 @@ package models
 
 import models.core.{Degree, Specialization}
 
+// TODO remove?
 case class POShort(
     id: String,
     version: Int,

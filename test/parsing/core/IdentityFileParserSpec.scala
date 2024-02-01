@@ -15,14 +15,12 @@ final class IdentityFileParserSpec
     with FakeApplication
     with FakeFaculties {
 
-  val personParser = app.injector.instanceOf(classOf[IdentityFileParser])
-
   "A Person File Parser" should {
     "parse a unknown person" in {
       val input =
         """nn:
           |  label: N.N.""".stripMargin
-      val (res1, rest1) = personParser.unknownParser.parse(input)
+      val (res1, rest1) = IdentityFileParser.unknownParser.parse(input)
       assert(res1.value == Identity.Unknown("nn", "N.N."))
       assert(rest1.isEmpty)
     }
@@ -31,7 +29,7 @@ final class IdentityFileParserSpec
       val input =
         """all:
           |  label: alle aktiven Lehrenden der Hochschule""".stripMargin
-      val (res1, rest1) = personParser.parser.parse(input)
+      val (res1, rest1) = IdentityFileParser.parser.parse(input)
       assert(
         res1.value == List(
           Identity.Group("all", "alle aktiven Lehrenden der Hochschule")
@@ -56,13 +54,14 @@ final class IdentityFileParserSpec
           |  label: alle Lehrenden der Lehreinheit Ingenieurswesen
           |all-ing-prof:
           |  label: alle Professor:innen der Lehreinheit Ingenieurswesen""".stripMargin
-      val (res1, rest1) = personParser.parser.parse(input)
+      val (res1, rest1) = IdentityFileParser.parser.parse(input)
       assert(
         res1.value == List(
           Identity.Group("all", "alle aktiven Lehrenden der Hochschule"),
           Identity.Group("all-f10", "alle Lehrenden der F10"),
           Identity.Group("all-f10-prof", "alle Professor:innen der F10"),
-          Identity.Group("all-inf", "alle Lehrenden der Lehreinheit Informatik"),
+          Identity
+            .Group("all-inf", "alle Lehrenden der Lehreinheit Informatik"),
           Identity.Group(
             "all-inf-prof",
             "alle Professor:innen der Lehreinheit Informatik"
@@ -80,17 +79,17 @@ final class IdentityFileParserSpec
 
     "parse person status" in {
       val input1 = "status: active"
-      val (res1, rest1) = personParser.statusParser.parse(input1)
+      val (res1, rest1) = IdentityFileParser.statusParser.parse(input1)
       assert(res1.value == PersonStatus.Active)
       assert(rest1.isEmpty)
 
       val input2 = "status: inactive"
-      val (res2, rest2) = personParser.statusParser.parse(input2)
+      val (res2, rest2) = IdentityFileParser.statusParser.parse(input2)
       assert(res2.value == PersonStatus.Inactive)
       assert(rest2.isEmpty)
 
       val input3 = "status: other"
-      val (res3, rest3) = personParser.statusParser.parse(input3)
+      val (res3, rest3) = IdentityFileParser.statusParser.parse(input3)
       assert(res3.value == PersonStatus.Unknown)
       assert(rest3.isEmpty)
     }
@@ -107,7 +106,7 @@ final class IdentityFileParserSpec
           |  abbreviation: ab
           |  campusid: abc
           |  status: active""".stripMargin
-      val (res1, rest1) = personParser.parser.parse(input)
+      val (res1, rest1) = IdentityFileParser.parser.parse(input)
       assert(
         res1.value == List(
           Identity.Person(
@@ -145,7 +144,7 @@ final class IdentityFileParserSpec
           |  abbreviation: ab
           |  campusid: def
           |  status: inactive""".stripMargin
-      val (res1, rest1) = personParser.parser.parse(input)
+      val (res1, rest1) = IdentityFileParser.parser.parse(input)
       assert(
         res1.value == List(
           Identity.Person(
@@ -201,7 +200,7 @@ final class IdentityFileParserSpec
           |  abbreviation: ab
           |  campusid: def
           |  status: inactive""".stripMargin
-      val (res1, rest1) = personParser.parser.parse(input)
+      val (res1, rest1) = IdentityFileParser.parser.parse(input)
       assert(
         res1.value == List(
           Identity.Unknown("nn", "N.N."),
@@ -234,7 +233,9 @@ final class IdentityFileParserSpec
 
     "parse all people in person.yaml" in {
       val (res1, rest1) =
-        withFile0("test/parsing/res/person.yaml")(personParser.parser.parse)
+        withFile0("test/parsing/res/person.yaml")(
+          IdentityFileParser.parser.parse
+        )
       assert(res1.value.size == 12)
       assert(res1.value.count(_.kind == Identity.UnknownKind) == 1)
       assert(res1.value.count(_.kind == Identity.GroupKind) == 7)

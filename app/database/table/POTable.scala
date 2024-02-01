@@ -1,27 +1,17 @@
 package database.table
 
+import models.core.PO
 import slick.jdbc.PostgresProfile.api._
 
 import java.time.LocalDate
 
-case class PODbEntry(
-    id: String,
-    studyProgram: String,
-    version: Int,
-    date: LocalDate,
-    dateFrom: LocalDate,
-    dateTo: Option[LocalDate]
-)
-
-final class POTable(tag: Tag) extends Table[PODbEntry](tag, "po") {
+final class POTable(tag: Tag) extends Table[PO](tag, "po") {
 
   def id = column[String]("id", O.PrimaryKey)
 
   def studyProgram = column[String]("study_program")
 
   def version = column[Int]("version")
-
-  def date = column[LocalDate]("date")
 
   def dateFrom = column[LocalDate]("date_from")
 
@@ -37,10 +27,9 @@ final class POTable(tag: Tag) extends Table[PODbEntry](tag, "po") {
 
   override def * = (
     id,
-    studyProgram,
     version,
-    date,
+    studyProgram,
     dateFrom,
     dateTo
-  ) <> (PODbEntry.tupled, PODbEntry.unapply)
+  ) <> ((PO.apply _).tupled, PO.unapply)
 }

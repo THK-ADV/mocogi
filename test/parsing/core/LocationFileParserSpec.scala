@@ -5,7 +5,6 @@ import models.core.Location
 import org.scalatest.EitherValues
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
-import parsing.core.LocationFileParser
 import parsing.{ParserSpecHelper, withFile0}
 
 class LocationFileParserSpec
@@ -15,7 +14,7 @@ class LocationFileParserSpec
     with GuiceOneAppPerSuite
     with FakeApplication {
 
-  val parser = app.injector.instanceOf(classOf[LocationFileParser]).fileParser
+  val parser = LocationFileParser.fileParser
 
   "A Location File Parser" should {
     "parse location file" when {

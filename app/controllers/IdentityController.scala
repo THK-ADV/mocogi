@@ -1,6 +1,8 @@
 package controllers
 
-import play.api.libs.json.Json
+import database.table.IdentityDbEntry
+import models.core.Identity
+import play.api.libs.json.Writes
 import play.api.mvc.{AbstractController, ControllerComponents}
 import service.core.IdentityService
 
@@ -10,11 +12,9 @@ import scala.concurrent.ExecutionContext
 @Singleton
 final class IdentityController @Inject() (
     cc: ControllerComponents,
-    val service: IdentityService,
+    override val service: IdentityService,
     implicit val ctx: ExecutionContext
-) extends AbstractController(cc) {
-  def all() =
-    Action.async { _ =>
-      service.all().map(xs => Ok(Json.toJson(xs)))
-    }
+) extends AbstractController(cc)
+    with YamlController[IdentityDbEntry, Identity] {
+  override implicit val writes: Writes[Identity] = Identity.writes
 }

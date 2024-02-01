@@ -154,7 +154,7 @@ object CoreDataPublisher {
             case "specialization" =>
               specializationService.createOrUpdate(content.value)
             case other =>
-              logFailure(path, content, s"unknown core data found: $other")
+              logger.info(s"unknown core data found: $other")
               Future.successful(Nil)
           }
           res.map(xs => (path, content, Left(xs.size)))

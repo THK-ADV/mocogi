@@ -9,6 +9,7 @@ import parsing.core.StudyProgramFileParser
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
+// TODO This seems to be a special case. Maybe it will be resolved when a few properties are dropped
 trait StudyProgramService {
   def all(): Future[Seq[StudyProgramOutput]]
   def allShort(): Future[Seq[StudyProgramShort]]

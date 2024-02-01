@@ -33,16 +33,8 @@ class POFileParserSpec
       val po1 = res.value.head
       assert(po1.id == "ing_inf1")
       assert(po1.version == 1)
-      assert(po1.date == LocalDate.of(2009, 3, 10))
       assert(po1.dateFrom == LocalDate.of(2007, 9, 1))
       assert(po1.dateTo.value == LocalDate.of(2021, 2, 28))
-      assert(
-        po1.modificationDates == List(
-          LocalDate.of(2012, 3, 15),
-          LocalDate.of(2015, 1, 23),
-          LocalDate.of(2016, 6, 7)
-        )
-      )
       assert(po1.program == "inf_inf")
       assert(rest.isEmpty)
     }
@@ -61,14 +53,8 @@ class POFileParserSpec
       val po1 = res.value.head
       assert(po1.id == "inf_mim2")
       assert(po1.version == 2)
-      assert(po1.date == LocalDate.of(2007, 4, 5))
       assert(po1.dateFrom == LocalDate.of(2001, 9, 1))
       assert(po1.dateTo.value == LocalDate.of(2020, 2, 29))
-      assert(
-        po1.modificationDates == List(
-          LocalDate.of(2009, 6, 16)
-        )
-      )
       assert(po1.program == "inf_mim")
       assert(rest.isEmpty)
     }
@@ -96,24 +82,14 @@ class POFileParserSpec
       val po1 = res.value.head
       assert(po1.id == "ing_inf1")
       assert(po1.version == 1)
-      assert(po1.date == LocalDate.of(2009, 3, 10))
       assert(po1.dateFrom == LocalDate.of(2007, 9, 1))
       assert(po1.dateTo.value == LocalDate.of(2021, 2, 28))
-      assert(
-        po1.modificationDates == List(
-          LocalDate.of(2012, 3, 15),
-          LocalDate.of(2015, 1, 23),
-          LocalDate.of(2016, 6, 7)
-        )
-      )
       assert(po1.program == "inf_inf")
       val po2 = res.value(1)
       assert(po2.id == "ing_gme4")
       assert(po2.version == 4)
-      assert(po2.date == LocalDate.of(2021, 1, 5))
       assert(po2.dateFrom == LocalDate.of(2021, 3, 1))
       assert(po2.dateTo.isEmpty)
-      assert(po2.modificationDates.isEmpty)
       assert(po2.program == "inf_inf")
       assert(rest.isEmpty)
     }

@@ -5,7 +5,6 @@ import models.core.Status
 import org.scalatest.EitherValues
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
-import parsing.core.StatusFileParser
 import parsing.{ParserSpecHelper, withFile0}
 
 final class StatusFileParserSpec
@@ -15,7 +14,7 @@ final class StatusFileParserSpec
     with GuiceOneAppPerSuite
     with FakeApplication {
 
-  val parser = app.injector.instanceOf(classOf[StatusFileParser]).fileParser
+  val parser = StatusFileParser.fileParser
 
   "A Status Filer Parser" should {
     "parse a single status" in {

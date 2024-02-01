@@ -199,18 +199,9 @@ create table po
     "id"            text PRIMARY KEY,
     "study_program" text     not null,
     "version"       smallint not null,
-    "date"          date     not null,
     "date_from"     date     not null,
     "date_to"       date,
     FOREIGN KEY (study_program) REFERENCES study_program (id)
-);
-
-create table po_modification_date
-(
-    "po"   text not null,
-    "date" date not null,
-    PRIMARY KEY (po, date),
-    FOREIGN KEY (po) REFERENCES po (id)
 );
 
 create table specialization
@@ -477,7 +468,8 @@ order by sp_label, po_id, degree_label;
 
 -- module_view
 create
-materialized view module_view as
+materialized
+view module_view as
 select metadata.id                       as id,
        metadata.title                    as title,
        metadata.abbrev                   as abbrev,
@@ -508,25 +500,25 @@ from metadata
          left join specialization on po.id = specialization.po and
                                      po_mandatory.specialization = specialization.id
 union
-select metadata.id                       as id,
-       metadata.title                    as title,
-       metadata.abbrev                   as abbrev,
-       metadata.ects                     as ects,
-       identity.id                       as module_management_id,
-       identity.kind                     as module_management_kind,
-       identity.abbreviation             as module_management_abbrev,
-       identity.title                    as module_management_title,
-       identity.firstname                as module_management_firstname,
-       identity.lastname                 as module_management_lastname,
-       po.id                             as po_id,
-       po.version                        as po_version,
-       study_program.id                  as sp_id,
-       study_program.de_label            as sp_label,
-       degree.de_label                   as degree_label,
-       specialization.id                 as spec_id,
-       specialization.label              as spec_label,
-       po_mandatory.recommended_semester as recommended_semester,
-       false                             as mandatory
+select metadata.id                      as id,
+       metadata.title                   as title,
+       metadata.abbrev                  as abbrev,
+       metadata.ects                    as ects,
+       identity.id                      as module_management_id,
+       identity.kind                    as module_management_kind,
+       identity.abbreviation            as module_management_abbrev,
+       identity.title                   as module_management_title,
+       identity.firstname               as module_management_firstname,
+       identity.lastname                as module_management_lastname,
+       po.id                            as po_id,
+       po.version                       as po_version,
+       study_program.id                 as sp_id,
+       study_program.de_label           as sp_label,
+       degree.de_label                  as degree_label,
+       specialization.id                as spec_id,
+       specialization.label             as spec_label,
+       po_optional.recommended_semester as recommended_semester,
+       false                            as mandatory
 from metadata
          join responsibility on metadata.id = responsibility.metadata and
                                 responsibility.responsibility_type = 'module_management'

@@ -5,7 +5,6 @@ import models.core.Language
 import org.scalatest.EitherValues
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
-import parsing.core.LanguageFileParser
 import parsing.{ParserSpecHelper, withFile0}
 
 final class LanguageFileParserSpec
@@ -15,7 +14,7 @@ final class LanguageFileParserSpec
     with GuiceOneAppPerSuite
     with FakeApplication {
 
-  val parser = app.injector.instanceOf(classOf[LanguageFileParser]).fileParser
+  val parser = LanguageFileParser.fileParser
 
   "A Language File Parser" should {
     "parse a single language" in {

@@ -1,7 +1,8 @@
 package controllers
 
 import controllers.POController.validAttribute
-import play.api.libs.json.Json
+import models.core.PO
+import play.api.libs.json.{Json, Writes}
 import play.api.mvc.{AbstractController, ControllerComponents}
 import service.core.POService
 
@@ -17,14 +18,16 @@ final class POController @Inject() (
     cc: ControllerComponents,
     val service: POService,
     implicit val ctx: ExecutionContext
-) extends AbstractController(cc) {
+) extends AbstractController(cc)
+    with SimpleYamlController[PO] {
+  override implicit val writes: Writes[PO] = PO.writes
 
-  def all() =
+  override def all() =
     Action.async { request =>
       val validOnly = request
         .getQueryString(validAttribute)
         .flatMap(_.toBooleanOption)
-        .getOrElse(false)
+        .getOrElse(true)
       val res =
         if (validOnly) service.allValid()
         else service.all()

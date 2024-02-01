@@ -6,10 +6,7 @@ import parser.Parser._
 import parser.ParserOps.{P2, P3, P4, P5, P6, P7}
 import parsing.{multipleValueParser, singleLineStringForKey}
 
-import javax.inject.Singleton
-
-@Singleton
-class IdentityFileParser {
+object IdentityFileParser {
 
   def unknownParser: Parser[Identity] =
     literal("nn")
