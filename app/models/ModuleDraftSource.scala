@@ -15,6 +15,7 @@ object ModuleDraftSource {
   case object Added extends ModuleDraftSource {
     override val id: String = "added"
   }
+
   case object Modified extends ModuleDraftSource {
     override val id: String = "modified"
   }

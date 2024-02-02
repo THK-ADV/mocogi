@@ -14,6 +14,6 @@ final class FacultyController @Inject() (
     val service: FacultyService,
     implicit val ctx: ExecutionContext
 ) extends AbstractController(cc)
-    with SimpleYamlController[Faculty] {
+    with YamlController[Faculty] {
   override implicit val writes: Writes[Faculty] = Faculty.writes
 }

@@ -1,15 +1,14 @@
 package service.core
 
 import database.repo.IdentityRepository
-import database.table.IdentityDbEntry
 import models.core.Identity
 import models.core.Identity.toDbEntry
 import parsing.core.IdentityFileParser
 
 import javax.inject.{Inject, Singleton}
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
 
-trait IdentityService extends YamlService[IdentityDbEntry, Identity]
+trait IdentityService extends YamlService[Identity]
 
 @Singleton
 final class IdentityServiceImpl @Inject() (
@@ -18,7 +17,13 @@ final class IdentityServiceImpl @Inject() (
     implicit val ctx: ExecutionContext
 ) extends IdentityService {
 
-  override def toInput(output: Identity): IdentityDbEntry = toDbEntry(output)
+  override protected def parser =
+    facultyService.all().map(IdentityFileParser.parser(_))
 
-  override def parser = facultyService.all().map(IdentityFileParser.parser(_))
+  override def createOrUpdateMany(
+      xs: Seq[Identity]
+  ): Future[Seq[Identity]] =
+    repo.createOrUpdateMany(xs.map(toDbEntry)).map(_ => xs)
+
+  override def all(): Future[Seq[Identity]] = repo.all()
 }

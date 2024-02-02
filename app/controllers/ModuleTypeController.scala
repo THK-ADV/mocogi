@@ -14,6 +14,6 @@ final class ModuleTypeController @Inject() (
     val service: ModuleTypeService,
     implicit val ctx: ExecutionContext
 ) extends AbstractController(cc)
-    with SimpleYamlController[ModuleType] {
+    with YamlController[ModuleType] {
   override implicit val writes: Writes[ModuleType] = ModuleType.writes
 }

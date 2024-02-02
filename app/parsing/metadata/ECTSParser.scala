@@ -1,6 +1,6 @@
 package parsing.metadata
 
-import models.core.FocusAreaPreview
+import models.core.FocusAreaID
 import parser.Parser
 import parser.Parser._
 import parser.ParserOps.{P0, P2}
@@ -13,7 +13,7 @@ object ECTSParser {
     doubleForKey("ects")
 
   def ectsContributionsToFocusAreasParser(implicit
-      focusAreas: Seq[FocusAreaPreview]
+      focusAreas: Seq[FocusAreaID]
   ) = {
     val focusAreaParser: Parser[ECTSFocusAreaContribution] =
       oneOf(
@@ -42,7 +42,7 @@ object ECTSParser {
   }
 
   def ectsParser(implicit
-      focusAreas: Seq[FocusAreaPreview]
+      focusAreas: Seq[FocusAreaID]
   ): Parser[Either[Double, List[ECTSFocusAreaContribution]]] = {
     oneOf(
       ectsValueParser.map(Left.apply),

@@ -6,13 +6,13 @@ import service.core.YamlService
 
 import scala.concurrent.ExecutionContext
 
-trait YamlController[Input, Output] { self: AbstractController =>
+trait YamlController[A] { self: AbstractController =>
 
-  implicit val writes: Writes[Output]
+  implicit val writes: Writes[A]
 
   implicit val ctx: ExecutionContext
 
-  val service: YamlService[Input, Output]
+  val service: YamlService[A]
 
   def all() =
     Action.async { _ =>

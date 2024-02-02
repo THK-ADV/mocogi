@@ -14,6 +14,6 @@ final class SeasonController @Inject() (
     val service: SeasonService,
     implicit val ctx: ExecutionContext
 ) extends AbstractController(cc)
-    with SimpleYamlController[Season] {
+    with YamlController[Season] {
   override implicit val writes: Writes[Season] = Season.writes
 }

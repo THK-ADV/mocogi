@@ -14,7 +14,7 @@ final class AssessmentMethodController @Inject() (
     val service: AssessmentMethodService,
     implicit val ctx: ExecutionContext
 ) extends AbstractController(cc)
-    with SimpleYamlController[AssessmentMethod] {
+    with YamlController[AssessmentMethod] {
   override implicit val writes: Writes[AssessmentMethod] =
     AssessmentMethod.writes
 }

@@ -18,7 +18,7 @@ final class MetadataValidatorSpec
   private case class PosInt(value: Int)
 
   private lazy val am = AssessmentMethod("", "", "")
-  private lazy val fa = FocusAreaPreview("")
+  private lazy val fa = FocusAreaID("")
   private lazy val ld = LocalDate.of(1998, 5, 9)
   private lazy val sp = PO("", 0, "", ld, None)
   private lazy val creditPointFactor = 30

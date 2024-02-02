@@ -14,6 +14,6 @@ final class LocationController @Inject() (
     val service: LocationService,
     implicit val ctx: ExecutionContext
 ) extends AbstractController(cc)
-    with SimpleYamlController[Location] {
+    with YamlController[Location] {
   override implicit val writes: Writes[Location] = Location.writes
 }

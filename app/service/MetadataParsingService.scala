@@ -58,7 +58,7 @@ final class MetadataParsingServiceImpl @Inject() (
         moduleTypes,
         seasons,
         persons,
-        focusAreas.map(f => FocusAreaPreview(f.id)),
+        focusAreas.map(f => FocusAreaID(f.id)),
         competences,
         globalCriteria,
         pos,

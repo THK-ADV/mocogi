@@ -14,6 +14,6 @@ final class CompetenceController @Inject() (
     val service: CompetenceService,
     implicit val ctx: ExecutionContext
 ) extends AbstractController(cc)
-    with SimpleYamlController[Competence] {
+    with YamlController[Competence] {
   override implicit val writes: Writes[Competence] = Competence.writes
 }

@@ -1,6 +1,5 @@
 package database.repo
 
-import database.InsertOrUpdateResult
 import database.table._
 import models.CampusId
 import models.core.Identity
@@ -32,7 +31,7 @@ class IdentityRepository @Inject() (
         p.faculties.map(f => PersonInFaculty(p.id, f))
       )
     } yield ls
-    db.run(action.transactionally.map(_.map(InsertOrUpdateResult.Update -> _)))
+    db.run(action.transactionally)
   }
 
   override def createMany(ls: Seq[IdentityDbEntry]) = {

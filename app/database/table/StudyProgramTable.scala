@@ -1,9 +1,6 @@
 package database.table
 
-import models.core.RestrictedAdmission
 import slick.jdbc.PostgresProfile.api._
-
-import java.time.LocalDate
 
 case class StudyProgramDbEntry(
     id: String,
@@ -11,15 +8,7 @@ case class StudyProgramDbEntry(
     enLabel: String,
     internalAbbreviation: String,
     externalAbbreviation: String,
-    deUrl: String,
-    enUrl: String,
-    degree: String,
-    accreditationUntil: LocalDate,
-    restrictedAdmission: RestrictedAdmission,
-    deDescription: String,
-    deNote: String,
-    enDescription: String,
-    enNote: String
+    degree: String
 )
 
 final class StudyProgramTable(tag: Tag)
@@ -27,20 +16,10 @@ final class StudyProgramTable(tag: Tag)
     with IDLabelColumn[StudyProgramDbEntry] {
 
   def internalAbbreviation = column[String]("internal_abbreviation")
+
   def externalAbbreviation = column[String]("external_abbreviation")
-  def deUrl = column[String]("de_url")
-  def enUrl = column[String]("en_url")
+
   def degree = column[String]("degree")
-  def accreditationUntil = column[LocalDate]("accreditation_until")
-  def restrictedAdmissionValue = column[Boolean]("restricted_admission_value")
-  def restrictedAdmissionDeReason =
-    column[String]("restricted_admission_de_reason")
-  def restrictedAdmissionEnReason =
-    column[String]("restricted_admission_en_reason")
-  def deDescription = column[String]("de_description")
-  def deNote = column[String]("de_note")
-  def enDescription = column[String]("en_description")
-  def enNote = column[String]("en_note")
 
   def degreeFk =
     foreignKey("degree", degree, TableQuery[DegreeTable])(_.id)
@@ -52,17 +31,7 @@ final class StudyProgramTable(tag: Tag)
       enLabel,
       internalAbbreviation,
       externalAbbreviation,
-      deUrl,
-      enUrl,
-      degree,
-      accreditationUntil,
-      restrictedAdmissionValue,
-      restrictedAdmissionDeReason,
-      restrictedAdmissionEnReason,
-      deDescription,
-      deNote,
-      enDescription,
-      enNote
+      degree
     ) <> (mapRow, unmapRow)
 
   def mapRow: (
@@ -72,71 +41,29 @@ final class StudyProgramTable(tag: Tag)
           String,
           String,
           String,
-          String,
-          String,
-          String,
-          LocalDate,
-          Boolean,
-          String,
-          String,
-          String,
-          String,
-          String,
           String
       )
   ) => StudyProgramDbEntry = {
     case (
-          abbrev,
+          id,
           deLabel,
           enLabel,
           internalAbbreviation,
           externalAbbreviation,
-          deUrl,
-          enUrl,
-          degree,
-          accreditationUntil,
-          restrictedAdmissionValue,
-          restrictedAdmissionDeReason,
-          restrictedAdmissionEnReason,
-          deDescription,
-          deNote,
-          enDescription,
-          enNote
+          degree
         ) =>
       StudyProgramDbEntry(
-        abbrev,
+        id,
         deLabel,
         enLabel,
         internalAbbreviation,
         externalAbbreviation,
-        deUrl,
-        enUrl,
-        degree,
-        accreditationUntil,
-        RestrictedAdmission(
-          restrictedAdmissionValue,
-          restrictedAdmissionDeReason,
-          restrictedAdmissionEnReason
-        ),
-        deDescription,
-        deNote,
-        enDescription,
-        enNote
+        degree
       )
   }
 
   def unmapRow: StudyProgramDbEntry => Option[
     (
-        String,
-        String,
-        String,
-        String,
-        String,
-        String,
-        String,
-        String,
-        LocalDate,
-        Boolean,
         String,
         String,
         String,
@@ -152,17 +79,7 @@ final class StudyProgramTable(tag: Tag)
         a.enLabel,
         a.internalAbbreviation,
         a.externalAbbreviation,
-        a.deUrl,
-        a.enUrl,
-        a.degree,
-        a.accreditationUntil,
-        a.restrictedAdmission.value,
-        a.restrictedAdmission.deReason,
-        a.restrictedAdmission.enReason,
-        a.deDescription,
-        a.deNote,
-        a.enDescription,
-        a.enNote
+        a.degree
       )
     )
   }

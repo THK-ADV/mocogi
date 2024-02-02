@@ -18,7 +18,7 @@ class FakeMetadataParser extends MetadataParser {
       moduleTypes: Seq[ModuleType],
       seasons: Seq[Season],
       identities: Seq[Identity],
-      focusAreas: Seq[FocusAreaPreview],
+      focusAreas: Seq[FocusAreaID],
       competences: Seq[Competence],
       globalCriteria: Seq[GlobalCriteria],
       pos: Seq[PO],

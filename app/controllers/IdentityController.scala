@@ -1,6 +1,5 @@
 package controllers
 
-import database.table.IdentityDbEntry
 import models.core.Identity
 import play.api.libs.json.Writes
 import play.api.mvc.{AbstractController, ControllerComponents}
@@ -15,6 +14,6 @@ final class IdentityController @Inject() (
     override val service: IdentityService,
     implicit val ctx: ExecutionContext
 ) extends AbstractController(cc)
-    with YamlController[IdentityDbEntry, Identity] {
+    with YamlController[Identity] {
   override implicit val writes: Writes[Identity] = Identity.writes
 }

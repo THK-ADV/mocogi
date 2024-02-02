@@ -1,12 +1,12 @@
 package helper
 
-import models.core.FocusAreaPreview
+import models.core.FocusAreaID
 
 trait FakeFocusAreas {
-  implicit def fakeFocusAreas: Seq[FocusAreaPreview] =
+  implicit def fakeFocusAreas: Seq[FocusAreaID] =
     Seq(
-      FocusAreaPreview("gak"),
-      FocusAreaPreview("acs"),
-      FocusAreaPreview("bs"),
+      FocusAreaID("gak"),
+      FocusAreaID("acs"),
+      FocusAreaID("bs"),
     )
 }

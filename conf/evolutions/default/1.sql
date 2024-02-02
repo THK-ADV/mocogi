@@ -67,13 +67,6 @@ create table degree
     "en_desc"  text not null
 );
 
-create table study_form_type
-(
-    "id"       text PRIMARY KEY,
-    "de_label" text not null,
-    "en_label" text not null
-);
-
 create table global_criteria
 (
     "id"       text PRIMARY KEY,
@@ -106,71 +99,13 @@ create table person_in_faculty
 
 create table study_program
 (
-    "id"                             text PRIMARY KEY,
-    "de_label"                       text    not null,
-    "en_label"                       text    not null,
-    "internal_abbreviation"          text    not null,
-    "external_abbreviation"          text    not null,
-    "de_url"                         text    not null,
-    "en_url"                         text    not null,
-    "degree"                         text    not null,
-    "accreditation_until"            date    not null,
-    "restricted_admission_value"     boolean not null,
-    "restricted_admission_de_reason" text    not null,
-    "restricted_admission_en_reason" text    not null,
-    "de_description"                 text    not null,
-    "de_note"                        text    not null,
-    "en_description"                 text    not null,
-    "en_note"                        text    not null,
+    "id"                    text PRIMARY KEY,
+    "de_label"              text not null,
+    "en_label"              text not null,
+    "internal_abbreviation" text not null,
+    "external_abbreviation" text not null,
+    "degree"                text not null,
     FOREIGN KEY (degree) REFERENCES degree (id)
-);
-
-create table study_form
-(
-    "id"                uuid PRIMARY KEY,
-    "study_program"     text     not null,
-    "study_form_type"   text     not null,
-    "workload_per_ects" smallint not null,
-    FOREIGN KEY (study_program) REFERENCES study_program (id),
-    FOREIGN KEY (study_form_type) REFERENCES study_form_type (id)
-);
-
-create table study_form_scope
-(
-    "id"         uuid PRIMARY KEY,
-    "study_form" uuid     not null,
-    "duration"   smallint not null,
-    "total_ects" smallint not null,
-    "de_reason"  text     not null,
-    "en_reason"  text     not null,
-    FOREIGN KEY (study_form) REFERENCES study_form (id)
-);
-
-create table study_program_language
-(
-    "language"      text not null,
-    "study_program" text not null,
-    PRIMARY KEY (language, study_program),
-    FOREIGN KEY (language) REFERENCES language (id),
-    FOREIGN KEY (study_program) REFERENCES study_program (id)
-);
-
-create table study_program_season
-(
-    "season"        text not null,
-    "study_program" text not null,
-    PRIMARY KEY (season, study_program),
-    FOREIGN KEY (season) REFERENCES season (id),
-    FOREIGN KEY (study_program) REFERENCES study_program (id)
-);
-
-create table study_program_location
-(
-    "location"      text not null,
-    "study_program" text not null,
-    PRIMARY KEY (location, study_program),
-    FOREIGN KEY (location) REFERENCES location (id),
-    FOREIGN KEY (study_program) REFERENCES study_program (id)
 );
 
 create table study_program_person
@@ -558,16 +493,10 @@ drop table po_modification_date if exists;
 drop table po if exists;
 drop table focus_area if exists;
 drop table study_program_person if exists;
-drop table study_program_location if exists;
-drop table study_program_season if exists;
-drop table study_program_language if exists;
-drop table study_form_scope if exists;
-drop table study_form if exists;
 drop table study_program if exists;
 drop table person_in_faculty if exists;
 drop table identity if exists;
 drop table global_criteria if exists;
-drop table study_form_type if exists;
 drop table degree if exists;
 drop table faculty if exists;
 drop table competence if exists;

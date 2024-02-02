@@ -1,6 +1,6 @@
 package parsing.types
 
-import models.core.FocusAreaPreview
+import models.core.FocusAreaID
 import play.api.libs.json.{Json, Writes}
 
 case class ECTS(
@@ -13,7 +13,7 @@ object ECTS {
 }
 
 case class ECTSFocusAreaContribution(
-    focusArea: FocusAreaPreview,
+    focusArea: FocusAreaID,
     ectsValue: Double,
     deDesc: String,
     enDesc: String

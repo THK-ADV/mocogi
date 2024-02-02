@@ -1,7 +1,7 @@
 package parsing.metadata
 
 import helper.FakeFocusAreas
-import models.core.FocusAreaPreview
+import models.core.FocusAreaID
 import org.scalatest.EitherValues
 import org.scalatest.wordspec.AnyWordSpec
 import parsing.ParserSpecHelper
@@ -43,7 +43,7 @@ final class ECTSParserSpec
         ectsContributionsToFocusAreasParser.parse(input)
       assert(
         res.value.head == ECTSFocusAreaContribution(
-          FocusAreaPreview("gak"),
+          FocusAreaID("gak"),
           0,
           "",
           ""
@@ -51,7 +51,7 @@ final class ECTSParserSpec
       )
       assert(
         res.value(1) == ECTSFocusAreaContribution(
-          FocusAreaPreview("acs"),
+          FocusAreaID("acs"),
           6,
           "Text1\nText2\n",
           ""
@@ -77,7 +77,7 @@ final class ECTSParserSpec
         ectsContributionsToFocusAreasParser.parse(input)
       assert(
         res.value.head == ECTSFocusAreaContribution(
-          FocusAreaPreview("gak"),
+          FocusAreaID("gak"),
           0,
           "a",
           ""
@@ -85,7 +85,7 @@ final class ECTSParserSpec
       )
       assert(
         res.value(1) == ECTSFocusAreaContribution(
-          FocusAreaPreview("acs"),
+          FocusAreaID("acs"),
           6,
           "a\nb\n",
           "c"
@@ -117,13 +117,13 @@ final class ECTSParserSpec
       assert(
         res2.value.value == List(
           ECTSFocusAreaContribution(
-            FocusAreaPreview("gak"),
+            FocusAreaID("gak"),
             4,
             "Text1\nText2\n",
             ""
           ),
           ECTSFocusAreaContribution(
-            FocusAreaPreview("acs"),
+            FocusAreaID("acs"),
             6,
             "Text1\nText2\n",
             ""

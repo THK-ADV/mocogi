@@ -2,7 +2,12 @@ import auth.{Authorization, UserToken}
 import com.google.inject.name.Names
 import com.google.inject.{AbstractModule, TypeLiteral}
 import compendium.{ModuleCompendiumLatexActor, WPFCatalogueGeneratorActor}
-import database.repo.{ModuleCompendiumRepository, ModuleCompendiumRepositoryImpl, ModuleDraftRepository, ModuleDraftRepositoryImpl}
+import database.repo.{
+  ModuleCompendiumRepository,
+  ModuleCompendiumRepositoryImpl,
+  ModuleDraftRepository,
+  ModuleDraftRepositoryImpl
+}
 import git.publisher.{CoreDataPublisher, ModuleCompendiumPublisher}
 import git.subscriber.ModuleCompendiumSubscribers
 import git.{GitConfig, GitFilesBroker, GitFilesBrokerImpl}
@@ -48,9 +53,6 @@ class Module(@unused environment: Environment, configuration: Configuration)
       .asEagerSingleton()
     bind(classOf[IdentityService])
       .to(classOf[IdentityServiceImpl])
-      .asEagerSingleton()
-    bind(classOf[StudyFormTypeService])
-      .to(classOf[StudyFormTypeServiceImpl])
       .asEagerSingleton()
     bind(classOf[DegreeService])
       .to(classOf[DegreeServiceImpl])

@@ -7,7 +7,7 @@ import parsing.core.POFileParser
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
-trait POService extends YamlService[PO, PO] {
+trait POService extends AsyncParserYamlService[PO] {
   def allValid(): Future[Seq[PO]]
   def allIds(): Future[Seq[String]]
 }
@@ -27,6 +27,4 @@ final class POServiceImpl @Inject() (
 
   override def allValid() =
     repo.allValid()
-
-  override def toInput(output: PO): PO = output
 }

@@ -14,6 +14,6 @@ final class DegreeController @Inject() (
     val service: DegreeService,
     implicit val ctx: ExecutionContext
 ) extends AbstractController(cc)
-    with SimpleYamlController[Degree] {
+    with YamlController[Degree] {
   override implicit val writes: Writes[Degree] = Degree.writes
 }

@@ -14,6 +14,6 @@ final class FocusAreaController @Inject() (
     val service: FocusAreaService,
     implicit val ctx: ExecutionContext
 ) extends AbstractController(cc)
-    with SimpleYamlController[FocusArea] {
+    with YamlController[FocusArea] {
   override implicit val writes: Writes[FocusArea] = FocusArea.writes
 }

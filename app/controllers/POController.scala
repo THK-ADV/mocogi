@@ -19,7 +19,7 @@ final class POController @Inject() (
     val service: POService,
     implicit val ctx: ExecutionContext
 ) extends AbstractController(cc)
-    with SimpleYamlController[PO] {
+    with YamlController[PO] {
   override implicit val writes: Writes[PO] = PO.writes
 
   override def all() =

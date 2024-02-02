@@ -1,7 +1,7 @@
 package parsing.core
 
 import models.core.PO
-import parser.Parser.{newline, optional, prefixTo, zeroOrMoreSpaces}
+import parser.Parser._
 import parser.ParserOps.{P0, P2, P3, P4}
 import parsing._
 
@@ -22,12 +22,7 @@ object POFileParser {
       .skip(zeroOrMoreSpaces)
       .take(dateForKey("date_to").option)
       .skip(zeroOrMoreSpaces)
-      .skip(
-        multipleValueParser(
-          "modification_dates",
-          prefixTo("\n").flatMap(localDateParser)
-        ).option
-      )
+      .skip(optional(skipFirst(range("modification_dates:", "program:"))))
       .skip(zeroOrMoreSpaces)
       .take(
         singleValueParser[String](

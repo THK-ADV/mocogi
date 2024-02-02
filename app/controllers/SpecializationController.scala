@@ -14,6 +14,6 @@ final class SpecializationController @Inject() (
     val service: SpecializationService,
     implicit val ctx: ExecutionContext
 ) extends AbstractController(cc)
-    with SimpleYamlController[Specialization] {
+    with YamlController[Specialization] {
   override implicit val writes: Writes[Specialization] = Specialization.writes
 }

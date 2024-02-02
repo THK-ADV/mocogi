@@ -14,6 +14,6 @@ final class GlobalCriteriaController @Inject() (
     val service: GlobalCriteriaService,
     implicit val ctx: ExecutionContext
 ) extends AbstractController(cc)
-    with SimpleYamlController[GlobalCriteria] {
+    with YamlController[GlobalCriteria] {
   override implicit val writes: Writes[GlobalCriteria] = GlobalCriteria.writes
 }

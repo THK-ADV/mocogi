@@ -29,7 +29,6 @@ object CoreDataPublisher {
       facultyService: FacultyService,
       degreeService: DegreeService,
       studyProgramService: StudyProgramService,
-      studyFormTypeService: StudyFormTypeService,
       specializationService: SpecializationService,
       studyProgramViewRepository: StudyProgramViewRepository,
       moduleViewRepository: ModuleViewRepository,
@@ -52,7 +51,6 @@ object CoreDataPublisher {
         facultyService,
         degreeService,
         studyProgramService,
-        studyFormTypeService,
         specializationService,
         studyProgramViewRepository,
         moduleViewRepository,
@@ -76,7 +74,6 @@ object CoreDataPublisher {
       private val facultyService: FacultyService,
       private val degreeService: DegreeService,
       private val studyProgramService: StudyProgramService,
-      private val studyFormTypeService: StudyFormTypeService,
       private val specializationService: SpecializationService,
       private val studyProgramViewRepository: StudyProgramViewRepository,
       private val moduleViewRepository: ModuleViewRepository,
@@ -95,14 +92,10 @@ object CoreDataPublisher {
       } yield res
 
       res onComplete {
-        case Success(s) =>
-          s.foreach { case (path, content, either) =>
-            either match {
-              case Left(size) =>
-                logSuccess(path, content, size)
-              case Right(errMsg) =>
-                logFailure(path, content, errMsg)
-            }
+        case Success(xs) =>
+          xs.foreach {
+            case (path, Some(count)) => logSuccess(path, count)
+            case (path, None)        => logUnknownFile(path)
           }
         case Failure(t) => logFailure(t)
       }
@@ -114,57 +107,72 @@ object CoreDataPublisher {
     private def createOrUpdate(
         path: GitFilePath,
         content: GitFileContent
-    ): Future[(GitFilePath, GitFileContent, Either[Int, String])] =
+    ): Future[(GitFilePath, Option[Int])] =
       path.value
         .stripPrefix(s"$folderPrefix/")
         .split('.')
         .headOption match {
         case Some(value) =>
-          val res = value match {
+          val res: Future[Option[Int]] = value match {
             case "location" =>
-              locationService.createOrUpdate(content.value)
+              locationService
+                .createOrUpdate(content.value)
+                .map(a => Some(a.size))
             case "lang" =>
-              languageService.createOrUpdate(content.value)
+              languageService
+                .createOrUpdate(content.value)
+                .map(a => Some(a.size))
             case "status" =>
-              statusService.createOrUpdate(content.value)
+              statusService.createOrUpdate(content.value).map(a => Some(a.size))
             case "assessment" =>
-              assessmentMethodService.createOrUpdate(content.value)
+              assessmentMethodService
+                .createOrUpdate(content.value)
+                .map(a => Some(a.size))
             case "module_type" =>
-              moduleTypeService.createOrUpdate(content.value)
+              moduleTypeService
+                .createOrUpdate(content.value)
+                .map(a => Some(a.size))
             case "season" =>
-              seasonService.createOrUpdate(content.value)
+              seasonService.createOrUpdate(content.value).map(a => Some(a.size))
             case "person" =>
-              identityService.createOrUpdate(content.value)
+              identityService
+                .createOrUpdate(content.value)
+                .map(a => Some(a.size))
             case "focus_area" =>
-              focusAreaService.createOrUpdate(content.value)
+              focusAreaService
+                .createOrUpdate(content.value)
+                .map(a => Some(a.size))
             case "global_criteria" =>
-              globalCriteriaService.createOrUpdate(content.value)
+              globalCriteriaService
+                .createOrUpdate(content.value)
+                .map(a => Some(a.size))
             case "po" =>
-              poService.createOrUpdate(content.value)
+              poService.createOrUpdate(content.value).map(a => Some(a.size))
             case "competence" =>
-              competenceService.createOrUpdate(content.value)
+              competenceService
+                .createOrUpdate(content.value)
+                .map(a => Some(a.size))
             case "faculty" =>
-              facultyService.createOrUpdate(content.value)
+              facultyService
+                .createOrUpdate(content.value)
+                .map(a => Some(a.size))
             case "grade" =>
-              degreeService.createOrUpdate(content.value)
+              degreeService.createOrUpdate(content.value).map(a => Some(a.size))
             case "program" =>
-              studyProgramService.createOrUpdate(content.value)
-            case "study_form" =>
-              studyFormTypeService.createOrUpdate(content.value)
+              studyProgramService
+                .createOrUpdate(content.value)
+                .map(a => Some(a.size))
             case "specialization" =>
-              specializationService.createOrUpdate(content.value)
-            case other =>
-              logger.info(s"unknown core data found: $other")
-              Future.successful(Nil)
+              specializationService
+                .createOrUpdate(content.value)
+                .map(a => Some(a.size))
+            case _ =>
+              Future.successful(None)
           }
-          res.map(xs => (path, content, Left(xs.size)))
+          res.map(path -> _)
         case None =>
-          Future.successful(
-            (
-              path,
-              content,
-              Right(s"expected path to be filename.yaml, but was $path")
-            )
+          Future.failed(
+            new Throwable(s"expected path to be filename.yaml, but was $path")
           )
       }
 
@@ -175,24 +183,12 @@ object CoreDataPublisher {
                        "\n           "
                      )}""".stripMargin)
 
-    private def logFailure(
-        path: GitFilePath,
-        content: GitFileContent,
-        error: String
-    ): Unit =
-      logger.error(s"""failed to create or update core data file
-           |  - file path: ${path.value}
-           |  - file content size: ${content.value.length}
-           |  - message: $error""".stripMargin)
+    private def logUnknownFile(path: GitFilePath): Unit =
+      logger.info(s"no handler found for ${path.value}")
 
-    private def logSuccess(
-        path: GitFilePath,
-        content: GitFileContent,
-        size: Int
-    ): Unit =
+    private def logSuccess(path: GitFilePath, size: Int): Unit =
       logger.info(s"""successfully created or updated core data file
            |  - file path: ${path.value}
-           |  - file content size: ${content.value.length}
            |  - result: $size""".stripMargin)
   }
 

@@ -14,6 +14,6 @@ final class StatusController @Inject() (
     val service: StatusService,
     implicit val ctx: ExecutionContext
 ) extends AbstractController(cc)
-    with SimpleYamlController[ModuleStatus] {
+    with YamlController[ModuleStatus] {
   override implicit val writes: Writes[ModuleStatus] = ModuleStatus.writes
 }
