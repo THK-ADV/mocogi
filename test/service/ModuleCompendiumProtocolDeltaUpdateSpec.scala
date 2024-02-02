@@ -33,7 +33,7 @@ final class ModuleCompendiumProtocolDeltaUpdateSpec extends AnyWordSpec {
       ),
       PrerequisitesOutput(None, None),
       POOutput(
-        List(POMandatoryOutput("po1", None, List(1), Nil)),
+        List(POMandatoryOutput("po1", None, List(1))),
         Nil
       ),
       Nil,
@@ -70,7 +70,7 @@ final class ModuleCompendiumProtocolDeltaUpdateSpec extends AnyWordSpec {
         .focus(_.metadata.po.mandatory)
         .modify(xs =>
           xs ::: List(
-            POMandatoryOutput("po2", Some("spec"), List(1, 2, 3), Nil)
+            POMandatoryOutput("po2", Some("spec"), List(1, 2, 3))
           )
         )
         .focus(_.metadata.participants)
@@ -87,8 +87,8 @@ final class ModuleCompendiumProtocolDeltaUpdateSpec extends AnyWordSpec {
       assert(updated.metadata.moduleManagement == List("a", "b"))
       assert(
         updated.metadata.po.mandatory == List(
-          POMandatoryOutput("po1", None, List(1), Nil),
-          POMandatoryOutput("po2", Some("spec"), List(1, 2, 3), Nil)
+          POMandatoryOutput("po1", None, List(1)),
+          POMandatoryOutput("po2", Some("spec"), List(1, 2, 3))
         )
       )
       assert(updated.metadata.participants.contains(Participants(0, 10)))

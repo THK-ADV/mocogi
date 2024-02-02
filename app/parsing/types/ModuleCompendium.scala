@@ -64,8 +64,6 @@ object ModuleCompendium {
           _.map(
             _.focus(_.recommendedSemester)
               .modify(_.sorted)
-              .focus(_.recommendedSemesterPartTime)
-              .modify(_.sorted)
           ).sortBy(_.po.id)
         )
 

@@ -240,9 +240,9 @@ final class MetadataYamlPrinterSpec extends AnyWordSpec with PrinterSpec {
 
     "print po mandatory" in {
       val po1 = List(
-        POMandatoryOutput("abc", None, List(1), Nil),
-        POMandatoryOutput("ghi", None, List(1, 2), List(2, 1)),
-        POMandatoryOutput("def", None, List(2, 1), Nil)
+        POMandatoryOutput("abc", None, List(1)),
+        POMandatoryOutput("ghi", None, List(1, 2)),
+        POMandatoryOutput("def", None, List(2, 1))
       )
       val res1 =
         s"""po_mandatory:
@@ -254,9 +254,6 @@ final class MetadataYamlPrinterSpec extends AnyWordSpec with PrinterSpec {
           |      - 2
           |  - study_program: study_program.ghi
           |    recommended_semester:
-          |      - 1
-          |      - 2
-          |    recommended_semester_part_time:
           |      - 1
           |      - 2\n""".stripMargin
       assert(run(printer.poMandatory(po1)) == res1)
@@ -322,9 +319,9 @@ final class MetadataYamlPrinterSpec extends AnyWordSpec with PrinterSpec {
         ),
         POOutput(
           List(
-            POMandatoryOutput("po1", None, List(1, 2), List(1)),
-            POMandatoryOutput("po2", None, List(1), Nil),
-            POMandatoryOutput("po3", None, List(1), Nil)
+            POMandatoryOutput("po1", None, List(1, 2)),
+            POMandatoryOutput("po2", None, List(1)),
+            POMandatoryOutput("po3", None, List(1))
           ),
           List(
             POOptionalOutput(
@@ -400,7 +397,6 @@ final class MetadataYamlPrinterSpec extends AnyWordSpec with PrinterSpec {
           |    recommended_semester:
           |      - 1
           |      - 2
-          |    recommended_semester_part_time: 1
           |  - study_program: study_program.po2
           |    recommended_semester: 1
           |  - study_program: study_program.po3

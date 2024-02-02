@@ -93,8 +93,7 @@ final class MetadataPipeline @Inject() (
                   POMandatoryOutput(
                     a.po.id,
                     a.specialization.map(_.id),
-                    a.recommendedSemester,
-                    a.recommendedSemesterPartTime
+                    a.recommendedSemester
                   )
                 ),
                 metadata.pos.optional.map(a =>

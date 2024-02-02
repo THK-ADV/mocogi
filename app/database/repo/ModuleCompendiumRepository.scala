@@ -298,8 +298,7 @@ final class ModuleCompendiumRepositoryImpl @Inject() (
           metadata.id,
           po.po.id,
           po.specialization.map(_.id),
-          po.recommendedSemester,
-          po.recommendedSemesterPartTime
+          po.recommendedSemester
         )
       ),
       metadata.validPOs.optional.map(po =>
@@ -519,8 +518,7 @@ final class ModuleCompendiumRepositoryImpl @Inject() (
                 poMandatory += POMandatoryOutput(
                   po.po,
                   po.specialization,
-                  po.recommendedSemester,
-                  po.recommendedPartTimeSemester
+                  po.recommendedSemester
                 )
               )
               poO.foreach(po =>

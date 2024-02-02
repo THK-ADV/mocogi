@@ -184,7 +184,7 @@ class THKV1ParserSpec
         assert(metadata.location == Location("gm", "Gummersbach", "--"))
         assert(
           metadata.pos == ParsedPOs(
-            List(POMandatory(inf1, None, List(3), Nil)),
+            List(POMandatory(inf1, None, List(3))),
             List(
               ParsedPOOptional(
                 wi1,
@@ -325,9 +325,9 @@ class THKV1ParserSpec
         assert(
           metadata.pos == ParsedPOs(
             List(
-              POMandatory(inf1, None, List(4), Nil),
-              POMandatory(mi1, None, List(4), Nil),
-              POMandatory(itm1, None, List(4), Nil)
+              POMandatory(inf1, None, List(4)),
+              POMandatory(mi1, None, List(4)),
+              POMandatory(itm1, None, List(4))
             ),
             Nil
           )

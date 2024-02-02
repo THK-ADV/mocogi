@@ -9,8 +9,7 @@ case class POMandatoryDbEntry(
     metadata: UUID,
     po: String,
     specialization: Option[String],
-    recommendedSemester: List[Int],
-    recommendedPartTimeSemester: List[Int]
+    recommendedSemester: List[Int]
 )
 
 final class POMandatoryTable(tag: Tag)
@@ -24,9 +23,6 @@ final class POMandatoryTable(tag: Tag)
 
   def recommendedSemester = column[List[Int]]("recommended_semester")
 
-  def recommendedPartTimeSemester =
-    column[List[Int]]("recommended_semester_part_time")
-
   def specialization = column[Option[String]]("specialization")
 
   override def * = (
@@ -34,7 +30,6 @@ final class POMandatoryTable(tag: Tag)
     metadata,
     po,
     specialization,
-    recommendedSemester,
-    recommendedPartTimeSemester
+    recommendedSemester
   ) <> (POMandatoryDbEntry.tupled, POMandatoryDbEntry.unapply)
 }

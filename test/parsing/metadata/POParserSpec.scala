@@ -57,7 +57,7 @@ class POParserSpec
       val (res, rest) = mandatoryPOParser.parse(input)
       assert(
         res.value == List(
-          POMandatory(wi1, None, List(3, 4), List(1, 2))
+          POMandatory(wi1, None, List(3, 4))
         )
       )
       assert(rest.isEmpty)
@@ -76,7 +76,7 @@ class POParserSpec
       val (res, rest) = mandatoryPOParser.parse(input)
       assert(
         res.value == List(
-          POMandatory(wi1, Some(vi), List(3, 4), List(1, 2))
+          POMandatory(wi1, Some(vi), List(3, 4))
         )
       )
       assert(rest.isEmpty)
@@ -88,7 +88,7 @@ class POParserSpec
           |  - study_program: study_program.wi1""".stripMargin
       val (res, rest) = mandatoryPOParser.parse(input)
       assert(
-        res.value == List(POMandatory(wi1, None, Nil, Nil))
+        res.value == List(POMandatory(wi1, None, Nil))
       )
       assert(rest.isEmpty)
     }
@@ -102,7 +102,7 @@ class POParserSpec
           |      - 4""".stripMargin
       val (res, rest) = mandatoryPOParser.parse(input)
       assert(
-        res.value == List(POMandatory(wi1, None, List(3, 4), Nil))
+        res.value == List(POMandatory(wi1, None, List(3, 4)))
       )
       assert(rest.isEmpty)
     }
@@ -122,8 +122,8 @@ class POParserSpec
       val (res, rest) = mandatoryPOParser.parse(input)
       assert(
         res.value == List(
-          POMandatory(wi1, None, List(3, 4), List(1, 2)),
-          POMandatory(mi1, None, List(5), Nil)
+          POMandatory(wi1, None, List(3, 4)),
+          POMandatory(mi1, None, List(5))
         )
       )
       assert(rest.isEmpty)

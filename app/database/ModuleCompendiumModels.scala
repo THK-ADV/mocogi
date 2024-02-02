@@ -10,8 +10,7 @@ import java.util.UUID
 case class POMandatoryOutput(
     po: String,
     specialization: Option[String],
-    recommendedSemester: List[Int],
-    recommendedSemesterPartTime: List[Int]
+    recommendedSemester: List[Int]
 )
 
 object POMandatoryOutput extends JsonNullWritable {

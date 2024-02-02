@@ -516,7 +516,7 @@ final class MetadataValidatorSpec
           Status("", "", ""),
           Location("", "", ""),
           ParsedPOs(
-            List(POMandatory(sp, None, List(1), Nil)),
+            List(POMandatory(sp, None, List(1))),
             List(
               ParsedPOOptional(sp, None, m2.id, partOfCatalog = false, List(2))
             )
@@ -543,7 +543,7 @@ final class MetadataValidatorSpec
           ivm1.status,
           ivm1.location,
           POs(
-            List(POMandatory(sp, None, List(1), Nil)),
+            List(POMandatory(sp, None, List(1))),
             List(POOptional(sp, None, m2, partOfCatalog = false, List(2)))
           ),
           Some(Participants(10, 20)),
@@ -597,7 +597,7 @@ final class MetadataValidatorSpec
           Status("", "", ""),
           Location("", "", ""),
           ParsedPOs(
-            List(POMandatory(sp, None, List(1), Nil)),
+            List(POMandatory(sp, None, List(1))),
             List(
               ParsedPOOptional(sp, None, m1.id, partOfCatalog = false, List(2))
             )

@@ -55,13 +55,11 @@ final class ModuleCompendiumMarkdownPrinterSpec
             POMandatory(
               PO("po1", 0, "program1", LocalDate.now, None),
               None,
-              List(1),
-              Nil
+              List(1)
             ),
             POMandatory(
               PO("po2", 0, "program1", LocalDate.now, None),
               None,
-              Nil,
               Nil
             )
           ),

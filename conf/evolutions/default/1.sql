@@ -273,7 +273,6 @@ create table po_mandatory
     "metadata"                       uuid not null,
     "po"                             text not null,
     "recommended_semester"           text not null,
-    "recommended_semester_part_time" text not null,
     "specialization"                 text null,
     FOREIGN KEY (specialization) REFERENCES specialization (id),
     FOREIGN KEY (metadata) REFERENCES metadata (id),

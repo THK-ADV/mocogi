@@ -360,20 +360,6 @@ final class MetadataYamlPrinter(identLevel: Int) {
                     )
                   )
               )
-              .skipOpt(
-                Option.when(e.recommendedSemesterPartTime.nonEmpty)(
-                  whitespace
-                    .repeat(deepness)
-                    .skip(
-                      list(
-                        prefix("recommended_semester_part_time:"),
-                        e.recommendedSemesterPartTime,
-                        "",
-                        deepness
-                      )
-                    )
-                )
-              )
           })
           .reduce(_.skip(_))
       )

@@ -35,8 +35,7 @@ object ModuleCompendiumProtocolDeltaUpdate extends Logging {
               "metadata.po.optional.specialization" |
               "metadata.po.optional.po" =>
             "metadata.po.optional"
-          case "metadata.po.mandatory.recommendedSemesterPartTime" |
-              "metadata.po.mandatory.recommendedSemester" |
+          case "metadata.po.mandatory.recommendedSemester" |
               "metadata.po.mandatory.specialization" |
               "metadata.po.mandatory.po" =>
             "metadata.po.mandatory"

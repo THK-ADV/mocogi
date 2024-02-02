@@ -132,8 +132,7 @@ final class ModuleCompendiumLatexPrinter @Inject() (pandocApi: PandocApi)
               POMandatoryOutput(
                 a.po.id,
                 a.specialization.map(_.id),
-                a.recommendedSemester,
-                a.recommendedSemesterPartTime
+                a.recommendedSemester
               )
             ),
             mc.metadata.validPOs.optional.map(a =>

@@ -63,10 +63,10 @@ object POParser {
           .skip(zeroOrMoreSpaces)
           .zip(recommendedSemesterParser)
           .skip(zeroOrMoreSpaces)
-          .take(recommendedSemesterPartTimeParser)
+          .skip(recommendedSemesterPartTimeParser)
           .many(zeroOrMoreSpaces)
-          .map(_.map { case ((po, spec), recSem, recSemPart) =>
-            POMandatory(po, spec, recSem, recSemPart)
+          .map(_.map { case ((po, spec), recSem) =>
+            POMandatory(po, spec, recSem)
           })
       )
 
