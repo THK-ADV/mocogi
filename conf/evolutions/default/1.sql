@@ -372,7 +372,6 @@ create table module_compendium_list
 (
     "full_po"        text      not null PRIMARY KEY,
     "po"             text      not null,
-    "po_number"      smallint  not null,
     "specialization" text null,
     "study_program"  text      not null,
     "semester"       text      not null,
@@ -386,9 +385,14 @@ create table module_compendium_list
 -- study_program_view
 create
 materialized view study_program_view as
-select study_program.de_label as sp_label,
+select study_program.de_label as sp_de_label,
+       study_program.en_label as sp_en_label,
        study_program.id       as sp_id,
-       degree.de_label        as degree_label,
+       degree.id              as degree_id,
+       degree.de_label        as degree_de_label,
+       degree.en_label        as degree_en_label,
+       degree.de_desc         as degree_de_desc,
+       degree.en_desc         as degree_en_desc,
        po.id                  as po_id,
        po.version             as po_version,
        specialization.label   as spec_label,
@@ -399,7 +403,7 @@ from study_program
                     po.date_from <= now() and
                     (po.date_to is null or po.date_to >= now())
          left join specialization on specialization.po = po.id
-order by sp_label, po_id, degree_label;
+order by sp_id, po_id, degree_id;
 
 -- module_view
 create

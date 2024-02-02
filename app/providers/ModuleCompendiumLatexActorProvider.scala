@@ -10,9 +10,9 @@ import database.repo.{
   ModuleCompendiumListRepository,
   ModuleCompendiumRepository,
   ModuleTypeRepository,
-  PORepository,
   SeasonRepository
 }
+import database.view.StudyProgramViewRepository
 import git.api.GitAvailabilityChecker
 import printing.latex.ModuleCompendiumLatexPrinter
 
@@ -26,7 +26,7 @@ final class ModuleCompendiumLatexActorProvider @Inject() (
     printer: ModuleCompendiumLatexPrinter,
     moduleCompendiumRepository: ModuleCompendiumRepository,
     moduleCompendiumListRepository: ModuleCompendiumListRepository,
-    poRepository: PORepository,
+    studyProgramViewRepo: StudyProgramViewRepository,
     moduleTypeRepository: ModuleTypeRepository,
     languageRepository: LanguageRepository,
     seasonRepository: SeasonRepository,
@@ -42,7 +42,7 @@ final class ModuleCompendiumLatexActorProvider @Inject() (
         printer,
         moduleCompendiumRepository,
         moduleCompendiumListRepository,
-        poRepository,
+        studyProgramViewRepo,
         moduleTypeRepository,
         languageRepository,
         seasonRepository,

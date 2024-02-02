@@ -1,11 +1,12 @@
 package printing.markdown
 
-import models.StudyProgramShort
+import models.StudyProgramView
 import models.core.Identity
 import parsing.types._
 import printer.Printer
 import printer.Printer.{newline, prefix}
 import printing.{
+  LabelOps,
   PrintingLanguage,
   fmtCommaSeparated,
   fmtDouble,
@@ -69,7 +70,7 @@ final class ModuleCompendiumMarkdownPrinter(
   private def fmtPOs(
       label: String,
       pos: POs,
-      studyProgram: String => Option[StudyProgramShort]
+      studyProgram: String => Option[StudyProgramView]
   )(implicit
       lang: PrintingLanguage
   ): Printer[Unit] = {
@@ -79,8 +80,8 @@ final class ModuleCompendiumMarkdownPrinter(
       )
       val studyProgramWithPO = studyProgram(p.po.program) match {
         case Some(sp) =>
-          val spLabel = lang.fold(sp.deLabel, sp.enLabel)
-          val degreeLabel = lang.fold(sp.degree.deLabel, sp.degree.enLabel)
+          val spLabel = sp.studyProgram.localizedLabel
+          val degreeLabel = sp.degree.localizedLabel
           s"$degreeLabel: $spLabel PO ${p.po.version}"
         case None =>
           p.po.id
@@ -217,7 +218,7 @@ final class ModuleCompendiumMarkdownPrinter(
       .skip(row(selfStudy._1, selfStudy._2))
   }
 
-  private def pos(studyProgram: String => Option[StudyProgramShort])(implicit
+  private def pos(studyProgram: String => Option[StudyProgramView])(implicit
       m: Metadata,
       language: PrintingLanguage
   ) =
@@ -280,7 +281,7 @@ final class ModuleCompendiumMarkdownPrinter(
       en.learningOutcome
     )
 
-  def printer(studyProgram: String => Option[StudyProgramShort])(implicit
+  def printer(studyProgram: String => Option[StudyProgramView])(implicit
       lang: PrintingLanguage,
       localDateTime: Option[LocalDateTime]
   ): Printer[ModuleCompendium] =

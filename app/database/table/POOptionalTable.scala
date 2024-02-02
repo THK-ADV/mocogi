@@ -17,6 +17,8 @@ case class POOptionalDbEntry(
 final class POOptionalTable(tag: Tag)
     extends Table[POOptionalDbEntry](tag, "po_optional") {
 
+  def fullPo = specialization.fold(po)(identity)
+
   def id = column[UUID]("id", O.PrimaryKey)
 
   def metadata = column[UUID]("metadata")

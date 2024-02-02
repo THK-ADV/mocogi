@@ -1,7 +1,8 @@
 package database.repo
 
-import database.table.{ModuleCompendiumListTable, SpecializationTable}
-import models.{ModuleCompendiumList, Semester, StudyProgramShort}
+import database.table.{ModuleCompendiumListDbEntry, ModuleCompendiumListTable}
+import database.view.StudyProgramViewRepository
+import models.{ModuleCompendiumList, Semester}
 import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfigProvider}
 import slick.jdbc.JdbcProfile
 
@@ -11,10 +12,11 @@ import scala.concurrent.{ExecutionContext, Future}
 @Singleton
 final class ModuleCompendiumListRepository @Inject() (
     val dbConfigProvider: DatabaseConfigProvider,
+    val studyProgramViewRepo: StudyProgramViewRepository,
     implicit val ctx: ExecutionContext
 ) extends Repository[
-      ModuleCompendiumList.DB,
-      ModuleCompendiumList.DB,
+      ModuleCompendiumListDbEntry,
+      ModuleCompendiumList,
       ModuleCompendiumListTable
     ]
     with HasDatabaseConfigProvider[JdbcProfile] {
@@ -22,33 +24,28 @@ final class ModuleCompendiumListRepository @Inject() (
 
   protected val tableQuery = TableQuery[ModuleCompendiumListTable]
 
+  private def studyProgramQuery = studyProgramViewRepo.tableQuery
+
   override protected def retrieve(
-      query: Query[ModuleCompendiumListTable, ModuleCompendiumList.DB, Seq]
-  ) = db.run(query.result)
-
-  private def retrieveAtomic(
-      query: Query[ModuleCompendiumListTable, ModuleCompendiumList.DB, Seq]
-  ): Future[Seq[ModuleCompendiumList.Atomic]] = {
-    val q = for {
-      q <- query
-      sp <- q.studyProgramFk
-      g <- sp.degreeFk
-    } yield (q, (sp.id, sp.deLabel, sp.enLabel, g))
-
+      query: Query[ModuleCompendiumListTable, ModuleCompendiumListDbEntry, Seq]
+  ): Future[Seq[ModuleCompendiumList]] = {
     db.run(
-      q.joinLeft(TableQuery[SpecializationTable])
-        .on(_._1.poId === _.po)
+      query
+        .join(studyProgramQuery)
+        .on(_.fullPo === _.fullPo)
         .result
-        .map(_.map { case ((mcl, sp), spec) =>
-          mcl.copy(
-            studyProgram = StudyProgramShort(sp),
-            semester = Semester(mcl.semester),
-            specialization = spec.map(_.toShort)
+        .map(_.map { case (mcl, sp) =>
+          ModuleCompendiumList(
+            sp,
+            Semester(mcl.semester),
+            mcl.deUrl,
+            mcl.enUrl,
+            mcl.generated
           )
-        })
+        }.toSeq)
     )
   }
 
   def allFromSemester(semester: String) =
-    retrieveAtomic(tableQuery.filter(_.semester === semester))
+    retrieve(tableQuery.filter(_.semester === semester))
 }

@@ -5,8 +5,7 @@ import play.api.libs.json.{Json, Writes}
 case class StudyProgramDirector(
     person: String,
     role: UniversityRole,
-    studyProgram: StudyProgramShort,
-    pos: Seq[PoSpec]
+    studyPrograms: Seq[StudyProgramView]
 )
 
 object StudyProgramDirector {

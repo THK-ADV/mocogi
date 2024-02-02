@@ -20,7 +20,7 @@ case class ModuleReview[StudyProgram, Person](
 
 object ModuleReview extends JsonNullWritable {
   type DB = ModuleReview[String, String]
-  type Atomic = ModuleReview[StudyProgramShort, Identity.Person]
+  type Atomic = ModuleReview[StudyProgramView, Identity.Person]
 
   implicit def writesDb: Writes[DB] = Json.writes
 

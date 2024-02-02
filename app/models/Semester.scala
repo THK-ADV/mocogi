@@ -4,7 +4,7 @@ import models.core.Label
 import play.api.libs.json.{Json, Writes}
 
 trait Semester extends Label {
-  def id: String = s"${id}_$year"
+  def id: String = s"${abbrev}_$year"
   def year: Int
   def abbrev: String
 }

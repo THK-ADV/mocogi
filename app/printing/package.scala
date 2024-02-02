@@ -1,4 +1,3 @@
-import models.SpecializationShort
 import models.core._
 import validator.Workload
 
@@ -219,10 +218,10 @@ package object printing {
       lang.fold(self.deLabel, self.enLabel)
 
     def localizedLabel(
-        specialization: Option[SpecializationShort]
+        specialization: Option[Label]
     )(implicit lang: PrintingLanguage): String =
       specialization.fold(self.localizedLabel)(s =>
-        s"${self.localizedLabel} (${s.label})"
+        s"${self.localizedLabel} (${s.localizedLabel})"
       )
   }
 

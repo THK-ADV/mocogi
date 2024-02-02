@@ -2,7 +2,8 @@ package providers
 
 import akka.actor.ActorSystem
 import compendium.WPFCatalogueGeneratorActor
-import database.repo.{PORepository, WPFRepository}
+import database.repo.WPFRepository
+import database.view.StudyProgramViewRepository
 import git.api.GitAvailabilityChecker
 
 import javax.inject.{Inject, Provider, Singleton}
@@ -13,7 +14,7 @@ final class WPFCatalogueGeneratorActorProvider @Inject() (
     system: ActorSystem,
     gitAvailabilityChecker: GitAvailabilityChecker,
     wpfRepository: WPFRepository,
-    poRepository: PORepository,
+    studyProgramViewRepo: StudyProgramViewRepository,
     ctx: ExecutionContext,
     configReader: ConfigReader
 ) extends Provider[WPFCatalogueGeneratorActor] {
@@ -22,7 +23,7 @@ final class WPFCatalogueGeneratorActorProvider @Inject() (
       WPFCatalogueGeneratorActor.props(
         gitAvailabilityChecker,
         wpfRepository,
-        poRepository,
+        studyProgramViewRepo,
         ctx,
         configReader.tmpFolderPath,
         configReader.wpfCatalogueFolderPath

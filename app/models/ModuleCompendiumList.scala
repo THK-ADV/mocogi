@@ -4,12 +4,8 @@ import play.api.libs.json.{Json, Writes}
 
 import java.time.LocalDateTime
 
-case class ModuleCompendiumList[StudyProgram, Semester, Specialization](
-    fullPoId: String,
-    poId: String,
-    poNumber: Int,
-    specialization: Option[Specialization],
-    studyProgram: StudyProgram,
+case class ModuleCompendiumList(
+    studyProgram: StudyProgramView,
     semester: Semester,
     deUrl: String,
     enUrl: String,
@@ -17,9 +13,5 @@ case class ModuleCompendiumList[StudyProgram, Semester, Specialization](
 )
 
 object ModuleCompendiumList {
-  type DB = ModuleCompendiumList[String, String, String]
-  type Atomic =
-    ModuleCompendiumList[StudyProgramShort, Semester, SpecializationShort]
-
-  implicit def atomicWrites: Writes[Atomic] = Json.writes
+  implicit def writes: Writes[ModuleCompendiumList] = Json.writes
 }

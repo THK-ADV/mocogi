@@ -1,7 +1,6 @@
 package service.core
 
 import database.repo.StudyProgramRepository
-import models.StudyProgramShort
 import models.core.StudyProgram
 import parser.Parser
 import parsing.core.StudyProgramFileParser
@@ -10,7 +9,6 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 trait StudyProgramService extends YamlService[StudyProgram] {
-  def allShort(): Future[Seq[StudyProgramShort]]
   def allIds(): Future[Seq[String]]
 }
 
@@ -34,9 +32,6 @@ final class StudyProgramServiceImpl @Inject() (
 
   override def all(): Future[Seq[StudyProgram]] =
     repo.all()
-
-  override def allShort() =
-    repo.allShort()
 
   override def allIds() =
     repo.allIds()

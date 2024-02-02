@@ -1,20 +1,28 @@
 package database.table
-import models.ModuleCompendiumList
 import slick.jdbc.PostgresProfile.api._
 
 import java.time.LocalDateTime
 
+case class ModuleCompendiumListDbEntry(
+    fullPo: String,
+    po: String,
+    specialization: Option[String],
+    studyProgram: String,
+    semester: String,
+    deUrl: String,
+    enUrl: String,
+    generated: LocalDateTime
+)
+
 final class ModuleCompendiumListTable(tag: Tag)
-    extends Table[ModuleCompendiumList.DB](
+    extends Table[ModuleCompendiumListDbEntry](
       tag,
       "module_compendium_list"
     ) {
 
-  def fullPoId = column[String]("full_po", O.PrimaryKey)
+  def fullPo = column[String]("full_po", O.PrimaryKey)
 
-  def poId = column[String]("po")
-
-  def poNumber = column[Int]("po_number")
+  def po = column[String]("po")
 
   def specialization = column[Option[String]]("specialization")
 
@@ -34,78 +42,13 @@ final class ModuleCompendiumListTable(tag: Tag)
     )
 
   override def * = (
-    fullPoId,
-    poId,
-    poNumber,
+    fullPo,
+    po,
     specialization,
     studyProgram,
     semester,
     deUrl,
     enUrl,
     generated
-  ) <> (mapRow, unmapRow)
-
-  private def mapRow: (
-      (
-          String,
-          String,
-          Int,
-          Option[String],
-          String,
-          String,
-          String,
-          String,
-          LocalDateTime
-      )
-  ) => ModuleCompendiumList.DB = {
-    case (
-          fullPoId,
-          poId,
-          poNumber,
-          specialization,
-          studyProgram,
-          semester,
-          deUrl,
-          enUrl,
-          generated
-        ) =>
-      ModuleCompendiumList(
-        fullPoId,
-        poId,
-        poNumber,
-        specialization,
-        studyProgram,
-        semester,
-        deUrl,
-        enUrl,
-        generated
-      )
-  }
-
-  private def unmapRow(arg: ModuleCompendiumList.DB): Option[
-    (
-        String,
-        String,
-        Int,
-        Option[String],
-        String,
-        String,
-        String,
-        String,
-        LocalDateTime
-    )
-  ] =
-    Some(
-      (
-        arg.fullPoId,
-        arg.poId,
-        arg.poNumber,
-        arg.specialization,
-        arg.studyProgram,
-        arg.semester,
-        arg.deUrl,
-        arg.enUrl,
-        arg.generated
-      )
-    )
+  ) <> (ModuleCompendiumListDbEntry.tupled, ModuleCompendiumListDbEntry.unapply)
 }

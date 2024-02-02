@@ -2,7 +2,7 @@ package printing.latex
 
 import database._
 import models.core._
-import models.{POShort, Semester, SpecializationShort, StudyProgramShort}
+import models.{Semester, StudyProgramView}
 import monocle.Lens
 import monocle.macros.GenLens
 import ops.StringBuilderOps.SBOps
@@ -28,8 +28,30 @@ import javax.inject.{Inject, Singleton}
 final class ModuleCompendiumLatexPrinter @Inject() (pandocApi: PandocApi)
     extends Logging {
 
-  def print(po: POShort, mcs: Seq[ModuleCompendium], poShorts: Seq[POShort])(
-      implicit language: PrintingLanguage
+  private implicit def identityOrd: Ordering[Identity] =
+    Ordering
+      .by[Identity, Int] {
+        case _: Identity.Person  => 1
+        case _: Identity.Group   => 2
+        case _: Identity.Unknown => 3
+      }
+      .orElse(Ordering.by[Identity, String] {
+        case p: Identity.Person  => p.lastname
+        case g: Identity.Group   => g.id
+        case u: Identity.Unknown => u.id
+      })
+      .orElse(Ordering.by[Identity, String] {
+        case p: Identity.Person  => p.firstname
+        case g: Identity.Group   => g.id
+        case u: Identity.Unknown => u.id
+      })
+
+  def print(
+      studyProgram: StudyProgramView,
+      mcs: Seq[ModuleCompendium],
+      studyProgramViews: Seq[StudyProgramView]
+  )(implicit
+      language: PrintingLanguage
   ): StringBuilder = {
     // TODO this is a bad implementation
     val entries = List.newBuilder[ModuleCompendiumOutput]
@@ -134,7 +156,7 @@ final class ModuleCompendiumLatexPrinter @Inject() (pandocApi: PandocApi)
     }
 
     print(
-      po,
+      studyProgram,
       None,
       entries.result(),
       moduleTypes.result().toSeq,
@@ -142,12 +164,12 @@ final class ModuleCompendiumLatexPrinter @Inject() (pandocApi: PandocApi)
       seasons.result().toSeq,
       people.result().toSeq,
       assessmentMethods.result().toSeq,
-      poShorts
+      studyProgramViews
     )
   }
 
   def print(
-      po: POShort,
+      studyProgram: StudyProgramView,
       semester: Option[Semester],
       entries: Seq[ModuleCompendiumOutput],
       moduleTypes: Seq[ModuleType],
@@ -155,7 +177,7 @@ final class ModuleCompendiumLatexPrinter @Inject() (pandocApi: PandocApi)
       seasons: Seq[Season],
       people: Seq[Identity],
       assessmentMethods: Seq[AssessmentMethod],
-      poShorts: Seq[POShort]
+      studyProgramViews: Seq[StudyProgramView]
   )(implicit lang: PrintingLanguage): StringBuilder = {
     implicit val builder: StringBuilder = new StringBuilder()
     builder.append("\\documentclass[article, 11pt, oneside]{book}\n")
@@ -163,7 +185,7 @@ final class ModuleCompendiumLatexPrinter @Inject() (pandocApi: PandocApi)
     commands
     builder.append("\\begin{document}\n")
     builder.append(s"\\selectlanguage{${lang.fold("ngerman", "english")}}\n")
-    title(po.studyProgram, po.specialization, po.version, semester)
+    title(studyProgram, semester)
     builder.append("\\maketitle\n")
     newPage
     builder.append("\\layout*\n")
@@ -175,14 +197,14 @@ final class ModuleCompendiumLatexPrinter @Inject() (pandocApi: PandocApi)
     chapter(lang.moduleHeadline)
     newPage
     modules(
-      po.id,
+      studyProgram.poId,
       entries,
       moduleTypes,
       languages,
       seasons,
       people,
       assessmentMethods,
-      poShorts
+      studyProgramViews
     )
     chapter(lang.studyPlanHeadline)
     builder.append("\\end{document}")
@@ -196,7 +218,7 @@ final class ModuleCompendiumLatexPrinter @Inject() (pandocApi: PandocApi)
       seasons: Seq[Season],
       people: Seq[Identity],
       assessmentMethods: Seq[AssessmentMethod],
-      poShorts: Seq[POShort]
+      studyProgramViews: Seq[StudyProgramView]
   )(implicit lang: PrintingLanguage, builder: StringBuilder) = {
     def row(key: String, value: String) =
       builder.append(s"$key & $value \\\\\n")
@@ -239,22 +261,22 @@ final class ModuleCompendiumLatexPrinter @Inject() (pandocApi: PandocApi)
             .collect {
               case p if p.po != po =>
                 val builder = new StringBuilder()
-                val poShort = poShorts.find(_.id == p.po).get
+                val studyProgram = studyProgramViews.find(_.poId == p.po).get
                 val spLabel = {
                   val spLabel = escape(
-                    poShort.studyProgram
-                      .localizedLabel(poShort.specialization)
+                    studyProgram.studyProgram
+                      .localizedLabel(studyProgram.specialization)
                   )
                   // TODO Workaround
-                  if (poShort.id.endsWith("flex")) s"$spLabel-Flex"
+                  if (studyProgram.poId.endsWith("flex")) s"$spLabel-Flex"
                   else spLabel
                 }
                 builder
                   .append(
-                    s"${poShort.studyProgram.degree.localizedLabel}: "
+                    s"${studyProgram.degree.localizedLabel}: "
                   )
                   .append(spLabel)
-                  .append(s" PO ${poShort.version}")
+                  .append(s" PO ${studyProgram.poVersion}")
                 if (p.recommendedSemester.nonEmpty) {
                   builder.append(
                     s" (Semester ${fmtCommaSeparated(p.recommendedSemester)(_.toString())})"
@@ -294,21 +316,21 @@ final class ModuleCompendiumLatexPrinter @Inject() (pandocApi: PandocApi)
       row(
         lang.moduleCoordinatorLabel,
         fmtCommaSeparated(
-          people.filter(p => e.metadata.moduleManagement.contains(p.id)),
+          people.filter(p => e.metadata.moduleManagement.contains(p.id)).sorted,
           "\\newline "
         )(fmtIdentity)
       )
       row(
         lang.lecturersLabel,
         fmtCommaSeparated(
-          people.filter(p => e.metadata.lecturers.contains(p.id)),
+          people.filter(p => e.metadata.lecturers.contains(p.id)).sorted,
           "\\newline "
         )(fmtIdentity)
       )
       row(
         lang.assessmentMethodLabel,
         fmtCommaSeparated(
-          e.metadata.assessmentMethods.mandatory,
+          e.metadata.assessmentMethods.mandatory.sortBy(_.method),
           "\\newline "
         ) { a =>
           val method = assessmentMethods
@@ -367,18 +389,16 @@ final class ModuleCompendiumLatexPrinter @Inject() (pandocApi: PandocApi)
   }
 
   private def title(
-      sp: StudyProgramShort,
-      specialization: Option[SpecializationShort],
-      po: Int,
+      studyProgram: StudyProgramView,
       semester: Option[Semester]
   )(implicit lang: PrintingLanguage, builder: StringBuilder) =
     builder
       .append("\\title{\n")
       .append(s"\\Huge ${lang.moduleCompendiumHeadline} \\\\ [1.5ex]\n")
       .append(
-        s"\\LARGE ${escape(sp.localizedLabel(specialization))} PO $po \\\\ [1ex]\n"
+        s"\\LARGE ${escape(studyProgram.studyProgram.localizedLabel(studyProgram.specialization))} PO ${studyProgram.poVersion} \\\\ [1ex]\n"
       )
-      .append(s"\\LARGE ${sp.degree.localizedDesc} \\\\ [1ex]\n")
+      .append(s"\\LARGE ${studyProgram.degree.localizedDesc} \\\\ [1ex]\n")
       .append(
         semester.fold(lang.previewLabel)(s =>
           s"\\LARGE ${s.localizedLabel} ${s.year}\n"

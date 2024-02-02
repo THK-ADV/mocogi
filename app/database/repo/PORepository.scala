@@ -1,7 +1,6 @@
 package database.repo
 
-import database.table.{POTable, SpecializationTable}
-import models.POShort
+import database.table.POTable
 import models.core.PO
 import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfigProvider}
 import slick.jdbc.JdbcProfile
@@ -28,25 +27,6 @@ final class PORepository @Inject() (
 
   def allValid(date: LocalDate = LocalDate.now): Future[Seq[PO]] =
     retrieve(tableQuery.filter(_.isValid(date)))
-
-  def allValidShort(date: LocalDate = LocalDate.now): Future[Seq[POShort]] =
-    allShortQuery(tableQuery.filter(_.isValid(date)))
-
-  private def allShortQuery(base: Query[POTable, PO, Seq]) = {
-    val query = for {
-      q <- base
-      sp <- q.studyProgramFk
-      g <- sp.degreeFk
-    } yield (q.id, q.version, (sp.id, sp.deLabel, sp.enLabel, g))
-
-    db.run(
-      query
-        .joinLeft(TableQuery[SpecializationTable])
-        .on(_._1 === _.po)
-        .result
-        .map(_.map(a => POShort(a._1, a._2)))
-    )
-  }
 
   override protected def retrieve(
       query: Query[POTable, PO, Seq]

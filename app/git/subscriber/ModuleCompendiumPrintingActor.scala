@@ -1,14 +1,14 @@
 package git.subscriber
 
 import akka.actor.{Actor, Props}
+import database.view.StudyProgramViewRepository
 import git.subscriber.ModuleCompendiumSubscribers.CreatedOrUpdated
-import models.StudyProgramShort
+import models.StudyProgramView
 import parsing.types.ModuleCompendium
 import play.api.Logging
 import printing.PrintingLanguage
 import printing.html.ModuleCompendiumHTMLPrinter
 import printing.pandoc.{PrinterOutput, PrinterOutputType}
-import service.core.StudyProgramService
 
 import java.time.LocalDateTime
 import java.util.UUID
@@ -20,14 +20,14 @@ object ModuleCompendiumPrintingActor {
   def props(
       printer: ModuleCompendiumHTMLPrinter,
       outputType: PrinterOutputType,
-      studyProgramService: StudyProgramService,
+      studyProgramViewRepo: StudyProgramViewRepository,
       ctx: ExecutionContext
   ) =
     Props(
       new ModuleCompendiumPrintingActor(
         printer,
         outputType,
-        studyProgramService,
+        studyProgramViewRepo,
         ctx
       )
     )
@@ -36,20 +36,20 @@ object ModuleCompendiumPrintingActor {
 private final class ModuleCompendiumPrintingActor(
     private val printer: ModuleCompendiumHTMLPrinter,
     private val outputType: PrinterOutputType,
-    private val studyProgramService: StudyProgramService,
+    private val studyProgramViewRepo: StudyProgramViewRepository,
     private implicit val ctx: ExecutionContext
 ) extends Actor
     with Logging {
 
   override def receive = {
     case CreatedOrUpdated(entries) if entries.nonEmpty =>
-      studyProgramService.allShort() onComplete {
+      studyProgramViewRepo.all() onComplete {
         case Success(sps) =>
           entries.par.foreach { case (_, mc, lastModified) =>
             print(
               lastModified,
               mc,
-              sp => sps.find(_.id == sp)
+              sp => sps.find(_.studyProgram.id == sp)
             )
           }
         case Failure(t) =>
@@ -67,7 +67,7 @@ private final class ModuleCompendiumPrintingActor(
   private def print(
       lastModified: LocalDateTime,
       mc: ModuleCompendium,
-      studyProgram: String => Option[StudyProgramShort]
+      studyProgram: String => Option[StudyProgramView]
   ): Unit = {
     def go(lang: PrintingLanguage): Unit =
       printer

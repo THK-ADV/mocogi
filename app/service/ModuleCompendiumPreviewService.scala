@@ -1,6 +1,7 @@
 package service
 
-import database.repo.{ModuleCompendiumRepository, PORepository}
+import database.repo.ModuleCompendiumRepository
+import database.view.StudyProgramViewRepository
 import models.Module
 import ops.EitherOps.EStringThrowOps
 import ops.LoggerOps
@@ -22,8 +23,8 @@ import scala.sys.process.Process
 @Singleton
 final class ModuleCompendiumPreviewService @Inject() (
     printer: ModuleCompendiumLatexPrinter,
-    moduleCompendiumRepository: ModuleCompendiumRepository,
-    poRepository: PORepository,
+    moduleCompendiumRepo: ModuleCompendiumRepository,
+    studyProgramViewRepo: StudyProgramViewRepository,
     pipeline: MetadataPipeline,
     configReader: ConfigReader,
     implicit val ctx: ExecutionContext
@@ -33,7 +34,7 @@ final class ModuleCompendiumPreviewService @Inject() (
   // Left: Preview, Right: Published
   def previewModules(poId: String): Future[(Seq[Module], Seq[Module])] =
     for {
-      modules <- moduleCompendiumRepository.allPreview(
+      modules <- moduleCompendiumRepo.allPreview(
         Map("po_mandatory" -> Seq(poId))
       )
       modulePreviews <- modifiedInPreview().toFuture
@@ -45,30 +46,32 @@ final class ModuleCompendiumPreviewService @Inject() (
       latexFile: TemporaryFile
   ): Future[Path] = {
     for {
-      pos <- poRepository.allValidShort()
-      po <- pos.find(_.id == poId) match {
+      studyPrograms <- studyProgramViewRepo.all()
+      studyProgram <- studyPrograms.find(_.poId == poId) match {
         case Some(value) =>
           Future.successful(value)
         case None =>
-          Future.failed(new Throwable(s"po $poId needs to be valid"))
+          Future.failed(
+            new Throwable(s"study program's po $poId needs to be valid")
+          )
       }
       _ <- switchToStagingBranch().toFuture
-      modules = getAllModulesFromPreview(po.id)
+      modules = getAllModulesFromPreview(studyProgram.poId)
       mcs <- pipeline.parseValidateMany(modules)
       pdf <- mcs match {
         case Left(errs) =>
           Future.failed(new Throwable(errs.map(_.getMessage).mkString("\n")))
         case Right(mcs) =>
           val content = printer.print(
-            po,
+            studyProgram,
             mcs
               .map(_._2)
               .filter(_.metadata.validPOs.mandatory.exists { a =>
-                a.po.id == po.id && a.specialization
-                  .zip(po.specialization)
+                a.po.id == studyProgram.poId && a.specialization
+                  .zip(studyProgram.specialization)
                   .fold(true)(a => a._1.id == a._2.id)
               }),
-            pos
+            studyPrograms
           )(pLang)
           val path = Files.writeString(latexFile, content.toString())
           compile(path).flatMap(_ => getPdf(path)).toFuture

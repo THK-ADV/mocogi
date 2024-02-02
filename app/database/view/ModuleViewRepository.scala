@@ -1,12 +1,8 @@
 package database.view
 
 import database.table.stringToInts
-import models.{
-  ModuleManagement,
-  ModuleView,
-  SpecializationShort,
-  StudyProgramModuleAssociation
-}
+import models.core.IDLabel
+import models.{ModuleManagement, ModuleView, StudyProgramModuleAssociation}
 import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfigProvider}
 import slick.jdbc.JdbcProfile
 
@@ -172,7 +168,7 @@ final class ModuleViewRepository @Inject() (
             poVersion,
             specializationId
               .zip(specializationLabel)
-              .map((SpecializationShort.apply _).tupled),
+              .map(a => IDLabel(a._1, a._2, a._2)),
             mandatory,
             recommendedSemester
           )
@@ -220,7 +216,7 @@ final class ModuleViewRepository @Inject() (
           a.studyProgram.studyProgramLabel,
           a.studyProgram.degreeLabel,
           a.studyProgram.specialization.map(_.id),
-          a.studyProgram.specialization.map(_.label),
+          a.studyProgram.specialization.map(_.deLabel),
           a.studyProgram.recommendedSemester,
           a.studyProgram.mandatory
         )

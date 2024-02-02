@@ -1,11 +1,10 @@
 package providers
 
 import akka.actor.ActorSystem
-import database.view.ModuleViewRepository
+import database.view.{ModuleViewRepository, StudyProgramViewRepository}
 import git.subscriber._
 import printing.html.ModuleCompendiumHTMLPrinter
 import printing.pandoc.PrinterOutputType
-import service.core.StudyProgramService
 import service.{ModuleCompendiumService, ModuleUpdatePermissionService}
 
 import javax.inject.{Inject, Provider, Singleton}
@@ -17,7 +16,7 @@ class ModuleCompendiumSubscribersProvider @Inject() (
     system: ActorSystem,
     metadataService: ModuleCompendiumService,
 //    publisher: KafkaPublisher[Metadata],
-    studyProgramService: StudyProgramService,
+    studyProgramViewRepo: StudyProgramViewRepository,
     moduleViewRepository: ModuleViewRepository,
     moduleUpdatePermissionService: ModuleUpdatePermissionService,
     configReader: ConfigReader,
@@ -35,7 +34,7 @@ class ModuleCompendiumSubscribersProvider @Inject() (
               configReader.deOutputFolderPath,
               configReader.enOutputFolderPath
             ),
-            studyProgramService,
+            studyProgramViewRepo,
             ctx
           )
         ),

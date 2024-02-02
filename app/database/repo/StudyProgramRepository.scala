@@ -1,8 +1,8 @@
 package database.repo
 
 import database.table._
+import models.UniversityRole
 import models.core.StudyProgram
-import models.{StudyProgramShort, UniversityRole}
 import play.api.Logging
 import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfigProvider}
 import slick.jdbc.JdbcProfile
@@ -27,14 +27,6 @@ class StudyProgramRepository @Inject() (
 
   def all(): Future[Seq[StudyProgram]] =
     retrieve(tableQuery)
-
-  def allShort(): Future[Seq[StudyProgramShort]] = {
-    val query = for {
-      q <- tableQuery
-      g <- q.degreeFk
-    } yield (q.id, q.deLabel, q.enLabel, g)
-    db.run(query.result.map(_.map(StudyProgramShort.apply)))
-  }
 
   def allIds(): Future[Seq[String]] =
     db.run(tableQuery.map(_.id).result)

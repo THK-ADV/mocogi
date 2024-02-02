@@ -11,12 +11,13 @@ import database.repo.{
   ModuleCompendiumListRepository,
   ModuleCompendiumRepository,
   ModuleTypeRepository,
-  PORepository,
   SeasonRepository
 }
+import database.table.ModuleCompendiumListDbEntry
+import database.view.StudyProgramViewRepository
 import git.api.GitAvailabilityChecker
 import models.core._
-import models.{ModuleCompendiumList, POShort, Semester}
+import models.{Semester, StudyProgramView}
 import ops.EitherOps.{EOps, EStringThrowOps}
 import ops.FileOps.FileOps0
 import ops.LoggerOps
@@ -28,7 +29,7 @@ import service.LatexCompiler
 import java.nio.file.{Files, Path, Paths, StandardCopyOption}
 import java.time.LocalDateTime
 import javax.inject.Singleton
-import scala.collection.parallel.CollectionConverters._
+import scala.collection.parallel.CollectionConverters.ImmutableIterableIsParallelizable
 import scala.concurrent.ExecutionContext
 import scala.sys.process._
 import scala.util.control.NonFatal
@@ -42,15 +43,11 @@ final class ModuleCompendiumLatexActor(actor: ActorRef) {
 
 object ModuleCompendiumLatexActor {
   private case class ModuleCatalogFile(
-      fullPoId: String,
-      poId: String,
-      poNumber: Int,
-      studyProgramId: String,
+      studyProgram: StudyProgramView,
       semester: Semester,
       texFile: Path,
       pdfFile: Path,
-      lang: PrintingLanguage,
-      specializationId: Option[String]
+      lang: PrintingLanguage
   )
 
   private case class GenerateLatexFiles(semester: Semester) extends AnyVal
@@ -73,7 +70,7 @@ object ModuleCompendiumLatexActor {
       printer: ModuleCompendiumLatexPrinter,
       moduleCompendiumRepository: ModuleCompendiumRepository,
       moduleCompendiumListRepository: ModuleCompendiumListRepository,
-      poRepository: PORepository,
+      studyProgramViewRepo: StudyProgramViewRepository,
       moduleTypeRepository: ModuleTypeRepository,
       languageRepository: LanguageRepository,
       seasonRepository: SeasonRepository,
@@ -87,7 +84,7 @@ object ModuleCompendiumLatexActor {
       printer,
       moduleCompendiumRepository,
       moduleCompendiumListRepository,
-      poRepository,
+      studyProgramViewRepo,
       moduleTypeRepository,
       languageRepository,
       seasonRepository,
@@ -103,7 +100,7 @@ object ModuleCompendiumLatexActor {
       private val printer: ModuleCompendiumLatexPrinter,
       private val moduleCompendiumRepository: ModuleCompendiumRepository,
       private val moduleCompendiumListRepository: ModuleCompendiumListRepository,
-      private val poRepository: PORepository,
+      private val studyProgramViewRepo: StudyProgramViewRepository,
       private val moduleTypeRepository: ModuleTypeRepository,
       private val languageRepository: LanguageRepository,
       private val seasonRepository: SeasonRepository,
@@ -122,8 +119,8 @@ object ModuleCompendiumLatexActor {
     private def generate(semester: Semester) =
       for {
         _ <- apiAvailableService.checkAvailability()
-        pos <- poRepository.allValidShort()
-        poIds = pos.map(_.id)
+        sps <- studyProgramViewRepo.all()
+        poIds = sps.map(_.poId)
         mcs <- moduleCompendiumRepository.allFromPos(poIds)
         mts <- moduleTypeRepository.all()
         lang <- languageRepository.all()
@@ -131,23 +128,23 @@ object ModuleCompendiumLatexActor {
         people <- identityRepository.all()
         ams <- assessmentMethodRepository.all()
         files <- {
-          val res = pos.par
+          val res = sps.par
             .flatMap(po => PrintingLanguage.all().map(po -> _))
-            .map { case (po, pLang) =>
+            .map { case (sp, pLang) =>
               val content = print(
                 semester,
-                pos,
+                sps,
                 mcs,
                 mts,
                 lang,
                 seasons,
                 people,
                 ams,
-                po,
+                sp,
                 pLang
               )
               val filename =
-                s"${pLang.id}_${semester.id}_${po.fullId}"
+                s"${pLang.id}_${semester.id}_${sp.fullPoId}"
               createTexFile(filename, content) match {
                 case Left(err) =>
                   Left(None, err)
@@ -168,15 +165,11 @@ object ModuleCompendiumLatexActor {
                     case Right(pdfFile) =>
                       Right(
                         ModuleCatalogFile(
-                          po.fullId,
-                          po.id,
-                          po.version,
-                          po.studyProgram.id,
+                          sp,
                           semester,
                           texFile,
                           pdfFile,
-                          pLang,
-                          po.specialization.map(_.id)
+                          pLang
                         )
                       )
                   }
@@ -187,29 +180,29 @@ object ModuleCompendiumLatexActor {
           val files = res.collect { case Right(r) => r }
           moveToGitFolder(files).toFuture
         }
-        _ <- commit(semester).toFuture
+//        _ <- commit(semester).toFuture
         res <- create(files)
       } yield res
 
     private def print(
         semester: Semester,
-        pos: Seq[POShort],
+        sps: Seq[StudyProgramView],
         mcs: Seq[ModuleCompendiumOutput],
         mts: Seq[ModuleType],
         lang: Seq[Language],
         seasons: Seq[Season],
         people: Seq[Identity],
         ams: Seq[AssessmentMethod],
-        po: POShort,
+        sp: StudyProgramView,
         pLang: PrintingLanguage
     ): StringBuilder =
       printer.print(
-        po,
+        sp,
         Some(semester),
         mcs
           .filter(_.metadata.po.mandatory.exists { a =>
-            a.po == po.id && a.specialization
-              .zip(po.specialization)
+            a.po == sp.poId && a.specialization
+              .zip(sp.specialization)
               .fold(true)(a => a._1 == a._2.id)
           }),
         mts,
@@ -217,12 +210,12 @@ object ModuleCompendiumLatexActor {
         seasons,
         people,
         ams,
-        pos
+        sps
       )(pLang)
 
     private def moveToGitFolder(
-        files: Seq[ModuleCatalogFile]
-    ): Either[String, Seq[ModuleCatalogFile]] = {
+        files: Iterable[ModuleCatalogFile]
+    ): Either[String, Iterable[ModuleCatalogFile]] = {
       logger.info(s"moving ${files.size} files to git folder...")
       val destDir = Paths.get(config.glabConfig.mcPath)
       val (failure, success) = files.partitionMap { f =>
@@ -278,9 +271,9 @@ object ModuleCompendiumLatexActor {
       res.mapErr(a => a._2.getOrElse(a._1))
     }
 
-    private def create(xs: Seq[ModuleCatalogFile]) = {
+    private def create(xs: Iterable[ModuleCatalogFile]) = {
       def getPdfFileName(
-          xs: Seq[ModuleCatalogFile],
+          xs: Iterable[ModuleCatalogFile],
           lang: PrintingLanguage
       ): String =
         xs
@@ -294,17 +287,16 @@ object ModuleCompendiumLatexActor {
         Paths.get(config.moduleCompendiumFolderPath).getFileName
 
       val normalized = xs
-        .groupBy(_.fullPoId)
+        .groupBy(_.studyProgram.fullPoId)
         .map { case (_, xs) =>
           val file = xs.head
           val dePdf = getPdfFileName(xs, PrintingLanguage.German)
           val enPdf = getPdfFileName(xs, PrintingLanguage.English)
-          ModuleCompendiumList(
-            file.fullPoId,
-            file.poId,
-            file.poNumber,
-            file.specializationId,
-            file.studyProgramId,
+          ModuleCompendiumListDbEntry(
+            file.studyProgram.fullPoId.id,
+            file.studyProgram.poId,
+            file.studyProgram.specialization.map(_.id),
+            file.studyProgram.studyProgram.id,
             file.semester.id,
             FileController.makeURI(moduleCompendiumFolder.toString, dePdf),
             FileController.makeURI(moduleCompendiumFolder.toString, enPdf),
