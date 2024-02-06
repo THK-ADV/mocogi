@@ -34,6 +34,12 @@ object GitFilePath {
     apply(s"$modulePrefix${moduleId.toString}$moduleFileExt")
 
   implicit class Ops(private val self: GitFilePath) extends AnyVal {
+    def fileName =
+      self.value.slice(
+        self.value.lastIndexOf("/") + 1,
+        self.value.lastIndexOf(".")
+      )
+
     def moduleId(implicit gitConfig: GitConfig): Option[UUID] = {
       val prefix = modulePrefix
       val suffix = moduleFileExt
