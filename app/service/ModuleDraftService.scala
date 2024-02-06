@@ -4,15 +4,12 @@ import database.repo.ModuleDraftRepository
 import git.api.{GitBranchService, GitCommitService, GitFileDownloadService}
 import models._
 import models.core.Identity
-import ops.EitherOps.EOps
 import ops.FutureOps.Ops
 import parsing.metadata.VersionScheme
 import parsing.types._
 import play.api.Logging
 import play.api.libs.json._
-import printing.yaml.ModuleYamlPrinter
 import service.ModuleProtocolDiff.{diff, nonEmptyKeys}
-import validator.{Metadata, ValidationError}
 
 import java.time.LocalDateTime
 import java.util.UUID
@@ -22,13 +19,11 @@ import scala.concurrent.{ExecutionContext, Future}
 @Singleton
 final class ModuleDraftService @Inject() (
     private val moduleDraftRepository: ModuleDraftRepository,
-    private val moduleYamlPrinter: ModuleYamlPrinter,
-    private val metadataParsingService: MetadataParsingService,
-    private val moduleService: ModuleService,
     private val gitBranchService: GitBranchService,
     private val gitCommitService: GitCommitService,
     private val keysToReview: ModuleKeysToReview,
     private val gitFileDownloadService: GitFileDownloadService,
+    private val pipeline: MetadataPipeline,
     private implicit val ctx: ExecutionContext
 ) extends Logging {
 
@@ -148,7 +143,7 @@ final class ModuleDraftService @Inject() (
       )
       res <-
         if (modifiedKeys.removedAll(draft.modifiedKeys).isEmpty) abortNoChanges
-        else pipeline(updated, versionScheme, moduleId)
+        else pipeline.printParseValidate(updated, versionScheme, moduleId)
       res <- res match {
         case Left(err) => Future.successful(Left(err))
         case Right((module, print)) =>
@@ -194,7 +189,7 @@ final class ModuleDraftService @Inject() (
       person: Identity.Person,
       updatedKeys: Set[String]
   ) =
-    pipeline(protocol, versionScheme, moduleId).flatMap {
+    pipeline.printParseValidate(protocol, versionScheme, moduleId).flatMap {
       case Left(err) => Future.successful(Left(err))
       case Right((module, print)) =>
         val commitMsg =
@@ -232,47 +227,4 @@ final class ModuleDraftService @Inject() (
 
   private def keysToBeReviewed(updatedKeys: Set[String]): Set[String] =
     updatedKeys.filter(keysToReview.contains)
-
-  // TODO implement via pipeline?
-  private def pipeline(
-      protocol: ModuleProtocol,
-      versionScheme: VersionScheme,
-      moduleId: UUID
-  ): Future[Either[PipelineError, (Module, Print)]] = {
-    def print(): Either[PipelineError, Print] =
-      moduleYamlPrinter
-        .print(versionScheme, moduleId, protocol)
-        .bimap(
-          PipelineError.Printer(_, Some(moduleId)),
-          Print.apply
-        )
-
-    def parse(
-        print: Print
-    ): Future[
-      Either[PipelineError, (ParsedMetadata, ModuleContent, ModuleContent)]
-    ] =
-      metadataParsingService
-        .parse(print)
-        .map(_.bimap(PipelineError.Parser(_, Some(moduleId)), identity))
-
-    def validate(
-        metadata: ParsedMetadata
-    ): Future[Either[PipelineError, Metadata]] =
-      moduleService.allModuleCore(Map.empty).map { existing =>
-        MetadataValidatingService
-          .validate(existing, metadata)
-          .bimap(
-            errs =>
-              PipelineError
-                .Validator(ValidationError(errs), Some(metadata.id)),
-            identity
-          )
-      }
-
-    for {
-      parsed <- continueWith(print())(parse)
-      validated <- continueWith(parsed)(a => validate(a._2._1))
-    } yield validated.map(t => (Module(t._2, t._1._2._2, t._1._2._3), t._1._1))
-  }
 }
