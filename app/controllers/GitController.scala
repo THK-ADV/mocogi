@@ -1,7 +1,7 @@
 package controllers
 
 import git.api.{GitFileDownloadService, GitRepositoryApiService}
-import git.publisher.{CoreDataPublisher, ModuleCompendiumPublisher}
+import git.publisher.{CoreDataPublisher, ModulePublisher}
 import git.{GitChanges, GitConfig}
 import play.api.mvc.{AbstractController, ControllerComponents}
 
@@ -13,7 +13,7 @@ final class GitController @Inject() (
     cc: ControllerComponents,
     downloadService: GitFileDownloadService,
     gitRepositoryApiService: GitRepositoryApiService,
-    compendiumPublisher: ModuleCompendiumPublisher,
+    modulePublisher: ModulePublisher,
     coreDataPublisher: CoreDataPublisher,
     gitConfig: GitConfig,
     implicit val ctx: ExecutionContext
@@ -50,7 +50,7 @@ final class GitController @Inject() (
         )
       )
     } yield {
-      compendiumPublisher.notifySubscribers(GitChanges(contents))
+      modulePublisher.notifySubscribers(GitChanges(contents))
       NoContent
     }
   }

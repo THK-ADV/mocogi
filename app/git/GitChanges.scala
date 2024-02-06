@@ -18,7 +18,7 @@ object GitChanges {
   case class CategorizedGitFilePaths(
       modules: List[GitFilePath],
       core: List[GitFilePath],
-      mcs: List[GitFilePath]
+      catalog: List[GitFilePath]
   )
 
   def apply(
@@ -31,17 +31,17 @@ object GitChanges {
     def categorized(implicit config: GitConfig): CategorizedGitFilePaths = {
       val modules = ListBuffer.empty[GitFilePath]
       val core = ListBuffer.empty[GitFilePath]
-      val mcs = ListBuffer.empty[GitFilePath]
+      val catalog = ListBuffer.empty[GitFilePath]
       (self.added ::: self.modified).foreach { p =>
         if (p.isModule) {
           modules += p
         } else if (p.isCore) {
           core += p
-        } else if (p.isModuleCompendium) {
-          mcs += p
+        } else if (p.isModuleCatalog) {
+          catalog += p
         }
       }
-      CategorizedGitFilePaths(modules.toList, core.toList, mcs.toList)
+      CategorizedGitFilePaths(modules.toList, core.toList, catalog.toList)
     }
   }
 }

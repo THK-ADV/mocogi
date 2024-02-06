@@ -2,7 +2,7 @@ package controllers
 
 import auth.AuthorizationAction
 import controllers.actions.PersonAction
-import database.repo.{IdentityRepository, StudyProgramPersonRepository}
+import database.repo.core.{IdentityRepository, StudyProgramPersonRepository}
 import play.api.libs.json.Json
 import play.api.mvc.{AbstractController, ControllerComponents}
 

@@ -1,6 +1,6 @@
 package models.core
 
-import database.table.IdentityDbEntry
+import database.table.core.IdentityDbEntry
 import play.api.libs.json.{JsObject, JsString, Json, Writes}
 
 sealed trait Identity {

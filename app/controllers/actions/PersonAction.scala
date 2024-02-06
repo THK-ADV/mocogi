@@ -2,7 +2,7 @@ package controllers.actions
 
 import auth.UserTokenRequest
 import controllers.actions.PersonAction.PersonRequest
-import database.repo.IdentityRepository
+import database.repo.core.IdentityRepository
 import models.CampusId
 import models.core.Identity
 import play.api.libs.json.Json

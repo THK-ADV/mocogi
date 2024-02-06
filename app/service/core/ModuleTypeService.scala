@@ -1,6 +1,6 @@
 package service.core
 
-import database.repo.ModuleTypeRepository
+import database.repo.core.ModuleTypeRepository
 import models.core.ModuleType
 import parsing.core.{FileParser, ModuleTypeFileParser}
 

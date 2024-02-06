@@ -1,5 +1,6 @@
 package database.table
 
+import database.table.core.IdentityTable
 import models._
 import play.api.libs.json.JsValue
 import service.Print
@@ -24,9 +25,9 @@ final class ModuleDraftTable(tag: Tag)
 
   def data = column[JsValue]("module_json")
 
-  def moduleCompendium = column[JsValue]("module_compendium_json")
+  def moduleValidated = column[JsValue]("module_validated_json")
 
-  def moduleCompendiumPrint = column[Print]("module_compendium_print")
+  def modulePrint = column[Print]("module_validated_print")
 
   def keysToBeReviewed = column[Set[String]]("keys_to_be_reviewed")
 
@@ -55,8 +56,8 @@ final class ModuleDraftTable(tag: Tag)
       branch,
       source,
       data,
-      moduleCompendium,
-      moduleCompendiumPrint,
+      moduleValidated,
+      modulePrint,
       keysToBeReviewed,
       modifiedKeys,
       lastCommit,
@@ -92,8 +93,8 @@ final class ModuleDraftTable(tag: Tag)
           branch,
           source,
           data,
-          moduleCompendium,
-          moduleCompendiumPrint,
+          moduleValidated,
+          modulePrint,
           keysToBeReviewed,
           modifiedKeys,
           lastCommit,
@@ -109,8 +110,8 @@ final class ModuleDraftTable(tag: Tag)
         branch,
         source,
         data,
-        moduleCompendium,
-        moduleCompendiumPrint,
+        moduleValidated,
+        modulePrint,
         keysToBeReviewed,
         modifiedKeys,
         lastCommit,
@@ -147,7 +148,7 @@ final class ModuleDraftTable(tag: Tag)
         d.branch,
         d.source,
         d.data,
-        d.moduleCompendium,
+        d.validated,
         d.print,
         d.keysToBeReviewed,
         d.modifiedKeys,

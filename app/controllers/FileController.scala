@@ -22,6 +22,7 @@ final class FileController @Inject() (
     configReader: ConfigReader,
     implicit val ctx: ExecutionContext
 ) extends AbstractController(cc) {
+
   def get(asset: Asset) =
     Action { r =>
       if (!asset.name.split('/').lastOption.exists(_.split('.').length == 2))

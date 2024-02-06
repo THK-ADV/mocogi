@@ -1,6 +1,6 @@
 package service.core
 
-import database.repo.LanguageRepository
+import database.repo.core.LanguageRepository
 import models.core.Language
 import parsing.core.{FileParser, LanguageFileParser}
 

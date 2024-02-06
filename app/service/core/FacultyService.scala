@@ -1,6 +1,6 @@
 package service.core
 
-import database.repo.FacultyRepository
+import database.repo.core.FacultyRepository
 import models.core.Faculty
 import parsing.core.FacultyFileParser
 

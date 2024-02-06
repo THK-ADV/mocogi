@@ -1,6 +1,6 @@
 package validator
 
-import models.Module
+import models.ModuleCore
 import models.core._
 import parsing.types._
 import play.api.libs.json.{Json, Writes}
@@ -27,7 +27,7 @@ case class Metadata(
     participants: Option[Participants],
     competences: List[Competence],
     globalCriteria: List[GlobalCriteria],
-    taughtWith: List[Module]
+    taughtWith: List[ModuleCore]
 )
 
 object Metadata {

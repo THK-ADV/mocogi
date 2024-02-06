@@ -1,6 +1,6 @@
 package service.core
 
-import database.repo.PORepository
+import database.repo.core.PORepository
 import models.core.PO
 import parsing.core.POFileParser
 

@@ -1,6 +1,6 @@
 package controllers
 
-import models.Module
+import models.ModuleCore
 import org.scalatest.wordspec.AnyWordSpec
 import play.api.libs.json.Json
 import validator.ModuleRelation
@@ -9,9 +9,9 @@ import java.util.UUID
 
 class ModuleRelationFormatSpec extends AnyWordSpec {
 
-  private lazy val m1 = Module(UUID.randomUUID, "m1", "m1")
-  private lazy val m2 = Module(UUID.randomUUID, "m2", "m2")
-  private lazy val m3 = Module(UUID.randomUUID, "m3", "m3")
+  private lazy val m1 = ModuleCore(UUID.randomUUID, "m1", "m1")
+  private lazy val m2 = ModuleCore(UUID.randomUUID, "m2", "m2")
+  private lazy val m3 = ModuleCore(UUID.randomUUID, "m3", "m3")
 
   "A Module Relation Format Spec" should {
     "convert a parent object to json" in {

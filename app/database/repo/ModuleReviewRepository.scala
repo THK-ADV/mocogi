@@ -1,6 +1,7 @@
 package database.repo
 
-import database.table.{IdentityTable, ModuleReviewTable}
+import database.table.ModuleReviewTable
+import database.table.core.IdentityTable
 import database.view.StudyProgramViewRepository
 import models.core.Identity
 import models.{ModuleReview, ModuleReviewStatus}

@@ -5,7 +5,7 @@ import models.ModuleUpdatePermissionType.{Granted, Inherited}
 import models.core.Identity
 import models.{
   CampusId,
-  Module,
+  ModuleCore,
   ModuleUpdatePermission,
   ModuleUpdatePermissionType
 }
@@ -56,6 +56,6 @@ final class ModuleUpdatePermissionService @Inject() (
 
   def allForCampusId(
       campusId: CampusId
-  ): Future[Seq[(ModuleUpdatePermissionType, Module)]] =
+  ): Future[Seq[(ModuleUpdatePermissionType, ModuleCore)]] =
     repo.allForCampusId(campusId)
 }

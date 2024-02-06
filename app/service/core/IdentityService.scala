@@ -1,6 +1,6 @@
 package service.core
 
-import database.repo.IdentityRepository
+import database.repo.core.IdentityRepository
 import models.core.Identity
 import models.core.Identity.toDbEntry
 import parsing.core.IdentityFileParser

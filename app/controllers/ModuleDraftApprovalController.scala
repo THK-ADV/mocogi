@@ -7,7 +7,7 @@ import controllers.actions.{
   PermissionCheck,
   PersonAction
 }
-import database.repo.IdentityRepository
+import database.repo.core.IdentityRepository
 import play.api.libs.json._
 import play.api.mvc.{AbstractController, ControllerComponents}
 import service.{

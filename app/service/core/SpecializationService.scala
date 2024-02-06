@@ -1,6 +1,6 @@
 package service.core
 
-import database.repo.SpecializationRepository
+import database.repo.core.SpecializationRepository
 import models.core.Specialization
 import parser.Parser
 import parsing.core.SpecializationFileParser

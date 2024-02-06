@@ -1,6 +1,6 @@
 package validator
 
-import models.Module
+import models.ModuleCore
 import models.core.PO
 import play.api.libs.json.{Json, Writes}
 
@@ -15,7 +15,7 @@ object Prerequisites {
 
 case class PrerequisiteEntry(
     text: String,
-    modules: List[Module],
+    modules: List[ModuleCore],
     pos: List[PO]
 )
 

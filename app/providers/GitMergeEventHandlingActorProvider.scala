@@ -3,7 +3,7 @@ package providers
 import akka.actor.ActorSystem
 import git.GitConfig
 import git.api.GitFileDownloadService
-import git.publisher.{CoreDataPublisher, ModuleCompendiumPublisher}
+import git.publisher.{CoreDataPublisher, ModulePublisher}
 import webhook.GitPushEventHandler
 
 import javax.inject.{Inject, Provider}
@@ -12,7 +12,7 @@ import scala.concurrent.ExecutionContext
 final class GitMergeEventHandlingActorProvider @Inject() (
     system: ActorSystem,
     downloadService: GitFileDownloadService,
-    moduleCompendiumPublisher: ModuleCompendiumPublisher,
+    modulePublisher: ModulePublisher,
     coreDataPublisher: CoreDataPublisher,
     gitConfig: GitConfig,
     ctx: ExecutionContext
@@ -21,7 +21,7 @@ final class GitMergeEventHandlingActorProvider @Inject() (
     system.actorOf(
       GitPushEventHandler.props(
         downloadService,
-        moduleCompendiumPublisher,
+        modulePublisher,
         coreDataPublisher,
         gitConfig,
         ctx

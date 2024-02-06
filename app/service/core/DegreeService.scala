@@ -1,6 +1,6 @@
 package service.core
 
-import database.repo.DegreeRepository
+import database.repo.core.DegreeRepository
 import models.core.Degree
 import parsing.core.DegreeFileParser
 

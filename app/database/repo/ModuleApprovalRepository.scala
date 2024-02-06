@@ -1,6 +1,7 @@
 package database.repo
 
 import com.google.inject.Inject
+import database.repo.core.StudyProgramPersonRepository
 import database.table.{ModuleDraftTable, ModuleReviewTable}
 import models.ModuleReviewStatus
 import models.ModuleReviewStatus.Pending

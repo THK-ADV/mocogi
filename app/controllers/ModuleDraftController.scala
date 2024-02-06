@@ -8,17 +8,17 @@ import controllers.actions.{
   PersonAction,
   VersionSchemeAction
 }
-import database.repo.IdentityRepository
-import models.{Module, ModuleCompendiumProtocol, ModuleDraft, ModuleDraftSource}
+import database.repo.core.IdentityRepository
+import models.{ModuleCore, ModuleDraft, ModuleDraftSource, ModuleProtocol}
 import play.api.Logging
 import play.api.libs.json.{Json, Writes}
 import play.api.mvc.{AbstractController, ControllerComponents}
 import service.PipelineError.parsingErrorWrites
 import service.core.{ModuleKeyService, StudyProgramService}
 import service.{
-  ModuleCompendiumService,
   ModuleDraftService,
   ModuleReviewService,
+  ModuleService,
   ModuleUpdatePermissionService
 }
 
@@ -35,7 +35,7 @@ final class ModuleDraftController @Inject() (
     val moduleUpdatePermissionService: ModuleUpdatePermissionService,
     val studyProgramService: StudyProgramService,
     val identityRepository: IdentityRepository,
-    val moduleCompendiumService: ModuleCompendiumService,
+    val moduleService: ModuleService,
     val moduleKeyService: ModuleKeyService,
     implicit val ctx: ExecutionContext
 ) extends AbstractController(cc)
@@ -47,7 +47,7 @@ final class ModuleDraftController @Inject() (
 
   def moduleDrafts() =
     auth andThen personAction async { r =>
-      def toJson(m: Module, d: Option[ModuleDraft], isPrivileged: Boolean) =
+      def toJson(m: ModuleCore, d: Option[ModuleDraft], isPrivileged: Boolean) =
         Json.obj(
           "module" -> m,
           "moduleDraft" -> d,
@@ -68,7 +68,7 @@ final class ModuleDraftController @Inject() (
         }
         val createdModules = added.map { draft =>
           toJson(
-            Module(draft.module, draft.moduleTitle, draft.moduleAbbrev),
+            ModuleCore(draft.module, draft.moduleTitle, draft.moduleAbbrev),
             Some(draft),
             draft.author == r.person.id
           )
@@ -100,7 +100,7 @@ final class ModuleDraftController @Inject() (
       }
 
   def createNewModuleDraft() =
-    auth(parse.json[ModuleCompendiumProtocol]) andThen
+    auth(parse.json[ModuleProtocol]) andThen
       personAction andThen
       new VersionSchemeAction(VersionSchemeHeader) async { r =>
         moduleDraftService
@@ -112,7 +112,7 @@ final class ModuleDraftController @Inject() (
       }
 
   def createOrUpdateModuleDraft(moduleId: UUID) =
-    auth(parse.json[ModuleCompendiumProtocol]) andThen
+    auth(parse.json[ModuleProtocol]) andThen
       personAction andThen
       hasPermissionToEditDraft(moduleId) andThen
       new VersionSchemeAction(VersionSchemeHeader) async { r =>

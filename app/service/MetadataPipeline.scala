@@ -4,7 +4,7 @@ import database._
 import git.GitFilePath
 import ops.EitherOps.{EOps, EThrowableOps}
 import ops.FutureOps.EitherOps
-import parsing.types.{ModuleCompendium, ParsedModuleRelation}
+import parsing.types.{Module, ParsedModuleRelation}
 import validator.{ValidationError, Workload}
 
 import java.util.UUID
@@ -14,14 +14,14 @@ import scala.concurrent.{ExecutionContext, Future}
 @Singleton
 final class MetadataPipeline @Inject() (
     private val parser: MetadataParsingService,
-    private val moduleCompendiumService: ModuleCompendiumService,
+    private val moduleService: ModuleService,
     implicit val ctx: ExecutionContext
 ) {
-  def parse(print: Print, path: GitFilePath): Future[ModuleCompendiumOutput] =
+  def parse(print: Print, path: GitFilePath): Future[ModuleOutput] =
     parser.parse(print).flatMap {
       case Right((metadata, de, en)) =>
         Future.successful(
-          ModuleCompendiumOutput(
+          ModuleOutput(
             path.value,
             MetadataOutput(
               metadata.id,
@@ -117,10 +117,10 @@ final class MetadataPipeline @Inject() (
       case Left(value) => Future.failed(value)
     }
 
-  def parseValidate(print: Print): Future[ModuleCompendium] =
+  def parseValidate(print: Print): Future[Module] =
     for {
       (metadata, de, en) <- parser.parse(print).unwrap
-      existing <- moduleCompendiumService.allModules(Map.empty)
+      existing <- moduleService.allModuleCore(Map.empty)
       metadata <- MetadataValidatingService
         .validate(existing, metadata)
         .mapErr(errs =>
@@ -128,14 +128,14 @@ final class MetadataPipeline @Inject() (
             .Validator(ValidationError(errs), Some(metadata.id))
         )
         .toFuture
-    } yield ModuleCompendium(metadata, de, en)
+    } yield Module(metadata, de, en)
 
   def parseValidateMany(
       prints: Seq[(Option[UUID], Print)]
-  ): Future[Either[Seq[PipelineError], Seq[(Print, ModuleCompendium)]]] =
+  ): Future[Either[Seq[PipelineError], Seq[(Print, Module)]]] =
     for {
       parsed <- parser.parseMany(prints)
-      existing <- moduleCompendiumService.allModules(Map.empty)
+      existing <- moduleService.allModuleCore(Map.empty)
     } yield parsed match {
       case Left(value) => Left(value)
       case Right(parsed) =>

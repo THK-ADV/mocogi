@@ -9,7 +9,7 @@ import printing.PrintingLanguage.{English, German}
 import javax.inject.Singleton
 
 @Singleton
-class ContentMarkdownPrinter {
+final class ContentMarkdownPrinter {
 
   private def abbrev(lang: PrintingLanguage) =
     lang match {

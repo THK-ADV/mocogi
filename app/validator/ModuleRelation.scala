@@ -2,12 +2,12 @@ package validator
 
 sealed trait ModuleRelation
 
-import models.Module
+import models.ModuleCore
 import play.api.libs.json.{Json, Writes}
 
 object ModuleRelation {
-  case class Parent(children: List[Module]) extends ModuleRelation
-  case class Child(parent: Module) extends ModuleRelation
+  case class Parent(children: List[ModuleCore]) extends ModuleRelation
+  case class Child(parent: ModuleCore) extends ModuleRelation
 
   implicit def writes: Writes[ModuleRelation] = {
     case ModuleRelation.Parent(children) =>

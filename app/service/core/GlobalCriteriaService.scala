@@ -1,6 +1,6 @@
 package service.core
 
-import database.repo.GlobalCriteriaRepository
+import database.repo.core.GlobalCriteriaRepository
 import models.core.GlobalCriteria
 import parsing.core.GlobalCriteriaFileParser
 

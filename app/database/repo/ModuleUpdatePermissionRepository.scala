@@ -1,9 +1,9 @@
 package database.repo
 
-import database.table.{ModuleCompendiumTable, ModuleUpdatePermissionTable}
+import database.table.{ModuleTable, ModuleUpdatePermissionTable}
 import models.{
   CampusId,
-  Module,
+  ModuleCore,
   ModuleUpdatePermission,
   ModuleUpdatePermissionType
 }
@@ -70,7 +70,7 @@ final class ModuleUpdatePermissionRepository @Inject() (
       tableQuery
         .filter(_.campusId === campusId)
         .join(
-          TableQuery[ModuleCompendiumTable].map(a => (a.id, a.title, a.abbrev))
+          TableQuery[ModuleTable].map(a => (a.id, a.title, a.abbrev))
         )
         .on(_.module === _._1)
         .result
@@ -110,11 +110,11 @@ final class ModuleUpdatePermissionRepository @Inject() (
 
   def allForCampusId(
       campusId: CampusId
-  ): Future[Seq[(ModuleUpdatePermissionType, Module)]] = {
+  ): Future[Seq[(ModuleUpdatePermissionType, ModuleCore)]] = {
     val query = for {
       q <- tableQuery if q.campusId === campusId
       m <- q.moduleFk
     } yield (q.kind, (m.id, m.title, m.abbrev))
-    db.run(query.result.map(_.map(a => (a._1, (Module.apply _).tupled(a._2)))))
+    db.run(query.result.map(_.map(a => (a._1, (ModuleCore.apply _).tupled(a._2)))))
   }
 }

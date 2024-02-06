@@ -1,6 +1,6 @@
 package validator
 
-import models.Module
+import models.ModuleCore
 import models.core.{PO, Specialization}
 import parsing.types.POMandatory
 import play.api.libs.json.{Json, Writes}
@@ -17,7 +17,7 @@ object POs {
 case class POOptional(
     po: PO,
     specialization: Option[Specialization],
-    instanceOf: Module,
+    instanceOf: ModuleCore,
     partOfCatalog: Boolean,
     recommendedSemester: List[Int]
 )

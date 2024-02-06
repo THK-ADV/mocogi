@@ -14,7 +14,7 @@ case class GitConfig(
     draftBranch: Branch,
     modulesRootFolder: String,
     coreRootFolder: String,
-    moduleCompendiumRootFolder: String,
+    moduleCatalogRootFolder: String,
     autoApprovedLabel: String,
     reviewApprovedLabel: String
 )

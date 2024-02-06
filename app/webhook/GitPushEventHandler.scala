@@ -3,7 +3,7 @@ package webhook
 import akka.actor.{Actor, ActorRef, Props}
 import git.GitChanges.CategorizedGitFilePaths
 import git.api.GitFileDownloadService
-import git.publisher.{CoreDataPublisher, ModuleCompendiumPublisher}
+import git.publisher.{CoreDataPublisher, ModulePublisher}
 import git.{GitChanges, GitConfig, GitFilePath}
 import models.{Branch, CommitId}
 import ops.LoggerOps
@@ -85,14 +85,14 @@ object GitPushEventHandler {
 
   def props(
       downloadService: GitFileDownloadService,
-      moduleCompendiumPublisher: ModuleCompendiumPublisher,
+      modulePublisher: ModulePublisher,
       coreDataPublisher: CoreDataPublisher,
       gitConfig: GitConfig,
       ctx: ExecutionContext
   ) = Props(
     new Impl(
       downloadService,
-      moduleCompendiumPublisher,
+      modulePublisher,
       coreDataPublisher,
       gitConfig,
       ctx
@@ -101,7 +101,7 @@ object GitPushEventHandler {
 
   private final class Impl(
       downloadService: GitFileDownloadService,
-      moduleCompendiumPublisher: ModuleCompendiumPublisher,
+      modulePublisher: ModulePublisher,
       coreDataPublisher: CoreDataPublisher,
       implicit val gitConfig: GitConfig,
       implicit val ctx: ExecutionContext
@@ -160,7 +160,7 @@ object GitPushEventHandler {
           logger.info(
             "publishing modules to subscribers ..."
           )
-          moduleCompendiumPublisher.notifySubscribers(
+          modulePublisher.notifySubscribers(
             changes.copy(added = Nil, modified = modules)
           )
         }

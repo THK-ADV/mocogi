@@ -24,8 +24,8 @@ case class ModuleDraft(
     branch: Branch,
     source: ModuleDraftSource,
     data: JsValue,
-    moduleCompendium: JsValue,
-    print: Print,
+    validated: JsValue, // TODO unused
+    print: Print, // TODO unused
     keysToBeReviewed: Set[String],
     modifiedKeys: Set[String],
     lastCommit: Option[CommitId],
@@ -35,8 +35,8 @@ case class ModuleDraft(
 
 object ModuleDraft {
   final implicit class Ops(private val self: ModuleDraft) extends AnyVal {
-    def protocol(): ModuleCompendiumProtocol =
-      ModuleCompendiumProtocol.format.reads(self.data).get
+    def protocol(): ModuleProtocol =
+      ModuleProtocol.format.reads(self.data).get
 
     def mergeRequestId: Option[MergeRequestId] =
       self.mergeRequest.map(_._1)

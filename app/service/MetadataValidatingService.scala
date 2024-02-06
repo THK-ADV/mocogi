@@ -1,21 +1,24 @@
 package service
 
-import models.Module
+import models.ModuleCore
 import ops.EitherOps.EOps
-import parsing.types.{Content, ModuleCompendium, ParsedMetadata}
+import parsing.types.{Content, Module, ParsedMetadata}
 import validator._
 
 object MetadataValidatingService {
+
+  private val ectsFactor = 30
+
   def validateMany(
-      existing: Seq[Module],
+      existing: Seq[ModuleCore],
       parsed: Seq[(Print, ParsedMetadata, Content, Content)]
-  ): Either[Seq[PipelineError], Seq[(Print, ModuleCompendium)]] = {
+  ): Either[Seq[PipelineError], Seq[(Print, Module)]] = {
     val parsedModules =
-      parsed.map(a => models.Module(a._2.id, a._2.title, a._2.abbrev))
+      parsed.map(a => ModuleCore(a._2.id, a._2.title, a._2.abbrev))
     val modules = existing ++ parsedModules
     val validator =
-      MetadataValidator.validate(30, id => modules.find(_.id == id)) _
-    val (errs, moduleCompendiums) =
+      MetadataValidator.validate(ectsFactor, id => modules.find(_.id == id)) _
+    val (errs, validated) =
       parsed.partitionMap { case (print, parsedMetadata, de, en) =>
         validator(parsedMetadata).bimap(
           errs =>
@@ -23,20 +26,21 @@ object MetadataValidatingService {
               ValidationError(errs),
               Some(parsedMetadata.id)
             ),
-          metadata => (print, ModuleCompendium(metadata, de, en))
+          metadata => (print, Module(metadata, de, en))
         )
       }
-    Either.cond(errs.isEmpty, moduleCompendiums, errs)
+    Either.cond(errs.isEmpty, validated, errs)
   }
 
   def validate(
-      existing: Seq[Module],
+      existing: Seq[ModuleCore],
       metadata: ParsedMetadata
   ): Validation[Metadata] = {
-    val parsedModule = models.Module(metadata.id, metadata.title, metadata.abbrev)
+    val parsedModule =
+      ModuleCore(metadata.id, metadata.title, metadata.abbrev)
     val modules = existing.+:(parsedModule)
     val validator =
-      MetadataValidator.validate(30, id => modules.find(_.id == id)) _
+      MetadataValidator.validate(ectsFactor, id => modules.find(_.id == id)) _
     validator(metadata)
   }
 }

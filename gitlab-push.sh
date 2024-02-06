@@ -36,7 +36,7 @@ if [ -n "$(git status --porcelain)" ]; then
     exit 2
   fi
   echo ">> waiting 10 seconds before continue..."
-  sleep 10 # this is a workaround. merge requests seems to be blocked after creation. wait for 10 seconds before continue with merge
+  sleep 10 # TODO this is a workaround. merge requests seems to be blocked after creation. wait for 10 seconds before continue with merge
   glab mr merge -s -y
   if [ $? -ne 0 ]; then
       echo_err ">> merging failed"

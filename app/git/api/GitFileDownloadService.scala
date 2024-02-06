@@ -5,7 +5,7 @@ import database._
 import git.{GitConfig, GitFileContent, GitFilePath}
 import models.Branch
 import printing.PrintingLanguage
-import printing.html.ModuleCompendiumHTMLPrinter
+import printing.html.ModuleHTMLPrinter
 import printing.pandoc.{PrinterOutput, PrinterOutputType}
 import service._
 
@@ -17,14 +17,14 @@ import scala.concurrent.{ExecutionContext, Future}
 final class GitFileDownloadService @Inject() (
     private val api: GitFileDownloadApiService,
     private val pipeline: MetadataPipeline,
-    private val printer: ModuleCompendiumHTMLPrinter,
+    private val printer: ModuleHTMLPrinter,
     private implicit val config: GitConfig,
     implicit val ctx: ExecutionContext
 ) {
 
-  def downloadModuleFromDraftBranch(
+  def downloadModuleFromPreviewBranch(
       id: UUID
-  ): Future[Option[ModuleCompendiumOutput]] = {
+  ): Future[Option[ModuleOutput]] = {
     val path = GitFilePath(id)
     for {
       content <- downloadFileContent(path, config.draftBranch)
@@ -43,10 +43,10 @@ final class GitFileDownloadService @Inject() (
   ): Future[Option[GitFileContent]] =
     api.download(path, branch)
 
-  def downloadModuleFromDraftBranchAsHTML(
-      id: UUID
+  def downloadModuleFromPreviewBranchAsHTML(
+      module: UUID
   )(implicit lang: PrintingLanguage): Future[Option[String]] = {
-    val path = GitFilePath(id)
+    val path = GitFilePath(module)
     for {
       content <- downloadFileContent(path, config.draftBranch)
       res <- content match {

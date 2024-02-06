@@ -2,9 +2,8 @@ package git.publisher
 
 import akka.actor.{Actor, ActorRef, Props}
 import database.view.{ModuleViewRepository, StudyProgramViewRepository}
-import git.GitFilesBroker.Changes
 import git.publisher.CoreDataPublisher.ParsingValidation
-import git.{GitFileContent, GitFilePath}
+import git.{GitChanges, GitFileContent, GitFilePath}
 import play.api.Logging
 import service.core._
 
@@ -103,7 +102,9 @@ object CoreDataPublisher {
 
     /*TODO add support for deletion.
             if an entry doesn't exists anymore in a yaml file, it will not be deleted currently.
-            instead, each entry will be either created (if new) or updated (if already exists).*/
+            instead, each entry will be either created (if new) or updated (if already exists).
+      TODO implement with topo sort to prevent brute force updating
+     */
     private def createOrUpdate(
         path: GitFilePath,
         content: GitFileContent
@@ -192,11 +193,15 @@ object CoreDataPublisher {
            |  - result: $size""".stripMargin)
   }
 
-  private case class ParsingValidation(changes: Changes)
+  private case class ParsingValidation(
+      changes: GitChanges[List[(GitFilePath, GitFileContent)]]
+  )
 }
 
 @Singleton
 case class CoreDataPublisher(private val value: ActorRef) {
-  def notifySubscribers(changes: Changes): Unit =
+  def notifySubscribers(
+      changes: GitChanges[List[(GitFilePath, GitFileContent)]]
+  ): Unit =
     value ! ParsingValidation(changes)
 }

@@ -1,6 +1,6 @@
 package service.core
 
-import database.repo.StudyProgramRepository
+import database.repo.core.StudyProgramRepository
 import models.core.StudyProgram
 import parser.Parser
 import parsing.core.StudyProgramFileParser

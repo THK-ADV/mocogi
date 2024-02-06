@@ -2,7 +2,7 @@ package controllers
 
 import auth.AuthorizationAction
 import controllers.actions.{ModuleDraftCheck, PermissionCheck, PersonAction}
-import database.repo.IdentityRepository
+import database.repo.core.IdentityRepository
 import play.api.mvc.{AbstractController, ControllerComponents}
 import service.{
   ModuleDraftService,

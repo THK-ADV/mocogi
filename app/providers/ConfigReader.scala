@@ -27,8 +27,8 @@ final class ConfigReader @Inject() (config: Configuration) {
   def enOutputFolderPath: String =
     config.nonEmptyString("pandoc.enOutputFolderPath")
 
-  def moduleCompendiumFolderPath: String = config.nonEmptyString(
-    "pandoc.moduleCompendiumFolderPath"
+  def moduleCatalogFolderPath: String = config.nonEmptyString(
+    "pandoc.moduleCatalogFolderPath"
   )
 
   def wpfCatalogueFolderPath: String = config.nonEmptyString(
@@ -55,8 +55,8 @@ final class ConfigReader @Inject() (config: Configuration) {
 
   def coreRootFolder: String = config.nonEmptyString("git.coreRootFolder")
 
-  def moduleCompendiumRootFolder: String =
-    config.nonEmptyString("git.moduleCompendiumRootFolder")
+  def moduleCatalogRootFolder: String =
+    config.nonEmptyString("git.moduleCatalogRootFolder")
 
   def projectId: Int = config.int("git.projectId")
 

@@ -1,6 +1,6 @@
 package service.core
 
-import database.repo.SeasonRepository
+import database.repo.core.SeasonRepository
 import models.core.Season
 import parsing.core.{FileParser, SeasonFileParser}
 

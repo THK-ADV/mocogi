@@ -19,7 +19,7 @@ final class GitConfigProvider @Inject() (config: ConfigReader)
       Branch(config.draftBranch),
       config.modulesRootFolder,
       config.coreRootFolder,
-      config.moduleCompendiumRootFolder,
+      config.moduleCatalogRootFolder,
       config.autoApprovedLabel,
       config.reviewApprovedLabel
     )

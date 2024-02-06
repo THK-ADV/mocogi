@@ -1,7 +1,7 @@
 package providers
 
 import akka.actor.ActorSystem
-import compendium.WPFCatalogueGeneratorActor
+import catalog.WPFCatalogueGeneratorActor
 import database.repo.WPFRepository
 import database.view.StudyProgramViewRepository
 import git.api.GitAvailabilityChecker

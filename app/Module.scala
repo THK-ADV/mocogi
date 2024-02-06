@@ -1,21 +1,16 @@
 import auth.{Authorization, UserToken}
+import catalog.{ModuleCatalogLatexActor, WPFCatalogueGeneratorActor}
 import com.google.inject.name.Names
 import com.google.inject.{AbstractModule, TypeLiteral}
-import compendium.{ModuleCompendiumLatexActor, WPFCatalogueGeneratorActor}
-import database.repo.{
-  ModuleCompendiumRepository,
-  ModuleCompendiumRepositoryImpl,
-  ModuleDraftRepository,
-  ModuleDraftRepositoryImpl
-}
-import git.publisher.{CoreDataPublisher, ModuleCompendiumPublisher}
-import git.subscriber.ModuleCompendiumSubscribers
-import git.{GitConfig, GitFilesBroker, GitFilesBrokerImpl}
+import database.repo.{ModuleDraftRepository, ModuleDraftRepositoryImpl}
+import git.GitConfig
+import git.publisher.{CoreDataPublisher, ModulePublisher}
+import git.subscriber.ModuleSubscribers
 import models.ModuleKeysToReview
 import ops.ConfigurationOps.Ops
 import parsing.metadata.MetadataParser
 import play.api.{Configuration, Environment}
-import printing.markdown.ModuleCompendiumMarkdownPrinter
+import printing.markdown.ModuleMarkdownPrinter
 import printing.pandoc.PandocApi
 import printing.yaml.MetadataYamlPrinter
 import providers._
@@ -72,20 +67,14 @@ class Module(@unused environment: Environment, configuration: Configuration)
     bind(classOf[FocusAreaService])
       .to(classOf[FocusAreaServiceImpl])
       .asEagerSingleton()
-    bind(classOf[ModuleCompendiumRepository])
-      .to(classOf[ModuleCompendiumRepositoryImpl])
-      .asEagerSingleton()
-    bind(classOf[ModuleCompendiumService])
-      .to(classOf[ModuleCompendiumServiceImpl])
+    bind(classOf[ModuleService])
+      .to(classOf[ModuleServiceImpl])
       .asEagerSingleton()
     bind(classOf[MetadataParsingService])
       .to(classOf[MetadataParsingServiceImpl])
       .asEagerSingleton()
     bind(classOf[CompetenceService])
       .to(classOf[CompetenceServiceImpl])
-      .asEagerSingleton()
-    bind(classOf[GitFilesBroker])
-      .to(classOf[GitFilesBrokerImpl])
       .asEagerSingleton()
     bind(classOf[SpecializationService])
       .to(classOf[SpecializationServiceImpl])
@@ -103,8 +92,8 @@ class Module(@unused environment: Environment, configuration: Configuration)
     bind(classOf[GitConfig])
       .toProvider(classOf[GitConfigProvider])
       .asEagerSingleton()
-    bind(classOf[ModuleCompendiumSubscribers])
-      .toProvider(classOf[ModuleCompendiumSubscribersProvider])
+    bind(classOf[ModuleSubscribers])
+      .toProvider(classOf[ModuleSubscribersProvider])
       .asEagerSingleton()
     bind(classOf[GitPushEventHandler])
       .toProvider(classOf[GitMergeEventHandlingActorProvider])
@@ -112,8 +101,8 @@ class Module(@unused environment: Environment, configuration: Configuration)
     bind(classOf[CoreDataPublisher])
       .toProvider(classOf[CoreDataPublisherProvider])
       .asEagerSingleton()
-    bind(classOf[ModuleCompendiumPublisher])
-      .toProvider(classOf[ModuleCompendiumPublisherProvider])
+    bind(classOf[ModulePublisher])
+      .toProvider(classOf[ModulePublisherProvider])
       .asEagerSingleton()
     bind(classOf[ModuleKeysToReview])
       .toProvider(classOf[ModuleKeysToReviewProvider])
@@ -121,8 +110,8 @@ class Module(@unused environment: Environment, configuration: Configuration)
     bind(classOf[ModuleKeyService])
       .toProvider(classOf[ModuleKeyServiceProvider])
       .asEagerSingleton()
-    bind(classOf[ModuleCompendiumLatexActor])
-      .toProvider(classOf[ModuleCompendiumLatexActorProvider])
+    bind(classOf[ModuleCatalogLatexActor])
+      .toProvider(classOf[ModuleCatalogLatexActorProvider])
       .asEagerSingleton()
     bind(classOf[WPFCatalogueGeneratorActor])
       .toProvider(classOf[WPFCatalogueGeneratorActorProvider])
@@ -141,8 +130,8 @@ class Module(@unused environment: Environment, configuration: Configuration)
     bind(classOf[MetadataYamlPrinter]).toInstance(
       new MetadataYamlPrinter(2)
     )
-    bind(classOf[ModuleCompendiumMarkdownPrinter]).toInstance(
-      new ModuleCompendiumMarkdownPrinter(true)
+    bind(classOf[ModuleMarkdownPrinter]).toInstance(
+      new ModuleMarkdownPrinter(true)
     )
 
     // TODO use more constant bindings

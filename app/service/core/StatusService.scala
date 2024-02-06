@@ -1,6 +1,6 @@
 package service.core
 
-import database.repo.StatusRepository
+import database.repo.core.StatusRepository
 import models.core.Status
 import parsing.core.{FileParser, StatusFileParser}
 

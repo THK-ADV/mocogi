@@ -1,13 +1,13 @@
 package database.repo
 
+import database.table.core.IdentityTable
 import database.table.{
-  IdentityTable,
-  ModuleCompendiumTable,
-  POOptionalTable,
-  ResponsibilityTable
+  ModuleTable,
+  ModulePOOptionalTable,
+  ModuleResponsibilityTable
 }
 import database.view.StudyProgramViewRepository
-import models.{FullPoId, Module}
+import models.{FullPoId, ModuleCore}
 import models.core.Identity
 import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfigProvider}
 import slick.jdbc.JdbcProfile
@@ -23,22 +23,22 @@ final class WPFRepository @Inject() (
 ) extends HasDatabaseConfigProvider[JdbcProfile] {
   import profile.api._
 
-  private val tableQuery = TableQuery[ModuleCompendiumTable]
+  private val tableQuery = TableQuery[ModuleTable]
 
   def all() =
     db.run(
       tableQuery
         .map(a => (a.id, a.title, a.abbrev))
-        .join(TableQuery[ResponsibilityTable].filter(_.isModuleManager))
-        .on(_._1 === _.metadata)
+        .join(TableQuery[ModuleResponsibilityTable].filter(_.isModuleManager))
+        .on(_._1 === _.module)
         .join(TableQuery[IdentityTable])
         .on(_._2.identity === _.id)
-        .join(TableQuery[POOptionalTable].map(a => (a.metadata, a.fullPo)))
+        .join(TableQuery[ModulePOOptionalTable].map(a => (a.module, a.fullPo)))
         .on(_._1._1._1 === _._1)
         .result
         .map(_.groupBy(_._1._1._1._1).collect {
           case (_, xs) if xs.nonEmpty =>
-            val module = Module(
+            val module = ModuleCore(
               xs.head._1._1._1._1,
               xs.head._1._1._1._2,
               xs.head._1._1._1._3

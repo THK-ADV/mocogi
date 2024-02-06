@@ -3,7 +3,7 @@ package service.core
 import models.ModuleKey
 import parsing.modulekeys.ModuleKeyParser
 import parsing.withFile0
-import service.ModuleCompendiumProtocolDeltaUpdate.moduleCompendiumProtocolFields
+import service.ModuleProtocolDiff.fields
 
 /** Provides a lookup function for resolving module keys into a localized
   * representation
@@ -23,7 +23,7 @@ object ModuleKeyService {
   }
 
   /** Ensures that each key defined in conf/module_keys.yaml lines up with the
-    * the field names defined in ModuleCompendiumProtocol
+    * the field names defined in ModuleProtocol
     * @param xs
     *   List of module keys to check
     * @throws Throwable
@@ -31,7 +31,7 @@ object ModuleKeyService {
     */
   private def validate(xs: List[ModuleKey]): Unit = {
     val moduleKeys = xs.map(_.id)
-    val keys = moduleCompendiumProtocolFields
+    val keys = fields
     val unmatched = moduleKeys.filterNot(keys.contains)
     if (unmatched.nonEmpty)
       throw new Throwable(s"unmatched module keys: ${unmatched.mkString(", ")}")

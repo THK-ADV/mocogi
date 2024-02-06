@@ -147,7 +147,7 @@ create table specialization
     FOREIGN KEY (po) REFERENCES po (id)
 );
 
-create table metadata
+create table module
 (
     "id"                           uuid PRIMARY KEY,
     "git_path"                     text          not null,
@@ -188,16 +188,16 @@ create table metadata
     FOREIGN KEY (location) REFERENCES location (id)
 );
 
-create table ects_focus_area_contribution
+create table module_ects_focus_area_contribution
 (
     "focus_area" text          not null,
-    "metadata"   uuid          not null,
+    "module"     uuid          not null,
     "ects_value" numeric(4, 2) not null,
     "de_desc"    text          not null,
     "en_desc"    text          not null,
-    PRIMARY KEY (focus_area, metadata),
+    PRIMARY KEY (focus_area, module),
     FOREIGN KEY (focus_area) REFERENCES focus_area (id),
-    FOREIGN KEY (metadata) REFERENCES metadata (id)
+    FOREIGN KEY (module) REFERENCES module (id)
 );
 
 create table module_relation
@@ -206,47 +206,47 @@ create table module_relation
     "relation_type"   text not null,
     "relation_module" uuid not null,
     PRIMARY KEY (module, relation_type, relation_module),
-    FOREIGN KEY (module) REFERENCES metadata (id),
-    FOREIGN KEY (relation_module) REFERENCES metadata (id)
+    FOREIGN KEY (module) REFERENCES module (id),
+    FOREIGN KEY (relation_module) REFERENCES module (id)
 );
 
-create table responsibility
+create table module_responsibility
 (
-    "metadata"            uuid not null,
+    "module"              uuid not null,
     "identity"            text not null,
     "responsibility_type" text not null,
-    PRIMARY KEY (metadata, identity, responsibility_type),
-    FOREIGN KEY (metadata) REFERENCES metadata (id),
+    PRIMARY KEY (module, identity, responsibility_type),
+    FOREIGN KEY (module) REFERENCES module (id),
     FOREIGN KEY (identity) REFERENCES identity (id)
 );
 
-create table metadata_assessment_method
+create table module_assessment_method
 (
     "id"                     uuid not null PRIMARY KEY,
-    "metadata"               uuid not null,
+    "module"                 uuid not null,
     "assessment_method"      text not null,
     "assessment_method_type" text not null,
     "percentage"             numeric(5, 2) null,
     FOREIGN KEY (assessment_method) REFERENCES assessment_method (id),
-    FOREIGN KEY (metadata) REFERENCES metadata (id)
+    FOREIGN KEY (module) REFERENCES module (id)
 );
 
-create table metadata_assessment_method_precondition
+create table module_assessment_method_precondition
 (
-    "assessment_method"          text not null,
-    "metadata_assessment_method" uuid not null,
-    PRIMARY KEY (assessment_method, metadata_assessment_method),
+    "assessment_method"        text not null,
+    "module_assessment_method" uuid not null,
+    PRIMARY KEY (assessment_method, module_assessment_method),
     FOREIGN KEY (assessment_method) REFERENCES assessment_method (id),
-    FOREIGN KEY (metadata_assessment_method) REFERENCES metadata_assessment_method (id)
+    FOREIGN KEY (module_assessment_method) REFERENCES module_assessment_method (id)
 );
 
-create table prerequisites
+create table module_prerequisites
 (
     "id"                uuid PRIMARY KEY,
-    "metadata"          uuid not null,
+    "module"            uuid not null,
     "prerequisite_type" text not null,
     "text"              text not null,
-    FOREIGN KEY (metadata) REFERENCES metadata (id)
+    FOREIGN KEY (module) REFERENCES module (id)
 );
 
 create table prerequisites_module
@@ -254,8 +254,8 @@ create table prerequisites_module
     "prerequisites" uuid not null,
     "module"        uuid not null,
     PRIMARY KEY (prerequisites, module),
-    FOREIGN KEY (prerequisites) REFERENCES prerequisites (id),
-    FOREIGN KEY (module) REFERENCES metadata (id)
+    FOREIGN KEY (prerequisites) REFERENCES module_prerequisites (id),
+    FOREIGN KEY (module) REFERENCES module (id)
 );
 
 create table prerequisites_po
@@ -263,83 +263,83 @@ create table prerequisites_po
     "prerequisites" uuid not null,
     "po"            text not null,
     PRIMARY KEY (prerequisites, po),
-    FOREIGN KEY (prerequisites) REFERENCES prerequisites (id),
+    FOREIGN KEY (prerequisites) REFERENCES module_prerequisites (id),
     FOREIGN KEY (po) REFERENCES po (id)
 );
 
-create table po_mandatory
+create table module_po_mandatory
 (
-    "id"                             uuid not null PRIMARY KEY,
-    "metadata"                       uuid not null,
-    "po"                             text not null,
-    "recommended_semester"           text not null,
-    "specialization"                 text null,
+    "id"                   uuid not null PRIMARY KEY,
+    "module"               uuid not null,
+    "po"                   text not null,
+    "recommended_semester" text not null,
+    "specialization"       text null,
     FOREIGN KEY (specialization) REFERENCES specialization (id),
-    FOREIGN KEY (metadata) REFERENCES metadata (id),
+    FOREIGN KEY (module) REFERENCES module (id),
     FOREIGN KEY (po) REFERENCES po (id)
 );
 
-create table po_optional
+create table module_po_optional
 (
     "id"                   uuid    not null PRIMARY KEY,
-    "metadata"             uuid    not null,
+    "module"               uuid    not null,
     "po"                   text    not null,
     "instance_of"          uuid    not null,
     "part_of_catalog"      boolean not null,
     "recommended_semester" text    not null,
     "specialization"       text null,
     FOREIGN KEY (specialization) REFERENCES specialization (id),
-    FOREIGN KEY (metadata) REFERENCES metadata (id),
+    FOREIGN KEY (module) REFERENCES module (id),
     FOREIGN KEY (po) REFERENCES po (id),
-    FOREIGN KEY (instance_of) REFERENCES metadata (id)
+    FOREIGN KEY (instance_of) REFERENCES module (id)
 );
 
-create table metadata_competence
+create table module_competence
 (
-    "metadata"   uuid not null,
+    "module"     uuid not null,
     "competence" text not null,
-    PRIMARY KEY (metadata, competence),
-    FOREIGN KEY (metadata) REFERENCES metadata (id),
+    PRIMARY KEY (module, competence),
+    FOREIGN KEY (module) REFERENCES module (id),
     FOREIGN KEY (competence) REFERENCES competence (id)
 );
 
-create table metadata_global_criteria
+create table module_global_criteria
 (
-    "metadata"        uuid not null,
+    "module"          uuid not null,
     "global_criteria" text not null,
-    PRIMARY KEY (metadata, global_criteria),
-    FOREIGN KEY (metadata) REFERENCES metadata (id),
+    PRIMARY KEY (module, global_criteria),
+    FOREIGN KEY (module) REFERENCES module (id),
     FOREIGN KEY (global_criteria) REFERENCES global_criteria (id)
 );
 
-create table metadata_taught_with
+create table module_taught_with
 (
-    "metadata" uuid not null,
-    "module"   uuid not null,
-    PRIMARY KEY (metadata, module),
-    FOREIGN KEY (metadata) REFERENCES metadata (id),
-    FOREIGN KEY (module) REFERENCES metadata (id)
+    "module"        uuid not null,
+    "module_taught" uuid not null,
+    PRIMARY KEY (module, module_taught),
+    FOREIGN KEY (module_taught) REFERENCES module (id),
+    FOREIGN KEY (module) REFERENCES module (id)
 );
 
 -- git handling
 
 create table module_draft
 (
-    "module"                  uuid      not null PRIMARY KEY,
-    "module_title"            text      not null,
-    "module_abbrev"           text      not null,
-    "author"                  text      not null,
-    "branch"                  text      not null,
-    "source"                  text      not null,
-    "module_json"             text      not null,
-    "module_compendium_json"  text      not null,
-    "module_compendium_print" text      not null,
-    "keys_to_be_reviewed"     text      not null,
-    "modified_keys"           text      not null,
-    "last_commit_id"          text null,
-    "merge_request_id"        integer null,
-    "merge_request_status"    text null,
-    "last_modified"           timestamp not null,
+    "module"                 uuid      not null PRIMARY KEY,
+    "module_title"           text      not null,
+    "module_abbrev"          text      not null,
+    "author"                 text      not null,
+    "branch"                 text      not null,
+    "source"                 text      not null,
+    "module_json"            text      not null,
+    "module_validated_json"  text      not null,
+    "module_validated_print" text      not null,
+    "keys_to_be_reviewed"    text      not null,
+    "modified_keys"          text      not null,
+    "last_commit_id"         text null,
+    "merge_request_id"       integer null,
+    "merge_request_status"   text null,
+    "last_modified"          timestamp not null,
     FOREIGN KEY (author) REFERENCES identity (id)
 );
 
@@ -366,8 +366,9 @@ create table module_review
     FOREIGN KEY (responded_by) REFERENCES identity (id)
 );
 
--- module compendium list
-create table module_compendium_list
+-- module catalog
+
+create table module_catalog
 (
     "full_po"        text      not null PRIMARY KEY,
     "po"             text      not null,
@@ -382,6 +383,7 @@ create table module_compendium_list
 );
 
 -- study_program_view
+
 create
 materialized view study_program_view as
 select study_program.de_label as sp_de_label,
@@ -405,92 +407,93 @@ from study_program
 order by sp_id, po_id, degree_id;
 
 -- module_view
+
 create
 materialized
 view module_view as
-select metadata.id                       as id,
-       metadata.title                    as title,
-       metadata.abbrev                   as abbrev,
-       metadata.ects                     as ects,
-       identity.id                       as module_management_id,
-       identity.kind                     as module_management_kind,
-       identity.abbreviation             as module_management_abbrev,
-       identity.title                    as module_management_title,
-       identity.firstname                as module_management_firstname,
-       identity.lastname                 as module_management_lastname,
-       po.id                             as po_id,
-       po.version                        as po_version,
-       study_program.id                  as sp_id,
-       study_program.de_label            as sp_label,
-       degree.de_label                   as degree_label,
-       specialization.id                 as spec_id,
-       specialization.label              as spec_label,
-       po_mandatory.recommended_semester as recommended_semester,
-       true                              as mandatory
-from metadata
-         join responsibility on metadata.id = responsibility.metadata and
-                                responsibility.responsibility_type = 'module_management'
-         join identity on responsibility.identity = identity.id
-         join po_mandatory on metadata.id = po_mandatory.metadata
-         join po on po_mandatory.po = po.id
+select module.id                                as id,
+       module.title                             as title,
+       module.abbrev                            as abbrev,
+       module.ects                              as ects,
+       identity.id                              as module_management_id,
+       identity.kind                            as module_management_kind,
+       identity.abbreviation                    as module_management_abbrev,
+       identity.title                           as module_management_title,
+       identity.firstname                       as module_management_firstname,
+       identity.lastname                        as module_management_lastname,
+       po.id                                    as po_id,
+       po.version                               as po_version,
+       study_program.id                         as sp_id,
+       study_program.de_label                   as sp_label,
+       degree.de_label                          as degree_label,
+       specialization.id                        as spec_id,
+       specialization.label                     as spec_label,
+       module_po_mandatory.recommended_semester as recommended_semester,
+       true                                     as mandatory
+from module
+         join module_responsibility on module.id = module_responsibility.module and
+                                       module_responsibility.responsibility_type = 'module_management'
+         join identity on module_responsibility.identity = identity.id
+         join module_po_mandatory on module.id = module_po_mandatory.module
+         join po on module_po_mandatory.po = po.id
          join study_program on po.study_program = study_program.id
          join degree on study_program.degree = degree.id
          left join specialization on po.id = specialization.po and
-                                     po_mandatory.specialization = specialization.id
+                                     module_po_mandatory.specialization = specialization.id
 union
-select metadata.id                      as id,
-       metadata.title                   as title,
-       metadata.abbrev                  as abbrev,
-       metadata.ects                    as ects,
-       identity.id                      as module_management_id,
-       identity.kind                    as module_management_kind,
-       identity.abbreviation            as module_management_abbrev,
-       identity.title                   as module_management_title,
-       identity.firstname               as module_management_firstname,
-       identity.lastname                as module_management_lastname,
-       po.id                            as po_id,
-       po.version                       as po_version,
-       study_program.id                 as sp_id,
-       study_program.de_label           as sp_label,
-       degree.de_label                  as degree_label,
-       specialization.id                as spec_id,
-       specialization.label             as spec_label,
-       po_optional.recommended_semester as recommended_semester,
-       false                            as mandatory
-from metadata
-         join responsibility on metadata.id = responsibility.metadata and
-                                responsibility.responsibility_type = 'module_management'
-         join identity on responsibility.identity = identity.id
-         join po_optional on metadata.id = po_optional.metadata
-         join po on po_optional.po = po.id
+select module.id                               as id,
+       module.title                            as title,
+       module.abbrev                           as abbrev,
+       module.ects                             as ects,
+       identity.id                             as module_management_id,
+       identity.kind                           as module_management_kind,
+       identity.abbreviation                   as module_management_abbrev,
+       identity.title                          as module_management_title,
+       identity.firstname                      as module_management_firstname,
+       identity.lastname                       as module_management_lastname,
+       po.id                                   as po_id,
+       po.version                              as po_version,
+       study_program.id                        as sp_id,
+       study_program.de_label                  as sp_label,
+       degree.de_label                         as degree_label,
+       specialization.id                       as spec_id,
+       specialization.label                    as spec_label,
+       module_po_optional.recommended_semester as recommended_semester,
+       false                                   as mandatory
+from module
+         join module_responsibility on module.id = module_responsibility.module and
+                                       module_responsibility.responsibility_type = 'module_management'
+         join identity on module_responsibility.identity = identity.id
+         join module_po_optional on module.id = module_po_optional.module
+         join po on module_po_optional.po = po.id
          join study_program on po.study_program = study_program.id
          join degree on study_program.degree = degree.id
          left join specialization on po.id = specialization.po and
-                                     po_optional.specialization = specialization.id;
+                                     module_po_optional.specialization = specialization.id;
 
 -- !Downs
 drop
 materialized view module_view;
 drop
 materialized view study_program_view;
-drop table module_compendium_list if exists;
+drop table module_catalog if exists;
 drop table module_review if exists;
 drop table module_update_permission if exists;
 drop table module_draft if exists;
-drop table metadata_taught_with if exists;
-drop table metadata_global_criteria if exists;
-drop table metadata_competence if exists;
-drop table po_optional if exists;
-drop table po_mandatory if exists;
+drop table module_taught_with if exists;
+drop table module_global_criteria if exists;
+drop table module_competence if exists;
+drop table module_po_optional if exists;
+drop table module_po_mandatory if exists;
 drop table prerequisites_po if exists;
 drop table prerequisites_module if exists;
-drop table prerequisites if exists;
-drop table metadata_assessment_method_precondition if exists;
-drop table metadata_assessment_method if exists;
-drop table responsibility if exists;
+drop table module_prerequisites if exists;
+drop table module_assessment_method_precondition if exists;
+drop table module_assessment_method if exists;
+drop table module_responsibility if exists;
 drop table module_relation if exists;
-drop table ects_focus_area_contribution if exists;
-drop table metadata if exists;
+drop table module_ects_focus_area_contribution if exists;
+drop table module if exists;
 drop table specialization if exists;
 drop table po_modification_date if exists;
 drop table po if exists;

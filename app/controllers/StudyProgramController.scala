@@ -20,6 +20,7 @@ final class StudyProgramController @Inject() (
 
   override implicit val writes: Writes[StudyProgram] = StudyProgram.writes
 
+  // TODO how should the resource look like?
   def allFromView() =
     Action.async { _ =>
       materializedView.all().map(res => Ok(Json.toJson(res)))

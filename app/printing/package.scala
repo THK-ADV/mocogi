@@ -36,7 +36,7 @@ package object printing {
   final implicit class LanguageOps(private val self: PrintingLanguage)
       extends AnyVal {
 
-    def moduleCompendiumHeadline = self.fold("Modulhandbuch", "Module Handbook")
+    def moduleCatalogHeadline = self.fold("Modulhandbuch", "Module Catalog")
 
     def prologHeadline = "Prolog"
 

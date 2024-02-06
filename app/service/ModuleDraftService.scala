@@ -1,6 +1,6 @@
 package service
 
-import database.ModuleCompendiumOutput
+import database.ModuleOutput
 import database.repo.ModuleDraftRepository
 import git.api.{GitBranchService, GitCommitService, GitFileDownloadService}
 import models._
@@ -11,8 +11,8 @@ import parsing.metadata.VersionScheme
 import parsing.types._
 import play.api.Logging
 import play.api.libs.json._
-import printing.yaml.ModuleCompendiumYamlPrinter
-import service.ModuleCompendiumProtocolDeltaUpdate.{deltaUpdate, nonEmptyKeys}
+import printing.yaml.ModuleYamlPrinter
+import service.ModuleProtocolDiff.{diff, nonEmptyKeys}
 import validator.{Metadata, ValidationError}
 
 import java.time.LocalDateTime
@@ -32,7 +32,7 @@ trait ModuleDraftService {
   def allByPerson(personId: String): Future[Seq[ModuleDraft]]
 
   def createNew(
-      protocol: ModuleCompendiumProtocol,
+      protocol: ModuleProtocol,
       person: Identity.Person,
       versionScheme: VersionScheme
   ): Future[Either[PipelineError, ModuleDraft]]
@@ -41,7 +41,7 @@ trait ModuleDraftService {
 
   def createOrUpdate(
       moduleId: UUID,
-      protocol: ModuleCompendiumProtocol,
+      protocol: ModuleProtocol,
       person: Identity.Person,
       versionScheme: VersionScheme
   ): Future[Either[PipelineError, Unit]]
@@ -50,9 +50,9 @@ trait ModuleDraftService {
 @Singleton
 final class ModuleDraftServiceImpl @Inject() (
     private val moduleDraftRepository: ModuleDraftRepository,
-    private val moduleCompendiumPrinter: ModuleCompendiumYamlPrinter,
+    private val moduleYamlPrinter: ModuleYamlPrinter,
     private val metadataParsingService: MetadataParsingService,
-    private val moduleCompendiumService: ModuleCompendiumService,
+    private val moduleService: ModuleService,
     private val gitBranchService: GitBranchService,
     private val gitCommitService: GitCommitService,
     private val keysToReview: ModuleKeysToReview,
@@ -77,7 +77,7 @@ final class ModuleDraftServiceImpl @Inject() (
     moduleDraftRepository.isAuthorOf(moduleId, personId)
 
   override def createNew(
-      protocol: ModuleCompendiumProtocol,
+      protocol: ModuleProtocol,
       person: Identity.Person,
       versionScheme: VersionScheme
   ): Future[Either[PipelineError, ModuleDraft]] = {
@@ -102,7 +102,7 @@ final class ModuleDraftServiceImpl @Inject() (
 
   override def createOrUpdate(
       moduleId: UUID,
-      protocol: ModuleCompendiumProtocol,
+      protocol: ModuleProtocol,
       person: Identity.Person,
       versionScheme: VersionScheme
   ): Future[Either[PipelineError, Unit]] =
@@ -124,22 +124,22 @@ final class ModuleDraftServiceImpl @Inject() (
     Future.failed(new Throwable("no changes to the module could be found"))
 
   private def getFromStaging(uuid: UUID) =
-    gitFileDownloadService.downloadModuleFromDraftBranch(uuid)
+    gitFileDownloadService.downloadModuleFromPreviewBranch(uuid)
 
   private def createFromExistingModule(
       moduleId: UUID,
-      protocol: ModuleCompendiumProtocol,
+      protocol: ModuleProtocol,
       person: Identity.Person,
       versionScheme: VersionScheme
   ): Future[Either[PipelineError, ModuleDraft]] =
     for {
-      mc <- getFromStaging(moduleId)
+      module <- getFromStaging(moduleId)
         .continueIf(
           _.isDefined,
           s"file for module $moduleId does not existing in git"
         )
-      (_, modifiedKeys) = deltaUpdate(
-        toProtocol(mc.get).normalize(),
+      (_, modifiedKeys) = diff(
+        toProtocol(module.get).normalize(),
         protocol.normalize(),
         None,
         Set.empty
@@ -159,7 +159,7 @@ final class ModuleDraftServiceImpl @Inject() (
 
   private def update(
       moduleId: UUID,
-      protocol: ModuleCompendiumProtocol,
+      protocol: ModuleProtocol,
       person: Identity.Person,
       versionScheme: VersionScheme
   ): Future[Either[PipelineError, Unit]] =
@@ -169,7 +169,7 @@ final class ModuleDraftServiceImpl @Inject() (
         .continueIf(_.state().canEdit, "can't edit module")
       origin <- getFromStaging(draft.module)
       existing = draft.protocol()
-      (updated, modifiedKeys) = deltaUpdate(
+      (updated, modifiedKeys) = diff(
         existing.normalize(),
         protocol.normalize(),
         origin,
@@ -180,7 +180,7 @@ final class ModuleDraftServiceImpl @Inject() (
         else pipeline(updated, versionScheme, moduleId)
       res <- res match {
         case Left(err) => Future.successful(Left(err))
-        case Right((mc, print)) =>
+        case Right((module, print)) =>
           for {
             commitId <- gitCommitService.commit(
               draft.branch,
@@ -192,10 +192,10 @@ final class ModuleDraftServiceImpl @Inject() (
             )
             _ <- moduleDraftRepository.updateDraft(
               moduleId,
-              mc.metadata.title,
-              mc.metadata.abbrev,
+              module.metadata.title,
+              module.metadata.abbrev,
               toJson(updated),
-              toJson(mc),
+              toJson(module),
               print,
               keysToBeReviewed(modifiedKeys),
               modifiedKeys,
@@ -209,16 +209,16 @@ final class ModuleDraftServiceImpl @Inject() (
   private def commitMessage(updatedKeys: Set[String]) =
     s"updated keys: ${updatedKeys.mkString(", ")}"
 
-  private def toJson(mc: ModuleCompendium) =
+  private def toJson(mc: Module) =
     Json.toJson(mc.normalize())
 
-  private def toJson(protocol: ModuleCompendiumProtocol) =
+  private def toJson(protocol: ModuleProtocol) =
     Json.toJson(protocol.normalize())
 
   private def toProtocol(
-      mcOutput: ModuleCompendiumOutput
-  ): ModuleCompendiumProtocol =
-    ModuleCompendiumProtocol(
+      mcOutput: ModuleOutput
+  ): ModuleProtocol =
+    ModuleProtocol(
       MetadataProtocol(
         mcOutput.metadata.title,
         mcOutput.metadata.abbrev,
@@ -253,7 +253,7 @@ final class ModuleDraftServiceImpl @Inject() (
     )
 
   private def create(
-      protocol: ModuleCompendiumProtocol,
+      protocol: ModuleProtocol,
       status: ModuleDraftSource,
       versionScheme: VersionScheme,
       moduleId: UUID,
@@ -262,7 +262,7 @@ final class ModuleDraftServiceImpl @Inject() (
   ) =
     pipeline(protocol, versionScheme, moduleId).flatMap {
       case Left(err) => Future.successful(Left(err))
-      case Right((mc, print)) =>
+      case Right((module, print)) =>
         val commitMsg =
           if (status == ModuleDraftSource.Added) "new module"
           else commitMessage(updatedKeys)
@@ -278,13 +278,13 @@ final class ModuleDraftServiceImpl @Inject() (
           )
           moduleDraft = ModuleDraft(
             moduleId,
-            mc.metadata.title,
-            mc.metadata.abbrev,
+            module.metadata.title,
+            module.metadata.abbrev,
             person.id,
             branch,
             status,
             toJson(protocol),
-            toJson(mc),
+            toJson(module),
             print,
             keysToBeReviewed(updatedKeys),
             updatedKeys,
@@ -300,12 +300,12 @@ final class ModuleDraftServiceImpl @Inject() (
     updatedKeys.filter(keysToReview.contains)
 
   private def pipeline(
-      protocol: ModuleCompendiumProtocol,
+      protocol: ModuleProtocol,
       versionScheme: VersionScheme,
       moduleId: UUID
-  ): Future[Either[PipelineError, (ModuleCompendium, Print)]] = {
+  ): Future[Either[PipelineError, (Module, Print)]] = {
     def print(): Either[PipelineError, Print] =
-      moduleCompendiumPrinter
+      moduleYamlPrinter
         .print(versionScheme, moduleId, protocol)
         .bimap(
           PipelineError.Printer(_, Some(moduleId)),
@@ -322,7 +322,7 @@ final class ModuleDraftServiceImpl @Inject() (
     def validate(
         metadata: ParsedMetadata
     ): Future[Either[PipelineError, Metadata]] =
-      moduleCompendiumService.allModules(Map.empty).map { existing =>
+      moduleService.allModuleCore(Map.empty).map { existing =>
         MetadataValidatingService
           .validate(existing, metadata)
           .bimap(
@@ -336,8 +336,6 @@ final class ModuleDraftServiceImpl @Inject() (
     for {
       parsed <- continueWith(print())(parse)
       validated <- continueWith(parsed)(a => validate(a._2._1))
-    } yield validated.map(t =>
-      (ModuleCompendium(t._2, t._1._2._2, t._1._2._3), t._1._1)
-    )
+    } yield validated.map(t => (Module(t._2, t._1._2._2, t._1._2._3), t._1._1))
   }
 }

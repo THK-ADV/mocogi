@@ -22,7 +22,7 @@ object GitFilePath {
 
   private def coreFileExt = ".yaml"
 
-  private def mcsFileExt = ".tex"
+  private def catalogFileExt = ".tex"
 
   def apply(path: String): GitFilePath =
     GitFilePathImpl(path)
@@ -58,8 +58,8 @@ object GitFilePath {
         coreFileExt
       )
 
-    def isModuleCompendium(implicit gitConfig: GitConfig): Boolean =
-      self.value.startsWith(gitConfig.moduleCompendiumRootFolder) && self.value
-        .endsWith(mcsFileExt)
+    def isModuleCatalog(implicit gitConfig: GitConfig): Boolean =
+      self.value.startsWith(gitConfig.moduleCatalogRootFolder) && self.value
+        .endsWith(catalogFileExt)
   }
 }

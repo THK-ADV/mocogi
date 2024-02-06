@@ -1,6 +1,6 @@
 package service.core
 
-import database.repo.CompetenceRepository
+import database.repo.core.CompetenceRepository
 import models.core.Competence
 import parsing.core.{CompetenceFileParser, FileParser}
 

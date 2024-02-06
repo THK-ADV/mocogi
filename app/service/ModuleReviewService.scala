@@ -1,11 +1,11 @@
 package service
 
 import database.POOutput
-import database.repo.StudyProgramDirectorsRepository.StudyProgramDirector
+import database.repo.core.StudyProgramDirectorsRepository
+import database.repo.core.StudyProgramDirectorsRepository.StudyProgramDirector
 import database.repo.{
   ModuleDraftRepository,
-  ModuleReviewRepository,
-  StudyProgramDirectorsRepository
+  ModuleReviewRepository
 }
 import git.api.GitMergeRequestApiService
 import models.ModuleReviewStatus.{Approved, Pending, Rejected}

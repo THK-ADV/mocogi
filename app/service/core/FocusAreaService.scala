@@ -1,6 +1,6 @@
 package service.core
 
-import database.repo.FocusAreaRepository
+import database.repo.core.FocusAreaRepository
 import models.core.FocusArea
 import parsing.core.FocusAreaFileParser
 

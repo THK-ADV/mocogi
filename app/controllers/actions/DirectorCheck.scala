@@ -1,7 +1,7 @@
 package controllers.actions
 
 import controllers.actions.PersonAction.PersonRequest
-import database.repo.StudyProgramPersonRepository
+import database.repo.core.StudyProgramPersonRepository
 import models.UniversityRole
 import play.api.mvc.{ActionFilter, Result}
 

@@ -1,6 +1,6 @@
 package validator
 
-import models.Module
+import models.ModuleCore
 import parsing.types._
 
 import java.util.UUID
@@ -8,7 +8,7 @@ import scala.collection.mutable.ListBuffer
 
 object MetadataValidator {
 
-  private type Lookup = UUID => Option[Module]
+  private type Lookup = UUID => Option[ModuleCore]
 
   def assessmentMethodsValidator: SimpleValidator[AssessmentMethods] = {
     def sum(xs: List[AssessmentMethodEntry]): Double =
@@ -100,7 +100,7 @@ object MetadataValidator {
   def moduleValidator(
       label: String,
       lookup: Lookup
-  ): Validator[List[UUID], List[Module]] =
+  ): Validator[List[UUID], List[ModuleCore]] =
     Validator { modules =>
       val (errs, res) =
         modules.partitionMap(m =>
@@ -111,7 +111,7 @@ object MetadataValidator {
 
   def taughtWithValidator(
       lookup: Lookup
-  ): Validator[List[UUID], List[Module]] =
+  ): Validator[List[UUID], List[ModuleCore]] =
     moduleValidator("taught with", lookup)
 
   def prerequisitesEntryValidator(
@@ -201,7 +201,7 @@ object MetadataValidator {
 
   def taughtWithValidatorAdapter(
       lookup: Lookup
-  ): Validator[ParsedMetadata, List[Module]] =
+  ): Validator[ParsedMetadata, List[ModuleCore]] =
     taughtWithValidator(lookup).pullback(_.taughtWith)
 
   def workloadValidatorAdapter(

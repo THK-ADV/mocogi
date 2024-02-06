@@ -1,6 +1,6 @@
 package service.core
 
-import database.repo.LocationRepository
+import database.repo.core.LocationRepository
 import models.core.Location
 import parsing.core.{FileParser, LocationFileParser}
 

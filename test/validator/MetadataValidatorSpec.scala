@@ -1,6 +1,6 @@
 package validator
 
-import models.Module
+import models.ModuleCore
 import models.core._
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatest.{EitherValues, OptionValues}
@@ -35,12 +35,12 @@ final class MetadataValidatorSpec
   private def poOpt(module: UUID) =
     ParsedPOOptional(sp, None, module, partOfCatalog = false, Nil)
 
-  val m1 = Module(UUID.randomUUID, "t1", "m1")
-  val m2 = Module(UUID.randomUUID, "t1", "m2")
-  val m3 = Module(UUID.randomUUID, "t1", "m3")
+  val m1 = ModuleCore(UUID.randomUUID, "t1", "m1")
+  val m2 = ModuleCore(UUID.randomUUID, "t1", "m2")
+  val m3 = ModuleCore(UUID.randomUUID, "t1", "m3")
   val modules = List(m1, m2, m3)
 
-  def lookup(module: UUID): Option[Module] =
+  def lookup(module: UUID): Option[ModuleCore] =
     modules.find(_.id == module)
 
   "A Metadata Validator" when {

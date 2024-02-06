@@ -1,6 +1,6 @@
 package controllers
 
-import compendium.WPFCatalogueGeneratorActor
+import catalog.WPFCatalogueGeneratorActor
 import models.Semester
 import play.api.libs.json.{JsArray, Json}
 import play.api.mvc.{AbstractController, ControllerComponents}
