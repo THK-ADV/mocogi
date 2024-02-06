@@ -7,12 +7,10 @@ import parsing.core.{FileParser, SeasonFileParser}
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 
-trait SeasonService extends SimpleYamlService[Season]
-
 @Singleton
-final class SeasonServiceImpl @Inject() (
+final class SeasonService @Inject() (
     val repo: SeasonRepository,
     val ctx: ExecutionContext
-) extends SeasonService {
+) extends SimpleYamlService[Season] {
   override def fileParser: FileParser[Season] = SeasonFileParser
 }

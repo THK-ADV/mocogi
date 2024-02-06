@@ -8,17 +8,13 @@ import parsing.core.StudyProgramFileParser
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
-trait StudyProgramService extends YamlService[StudyProgram] {
-  def allIds(): Future[Seq[String]]
-}
-
 @Singleton
-final class StudyProgramServiceImpl @Inject() (
-    val repo: StudyProgramRepository,
-    val degreeService: DegreeService,
-    val personService: IdentityService,
+final class StudyProgramService @Inject() (
+    private val repo: StudyProgramRepository,
+    private val degreeService: DegreeService,
+    private val personService: IdentityService,
     implicit val ctx: ExecutionContext
-) extends StudyProgramService {
+) extends YamlService[StudyProgram] {
 
   override protected def parser: Future[Parser[List[StudyProgram]]] =
     for {
@@ -30,9 +26,9 @@ final class StudyProgramServiceImpl @Inject() (
       xs: Seq[StudyProgram]
   ): Future[Seq[StudyProgram]] = repo.createOrUpdateMany(xs)
 
-  override def all(): Future[Seq[StudyProgram]] =
+  def all(): Future[Seq[StudyProgram]] =
     repo.all()
 
-  override def allIds() =
+  def allIds() =
     repo.allIds()
 }

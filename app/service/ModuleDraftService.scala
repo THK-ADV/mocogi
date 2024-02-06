@@ -19,35 +19,8 @@ import java.util.UUID
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
-trait ModuleDraftService {
-  def getByModule(moduleId: UUID): Future[ModuleDraft]
-
-  def getByModuleOpt(moduleId: UUID): Future[Option[ModuleDraft]]
-
-  def hasModuleDraft(moduleId: UUID): Future[Boolean]
-
-  def isAuthorOf(moduleId: UUID, personId: String): Future[Boolean]
-
-  def allByPerson(personId: String): Future[Seq[ModuleDraft]]
-
-  def createNew(
-      protocol: ModuleProtocol,
-      person: Identity.Person,
-      versionScheme: VersionScheme
-  ): Future[Either[PipelineError, ModuleDraft]]
-
-  def delete(moduleId: UUID): Future[Unit]
-
-  def createOrUpdate(
-      moduleId: UUID,
-      protocol: ModuleProtocol,
-      person: Identity.Person,
-      versionScheme: VersionScheme
-  ): Future[Either[PipelineError, Unit]]
-}
-
 @Singleton
-final class ModuleDraftServiceImpl @Inject() (
+final class ModuleDraftService @Inject() (
     private val moduleDraftRepository: ModuleDraftRepository,
     private val moduleYamlPrinter: ModuleYamlPrinter,
     private val metadataParsingService: MetadataParsingService,
@@ -57,25 +30,24 @@ final class ModuleDraftServiceImpl @Inject() (
     private val keysToReview: ModuleKeysToReview,
     private val gitFileDownloadService: GitFileDownloadService,
     private implicit val ctx: ExecutionContext
-) extends ModuleDraftService
-    with Logging {
+) extends Logging {
 
-  override def getByModule(moduleId: UUID): Future[ModuleDraft] =
+  def getByModule(moduleId: UUID): Future[ModuleDraft] =
     moduleDraftRepository.getByModule(moduleId)
 
-  override def getByModuleOpt(moduleId: UUID) =
+  def getByModuleOpt(moduleId: UUID) =
     moduleDraftRepository.getByModuleOpt(moduleId)
 
-  override def hasModuleDraft(moduleId: UUID) =
+  def hasModuleDraft(moduleId: UUID) =
     moduleDraftRepository.hasModuleDraft(moduleId)
 
   def allByPerson(personId: String): Future[Seq[ModuleDraft]] =
     moduleDraftRepository.allByAuthor(personId)
 
-  override def isAuthorOf(moduleId: UUID, personId: String) =
+  def isAuthorOf(moduleId: UUID, personId: String) =
     moduleDraftRepository.isAuthorOf(moduleId, personId)
 
-  override def createNew(
+  def createNew(
       protocol: ModuleProtocol,
       person: Identity.Person,
       versionScheme: VersionScheme
@@ -99,7 +71,7 @@ final class ModuleDraftServiceImpl @Inject() (
       _ <- moduleDraftRepository.delete(moduleId).map(_ => ())
     } yield ()
 
-  override def createOrUpdate(
+  def createOrUpdate(
       moduleId: UUID,
       protocol: ModuleProtocol,
       person: Identity.Person,
@@ -261,6 +233,7 @@ final class ModuleDraftServiceImpl @Inject() (
   private def keysToBeReviewed(updatedKeys: Set[String]): Set[String] =
     updatedKeys.filter(keysToReview.contains)
 
+  // TODO implement via pipeline?
   private def pipeline(
       protocol: ModuleProtocol,
       versionScheme: VersionScheme,
@@ -276,7 +249,9 @@ final class ModuleDraftServiceImpl @Inject() (
 
     def parse(
         print: Print
-    ): Future[Either[PipelineError, (ParsedMetadata, ModuleContent, ModuleContent)]] =
+    ): Future[
+      Either[PipelineError, (ParsedMetadata, ModuleContent, ModuleContent)]
+    ] =
       metadataParsingService
         .parse(print)
         .map(_.bimap(PipelineError.Parser(_, Some(moduleId)), identity))

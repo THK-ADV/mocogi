@@ -7,13 +7,10 @@ import parsing.core.AssessmentMethodFileParser
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 
-// TODO inline
-trait AssessmentMethodService extends SimpleYamlService[AssessmentMethod]
-
 @Singleton
-final class AssessmentMethodServiceImpl @Inject() (
+final class AssessmentMethodService @Inject() (
     val repo: AssessmentMethodRepository,
     val ctx: ExecutionContext
-) extends AssessmentMethodService {
+) extends SimpleYamlService[AssessmentMethod] {
   override def fileParser = AssessmentMethodFileParser
 }

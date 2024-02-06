@@ -7,12 +7,10 @@ import parsing.core.{FileParser, LanguageFileParser}
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 
-trait LanguageService extends SimpleYamlService[ModuleLanguage]
-
 @Singleton
-final class LanguageServiceImpl @Inject() (
+final class LanguageService @Inject() (
     val repo: LanguageRepository,
     val ctx: ExecutionContext
-) extends LanguageService {
+) extends SimpleYamlService[ModuleLanguage] {
   override def fileParser: FileParser[ModuleLanguage] = LanguageFileParser
 }

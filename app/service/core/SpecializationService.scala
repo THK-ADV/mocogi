@@ -8,14 +8,12 @@ import parsing.core.SpecializationFileParser
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
-trait SpecializationService extends AsyncParserYamlService[Specialization]
-
 @Singleton
-final class SpecializationServiceImpl @Inject() (
+final class SpecializationService @Inject() (
     val repo: SpecializationRepository,
-    val poService: POService,
+    private val poService: POService,
     implicit val ctx: ExecutionContext
-) extends SpecializationService {
+) extends AsyncParserYamlService[Specialization] {
 
   override def parser: Future[Parser[List[Specialization]]] =
     poService.allIds().map(SpecializationFileParser.fileParser(_))

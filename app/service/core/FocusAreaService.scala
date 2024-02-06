@@ -7,14 +7,12 @@ import parsing.core.FocusAreaFileParser
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 
-trait FocusAreaService extends AsyncParserYamlService[FocusArea]
-
 @Singleton
-final class FocusAreaServiceImpl @Inject() (
+final class FocusAreaService @Inject() (
     val repo: FocusAreaRepository,
     val studyProgramService: StudyProgramService,
     implicit val ctx: ExecutionContext
-) extends FocusAreaService {
+) extends AsyncParserYamlService[FocusArea] {
   override def parser =
     studyProgramService.allIds().map(FocusAreaFileParser.fileParser(_))
 }

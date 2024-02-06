@@ -7,13 +7,10 @@ import parsing.core.{FileParser, LocationFileParser}
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 
-trait LocationService extends SimpleYamlService[ModuleLocation]
-
 @Singleton
-final class LocationServiceImpl @Inject() (
+final class LocationService @Inject() (
     val repo: LocationRepository,
     val ctx: ExecutionContext
-) extends LocationService {
-
+) extends SimpleYamlService[ModuleLocation] {
   override def fileParser: FileParser[ModuleLocation] = LocationFileParser
 }

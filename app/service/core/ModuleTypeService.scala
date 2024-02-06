@@ -7,12 +7,10 @@ import parsing.core.{FileParser, ModuleTypeFileParser}
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 
-trait ModuleTypeService extends SimpleYamlService[ModuleType]
-
 @Singleton
-final class ModuleTypeServiceImpl @Inject() (
+final class ModuleTypeService @Inject() (
     val repo: ModuleTypeRepository,
     val ctx: ExecutionContext
-) extends ModuleTypeService {
+) extends SimpleYamlService[ModuleType] {
   override def fileParser: FileParser[ModuleType] = ModuleTypeFileParser
 }

@@ -7,12 +7,10 @@ import parsing.core.FacultyFileParser
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 
-trait FacultyService extends SimpleYamlService[Faculty]
-
 @Singleton
-final class FacultyServiceImpl @Inject() (
+final class FacultyService @Inject() (
     val repo: FacultyRepository,
     val ctx: ExecutionContext
-) extends FacultyService {
+) extends SimpleYamlService[Faculty] {
   override def fileParser = FacultyFileParser
 }

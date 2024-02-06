@@ -12,15 +12,8 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 // TODO add support for a raw parser which parses ids only and does not validate at all
-trait MetadataParsingService {
-  def parseMany(prints: Seq[(Option[UUID], Print)]): ParsingResult
-  def parse(
-      print: Print
-  ): Future[Either[ParsingError, (ParsedMetadata, ModuleContent, ModuleContent)]]
-}
-
 @Singleton
-final class MetadataParsingServiceImpl @Inject() (
+final class MetadataParsingService @Inject() (
     private val metadataParser: MetadataCompositeParser,
     private val contentParsingService: ContentParsingService,
     private val locationService: LocationService,
@@ -36,7 +29,7 @@ final class MetadataParsingServiceImpl @Inject() (
     private val competenceService: CompetenceService,
     private val specializationService: SpecializationService,
     private implicit val ctx: ExecutionContext
-) extends MetadataParsingService {
+) {
 
   private def parser() =
     for {
@@ -90,9 +83,11 @@ final class MetadataParsingServiceImpl @Inject() (
       Either.cond(errs.isEmpty, parses, errs)
     }
 
-  override def parse(
+  def parse(
       print: Print
-  ): Future[Either[ParsingError, (ParsedMetadata, ModuleContent, ModuleContent)]] =
+  ): Future[
+    Either[ParsingError, (ParsedMetadata, ModuleContent, ModuleContent)]
+  ] =
     parser().map { p =>
       val (res, rest) = p.parse(print.value)
       res.flatMap { parsedMetadata =>

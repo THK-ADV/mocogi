@@ -7,12 +7,10 @@ import parsing.core.GlobalCriteriaFileParser
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 
-trait GlobalCriteriaService extends SimpleYamlService[ModuleGlobalCriteria]
-
 @Singleton
-final class GlobalCriteriaServiceImpl @Inject() (
+final class GlobalCriteriaService @Inject() (
     val repo: GlobalCriteriaRepository,
     val ctx: ExecutionContext
-) extends GlobalCriteriaService {
+) extends SimpleYamlService[ModuleGlobalCriteria] {
   override def fileParser = GlobalCriteriaFileParser
 }

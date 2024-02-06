@@ -8,14 +8,12 @@ import parsing.core.IdentityFileParser
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
-trait IdentityService extends YamlService[Identity]
-
 @Singleton
-final class IdentityServiceImpl @Inject() (
+final class IdentityService @Inject() (
     val repo: IdentityRepository,
     val facultyService: FacultyService,
     implicit val ctx: ExecutionContext
-) extends IdentityService {
+) extends YamlService[Identity] {
 
   override protected def parser =
     facultyService.all().map(IdentityFileParser.parser(_))
