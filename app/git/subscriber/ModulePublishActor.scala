@@ -22,10 +22,8 @@ object ModulePublishActor {
       with Logging {
 
     override def receive = {
-      case CreatedOrUpdated(entries) if entries.nonEmpty =>
-        entries.foreach { case (_, mc, _) =>
-          publish(Record("updated", mc.metadata))
-        }
+      case CreatedOrUpdated(modules, _) if modules.nonEmpty =>
+        modules.foreach(module => publish(Record("updated", module.metadata)))
     }
 
     private def publish(record: Record[Metadata]): Unit =

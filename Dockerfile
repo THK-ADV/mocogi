@@ -27,7 +27,7 @@ RUN mkdir -p logs
 RUN mkdir -p output
 RUN mkdir -p output/de
 RUN mkdir -p output/en
-RUN mkdir -p output/mcs
+RUN mkdir -p output/catalogs
 RUN mkdir -p output/wpfs
 RUN ./gitlab-init.sh $GIT_EMAIL $GIT_USERNAME $GIT_HOST $GIT_ACCESS_TOKEN $GIT_REPO_PATH $GIT_REPO_NAME
 RUN rm gitlab-init.sh

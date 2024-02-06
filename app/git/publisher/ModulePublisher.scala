@@ -45,15 +45,11 @@ object ModulePublisher {
 
       pipeline.parseValidateMany(allPrints) onComplete {
         case Success(validates) =>
-          val res = validates.map(_.map { case (print, mc) =>
-            (allChanges.find(_._2.value == print.value).get._1, mc.normalize())
-          })
+          val modules = validates.map(_.map(_._2.normalize()))
 
-          res match {
-            case Right(mcs) =>
-              subscribers.createdOrUpdated(
-                mcs.map(t => (t._1, t._2, changes.timestamp))
-              )
+          modules match {
+            case Right(modules) =>
+              subscribers.createdOrUpdated(modules, changes.timestamp)
             case Left(errs) => logPipelineErrors(errs)
           }
         case Failure(t) =>

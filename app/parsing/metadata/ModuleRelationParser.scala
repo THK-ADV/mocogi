@@ -8,7 +8,7 @@ import parsing.{multipleValueParser, uuidParser}
 
 object ModuleRelationParser {
 
-  val moduleRelationParser: Parser[Option[ParsedModuleRelation]] = {
+  def moduleRelationParser: Parser[Option[ParsedModuleRelation]] = {
     def go: Parser[ParsedModuleRelation] = oneOf(
       prefix("parent:")
         .skip(zeroOrMoreSpaces)

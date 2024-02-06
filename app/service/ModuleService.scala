@@ -1,9 +1,7 @@
 package service
 
 import database.repo.ModuleRepository
-import database.{MetadataOutput, ModuleOutput}
-import git.GitFilePath
-import models.ModuleCore
+import models.{MetadataProtocol, ModuleCore, ModuleProtocol}
 import ops.FutureOps.SeqOps
 import parsing.types.Module
 
@@ -14,13 +12,16 @@ import scala.concurrent.{ExecutionContext, Future}
 
 trait ModuleService {
   def createOrUpdateMany(
-      entries: Seq[(GitFilePath, Module, LocalDateTime)]
+      modules: Seq[Module],
+      timestamp: LocalDateTime
   ): Future[Seq[Unit]]
-  def all(filter: Map[String, Seq[String]]): Future[Seq[ModuleOutput]]
+  def all(filter: Map[String, Seq[String]]): Future[Seq[ModuleProtocol]]
   def allModuleCore(filter: Map[String, Seq[String]]): Future[Seq[ModuleCore]]
-  def allMetadata(filter: Map[String, Seq[String]]): Future[Seq[MetadataOutput]]
-  def get(id: UUID): Future[ModuleOutput]
-  def getOrNull(id: UUID): Future[Option[ModuleOutput]]
+  def allMetadata(
+      filter: Map[String, Seq[String]]
+  ): Future[Seq[MetadataProtocol]]
+  def get(id: UUID): Future[ModuleProtocol]
+  def getOrNull(id: UUID): Future[Option[ModuleProtocol]]
 }
 
 @Singleton
@@ -30,9 +31,10 @@ final class ModuleServiceImpl @Inject() (
 ) extends ModuleService {
 
   override def createOrUpdateMany(
-      entries: Seq[(GitFilePath, Module, LocalDateTime)]
+      modules: Seq[Module],
+      timestamp: LocalDateTime
   ) =
-    repo.createOrUpdateMany(entries)
+    repo.createOrUpdateMany(modules, timestamp)
 
   override def all(filter: Map[String, Seq[String]]) =
     repo.all(filter)

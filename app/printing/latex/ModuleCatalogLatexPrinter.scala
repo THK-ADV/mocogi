@@ -1,12 +1,11 @@
 package printing.latex
 
-import database._
+import models._
 import models.core._
-import models.{Semester, StudyProgramView}
 import monocle.Lens
 import monocle.macros.GenLens
 import ops.StringBuilderOps.SBOps
-import parsing.types.{Content, Module}
+import parsing.types.{ModuleContent, Module}
 import play.api.Logging
 import printing.pandoc.PandocApi
 import printing.{
@@ -48,95 +47,94 @@ final class ModuleCatalogLatexPrinter @Inject() (pandocApi: PandocApi)
 
   def print(
       studyProgram: StudyProgramView,
-      mcs: Seq[Module],
+      modules: Seq[Module],
       studyProgramViews: Seq[StudyProgramView]
   )(implicit
       language: PrintingLanguage
   ): StringBuilder = {
-    // TODO this is a bad implementation, because it transforms each Module to ModuleOutput
-    val entries = List.newBuilder[ModuleOutput]
+    // TODO this is a bad implementation, because it transforms each Module to ModuleProtocol. A raw Module parser would be great here
+    val entries = List.newBuilder[ModuleProtocol]
     val moduleTypes = Set.newBuilder[ModuleType]
-    val languages = Set.newBuilder[Language]
+    val languages = Set.newBuilder[ModuleLanguage]
     val seasons = Set.newBuilder[Season]
     val people = Set.newBuilder[Identity]
     val assessmentMethods = Set.newBuilder[AssessmentMethod]
 
-    mcs.foreach { mc =>
-      moduleTypes += mc.metadata.kind
-      languages += mc.metadata.language
-      seasons += mc.metadata.season
-      people ++= mc.metadata.responsibilities.moduleManagement
-      people ++= mc.metadata.responsibilities.lecturers
-      assessmentMethods ++= mc.metadata.assessmentMethods.mandatory
+    modules.foreach { m =>
+      moduleTypes += m.metadata.kind
+      languages += m.metadata.language
+      seasons += m.metadata.season
+      people ++= m.metadata.responsibilities.moduleManagement
+      people ++= m.metadata.responsibilities.lecturers
+      assessmentMethods ++= m.metadata.assessmentMethods.mandatory
         .map(_.method)
-      assessmentMethods ++= mc.metadata.assessmentMethods.optional
+      assessmentMethods ++= m.metadata.assessmentMethods.optional
         .map(_.method)
 
-      entries += ModuleOutput(
-        "",
-        MetadataOutput(
-          mc.metadata.id,
-          mc.metadata.title,
-          mc.metadata.abbrev,
-          mc.metadata.kind.id,
-          mc.metadata.ects.value,
-          mc.metadata.language.id,
-          mc.metadata.duration,
-          mc.metadata.season.id,
-          mc.metadata.workload,
-          mc.metadata.status.id,
-          mc.metadata.location.id,
-          mc.metadata.participants,
-          mc.metadata.relation.map {
+      entries += ModuleProtocol(
+        Some(m.metadata.id),
+        MetadataProtocol(
+          m.metadata.title,
+          m.metadata.abbrev,
+          m.metadata.kind.id,
+          m.metadata.ects.value,
+          m.metadata.language.id,
+          m.metadata.duration,
+          m.metadata.season.id,
+          m.metadata.workload,
+          m.metadata.status.id,
+          m.metadata.location.id,
+          m.metadata.participants,
+          m.metadata.relation.map {
             case ModuleRelation.Parent(children) =>
-              ModuleRelationOutput.Parent(children.map(_.id))
+              ModuleRelationProtocol.Parent(children.map(_.id))
             case ModuleRelation.Child(parent) =>
-              ModuleRelationOutput.Child(parent.id)
+              ModuleRelationProtocol.Child(parent.id)
           },
-          mc.metadata.responsibilities.moduleManagement.map(_.id),
-          mc.metadata.responsibilities.lecturers.map(_.id),
-          AssessmentMethodsOutput(
-            mc.metadata.assessmentMethods.mandatory.map(a =>
-              AssessmentMethodEntryOutput(
+          m.metadata.responsibilities.moduleManagement.map(_.id),
+          m.metadata.responsibilities.lecturers.map(_.id),
+          ModuleAssessmentMethodsProtocol(
+            m.metadata.assessmentMethods.mandatory.map(a =>
+              ModuleAssessmentMethodEntryProtocol(
                 a.method.id,
                 a.percentage,
                 a.precondition.map(_.id)
               )
             ),
-            mc.metadata.assessmentMethods.optional.map(a =>
-              AssessmentMethodEntryOutput(
+            m.metadata.assessmentMethods.optional.map(a =>
+              ModuleAssessmentMethodEntryProtocol(
                 a.method.id,
                 a.percentage,
                 a.precondition.map(_.id)
               )
             )
           ),
-          PrerequisitesOutput(
-            mc.metadata.prerequisites.recommended.map(e =>
-              PrerequisiteEntryOutput(
+          ModulePrerequisitesProtocol(
+            m.metadata.prerequisites.recommended.map(e =>
+              ModulePrerequisiteEntryProtocol(
                 e.text,
                 e.modules.map(_.id),
                 e.pos.map(_.id)
               )
             ),
-            mc.metadata.prerequisites.required.map(e =>
-              PrerequisiteEntryOutput(
+            m.metadata.prerequisites.required.map(e =>
+              ModulePrerequisiteEntryProtocol(
                 e.text,
                 e.modules.map(_.id),
                 e.pos.map(_.id)
               )
             )
           ),
-          POOutput(
-            mc.metadata.validPOs.mandatory.map(a =>
-              POMandatoryOutput(
+          ModulePOProtocol(
+            m.metadata.pos.mandatory.map(a =>
+              ModulePOMandatoryProtocol(
                 a.po.id,
                 a.specialization.map(_.id),
                 a.recommendedSemester
               )
             ),
-            mc.metadata.validPOs.optional.map(a =>
-              POOptionalOutput(
+            m.metadata.pos.optional.map(a =>
+              ModulePOOptionalProtocol(
                 a.po.id,
                 a.specialization.map(_.id),
                 a.instanceOf.id,
@@ -145,12 +143,12 @@ final class ModuleCatalogLatexPrinter @Inject() (pandocApi: PandocApi)
               )
             )
           ),
-          mc.metadata.competences.map(_.id),
-          mc.metadata.globalCriteria.map(_.id),
-          mc.metadata.taughtWith.map(_.id)
+          m.metadata.competences.map(_.id),
+          m.metadata.globalCriteria.map(_.id),
+          m.metadata.taughtWith.map(_.id)
         ),
-        mc.deContent,
-        mc.enContent
+        m.deContent,
+        m.enContent
       )
     }
 
@@ -170,9 +168,9 @@ final class ModuleCatalogLatexPrinter @Inject() (pandocApi: PandocApi)
   def print(
       studyProgram: StudyProgramView,
       semester: Option[Semester],
-      entries: Seq[ModuleOutput],
+      entries: Seq[ModuleProtocol],
       moduleTypes: Seq[ModuleType],
-      languages: Seq[Language],
+      languages: Seq[ModuleLanguage],
       seasons: Seq[Season],
       people: Seq[Identity],
       assessmentMethods: Seq[AssessmentMethod],
@@ -211,9 +209,9 @@ final class ModuleCatalogLatexPrinter @Inject() (pandocApi: PandocApi)
 
   private def modules(
       po: String,
-      entries: Seq[ModuleOutput],
+      entries: Seq[ModuleProtocol],
       moduleTypes: Seq[ModuleType],
-      languages: Seq[Language],
+      languages: Seq[ModuleLanguage],
       seasons: Seq[Season],
       people: Seq[Identity],
       assessmentMethods: Seq[AssessmentMethod],
@@ -223,10 +221,10 @@ final class ModuleCatalogLatexPrinter @Inject() (pandocApi: PandocApi)
       builder.append(s"$key & $value \\\\\n")
 
     def content(
-        id: UUID,
-        deContent: Content,
-        enContent: Content,
-        entries: List[(String, Lens[Content, String])]
+        id: Option[UUID],
+        deContent: ModuleContent,
+        enContent: ModuleContent,
+        entries: List[(String, Lens[ModuleContent, String])]
     ): Unit = {
       val markdownContent = new StringBuilder()
       entries.foreach { case (headline, lens) =>
@@ -249,13 +247,13 @@ final class ModuleCatalogLatexPrinter @Inject() (pandocApi: PandocApi)
       }
     }
 
-    def go(e: ModuleOutput): Unit = {
+    def go(module: ModuleProtocol): Unit = {
       val (workload, contactHour, selfStudy) =
-        lang.workload(e.metadata.workload)
+        lang.workload(module.metadata.workload)
       val poMandatory =
-        if (e.metadata.po.mandatory.size == 1) lang.noneLabel
+        if (module.metadata.po.mandatory.size == 1) lang.noneLabel
         else
-          e.metadata.po.mandatory
+          module.metadata.po.mandatory
             .sortBy(_.po)
             .collect {
               case p if p.po != po =>
@@ -285,51 +283,53 @@ final class ModuleCatalogLatexPrinter @Inject() (pandocApi: PandocApi)
             }
             .mkString("\\newline ")
 
-      section(e.metadata.title)
+      section(module.metadata.title)
       builder.append(
         "\\begin{tabularx}{\\linewidth}{@{}>{\\bfseries}l@{\\hspace{.5em}}X@{}}\n"
       )
-      row("ID", e.metadata.id.toString)
-      row(lang.moduleCodeLabel, escape(e.metadata.abbrev))
-      row(lang.moduleTitleLabel, escape(e.metadata.title))
+      row("ID", module.id.fold("Unknown ID")(_.toString))
+      row(lang.moduleCodeLabel, escape(module.metadata.abbrev))
+      row(lang.moduleTitleLabel, escape(module.metadata.title))
       row(
         lang.moduleTypeLabel,
         moduleTypes
-          .find(_.id == e.metadata.moduleType)
+          .find(_.id == module.metadata.moduleType)
           .get
           .localizedLabel
       )
-      row(lang.ectsLabel, fmtDouble(e.metadata.ects))
+      row(lang.ectsLabel, fmtDouble(module.metadata.ects))
       row(
         lang.languageLabel,
         languages
-          .find(_.id == e.metadata.language)
+          .find(_.id == module.metadata.language)
           .get
           .localizedLabel
       )
-      row(lang.durationLabel, lang.durationValue(e.metadata.duration))
+      row(lang.durationLabel, lang.durationValue(module.metadata.duration))
       row(
         lang.frequencyLabel,
-        seasons.find(_.id == e.metadata.season).get.localizedLabel
+        seasons.find(_.id == module.metadata.season).get.localizedLabel
       )
       row(
         lang.moduleCoordinatorLabel,
         fmtCommaSeparated(
-          people.filter(p => e.metadata.moduleManagement.contains(p.id)).sorted,
+          people
+            .filter(p => module.metadata.moduleManagement.contains(p.id))
+            .sorted,
           "\\newline "
         )(fmtIdentity)
       )
       row(
         lang.lecturersLabel,
         fmtCommaSeparated(
-          people.filter(p => e.metadata.lecturers.contains(p.id)).sorted,
+          people.filter(p => module.metadata.lecturers.contains(p.id)).sorted,
           "\\newline "
         )(fmtIdentity)
       )
       row(
         lang.assessmentMethodLabel,
         fmtCommaSeparated(
-          e.metadata.assessmentMethods.mandatory.sortBy(_.method),
+          module.metadata.assessmentMethods.mandatory.sortBy(_.method),
           "\\newline "
         ) { a =>
           val method = assessmentMethods
@@ -348,21 +348,21 @@ final class ModuleCatalogLatexPrinter @Inject() (pandocApi: PandocApi)
       )
       builder.append("\\end{tabularx}\n")
       content(
-        e.metadata.id,
-        e.deContent,
-        e.enContent,
+        module.id,
+        module.deContent,
+        module.enContent,
         List(
-          (lang.learningOutcomeLabel, GenLens[Content](_.learningOutcome)),
-          (lang.moduleContentLabel, GenLens[Content](_.content)),
+          (lang.learningOutcomeLabel, GenLens[ModuleContent](_.learningOutcome)),
+          (lang.moduleContentLabel, GenLens[ModuleContent](_.content)),
           (
             lang.teachingAndLearningMethodsLabel,
-            GenLens[Content](_.teachingAndLearningMethods)
+            GenLens[ModuleContent](_.teachingAndLearningMethods)
           ),
           (
             lang.recommendedReadingLabel,
-            GenLens[Content](_.recommendedReading)
+            GenLens[ModuleContent](_.recommendedReading)
           ),
-          (lang.particularitiesLabel, GenLens[Content](_.particularities))
+          (lang.particularitiesLabel, GenLens[ModuleContent](_.particularities))
         )
       )
     }

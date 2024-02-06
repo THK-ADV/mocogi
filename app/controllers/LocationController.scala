@@ -1,6 +1,6 @@
 package controllers
 
-import models.core.Location
+import models.core.ModuleLocation
 import play.api.libs.json.Writes
 import play.api.mvc.{AbstractController, ControllerComponents}
 import service.core.LocationService
@@ -14,6 +14,6 @@ final class LocationController @Inject() (
     val service: LocationService,
     implicit val ctx: ExecutionContext
 ) extends AbstractController(cc)
-    with YamlController[Location] {
-  override implicit val writes: Writes[Location] = Location.writes
+    with YamlController[ModuleLocation] {
+  override implicit val writes: Writes[ModuleLocation] = ModuleLocation.writes
 }

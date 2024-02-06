@@ -6,7 +6,7 @@ import play.api.libs.json.{Json, Writes}
 import java.util.UUID
 
 case class ParsedPOs(
-    mandatory: List[POMandatory],
+    mandatory: List[ModulePOMandatory],
     optional: List[ParsedPOOptional]
 )
 
@@ -18,12 +18,12 @@ case class ParsedPOOptional(
     recommendedSemester: List[Int]
 )
 
-case class POMandatory(
+case class ModulePOMandatory(
     po: PO,
     specialization: Option[Specialization],
     recommendedSemester: List[Int]
 )
 
-object POMandatory {
-  implicit def writes: Writes[POMandatory] = Json.writes
+object ModulePOMandatory {
+  implicit def writes: Writes[ModulePOMandatory] = Json.writes
 }

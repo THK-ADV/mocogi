@@ -65,7 +65,7 @@ final class ModulePreviewService @Inject() (
             studyProgram,
             modules
               .map(_._2)
-              .filter(_.metadata.validPOs.mandatory.exists { a =>
+              .filter(_.metadata.pos.mandatory.exists { a =>
                 a.po.id == studyProgram.poId && a.specialization
                   .zip(studyProgram.specialization)
                   .fold(true)(a => a._1.id == a._2.id)

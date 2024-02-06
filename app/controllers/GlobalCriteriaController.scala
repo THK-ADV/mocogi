@@ -1,6 +1,6 @@
 package controllers
 
-import models.core.GlobalCriteria
+import models.core.ModuleGlobalCriteria
 import play.api.libs.json.Writes
 import play.api.mvc.{AbstractController, ControllerComponents}
 import service.core.GlobalCriteriaService
@@ -14,6 +14,6 @@ final class GlobalCriteriaController @Inject() (
     val service: GlobalCriteriaService,
     implicit val ctx: ExecutionContext
 ) extends AbstractController(cc)
-    with YamlController[GlobalCriteria] {
-  override implicit val writes: Writes[GlobalCriteria] = GlobalCriteria.writes
+    with YamlController[ModuleGlobalCriteria] {
+  override implicit val writes: Writes[ModuleGlobalCriteria] = ModuleGlobalCriteria.writes
 }

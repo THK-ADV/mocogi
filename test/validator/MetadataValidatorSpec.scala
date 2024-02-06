@@ -24,10 +24,10 @@ final class MetadataValidatorSpec
   private lazy val creditPointFactor = 30
 
   private def method(percentage: Option[Double]) =
-    AssessmentMethodEntry(am, percentage, Nil)
+    ModuleAssessmentMethodEntry(am, percentage, Nil)
 
   private def ectsContrib(value: Double) =
-    ECTSFocusAreaContribution(fa, value, "", "")
+    ModuleECTSFocusAreaContribution(fa, value, "", "")
 
   private def prerequisiteEntry(modules: List[UUID]) =
     ParsedPrerequisiteEntry("", modules, Nil)
@@ -74,32 +74,32 @@ final class MetadataValidatorSpec
 
     "validating assessment methods" should {
       "pass if their percentage is 0" in {
-        val am1 = AssessmentMethods(Nil, Nil)
+        val am1 = ModuleAssessmentMethods(Nil, Nil)
         assert(assessmentMethodsValidator.validate(am1).value == am1)
 
-        val am2 = AssessmentMethods(List(method(None)), Nil)
+        val am2 = ModuleAssessmentMethods(List(method(None)), Nil)
         assert(assessmentMethodsValidator.validate(am2).value == am2)
 
-        val am3 = AssessmentMethods(List(method(None)), List(method(None)))
+        val am3 = ModuleAssessmentMethods(List(method(None)), List(method(None)))
         assert(assessmentMethodsValidator.validate(am3).value == am3)
 
         val am4 =
-          AssessmentMethods(List(method(Some(0))), List(method(Some(0))))
+          ModuleAssessmentMethods(List(method(Some(0))), List(method(Some(0))))
         assert(assessmentMethodsValidator.validate(am4).value == am4)
       }
 
       "pass if their percentage matches 100" in {
         val am1 =
-          AssessmentMethods(List(method(Some(30)), method(Some(70))), Nil)
+          ModuleAssessmentMethods(List(method(Some(30)), method(Some(70))), Nil)
         assert(assessmentMethodsValidator.validate(am1).value == am1)
 
-        val am2 = AssessmentMethods(List(method(Some(100))), Nil)
+        val am2 = ModuleAssessmentMethods(List(method(Some(100))), Nil)
         assert(assessmentMethodsValidator.validate(am2).value == am2)
 
-        val am3 = AssessmentMethods(Nil, List(method(Some(100))))
+        val am3 = ModuleAssessmentMethods(Nil, List(method(Some(100))))
         assert(assessmentMethodsValidator.validate(am3).value == am3)
 
-        val am4 = AssessmentMethods(
+        val am4 = ModuleAssessmentMethods(
           List(method(Some(50)), method(Some(50))),
           List(method(Some(100)))
         )
@@ -108,28 +108,28 @@ final class MetadataValidatorSpec
 
       "fail if their percentage doesn't match 100" in {
         val am1 =
-          AssessmentMethods(List(method(Some(10)), method(Some(10))), Nil)
+          ModuleAssessmentMethods(List(method(Some(10)), method(Some(10))), Nil)
         assert(
           assessmentMethodsValidator.validate(am1).left.value == List(
             "mandatory sum must be null or 100, but was 20.0"
           )
         )
 
-        val am2 = AssessmentMethods(List(method(Some(50))), Nil)
+        val am2 = ModuleAssessmentMethods(List(method(Some(50))), Nil)
         assert(
           assessmentMethodsValidator.validate(am2).left.value == List(
             "mandatory sum must be null or 100, but was 50.0"
           )
         )
 
-        val am3 = AssessmentMethods(Nil, List(method(Some(30))))
+        val am3 = ModuleAssessmentMethods(Nil, List(method(Some(30))))
         assert(
           assessmentMethodsValidator.validate(am3).left.value == List(
             "optional sum must be null or 100, but was 30.0"
           )
         )
 
-        val am4 = AssessmentMethods(
+        val am4 = ModuleAssessmentMethods(
           List(method(Some(20)), method(Some(20))),
           List(method(Some(100)))
         )
@@ -139,7 +139,7 @@ final class MetadataValidatorSpec
           )
         )
 
-        val am5 = AssessmentMethods(
+        val am5 = ModuleAssessmentMethods(
           List(method(Some(20)), method(Some(20))),
           List(method(Some(50)))
         )
@@ -158,21 +158,21 @@ final class MetadataValidatorSpec
       }
 
       "pass if participants minimum is higher than 0" in {
-        val p1 = Participants(0, 10)
+        val p1 = ModuleParticipants(0, 10)
         assert(
           participantsValidator.validate(Some(p1)).value.value == p1
         )
       }
 
       "fail if participants minimum or maximum is lower than 0" in {
-        val p1 = Participants(-1, 10)
+        val p1 = ModuleParticipants(-1, 10)
         assert(
           participantsValidator.validate(Some(p1)).left.value == List(
             "participants min must be positive, but was -1"
           )
         )
 
-        val p2 = Participants(0, -1)
+        val p2 = ModuleParticipants(0, -1)
         assert(
           participantsValidator.validate(Some(p2)).left.value == List(
             "participants max must be positive, but was -1",
@@ -182,14 +182,14 @@ final class MetadataValidatorSpec
       }
 
       "fail if participants minimum is higher than max" in {
-        val p1 = Participants(10, 10)
+        val p1 = ModuleParticipants(10, 10)
         assert(
           participantsValidator.validate(Some(p1)).left.value == List(
             "participants min must be lower than max. min: 10, max: 10"
           )
         )
 
-        val p2 = Participants(11, 10)
+        val p2 = ModuleParticipants(11, 10)
         assert(
           participantsValidator.validate(Some(p2)).left.value == List(
             "participants min must be lower than max. min: 11, max: 10"
@@ -198,7 +198,7 @@ final class MetadataValidatorSpec
       }
 
       "pass if participants ranges are valid" in {
-        val p1 = Participants(5, 10)
+        val p1 = ModuleParticipants(5, 10)
         assert(
           participantsValidator.validate(Some(p1)).value.value == p1
         )
@@ -208,13 +208,13 @@ final class MetadataValidatorSpec
     "validating ects" should {
       "pass if ects value is set via contributions to focus areas" in {
         val ects1 = List(ectsContrib(5))
-        assert(ectsValidator.validate(Right(ects1)).value == ECTS(5, ects1))
+        assert(ectsValidator.validate(Right(ects1)).value == ModuleECTS(5, ects1))
         val ects2 = List(ectsContrib(5), ectsContrib(3))
-        assert(ectsValidator.validate(Right(ects2)).value == ECTS(8, ects2))
+        assert(ectsValidator.validate(Right(ects2)).value == ModuleECTS(8, ects2))
       }
 
       "pass if ects value is already set" in {
-        assert(ectsValidator.validate(Left(5)).value == ECTS(5, Nil))
+        assert(ectsValidator.validate(Left(5)).value == ModuleECTS(5, Nil))
       }
 
       "fail if neither ects value nor contributions to focus areas are set" in {
@@ -284,19 +284,19 @@ final class MetadataValidatorSpec
           prerequisitesEntryValidator("prerequisites", lookup)
             .validate(Some(prerequisiteEntry(List(m1.id, m2.id))))
             .value
-            .value == PrerequisiteEntry("", List(m1, m2), Nil)
+            .value == ModulePrerequisiteEntry("", List(m1, m2), Nil)
         )
         assert(
           prerequisitesEntryValidator("prerequisites", lookup)
             .validate(Some(prerequisiteEntry(List(m1.id))))
             .value
-            .value == PrerequisiteEntry("", List(m1), Nil)
+            .value == ModulePrerequisiteEntry("", List(m1), Nil)
         )
         assert(
           prerequisitesEntryValidator("prerequisites", lookup)
             .validate(Some(prerequisiteEntry(Nil)))
             .value
-            .value == PrerequisiteEntry("", Nil, Nil)
+            .value == ModulePrerequisiteEntry("", Nil, Nil)
         )
       }
 
@@ -322,9 +322,9 @@ final class MetadataValidatorSpec
                 Some(prerequisiteEntry(List(m2.id)))
               )
             )
-            .value == Prerequisites(
-            Some(PrerequisiteEntry("", List(m1), Nil)),
-            Some(PrerequisiteEntry("", List(m2), Nil))
+            .value == ModulePrerequisites(
+            Some(ModulePrerequisiteEntry("", List(m1), Nil)),
+            Some(ModulePrerequisiteEntry("", List(m2), Nil))
           )
         )
         assert(
@@ -335,15 +335,15 @@ final class MetadataValidatorSpec
                 None
               )
             )
-            .value == Prerequisites(
-            Some(PrerequisiteEntry("", List(m1), Nil)),
+            .value == ModulePrerequisites(
+            Some(ModulePrerequisiteEntry("", List(m1), Nil)),
             None
           )
         )
         assert(
           prerequisitesValidator(lookup)
             .validate(ParsedPrerequisites(None, None))
-            .value == Prerequisites(None, None)
+            .value == ModulePrerequisites(None, None)
         )
         assert(
           prerequisitesValidator(lookup)
@@ -380,18 +380,18 @@ final class MetadataValidatorSpec
       "pass by setting self study and total value" in {
         assert(
           workloadValidator(creditPointFactor)
-            .validate((ParsedWorkload(10, 10, 0, 0, 10, 0), ECTS(2, Nil)))
-            .value == Workload(10, 10, 0, 0, 10, 0, 30, 60)
+            .validate((ParsedWorkload(10, 10, 0, 0, 10, 0), ModuleECTS(2, Nil)))
+            .value == ModuleWorkload(10, 10, 0, 0, 10, 0, 30, 60)
         )
         assert(
           workloadValidator(creditPointFactor)
-            .validate((ParsedWorkload(0, 0, 0, 0, 0, 0), ECTS(2, Nil)))
-            .value == Workload(0, 0, 0, 0, 0, 0, 60, 60)
+            .validate((ParsedWorkload(0, 0, 0, 0, 0, 0), ModuleECTS(2, Nil)))
+            .value == ModuleWorkload(0, 0, 0, 0, 0, 0, 60, 60)
         )
         assert(
           workloadValidator(creditPointFactor)
-            .validate((ParsedWorkload(0, 0, 0, 0, 0, 0), ECTS(0, Nil)))
-            .value == Workload(0, 0, 0, 0, 0, 0, 0, 0)
+            .validate((ParsedWorkload(0, 0, 0, 0, 0, 0), ModuleECTS(0, Nil)))
+            .value == ModuleWorkload(0, 0, 0, 0, 0, 0, 0, 0)
         )
       }
     }
@@ -402,15 +402,15 @@ final class MetadataValidatorSpec
           poOptionalValidator(lookup)
             .validate(List(poOpt(m1.id)))
             .value == List(
-            POOptional(sp, None, m1, partOfCatalog = false, Nil)
+            ModulePOOptional(sp, None, m1, partOfCatalog = false, Nil)
           )
         )
         assert(
           poOptionalValidator(lookup)
             .validate(List(poOpt(m1.id), poOpt(m2.id)))
             .value == List(
-            POOptional(sp, None, m1, partOfCatalog = false, Nil),
-            POOptional(sp, None, m2, partOfCatalog = false, Nil)
+            ModulePOOptional(sp, None, m1, partOfCatalog = false, Nil),
+            ModulePOOptional(sp, None, m2, partOfCatalog = false, Nil)
           )
         )
         assert(poOptionalValidator(lookup).validate(Nil).value == Nil)
@@ -430,13 +430,13 @@ final class MetadataValidatorSpec
         val random = UUID.randomUUID
         posValidator(lookup)
           .validate(ParsedPOs(Nil, List(poOpt(m1.id))))
-          .value == POs(
+          .value == ModulePOs(
           Nil,
-          List(POOptional(sp, None, m1, partOfCatalog = false, Nil))
+          List(ModulePOOptional(sp, None, m1, partOfCatalog = false, Nil))
         )
         posValidator(lookup)
           .validate(ParsedPOs(Nil, Nil))
-          .value == POs(Nil, Nil)
+          .value == ModulePOs(Nil, Nil)
         posValidator(lookup)
           .validate(ParsedPOs(Nil, List(poOpt(random))))
           .left
@@ -503,25 +503,25 @@ final class MetadataValidatorSpec
           ModuleType("", "", ""),
           Some(ParsedModuleRelation.Child(m1.id)),
           Left(1),
-          Language("", "", ""),
+          ModuleLanguage("", "", ""),
           1,
           Season("", "", ""),
-          Responsibilities(Nil, Nil),
-          AssessmentMethods(
+          ModuleResponsibilities(Nil, Nil),
+          ModuleAssessmentMethods(
             List(method(Some(50)), method(Some(50))),
             List(method(None))
           ),
           ParsedWorkload(5, 0, 0, 0, 0, 0),
           ParsedPrerequisites(None, None),
-          Status("", "", ""),
-          Location("", "", ""),
+          ModuleStatus("", "", ""),
+          ModuleLocation("", "", ""),
           ParsedPOs(
-            List(POMandatory(sp, None, List(1))),
+            List(ModulePOMandatory(sp, None, List(1))),
             List(
               ParsedPOOptional(sp, None, m2.id, partOfCatalog = false, List(2))
             )
           ),
-          Some(Participants(10, 20)),
+          Some(ModuleParticipants(10, 20)),
           Nil,
           Nil,
           Nil
@@ -532,21 +532,21 @@ final class MetadataValidatorSpec
           ivm1.abbrev,
           ivm1.kind,
           Some(ModuleRelation.Child(m1)),
-          ECTS(1, Nil),
+          ModuleECTS(1, Nil),
           ivm1.language,
           ivm1.duration,
           ivm1.season,
           ivm1.responsibilities,
           ivm1.assessmentMethods,
-          Workload(5, 0, 0, 0, 0, 0, 5, 10),
-          Prerequisites(None, None),
+          ModuleWorkload(5, 0, 0, 0, 0, 0, 5, 10),
+          ModulePrerequisites(None, None),
           ivm1.status,
           ivm1.location,
-          POs(
-            List(POMandatory(sp, None, List(1))),
-            List(POOptional(sp, None, m2, partOfCatalog = false, List(2)))
+          ModulePOs(
+            List(ModulePOMandatory(sp, None, List(1))),
+            List(ModulePOOptional(sp, None, m2, partOfCatalog = false, List(2)))
           ),
-          Some(Participants(10, 20)),
+          Some(ModuleParticipants(10, 20)),
           Nil,
           Nil,
           Nil
@@ -568,7 +568,7 @@ final class MetadataValidatorSpec
         assert(res.prerequisites == vm1.prerequisites)
         assert(res.status == vm1.status)
         assert(res.location == vm1.location)
-        assert(res.validPOs == vm1.validPOs)
+        assert(res.pos == vm1.pos)
         assert(res.participants == vm1.participants)
         assert(res.competences == vm1.competences)
         assert(res.globalCriteria == vm1.globalCriteria)
@@ -584,25 +584,25 @@ final class MetadataValidatorSpec
           ModuleType("", "", ""),
           Some(ParsedModuleRelation.Child(random)),
           Left(1),
-          Language("", "", ""),
+          ModuleLanguage("", "", ""),
           1,
           Season("", "", ""),
-          Responsibilities(Nil, Nil),
-          AssessmentMethods(
+          ModuleResponsibilities(Nil, Nil),
+          ModuleAssessmentMethods(
             List(method(Some(50)), method(Some(50))),
             List(method(None))
           ),
           ParsedWorkload(5, 0, 0, 0, 0, 0),
           ParsedPrerequisites(None, None),
-          Status("", "", ""),
-          Location("", "", ""),
+          ModuleStatus("", "", ""),
+          ModuleLocation("", "", ""),
           ParsedPOs(
-            List(POMandatory(sp, None, List(1))),
+            List(ModulePOMandatory(sp, None, List(1))),
             List(
               ParsedPOOptional(sp, None, m1.id, partOfCatalog = false, List(2))
             )
           ),
-          Some(Participants(20, 15)),
+          Some(ModuleParticipants(20, 15)),
           Nil,
           Nil,
           Nil

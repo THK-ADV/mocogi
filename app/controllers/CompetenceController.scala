@@ -1,6 +1,6 @@
 package controllers
 
-import models.core.Competence
+import models.core.ModuleCompetence
 import play.api.libs.json.Writes
 import play.api.mvc.{AbstractController, ControllerComponents}
 import service.core.CompetenceService
@@ -14,6 +14,6 @@ final class CompetenceController @Inject() (
     val service: CompetenceService,
     implicit val ctx: ExecutionContext
 ) extends AbstractController(cc)
-    with YamlController[Competence] {
-  override implicit val writes: Writes[Competence] = Competence.writes
+    with YamlController[ModuleCompetence] {
+  override implicit val writes: Writes[ModuleCompetence] = ModuleCompetence.writes
 }

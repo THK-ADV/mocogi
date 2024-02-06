@@ -6,12 +6,12 @@ import javax.inject.{Inject, Provider, Singleton}
 
 @Singleton()
 final class MetadataParserProvider @Inject() (
-    responsibilitiesParser: ResponsibilitiesParser,
-    seasonParser: SeasonParser,
-    statusParser: StatusParser,
+    responsibilitiesParser: ModuleResponsibilitiesParser,
+    seasonParser: ModuleSeasonParser,
+    statusParser: ModuleStatusParser,
     moduleTypeParser: ModuleTypeParser,
-    locationParser: LocationParser,
-    languageParser: LanguageParser
+    locationParser: ModuleLocationParser,
+    languageParser: ModuleLanguageParser
 ) extends Provider[Set[MetadataParser]] {
   override def get() = Set(
     new THKV1Parser(

@@ -1,17 +1,17 @@
 package database.table.core
 
 import database.table.IDLabelDescColumn
-import models.core.GlobalCriteria
+import models.core.ModuleGlobalCriteria
 import slick.jdbc.PostgresProfile.api._
 
 final class GlobalCriteriaTable(tag: Tag)
-    extends Table[GlobalCriteria](tag, "global_criteria")
-    with IDLabelDescColumn[GlobalCriteria] {
+    extends Table[ModuleGlobalCriteria](tag, "global_criteria")
+    with IDLabelDescColumn[ModuleGlobalCriteria] {
   override def * = (
     id,
     deLabel,
     deDesc,
     enLabel,
     enDesc
-  ) <> ((GlobalCriteria.apply _).tupled, GlobalCriteria.unapply)
+  ) <> ((ModuleGlobalCriteria.apply _).tupled, ModuleGlobalCriteria.unapply)
 }

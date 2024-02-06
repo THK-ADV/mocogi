@@ -1,9 +1,8 @@
 package git.api
 
 import com.google.inject.Inject
-import database._
 import git.{GitConfig, GitFileContent, GitFilePath}
-import models.Branch
+import models.{Branch, ModuleProtocol}
 import printing.PrintingLanguage
 import printing.html.ModuleHTMLPrinter
 import printing.pandoc.{PrinterOutput, PrinterOutputType}
@@ -24,18 +23,16 @@ final class GitFileDownloadService @Inject() (
 
   def downloadModuleFromPreviewBranch(
       id: UUID
-  ): Future[Option[ModuleOutput]] = {
-    val path = GitFilePath(id)
+  ): Future[Option[ModuleProtocol]] =
     for {
-      content <- downloadFileContent(path, config.draftBranch)
+      content <- downloadFileContent(GitFilePath(id), config.draftBranch)
       res <- content match {
         case Some(content) =>
-          pipeline.parse(Print(content.value), path).map(Some.apply)
+          pipeline.parse(Print(content.value)).map(Some.apply)
         case None =>
           Future.successful(None)
       }
     } yield res
-  }
 
   def downloadFileContent(
       path: GitFilePath,
@@ -45,17 +42,16 @@ final class GitFileDownloadService @Inject() (
 
   def downloadModuleFromPreviewBranchAsHTML(
       module: UUID
-  )(implicit lang: PrintingLanguage): Future[Option[String]] = {
-    val path = GitFilePath(module)
+  )(implicit lang: PrintingLanguage): Future[Option[String]] =
     for {
-      content <- downloadFileContent(path, config.draftBranch)
+      content <- downloadFileContent(GitFilePath(module), config.draftBranch)
       res <- content match {
         case Some(content) =>
           for {
-            mc <- pipeline.parseValidate(Print(content.value))
+            module <- pipeline.parseValidate(Print(content.value))
             output <- printer
               .print(
-                mc,
+                module,
                 lang,
                 None,
                 PrinterOutputType.HTMLStandalone
@@ -73,5 +69,4 @@ final class GitFileDownloadService @Inject() (
           Future.successful(None)
       }
     } yield res
-  }
 }

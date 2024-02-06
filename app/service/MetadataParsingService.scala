@@ -4,16 +4,19 @@ import models.core._
 import ops.EitherOps.EOps
 import parser.ParsingError
 import parsing.metadata.MetadataCompositeParser
-import parsing.types.{Content, ParsedMetadata}
+import parsing.types.{ModuleContent, ParsedMetadata}
 import service.core._
 
 import java.util.UUID
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
+// TODO add support for a raw parser which parses ids only and does not validate at all
 trait MetadataParsingService {
   def parseMany(prints: Seq[(Option[UUID], Print)]): ParsingResult
-  def parse(print: Print): Future[Either[ParsingError, (ParsedMetadata, Content, Content)]]
+  def parse(
+      print: Print
+  ): Future[Either[ParsingError, (ParsedMetadata, ModuleContent, ModuleContent)]]
 }
 
 @Singleton
@@ -89,7 +92,7 @@ final class MetadataParsingServiceImpl @Inject() (
 
   override def parse(
       print: Print
-  ): Future[Either[ParsingError, (ParsedMetadata, Content, Content)]] =
+  ): Future[Either[ParsingError, (ParsedMetadata, ModuleContent, ModuleContent)]] =
     parser().map { p =>
       val (res, rest) = p.parse(print.value)
       res.flatMap { parsedMetadata =>

@@ -1,7 +1,7 @@
 package parsing.core
 
-import models.core.Location
+import models.core.ModuleLocation
 
-object LocationFileParser extends LabelFileParser[Location] {
-  override protected def makeType = (Location.apply _).tupled
+object LocationFileParser extends LabelFileParser[ModuleLocation] {
+  override protected def makeType = (ModuleLocation.apply _).tupled
 }

@@ -110,11 +110,11 @@ class THKV1ParserSpec
           )
         )
         assert(metadata.credits == Left(5))
-        assert(metadata.language == Language("de", "Deutsch", "--"))
+        assert(metadata.language == ModuleLanguage("de", "Deutsch", "--"))
         assert(metadata.duration == 1)
         assert(metadata.season == Season("ws", "Wintersemester", "--"))
         assert(
-          metadata.responsibilities == Responsibilities(
+          metadata.responsibilities == ModuleResponsibilities(
             List(
               Identity.Person(
                 "ald",
@@ -152,9 +152,9 @@ class THKV1ParserSpec
           )
         )
         assert(
-          metadata.assessmentMethods == AssessmentMethods(
+          metadata.assessmentMethods == ModuleAssessmentMethods(
             List(
-              AssessmentMethodEntry(
+              ModuleAssessmentMethodEntry(
                 AssessmentMethod("written-exam", "Klausurarbeiten", "--"),
                 None,
                 Nil
@@ -180,11 +180,11 @@ class THKV1ParserSpec
             None
           )
         )
-        assert(metadata.status == Status("active", "Aktiv", "--"))
-        assert(metadata.location == Location("gm", "Gummersbach", "--"))
+        assert(metadata.status == ModuleStatus("active", "Aktiv", "--"))
+        assert(metadata.location == ModuleLocation("gm", "Gummersbach", "--"))
         assert(
           metadata.pos == ParsedPOs(
-            List(POMandatory(inf1, None, List(3))),
+            List(ModulePOMandatory(inf1, None, List(3))),
             List(
               ParsedPOOptional(
                 wi1,
@@ -197,18 +197,18 @@ class THKV1ParserSpec
           )
         )
         assert(
-          metadata.participants.value == Participants(4, 20)
+          metadata.participants.value == ModuleParticipants(4, 20)
         )
         assert(
           metadata.competences == List(
-            Competence(
+            ModuleCompetence(
               "analyze-domains",
               "Analyze Domains",
               "...",
               "Analyze Domains",
               "..."
             ),
-            Competence(
+            ModuleCompetence(
               "model-systems",
               "Model Systems",
               "...",
@@ -219,14 +219,14 @@ class THKV1ParserSpec
         )
         assert(
           metadata.globalCriteria == List(
-            GlobalCriteria(
+            ModuleGlobalCriteria(
               "internationalization",
               "Internationalisierung",
               "...",
               "Internationalization",
               "..."
             ),
-            GlobalCriteria(
+            ModuleGlobalCriteria(
               "digitization",
               "Digitalisierung",
               "...",
@@ -254,8 +254,8 @@ class THKV1ParserSpec
         assert(
           metadata.credits == Right(
             List(
-              ECTSFocusAreaContribution(FocusAreaID("gak"), 3.5, "", ""),
-              ECTSFocusAreaContribution(
+              ModuleECTSFocusAreaContribution(FocusAreaID("gak"), 3.5, "", ""),
+              ModuleECTSFocusAreaContribution(
                 FocusAreaID("acs"),
                 6,
                 "Text1\nText2\n",
@@ -264,11 +264,11 @@ class THKV1ParserSpec
             )
           )
         )
-        assert(metadata.language == Language("en", "Englisch", "--"))
+        assert(metadata.language == ModuleLanguage("en", "Englisch", "--"))
         assert(metadata.duration == 1)
         assert(metadata.season == Season("ss", "Sommersemester", "--"))
         assert(
-          metadata.responsibilities == Responsibilities(
+          metadata.responsibilities == ModuleResponsibilities(
             List(
               Identity.Person(
                 "ald",
@@ -296,21 +296,21 @@ class THKV1ParserSpec
           )
         )
         assert(
-          metadata.assessmentMethods == AssessmentMethods(
+          metadata.assessmentMethods == ModuleAssessmentMethods(
             List(
-              AssessmentMethodEntry(
+              ModuleAssessmentMethodEntry(
                 AssessmentMethod("written-exam", "Klausurarbeiten", "--"),
                 Some(70),
                 List(AssessmentMethod("practical", "Praktikum", "--"))
               ),
-              AssessmentMethodEntry(
+              ModuleAssessmentMethodEntry(
                 AssessmentMethod("practical-report", "Praktikumsbericht", "--"),
                 Some(30),
                 Nil
               )
             ),
             List(
-              AssessmentMethodEntry(
+              ModuleAssessmentMethodEntry(
                 AssessmentMethod("written-exam", "Klausurarbeiten", "--"),
                 None,
                 Nil
@@ -320,19 +320,19 @@ class THKV1ParserSpec
         )
         assert(metadata.workload == ParsedWorkload(30, 0, 10, 10, 0, 0))
         assert(metadata.prerequisites == ParsedPrerequisites(None, None))
-        assert(metadata.status == Status("active", "Aktiv", "--"))
-        assert(metadata.location == Location("gm", "Gummersbach", "--"))
+        assert(metadata.status == ModuleStatus("active", "Aktiv", "--"))
+        assert(metadata.location == ModuleLocation("gm", "Gummersbach", "--"))
         assert(
           metadata.pos == ParsedPOs(
             List(
-              POMandatory(inf1, None, List(4)),
-              POMandatory(mi1, None, List(4)),
-              POMandatory(itm1, None, List(4))
+              ModulePOMandatory(inf1, None, List(4)),
+              ModulePOMandatory(mi1, None, List(4)),
+              ModulePOMandatory(itm1, None, List(4))
             ),
             Nil
           )
         )
-        assert(metadata.participants.value == Participants(4, 20))
+        assert(metadata.participants.value == ModuleParticipants(4, 20))
         assert(metadata.competences.isEmpty)
         assert(metadata.globalCriteria.isEmpty)
         assert(

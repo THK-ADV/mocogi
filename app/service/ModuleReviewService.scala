@@ -1,6 +1,5 @@
 package service
 
-import database.POOutput
 import database.repo.core.StudyProgramDirectorsRepository
 import database.repo.core.StudyProgramDirectorsRepository.StudyProgramDirector
 import database.repo.{
@@ -280,7 +279,7 @@ final class ModuleReviewService @Inject() (
     }
 
   private def studyProgramDirectors(
-      po: POOutput,
+      po: ModulePOProtocol,
       roles: Set[UniversityRole]
   ): Future[Seq[StudyProgramDirector]] = {
     def affectedPos(): Set[String] =

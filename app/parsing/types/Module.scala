@@ -8,8 +8,8 @@ import validator.Metadata
 
 case class Module(
     metadata: Metadata,
-    deContent: Content,
-    enContent: Content
+    deContent: ModuleContent,
+    enContent: ModuleContent
 )
 
 object Module {
@@ -59,7 +59,7 @@ object Module {
       )
 
     private def poMandatory =
-      GenLens[Module](_.metadata.validPOs.mandatory)
+      GenLens[Module](_.metadata.pos.mandatory)
         .modify(
           _.map(
             _.focus(_.recommendedSemester)
@@ -68,7 +68,7 @@ object Module {
         )
 
     private def poOptional =
-      GenLens[Module](_.metadata.validPOs.optional)
+      GenLens[Module](_.metadata.pos.optional)
         .modify(
           _.map(
             _.focus(_.recommendedSemester)

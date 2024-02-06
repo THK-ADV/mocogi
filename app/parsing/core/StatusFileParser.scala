@@ -1,7 +1,7 @@
 package parsing.core
 
-import models.core.Status
+import models.core.ModuleStatus
 
-object StatusFileParser extends LabelFileParser[Status] {
-  override protected def makeType = (Status.apply _).tupled
+object StatusFileParser extends LabelFileParser[ModuleStatus] {
+  override protected def makeType = (ModuleStatus.apply _).tupled
 }

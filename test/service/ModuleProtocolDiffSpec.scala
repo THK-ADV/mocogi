@@ -1,10 +1,9 @@
 package service
 
-import database._
-import models.{MetadataProtocol, ModuleProtocol}
+import models._
 import org.scalatest.wordspec.AnyWordSpec
-import parsing.types.{Content, ParsedWorkload, Participants}
-import validator.Workload
+import parsing.types.{ModuleContent, ModuleParticipants}
+import validator.ModuleWorkload
 
 import java.util.UUID
 
@@ -12,6 +11,7 @@ final class ModuleProtocolDiffSpec extends AnyWordSpec {
   import ModuleProtocolDiff.diff
 
   private val existing = ModuleProtocol(
+    None,
     MetadataProtocol(
       "title",
       "abbrev",
@@ -20,34 +20,34 @@ final class ModuleProtocolDiffSpec extends AnyWordSpec {
       "language",
       0,
       "season",
-      ParsedWorkload(0, 0, 0, 0, 0, 0),
+      ModuleWorkload(0, 0, 0, 0, 0, 0, 0, 0),
       "status",
       "location",
       None,
       None,
       List("a"),
       List("a"),
-      AssessmentMethodsOutput(
-        List(AssessmentMethodEntryOutput("method", None, Nil)),
+      ModuleAssessmentMethodsProtocol(
+        List(ModuleAssessmentMethodEntryProtocol("method", None, Nil)),
         Nil
       ),
-      PrerequisitesOutput(None, None),
-      POOutput(
-        List(POMandatoryOutput("po1", None, List(1))),
+      ModulePrerequisitesProtocol(None, None),
+      ModulePOProtocol(
+        List(ModulePOMandatoryProtocol("po1", None, List(1))),
         Nil
       ),
       Nil,
       Nil,
       Nil
     ),
-    Content(
+    ModuleContent(
       "de_learningOutcome",
       "de_content",
       "de_teachingAndLearningMethods",
       "de_recommendedReading",
       "de_particularities"
     ),
-    Content(
+    ModuleContent(
       "en_learningOutcome",
       "en_content",
       "en_teachingAndLearningMethods",
@@ -70,11 +70,11 @@ final class ModuleProtocolDiffSpec extends AnyWordSpec {
         .focus(_.metadata.po.mandatory)
         .modify(xs =>
           xs ::: List(
-            POMandatoryOutput("po2", Some("spec"), List(1, 2, 3))
+            ModulePOMandatoryProtocol("po2", Some("spec"), List(1, 2, 3))
           )
         )
         .focus(_.metadata.participants)
-        .replace(Some(Participants(0, 10)))
+        .replace(Some(ModuleParticipants(0, 10)))
       val (updated, updatedKeys) = diff(existing, newP, None, Set.empty)
       assert(updatedKeys.size == 5)
       assert(updatedKeys.contains("metadata.title"))
@@ -87,11 +87,11 @@ final class ModuleProtocolDiffSpec extends AnyWordSpec {
       assert(updated.metadata.moduleManagement == List("a", "b"))
       assert(
         updated.metadata.po.mandatory == List(
-          POMandatoryOutput("po1", None, List(1)),
-          POMandatoryOutput("po2", Some("spec"), List(1, 2, 3))
+          ModulePOMandatoryProtocol("po1", None, List(1)),
+          ModulePOMandatoryProtocol("po2", Some("spec"), List(1, 2, 3))
         )
       )
-      assert(updated.metadata.participants.contains(Participants(0, 10)))
+      assert(updated.metadata.participants.contains(ModuleParticipants(0, 10)))
     }
 
     "undo update if its changed to the origin value" in {
@@ -108,10 +108,9 @@ final class ModuleProtocolDiffSpec extends AnyWordSpec {
         existing0,
         newP,
         Some(
-          ModuleOutput(
-            "",
-            MetadataOutput(
-              UUID.randomUUID(),
+          ModuleProtocol(
+            Some(UUID.randomUUID()),
+            MetadataProtocol(
               "title",
               existing0.metadata.abbrev,
               existing0.metadata.moduleType,
@@ -119,7 +118,7 @@ final class ModuleProtocolDiffSpec extends AnyWordSpec {
               existing0.metadata.language,
               existing0.metadata.duration,
               existing0.metadata.season,
-              Workload(
+              ModuleWorkload(
                 existing0.metadata.workload.lecture,
                 existing0.metadata.workload.seminar,
                 existing0.metadata.workload.practical,

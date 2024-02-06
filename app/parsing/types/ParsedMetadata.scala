@@ -1,6 +1,6 @@
 package parsing.types
 
-import models.core.{Competence, GlobalCriteria, Language, Location, ModuleType, Season, Status}
+import models.core.{ModuleCompetence, ModuleGlobalCriteria, ModuleLanguage, ModuleLocation, ModuleType, Season, ModuleStatus}
 
 import java.util.UUID
 
@@ -10,19 +10,19 @@ case class ParsedMetadata(
     abbrev: String,
     kind: ModuleType,
     relation: Option[ParsedModuleRelation],
-    credits: Either[Double, List[ECTSFocusAreaContribution]],
-    language: Language,
+    credits: Either[Double, List[ModuleECTSFocusAreaContribution]],
+    language: ModuleLanguage,
     duration: Int,
     season: Season,
-    responsibilities: Responsibilities,
-    assessmentMethods: AssessmentMethods,
+    responsibilities: ModuleResponsibilities,
+    assessmentMethods: ModuleAssessmentMethods,
     workload: ParsedWorkload,
     prerequisites: ParsedPrerequisites,
-    status: Status,
-    location: Location,
+    status: ModuleStatus,
+    location: ModuleLocation,
     pos: ParsedPOs,
-    participants: Option[Participants],
-    competences: List[Competence],
-    globalCriteria: List[GlobalCriteria],
+    participants: Option[ModuleParticipants],
+    competences: List[ModuleCompetence],
+    globalCriteria: List[ModuleGlobalCriteria],
     taughtWith: List[UUID]
 )

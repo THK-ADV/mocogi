@@ -1,12 +1,12 @@
 package helper
 
-import models.core.Location
+import models.core.ModuleLocation
 
 trait FakeLocations {
-  implicit def fakeLocations: Seq[Location] = Seq(
-    Location("gm", "Gummersbach", "--"),
-    Location("dz", "Deutz", "--"),
-    Location("su", "Südstadt", "--"),
-    Location("km", "Köln-Mühlheim", "--"),
+  implicit def fakeLocations: Seq[ModuleLocation] = Seq(
+    ModuleLocation("gm", "Gummersbach", "--"),
+    ModuleLocation("dz", "Deutz", "--"),
+    ModuleLocation("su", "Südstadt", "--"),
+    ModuleLocation("km", "Köln-Mühlheim", "--"),
   )
 }

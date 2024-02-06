@@ -34,24 +34,24 @@ object ModuleDatabaseActor {
       with Logging {
 
     override def receive = {
-      case CreatedOrUpdated(entries) if entries.nonEmpty =>
+      case CreatedOrUpdated(modules, timestamp) if modules.nonEmpty =>
         val res = for {
-          modules <- moduleService.createOrUpdateMany(entries)
+          created <- moduleService.createOrUpdateMany(modules, timestamp)
           _ <- moduleViewRepository.refreshView()
           permissions <- moduleUpdatePermissionService.createOrUpdateInherited(
-            entries.map(a =>
+            modules.map(a =>
               (
-                a._2.metadata.id,
-                a._2.metadata.responsibilities.moduleManagement
+                a.metadata.id,
+                a.metadata.responsibilities.moduleManagement
               )
             )
           )
-        } yield (modules, permissions)
+        } yield (created, permissions)
 
         res onComplete {
           case Success((modules, permissions)) =>
             logger.info(
-              s"successfully created or updated ${modules.size} mc and ${permissions.size} permission entries"
+              s"successfully created or updated ${modules.size} modules and ${permissions.size} permission entries"
             )
           case Failure(e) =>
             logger.error(

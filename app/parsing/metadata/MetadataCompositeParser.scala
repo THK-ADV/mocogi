@@ -10,11 +10,11 @@ import printer.Printer
 import javax.inject.{Inject, Singleton}
 
 @Singleton
-class MetadataCompositeParser @Inject() (
+final class MetadataCompositeParser @Inject() (
     val parsers: Set[MetadataParser]
 ) extends MetadataParser {
 
-  private val versionSchemePrinter: Printer[VersionScheme] = {
+  private def versionSchemePrinter: Printer[VersionScheme] = {
     import printer.PrinterOps.P0
     Printer
       .prefix("v")
@@ -24,16 +24,16 @@ class MetadataCompositeParser @Inject() (
   }
 
   def parser(implicit
-      locations: Seq[Location],
-      languages: Seq[Language],
-      status: Seq[Status],
+      locations: Seq[ModuleLocation],
+      languages: Seq[ModuleLanguage],
+      status: Seq[ModuleStatus],
       assessmentMethods: Seq[AssessmentMethod],
       moduleTypes: Seq[ModuleType],
       seasons: Seq[Season],
       identities: Seq[Identity],
       focusAreas: Seq[FocusAreaID],
-      competences: Seq[Competence],
-      globalCriteria: Seq[GlobalCriteria],
+      competences: Seq[ModuleCompetence],
+      globalCriteria: Seq[ModuleGlobalCriteria],
       pos: Seq[PO],
       specializations: Seq[Specialization]
   ): Parser[ParsedMetadata] =

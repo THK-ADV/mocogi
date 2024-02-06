@@ -1,5 +1,5 @@
 import models.core._
-import validator.Workload
+import validator.ModuleWorkload
 
 import java.time.format.DateTimeFormatter
 import scala.annotation.unused
@@ -137,7 +137,7 @@ package object printing {
       s"$duration ${self.semesterLabel}"
 
     def workload(
-        wl: Workload
+        wl: ModuleWorkload
     ): ((String, String), (String, String), (String, String)) = {
       val contactHoursValue = wl.total - wl.selfStudy
       val contactHoursParts = List(
@@ -164,7 +164,7 @@ package object printing {
       )
     }
 
-    def lectureValue(wl: Workload): String =
+    def lectureValue(wl: ModuleWorkload): String =
       if (wl.lecture == 0) ""
       else {
         val value = s"${wl.lecture} h"
@@ -172,7 +172,7 @@ package object printing {
         s"$value $res"
       }
 
-    def exerciseValue(wl: Workload): String =
+    def exerciseValue(wl: ModuleWorkload): String =
       if (wl.exercise == 0) ""
       else {
         val value = s"${wl.exercise} h"
@@ -180,7 +180,7 @@ package object printing {
         s"$value $res"
       }
 
-    def practicalValue(wl: Workload): String =
+    def practicalValue(wl: ModuleWorkload): String =
       if (wl.practical == 0) ""
       else {
         val value = s"${wl.practical} h"
@@ -188,7 +188,7 @@ package object printing {
         s"$value $res"
       }
 
-    def seminarValue(wl: Workload): String =
+    def seminarValue(wl: ModuleWorkload): String =
       if (wl.seminar == 0) ""
       else {
         val value = s"${wl.seminar} h"
@@ -196,7 +196,7 @@ package object printing {
         s"$value $res"
       }
 
-    def projectSupervisionValue(wl: Workload): String =
+    def projectSupervisionValue(wl: ModuleWorkload): String =
       if (wl.projectSupervision == 0) ""
       else {
         val value = s"${wl.projectSupervision} h"
@@ -204,7 +204,7 @@ package object printing {
         s"$value $res"
       }
 
-    def projectWorkValue(wl: Workload): String =
+    def projectWorkValue(wl: ModuleWorkload): String =
       if (wl.projectWork == 0) ""
       else {
         val value = s"${wl.projectWork} h"

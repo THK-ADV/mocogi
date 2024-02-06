@@ -1,6 +1,6 @@
 package controllers
 
-import models.core.{Status => ModuleStatus}
+import models.core.{ModuleStatus => ModuleStatus}
 import play.api.libs.json.Writes
 import play.api.mvc.{AbstractController, ControllerComponents}
 import service.core.StatusService

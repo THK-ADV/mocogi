@@ -1,17 +1,17 @@
 package database.table.core
 
 import database.table.IDLabelDescColumn
-import models.core.Competence
+import models.core.ModuleCompetence
 import slick.jdbc.PostgresProfile.api._
 
 final class CompetenceTable(tag: Tag)
-    extends Table[Competence](tag, "competence")
-    with IDLabelDescColumn[Competence] {
+    extends Table[ModuleCompetence](tag, "competence")
+    with IDLabelDescColumn[ModuleCompetence] {
   override def * = (
     id,
     deLabel,
     deDesc,
     enLabel,
     enDesc
-  ) <> ((Competence.apply _).tupled, Competence.unapply)
+  ) <> ((ModuleCompetence.apply _).tupled, ModuleCompetence.unapply)
 }

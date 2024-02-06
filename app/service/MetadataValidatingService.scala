@@ -2,7 +2,7 @@ package service
 
 import models.ModuleCore
 import ops.EitherOps.EOps
-import parsing.types.{Content, Module, ParsedMetadata}
+import parsing.types.{ModuleContent, Module, ParsedMetadata}
 import validator._
 
 object MetadataValidatingService {
@@ -11,7 +11,7 @@ object MetadataValidatingService {
 
   def validateMany(
       existing: Seq[ModuleCore],
-      parsed: Seq[(Print, ParsedMetadata, Content, Content)]
+      parsed: Seq[(Print, ParsedMetadata, ModuleContent, ModuleContent)]
   ): Either[Seq[PipelineError], Seq[(Print, Module)]] = {
     val parsedModules =
       parsed.map(a => ModuleCore(a._2.id, a._2.title, a._2.abbrev))

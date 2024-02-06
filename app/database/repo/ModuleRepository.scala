@@ -2,13 +2,12 @@ package database.repo
 
 import database._
 import database.table._
-import git.GitFilePath
 import models._
-import parsing.types._
+import parsing.types.{Module, _}
 import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfigProvider}
 import slick.jdbc.JdbcProfile
 import validator._
-import parsing.types.Module
+
 import java.time.LocalDateTime
 import java.util.UUID
 import javax.inject.{Inject, Singleton}
@@ -87,28 +86,26 @@ final class ModuleRepository @Inject() (
           .exists
   }
 
-  def createOrUpdateMany(
-      entries: Seq[(GitFilePath, Module, LocalDateTime)]
-  ) = {
-    def flat(mc: Module) =
-      mc.copy(
-        metadata = mc.metadata.copy(
+  def createOrUpdateMany(modules: Seq[Module], timestamp: LocalDateTime) = {
+    def flat(module: Module) =
+      module.copy(
+        metadata = module.metadata.copy(
           relation = None,
-          prerequisites = Prerequisites(None, None),
-          validPOs = POs(Nil, Nil),
+          prerequisites = ModulePrerequisites(None, None),
+          pos = ModulePOs(Nil, Nil),
           taughtWith = Nil
         )
       )
-    val createOrUpdateInstant = entries.map { case (path, module, timestamp) =>
+    val createOrUpdateInstant = modules.map { module =>
       for {
         exists <- existsAction(module)
         res <-
-          if (exists) updateAction(module, path, timestamp)
-          else createAction(flat(module), path, timestamp)
+          if (exists) updateAction(module, timestamp)
+          else createAction(flat(module), timestamp)
       } yield res
     }
-    val updateAfterCreation = entries.map { case (path, module, timestamp) =>
-      updateAction(module, path, timestamp)
+    val updateAfterCreation = modules.map { module =>
+      updateAction(module, timestamp)
     }
     val actions = createOrUpdateInstant.appendedAll(updateAfterCreation)
     db.run(DBIO.sequence(actions).transactionally)
@@ -139,26 +136,18 @@ final class ModuleRepository @Inject() (
   private def isMandatoryPOQuery(pos: Seq[String]) =
     poMandatoryTable.filter(_.po.inSet(pos)).map(_.module)
 
-  private def updateAction(
-      module: Module,
-      path: GitFilePath,
-      timestamp: LocalDateTime
-  ) =
+  private def updateAction(module: Module, timestamp: LocalDateTime) =
     for {
       _ <- deleteDependencies(module.metadata)
       _ <- tableQuery
         .filter(_.id === module.metadata.id)
-        .update(toDbEntry(module, path, timestamp))
+        .update(toDbEntry(module, timestamp))
       _ <- createDependencies(module.metadata)
     } yield ()
 
-  private def createAction(
-      module: Module,
-      path: GitFilePath,
-      timestamp: LocalDateTime
-  ) =
+  private def createAction(module: Module, timestamp: LocalDateTime) =
     for {
-      _ <- tableQuery += toDbEntry(module, path, timestamp)
+      _ <- tableQuery += toDbEntry(module, timestamp)
       _ <- createDependencies(module.metadata)
     } yield ()
 
@@ -225,14 +214,9 @@ final class ModuleRepository @Inject() (
     } yield ()
   }
 
-  private def toDbEntry(
-      module: Module,
-      path: GitFilePath,
-      timestamp: LocalDateTime
-  ) =
+  private def toDbEntry(module: Module, timestamp: LocalDateTime) =
     ModuleDbEntry(
       module.metadata.id,
-      path.value,
       timestamp,
       module.metadata.title,
       module.metadata.abbrev,
@@ -271,7 +255,7 @@ final class ModuleRepository @Inject() (
       metadata: Metadata
   ): (List[ModulePOMandatoryDbEntry], List[ModulePOOptionalDbEntry]) =
     (
-      metadata.validPOs.mandatory.map(po =>
+      metadata.pos.mandatory.map(po =>
         ModulePOMandatoryDbEntry(
           UUID.randomUUID(),
           metadata.id,
@@ -280,7 +264,7 @@ final class ModuleRepository @Inject() (
           po.recommendedSemester
         )
       ),
-      metadata.validPOs.optional.map(po =>
+      metadata.pos.optional.map(po =>
         ModulePOOptionalDbEntry(
           UUID.randomUUID(),
           metadata.id,
@@ -299,7 +283,7 @@ final class ModuleRepository @Inject() (
     val pos = ListBuffer[PrerequisitesPODbEntry]()
 
     def go(
-        entry: PrerequisiteEntry,
+        entry: ModulePrerequisiteEntry,
         prerequisiteType: PrerequisiteType
     ) = {
       val prerequisites = ModulePrerequisitesDbEntry(
@@ -394,7 +378,7 @@ final class ModuleRepository @Inject() (
       ListBuffer[ModuleAssessmentMethodPreconditionDbEntry]()
 
     def go(
-        xs: List[AssessmentMethodEntry],
+        xs: List[ModuleAssessmentMethodEntry],
         `type`: AssessmentMethodType
     ): Unit =
       xs.foreach { m =>
@@ -429,7 +413,7 @@ final class ModuleRepository @Inject() (
 
   private def retrieve(
       query: Query[ModuleTable, ModuleDbEntry, Seq]
-  ): Future[Seq[ModuleOutput]] = {
+  ): Future[Seq[ModuleProtocol]] = {
     val methods = metadataAssessmentMethodTable
       .joinLeft(metadataAssessmentMethodPreconditionTable)
       .on(_.id === _.moduleAssessmentMethod)
@@ -465,25 +449,25 @@ final class ModuleRepository @Inject() (
         val participants = for {
           min <- m.participantsMin
           max <- m.participantsMax
-        } yield Participants(min, max)
+        } yield ModuleParticipants(min, max)
         val relations = mutable.HashSet[ModuleRelationDbEntry]()
         val moduleManagement = mutable.HashSet[String]()
         val lecturer = mutable.HashSet[String]()
         val mandatoryAssessmentMethods =
-          mutable.HashSet[(UUID, AssessmentMethodEntryOutput)]()
+          mutable.HashSet[(UUID, ModuleAssessmentMethodEntryProtocol)]()
         val optionalAssessmentMethods =
-          mutable.HashSet[(UUID, AssessmentMethodEntryOutput)]()
+          mutable.HashSet[(UUID, ModuleAssessmentMethodEntryProtocol)]()
         val preconditions =
           mutable.HashSet[ModuleAssessmentMethodPreconditionDbEntry]()
         var recommendedPrerequisite =
-          Option.empty[(UUID, PrerequisiteEntryOutput)]
+          Option.empty[(UUID, ModulePrerequisiteEntryProtocol)]
         var requiredPrerequisite =
-          Option.empty[(UUID, PrerequisiteEntryOutput)]
+          Option.empty[(UUID, ModulePrerequisiteEntryProtocol)]
         val prerequisitesModules =
           mutable.HashSet[PrerequisitesModuleDbEntry]()
         val prerequisitesPOS = mutable.HashSet[PrerequisitesPODbEntry]()
-        val poMandatory = mutable.HashSet[POMandatoryOutput]()
-        val poOptional = mutable.HashSet[POOptionalOutput]()
+        val poMandatory = mutable.HashSet[ModulePOMandatoryProtocol]()
+        val poOptional = mutable.HashSet[ModulePOOptionalProtocol]()
         val competences = mutable.HashSet[String]()
         val globalCriteria = mutable.HashSet[String]()
         val taughtWith = mutable.HashSet[UUID]()
@@ -495,14 +479,14 @@ final class ModuleRepository @Inject() (
               gc.foreach(globalCriteria += _.globalCriteria)
               c.foreach(competences += _.competence)
               poM.foreach(po =>
-                poMandatory += POMandatoryOutput(
+                poMandatory += ModulePOMandatoryProtocol(
                   po.po,
                   po.specialization,
                   po.recommendedSemester
                 )
               )
               poO.foreach(po =>
-                poOptional += POOptionalOutput(
+                poOptional += models.ModulePOOptionalProtocol(
                   po.po,
                   po.specialization,
                   po.instanceOf,
@@ -512,7 +496,9 @@ final class ModuleRepository @Inject() (
               )
               p.foreach { case ((e, m), po) =>
                 val prerequisite =
-                  Some(e.id -> PrerequisiteEntryOutput(e.text, Nil, Nil))
+                  Some(
+                    e.id -> ModulePrerequisiteEntryProtocol(e.text, Nil, Nil)
+                  )
                 e.prerequisitesType match {
                   case PrerequisiteType.Required =>
                     requiredPrerequisite = prerequisite
@@ -540,7 +526,7 @@ final class ModuleRepository @Inject() (
                     case AssessmentMethodType.Mandatory =>
                       mandatoryAssessmentMethods +=
                         am.id ->
-                          AssessmentMethodEntryOutput(
+                          ModuleAssessmentMethodEntryProtocol(
                             am.assessmentMethod,
                             am.percentage,
                             Nil
@@ -549,7 +535,7 @@ final class ModuleRepository @Inject() (
                     case AssessmentMethodType.Optional =>
                       optionalAssessmentMethods +=
                         am.id ->
-                          AssessmentMethodEntryOutput(
+                          ModuleAssessmentMethodEntryProtocol(
                             am.assessmentMethod,
                             am.percentage,
                             Nil
@@ -561,17 +547,16 @@ final class ModuleRepository @Inject() (
         val relation = relations.headOption.map { r =>
           r.relationType match {
             case ModuleRelationType.Parent =>
-              ModuleRelationOutput
+              ModuleRelationProtocol
                 .Parent(relations.map(_.relationModule).toList)
             case ModuleRelationType.Child =>
-              ModuleRelationOutput.Child(r.relationModule)
+              ModuleRelationProtocol.Child(r.relationModule)
           }
         }
 
-        ModuleOutput(
-          m.gitPath,
-          MetadataOutput(
-            m.id,
+        ModuleProtocol(
+          Some(m.id),
+          MetadataProtocol(
             m.title,
             m.abbrev,
             m.moduleType,
@@ -586,7 +571,7 @@ final class ModuleRepository @Inject() (
             relation,
             moduleManagement.toList,
             lecturer.toList,
-            AssessmentMethodsOutput(
+            ModuleAssessmentMethodsProtocol(
               mandatoryAssessmentMethods
                 .map(a =>
                   a._2.copy(precondition =
@@ -608,7 +593,7 @@ final class ModuleRepository @Inject() (
                 )
                 .toList
             ),
-            PrerequisitesOutput(
+            ModulePrerequisitesProtocol(
               recommendedPrerequisite.map(a =>
                 a._2.copy(
                   modules = prerequisitesModules
@@ -634,7 +619,7 @@ final class ModuleRepository @Inject() (
                 )
               )
             ),
-            POOutput(
+            ModulePOProtocol(
               poMandatory.toList,
               poOptional.toList
             ),

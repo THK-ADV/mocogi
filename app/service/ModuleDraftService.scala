@@ -1,6 +1,5 @@
 package service
 
-import database.ModuleOutput
 import database.repo.ModuleDraftRepository
 import git.api.{GitBranchService, GitCommitService, GitFileDownloadService}
 import models._
@@ -139,7 +138,7 @@ final class ModuleDraftServiceImpl @Inject() (
           s"file for module $moduleId does not existing in git"
         )
       (_, modifiedKeys) = diff(
-        toProtocol(module.get).normalize(),
+        module.get.normalize(),
         protocol.normalize(),
         None,
         Set.empty
@@ -209,48 +208,11 @@ final class ModuleDraftServiceImpl @Inject() (
   private def commitMessage(updatedKeys: Set[String]) =
     s"updated keys: ${updatedKeys.mkString(", ")}"
 
-  private def toJson(mc: Module) =
-    Json.toJson(mc.normalize())
+  private def toJson(module: Module) =
+    Json.toJson(module.normalize())
 
   private def toJson(protocol: ModuleProtocol) =
     Json.toJson(protocol.normalize())
-
-  private def toProtocol(
-      mcOutput: ModuleOutput
-  ): ModuleProtocol =
-    ModuleProtocol(
-      MetadataProtocol(
-        mcOutput.metadata.title,
-        mcOutput.metadata.abbrev,
-        mcOutput.metadata.moduleType,
-        mcOutput.metadata.ects,
-        mcOutput.metadata.language,
-        mcOutput.metadata.duration,
-        mcOutput.metadata.season,
-        ParsedWorkload(
-          mcOutput.metadata.workload.lecture,
-          mcOutput.metadata.workload.seminar,
-          mcOutput.metadata.workload.practical,
-          mcOutput.metadata.workload.exercise,
-          mcOutput.metadata.workload.projectSupervision,
-          mcOutput.metadata.workload.projectWork
-        ),
-        mcOutput.metadata.status,
-        mcOutput.metadata.location,
-        mcOutput.metadata.participants,
-        mcOutput.metadata.moduleRelation,
-        mcOutput.metadata.moduleManagement,
-        mcOutput.metadata.lecturers,
-        mcOutput.metadata.assessmentMethods,
-        mcOutput.metadata.prerequisites,
-        mcOutput.metadata.po,
-        mcOutput.metadata.competences,
-        mcOutput.metadata.globalCriteria,
-        mcOutput.metadata.taughtWith
-      ),
-      mcOutput.deContent,
-      mcOutput.enContent
-    )
 
   private def create(
       protocol: ModuleProtocol,
@@ -314,7 +276,7 @@ final class ModuleDraftServiceImpl @Inject() (
 
     def parse(
         print: Print
-    ): Future[Either[PipelineError, (ParsedMetadata, Content, Content)]] =
+    ): Future[Either[PipelineError, (ParsedMetadata, ModuleContent, ModuleContent)]] =
       metadataParsingService
         .parse(print)
         .map(_.bimap(PipelineError.Parser(_, Some(moduleId)), identity))

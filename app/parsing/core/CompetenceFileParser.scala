@@ -1,7 +1,7 @@
 package parsing.core
 
-import models.core.Competence
+import models.core.ModuleCompetence
 
-object CompetenceFileParser extends LabelDescFileParser[Competence] {
-  override protected def makeType = (Competence.apply _).tupled
+object CompetenceFileParser extends LabelDescFileParser[ModuleCompetence] {
+  override protected def makeType = (ModuleCompetence.apply _).tupled
 }

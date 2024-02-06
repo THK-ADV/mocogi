@@ -150,7 +150,6 @@ create table specialization
 create table module
 (
     "id"                           uuid PRIMARY KEY,
-    "git_path"                     text          not null,
     "last_modified"                timestamp     not null,
     "title"                        text          not null,
     "abbrev"                       text          not null,

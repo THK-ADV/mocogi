@@ -41,16 +41,16 @@ object ModulePrintingActor {
       with Logging {
 
     override def receive = {
-      case CreatedOrUpdated(entries) if entries.nonEmpty =>
+      case CreatedOrUpdated(modules, lastModified) if modules.nonEmpty =>
         studyProgramViewRepo.all() onComplete {
           case Success(sps) =>
-            entries.par.foreach { case (_, mc, lastModified) =>
+            modules.par.foreach(module =>
               print(
                 lastModified,
-                mc,
+                module,
                 sp => sps.find(_.studyProgram.id == sp)
               )
-            }
+            )
           case Failure(t) =>
             logger.error(
               s"""failed to print module
@@ -65,18 +65,24 @@ object ModulePrintingActor {
 
     private def print(
         lastModified: LocalDateTime,
-        mc: Module,
+        module: Module,
         studyProgram: String => Option[StudyProgramView]
     ): Unit = {
       def go(lang: PrintingLanguage): Unit =
         printer
-          .print(mc, lang, Some(lastModified), outputType, studyProgram) match {
+          .print(
+            module,
+            lang,
+            Some(lastModified),
+            outputType,
+            studyProgram
+          ) match {
           case Left(err) =>
-            logError(mc, lang, err)
+            logError(module, lang, err)
           case Right(output) =>
-            logSuccess(mc, lang)
-            val moduleId = mc.metadata.id
-            val moduleTitle = mc.metadata.title
+            logSuccess(module, lang)
+            val moduleId = module.metadata.id
+            val moduleTitle = module.metadata.title
             output match {
               case PrinterOutput.Text(content, _, consoleOutput) =>
                 logText(moduleTitle, moduleId, content, consoleOutput)
@@ -117,23 +123,23 @@ object ModulePrintingActor {
       )
 
     private def logSuccess(
-        mc: Module,
+        module: Module,
         language: PrintingLanguage
     ): Unit =
       logger.info(
         s"""successfully printed module in $language
-           |  - id: ${mc.metadata.id}
-           |  - title: ${mc.metadata.title}""".stripMargin
+           |  - id: ${module.metadata.id}
+           |  - title: ${module.metadata.title}""".stripMargin
       )
 
     private def logError(
-        mc: Module,
+        module: Module,
         language: PrintingLanguage,
         t: Throwable
     ): Unit =
       logger.error(
         s"""failed to print module in $language
-           |  - id: ${mc.metadata.id}
+           |  - id: ${module.metadata.id}
            |  - message: ${t.getMessage}
            |  - trace: ${t.getStackTrace.mkString(
             "\n           "

@@ -1,6 +1,6 @@
 package controllers
 
-import models.core.Language
+import models.core.ModuleLanguage
 import play.api.libs.json.Writes
 import play.api.mvc.{AbstractController, ControllerComponents}
 import service.core.LanguageService
@@ -14,6 +14,6 @@ final class LanguageController @Inject() (
     val service: LanguageService,
     implicit val ctx: ExecutionContext
 ) extends AbstractController(cc)
-    with YamlController[Language] {
-  override implicit val writes: Writes[Language] = Language.writes
+    with YamlController[ModuleLanguage] {
+  override implicit val writes: Writes[ModuleLanguage] = ModuleLanguage.writes
 }

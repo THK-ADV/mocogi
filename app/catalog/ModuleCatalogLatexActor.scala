@@ -3,14 +3,13 @@ package catalog
 import akka.actor.{Actor, ActorRef, Props}
 import catalog.ModuleCatalogLatexActor.GenerateLatexFiles
 import controllers.FileController
-import database.ModuleOutput
 import database.repo.core._
 import database.repo.{ModuleCatalogRepository, ModuleRepository}
 import database.table.ModuleCatalogEntry
 import database.view.StudyProgramViewRepository
 import git.api.GitAvailabilityChecker
 import models.core._
-import models.{Semester, StudyProgramView}
+import models.{ModuleProtocol, Semester, StudyProgramView}
 import ops.EitherOps.{EOps, EStringThrowOps}
 import ops.FileOps.FileOps0
 import ops.LoggerOps
@@ -114,7 +113,7 @@ object ModuleCatalogLatexActor {
         _ <- apiAvailableService.checkAvailability()
         sps <- studyProgramViewRepo.all()
         poIds = sps.map(_.poId)
-        mcs <- moduleRepository.allFromPos(poIds)
+        ms <- moduleRepository.allFromPos(poIds)
         mts <- moduleTypeRepository.all()
         lang <- languageRepository.all()
         seasons <- seasonRepository.all()
@@ -127,7 +126,7 @@ object ModuleCatalogLatexActor {
               val content = print(
                 semester,
                 sps,
-                mcs,
+                ms,
                 mts,
                 lang,
                 seasons,
@@ -173,16 +172,16 @@ object ModuleCatalogLatexActor {
           val files = res.collect { case Right(r) => r }
           moveToGitFolder(files).toFuture
         }
-//        _ <- commit(semester).toFuture
+        //        _ <- commit(semester).toFuture
         res <- create(files)
       } yield res
 
     private def print(
         semester: Semester,
         sps: Seq[StudyProgramView],
-        mcs: Seq[ModuleOutput],
+        ms: Seq[ModuleProtocol],
         mts: Seq[ModuleType],
-        lang: Seq[Language],
+        lang: Seq[ModuleLanguage],
         seasons: Seq[Season],
         people: Seq[Identity],
         ams: Seq[AssessmentMethod],
@@ -192,7 +191,7 @@ object ModuleCatalogLatexActor {
       printer.print(
         sp,
         Some(semester),
-        mcs
+        ms
           .filter(_.metadata.po.mandatory.exists { a =>
             a.po == sp.poId && a.specialization
               .zip(sp.specialization)

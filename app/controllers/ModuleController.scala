@@ -85,7 +85,7 @@ final class ModuleController @Inject() (
 
   def getPreview(id: UUID) =
     auth.async { _ =>
-      getFromPreview(id).map(mc => Ok(Json.toJson(mc)))
+      getFromPreview(id).map(x => Ok(Json.toJson(x)))
     }
 
   def getLatest(id: UUID) = // TODO only which can edit or which should review
@@ -93,7 +93,7 @@ final class ModuleController @Inject() (
       draftService
         .getByModuleOpt(id)
         .map(_.map(_.data))
-        .or(getFromPreview(id).map(_.map(mc => Json.toJson(mc))))
+        .or(getFromPreview(id).map(_.map(module => Json.toJson(module))))
         .map {
           case Some(js) => Ok(js)
           case None     => NotFound

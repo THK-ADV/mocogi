@@ -1,15 +1,14 @@
 package database.table
 
-import parsing.types.Content
+import parsing.types.ModuleContent
 import slick.jdbc.PostgresProfile.api._
-import validator.Workload
+import validator.ModuleWorkload
 
 import java.time.LocalDateTime
 import java.util.UUID
 
 case class ModuleDbEntry(
     id: UUID,
-    gitPath: String,
     lastModified: LocalDateTime,
     title: String,
     abbrev: String,
@@ -18,20 +17,18 @@ case class ModuleDbEntry(
     language: String,
     duration: Int,
     season: String,
-    workload: Workload,
+    workload: ModuleWorkload,
     status: String,
     location: String,
     participantsMin: Option[Int],
     participantsMax: Option[Int],
-    deContent: Content,
-    enContent: Content
+    deContent: ModuleContent,
+    enContent: ModuleContent
 )
 
 final class ModuleTable(tag: Tag) extends Table[ModuleDbEntry](tag, "module") {
 
   def id = column[UUID]("id", O.PrimaryKey)
-
-  def gitPath = column[String]("git_path")
 
   def lastModified = column[LocalDateTime]("last_modified")
 
@@ -95,7 +92,6 @@ final class ModuleTable(tag: Tag) extends Table[ModuleDbEntry](tag, "module") {
 
   override def * = (
     id,
-    gitPath,
     lastModified,
     title,
     abbrev,
@@ -142,7 +138,6 @@ final class ModuleTable(tag: Tag) extends Table[ModuleDbEntry](tag, "module") {
   def mapRow: (
       (
           UUID,
-          String,
           LocalDateTime,
           String,
           String,
@@ -164,7 +159,6 @@ final class ModuleTable(tag: Tag) extends Table[ModuleDbEntry](tag, "module") {
   ) => ModuleDbEntry = {
     case (
           id,
-          gitPath,
           lastModified,
           title,
           abbrev,
@@ -209,7 +203,6 @@ final class ModuleTable(tag: Tag) extends Table[ModuleDbEntry](tag, "module") {
         ) =>
       ModuleDbEntry(
         id,
-        gitPath,
         lastModified,
         title,
         abbrev,
@@ -218,7 +211,7 @@ final class ModuleTable(tag: Tag) extends Table[ModuleDbEntry](tag, "module") {
         language,
         duration,
         season,
-        Workload(
+        ModuleWorkload(
           workloadLecture,
           workloadSeminar,
           workloadPractical,
@@ -232,14 +225,14 @@ final class ModuleTable(tag: Tag) extends Table[ModuleDbEntry](tag, "module") {
         location,
         participantsMin,
         participantsMax,
-        Content(
+        ModuleContent(
           learningOutcomeDe,
           moduleContentDe,
           learningMethodsDe,
           literatureDe,
           particularitiesDe
         ),
-        Content(
+        ModuleContent(
           learningOutcomeEn,
           moduleContentEn,
           learningMethodsEn,
@@ -252,7 +245,6 @@ final class ModuleTable(tag: Tag) extends Table[ModuleDbEntry](tag, "module") {
   def unmapRow: ModuleDbEntry => Option[
     (
         UUID,
-        String,
         LocalDateTime,
         String,
         String,
@@ -276,7 +268,6 @@ final class ModuleTable(tag: Tag) extends Table[ModuleDbEntry](tag, "module") {
       Option(
         (
           a.id,
-          a.gitPath,
           a.lastModified,
           a.title,
           a.abbrev,

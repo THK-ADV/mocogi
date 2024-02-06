@@ -1,11 +1,10 @@
 package service
 
-import database._
-import git.GitFilePath
+import models._
 import ops.EitherOps.{EOps, EThrowableOps}
 import ops.FutureOps.EitherOps
 import parsing.types.{Module, ParsedModuleRelation}
-import validator.{ValidationError, Workload}
+import validator.{ModuleWorkload, ValidationError}
 
 import java.util.UUID
 import javax.inject.{Inject, Singleton}
@@ -17,14 +16,13 @@ final class MetadataPipeline @Inject() (
     private val moduleService: ModuleService,
     implicit val ctx: ExecutionContext
 ) {
-  def parse(print: Print, path: GitFilePath): Future[ModuleOutput] =
+  def parse(print: Print): Future[ModuleProtocol] =
     parser.parse(print).flatMap {
       case Right((metadata, de, en)) =>
         Future.successful(
-          ModuleOutput(
-            path.value,
-            MetadataOutput(
-              metadata.id,
+          ModuleProtocol(
+            Some(metadata.id),
+            MetadataProtocol(
               metadata.title,
               metadata.abbrev,
               metadata.kind.id,
@@ -35,7 +33,7 @@ final class MetadataPipeline @Inject() (
               metadata.language.id,
               metadata.duration,
               metadata.season.id,
-              Workload(
+              ModuleWorkload(
                 metadata.workload.lecture,
                 metadata.workload.seminar,
                 metadata.workload.practical,
@@ -50,54 +48,54 @@ final class MetadataPipeline @Inject() (
               metadata.participants,
               metadata.relation.map {
                 case ParsedModuleRelation.Parent(children) =>
-                  ModuleRelationOutput.Parent(children)
+                  ModuleRelationProtocol.Parent(children)
                 case ParsedModuleRelation.Child(parent) =>
-                  ModuleRelationOutput.Child(parent)
+                  ModuleRelationProtocol.Child(parent)
               },
               metadata.responsibilities.moduleManagement.map(_.id),
               metadata.responsibilities.lecturers.map(_.id),
-              AssessmentMethodsOutput(
+              ModuleAssessmentMethodsProtocol(
                 metadata.assessmentMethods.mandatory.map(a =>
-                  AssessmentMethodEntryOutput(
+                  ModuleAssessmentMethodEntryProtocol(
                     a.method.id,
                     a.percentage,
                     a.precondition.map(_.id)
                   )
                 ),
                 metadata.assessmentMethods.optional.map(a =>
-                  AssessmentMethodEntryOutput(
+                  ModuleAssessmentMethodEntryProtocol(
                     a.method.id,
                     a.percentage,
                     a.precondition.map(_.id)
                   )
                 )
               ),
-              PrerequisitesOutput(
+              ModulePrerequisitesProtocol(
                 metadata.prerequisites.recommended.map(e =>
-                  PrerequisiteEntryOutput(
+                  ModulePrerequisiteEntryProtocol(
                     e.text,
                     e.modules,
                     e.studyPrograms.map(_.id)
                   )
                 ),
                 metadata.prerequisites.required.map(e =>
-                  PrerequisiteEntryOutput(
+                  ModulePrerequisiteEntryProtocol(
                     e.text,
                     e.modules,
                     e.studyPrograms.map(_.id)
                   )
                 )
               ),
-              POOutput(
+              ModulePOProtocol(
                 metadata.pos.mandatory.map(a =>
-                  POMandatoryOutput(
+                  ModulePOMandatoryProtocol(
                     a.po.id,
                     a.specialization.map(_.id),
                     a.recommendedSemester
                   )
                 ),
                 metadata.pos.optional.map(a =>
-                  POOptionalOutput(
+                  ModulePOOptionalProtocol(
                     a.po.id,
                     a.specialization.map(_.id),
                     a.instanceOf,

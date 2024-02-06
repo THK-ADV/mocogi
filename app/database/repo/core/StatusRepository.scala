@@ -2,7 +2,7 @@ package database.repo.core
 
 import database.repo.Repository
 import database.table.core.StatusTable
-import models.core.Status
+import models.core.ModuleStatus
 import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfigProvider}
 import slick.jdbc.JdbcProfile
 
@@ -13,12 +13,12 @@ import scala.concurrent.ExecutionContext
 class StatusRepository @Inject() (
     val dbConfigProvider: DatabaseConfigProvider,
     implicit val ctx: ExecutionContext
-) extends Repository[Status, Status, StatusTable]
+) extends Repository[ModuleStatus, ModuleStatus, StatusTable]
     with HasDatabaseConfigProvider[JdbcProfile] {
   import profile.api._
 
   protected val tableQuery = TableQuery[StatusTable]
 
-  override protected def retrieve(query: Query[StatusTable, Status, Seq]) =
+  override protected def retrieve(query: Query[StatusTable, ModuleStatus, Seq]) =
     db.run(query.result)
 }

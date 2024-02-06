@@ -1,6 +1,6 @@
 package printing.yaml
 
-import parsing.types.Content
+import parsing.types.ModuleContent
 import printer.Printer
 import printer.Printer.{newline, prefix}
 import printing.PrintingLanguage
@@ -59,7 +59,7 @@ final class ContentMarkdownPrinter {
   def particularities(lang: PrintingLanguage, text: String) =
     content(particularitiesHeader(lang), text)
 
-  def printer(): Printer[(Content, Content)] =
+  def printer(): Printer[(ModuleContent, ModuleContent)] =
     Printer { case ((de, en), input) =>
       learningOutcome(German, de.learningOutcome)
         .skip(newline)
