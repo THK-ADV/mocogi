@@ -142,7 +142,6 @@ package object parsing {
     res
   }
 
-  // TODO use this
   def singleValueParser[A](key: String, optionPrefix: A => String)(implicit
       options: Seq[A]
   ): Parser[A] =

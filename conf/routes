@@ -7,6 +7,9 @@ GET           /                                                controllers.HomeC
 
 GET           /me                                              controllers.MeController.me()
 
+# Big Bang
+GET           /bigbang                                         controllers.BigBangController.go()
+
 # Git Webhooks
 
 POST          /webhook/onPushEvent                             controllers.GitWebhookController.onPushEvent()
@@ -51,7 +54,6 @@ GET           /modules/:id/latest/file                         controllers.Modul
 
 # Module Catalog
 
-POST          /moduleCatalogs/:semester                        controllers.ModuleCatalogController.generate(semester: java.lang.String)
 GET           /moduleCatalogs/:semester                        controllers.ModuleCatalogController.allFromSemester(semester: java.lang.String)
 GET           /moduleCatalogs/preview/:studyProgram/:po        controllers.ModuleCatalogController.getPreview(studyProgram: java.lang.String, po: java.lang.String)
 

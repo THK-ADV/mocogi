@@ -1,16 +1,19 @@
 package catalog
 
-import akka.actor.{Actor, ActorRef, Props}
-import catalog.ModuleCatalogLatexActor.GenerateLatexFiles
+import akka.actor.{Actor, Props}
 import controllers.FileController
 import database.repo.core._
-import database.repo.{ModuleCatalogRepository, ModuleRepository}
+import database.repo.{
+  ModuleCatalogGenerationRequestRepository,
+  ModuleCatalogRepository,
+  ModuleRepository
+}
 import database.table.ModuleCatalogEntry
 import database.view.StudyProgramViewRepository
-import git.api.GitAvailabilityChecker
+import git.api.{GitAvailabilityChecker, GitMergeRequestApiService}
+import models._
 import models.core._
-import models.{ModuleProtocol, Semester, StudyProgramView}
-import ops.EitherOps.{EOps, EStringThrowOps}
+import ops.EitherOps.EStringThrowOps
 import ops.FileOps.FileOps0
 import ops.LoggerOps
 import play.api.Logging
@@ -20,18 +23,11 @@ import service.LatexCompiler
 
 import java.nio.file.{Files, Path, Paths, StandardCopyOption}
 import java.time.LocalDateTime
-import javax.inject.Singleton
 import scala.collection.parallel.CollectionConverters.ImmutableIterableIsParallelizable
 import scala.concurrent.ExecutionContext
 import scala.sys.process._
 import scala.util.control.NonFatal
 import scala.util.{Failure, Success}
-
-@Singleton
-final class ModuleCatalogLatexActor(actor: ActorRef) {
-  def generateLatexFiles(semester: Semester): Unit =
-    actor ! GenerateLatexFiles(semester)
-}
 
 object ModuleCatalogLatexActor {
   private case class ModuleCatalogFile(
@@ -42,19 +38,17 @@ object ModuleCatalogLatexActor {
       lang: PrintingLanguage
   )
 
-  private case class GenerateLatexFiles(semester: Semester) extends AnyVal
+  case class GenerateLatexFiles(request: ModuleCatalogGenerationRequest)
+      extends AnyVal
 
   case class Config(
       tmpFolderPath: String,
       moduleCatalogFolderPath: String,
-      glabConfig: GlabConfig
-  )
-
-  case class GlabConfig(
       repoPath: String,
       mcPath: String,
       pushScriptPath: String,
-      mainBranch: String
+      mainBranch: Branch,
+      moduleCatalogLabel: String
   )
 
   def props(
@@ -68,6 +62,8 @@ object ModuleCatalogLatexActor {
       seasonRepository: SeasonRepository,
       identityRepository: IdentityRepository,
       assessmentMethodRepository: AssessmentMethodRepository,
+      moduleCatalogGenerationRepo: ModuleCatalogGenerationRequestRepository,
+      gitMergeRequestApiService: GitMergeRequestApiService,
       config: Config,
       ctx: ExecutionContext
   ) = Props(
@@ -82,6 +78,8 @@ object ModuleCatalogLatexActor {
       seasonRepository,
       identityRepository,
       assessmentMethodRepository,
+      moduleCatalogGenerationRepo,
+      gitMergeRequestApiService,
       config,
       ctx
     )
@@ -98,6 +96,8 @@ object ModuleCatalogLatexActor {
       private val seasonRepository: SeasonRepository,
       private val identityRepository: IdentityRepository,
       private val assessmentMethodRepository: AssessmentMethodRepository,
+      private val moduleCatalogGenerationRepo: ModuleCatalogGenerationRequestRepository,
+      private val gitMergeRequestApiService: GitMergeRequestApiService,
       private val config: Config,
       implicit val ctx: ExecutionContext
   ) extends Actor
@@ -108,7 +108,8 @@ object ModuleCatalogLatexActor {
 
     private def tmpFolder = Paths.get(config.tmpFolderPath)
 
-    private def generate(semester: Semester) =
+    private def generate(request: ModuleCatalogGenerationRequest) = {
+      val semester = Semester(request.semesterId)
       for {
         _ <- apiAvailableService.checkAvailability()
         sps <- studyProgramViewRepo.all()
@@ -172,9 +173,47 @@ object ModuleCatalogLatexActor {
           val files = res.collect { case Right(r) => r }
           moveToGitFolder(files).toFuture
         }
-        //        _ <- commit(semester).toFuture
-        res <- create(files)
+        branch = Branch(semester.id)
+        commitMessage =
+          s"Module Catalog for ${semester.enLabel} ${semester.year}"
+        commitSuccess <- commit(branch, commitMessage).toFuture
+        res <-
+          if (commitSuccess) {
+            for {
+              (mrId, mrStatus) <- createMergeRequest(branch, commitMessage)
+              _ = logger.info(
+                s"successfully created merge request with id ${mrId.value}"
+              )
+              created <- createCatalogFiles(files)
+              _ = logger.info(
+                s"successfully created ${created.size} module catalogs"
+              )
+              _ <- moduleCatalogGenerationRepo.update(mrId, mrStatus, request)
+            } yield logger.info(
+              s"successfully updated generation request to new id: ${mrId.value} and status ${mrStatus.id}"
+            )
+          } else {
+            logger.info("nothing to commit!")
+            moduleCatalogGenerationRepo
+              .delete(request.mergeRequestId)
+              .map(_ =>
+                logger.info(
+                  s"successfully deleted generation request with id ${request.mergeRequestId.value}"
+                )
+              )
+          }
       } yield res
+    }
+
+    private def createMergeRequest(branch: Branch, commitMessage: String) =
+      gitMergeRequestApiService.create(
+        branch,
+        config.mainBranch,
+        commitMessage,
+        "",
+        needsApproval = false,
+        config.moduleCatalogLabel
+      )
 
     private def print(
         semester: Semester,
@@ -209,7 +248,7 @@ object ModuleCatalogLatexActor {
         files: Iterable[ModuleCatalogFile]
     ): Either[String, Iterable[ModuleCatalogFile]] = {
       logger.info(s"moving ${files.size} files to git folder...")
-      val destDir = Paths.get(config.glabConfig.mcPath)
+      val destDir = Paths.get(config.mcPath)
       val (failure, success) = files.partitionMap { f =>
         val src = f.texFile.toAbsolutePath
         val dest = destDir.resolve(src.getFileName)
@@ -241,29 +280,42 @@ object ModuleCatalogLatexActor {
       }
     }
 
-    private def commit(semester: Semester): Either[String, String] = {
-      val branchName = semester.id
+    private def commit(
+        branch: Branch,
+        message: String
+    ): Either[String, Boolean] = {
       val process = Process(
         command = Seq(
           "/bin/bash",
-          config.glabConfig.pushScriptPath,
-          config.glabConfig.mainBranch,
-          branchName,
-          s"Module Catalog for ${semester.enLabel} ${semester.year}",
-          s"Module Catalog for ${semester.enLabel} ${semester.year}"
+          config.pushScriptPath,
+          config.mainBranch.value,
+          branch.value,
+          message
         ),
-        cwd = Paths.get(config.glabConfig.repoPath).toAbsolutePath.toFile
+        cwd = Paths.get(config.repoPath).toAbsolutePath.toFile
       )
       val res = execRes(process) {
-        case 1 => "failed to commit"
-        case 2 => "failed to create the merge request"
-        case 3 => "failed to merge the merge request"
+        case 1 => s"failed git switch ${config.mainBranch.value}"
+        case 2 => "failed git pull"
+        case 3 => s"failed git swtich -c ${branch.value}"
+        case 4 => "failed git add"
+        case 5 => "failed git commit"
+        case 6 => s"failed git push origin ${branch.value}"
+        case 7 => "no changes"
       }
-      res.fold(a => logger.error(a._1), logger.info(_))
-      res.mapErr(a => a._2.getOrElse(a._1))
+      res match {
+        case Right(_) =>
+          Right(true)
+        case Left((stdErr, codeErr)) =>
+          if (codeErr.exists(_._1 == 7)) {
+            Right(false)
+          } else {
+            Left(codeErr.fold(stdErr)(_._2))
+          }
+      }
     }
 
-    private def create(xs: Iterable[ModuleCatalogFile]) = {
+    private def createCatalogFiles(xs: Iterable[ModuleCatalogFile]) = {
       def getPdfFileName(
           xs: Iterable[ModuleCatalogFile],
           lang: PrintingLanguage
@@ -317,11 +369,10 @@ object ModuleCatalogLatexActor {
         case NonFatal(e) => Left(e.getMessage)
       }
 
-    override def receive: Receive = { case GenerateLatexFiles(semester) =>
+    override def receive: Receive = { case GenerateLatexFiles(request) =>
       logger.info("start generating module catalogs")
-      generate(semester) onComplete {
-        case Success(value) =>
-          logSuccess(s"created ${value.size} module catalogs")
+      generate(request) onComplete {
+        case Success(_) => logger.info("finished!")
         case Failure(e) => logFailure(e)
       }
     }

@@ -1,11 +1,9 @@
 package controllers
 
 import auth.AuthorizationAction
-import catalog.ModuleCatalogLatexActor
 import controllers.actions.{DirectorCheck, PermissionCheck, PersonAction}
 import database.repo.ModuleCatalogRepository
 import database.repo.core.{IdentityRepository, StudyProgramPersonRepository}
-import models.Semester
 import ops.FileOps.FileOps0
 import play.api.libs.Files.DefaultTemporaryFileCreator
 import play.api.libs.json.Json
@@ -20,7 +18,6 @@ import scala.concurrent.{ExecutionContext, Future}
 final class ModuleCatalogController @Inject() (
     cc: ControllerComponents,
     repo: ModuleCatalogRepository,
-    actor: ModuleCatalogLatexActor,
     fileCreator: DefaultTemporaryFileCreator,
     previewService: ModulePreviewService,
     auth: AuthorizationAction,
@@ -36,13 +33,6 @@ final class ModuleCatalogController @Inject() (
     Action.async(_ =>
       repo.allFromSemester(semester).map(xs => Ok(Json.toJson(xs)))
     )
-
-  // TODO DEBUG ONLY. Generation of Module Catalog should be part of a pipeline
-  def generate(semester: String) =
-    Action { _ =>
-      actor.generateLatexFiles(Semester(semester))
-      NoContent
-    }
 
   def getPreview(studyProgram: String, po: String) =
     auth andThen

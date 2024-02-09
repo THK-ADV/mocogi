@@ -1,5 +1,5 @@
 import auth.{Authorization, UserToken}
-import catalog.{ModuleCatalogLatexActor, WPFCatalogueGeneratorActor}
+import catalog.{PreviewMergeActor, WPFCatalogueGeneratorActor}
 import com.google.inject.name.Names
 import com.google.inject.{AbstractModule, TypeLiteral}
 import git.GitConfig
@@ -16,7 +16,7 @@ import providers._
 import publisher.KafkaPublisher
 import service.core._
 import validator.Metadata
-import webhook.GitPushEventHandler
+import webhook.{GitMergeEventHandler, GitPushEventHandler}
 
 import scala.annotation.unused
 
@@ -50,11 +50,14 @@ class Module(@unused environment: Environment, configuration: Configuration)
     bind(classOf[ModuleKeyService])
       .toProvider(classOf[ModuleKeyServiceProvider])
       .asEagerSingleton()
-    bind(classOf[ModuleCatalogLatexActor])
-      .toProvider(classOf[ModuleCatalogLatexActorProvider])
-      .asEagerSingleton()
     bind(classOf[WPFCatalogueGeneratorActor])
       .toProvider(classOf[WPFCatalogueGeneratorActorProvider])
+      .asEagerSingleton()
+    bind(classOf[PreviewMergeActor])
+      .toProvider(classOf[PreviewMergeActorProvider])
+      .asEagerSingleton()
+    bind(classOf[GitMergeEventHandler])
+      .toProvider(classOf[GitMergeEventHandlerProvider])
       .asEagerSingleton()
 
     bind(new TypeLiteral[Set[MetadataParser]] {})

@@ -22,7 +22,7 @@ final class GitMergeRequestApiService @Inject() (
       title: String,
       description: String,
       needsApproval: Boolean,
-      labels: List[String]
+      label: String
   ): Future[(MergeRequestId, MergeRequestStatus)] =
     ws
       .url(mergeRequestUrl)
@@ -36,7 +36,7 @@ final class GitMergeRequestApiService @Inject() (
         "squash_on_merge" -> true.toString,
         "squash" -> true.toString,
         "approvals_before_merge" -> (if (needsApproval) 1 else 0).toString,
-        "labels" -> labels.mkString(",")
+        "labels" -> label
       )
       .post(EmptyBody)
       .flatMap { res =>
@@ -130,6 +130,13 @@ final class GitMergeRequestApiService @Inject() (
           }
         else Future.failed(parseErrorMessage(res))
       }
+
+  def get(mergeRequestId: MergeRequestId) =
+    ws
+      .url(s"${this.mergeRequestUrl}/${mergeRequestId.value}")
+      .withHttpHeaders(tokenHeader())
+      .get()
+      .map(a => (a.status, a.json))
 
   private def mergeRequestUrl =
     s"${projectsUrl()}/merge_requests"

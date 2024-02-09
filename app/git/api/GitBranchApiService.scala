@@ -19,13 +19,13 @@ final class GitBranchApiService @Inject() (
     private implicit val ctx: ExecutionContext
 ) extends GitService {
 
-  def createBranch(branch: Branch): Future[Unit] = {
+  def createBranch(branch: Branch, source: Branch): Future[Unit] = {
     ws
       .url(this.branchUrl())
       .withHttpHeaders(tokenHeader())
       .withQueryStringParameters(
         ("branch", branch.value),
-        ("ref", config.draftBranch.value)
+        ("ref", source.value)
       )
       .post(EmptyBody)
       .flatMap { res =>

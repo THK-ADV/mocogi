@@ -108,7 +108,7 @@ final class ModuleRepository @Inject() (
       updateAction(module, timestamp)
     }
     val actions = createOrUpdateInstant.appendedAll(updateAfterCreation)
-    db.run(DBIO.sequence(actions).transactionally)
+    db.run(DBIO.sequence(actions).transactionally.map(_.size / 2))
   }
 
   def all(filter: Map[String, Seq[String]]) =

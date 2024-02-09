@@ -12,12 +12,20 @@ final class GitBranchService @Inject() (
     implicit val ctx: ExecutionContext
 ) {
 
-  def createBranch(moduleId: UUID): Future[Branch] = {
+  def createPreviewBranch(): Future[Unit] =
+    apiService.createBranch(
+      apiService.config.draftBranch,
+      apiService.config.mainBranch
+    )
+
+  def createModuleBranch(moduleId: UUID): Future[Branch] = {
     val branch = this.branch(moduleId)
-    apiService.createBranch(branch).map(_ => branch)
+    apiService
+      .createBranch(branch, apiService.config.draftBranch)
+      .map(_ => branch)
   }
 
-  def deleteBranch(moduleId: UUID): Future[Unit] = {
+  def deleteModuleBranch(moduleId: UUID): Future[Unit] = {
     val branch = this.branch(moduleId)
     apiService.deleteBranch(branch)
   }

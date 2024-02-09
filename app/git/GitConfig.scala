@@ -16,5 +16,5 @@ case class GitConfig(
     coreRootFolder: String,
     moduleCatalogRootFolder: String,
     autoApprovedLabel: String,
-    reviewApprovedLabel: String
+    reviewRequiredLabel: String
 )

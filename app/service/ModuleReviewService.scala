@@ -2,10 +2,7 @@ package service
 
 import database.repo.core.StudyProgramDirectorsRepository
 import database.repo.core.StudyProgramDirectorsRepository.StudyProgramDirector
-import database.repo.{
-  ModuleDraftRepository,
-  ModuleReviewRepository
-}
+import database.repo.{ModuleDraftRepository, ModuleReviewRepository}
 import git.api.GitMergeRequestApiService
 import models.ModuleReviewStatus.{Approved, Pending, Rejected}
 import models._
@@ -239,10 +236,8 @@ final class ModuleReviewService @Inject() (
       title,
       description,
       needsApproval,
-      List(
-        if (needsApproval) api.config.reviewApprovedLabel
-        else api.config.autoApprovedLabel
-      )
+      if (needsApproval) api.config.reviewRequiredLabel
+      else api.config.autoApprovedLabel
     )
 
   private def mrTitle(author: Identity.Person, metadata: MetadataProtocol) =

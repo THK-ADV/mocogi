@@ -51,7 +51,7 @@ object ModuleDatabaseActor {
         res onComplete {
           case Success((modules, permissions)) =>
             logger.info(
-              s"successfully created or updated ${modules.size} modules and ${permissions.size} permission entries"
+              s"successfully created or updated $modules modules and ${permissions.size} permission entries"
             )
           case Failure(e) =>
             logger.error(

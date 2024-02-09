@@ -62,7 +62,7 @@ final class ModuleDraftService @Inject() (
 
   def delete(moduleId: UUID): Future[Unit] =
     for {
-      _ <- gitBranchService.deleteBranch(moduleId)
+      _ <- gitBranchService.deleteModuleBranch(moduleId)
       _ <- moduleDraftRepository.delete(moduleId).map(_ => ())
     } yield ()
 
@@ -196,7 +196,7 @@ final class ModuleDraftService @Inject() (
           if (status == ModuleDraftSource.Added) "new module"
           else commitMessage(updatedKeys)
         for {
-          branch <- gitBranchService.createBranch(moduleId)
+          branch <- gitBranchService.createModuleBranch(moduleId)
           commitId <- gitCommitService.commit(
             branch,
             person,

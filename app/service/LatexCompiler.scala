@@ -64,7 +64,7 @@ object LatexCompiler {
       process: ProcessBuilder
   )(
       statusErrMsg: PartialFunction[Int, String]
-  ): Either[(String, Option[String]), String] = {
+  ): Either[(String, Option[(Int, String)]), String] = {
     val builder = new StringBuilder()
     val pLogger =
       ProcessLogger(
@@ -76,7 +76,7 @@ object LatexCompiler {
       if (status == 0) Right(builder.toString())
       else if (status < 0) Left((builder.toString(), None))
       else if (statusErrMsg.isDefinedAt(status))
-        Left((builder.toString(), Some(statusErrMsg(status))))
+        Left((builder.toString(), Some(status, statusErrMsg(status))))
       else Left((builder.toString(), None))
     } catch {
       case NonFatal(e) => Left((e.getMessage, None))

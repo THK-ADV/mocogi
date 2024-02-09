@@ -5,10 +5,22 @@ import play.api.Configuration
 
 import java.util.UUID
 import javax.inject.{Inject, Singleton}
+import scala.jdk.CollectionConverters.IteratorHasAsScala
 import scala.util.Try
 
 @Singleton
 final class ConfigReader @Inject() (config: Configuration) {
+
+  val res = for {
+    trigger <- config.underlying
+      .getConfigList("bigbang.trigger")
+      .iterator()
+      .asScala
+    date = trigger.getString("date")
+    semester = trigger.getString("semester")
+  } yield (date, semester)
+
+  res.foreach(println)
 
   def htmlCmd: String = config.nonEmptyString("pandoc.htmlCmd")
 
@@ -72,8 +84,8 @@ final class ConfigReader @Inject() (config: Configuration) {
 
   def autoApprovedLabel: String = config.nonEmptyString("git.autoApprovedLabel")
 
-  def reviewApprovedLabel: String =
-    config.nonEmptyString("git.reviewApprovedLabel")
+  def reviewRequiredLabel: String =
+    config.nonEmptyString("git.reviewRequiredLabel")
 
   def repoPath: String = config.nonEmptyString("glab.repoPath")
 
@@ -88,4 +100,8 @@ final class ConfigReader @Inject() (config: Configuration) {
   def diffPreviewScriptPath: String = config.nonEmptyString(
     "glab.diffPreviewScriptPath"
   )
+
+  def bigBangLabel = config.nonEmptyString("git.bigBangLabel")
+
+  def moduleCatalogLabel = config.nonEmptyString("git.moduleCatalogLabel")
 }

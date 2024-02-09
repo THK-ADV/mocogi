@@ -1,10 +1,10 @@
 package controllers
 
+import _root_.webhook.{GitMergeEventHandler, GitPushEventHandler}
 import controllers.GitWebhookController.GitlabTokenHeader
 import git._
 import play.api.libs.json._
 import play.api.mvc._
-import _root_.webhook.GitPushEventHandler
 
 import java.util.UUID
 import javax.inject.{Inject, Singleton}
@@ -19,14 +19,15 @@ object GitWebhookController {
 class GitWebhookController @Inject() (
     cc: ControllerComponents,
     gitConfig: GitConfig,
-    gitMergeEventHandlingActor: GitPushEventHandler,
+    gitPushEventHandler: GitPushEventHandler,
+    gitMergeEventHandler: GitMergeEventHandler,
     implicit val ctx: ExecutionContext
 ) extends AbstractController(cc) {
 
   def onPushEvent() =
     isAuthenticated(
       Action(parse.json) { implicit r =>
-        gitMergeEventHandlingActor.handle(r.body)
+        gitPushEventHandler.handle(r.body)
         NoContent
       }
     )
@@ -34,7 +35,7 @@ class GitWebhookController @Inject() (
   def onMergeEvent() =
     isAuthenticated(
       Action(parse.json) { implicit r =>
-        gitMergeEventHandlingActor.handle(r.body)
+        gitMergeEventHandler.handle(r.body)
         NoContent
       }
     )

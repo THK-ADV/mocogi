@@ -1,26 +1,46 @@
 package catalog
 
-import akka.actor.{Actor, ActorRef}
-import catalog.PreviewMergeActor.Merge
+import akka.actor.{Actor, ActorRef, Props}
+import catalog.PreviewMergeActor.CreateMergeRequest
+import database.repo.ModuleCatalogGenerationRequestRepository
 import git.api.GitMergeRequestApiService
+import models.{ModuleCatalogGenerationRequest, Semester}
+import ops.FutureOps.Ops
 import ops.LoggerOps
 import play.api.Logging
 
 import javax.inject.Singleton
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
 import scala.util.{Failure, Success}
 
 @Singleton
 final class PreviewMergeActor(actor: ActorRef) {
-  def merge(): Unit =
-    actor ! Merge
+  def createMergeRequest(semester: Semester): Unit =
+    actor ! CreateMergeRequest(semester)
 }
 
 object PreviewMergeActor {
-  case object Merge
+  case class CreateMergeRequest(semester: Semester) extends AnyVal
+
+  def props(
+      mergeRequestApi: GitMergeRequestApiService,
+      moduleCatalogGenerationRequestRepo: ModuleCatalogGenerationRequestRepository,
+      gitLabel: String,
+      ctx: ExecutionContext
+  ) =
+    Props(
+      new Impl(
+        mergeRequestApi,
+        moduleCatalogGenerationRequestRepo,
+        gitLabel,
+        ctx
+      )
+    )
 
   private class Impl(
       private val mergeRequestApi: GitMergeRequestApiService,
+      private val moduleCatalogGenerationRequestRepo: ModuleCatalogGenerationRequestRepository,
+      private val gitLabel: String,
       implicit val ctx: ExecutionContext
   ) extends Actor
       with Logging
@@ -28,49 +48,45 @@ object PreviewMergeActor {
 
     private def config = mergeRequestApi.config
 
-    private def ensureNonPendingMergeRequests(): Future[Unit] =
-      mergeRequestApi
-        .hasOpenedMergeRequests(config.draftBranch)
-        .flatMap(b =>
-          if (b)
-            Future.failed(
-              new Throwable(
-                s"expected no opened merge request for ${config.draftBranch}"
-              )
-            )
-          else Future.unit
-        )
-
-    // TODO
-//    private def mergePreviewBranch(): Future[Unit] =
-//      for {
-//        (mergeRequestId, _) <- mergeRequestApi.create(
-//          config.draftBranch,
-//          config.mainBranch,
-//          "Big Bang",
-//          "",
-//          needsApproval = false,
-//          Nil
-//        )
-//        _ <- mergeRequestApi.canBeMerged(mergeRequestId)
-//        _ <- mergeRequestApi.merge(mergeRequestId)
-//      } yield ()
-
-    private def merge(): Future[Unit] =
+    private def createMergeRequest(semester: Semester) =
       for {
-        _ <- ensureNonPendingMergeRequests()
-//        _ <- mergePreviewBranch()
-      } yield ()
-
-    override def receive: Receive = { case Merge =>
-      logger.info(
-        s"start merging ${config.draftBranch} branch into ${config.mainBranch} branch"
+        _ <- moduleCatalogGenerationRequestRepo
+          .exists(semester)
+          .abortIf(
+            identity,
+            s"module catalog generation request already defined for semester ${semester.id}"
+          )
+        _ <- mergeRequestApi
+          .hasOpenedMergeRequests(config.draftBranch)
+          .abortIf(
+            identity,
+            s"expected no opened merge request for ${config.draftBranch}"
+          )
+        (mrId, mrStatus) <- mergeRequestApi.create(
+          config.draftBranch,
+          config.mainBranch,
+          s"${semester.deLabel} ${semester.year}",
+          "",
+          needsApproval = false,
+          gitLabel
+        )
+        _ = logger.info(
+          s"successfully created merge request with id ${mrId.value} and status ${mrStatus.id}"
+        )
+        _ <- moduleCatalogGenerationRequestRepo.create(
+          ModuleCatalogGenerationRequest(mrId, semester.id, mrStatus)
+        )
+      } yield logger.info(
+        s"successfully created generation request with id ${mrId.value} and semester ${semester.id}"
       )
-      merge() onComplete {
-        case Success(_) =>
-          logger.info("successfully merged!")
-        case Failure(e) =>
-          logFailure(e)
+
+    override def receive: Receive = { case CreateMergeRequest(semester) =>
+      logger.info(
+        s"start merging ${config.draftBranch} into ${config.mainBranch} for semester ${semester.id}"
+      )
+      createMergeRequest(semester) onComplete {
+        case Success(_) => logger.info("finished!")
+        case Failure(e) => logFailure(e)
       }
     }
   }

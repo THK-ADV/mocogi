@@ -381,6 +381,14 @@ create table module_catalog
     FOREIGN KEY (po) REFERENCES po (id)
 );
 
+create table module_catalog_generation_request
+(
+    "merge_request_id"     integer not null,
+    "merge_request_status" text    not null,
+    "semester"             text    not null,
+    PRIMARY KEY (merge_request_id, semester)
+);
+
 -- study_program_view
 
 create
@@ -475,6 +483,7 @@ drop
 materialized view module_view;
 drop
 materialized view study_program_view;
+drop table module_catalog_generation_request if exists;
 drop table module_catalog if exists;
 drop table module_review if exists;
 drop table module_update_permission if exists;
