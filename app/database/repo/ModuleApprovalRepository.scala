@@ -62,7 +62,7 @@ final class ModuleApprovalRepository @Inject() (
       .join(moduleDraftTable)
       .on(_._1._1.moduleDraft === _.module)
       .flatMap(a =>
-        a._2.authorFk.filter(_.kind === Identity.DefaultKind).map(a -> _)
+        a._2.authorFk.filter(_.kind === Identity.PersonKind).map(a -> _)
       )
       .map { case ((((r, spp), _), d), p) =>
         (

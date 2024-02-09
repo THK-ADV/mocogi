@@ -11,7 +11,7 @@ sealed trait Identity {
 }
 
 object Identity {
-  val DefaultKind = "default"
+  val PersonKind = "person"
   val GroupKind = "group"
   val UnknownKind = "unknown"
 
@@ -25,7 +25,7 @@ object Identity {
       campusId: String,
       status: PersonStatus
   ) extends Identity {
-    override val kind = DefaultKind
+    override val kind = PersonKind
     override def username: Option[String] =
       Option.when(campusId.nonEmpty)(campusId)
 
@@ -63,7 +63,7 @@ object Identity {
       faculties: List[Faculty]
   ): Identity =
     identity.kind match {
-      case DefaultKind =>
+      case PersonKind =>
         Person(
           identity.id,
           identity.lastname,
@@ -101,7 +101,7 @@ object Identity {
           abbreviation,
           Some(campusId),
           status,
-          DefaultKind
+          PersonKind
         )
       case Group(id, title) =>
         IdentityDbEntry(
@@ -137,7 +137,7 @@ object Identity {
   implicit def personWrites: Writes[Person] =
     Json
       .writes[Person]
-      .transform((js: JsObject) => js + ("kind" -> JsString(DefaultKind)))
+      .transform((js: JsObject) => js + ("kind" -> JsString(PersonKind)))
 
   implicit def groupWrites: Writes[Group] =
     Json

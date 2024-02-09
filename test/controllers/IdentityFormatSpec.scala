@@ -30,7 +30,7 @@ final class IdentityFormatSpec extends AnyWordSpec {
       assert((studentJson \ "abbreviation").get == JsString("p1"))
       assert((studentJson \ "campusId").get == JsString("id"))
       assert((studentJson \ "status").get == JsString("active"))
-      assert((studentJson \ "kind").get == JsString(Identity.DefaultKind))
+      assert((studentJson \ "kind").get == JsString(Identity.PersonKind))
     }
 
     "serialize an unknown entry" in {

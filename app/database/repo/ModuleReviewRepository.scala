@@ -67,7 +67,7 @@ final class ModuleReviewRepository @Inject() (
           r.copy(
             studyProgram = sp,
             respondedBy = p.collect {
-              case p if p.kind == Identity.DefaultKind =>
+              case p if p.kind == Identity.PersonKind =>
                 Identity.Person(
                   p.id,
                   p.lastname,

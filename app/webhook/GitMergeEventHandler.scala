@@ -30,12 +30,9 @@ case class GitMergeEventHandler(private val value: ActorRef) {
 }
 
 object GitMergeEventHandler {
-  private type MergeStatus = String
-  private type State = String
   private type Action = String
   private type Labels = IndexedSeq[String]
-  private type ParseResult =
-    (MergeRequestId, MergeStatus, State, Action, Branch, Branch, Labels)
+  private type ParseResult = (MergeRequestId, Action, Branch, Branch, Labels)
 
   def props(
       gitConfig: GitConfig,
@@ -89,70 +86,6 @@ object GitMergeEventHandler {
   ) extends Actor
       with Logging
       with LoggerOps {
-
-    private def parse(json: JsValue): JsResult[ParseResult] = {
-      val attrs = json.\("object_attributes")
-      for {
-        mrId <- attrs.\("iid").validate[Int].map(MergeRequestId.apply)
-        mergeStatus <- attrs.\("detailed_merge_status").validate[String]
-        state <- attrs.\("state").validate[String]
-        action <- attrs.\("action").validate[String]
-        sourceBranch <- attrs
-          .\("source_branch")
-          .validate[String]
-          .map(Branch.apply)
-        targetBranch <- attrs
-          .\("target_branch")
-          .validate[String]
-          .map(Branch.apply)
-        labels <- attrs
-          .\("labels")
-          .validate[JsArray]
-          .map(_.value.collect {
-            case title if title.\("title").isDefined =>
-              title.\("title").validate[String].get
-          })
-      } yield (
-        mrId,
-        mergeStatus,
-        state,
-        action,
-        sourceBranch,
-        targetBranch,
-        labels
-      )
-    }
-
-    private def removeModuleDrafts(id: UUID, moduleId: UUID): Unit = {
-      logger.info(
-        s"[$id][${Thread.currentThread().getName.last}] deleting module draft with id $moduleId"
-      )
-      val f = for {
-        res1 <- moduleReviewRepository.delete(moduleId)
-        res2 <- moduleDraftRepository.delete(moduleId)
-      } yield logger.info(
-        s"[$id][${Thread.currentThread().getName.last}] successfully deleted $res1 module reviews and $res2 module drafts"
-      )
-      f onComplete {
-        case Success(_) =>
-          self ! Finished(id)
-        case Failure(e) =>
-          logFailure(e)
-          self ! Finished(id)
-      }
-    }
-
-    private def abort(id: UUID, result: ParseResult): Unit =
-      logger.info(
-        s"""[$id][${Thread.currentThread().getName.last}] unable to handle event
-                     |- merge request id: ${result._1.value}
-                     |- merge status: ${result._2}
-                     |- state: ${result._3}
-                     |- action: ${result._4}
-                     |- source: ${result._5.value}
-                     |- target ${result._6.value}
-                     |- labels: ${result._7}""".stripMargin
-      )
 
 //    private def handleEvent(json: JsValue): Unit = {
 //      parse(json) match {
@@ -281,34 +214,20 @@ object GitMergeEventHandler {
 //      }
 //    }
 
-    private def withUUID(id: UUID, result: ParseResult, branch: Branch)(
-        k: UUID => Unit
-    ): Unit =
-      try {
-        val moduleId = UUID.fromString(branch.value)
-        k(moduleId)
-      } catch {
-        case NonFatal(_) =>
-          logger.error(
-            s"[$id][${Thread.currentThread().getName.last}] expected source branch to be a module, but was ${branch.value}"
-          )
-          abort(id, result)
-      }
-
     override def receive: Receive = {
       case HandleEvent(json) =>
         val id = UUID.randomUUID()
         parse(json) match {
           case JsSuccess(result, _) =>
             val mrId = result._1
-            val targetBranch = result._6
-            val sourceBranch = result._5
-            val action = result._4
-            val labels = result._7
-
+            val action = result._2
+            val sourceBranch = result._3
+            val targetBranch = result._4
+            val labels = result._5
             (sourceBranch, targetBranch, action) match {
               case (gitConfig.draftBranch, gitConfig.mainBranch, "open")
                   if labels.contains(bigBangLabel) =>
+
               case (semesterBranch, gitConfig.mainBranch, "open")
                   if labels.contains(moduleCatalogLabel) =>
               // TODO semester branch validation
@@ -418,6 +337,53 @@ object GitMergeEventHandler {
         max: Int
     )
 
+    private def handleBigBang(
+        id: UUID,
+        result: ParseResult,
+        mrId: MergeRequestId
+    ) = {
+//      for {
+//        request <- moduleCatalogGenerationRepo.get(mrId)
+//        _ <-
+//          if (request.status != MergeRequestStatus.Open)
+//            abort(id, result)
+//          else
+//            for {
+//              status <- mergeRequestApiService.merge(mrId)
+//              _ = logger.info(
+//                s"[$id][${Thread.currentThread().getName.last}] successfully merged request with id ${mrId.value}"
+//              )
+//              _ <- moduleCatalogGenerationRepo.update(
+//                status,
+//                request
+//              )
+//              _ = logger.info(
+//                s"[$id][${Thread.currentThread().getName.last}] successfully updated generation request with id ${mrId.value} to status ${status.id}"
+//              )
+//            } yield context.system.scheduler.scheduleOnce(
+//              moduleCatalogGenerationDelay,
+//              moduleCatalogActor,
+//              GenerateLatexFiles(request)
+//            )
+//      } yield logger.info(
+//        s"[$id][${Thread.currentThread().getName.last}] successfully scheduled module catalog generation for ${request.semesterId} in $moduleCatalogGenerationDelay"
+//      )
+    }
+
+    private def withUUID(id: UUID, result: ParseResult, branch: Branch)(
+        k: UUID => Unit
+    ): Unit =
+      try {
+        val moduleId = UUID.fromString(branch.value)
+        k(moduleId)
+      } catch {
+        case NonFatal(_) =>
+          logger.error(
+            s"[$id][${Thread.currentThread().getName.last}] expected source branch to be a module, but was ${branch.value}"
+          )
+          abort(id, result)
+      }
+
     private def merge(
         id: UUID,
         mrId: MergeRequestId,
@@ -434,5 +400,63 @@ object GitMergeEventHandler {
         s"[$id][${Thread.currentThread().getName.last}] successfully merged request with id ${mrId.value}"
       )
     }
+
+    private def parse(json: JsValue): JsResult[ParseResult] = {
+      val attrs = json.\("object_attributes")
+      for {
+        mrId <- attrs.\("iid").validate[Int].map(MergeRequestId.apply)
+        action <- attrs.\("action").validate[String]
+        sourceBranch <- attrs
+          .\("source_branch")
+          .validate[String]
+          .map(Branch.apply)
+        targetBranch <- attrs
+          .\("target_branch")
+          .validate[String]
+          .map(Branch.apply)
+        labels <- attrs
+          .\("labels")
+          .validate[JsArray]
+          .map(_.value.collect {
+            case title if title.\("title").isDefined =>
+              title.\("title").validate[String].get
+          })
+      } yield (
+        mrId,
+        action,
+        sourceBranch,
+        targetBranch,
+        labels
+      )
+    }
+
+    private def removeModuleDrafts(id: UUID, moduleId: UUID): Unit = {
+      logger.info(
+        s"[$id][${Thread.currentThread().getName.last}] deleting module draft with id $moduleId"
+      )
+      val f = for {
+        res1 <- moduleReviewRepository.delete(moduleId)
+        res2 <- moduleDraftRepository.delete(moduleId)
+      } yield logger.info(
+        s"[$id][${Thread.currentThread().getName.last}] successfully deleted $res1 module reviews and $res2 module drafts"
+      )
+      f onComplete {
+        case Success(_) =>
+          self ! Finished(id)
+        case Failure(e) =>
+          logFailure(e)
+          self ! Finished(id)
+      }
+    }
+
+    private def abort(id: UUID, result: ParseResult): Unit =
+      logger.info(
+        s"""[$id][${Thread.currentThread().getName.last}] unable to handle event
+           |- merge request id: ${result._1.value}
+           |- action: ${result._2}
+           |- source: ${result._3.value}
+           |- target ${result._4.value}
+           |- labels: ${result._5}""".stripMargin
+      )
   }
 }

@@ -64,7 +64,7 @@ final class ModuleViewRepository @Inject() (
     private def moduleManagementId = column[String]("module_management_id")
     private def moduleManagementKind = column[String]("module_management_kind")
     private def moduleManagementAbbrev =
-      column[String]("module_management_abbrev")
+      column[String]("module_management_abbreviation")
     private def moduleManagementTitle =
       column[String]("module_management_title")
     private def moduleManagementFirstname =
@@ -206,7 +206,7 @@ final class ModuleViewRepository @Inject() (
           a.ects,
           a.moduleManagement.id,
           a.moduleManagement.kind,
-          a.moduleManagement.abbrev,
+          a.moduleManagement.abbreviation,
           a.moduleManagement.title,
           a.moduleManagement.firstname,
           a.moduleManagement.lastname,

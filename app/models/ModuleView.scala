@@ -26,7 +26,7 @@ case class StudyProgramModuleAssociation[Semester](
 
 case class ModuleManagement(
     id: String,
-    abbrev: String,
+    abbreviation: String,
     kind: String,
     title: String,
     firstname: String,

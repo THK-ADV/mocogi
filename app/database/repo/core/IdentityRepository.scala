@@ -65,7 +65,7 @@ class IdentityRepository @Inject() (
     db.run(
       tableQuery
         .filter(a =>
-          a.campusId === campusId.value && a.kind === Identity.DefaultKind
+          a.campusId === campusId.value && a.kind === Identity.PersonKind
         )
         .result
         .map(p =>

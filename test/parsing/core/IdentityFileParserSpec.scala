@@ -239,7 +239,7 @@ final class IdentityFileParserSpec
       assert(res1.value.size == 12)
       assert(res1.value.count(_.kind == Identity.UnknownKind) == 1)
       assert(res1.value.count(_.kind == Identity.GroupKind) == 7)
-      assert(res1.value.count(_.kind == Identity.DefaultKind) == 4)
+      assert(res1.value.count(_.kind == Identity.PersonKind) == 4)
       assert(rest1.isEmpty)
     }
   }
