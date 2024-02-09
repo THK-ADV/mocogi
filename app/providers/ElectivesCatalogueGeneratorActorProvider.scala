@@ -1,8 +1,8 @@
 package providers
 
 import akka.actor.ActorSystem
-import catalog.WPFCatalogueGeneratorActor
-import database.repo.WPFRepository
+import catalog.ElectivesCatalogueGeneratorActor
+import database.repo.ElectivesRepository
 import database.view.StudyProgramViewRepository
 import git.api.GitAvailabilityChecker
 
@@ -10,23 +10,23 @@ import javax.inject.{Inject, Provider, Singleton}
 import scala.concurrent.ExecutionContext
 
 @Singleton
-final class WPFCatalogueGeneratorActorProvider @Inject() (
+final class ElectivesCatalogueGeneratorActorProvider @Inject() (
     system: ActorSystem,
     gitAvailabilityChecker: GitAvailabilityChecker,
-    wpfRepository: WPFRepository,
+    electivesRepository: ElectivesRepository,
     studyProgramViewRepo: StudyProgramViewRepository,
     ctx: ExecutionContext,
     configReader: ConfigReader
-) extends Provider[WPFCatalogueGeneratorActor] {
-  override def get() = new WPFCatalogueGeneratorActor(
+) extends Provider[ElectivesCatalogueGeneratorActor] {
+  override def get() = new ElectivesCatalogueGeneratorActor(
     system.actorOf(
-      WPFCatalogueGeneratorActor.props(
+      ElectivesCatalogueGeneratorActor.props(
         gitAvailabilityChecker,
-        wpfRepository,
+        electivesRepository,
         studyProgramViewRepo,
         ctx,
         configReader.tmpFolderPath,
-        configReader.wpfCatalogueFolderPath
+        configReader.electivesCatalogueFolderPath
       )
     )
   )

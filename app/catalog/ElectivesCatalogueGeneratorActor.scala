@@ -1,8 +1,8 @@
 package catalog
 
 import akka.actor.{Actor, ActorRef, Props}
-import catalog.WPFCatalogueGeneratorActor.Generate
-import database.repo.WPFRepository
+import catalog.ElectivesCatalogueGeneratorActor.Generate
+import database.repo.ElectivesRepository
 import database.view.StudyProgramViewRepository
 import git.api.GitAvailabilityChecker
 import models.core.Identity
@@ -19,26 +19,26 @@ import scala.util.control.NonFatal
 import scala.util.{Failure, Success}
 
 @Singleton
-final class WPFCatalogueGeneratorActor(actor: ActorRef) {
+final class ElectivesCatalogueGeneratorActor(actor: ActorRef) {
   def generate(semester: Semester): Unit =
     actor ! Generate(semester)
 }
 
-object WPFCatalogueGeneratorActor {
+object ElectivesCatalogueGeneratorActor {
   def props(
       gitAvailabilityChecker: GitAvailabilityChecker,
-      wpfRepo: WPFRepository,
+      electivesRepository: ElectivesRepository,
       studyProgramViewRepo: StudyProgramViewRepository,
       ctx: ExecutionContext,
       tmpFolderPath: String,
-      wpfCatalogueFolderPath: String
+      electivesCatalogFolderPath: String
   ) = Props(
     new Impl(
       gitAvailabilityChecker,
-      wpfRepo,
+      electivesRepository,
       studyProgramViewRepo,
       tmpFolderPath,
-      wpfCatalogueFolderPath,
+      electivesCatalogFolderPath,
       ctx
     )
   )
@@ -47,10 +47,10 @@ object WPFCatalogueGeneratorActor {
 
   private class Impl(
       gitAvailabilityChecker: GitAvailabilityChecker,
-      wpfRepo: WPFRepository,
+      electivesRepository: ElectivesRepository,
       studyProgramViewRepo: StudyProgramViewRepository,
       tmpFolderPath: String,
-      wpfCatalogueFolderPath: String,
+      electivesCatalogFolderPath: String,
       implicit val ctx: ExecutionContext
   ) extends Actor
       with Logging
@@ -58,7 +58,7 @@ object WPFCatalogueGeneratorActor {
 
     private def tmpFolder = Paths.get(tmpFolderPath)
 
-    private def wpfCatalogueFolder = Paths.get(wpfCatalogueFolderPath)
+    private def electivesCatalogueFolder = Paths.get(electivesCatalogFolderPath)
 
     private def fillHeaderWithAllStudyPrograms(
         csv: StringBuilder,
@@ -104,7 +104,7 @@ object WPFCatalogueGeneratorActor {
         studyPrograms <- studyProgramViewRepo
           .all()
           .map(_.sortBy(a => (a.degree.id, a.fullPoId, a.poVersion)))
-        electiveModules <- wpfRepo.all()
+        electiveModules <- electivesRepository.all()
         file <- {
           fillHeaderWithAllStudyPrograms(csv, studyPrograms)
           fillContent(csv, studyPrograms, electiveModules)
@@ -125,7 +125,7 @@ object WPFCatalogueGeneratorActor {
         Right(
           Files.move(
             file,
-            wpfCatalogueFolder.resolve(file.getFileName),
+            electivesCatalogueFolder.resolve(file.getFileName),
             StandardCopyOption.REPLACE_EXISTING
           )
         )

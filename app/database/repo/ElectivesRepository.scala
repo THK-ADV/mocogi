@@ -16,7 +16,7 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 
 @Singleton
-final class WPFRepository @Inject() (
+final class ElectivesRepository @Inject() (
     val dbConfigProvider: DatabaseConfigProvider,
     val studyProgramViewRepository: StudyProgramViewRepository,
     private implicit val ctx: ExecutionContext

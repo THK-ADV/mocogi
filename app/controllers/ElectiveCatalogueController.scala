@@ -1,6 +1,6 @@
 package controllers
 
-import catalog.WPFCatalogueGeneratorActor
+import catalog.ElectivesCatalogueGeneratorActor
 import models.Semester
 import play.api.libs.json.{JsArray, Json}
 import play.api.mvc.{AbstractController, ControllerComponents}
@@ -11,13 +11,13 @@ import javax.inject.{Inject, Singleton}
 import scala.jdk.CollectionConverters.IteratorHasAsScala
 
 @Singleton
-final class WPFCatalogueController @Inject() (
+final class ElectiveCatalogueController @Inject() (
     cc: ControllerComponents,
-    actor: WPFCatalogueGeneratorActor,
+    actor: ElectivesCatalogueGeneratorActor,
     configReader: ConfigReader
 ) extends AbstractController(cc) {
 
-  // TODO DEBUG ONLY. Generation of WPF Catalogue should be part of a pipeline
+  // TODO DEBUG ONLY. Generation of Electives Catalogue should be part of a pipeline
   def generate(semester: String) =
     Action { _ =>
       actor.generate(Semester(semester))
@@ -26,7 +26,7 @@ final class WPFCatalogueController @Inject() (
 
   def all() =
     Action { _ =>
-      val folder = Paths.get(configReader.wpfCatalogueFolderPath)
+      val folder = Paths.get(configReader.electivesCatalogueFolderPath)
       val json = Files
         .walk(folder)
         .iterator()

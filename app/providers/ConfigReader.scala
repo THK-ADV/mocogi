@@ -43,8 +43,8 @@ final class ConfigReader @Inject() (config: Configuration) {
     "pandoc.moduleCatalogFolderPath"
   )
 
-  def wpfCatalogueFolderPath: String = config.nonEmptyString(
-    "pandoc.wpfCatalogueFolderPath"
+  def electivesCatalogueFolderPath: String = config.nonEmptyString(
+    "pandoc.electivesCatalogFolderPath"
   )
 
   def gitToken: Option[UUID] = config

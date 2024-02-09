@@ -281,9 +281,9 @@ final class ModuleReviewService @Inject() (
       (po.mandatory.isEmpty, po.optional.isEmpty) match {
         case (true, true) =>
           Set.empty
-        case (false, false) => // Default + WPF
+        case (false, false) => // Default + Elective
           po.mandatory.map(_.po).toSet
-        case (true, false) => // WPF only
+        case (true, false) => // Elective only
           po.optional.map(_.po).toSet
         case (false, true) => // Default only
           po.mandatory.map(_.po).toSet
