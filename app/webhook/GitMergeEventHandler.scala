@@ -263,14 +263,10 @@ object GitMergeEventHandler {
 
     private def scheduleModuleCatalogMerge(semester: Semester)(implicit
         id: UUID,
-        result: ParseResult,
         mrId: MergeRequestId
     ): Unit = moduleCatalogGenerationRepo.get(mrId, semester.id).onComplete {
-      case Success(r) if r.status == MergeRequestStatus.Open =>
+      case Success(r) =>
         scheduleMerge(0, () => self ! MergeModuleCatalog(id, mrId, r))
-      case Success(_) =>
-        abort(id, result)
-        self ! Finished(id)
       case Failure(e) =>
         logFailure(e)
         self ! Finished(id)
@@ -278,11 +274,10 @@ object GitMergeEventHandler {
 
     private def scheduleModuleCatalogCreation(implicit
         id: UUID,
-        result: ParseResult,
         mrId: MergeRequestId
     ): Unit =
       moduleCatalogGenerationRepo.get(mrId).onComplete {
-        case Success(r) if r.status == MergeRequestStatus.Merged =>
+        case Success(r) =>
           logger.info(
             s"[$id][${Thread.currentThread().getName.last}] scheduling module catalog generating in $moduleCatalogGenerationDelay"
           )
@@ -291,8 +286,6 @@ object GitMergeEventHandler {
             self,
             CreateModuleCatalogs(id, r)
           )
-        case Success(_) =>
-          abort(id, result)
           self ! Finished(id)
         case Failure(e) =>
           logFailure(e)
@@ -311,15 +304,11 @@ object GitMergeEventHandler {
 
     private def scheduleBigBangMerge(implicit
         id: UUID,
-        result: ParseResult,
         mrId: MergeRequestId
     ): Unit =
       moduleCatalogGenerationRepo.get(mrId).onComplete {
-        case Success(r) if r.status == MergeRequestStatus.Open =>
+        case Success(r) =>
           scheduleMerge(0, () => self ! MergePreview(id, mrId, r))
-        case Success(_) =>
-          abort(id, result)
-          self ! Finished(id)
         case Failure(e) =>
           logFailure(e)
           self ! Finished(id)

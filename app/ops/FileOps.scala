@@ -13,6 +13,32 @@ object FileOps {
         StandardCopyOption.REPLACE_EXISTING
       )
 
+    def move(folder: Path) =
+      try {
+        Right(
+          Files.move(
+            self,
+            folder.resolve(self.getFileName),
+            StandardCopyOption.REPLACE_EXISTING
+          )
+        )
+      } catch {
+        case NonFatal(e) => Left(e.getMessage)
+      }
+
+    def copy(folder: Path) =
+      try {
+        Right(
+          Files.copy(
+            self,
+            folder.resolve(self.getFileName),
+            StandardCopyOption.REPLACE_EXISTING
+          )
+        )
+      } catch {
+        case NonFatal(e) => Left(e.getMessage)
+      }
+
     def deleteDirectory(): Unit =
       Files
         .walk(self)

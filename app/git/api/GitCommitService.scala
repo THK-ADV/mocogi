@@ -31,7 +31,7 @@ final class GitCommitService @Inject() (
     val action = GitCommitAction(gitActionType, filePath, print.value)
     apiService.commit(
       branch,
-      author.email getOrElse "mocogi@th-koeln.de",
+      author.email getOrElse apiService.config.defaultEmail,
       author.fullName,
       message,
       Seq(action)

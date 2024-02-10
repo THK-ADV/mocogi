@@ -6,6 +6,8 @@
 # $4 GIT_ACCESS_TOKEN
 # $5 GIT_REPO_PATH
 # $6 GIT_REPO_NAME
+git config --global user.email $1
+git config --global user.name $2
 glab config set -g pull.rebase false &&
 glab config set -g user.email $1 &&
 glab config set -g user.name $2 &&

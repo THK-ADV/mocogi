@@ -104,4 +104,8 @@ final class ConfigReader @Inject() (config: Configuration) {
   def bigBangLabel = config.nonEmptyString("git.bigBangLabel")
 
   def moduleCatalogLabel = config.nonEmptyString("git.moduleCatalogLabel")
+
+  def defaultEmail = config.nonEmptyString("git.defaultEmail")
+
+  def defaultUser = config.nonEmptyString("git.defaultUser")
 }

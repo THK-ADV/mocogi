@@ -1,9 +1,5 @@
 import auth.{Authorization, UserToken}
-import catalog.{
-  ElectivesCatalogueGeneratorActor,
-  ModuleCatalogConfig,
-  PreviewMergeActor
-}
+import catalog.{ElectivesCatalogService, ModuleCatalogConfig, PreviewMergeActor}
 import com.google.inject.name.Names
 import com.google.inject.{AbstractModule, TypeLiteral}
 import git.GitConfig
@@ -54,9 +50,6 @@ class Module(@unused environment: Environment, configuration: Configuration)
     bind(classOf[ModuleKeyService])
       .toProvider(classOf[ModuleKeyServiceProvider])
       .asEagerSingleton()
-    bind(classOf[ElectivesCatalogueGeneratorActor])
-      .toProvider(classOf[ElectivesCatalogueGeneratorActorProvider])
-      .asEagerSingleton()
     bind(classOf[PreviewMergeActor])
       .toProvider(classOf[PreviewMergeActorProvider])
       .asEagerSingleton()
@@ -65,6 +58,9 @@ class Module(@unused environment: Environment, configuration: Configuration)
       .asEagerSingleton()
     bind(classOf[ModuleCatalogConfig])
       .toProvider(classOf[ModuleCatalogConfigProvider])
+      .asEagerSingleton()
+    bind(classOf[ElectivesCatalogService])
+      .toProvider(classOf[ElectivesCatalogServiceProvider])
       .asEagerSingleton()
 
     bind(new TypeLiteral[Set[MetadataParser]] {})
@@ -88,5 +84,6 @@ class Module(@unused environment: Environment, configuration: Configuration)
     bind(classOf[String])
       .annotatedWith(Names.named("gitHost"))
       .toInstance(configuration.nonEmptyString("git.host"))
+
   }
 }

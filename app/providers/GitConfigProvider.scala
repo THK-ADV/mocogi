@@ -21,6 +21,8 @@ final class GitConfigProvider @Inject() (config: ConfigReader)
       config.coreRootFolder,
       config.moduleCatalogRootFolder,
       config.autoApprovedLabel,
-      config.reviewRequiredLabel
+      config.reviewRequiredLabel,
+      config.defaultEmail,
+      config.defaultUser
     )
 }

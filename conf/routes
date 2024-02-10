@@ -84,7 +84,6 @@ POST          /moduleUpdatePermissions/:moduleId               controllers.Modul
 
 # Electives
 
-POST          /electivesCataloges/:semester                    controllers.ElectiveCatalogueController.generate(semester: java.lang.String)
 GET           /electivesCataloges                              controllers.ElectiveCatalogueController.all()
 
 # Map static resources from the /public folder to the /assets URL path
