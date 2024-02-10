@@ -1,25 +1,14 @@
 package providers
 
 import akka.actor.ActorSystem
-import catalog.ModuleCatalogLatexActor
-import catalog.ModuleCatalogLatexActor.Config
-import database.repo.core._
+import catalog.ModuleCatalogService
 import database.repo.{
   ModuleCatalogGenerationRequestRepository,
-  ModuleCatalogRepository,
   ModuleDraftRepository,
-  ModuleRepository,
   ModuleReviewRepository
 }
-import database.view.StudyProgramViewRepository
 import git.GitConfig
-import git.api.{
-  GitAvailabilityChecker,
-  GitBranchService,
-  GitMergeRequestApiService
-}
-import models.Branch
-import printing.latex.ModuleCatalogLatexPrinter
+import git.api.{GitBranchService, GitMergeRequestApiService}
 import webhook.GitMergeEventHandler
 
 import javax.inject.{Inject, Provider, Singleton}
@@ -32,20 +21,11 @@ final class GitMergeEventHandlerProvider @Inject() (
     gitConfig: GitConfig,
     moduleReviewRepository: ModuleReviewRepository,
     moduleDraftRepository: ModuleDraftRepository,
-    mergeRequestApiService: GitMergeRequestApiService,
     moduleCatalogGenerationRepo: ModuleCatalogGenerationRequestRepository,
-    configReader: ConfigReader,
-    gitAvailabilityChecker: GitAvailabilityChecker,
-    printer: ModuleCatalogLatexPrinter,
-    moduleRepository: ModuleRepository,
-    catalogRepository: ModuleCatalogRepository,
-    studyProgramViewRepo: StudyProgramViewRepository,
-    moduleTypeRepository: ModuleTypeRepository,
-    languageRepository: LanguageRepository,
-    seasonRepository: SeasonRepository,
-    identityRepository: IdentityRepository,
-    assessmentMethodRepository: AssessmentMethodRepository,
+    mergeRequestApiService: GitMergeRequestApiService,
     branchService: GitBranchService,
+    moduleCatalogService: ModuleCatalogService,
+    configReader: ConfigReader,
     ctx: ExecutionContext
 ) extends Provider[GitMergeEventHandler] {
   override def get() = GitMergeEventHandler(
@@ -54,40 +34,15 @@ final class GitMergeEventHandlerProvider @Inject() (
         gitConfig,
         moduleReviewRepository,
         moduleDraftRepository,
+        moduleCatalogGenerationRepo,
         mergeRequestApiService,
         branchService,
+        moduleCatalogService,
         configReader.bigBangLabel,
         configReader.moduleCatalogLabel,
         configReader.autoApprovedLabel,
         configReader.reviewRequiredLabel,
-        10.seconds,
-        system.actorOf(
-          ModuleCatalogLatexActor.props(
-            gitAvailabilityChecker,
-            printer,
-            moduleRepository,
-            catalogRepository,
-            studyProgramViewRepo,
-            moduleTypeRepository,
-            languageRepository,
-            seasonRepository,
-            identityRepository,
-            assessmentMethodRepository,
-            moduleCatalogGenerationRepo,
-            mergeRequestApiService,
-            Config(
-              configReader.tmpFolderPath,
-              configReader.moduleCatalogFolderPath,
-              configReader.repoPath,
-              configReader.mcPath,
-              configReader.pushScriptPath,
-              Branch(configReader.mainBranch),
-              configReader.moduleCatalogLabel
-            ),
-            ctx
-          )
-        ),
-        moduleCatalogGenerationRepo,
+        15.seconds,
         10,
         ctx
       )

@@ -25,7 +25,7 @@ object LatexCompiler {
       case NonFatal(e) => Left(e.getMessage)
     }
 
-  def clear(file: Path): Unit = {
+  def clear(file: Path): Either[String, String] = {
     val process = Process(
       command = s"latexmk -c ${file.getFileName.toString}",
       cwd = file.getParent.toAbsolutePath.toFile

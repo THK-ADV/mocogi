@@ -1,5 +1,9 @@
 import auth.{Authorization, UserToken}
-import catalog.{ElectivesCatalogueGeneratorActor, PreviewMergeActor}
+import catalog.{
+  ElectivesCatalogueGeneratorActor,
+  ModuleCatalogConfig,
+  PreviewMergeActor
+}
 import com.google.inject.name.Names
 import com.google.inject.{AbstractModule, TypeLiteral}
 import git.GitConfig
@@ -58,6 +62,9 @@ class Module(@unused environment: Environment, configuration: Configuration)
       .asEagerSingleton()
     bind(classOf[GitMergeEventHandler])
       .toProvider(classOf[GitMergeEventHandlerProvider])
+      .asEagerSingleton()
+    bind(classOf[ModuleCatalogConfig])
+      .toProvider(classOf[ModuleCatalogConfigProvider])
       .asEagerSingleton()
 
     bind(new TypeLiteral[Set[MetadataParser]] {})

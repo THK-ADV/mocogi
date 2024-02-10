@@ -32,6 +32,17 @@ final class ModuleCatalogGenerationRequestRepository @Inject() (
   def get(mrId: MergeRequestId): Future[ModuleCatalogGenerationRequest] =
     db.run(tableQuery.filter(_.mergeRequestId === mrId).result.single)
 
+  def get(
+      mrId: MergeRequestId,
+      semesterId: String
+  ): Future[ModuleCatalogGenerationRequest] =
+    db.run(
+      tableQuery
+        .filter(a => a.mergeRequestId === mrId && a.semesterId === semesterId)
+        .result
+        .single
+    )
+
   def update(
       newStatus: MergeRequestStatus,
       existing: ModuleCatalogGenerationRequest
@@ -61,6 +72,13 @@ final class ModuleCatalogGenerationRequestRepository @Inject() (
 
   def delete(mrId: MergeRequestId) =
     db.run(tableQuery.filter(_.mergeRequestId === mrId).delete)
+
+  def delete(mrId: MergeRequestId, semesterId: String) =
+    db.run(
+      tableQuery
+        .filter(a => a.mergeRequestId === mrId && a.semesterId === semesterId)
+        .delete
+    )
 
   override protected val tableQuery
       : TableQuery[ModuleCatalogGenerationRequestTable] =

@@ -52,6 +52,7 @@ if [ -n "$(git status --porcelain)" ]; then
       reset_to_head $1 $2
       exit 6
   fi
+  git branch -D $2
   echo ">> done!"
   exit 0
 else
