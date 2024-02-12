@@ -3,7 +3,7 @@ package git
 import models.ModuleDraft
 
 import java.util.UUID
-import scala.util.Try
+import scala.util.control.NonFatal
 
 sealed trait GitFilePath extends Any {
   def value: String
@@ -44,11 +44,15 @@ object GitFilePath {
       val prefix = modulePrefix
       val suffix = moduleFileExt
       if (self.value.startsWith(prefix) && self.value.endsWith(suffix)) {
-        Try(
-          UUID.fromString(
-            self.value.stripPrefix(prefix).stripSuffix(suffix)
+        try {
+          Some(
+            UUID.fromString(
+              self.value.stripPrefix(prefix).stripSuffix(suffix)
+            )
           )
-        ).toOption
+        } catch {
+          case NonFatal(_) => None
+        }
       } else {
         None
       }

@@ -8,6 +8,9 @@ import parsing.types.{ModulePOMandatory, ParsedPOOptional}
 import parsing.{multipleValueParser, uuidParser}
 
 object ModulePOParser {
+
+  def modulePOMandatoryKey = "po_mandatory:"
+
   def studyProgramParser(implicit
       pos: Seq[PO],
       specializations: Seq[Specialization]
@@ -56,7 +59,7 @@ object ModulePOParser {
       pos: Seq[PO],
       specializations: Seq[Specialization]
   ): Parser[List[ModulePOMandatory]] =
-    prefix("po_mandatory:")
+    prefix(modulePOMandatoryKey)
       .skip(zeroOrMoreSpaces)
       .take(
         studyProgramParser

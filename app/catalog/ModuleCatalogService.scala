@@ -169,12 +169,7 @@ final class ModuleCatalogService @Inject() (
         printer.print(
           sp,
           Some(semester),
-          ms
-            .filter(_.metadata.po.mandatory.exists { a =>
-              a.po == sp.poId && a.specialization
-                .zip(sp.specialization)
-                .fold(true)(a => a._1 == a._2.id)
-            }),
+          ms,
           mts,
           lang,
           seasons,

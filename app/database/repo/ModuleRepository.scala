@@ -128,11 +128,6 @@ final class ModuleRepository @Inject() (
     retrieve(tableQuery.filter(_.id.in(isMandatoryPO)))
   }
 
-  def allIdsFromPo(po: String) = {
-    val isMandatoryPO = isMandatoryPOQuery(Seq(po))
-    db.run(tableQuery.filter(_.id.in(isMandatoryPO)).map(_.id).result)
-  }
-
   private def isMandatoryPOQuery(pos: Seq[String]) =
     poMandatoryTable.filter(_.po.inSet(pos)).map(_.module)
 

@@ -24,6 +24,10 @@ final class MetadataPipeline @Inject() (
     private val moduleYamlPrinter: ModuleYamlPrinter,
     implicit val ctx: ExecutionContext
 ) {
+
+  // TODO implement raw parsing and use it where needed
+  def parseRaw(print: Print) = ???
+
   def parse(print: Print): Future[ModuleProtocol] =
     parser.parse(print).flatMap {
       case Right((metadata, de, en)) =>

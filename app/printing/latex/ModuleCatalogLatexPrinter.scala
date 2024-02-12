@@ -5,7 +5,7 @@ import models.core._
 import monocle.Lens
 import monocle.macros.GenLens
 import ops.StringBuilderOps.SBOps
-import parsing.types.{ModuleContent, Module}
+import parsing.types.ModuleContent
 import play.api.Logging
 import printing.pandoc.PandocApi
 import printing.{
@@ -16,7 +16,6 @@ import printing.{
   fmtDouble,
   fmtIdentity
 }
-import validator.ModuleRelation
 
 import java.util.UUID
 import javax.inject.{Inject, Singleton}
@@ -47,126 +46,6 @@ final class ModuleCatalogLatexPrinter @Inject() (pandocApi: PandocApi)
 
   def print(
       studyProgram: StudyProgramView,
-      modules: Seq[Module],
-      studyProgramViews: Seq[StudyProgramView]
-  )(implicit
-      language: PrintingLanguage
-  ): StringBuilder = {
-    // TODO this is a bad implementation, because it transforms each Module to ModuleProtocol. A raw Module parser would be great here
-    val entries = List.newBuilder[ModuleProtocol]
-    val moduleTypes = Set.newBuilder[ModuleType]
-    val languages = Set.newBuilder[ModuleLanguage]
-    val seasons = Set.newBuilder[Season]
-    val people = Set.newBuilder[Identity]
-    val assessmentMethods = Set.newBuilder[AssessmentMethod]
-
-    modules.foreach { m =>
-      moduleTypes += m.metadata.kind
-      languages += m.metadata.language
-      seasons += m.metadata.season
-      people ++= m.metadata.responsibilities.moduleManagement
-      people ++= m.metadata.responsibilities.lecturers
-      assessmentMethods ++= m.metadata.assessmentMethods.mandatory
-        .map(_.method)
-      assessmentMethods ++= m.metadata.assessmentMethods.optional
-        .map(_.method)
-
-      entries += ModuleProtocol(
-        Some(m.metadata.id),
-        MetadataProtocol(
-          m.metadata.title,
-          m.metadata.abbrev,
-          m.metadata.kind.id,
-          m.metadata.ects.value,
-          m.metadata.language.id,
-          m.metadata.duration,
-          m.metadata.season.id,
-          m.metadata.workload,
-          m.metadata.status.id,
-          m.metadata.location.id,
-          m.metadata.participants,
-          m.metadata.relation.map {
-            case ModuleRelation.Parent(children) =>
-              ModuleRelationProtocol.Parent(children.map(_.id))
-            case ModuleRelation.Child(parent) =>
-              ModuleRelationProtocol.Child(parent.id)
-          },
-          m.metadata.responsibilities.moduleManagement.map(_.id),
-          m.metadata.responsibilities.lecturers.map(_.id),
-          ModuleAssessmentMethodsProtocol(
-            m.metadata.assessmentMethods.mandatory.map(a =>
-              ModuleAssessmentMethodEntryProtocol(
-                a.method.id,
-                a.percentage,
-                a.precondition.map(_.id)
-              )
-            ),
-            m.metadata.assessmentMethods.optional.map(a =>
-              ModuleAssessmentMethodEntryProtocol(
-                a.method.id,
-                a.percentage,
-                a.precondition.map(_.id)
-              )
-            )
-          ),
-          ModulePrerequisitesProtocol(
-            m.metadata.prerequisites.recommended.map(e =>
-              ModulePrerequisiteEntryProtocol(
-                e.text,
-                e.modules.map(_.id),
-                e.pos.map(_.id)
-              )
-            ),
-            m.metadata.prerequisites.required.map(e =>
-              ModulePrerequisiteEntryProtocol(
-                e.text,
-                e.modules.map(_.id),
-                e.pos.map(_.id)
-              )
-            )
-          ),
-          ModulePOProtocol(
-            m.metadata.pos.mandatory.map(a =>
-              ModulePOMandatoryProtocol(
-                a.po.id,
-                a.specialization.map(_.id),
-                a.recommendedSemester
-              )
-            ),
-            m.metadata.pos.optional.map(a =>
-              ModulePOOptionalProtocol(
-                a.po.id,
-                a.specialization.map(_.id),
-                a.instanceOf.id,
-                a.partOfCatalog,
-                a.recommendedSemester
-              )
-            )
-          ),
-          m.metadata.competences.map(_.id),
-          m.metadata.globalCriteria.map(_.id),
-          m.metadata.taughtWith.map(_.id)
-        ),
-        m.deContent,
-        m.enContent
-      )
-    }
-
-    print(
-      studyProgram,
-      None,
-      entries.result(),
-      moduleTypes.result().toSeq,
-      languages.result().toSeq,
-      seasons.result().toSeq,
-      people.result().toSeq,
-      assessmentMethods.result().toSeq,
-      studyProgramViews
-    )
-  }
-
-  def print(
-      studyProgram: StudyProgramView,
       semester: Option[Semester],
       entries: Seq[ModuleProtocol],
       moduleTypes: Seq[ModuleType],
@@ -174,7 +53,8 @@ final class ModuleCatalogLatexPrinter @Inject() (pandocApi: PandocApi)
       seasons: Seq[Season],
       people: Seq[Identity],
       assessmentMethods: Seq[AssessmentMethod],
-      studyProgramViews: Seq[StudyProgramView]
+      studyProgramViews: Seq[StudyProgramView],
+      diffs: Seq[(ModuleCore, Set[String])] = Seq.empty
   )(implicit lang: PrintingLanguage): StringBuilder = {
     implicit val builder: StringBuilder = new StringBuilder()
     builder.append("\\documentclass[article, 11pt, oneside]{book}\n")
@@ -187,6 +67,7 @@ final class ModuleCatalogLatexPrinter @Inject() (pandocApi: PandocApi)
     newPage
     builder.append("\\layout*\n")
     newPage
+    renderDiffs(diffs)
     builder.append("\\tableofcontents\n")
     headlineFormats
     chapter(lang.prologHeadline)
@@ -195,7 +76,11 @@ final class ModuleCatalogLatexPrinter @Inject() (pandocApi: PandocApi)
     newPage
     modules(
       studyProgram.poId,
-      entries,
+      entries.filter(_.metadata.po.mandatory.exists { a =>
+        a.po == studyProgram.poId && a.specialization
+          .zip(studyProgram.specialization)
+          .fold(true)(a => a._1 == a._2.id)
+      }),
       moduleTypes,
       languages,
       seasons,
@@ -205,6 +90,21 @@ final class ModuleCatalogLatexPrinter @Inject() (pandocApi: PandocApi)
     )
     chapter(lang.studyPlanHeadline)
     builder.append("\\end{document}")
+  }
+
+  private def renderDiffs(
+      diffs: Seq[(ModuleCore, Set[String])]
+  )(implicit builder: StringBuilder) = {
+    if (diffs.nonEmpty) {
+      builder.append(s"\\textbf{Module Diffs}\n\n")
+      diffs.foreach { case (module, diffs) =>
+        builder.append(s"${module.title} (${module.id})\n")
+        builder.append("\\begin{itemize}\n")
+        diffs.foreach(d => builder.append(s"\\item $d\n"))
+        builder.append("\\end{itemize}\n")
+      }
+      newPage
+    }
   }
 
   private def modules(
@@ -352,7 +252,10 @@ final class ModuleCatalogLatexPrinter @Inject() (pandocApi: PandocApi)
         module.deContent,
         module.enContent,
         List(
-          (lang.learningOutcomeLabel, GenLens[ModuleContent](_.learningOutcome)),
+          (
+            lang.learningOutcomeLabel,
+            GenLens[ModuleContent](_.learningOutcome)
+          ),
           (lang.moduleContentLabel, GenLens[ModuleContent](_.content)),
           (
             lang.teachingAndLearningMethodsLabel,
