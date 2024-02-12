@@ -83,16 +83,6 @@ final class ConfigReader @Inject() (config: Configuration) {
   def reviewRequiredLabel: String =
     config.nonEmptyString("git.reviewRequiredLabel")
 
-  def repoPath: String = config.nonEmptyString("glab.repoPath")
-
-  def switchBranchScriptPath: String = config.nonEmptyString(
-    "glab.switchBranchScriptPath"
-  )
-
-  def diffPreviewScriptPath: String = config.nonEmptyString(
-    "glab.diffPreviewScriptPath"
-  )
-
   def bigBangLabel = config.nonEmptyString("git.bigBangLabel")
 
   def moduleCatalogLabel = config.nonEmptyString("git.moduleCatalogLabel")

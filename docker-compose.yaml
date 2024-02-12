@@ -28,12 +28,6 @@ services:
       dockerfile: Dockerfile
       args:
         GITHUB_TOKEN: ${GITHUB_TOKEN}
-        GIT_EMAIL: ${GIT_EMAIL}
-        GIT_USERNAME: ${GIT_USERNAME}
-        GIT_HOST: ${GIT_HOST}
-        GIT_ACCESS_TOKEN: ${GIT_ACCESS_TOKEN}
-        GIT_REPO_PATH: ${GIT_REPO_PATH}
-        GIT_REPO_NAME: ${GIT_REPO_NAME}
 
   frontend:
     container_name: mocogi-frontend

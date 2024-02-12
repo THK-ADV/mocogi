@@ -36,33 +36,32 @@ final class ModuleCatalogController @Inject() (
     )
 
   def getPreview(studyProgram: String, po: String) =
-//    auth andThen
-//      personAction andThen
-//      isDirector(studyProgram) async { r =>
-    Action.async { r =>
-      r.headers.get(HeaderNames.ACCEPT) match {
-        case Some(MimeTypes.PDF) =>
-          val lang = r.parseLang()
-          val filename = s"${lang.id}_draft_$po"
-          val file = fileCreator.create(filename, ".tex")
-          previewService
-            .previewCatalog(po, lang, file)
-            .map(path =>
-              Ok.sendPath(
-                path,
-                onClose = () => file.getParentFile.toPath.deleteDirectory()
-              ).as(MimeTypes.PDF)
+    auth andThen
+      personAction andThen
+      isDirector(studyProgram) async { r =>
+        r.headers.get(HeaderNames.ACCEPT) match {
+          case Some(MimeTypes.PDF) =>
+            val lang = r.parseLang()
+            val filename = s"${lang.id}_draft_$po"
+            val file = fileCreator.create(filename, ".tex")
+            previewService
+              .previewCatalog(po, lang, file)
+              .map(path =>
+                Ok.sendPath(
+                  path,
+                  onClose = () => file.getParentFile.toPath.deleteDirectory()
+                ).as(MimeTypes.PDF)
+              )
+              .recoverWith { case NonFatal(e) =>
+                file.getParentFile.toPath.deleteDirectory()
+                Future.failed(e)
+              }
+          case _ =>
+            Future.successful(
+              UnsupportedMediaType(
+                s"expected media type: ${MimeTypes.JSON} or ${MimeTypes.PDF}"
+              )
             )
-            .recoverWith { case NonFatal(e) =>
-              file.getParentFile.toPath.deleteDirectory()
-              Future.failed(e)
-            }
-        case _ =>
-          Future.successful(
-            UnsupportedMediaType(
-              s"expected media type: ${MimeTypes.JSON} or ${MimeTypes.PDF}"
-            )
-          )
+        }
       }
-    }
 }

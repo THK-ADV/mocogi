@@ -1,5 +1,7 @@
 package controllers
 
+import auth.AuthorizationAction
+import controllers.actions.{AdminCheck, PermissionCheck}
 import git.api.{GitFileDownloadService, GitRepositoryApiService}
 import git.publisher.{CoreDataPublisher, ModulePublisher}
 import git.{GitChanges, GitConfig}
@@ -15,43 +17,48 @@ final class GitController @Inject() (
     gitRepositoryApiService: GitRepositoryApiService,
     modulePublisher: ModulePublisher,
     coreDataPublisher: CoreDataPublisher,
+    auth: AuthorizationAction,
     gitConfig: GitConfig,
     implicit val ctx: ExecutionContext
-) extends AbstractController(cc) {
+) extends AbstractController(cc)
+    with AdminCheck
+    with PermissionCheck {
 
-  def updateCoreFiles() = Action.async { _ => // TODO permission handling
-    for {
-      paths <- gitRepositoryApiService.listCoreFiles()
-      contents <- Future.sequence(
-        paths.map(path =>
-          downloadService
-            .downloadFileContent(path, gitConfig.mainBranch)
-            .collect { case Some(content) =>
-              path -> content
-            }
+  def updateCoreFiles() =
+    auth andThen isAdmin async { _ =>
+      for {
+        paths <- gitRepositoryApiService.listCoreFiles()
+        contents <- Future.sequence(
+          paths.map(path =>
+            downloadService
+              .downloadFileContent(path, gitConfig.mainBranch)
+              .collect { case Some(content) =>
+                path -> content
+              }
+          )
         )
-      )
-    } yield {
-      coreDataPublisher.notifySubscribers(GitChanges(contents))
-      NoContent
+      } yield {
+        coreDataPublisher.notifySubscribers(GitChanges(contents))
+        NoContent
+      }
     }
-  }
 
-  def updateModuleFiles() = Action.async { _ => // TODO permission handling
-    for {
-      paths <- gitRepositoryApiService.listModuleFiles()
-      contents <- Future.sequence(
-        paths.map(path =>
-          downloadService
-            .downloadFileContent(path, gitConfig.mainBranch)
-            .collect { case Some(content) =>
-              path -> content
-            }
+  def updateModuleFiles() =
+    auth andThen isAdmin async { _ =>
+      for {
+        paths <- gitRepositoryApiService.listModuleFiles()
+        contents <- Future.sequence(
+          paths.map(path =>
+            downloadService
+              .downloadFileContent(path, gitConfig.mainBranch)
+              .collect { case Some(content) =>
+                path -> content
+              }
+          )
         )
-      )
-    } yield {
-      modulePublisher.notifySubscribers(GitChanges(contents))
-      NoContent
+      } yield {
+        modulePublisher.notifySubscribers(GitChanges(contents))
+        NoContent
+      }
     }
-  }
 }
