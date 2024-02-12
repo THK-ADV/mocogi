@@ -4,13 +4,11 @@ import git.{GitConfig, GitFileContent, GitFilePath}
 import models.Branch
 import play.api.libs.ws.WSClient
 
-import java.net.URLEncoder
-import java.nio.charset.StandardCharsets
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-final class GitFileDownloadApiService @Inject() (
+final class GitFileApiService @Inject() (
     private val ws: WSClient,
     val config: GitConfig,
     private implicit val ctx: ExecutionContext
@@ -21,7 +19,7 @@ final class GitFileDownloadApiService @Inject() (
       branch: Branch
   ): Future[Option[GitFileContent]] =
     ws
-      .url(url(path, branch))
+      .url(fileUrl(path, branch))
       .addHttpHeaders(tokenHeader())
       .get()
       .flatMap { r =>
@@ -42,9 +40,16 @@ final class GitFileDownloadApiService @Inject() (
         }
       }
 
-  private def urlEncoded(path: GitFilePath) =
-    URLEncoder.encode(path.value, StandardCharsets.UTF_8)
-
-  private def url(path: GitFilePath, branch: Branch) =
-    s"${config.baseUrl}/projects/${config.projectId}/repository/files/${urlEncoded(path)}/raw?ref=${branch.value}"
+  def fileExists(path: GitFilePath, branch: Branch) =
+    ws
+      .url(fileUrl(path, branch))
+      .addHttpHeaders(tokenHeader())
+      .head()
+      .flatMap { r =>
+        r.status match {
+          case 200 => Future.successful(true)
+          case 404 => Future.successful(false)
+          case _   => Future.failed(parseErrorMessage(r))
+        }
+      }
 }

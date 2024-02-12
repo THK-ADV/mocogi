@@ -10,11 +10,9 @@ final class ModuleCatalogConfigProvider @Inject() (configReader: ConfigReader)
     extends Provider[ModuleCatalogConfig] {
   override def get() = ModuleCatalogConfig(
     configReader.tmpFolderPath,
-    configReader.moduleCatalogFolderPath,
-    configReader.repoPath,
-    configReader.mcPath,
-    configReader.pushScriptPath,
-    Branch(configReader.mainBranch),
-    configReader.moduleCatalogLabel
+    configReader.moduleCatalogOutputFolderPath,
+    configReader.moduleCatalogLabel,
+    configReader.gitModuleCatalogsFolder,
+    Branch(configReader.mainBranch)
   )
 }

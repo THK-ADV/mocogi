@@ -65,7 +65,7 @@ object PreviewMergeActor {
         (mrId, mrStatus) <- mergeRequestApi.create(
           config.draftBranch,
           config.mainBranch,
-          s"${semester.deLabel} ${semester.year}",
+          s"Big Bang for ${semester.deLabel} ${semester.year}",
           "",
           needsApproval = false,
           gitLabel

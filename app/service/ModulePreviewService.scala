@@ -82,7 +82,7 @@ final class ModulePreviewService @Inject() (
       poId: String
   ): Seq[(Option[UUID], Print)] = {
     val folder =
-      Paths.get(configReader.repoPath).resolve(configReader.modulesRootFolder)
+      Paths.get(configReader.repoPath).resolve(configReader.gitModulesFolder)
     Files
       .walk(folder)
       .iterator()
@@ -112,10 +112,10 @@ final class ModulePreviewService @Inject() (
       s.linesIterator
         .takeWhile(s => s.headOption.contains('M'))
         .map(_.drop(1).dropWhile(_.isWhitespace))
-        .takeWhile(_.startsWith(configReader.modulesRootFolder))
+        .takeWhile(_.startsWith(configReader.gitModulesFolder))
         .map(s =>
           UUID.fromString(
-            s.drop(configReader.modulesRootFolder.length + 1).dropRight(3)
+            s.drop(configReader.gitModulesFolder.length + 1).dropRight(3)
           )
         )
         .toList

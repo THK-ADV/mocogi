@@ -31,10 +31,10 @@ final class GitRepositoryApiService @Inject() (
 ) extends GitService {
 
   def listCoreFiles(): Future[List[GitFilePath]] =
-    listFileNames(treeUrl(config.coreRootFolder))
+    listFileNames(treeUrl(config.coreFolder))
 
   def listModuleFiles(): Future[List[GitFilePath]] =
-    listFileNames(treeUrl(config.modulesRootFolder))
+    listFileNames(treeUrl(config.modulesFolder))
 
   private def listFileNames(url: String): Future[List[GitFilePath]] =
     ws

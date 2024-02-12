@@ -14,7 +14,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 final class GitFileDownloadService @Inject() (
-    private val api: GitFileDownloadApiService,
+    private val api: GitFileApiService,
     private val pipeline: MetadataPipeline,
     private val printer: ModuleHTMLPrinter,
     private implicit val config: GitConfig,

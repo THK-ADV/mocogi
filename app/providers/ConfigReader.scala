@@ -39,20 +39,16 @@ final class ConfigReader @Inject() (config: Configuration) {
   def enOutputFolderPath: String =
     config.nonEmptyString("pandoc.enOutputFolderPath")
 
-  def moduleCatalogFolderPath: String = config.nonEmptyString(
-    "pandoc.moduleCatalogFolderPath"
+  def moduleCatalogOutputFolderPath: String = config.nonEmptyString(
+    "pandoc.moduleCatalogOutputFolderPath"
   )
 
-  def electivesCatalogueFolderPath: String = config.nonEmptyString(
-    "pandoc.electivesCatalogFolderPath"
+  def electivesCatalogOutputFolderPath: String = config.nonEmptyString(
+    "pandoc.electivesCatalogOutputFolderPath"
   )
 
   def gitToken: Option[UUID] = config
     .getOptional[String]("git.token")
-    .flatMap(s => Try(UUID.fromString(s)).toOption)
-
-  def moduleModeToken: Option[UUID] = config
-    .getOptional[String]("git.moduleModeToken")
     .flatMap(s => Try(UUID.fromString(s)).toOption)
 
   def accessToken: String = config.nonEmptyString("git.accessToken")
@@ -63,12 +59,12 @@ final class ConfigReader @Inject() (config: Configuration) {
 
   def draftBranch: String = config.nonEmptyString("git.draftBranch")
 
-  def modulesRootFolder: String = config.nonEmptyString("git.modulesRootFolder")
+  def gitModulesFolder: String = config.nonEmptyString("git.modulesFolder")
 
-  def coreRootFolder: String = config.nonEmptyString("git.coreRootFolder")
+  def gitCoreFolder: String = config.nonEmptyString("git.coreFolder")
 
-  def moduleCatalogRootFolder: String =
-    config.nonEmptyString("git.moduleCatalogRootFolder")
+  def gitModuleCatalogsFolder: String =
+    config.nonEmptyString("git.moduleCatalogsFolder")
 
   def projectId: Int = config.int("git.projectId")
 
@@ -88,10 +84,6 @@ final class ConfigReader @Inject() (config: Configuration) {
     config.nonEmptyString("git.reviewRequiredLabel")
 
   def repoPath: String = config.nonEmptyString("glab.repoPath")
-
-  def mcPath: String = config.nonEmptyString("glab.mcPath")
-
-  def pushScriptPath: String = config.nonEmptyString("glab.pushScriptPath")
 
   def switchBranchScriptPath: String = config.nonEmptyString(
     "glab.switchBranchScriptPath"

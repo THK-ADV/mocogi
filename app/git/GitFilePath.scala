@@ -16,7 +16,7 @@ object GitFilePath {
       with GitFilePath
 
   private def modulePrefix(implicit gitConfig: GitConfig) =
-    s"${gitConfig.modulesRootFolder}/"
+    s"${gitConfig.modulesFolder}/"
 
   private def moduleFileExt = ".md"
 
@@ -55,17 +55,17 @@ object GitFilePath {
     }
 
     def isModule(implicit gitConfig: GitConfig): Boolean =
-      self.value.startsWith(gitConfig.modulesRootFolder) && self.value.endsWith(
+      self.value.startsWith(gitConfig.modulesFolder) && self.value.endsWith(
         moduleFileExt
       )
 
     def isCore(implicit gitConfig: GitConfig): Boolean =
-      self.value.startsWith(gitConfig.coreRootFolder) && self.value.endsWith(
+      self.value.startsWith(gitConfig.coreFolder) && self.value.endsWith(
         coreFileExt
       )
 
     def isModuleCatalog(implicit gitConfig: GitConfig): Boolean =
-      self.value.startsWith(gitConfig.moduleCatalogRootFolder) && self.value
+      self.value.startsWith(gitConfig.moduleCatalogsFolder) && self.value
         .endsWith(catalogFileExt)
   }
 }

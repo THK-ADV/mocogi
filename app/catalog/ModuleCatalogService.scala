@@ -9,11 +9,14 @@ import database.repo.{
 }
 import database.table.ModuleCatalogEntry
 import database.view.StudyProgramViewRepository
-import git.api.{GitAvailabilityChecker, GitMergeRequestApiService}
+import git.GitFilePath
+import git.api.{
+  GitAvailabilityChecker,
+  GitBranchApiService,
+  GitMergeRequestApiService
+}
 import models._
-import ops.EitherOps.EStringThrowOps
 import ops.FileOps.FileOps0
-import ops.LoggerOps
 import play.api.Logging
 import printing.PrintingLanguage
 import printing.latex.ModuleCatalogLatexPrinter
@@ -25,7 +28,6 @@ import javax.inject.{Inject, Singleton}
 import scala.collection.mutable.ListBuffer
 import scala.collection.parallel.CollectionConverters.ImmutableIterableIsParallelizable
 import scala.concurrent.{ExecutionContext, Future}
-import scala.sys.process._
 import scala.util.control.NonFatal
 
 @Singleton
@@ -44,69 +46,115 @@ final class ModuleCatalogService @Inject() (
     private val gitMergeRequestApiService: GitMergeRequestApiService,
     private val electivesCatalogService: ElectivesCatalogService,
     private val config: ModuleCatalogConfig,
+    private val commitService: ModuleCatalogCommitService,
+    private val branchApiService: GitBranchApiService,
     implicit val ctx: ExecutionContext
-) extends Logging
-    with LoggerOps {
+) extends Logging {
 
   import LatexCompiler._
 
-  private def tmpFolder = Paths.get(config.tmpFolderPath)
+  def createAndOpenMergeRequest(
+      r: ModuleCatalogGenerationRequest
+  ): Future[Unit] = {
+    implicit val semester: Semester = Semester(r.semesterId)
+    implicit val branch: Branch = Branch(semester.id)
 
-  def createAndOpenMergeRequest(r: ModuleCatalogGenerationRequest) = {
-    val semester = Semester(r.semesterId)
     for {
-      (catalogFiles, brokenFiles) <- printAndCompile(semester)
-      catalogFiles <- movePDFsToOutputFolder(catalogFiles, brokenFiles).toFuture
-      catalogFiles <- moveToGitFolder(catalogFiles, brokenFiles).toFuture
-      electivesPath <- electivesCatalogService.create(semester)
-      branch = Branch(semester.id)
-      commitMessage = s"Module Catalog for ${semester.deLabel} ${semester.year}"
-      res <- commit(branch, commitMessage) match { // TODO commit via cli seems to be flaky. consider using the web api
-        case Left(err) =>
-          delete(electivesPath :: brokenFiles, catalogFiles)
-          Future.failed(new Throwable(err))
-        case Right(true) =>
-          for {
-            (mrId, mrStatus) <- createMergeRequest(branch, commitMessage)
-              .recoverWith { case NonFatal(e) =>
-                delete(electivesPath :: brokenFiles, catalogFiles)
-                Future.failed(e)
-              }
-            _ <- createCatalogFiles(catalogFiles)
-            _ <- moduleCatalogGenerationRepo.update(mrId, mrStatus, r)
-          } yield logger.info(
-            s"successfully updated generation request to new id: ${mrId.value} and status ${mrStatus.id}"
-          )
-        case Right(false) =>
-          moduleCatalogGenerationRepo
-            .delete(r.mergeRequestId)
-            .map(_ =>
-              logger.info(
-                s"successfully deleted generation request with id ${r.mergeRequestId.value}"
-              )
-            )
-      }
-    } yield res
+      _ <- apiAvailableService.checkAvailability()
+      _ <- branchApiService.createBranch(branch, config.mainBranch)
+      (catalogFiles, brokenFiles, electivesFile) <- createCatalogs
+        .recoverWith { case NonFatal(e) =>
+          logger.error("failed creating catalogs! recovering...")
+          deleteBranch(branch).flatMap(_ => Future.failed(e))
+        }
+      _ <- commit(catalogFiles, brokenFiles, electivesFile)
+        .recoverWith { case NonFatal(e) =>
+          logger.error("commit failed! recovering...")
+          deleteAllFiles(electivesFile._1 :: brokenFiles, catalogFiles)
+          deleteBranch(branch).flatMap(_ => Future.failed(e))
+        }
+      (mrId, mrStatus) <- createMergeRequest
+        .recoverWith { case NonFatal(e) =>
+          logger.error("failed to create merge request! recovering...")
+          deleteAllFiles(electivesFile._1 :: brokenFiles, catalogFiles)
+          deleteBranch(branch).flatMap(_ => Future.failed(e))
+        }
+      _ <- createCatalogFiles(catalogFiles)
+        .recoverWith { case NonFatal(e) =>
+          logger.error("failed to create catalog files! recovering...")
+          deleteAllFiles(electivesFile._1 :: brokenFiles, catalogFiles)
+          deleteMergeRequest(mrId)
+            .flatMap(_ => deleteBranch(branch))
+            .flatMap(_ => Future.failed(e))
+        }
+      _ <- moduleCatalogGenerationRepo.update(mrId, mrStatus, r)
+    } yield tmpFolder.deleteContentsOfDirectory()
   }
 
-  private def delete(
+  private def tmpFolder = Paths.get(config.tmpFolderPath)
+
+  private def createCatalogs(implicit semester: Semester) =
+    for {
+      (catalogFiles, brokenFiles) <- printAndCompile(semester)
+      catalogPdfFiles <- movePDFsToOutputFolder(catalogFiles)
+        .recoverWith { case NonFatal(e) =>
+          logger.error("failed moving pdf files! recovering...")
+          deleteAllFiles(brokenFiles, Nil)
+          Future.failed(e)
+        }
+      electivesFile <- electivesCatalogService
+        .create(semester)
+        .recoverWith { case NonFatal(e) =>
+          logger.error("failed creating electives! recovering...")
+          deleteAllFiles(brokenFiles, catalogPdfFiles)
+          Future.failed(e)
+        }
+    } yield (catalogPdfFiles, brokenFiles, electivesFile)
+
+  private def commit(
+      catalogFiles: List[ModuleCatalogFile[Path]],
+      brokenFiles: List[Path],
+      electivesFile: (Path, String)
+  )(implicit semester: Semester, branch: Branch) = {
+    def toGitPath(path: Path) = GitFilePath(
+      s"${config.moduleCatalogGitPath}/${path.getFileName.toString}"
+    )
+    val files = ListBuffer.empty[(GitFilePath, String)]
+    catalogFiles.foreach(f => files += ((toGitPath(f.texFile), f.content)))
+    brokenFiles.foreach(f => files += ((toGitPath(f), Files.readString(f))))
+    files += ((toGitPath(electivesFile._1), electivesFile._2))
+
+    commitService
+      .commit(
+        files.toList,
+        semester,
+        branch
+      )
+      .map(_ => logger.info("successfully committed files"))
+  }
+
+  private def deleteBranch(branch: Branch): Future[Unit] =
+    branchApiService
+      .deleteBranch(branch)
+      .map(_ => logger.info(s"branch ${branch.value} deleted"))
+
+  private def deleteAllFiles(
       files: List[Path],
-      catalogFiles: List[ModuleCatalogFile[Path]]
-  ): Unit =
+      pdfFiles: List[ModuleCatalogFile[Path]]
+  ): Unit = {
+    logger.info("deleting all created files")
     try {
+      tmpFolder.deleteContentsOfDirectory()
       files.foreach(p => Files.deleteIfExists(p))
-      catalogFiles.foreach { p =>
-        Files.deleteIfExists(p.texFile)
-        Files.deleteIfExists(p.pdfFile)
-      }
+      pdfFiles.foreach(p => Files.deleteIfExists(p.pdfFile))
     } catch {
       case NonFatal(e) =>
-        logger.error(s"failed to delete file. reason: ${e.getMessage}")
+        logger.error(s"failed to deleteAllFiles file. reason: ${e.getMessage}")
     }
+  }
 
   private def printAndCompile(semester: Semester) = {
     for {
-      _ <- apiAvailableService.checkAvailability()
       sps <- studyProgramViewRepo.all()
       poIds = sps.map(_.poId)
       ms <- moduleRepository.allFromPos(poIds)
@@ -139,7 +187,7 @@ final class ModuleCatalogService @Inject() (
       def compileAndRecover(
           sp: StudyProgramView,
           pLang: PrintingLanguage,
-          content: StringBuilder,
+          content: String,
           filename: String
       ) =
         createTexFile(filename, content) match {
@@ -147,7 +195,6 @@ final class ModuleCatalogService @Inject() (
             logger.error(s"unable to create latex file $filename. reason: $err")
             Left(None, err)
           case Right(texFile) =>
-            logger.info(s"created ${texFile.toAbsolutePath.toString}")
             val compiledRes = for {
               _ <- compile(texFile)
               _ <- clear(texFile)
@@ -162,19 +209,17 @@ final class ModuleCatalogService @Inject() (
                 )
                 markFileAsBroken(texFile) match {
                   case Left(err) =>
-                    Left(Some(texFile), err)
+                    Left(Some((texFile)), err)
                   case Right(texFile) =>
                     Left(Some(texFile), err)
                 }
               case Right(_) =>
-                logger.info(
-                  s"successfully compiled ${texFile.toAbsolutePath.toString}"
-                )
                 Right(
                   ModuleCatalogFile[Unit](
                     filename,
                     sp,
                     semester,
+                    content,
                     texFile,
                     (),
                     pLang
@@ -191,7 +236,7 @@ final class ModuleCatalogService @Inject() (
         .map { case (sp, pLang) =>
           val content = print(sp, pLang)
           val filename = s"${pLang.id}_${semester.id}_${sp.fullPoId}"
-          compileAndRecover(sp, pLang, content, filename)
+          compileAndRecover(sp, pLang, content.toString(), filename)
         }
         .seq
         .foreach {
@@ -205,12 +250,15 @@ final class ModuleCatalogService @Inject() (
     }
   }
 
-  private def createMergeRequest(branch: Branch, commitMessage: String) =
+  private def createMergeRequest(implicit
+      semester: Semester,
+      branch: Branch
+  ): Future[(MergeRequestId, MergeRequestStatus)] =
     gitMergeRequestApiService
       .create(
         branch,
         config.mainBranch,
-        commitMessage,
+        s"Module Catalog for ${semester.deLabel} ${semester.year}",
         "",
         needsApproval = false,
         config.moduleCatalogLabel
@@ -222,10 +270,18 @@ final class ModuleCatalogService @Inject() (
         res
       }
 
+  private def deleteMergeRequest(mrId: MergeRequestId): Future[Unit] =
+    gitMergeRequestApiService
+      .delete(mrId)
+      .map(_ =>
+        logger.info(
+          s"successfully deleted mr with id ${mrId.value}"
+        )
+      )
+
   private def movePDFsToOutputFolder(
-      files: List[ModuleCatalogFile[Unit]],
-      brokenFiles: List[Path]
-  ) = {
+      files: List[ModuleCatalogFile[Unit]]
+  ): Future[List[ModuleCatalogFile[Path]]] = {
     logger.info(s"moving ${files.size} pdf files to output folder...")
     val (failure, success) = files.partitionMap { f =>
       val res = for {
@@ -241,88 +297,13 @@ final class ModuleCatalogService @Inject() (
       }
     }
 
-    if (failure.nonEmpty) {
-      logger.error("abort! deleting all files...")
-      failure.foreach(a => Files.delete(a.texFile))
-      delete(brokenFiles, success)
-      val errFiles = failure.map(_.texFile.toAbsolutePath).mkString(", ")
-      Left(s"failed moving files: $errFiles")
-    } else {
+    if (failure.isEmpty) {
       logger.info("finished moving files!")
-      Right(success)
-    }
-  }
-
-  private def moveToGitFolder(
-      files: List[ModuleCatalogFile[Path]],
-      brokenFiles: List[Path]
-  ): Either[String, List[ModuleCatalogFile[Path]]] = {
-    logger.info(s"moving ${files.size} files to git folder...")
-    val destDir = Paths.get(config.mcPath)
-    val (failure, success) = files.partitionMap { f =>
-      val src = f.texFile.toAbsolutePath
-      val dest = destDir.resolve(src.getFileName)
-      try {
-        Files.move(
-          src,
-          dest,
-          StandardCopyOption.REPLACE_EXISTING
-        )
-        Right(f.copy(texFile = dest))
-      } catch {
-        case NonFatal(e) =>
-          logger.error(
-            s"failed to move file from ${src.toAbsolutePath} to ${dest.toAbsolutePath}. reason: ${e.getMessage}"
-          )
-          Left(f)
-      }
-    }
-    if (failure.nonEmpty) {
-      logger.error("abort! deleting all files...")
-      delete(brokenFiles, success ::: failure)
-      val errFiles = failure.map(_.texFile.toAbsolutePath).mkString(", ")
-      Left(s"failed moving files: $errFiles")
+      Future.successful(success)
     } else {
-      logger.info("finished moving files!")
-      Right(success)
-    }
-  }
-
-  private def commit(
-      branch: Branch,
-      message: String
-  ): Either[String, Boolean] = {
-    logger.info("starting to commit files...")
-    val process = Process(
-      command = Seq(
-        "/bin/bash",
-        config.pushScriptPath,
-        config.mainBranch.value,
-        branch.value,
-        message
-      ),
-      cwd = Paths.get(config.repoPath).toAbsolutePath.toFile
-    )
-    val res = execRes(process) {
-      case 1 => s"failed git switch ${config.mainBranch.value}"
-      case 2 => "failed git pull"
-      case 3 => s"failed git swtich -c ${branch.value}"
-      case 4 => "failed git add"
-      case 5 => "failed git commit"
-      case 6 => s"failed git push origin ${branch.value}"
-      case 7 => "no changes"
-    }
-    res match {
-      case Right(_) =>
-        logger.info("successfully committed!")
-        Right(true)
-      case Left((stdErr, codeErr)) =>
-        if (codeErr.exists(_._1 == 7)) {
-          logger.info("nothing to commit!")
-          Right(false)
-        } else {
-          Left(codeErr.fold(stdErr)(_._2 + "\n" + stdErr))
-        }
+      success.foreach(p => Files.deleteIfExists(p.pdfFile))
+      val errFiles = failure.map(_.texFile.toAbsolutePath).mkString(", ")
+      Future.failed(new Throwable(s"failed moving files: $errFiles"))
     }
   }
 
@@ -339,7 +320,7 @@ final class ModuleCatalogService @Inject() (
         .toString
 
     val moduleCatalogFolder =
-      Paths.get(config.moduleCatalogFolderPath).getFileName
+      Paths.get(config.moduleCatalogOutputFolderPath).getFileName
 
     val normalized = xs
       .groupBy(_.studyProgram.fullPoId)
@@ -370,7 +351,7 @@ final class ModuleCatalogService @Inject() (
 
   private def createTexFile(
       name: String,
-      content: StringBuilder
+      content: String
   ): Either[String, Path] = tmpFolder.createFile(s"$name.tex", content)
 
   private def movePdf(file: Path, newFilename: String): Either[String, Path] =
@@ -378,7 +359,7 @@ final class ModuleCatalogService @Inject() (
       Right(
         Files.move(
           file,
-          Paths.get(config.moduleCatalogFolderPath, s"$newFilename.pdf"),
+          Paths.get(config.moduleCatalogOutputFolderPath, s"$newFilename.pdf"),
           StandardCopyOption.REPLACE_EXISTING
         )
       )

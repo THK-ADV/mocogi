@@ -2,12 +2,10 @@ package catalog
 
 import database.repo.ElectivesRepository
 import database.view.StudyProgramViewRepository
-import git.api.GitAvailabilityChecker
 import models._
 import models.core.Identity
 import ops.EitherOps.EStringThrowOps
 import ops.FileOps.FileOps0
-import ops.LoggerOps
 import play.api.Logging
 
 import java.nio.file.{Path, Paths}
@@ -16,20 +14,17 @@ import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 final class ElectivesCatalogService @Inject() (
-    gitAvailabilityChecker: GitAvailabilityChecker,
     electivesRepository: ElectivesRepository,
     studyProgramViewRepo: StudyProgramViewRepository,
     tmpFolderPath: String,
-    electivesCatalogFolderPath: String,
-    gitFolderPath: String,
+    electivesCatalogOutputFolderPath: String,
     implicit val ctx: ExecutionContext
 ) extends Logging {
 
   private def tmpFolder = Paths.get(tmpFolderPath)
 
-  private def electivesCatalogueFolder = Paths.get(electivesCatalogFolderPath)
-
-  private def gitFolder = Paths.get(gitFolderPath)
+  private def electivesCatalogueFolder =
+    Paths.get(electivesCatalogOutputFolderPath)
 
   private def fillHeaderWithAllStudyPrograms(
       csv: StringBuilder,
@@ -67,22 +62,25 @@ final class ElectivesCatalogService @Inject() (
 
   // TODO discuss usage of semester since recommended semester does not consider whether a study program starts in summer or winter
   // TODO split by teaching unit
-  def create(semester: Semester): Future[Path] = {
+  def create(semester: Semester): Future[(Path, String)] = {
     logger.info(s"creating elective catalog for ${semester.id}")
+    val studyPrograms = studyProgramViewRepo
+      .all()
+      .map(_.sortBy(a => (a.degree.id, a.fullPoId, a.poVersion)))
+    val electiveModules = electivesRepository.all()
     val csv = new StringBuilder()
     csv.append("Modulname,Modulabkürzung,Modulverantwortliche")
+
     for {
-      _ <- gitAvailabilityChecker.checkAvailability()
-      studyPrograms <- studyProgramViewRepo
-        .all()
-        .map(_.sortBy(a => (a.degree.id, a.fullPoId, a.poVersion)))
-      electiveModules <- electivesRepository.all()
+      studyPrograms <- studyPrograms
+      electiveModules <- electiveModules
       file <- {
         fillHeaderWithAllStudyPrograms(csv, studyPrograms)
         fillContent(csv, studyPrograms, electiveModules)
-        createCSVFile(semester.id, csv)
+        val content = csv.toString()
+        createCSVFile(semester.id, content)
           .flatMap(_.move(electivesCatalogueFolder))
-          .flatMap(_.copy(gitFolder))
+          .map(_ -> content)
           .toFuture
       }
     } yield file
@@ -90,6 +88,7 @@ final class ElectivesCatalogService @Inject() (
 
   private def createCSVFile(
       name: String,
-      content: StringBuilder
-  ): Either[String, Path] = tmpFolder.createFile(s"$name.csv", content)
+      content: String
+  ): Either[String, Path] =
+    tmpFolder.createFile(s"$name.csv", content)
 }

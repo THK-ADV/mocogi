@@ -17,7 +17,7 @@ final class ElectiveCatalogueController @Inject() (
 
   def all() =
     Action { _ =>
-      val folder = Paths.get(configReader.electivesCatalogueFolderPath)
+      val folder = Paths.get(configReader.electivesCatalogOutputFolderPath)
       val json = Files
         .walk(folder)
         .iterator()

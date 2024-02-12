@@ -43,11 +43,19 @@ object FileOps {
       Files
         .walk(self)
         .sorted(Comparator.reverseOrder())
-        .forEach(p => Files.delete(p))
+        .forEach(p => Files.deleteIfExists(p))
+
+    def deleteContentsOfDirectory(): Unit =
+      if (Files.isDirectory(self))
+        Files
+          .walk(self)
+          .filter(p => self.toAbsolutePath != p.toAbsolutePath)
+          .forEach(p => Files.deleteIfExists(p))
+      else ()
 
     def createFile(
         name: String,
-        content: StringBuilder
+        content: String
     ): Either[String, Path] = {
       try {
         val file = self.resolve(name)
