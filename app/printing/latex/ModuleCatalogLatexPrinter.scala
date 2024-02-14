@@ -159,14 +159,9 @@ final class ModuleCatalogLatexPrinter @Inject() (pandocApi: PandocApi)
               case p if p.po != po =>
                 val builder = new StringBuilder()
                 val studyProgram = studyProgramViews.find(_.po.id == p.po).get
-                val spLabel = {
-                  val spLabel = escape(
-                    studyProgram.localizedLabel(studyProgram.specialization)
-                  )
-                  // TODO Workaround
-                  if (studyProgram.po.id.endsWith("flex")) s"$spLabel-Flex"
-                  else spLabel
-                }
+                val spLabel = escape(
+                  studyProgram.localizedLabel(studyProgram.specialization)
+                )
                 builder
                   .append(
                     s"${studyProgram.degree.localizedLabel}: "

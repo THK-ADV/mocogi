@@ -87,7 +87,6 @@ final class GitPushEventHandlerSpec extends AnyWordSpec with TryValues {
         GitConfig(
           None,
           "",
-          None,
           "",
           0,
           Branch(""),
@@ -95,6 +94,8 @@ final class GitPushEventHandlerSpec extends AnyWordSpec with TryValues {
           "modules",
           "core",
           "mcs",
+          "",
+          "",
           "",
           ""
         )
