@@ -20,6 +20,12 @@ package object controllers {
         .getQueryString("lang")
         .flatMap(PrintingLanguage.apply)
         .getOrElse(PrintingLanguage.German)
+
+    def isExtended: Boolean =
+      self
+        .getQueryString("extend")
+        .flatMap(_.toBooleanOption)
+        .getOrElse(false)
   }
 
   object MimeTypes {

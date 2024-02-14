@@ -47,11 +47,7 @@ final class ModuleController @Inject() (
 
   def all() =
     Action.async { request =>
-      val extend = request
-        .getQueryString("extend")
-        .flatMap(_.toBooleanOption)
-        .getOrElse(false)
-      if (extend)
+      if (request.isExtended)
         moduleViewRepository
           .all()
           .map(xs => Ok(Json.toJson(xs)))

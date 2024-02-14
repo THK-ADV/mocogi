@@ -18,11 +18,7 @@ final class StudyProgramController @Inject() (
 
   def all() =
     Action.async { request =>
-      val extend = request
-        .getQueryString("extend")
-        .flatMap(_.toBooleanOption)
-        .getOrElse(false)
-      if (extend)
+      if (request.isExtended)
         studyProgramViewRepo.all().map(res => Ok(Json.toJson(res)))
       else
         studyProgramRepo
