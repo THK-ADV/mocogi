@@ -9,6 +9,7 @@ GET           /me                                              controllers.MeCon
 
 # Big Bang
 GET           /bigbang                                         controllers.BigBangController.go()
+GET           /bigbangCatalogs                                 controllers.BigBangController.goCatalogs()
 
 # Git Webhooks
 

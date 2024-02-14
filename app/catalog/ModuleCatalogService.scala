@@ -62,27 +62,36 @@ final class ModuleCatalogService @Inject() (
     for {
       _ <- apiAvailableService.checkAvailability()
       _ <- branchApiService.createBranch(branch, config.mainBranch)
-      (catalogFiles, brokenFiles, electivesFile) <- createCatalogs
+      (catalogFiles, brokenFiles, electivesFiles) <- createCatalogs
         .recoverWith { case NonFatal(e) =>
           logger.error("failed creating catalogs! recovering...")
           deleteBranch(branch).flatMap(_ => Future.failed(e))
         }
-      _ <- commit(catalogFiles, brokenFiles, electivesFile)
+      _ <- commit(catalogFiles, brokenFiles, electivesFiles)
         .recoverWith { case NonFatal(e) =>
           logger.error("commit failed! recovering...")
-          deleteAllFiles(electivesFile._1.path :: brokenFiles, catalogFiles)
+          deleteAllFiles(
+            electivesFiles.map(_._1.path) ::: brokenFiles,
+            catalogFiles
+          )
           deleteBranch(branch).flatMap(_ => Future.failed(e))
         }
       (mrId, mrStatus) <- createMergeRequest
         .recoverWith { case NonFatal(e) =>
           logger.error("failed to create merge request! recovering...")
-          deleteAllFiles(electivesFile._1.path :: brokenFiles, catalogFiles)
+          deleteAllFiles(
+            electivesFiles.map(_._1.path) ::: brokenFiles,
+            catalogFiles
+          )
           deleteBranch(branch).flatMap(_ => Future.failed(e))
         }
       _ <- createCatalogFiles(catalogFiles)
         .recoverWith { case NonFatal(e) =>
           logger.error("failed to create catalog files! recovering...")
-          deleteAllFiles(electivesFile._1.path :: brokenFiles, catalogFiles)
+          deleteAllFiles(
+            electivesFiles.map(_._1.path) ::: brokenFiles,
+            catalogFiles
+          )
           deleteMergeRequest(mrId)
             .flatMap(_ => deleteBranch(branch))
             .flatMap(_ => Future.failed(e))
@@ -114,7 +123,7 @@ final class ModuleCatalogService @Inject() (
   private def commit(
       catalogFiles: List[ModuleCatalogFile[Path]],
       brokenFiles: List[Path],
-      electivesFile: (ElectivesFile, String)
+      electivesFiles: Iterable[(ElectivesFile, String)]
   )(implicit semester: Semester, branch: Branch) = {
     def toGitPath(path: Path) = GitFilePath(
       s"${config.moduleCatalogGitPath}/${path.getFileName.toString}"
@@ -122,7 +131,7 @@ final class ModuleCatalogService @Inject() (
     val files = ListBuffer.empty[(GitFilePath, String)]
     catalogFiles.foreach(f => files += ((toGitPath(f.texFile), f.content)))
     brokenFiles.foreach(f => files += ((toGitPath(f), Files.readString(f))))
-    files += ((toGitPath(electivesFile._1.path), electivesFile._2))
+    electivesFiles.foreach(f => files += ((toGitPath(f._1.path), f._2)))
 
     commitService
       .commit(

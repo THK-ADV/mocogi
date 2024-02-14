@@ -55,34 +55,43 @@ final class ElectivesCatalogService @Inject() (
         val matchedStudyPrograms = sps
           .map(sp => if (pos.contains(sp.fullPoId)) "X" else "")
           .mkString(",")
-        csv.append(
-          s"${module.title},${module.abbrev},\"$moduleManagement\",$matchedStudyPrograms\n"
-        )
+        if (matchedStudyPrograms.contains("X")) {
+          csv.append(
+            s"${module.title},${module.abbrev},\"$moduleManagement\",$matchedStudyPrograms\n"
+          )
+        }
       }
 
-  // TODO split by teaching unit
-  def create(semester: Semester): Future[(ElectivesFile, String)] = {
+  def create(semester: Semester): Future[List[(ElectivesFile, String)]] = {
     logger.info(s"creating elective catalog for ${semester.id}")
     val studyPrograms = studyProgramViewRepo
       .all()
       .map(_.sortBy(a => (a.degree.id, a.fullPoId, a.po.version)))
     val electiveModules = electivesRepository.all()
-    val csv = new StringBuilder()
-    csv.append("Modulname,Modulabkürzung,Modulverantwortliche")
 
     for {
       studyPrograms <- studyPrograms
       electiveModules <- electiveModules
-      file <- {
-        fillHeaderWithAllStudyPrograms(csv, studyPrograms)
-        fillContent(csv, studyPrograms, electiveModules)
-        val content = csv.toString()
-        tmpFolder
-          .createFile(ElectivesFile.fileName(semester), content)
-          .flatMap(_.move(electivesCatalogueFolder))
-          .map(ElectivesFile(_) -> content)
-          .toFuture
-      }
+      file <- Future.sequence(
+        studyPrograms
+          .groupBy(_.po.id.split("_").head)
+          .map { case (teachingUnit, studyPrograms) =>
+            val csv = new StringBuilder()
+            csv.append("Modulname,Modulabkürzung,Modulverantwortliche")
+            fillHeaderWithAllStudyPrograms(csv, studyPrograms)
+            fillContent(csv, studyPrograms, electiveModules)
+            val content = csv.toString()
+            tmpFolder
+              .createFile(
+                ElectivesFile.fileName(semester, teachingUnit),
+                content
+              )
+              .flatMap(_.move(electivesCatalogueFolder))
+              .map(ElectivesFile(_) -> content)
+              .toFuture
+          }
+          .toList
+      )
     } yield file
   }
 }

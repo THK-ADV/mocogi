@@ -1,5 +1,6 @@
 package controllers
 
+import models.core.IDLabel
 import models.{ElectivesFile, Semester}
 import play.api.libs.json.{JsArray, Json}
 import play.api.mvc.{AbstractController, ControllerComponents}
@@ -27,8 +28,16 @@ final class ElectiveCatalogueController @Inject() (
         .map(ElectivesFile.apply)
         .collect {
           case file if file.hasFileName(semester) =>
+            val teachingUnit = file.teachingUnit match {
+              case Some("inf") =>
+                IDLabel("inf", "Informatik", "Computer Science")
+              case Some("ing") =>
+                IDLabel("ing", "Ingenieurwissenschaften", "Engineering")
+              case _ => IDLabel("-", "-", "-")
+            }
             Json.obj(
               "semester" -> semester,
+              "teachingUnit" -> teachingUnit,
               "url" -> FileController
                 .makeURI(folder.getFileName.toString, file.fileName)
             )

@@ -11,12 +11,15 @@ case class ElectivesFile(path: Path) extends AnyVal {
   }
 
   def fileName = path.getFileName.toString
+
+  def teachingUnit: Option[String] =
+    fileName.split("_").lastOption.map(_.stripSuffix(fileExt))
 }
 
 object ElectivesFile {
 
   private def fileExt = ".csv"
 
-  def fileName(semester: Semester): String =
-    s"${semester.id}$fileExt"
+  def fileName(semester: Semester, teachingUnit: String): String =
+    s"${semester.id}_$teachingUnit$fileExt"
 }
