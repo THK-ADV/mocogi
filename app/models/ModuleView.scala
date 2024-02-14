@@ -1,7 +1,5 @@
 package models
 
-import models.core.IDLabel
-
 import java.util.UUID
 
 case class ModuleView[ModuleManagement, StudyProgram](
@@ -14,12 +12,7 @@ case class ModuleView[ModuleManagement, StudyProgram](
 )
 
 case class StudyProgramModuleAssociation[Semester](
-    poId: String,
-    studyProgramId: String,
-    studyProgramLabel: String,
-    degreeLabel: String,
-    version: Int,
-    specialization: Option[IDLabel],
+    studyProgram: StudyProgramView,
     mandatory: Boolean,
     recommendedSemester: Semester
 )

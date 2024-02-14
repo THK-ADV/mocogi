@@ -428,13 +428,18 @@ select module.id                                as id,
        identity.title                           as module_management_title,
        identity.firstname                       as module_management_firstname,
        identity.lastname                        as module_management_lastname,
-       po.id                                    as po_id,
-       po.version                               as po_version,
-       study_program.id                         as sp_id,
-       study_program.de_label                   as sp_label,
-       degree.de_label                          as degree_label,
-       specialization.id                        as spec_id,
-       specialization.label                     as spec_label,
+       study_program_view.sp_de_label,
+       study_program_view.sp_en_label,
+       study_program_view.sp_id,
+       study_program_view.degree_id,
+       study_program_view.degree_de_label,
+       study_program_view.degree_en_label,
+       study_program_view.degree_de_desc,
+       study_program_view.degree_en_desc,
+       study_program_view.po_id,
+       study_program_view.po_version,
+       study_program_view.spec_label,
+       study_program_view.spec_id,
        module_po_mandatory.recommended_semester as recommended_semester,
        true                                     as mandatory
 from module
@@ -442,11 +447,7 @@ from module
                                        module_responsibility.responsibility_type = 'module_management'
          join identity on module_responsibility.identity = identity.id
          join module_po_mandatory on module.id = module_po_mandatory.module
-         join po on module_po_mandatory.po = po.id
-         join study_program on po.study_program = study_program.id
-         join degree on study_program.degree = degree.id
-         left join specialization on po.id = specialization.po and
-                                     module_po_mandatory.specialization = specialization.id
+         join study_program_view on study_program_view.po_id = module_po_mandatory.po
 union
 select module.id                               as id,
        module.title                            as title,
@@ -458,13 +459,18 @@ select module.id                               as id,
        identity.title                          as module_management_title,
        identity.firstname                      as module_management_firstname,
        identity.lastname                       as module_management_lastname,
-       po.id                                   as po_id,
-       po.version                              as po_version,
-       study_program.id                        as sp_id,
-       study_program.de_label                  as sp_label,
-       degree.de_label                         as degree_label,
-       specialization.id                       as spec_id,
-       specialization.label                    as spec_label,
+       study_program_view.sp_de_label,
+       study_program_view.sp_en_label,
+       study_program_view.sp_id,
+       study_program_view.degree_id,
+       study_program_view.degree_de_label,
+       study_program_view.degree_en_label,
+       study_program_view.degree_de_desc,
+       study_program_view.degree_en_desc,
+       study_program_view.po_id,
+       study_program_view.po_version,
+       study_program_view.spec_label,
+       study_program_view.spec_id,
        module_po_optional.recommended_semester as recommended_semester,
        false                                   as mandatory
 from module
@@ -472,11 +478,7 @@ from module
                                        module_responsibility.responsibility_type = 'module_management'
          join identity on module_responsibility.identity = identity.id
          join module_po_optional on module.id = module_po_optional.module
-         join po on module_po_optional.po = po.id
-         join study_program on po.study_program = study_program.id
-         join degree on study_program.degree = degree.id
-         left join specialization on po.id = specialization.po and
-                                     module_po_optional.specialization = specialization.id;
+         join study_program_view on study_program_view.po_id = module_po_optional.po;
 
 -- !Downs
 drop
