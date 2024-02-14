@@ -41,9 +41,6 @@ GET           /specializations                                 controllers.Speci
 # Module
 
 GET           /modules                                         controllers.ModuleController.all()
-GET           /modules/core                                    controllers.ModuleController.allModuleCore()
-GET           /modules/view                                    controllers.ModuleController.allModulesFromView()
-GET           /modules/metadata                                controllers.ModuleController.allModuleMetadata()
 GET           /modules/:id                                     controllers.ModuleController.get(id: java.util.UUID)
 GET           /modules/:id/preview                             controllers.ModuleController.getPreview(id: java.util.UUID)
 GET           /modules/:id/latest                              controllers.ModuleController.getLatest(id: java.util.UUID)

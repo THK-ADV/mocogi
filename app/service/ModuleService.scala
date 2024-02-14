@@ -21,22 +21,12 @@ final class ModuleService @Inject() (
   ) =
     repo.createOrUpdateMany(modules, timestamp)
 
-  def all(filter: Map[String, Seq[String]]) =
-    repo.all(filter)
-
   def allFromPoMandatory(poId: String) =
     repo.all(Map("po_mandatory" -> Seq(poId)))
 
   def get(id: UUID) =
     repo.all(Map("id" -> Seq(id.toString))).single
 
-  def getOrNull(id: UUID) =
-    repo.all(Map("id" -> Seq(id.toString))).map(_.headOption)
-
   def allModuleCore(filter: Map[String, Seq[String]]) =
     repo.allModuleCore(filter)
-
-  // TODO inefficient implementation
-  def allMetadata(filter: Map[String, Seq[String]]) =
-    repo.all(filter).map(_.map(_.metadata))
 }

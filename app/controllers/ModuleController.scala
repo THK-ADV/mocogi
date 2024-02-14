@@ -45,34 +45,20 @@ final class ModuleController @Inject() (
   implicit def moduleViewWrites: Writes[ModuleViewRepository#Entry] =
     Json.writes[ModuleViewRepository#Entry]
 
-  // TODO needed?
   def all() =
     Action.async { request =>
-      service
-        .all(request.queryString)
-        .map(xs => Ok(Json.toJson(xs)))
-    }
-
-  def allModuleCore() =
-    Action.async { request =>
-      service
-        .allModuleCore(request.queryString)
-        .map(xs => Ok(Json.toJson(xs)))
-    }
-
-  // TODO needed?
-  def allModuleMetadata() =
-    Action.async { request =>
-      service
-        .allMetadata(request.queryString)
-        .map(xs => Ok(Json.toJson(xs)))
-    }
-
-  def allModulesFromView() =
-    Action.async { _ =>
-      moduleViewRepository
-        .all()
-        .map(xs => Ok(Json.toJson(xs)))
+      val extend = request
+        .getQueryString("extend")
+        .flatMap(_.toBooleanOption)
+        .getOrElse(false)
+      if (extend)
+        moduleViewRepository
+          .all()
+          .map(xs => Ok(Json.toJson(xs)))
+      else
+        service
+          .allModuleCore(request.queryString)
+          .map(xs => Ok(Json.toJson(xs)))
     }
 
   // GET by ID
