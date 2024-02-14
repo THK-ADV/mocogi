@@ -132,8 +132,12 @@ object CoreDataPublisher {
 
     override def receive = { case ParsingValidation(changes) =>
       val order = topologicalSort(changes)
+      val updates = order.foldLeft(Future.unit) { case (acc, a) =>
+        logger.info(a._1)
+        acc.flatMap(_ => createOrUpdate(a._1, a._2))
+      }
       val res = for {
-        _ <- Future.sequence(order.map(a => createOrUpdate(a._1, a._2)))
+        _ <- updates
         _ <- studyProgramViewRepository.refreshView()
         _ <- moduleViewRepository.refreshView()
       } yield ()
@@ -154,7 +158,9 @@ object CoreDataPublisher {
         deps.get(f) match {
           case Some(value) =>
             val self = vertices.indexOf(f)
-            value.map(d => (self, vertices.indexOf(d)))
+            value.collect {
+              case d if vertices.contains(d) => (self, vertices.indexOf(d))
+            }
           case None => Nil
         }
       }
