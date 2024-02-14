@@ -21,7 +21,6 @@ object StudyProgramDirectorsRepository {
   )
 }
 
-// TODO merge with StudyProgramPersonRepo?
 @Singleton
 final class StudyProgramDirectorsRepository @Inject() (
     val dbConfigProvider: DatabaseConfigProvider,

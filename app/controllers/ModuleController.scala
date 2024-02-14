@@ -59,7 +59,6 @@ final class ModuleController @Inject() (
 
   // GET by ID
 
-  // TODO needed?
   def get(id: UUID) =
     Action.async { _ =>
       service.get(id).map(x => Ok(Json.toJson(x)))
@@ -70,7 +69,7 @@ final class ModuleController @Inject() (
       getFromPreview(id).map(x => Ok(Json.toJson(x)))
     }
 
-  def getLatest(id: UUID) = // TODO only which can edit or which should review
+  def getLatest(id: UUID) =
     auth.async { _ =>
       draftService
         .getByModuleOpt(id)

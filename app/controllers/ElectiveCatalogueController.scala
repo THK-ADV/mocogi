@@ -1,6 +1,6 @@
 package controllers
 
-import models.Semester
+import models.{ElectivesFile, Semester}
 import play.api.libs.json.{JsArray, Json}
 import play.api.mvc.{AbstractController, ControllerComponents}
 import providers.ConfigReader
@@ -15,22 +15,23 @@ final class ElectiveCatalogueController @Inject() (
     configReader: ConfigReader
 ) extends AbstractController(cc) {
 
-  def all() =
+  def allFromSemester(semesterId: String) =
     Action { _ =>
+      val semester = Semester(semesterId)
       val folder = Paths.get(configReader.electivesCatalogOutputFolderPath)
       val json = Files
         .walk(folder)
         .iterator()
         .asScala
         .drop(1)
-        .map { p =>
-          val filenameWithExt = p.getFileName.toString
-          val filenameOnly = filenameWithExt.split('.').head
-          Json.obj(
-            "semester" -> Semester(filenameOnly),
-            "url" -> FileController
-              .makeURI(folder.getFileName.toString, filenameWithExt)
-          )
+        .map(ElectivesFile.apply)
+        .collect {
+          case file if file.hasFileName(semester) =>
+            Json.obj(
+              "semester" -> semester,
+              "url" -> FileController
+                .makeURI(folder.getFileName.toString, file.fileName)
+            )
         }
       Ok(JsArray.apply(json.toSeq))
     }

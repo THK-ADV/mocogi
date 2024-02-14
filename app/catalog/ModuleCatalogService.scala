@@ -70,19 +70,19 @@ final class ModuleCatalogService @Inject() (
       _ <- commit(catalogFiles, brokenFiles, electivesFile)
         .recoverWith { case NonFatal(e) =>
           logger.error("commit failed! recovering...")
-          deleteAllFiles(electivesFile._1 :: brokenFiles, catalogFiles)
+          deleteAllFiles(electivesFile._1.path :: brokenFiles, catalogFiles)
           deleteBranch(branch).flatMap(_ => Future.failed(e))
         }
       (mrId, mrStatus) <- createMergeRequest
         .recoverWith { case NonFatal(e) =>
           logger.error("failed to create merge request! recovering...")
-          deleteAllFiles(electivesFile._1 :: brokenFiles, catalogFiles)
+          deleteAllFiles(electivesFile._1.path :: brokenFiles, catalogFiles)
           deleteBranch(branch).flatMap(_ => Future.failed(e))
         }
       _ <- createCatalogFiles(catalogFiles)
         .recoverWith { case NonFatal(e) =>
           logger.error("failed to create catalog files! recovering...")
-          deleteAllFiles(electivesFile._1 :: brokenFiles, catalogFiles)
+          deleteAllFiles(electivesFile._1.path :: brokenFiles, catalogFiles)
           deleteMergeRequest(mrId)
             .flatMap(_ => deleteBranch(branch))
             .flatMap(_ => Future.failed(e))
@@ -114,7 +114,7 @@ final class ModuleCatalogService @Inject() (
   private def commit(
       catalogFiles: List[ModuleCatalogFile[Path]],
       brokenFiles: List[Path],
-      electivesFile: (Path, String)
+      electivesFile: (ElectivesFile, String)
   )(implicit semester: Semester, branch: Branch) = {
     def toGitPath(path: Path) = GitFilePath(
       s"${config.moduleCatalogGitPath}/${path.getFileName.toString}"
@@ -122,7 +122,7 @@ final class ModuleCatalogService @Inject() (
     val files = ListBuffer.empty[(GitFilePath, String)]
     catalogFiles.foreach(f => files += ((toGitPath(f.texFile), f.content)))
     brokenFiles.foreach(f => files += ((toGitPath(f), Files.readString(f))))
-    files += ((toGitPath(electivesFile._1), electivesFile._2))
+    files += ((toGitPath(electivesFile._1.path), electivesFile._2))
 
     commitService
       .commit(
@@ -204,7 +204,7 @@ final class ModuleCatalogService @Inject() (
                 )
                 markFileAsBroken(texFile) match {
                   case Left(err) =>
-                    Left(Some((texFile)), err)
+                    Left(Some(texFile), err)
                   case Right(texFile) =>
                     Left(Some(texFile), err)
                 }

@@ -8,7 +8,7 @@ import ops.EitherOps.EStringThrowOps
 import ops.FileOps.FileOps0
 import play.api.Logging
 
-import java.nio.file.{Path, Paths}
+import java.nio.file.Paths
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -60,9 +60,8 @@ final class ElectivesCatalogService @Inject() (
         )
       }
 
-  // TODO discuss usage of semester since recommended semester does not consider whether a study program starts in summer or winter
   // TODO split by teaching unit
-  def create(semester: Semester): Future[(Path, String)] = {
+  def create(semester: Semester): Future[(ElectivesFile, String)] = {
     logger.info(s"creating elective catalog for ${semester.id}")
     val studyPrograms = studyProgramViewRepo
       .all()
@@ -78,17 +77,12 @@ final class ElectivesCatalogService @Inject() (
         fillHeaderWithAllStudyPrograms(csv, studyPrograms)
         fillContent(csv, studyPrograms, electiveModules)
         val content = csv.toString()
-        createCSVFile(semester.id, content)
+        tmpFolder
+          .createFile(ElectivesFile.fileName(semester), content)
           .flatMap(_.move(electivesCatalogueFolder))
-          .map(_ -> content)
+          .map(ElectivesFile(_) -> content)
           .toFuture
       }
     } yield file
   }
-
-  private def createCSVFile(
-      name: String,
-      content: String
-  ): Either[String, Path] =
-    tmpFolder.createFile(s"$name.csv", content)
 }

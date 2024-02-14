@@ -80,7 +80,6 @@ class Module(@unused environment: Environment, configuration: Configuration)
       new ModuleMarkdownPrinter(true)
     )
 
-    // TODO use more constant bindings
     bind(classOf[String])
       .annotatedWith(Names.named("gitHost"))
       .toInstance(configuration.nonEmptyString("git.host"))

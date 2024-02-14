@@ -36,7 +36,6 @@ final class ModuleViewRepository @Inject() (
   def all(): Future[Iterable[Entry]] =
     db.run(
       tableQuery.result.map(_.groupBy(_.id).map { case (_, deps) =>
-        // TODO can this be removed via query?
         val moduleManagement = mutable.HashSet[ModuleManagement]()
         val studyPrograms =
           mutable.HashSet[StudyProgramModuleAssociation[Iterable[Int]]]()
