@@ -2,11 +2,7 @@ package catalog
 
 import controllers.FileController
 import database.repo.core._
-import database.repo.{
-  ModuleCatalogGenerationRequestRepository,
-  ModuleCatalogRepository,
-  ModuleRepository
-}
+import database.repo.{ModuleCatalogRepository, ModuleRepository}
 import database.table.ModuleCatalogEntry
 import database.view.StudyProgramViewRepository
 import git.GitFilePath
@@ -42,7 +38,6 @@ final class ModuleCatalogService @Inject() (
     private val seasonRepository: SeasonRepository,
     private val identityRepository: IdentityRepository,
     private val assessmentMethodRepository: AssessmentMethodRepository,
-    private val moduleCatalogGenerationRepo: ModuleCatalogGenerationRequestRepository,
     private val gitMergeRequestApiService: GitMergeRequestApiService,
     private val electivesCatalogService: ElectivesCatalogService,
     private val config: ModuleCatalogConfig,
@@ -53,10 +48,8 @@ final class ModuleCatalogService @Inject() (
 
   import LatexCompiler._
 
-  def createAndOpenMergeRequest(
-      r: ModuleCatalogGenerationRequest
-  ): Future[Unit] = {
-    implicit val semester: Semester = Semester(r.semesterId)
+  def createAndOpenMergeRequest(semesterId: String): Future[Unit] = {
+    implicit val semester: Semester = Semester(semesterId)
     implicit val branch: Branch = Branch(semester.id)
 
     for {
@@ -96,7 +89,6 @@ final class ModuleCatalogService @Inject() (
             .flatMap(_ => deleteBranch(branch))
             .flatMap(_ => Future.failed(e))
         }
-      _ <- moduleCatalogGenerationRepo.update(mrId, mrStatus, r)
     } yield tmpFolder.deleteContentsOfDirectory()
   }
 

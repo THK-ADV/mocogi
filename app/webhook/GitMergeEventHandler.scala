@@ -108,7 +108,7 @@ object GitMergeEventHandler {
                 scheduleModuleCatalogCreation
               case (semesterBranch, gitConfig.mainBranch, "open")
                   if labels.contains(moduleCatalogLabel) =>
-                scheduleModuleCatalogMerge(Semester(semesterBranch.value))
+                scheduleModuleCatalogMerge
               case (semesterBranch, gitConfig.mainBranch, "merge")
                   if labels.contains(moduleCatalogLabel) =>
                 resetBigBang(Semester(semesterBranch.value))
@@ -147,25 +147,27 @@ object GitMergeEventHandler {
             logFailure(e)
             self ! Finished(id)
         }
-      case MergeModuleCatalog(id, mrId, r) =>
-        mergeModuleCatalogBranch(id, mrId, r) onComplete {
+      case MergeModuleCatalog(id, mrId) =>
+        mergeModuleCatalogBranch(id, mrId) onComplete {
           case Success(_) =>
             self ! Finished(id)
           case Failure(e) =>
             logFailure(e)
             self ! Finished(id)
         }
-      case CreateModuleCatalogs(id, r) =>
+      case CreateModuleCatalogs(id, semesterId) =>
         logger.info(
           s"[$id][${Thread.currentThread().getName.last}] starting with module catalog generation..."
         )
-        moduleCatalogService.createAndOpenMergeRequest(r).onComplete {
-          case Success(_) =>
-            self ! Finished(id)
-          case Failure(e) =>
-            logFailure(e)
-            self ! Finished(id)
-        }
+        moduleCatalogService
+          .createAndOpenMergeRequest(semesterId)
+          .onComplete {
+            case Success(_) =>
+              self ! Finished(id)
+            case Failure(e) =>
+              logFailure(e)
+              self ! Finished(id)
+          }
       case CheckMrStatus(id, mrId, attempt, max, merge) =>
         if (attempt < max) {
           logger.info(
@@ -234,8 +236,7 @@ object GitMergeEventHandler {
 
     private case class MergeModuleCatalog(
         id: UUID,
-        mrId: MergeRequestId,
-        request: ModuleCatalogGenerationRequest
+        mrId: MergeRequestId
     )
 
     private case class MergePreview(
@@ -250,7 +251,7 @@ object GitMergeEventHandler {
 
     private case class CreateModuleCatalogs(
         id: UUID,
-        request: ModuleCatalogGenerationRequest
+        semesterId: String
     )
 
     private case class CheckMrStatus(
@@ -261,15 +262,15 @@ object GitMergeEventHandler {
         merge: () => Unit
     )
 
-    private def scheduleModuleCatalogMerge(semester: Semester)(implicit
+    private def scheduleModuleCatalogMerge(implicit
         id: UUID,
         mrId: MergeRequestId
-    ): Unit = moduleCatalogGenerationRepo.get(mrId, semester.id).onComplete {
-      case Success(r) =>
-        scheduleMerge(0, () => self ! MergeModuleCatalog(id, mrId, r))
-      case Failure(e) =>
-        logFailure(e)
-        self ! Finished(id)
+    ): Unit = {
+      scheduleMerge(
+        0,
+        () => self ! MergeModuleCatalog(id, mrId)
+      )
+      self ! Finished(id)
     }
 
     private def scheduleModuleCatalogCreation(implicit
@@ -284,7 +285,7 @@ object GitMergeEventHandler {
           context.system.scheduler.scheduleOnce(
             moduleCatalogGenerationDelay,
             self,
-            CreateModuleCatalogs(id, r)
+            CreateModuleCatalogs(id, r.semesterId)
           )
           self ! Finished(id)
         case Failure(e) =>
@@ -387,16 +388,16 @@ object GitMergeEventHandler {
 
     private def mergeModuleCatalogBranch(
         id: UUID,
-        mrId: MergeRequestId,
-        request: ModuleCatalogGenerationRequest
+        mrId: MergeRequestId
     ) = {
       logger.info(s"[$id][${Thread.currentThread().getName.last}] merging...")
-      for {
-        mrStatus <- mergeRequestApiService.merge(mrId)
-        _ <- moduleCatalogGenerationRepo.update(mrStatus, request)
-      } yield logger.info(
-        s"[$id][${Thread.currentThread().getName.last}] successfully merged request with id ${mrId.value}"
-      )
+      mergeRequestApiService
+        .merge(mrId)
+        .map(_ =>
+          logger.info(
+            s"[$id][${Thread.currentThread().getName.last}] successfully merged request with id ${mrId.value}"
+          )
+        )
     }
 
     private def parse(json: JsValue): JsResult[ParseResult] = {

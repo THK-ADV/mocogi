@@ -3,12 +3,7 @@ package controllers
 import auth.AuthorizationAction
 import catalog.{ModuleCatalogService, PreviewMergeActor}
 import controllers.actions.{AdminCheck, PermissionCheck}
-import models.{
-  MergeRequestId,
-  MergeRequestStatus,
-  ModuleCatalogGenerationRequest,
-  Semester
-}
+import models.Semester
 import play.api.mvc.{AbstractController, ControllerComponents}
 
 import javax.inject.{Inject, Singleton}
@@ -36,13 +31,7 @@ final class BigBangController @Inject() (
   def goCatalogs() =
     auth andThen isAdmin async { _ =>
       moduleCatalogService
-        .createAndOpenMergeRequest(
-          ModuleCatalogGenerationRequest(
-            MergeRequestId(1),
-            semester,
-            MergeRequestStatus.Open
-          )
-        )
+        .createAndOpenMergeRequest(semester)
         .map(_ => NoContent)
     }
 }
