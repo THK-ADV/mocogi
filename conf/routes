@@ -35,7 +35,6 @@ GET           /focusAreas                                      controllers.Focus
 GET           /faculties                                       controllers.FacultyController.all()
 GET           /globalCriteria                                  controllers.GlobalCriteriaController.all()
 GET           /studyPrograms                                   controllers.StudyProgramController.all()
-GET           /studyPrograms/view                              controllers.StudyProgramController.allFromView()
 GET           /competences                                     controllers.CompetenceController.all()
 GET           /specializations                                 controllers.SpecializationController.all()
 
