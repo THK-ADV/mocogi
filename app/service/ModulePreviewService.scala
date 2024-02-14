@@ -44,7 +44,7 @@ final class ModulePreviewService @Inject() (
 
     for {
       studyPrograms <- studyPrograms
-      studyProgram <- studyPrograms.find(_.poId == poId) match {
+      studyProgram <- studyPrograms.find(_.po.id == poId) match {
         case Some(value) =>
           Future.successful(value)
         case None =>

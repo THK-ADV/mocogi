@@ -34,9 +34,9 @@ final class ElectivesCatalogService @Inject() (
       csv.append(
         p.specialization match {
           case Some(spec) =>
-            s",${p.studyProgram.deLabel}-${spec.deLabel}-${p.poVersion}-${p.degree.deLabel}"
+            s",${p.deLabel}-${spec.deLabel}-${p.po.version}-${p.degree.deLabel}"
           case None =>
-            s",${p.studyProgram.deLabel}-${p.poVersion}-${p.degree.deLabel}"
+            s",${p.deLabel}-${p.po.version}-${p.degree.deLabel}"
         }
       )
     })
@@ -66,7 +66,7 @@ final class ElectivesCatalogService @Inject() (
     logger.info(s"creating elective catalog for ${semester.id}")
     val studyPrograms = studyProgramViewRepo
       .all()
-      .map(_.sortBy(a => (a.degree.id, a.fullPoId, a.poVersion)))
+      .map(_.sortBy(a => (a.degree.id, a.fullPoId, a.po.version)))
     val electiveModules = electivesRepository.all()
     val csv = new StringBuilder()
     csv.append("Modulname,Modulabkürzung,Modulverantwortliche")

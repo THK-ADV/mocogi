@@ -43,7 +43,7 @@ final class ModuleHTMLPrinter @Inject() (
         lang,
         localDateTime,
         outputType,
-        sp => sps.find(_.studyProgram.id == sp)
+        sp => sps.find(_.id == sp)
       )
     }
 }

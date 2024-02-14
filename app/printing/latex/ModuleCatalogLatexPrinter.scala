@@ -75,9 +75,9 @@ final class ModuleCatalogLatexPrinter @Inject() (pandocApi: PandocApi)
     chapter(lang.moduleHeadline)
     newPage
     modules(
-      studyProgram.poId,
+      studyProgram.po.id,
       entries.filter(_.metadata.po.mandatory.exists { a =>
-        a.po == studyProgram.poId && a.specialization
+        a.po == studyProgram.po.id && a.specialization
           .zip(studyProgram.specialization)
           .fold(true)(a => a._1 == a._2.id)
       }),
@@ -158,14 +158,13 @@ final class ModuleCatalogLatexPrinter @Inject() (pandocApi: PandocApi)
             .collect {
               case p if p.po != po =>
                 val builder = new StringBuilder()
-                val studyProgram = studyProgramViews.find(_.poId == p.po).get
+                val studyProgram = studyProgramViews.find(_.po.id == p.po).get
                 val spLabel = {
                   val spLabel = escape(
-                    studyProgram.studyProgram
-                      .localizedLabel(studyProgram.specialization)
+                    studyProgram.localizedLabel(studyProgram.specialization)
                   )
                   // TODO Workaround
-                  if (studyProgram.poId.endsWith("flex")) s"$spLabel-Flex"
+                  if (studyProgram.po.id.endsWith("flex")) s"$spLabel-Flex"
                   else spLabel
                 }
                 builder
@@ -173,7 +172,7 @@ final class ModuleCatalogLatexPrinter @Inject() (pandocApi: PandocApi)
                     s"${studyProgram.degree.localizedLabel}: "
                   )
                   .append(spLabel)
-                  .append(s" PO ${studyProgram.poVersion}")
+                  .append(s" PO ${studyProgram.po.version}")
                 if (p.recommendedSemester.nonEmpty) {
                   builder.append(
                     s" (Semester ${fmtCommaSeparated(p.recommendedSemester)(_.toString())})"
@@ -298,7 +297,7 @@ final class ModuleCatalogLatexPrinter @Inject() (pandocApi: PandocApi)
       .append("\\title{\n")
       .append(s"\\Huge ${lang.moduleCatalogHeadline} \\\\ [1.5ex]\n")
       .append(
-        s"\\LARGE ${escape(studyProgram.studyProgram.localizedLabel(studyProgram.specialization))} PO ${studyProgram.poVersion} \\\\ [1ex]\n"
+        s"\\LARGE ${escape(studyProgram.localizedLabel(studyProgram.specialization))} PO ${studyProgram.po.version} \\\\ [1ex]\n"
       )
       .append(s"\\LARGE ${studyProgram.degree.localizedDesc} \\\\ [1ex]\n")
       .append(

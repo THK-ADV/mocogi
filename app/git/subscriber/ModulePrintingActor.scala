@@ -48,7 +48,7 @@ object ModulePrintingActor {
               print(
                 lastModified,
                 module,
-                sp => sps.find(_.studyProgram.id == sp)
+                sp => sps.find(_.id == sp)
               )
             )
           case Failure(t) =>

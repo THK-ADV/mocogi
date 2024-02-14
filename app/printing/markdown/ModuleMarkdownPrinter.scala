@@ -13,7 +13,7 @@ import printing.{
   fmtIdentity,
   localDatePattern
 }
-import validator.{Metadata, ModuleRelation, ModulePOs, ModulePrerequisiteEntry}
+import validator.{Metadata, ModulePOs, ModulePrerequisiteEntry, ModuleRelation}
 
 import java.time.LocalDateTime
 import javax.inject.Singleton
@@ -80,7 +80,7 @@ final class ModuleMarkdownPrinter(
       )
       val studyProgramWithPO = studyProgram(p.po.program) match {
         case Some(sp) =>
-          val spLabel = sp.studyProgram.localizedLabel
+          val spLabel = sp.localizedLabel
           val degreeLabel = sp.degree.localizedLabel
           s"$degreeLabel: $spLabel PO ${p.po.version}"
         case None =>

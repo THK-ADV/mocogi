@@ -156,7 +156,7 @@ final class ModuleCatalogService @Inject() (
   private def printAndCompile(semester: Semester) = {
     for {
       sps <- studyProgramViewRepo.all()
-      poIds = sps.map(_.poId)
+      poIds = sps.map(_.po.id)
       ms <- moduleRepository.allFromPos(poIds)
       mts <- moduleTypeRepository.all()
       lang <- languageRepository.all()
@@ -325,9 +325,9 @@ final class ModuleCatalogService @Inject() (
         val enPdf = getPdfFileName(xs, PrintingLanguage.English)
         ModuleCatalogEntry(
           file.studyProgram.fullPoId.id,
-          file.studyProgram.poId,
+          file.studyProgram.po.id,
           file.studyProgram.specialization.map(_.id),
-          file.studyProgram.studyProgram.id,
+          file.studyProgram.id,
           file.semester.id,
           FileController.makeURI(moduleCatalogFolder.toString, dePdf),
           FileController.makeURI(moduleCatalogFolder.toString, enPdf),

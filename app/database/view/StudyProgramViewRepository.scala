@@ -1,7 +1,7 @@
 package database.view
 
-import models.StudyProgramView
 import models.core.{Degree, IDLabel}
+import models.{POCore, StudyProgramView}
 import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfigProvider}
 import slick.jdbc.JdbcProfile
 
@@ -98,9 +98,10 @@ final class StudyProgramViewRepository @Inject() (
             specializationLabel
           ) =>
         StudyProgramView(
-          poId,
-          poVersion,
-          IDLabel(studyProgramId, studyProgramDeLabel, studyProgramEnLabel),
+          studyProgramId,
+          studyProgramDeLabel,
+          studyProgramEnLabel,
+          POCore(poId, poVersion),
           Degree(
             degreeId,
             degreeDeLabel,
@@ -132,11 +133,11 @@ final class StudyProgramViewRepository @Inject() (
     ] = { a =>
       Option(
         (
-          a.poId,
-          a.poVersion,
-          a.studyProgram.id,
-          a.studyProgram.deLabel,
-          a.studyProgram.enLabel,
+          a.po.id,
+          a.po.version,
+          a.id,
+          a.deLabel,
+          a.enLabel,
           a.degree.id,
           a.degree.deLabel,
           a.degree.enLabel,
