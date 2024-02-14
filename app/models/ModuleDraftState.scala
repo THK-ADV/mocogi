@@ -1,13 +1,10 @@
 package models
 
 import models.ModuleDraftState.{ValidForPublication, ValidForReview}
-import play.api.libs.json.{Json, Writes}
+import models.core.IDLabel
+import play.api.libs.json.Writes
 
-sealed trait ModuleDraftState {
-  def id: String
-  def deLabel: String
-  def enLabel: String
-
+sealed trait ModuleDraftState extends IDLabel {
   def canRequestReview: Boolean =
     this == ValidForReview || this == ValidForPublication
 
@@ -23,13 +20,9 @@ sealed trait ModuleDraftState {
 }
 
 object ModuleDraftState {
-  implicit val writes: Writes[ModuleDraftState] =
-    (status: ModuleDraftState) =>
-      Json.obj(
-        "id" -> status.id,
-        "deLabel" -> status.deLabel,
-        "enLabel" -> status.enLabel
-      )
+
+  implicit def writes: Writes[ModuleDraftState] =
+    Writes.of[IDLabel].contramap(identity)
 
   case object Published extends ModuleDraftState {
     override def id: String = "published"

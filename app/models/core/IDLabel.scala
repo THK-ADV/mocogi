@@ -1,6 +1,6 @@
 package models.core
 
-import play.api.libs.json.{Json, Writes}
+import play.api.libs.json.{Json, OWrites}
 
 trait IDLabel extends Label {
   def id: String
@@ -22,7 +22,7 @@ object IDLabel {
       override def enLabel: String = _enLabel
     }
 
-  implicit def writes: Writes[IDLabel] =
+  implicit def writes: OWrites[IDLabel] =
     o =>
       Json.obj(
         "id" -> o.id,

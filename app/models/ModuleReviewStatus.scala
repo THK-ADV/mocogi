@@ -1,14 +1,15 @@
 package models
 
-import play.api.libs.json.{Json, Writes}
+import models.core.IDLabel
+import play.api.libs.json.Writes
 
-sealed trait ModuleReviewStatus {
-  def id: String
-  def deLabel: String
-  def enLabel: String
-}
+sealed trait ModuleReviewStatus extends IDLabel
 
 object ModuleReviewStatus {
+
+  implicit def writes: Writes[ModuleReviewStatus] =
+    Writes.of[IDLabel].contramap(identity)
+
   case object Approved extends ModuleReviewStatus {
     override def id: String = "approved"
     override def deLabel = "Genehmigt"
@@ -33,12 +34,4 @@ object ModuleReviewStatus {
       case "rejected" => Rejected
       case "pending"  => Pending
     }
-
-  implicit def writes: Writes[ModuleReviewStatus] =
-    s =>
-      Json.obj(
-        "id" -> s.id,
-        "deLabel" -> s.deLabel,
-        "enLabel" -> s.enLabel
-      )
 }

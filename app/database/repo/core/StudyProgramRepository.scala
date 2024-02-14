@@ -1,8 +1,13 @@
 package database.repo.core
 
-import database.table.core.{StudyProgramDbEntry, StudyProgramPersonDbEntry, StudyProgramPersonTable, StudyProgramTable}
+import database.table.core.{
+  StudyProgramDbEntry,
+  StudyProgramPersonDbEntry,
+  StudyProgramPersonTable,
+  StudyProgramTable
+}
 import models.UniversityRole
-import models.core.StudyProgram
+import models.core.{IDLabel, StudyProgram}
 import play.api.Logging
 import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfigProvider}
 import slick.jdbc.JdbcProfile
@@ -71,6 +76,14 @@ class StudyProgramRepository @Inject() (
         .transactionally
         .map(_ => xs)
     )
+  }
+
+  def allWithDegrees() = {
+    val query = for {
+      q <- tableQuery
+      d <- q.degreeFk
+    } yield (q.id, q.deLabel, q.enLabel, d)
+    db.run(query.result.map(_.map(a => (IDLabel(a._1, a._2, a._3), a._4))))
   }
 
   private def retrieve(

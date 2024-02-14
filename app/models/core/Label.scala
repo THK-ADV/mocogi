@@ -1,6 +1,6 @@
 package models.core
 
-import play.api.libs.json.{Json, Writes}
+import play.api.libs.json.{Json, OWrites}
 
 trait Label {
   def deLabel: String
@@ -8,7 +8,7 @@ trait Label {
 }
 
 object Label {
-  implicit def writes: Writes[Label] =
+  implicit def writes: OWrites[Label] =
     o =>
       Json.obj(
         "deLabel" -> o.deLabel,
