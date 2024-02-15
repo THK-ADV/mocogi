@@ -35,7 +35,7 @@ class ErrorHandler extends HttpErrorHandler {
       ErrorHandler.internalServerError(
         request.toString(),
         exception.getMessage,
-        exception.getStackTrace
+        exception
       )
     )
 }

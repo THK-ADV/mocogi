@@ -108,10 +108,10 @@ final class ModuleController @Inject() (
             Ok.sendPath(path, onClose = () => fileCreator.delete(file))
           } catch {
             case NonFatal(e) =>
-              ErrorHandler.internalServerError(
+              ErrorHandler.badRequest(
                 r.toString(),
                 e.getMessage,
-                e.getStackTrace
+                e
               )
           }
         case None => NotFound
@@ -131,10 +131,10 @@ final class ModuleController @Inject() (
       Ok.sendFile(content = path.toFile, fileName = f => Some(f.getName))
     } catch {
       case NonFatal(e) =>
-        ErrorHandler.internalServerError(
+        ErrorHandler.badRequest(
           r.toString(),
           s"file not found: ${e.getMessage}",
-          e.getStackTrace
+          e
         )
     }
   }
