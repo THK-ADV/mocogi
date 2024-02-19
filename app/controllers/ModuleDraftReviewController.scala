@@ -2,7 +2,7 @@ package controllers
 
 import auth.AuthorizationAction
 import controllers.actions.{ModuleDraftCheck, PermissionCheck, PersonAction}
-import database.repo.PersonRepository
+import database.repo.core.IdentityRepository
 import play.api.mvc.{AbstractController, ControllerComponents}
 import service.{
   ModuleDraftService,
@@ -21,7 +21,7 @@ final class ModuleDraftReviewController @Inject() (
     val service: ModuleReviewService,
     val moduleUpdatePermissionService: ModuleUpdatePermissionService,
     val moduleDraftService: ModuleDraftService,
-    val personRepository: PersonRepository,
+    val identityRepository: IdentityRepository,
     implicit val ctx: ExecutionContext
 ) extends AbstractController(cc)
     with ModuleDraftCheck

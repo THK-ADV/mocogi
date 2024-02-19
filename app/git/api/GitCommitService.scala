@@ -1,8 +1,8 @@
 package git.api
 
-import git.{GitCommitAction, GitCommitActionType, GitFilePath}
+import git.{Branch, CommitId, GitCommitAction, GitCommitActionType, GitFilePath}
 import models._
-import models.core.Person
+import models.core.Identity
 import service.Print
 
 import java.util.UUID
@@ -17,7 +17,7 @@ final class GitCommitService @Inject() (
 ) {
   def commit(
       branch: Branch,
-      author: Person.Default,
+      author: Identity.Person,
       message: String,
       moduleId: UUID,
       status: ModuleDraftSource,
@@ -31,7 +31,7 @@ final class GitCommitService @Inject() (
     val action = GitCommitAction(gitActionType, filePath, print.value)
     apiService.commit(
       branch,
-      author.email getOrElse "mocogi@th-koeln.de",
+      author.email getOrElse apiService.config.defaultEmail,
       author.fullName,
       message,
       Seq(action)

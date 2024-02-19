@@ -1,16 +1,16 @@
 package service.core
 
-import database.repo.AssessmentMethodRepository
+import database.repo.core.AssessmentMethodRepository
 import models.core.AssessmentMethod
 import parsing.core.AssessmentMethodFileParser
 
 import javax.inject.{Inject, Singleton}
-
-trait AssessmentMethodService extends SimpleYamlService[AssessmentMethod]
+import scala.concurrent.ExecutionContext
 
 @Singleton
-final class AssessmentMethodServiceImpl @Inject() (
-    val repo: AssessmentMethodRepository
-) extends AssessmentMethodService {
-  override def parser = AssessmentMethodFileParser
+final class AssessmentMethodService @Inject() (
+    val repo: AssessmentMethodRepository,
+    val ctx: ExecutionContext
+) extends SimpleYamlService[AssessmentMethod] {
+  override def fileParser = AssessmentMethodFileParser
 }

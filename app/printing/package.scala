@@ -1,6 +1,5 @@
-import models.SpecializationShort
-import models.core.{AbbrevLabelDescLike, AbbrevLabelLike, Person, Season}
-import validator.Workload
+import models.core._
+import validator.ModuleWorkload
 
 import java.time.format.DateTimeFormatter
 import scala.annotation.unused
@@ -12,13 +11,13 @@ package object printing {
     if (d % 1 == 0) d.toInt.toString
     else d.toString.replace('.', ',')
 
-  def fmtPerson(p: Person): String =
+  def fmtIdentity(p: Identity): String =
     p match {
-      case s: Person.Default =>
-        s"${s.title} ${s.fullName} (${fmtCommaSeparated(s.faculties, ", ")(_.abbrev.toUpperCase)})"
-      case g: Person.Group =>
+      case s: Identity.Person =>
+        s"${s.title} ${s.fullName} (${fmtCommaSeparated(s.faculties)(_.id.toUpperCase)})"
+      case g: Identity.Group =>
         g.label
-      case u: Person.Unknown =>
+      case u: Identity.Unknown =>
         u.label
     }
 
@@ -37,7 +36,7 @@ package object printing {
   final implicit class LanguageOps(private val self: PrintingLanguage)
       extends AnyVal {
 
-    def moduleCompendiumHeadline = self.fold("Modulhandbuch", "Module Handbook")
+    def moduleCatalogHeadline = self.fold("Modulhandbuch", "Module Catalog")
 
     def prologHeadline = "Prolog"
 
@@ -128,7 +127,7 @@ package object printing {
 
     def particularitiesLabel = self.fold("Besonderheiten", "Particularities")
 
-    def value(a: AbbrevLabelLike): String =
+    def value(a: IDLabel): String =
       self.fold(a.deLabel, a.enLabel)
 
     def frequencyValue(season: Season): String =
@@ -138,7 +137,7 @@ package object printing {
       s"$duration ${self.semesterLabel}"
 
     def workload(
-        wl: Workload
+        wl: ModuleWorkload
     ): ((String, String), (String, String), (String, String)) = {
       val contactHoursValue = wl.total - wl.selfStudy
       val contactHoursParts = List(
@@ -165,7 +164,7 @@ package object printing {
       )
     }
 
-    def lectureValue(wl: Workload): String =
+    def lectureValue(wl: ModuleWorkload): String =
       if (wl.lecture == 0) ""
       else {
         val value = s"${wl.lecture} h"
@@ -173,7 +172,7 @@ package object printing {
         s"$value $res"
       }
 
-    def exerciseValue(wl: Workload): String =
+    def exerciseValue(wl: ModuleWorkload): String =
       if (wl.exercise == 0) ""
       else {
         val value = s"${wl.exercise} h"
@@ -181,7 +180,7 @@ package object printing {
         s"$value $res"
       }
 
-    def practicalValue(wl: Workload): String =
+    def practicalValue(wl: ModuleWorkload): String =
       if (wl.practical == 0) ""
       else {
         val value = s"${wl.practical} h"
@@ -189,7 +188,7 @@ package object printing {
         s"$value $res"
       }
 
-    def seminarValue(wl: Workload): String =
+    def seminarValue(wl: ModuleWorkload): String =
       if (wl.seminar == 0) ""
       else {
         val value = s"${wl.seminar} h"
@@ -197,7 +196,7 @@ package object printing {
         s"$value $res"
       }
 
-    def projectSupervisionValue(wl: Workload): String =
+    def projectSupervisionValue(wl: ModuleWorkload): String =
       if (wl.projectSupervision == 0) ""
       else {
         val value = s"${wl.projectSupervision} h"
@@ -205,7 +204,7 @@ package object printing {
         s"$value $res"
       }
 
-    def projectWorkValue(wl: Workload): String =
+    def projectWorkValue(wl: ModuleWorkload): String =
       if (wl.projectWork == 0) ""
       else {
         val value = s"${wl.projectWork} h"
@@ -214,21 +213,20 @@ package object printing {
       }
   }
 
-  final implicit class AbbrevLabelLikeOps(private val self: AbbrevLabelLike)
-      extends AnyVal {
+  final implicit class LabelOps(private val self: Label) extends AnyVal {
     def localizedLabel(implicit lang: PrintingLanguage): String =
       lang.fold(self.deLabel, self.enLabel)
 
     def localizedLabel(
-        specialization: Option[SpecializationShort]
+        specialization: Option[Label]
     )(implicit lang: PrintingLanguage): String =
       specialization.fold(self.localizedLabel)(s =>
-        s"${self.localizedLabel} (${s.label})"
+        s"${self.localizedLabel} (${s.localizedLabel})"
       )
   }
 
-  final implicit class AbbrevLabelDescLikeOps(
-      private val self: AbbrevLabelDescLike
+  final implicit class IDLabelDescOps(
+      private val self: IDLabelDesc
   ) extends AnyVal {
     def localizedDesc(implicit lang: PrintingLanguage): String =
       lang.fold(self.deDesc, self.enDesc)

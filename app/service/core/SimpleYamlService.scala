@@ -1,5 +1,21 @@
 package service.core
 
-trait SimpleYamlService[A] extends YamlService[A, A] {
-  override def toInput(output: A) = output
+import database.repo.Repository
+import parser.Parser
+import parsing.core.FileParser
+
+import scala.concurrent.Future
+
+trait SimpleYamlService[A] extends YamlService[A] {
+  def fileParser: FileParser[A]
+  def repo: Repository[A, A, _]
+
+  def createOrUpdateMany(xs: Seq[A]): Future[Seq[A]] =
+    repo.createOrUpdateMany(xs)
+
+  def all(): Future[Seq[A]] =
+    repo.all()
+
+  override def parser: Future[Parser[List[A]]] =
+    Future.successful(fileParser.fileParser)
 }

@@ -1,13 +1,13 @@
 package parsing.core
 
-import models.core.GlobalCriteria
+import models.core.ModuleGlobalCriteria
 import parser.Parser
 import parser.Parser._
 import parser.ParserOps.{P0, P2, P3, P4}
 import parsing.{removeIndentation, singleLineStringForKey, stringForKey}
 
-object GlobalCriteriaFileParser extends FileParser[GlobalCriteria] {
-  override val fileParser: Parser[List[GlobalCriteria]] =
+object GlobalCriteriaFileParser extends FileParser[ModuleGlobalCriteria] {
+  override val fileParser: Parser[List[ModuleGlobalCriteria]] =
     skipFirst(removeIndentation())
       .take(
         prefixTo(":")
@@ -21,6 +21,6 @@ object GlobalCriteriaFileParser extends FileParser[GlobalCriteria] {
           .skip(zeroOrMoreSpaces)
           .take(stringForKey("en_desc").option.map(_.getOrElse("")))
           .all(zeroOrMoreSpaces)
-          .map(_.map(GlobalCriteria.tupled))
+          .map(_.map((ModuleGlobalCriteria.apply _).tupled))
       )
 }

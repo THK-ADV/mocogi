@@ -4,22 +4,17 @@ import models.core._
 import parser.Parser
 import parser.Parser._
 import parser.ParserOps._
-import parsing.metadata.AssessmentMethodParser.{
-  assessmentMethodsMandatoryParser,
-  assessmentMethodsOptionalParser
-}
-import parsing.metadata.CompetencesParser.competencesParser
-import parsing.metadata.ECTSParser.ectsParser
-import parsing.metadata.GlobalCriteriaParser.globalCriteriaParser
-import parsing.metadata.ModuleRelationParser.moduleRelationParser
-import parsing.metadata.POParser.{mandatoryPOParser, optionalPOParser}
-import parsing.metadata.ParticipantsParser.participantsParser
-import parsing.metadata.PrerequisitesParser.{
+import parsing.metadata.ModuleCompetencesParser.competencesParser
+import parsing.metadata.ModuleECTSParser.ectsParser
+import parsing.metadata.ModuleGlobalCriteriaParser.globalCriteriaParser
+import parsing.metadata.ModuleParticipantsParser.participantsParser
+import parsing.metadata.ModulePrerequisitesParser.{
   recommendedPrerequisitesParser,
   requiredPrerequisitesParser
 }
-import parsing.metadata.TaughtWithParser.taughtWithParser
-import parsing.metadata.WorkloadParser.workloadParser
+import parsing.metadata.ModuleRelationParser.moduleRelationParser
+import parsing.metadata.ModuleTaughtWithParser.taughtWithParser
+import parsing.metadata.ModuleWorkloadParser.workloadParser
 import parsing.types._
 import parsing.{posIntForKey, singleLineStringForKey, uuidParser}
 
@@ -28,12 +23,12 @@ import javax.inject.{Inject, Singleton}
 
 @Singleton
 final class THKV1Parser @Inject() (
-    responsibilitiesParser: ResponsibilitiesParser,
-    seasonParser: SeasonParser,
-    statusParser: StatusParser,
+    responsibilitiesParser: ModuleResponsibilitiesParser,
+    seasonParser: ModuleSeasonParser,
+    statusParser: ModuleStatusParser,
     moduleTypeParser: ModuleTypeParser,
-    locationParser: LocationParser,
-    languageParser: LanguageParser
+    locationParser: ModuleLocationParser,
+    languageParser: ModuleLanguageParser
 ) extends MetadataParser {
   override val versionScheme = VersionScheme(1, "s")
 
@@ -48,16 +43,16 @@ final class THKV1Parser @Inject() (
   val durationParser = posIntForKey("duration")
 
   def parser(implicit
-      locations: Seq[Location],
-      languages: Seq[Language],
-      status: Seq[Status],
+      locations: Seq[ModuleLocation],
+      languages: Seq[ModuleLanguage],
+      status: Seq[ModuleStatus],
       assessmentMethods: Seq[AssessmentMethod],
       moduleTypes: Seq[ModuleType],
       seasons: Seq[Season],
-      persons: Seq[Person],
-      focusAreas: Seq[FocusAreaPreview],
-      competences: Seq[Competence],
-      globalCriteria: Seq[GlobalCriteria],
+      identities: Seq[Identity],
+      focusAreas: Seq[FocusAreaID],
+      competences: Seq[ModuleCompetence],
+      globalCriteria: Seq[ModuleGlobalCriteria],
       pos: Seq[PO],
       specializations: Seq[Specialization]
   ): Parser[ParsedMetadata] =
@@ -74,9 +69,13 @@ final class THKV1Parser @Inject() (
       .take(seasonParser.parser)
       .take(responsibilitiesParser.parser)
       .take(
-        assessmentMethodsMandatoryParser
-          .zip(assessmentMethodsOptionalParser.option.map(_.getOrElse(Nil)))
-          .map(AssessmentMethods.tupled)
+        ModuleAssessmentMethodParser.mandatoryParser
+          .zip(
+            ModuleAssessmentMethodParser.electiveParser.option.map(
+              _.getOrElse(Nil)
+            )
+          )
+          .map((ModuleAssessmentMethods.apply _).tupled)
       )
       .take(workloadParser)
       .skip(newline)
@@ -90,9 +89,9 @@ final class THKV1Parser @Inject() (
       .take(locationParser.parser)
       .skip(optional(newline))
       .take(
-        mandatoryPOParser.option
+        ModulePOParser.mandatoryParser.option
           .map(_.getOrElse(Nil))
-          .zip(optionalPOParser.option.map(_.getOrElse(Nil)))
+          .zip(ModulePOParser.electiveParser.option.map(_.getOrElse(Nil)))
           .map(ParsedPOs.tupled)
       )
       .take(

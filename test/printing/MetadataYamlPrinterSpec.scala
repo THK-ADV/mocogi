@@ -1,10 +1,11 @@
 package printing
 
-import database._
+import models._
 import org.scalatest.wordspec.AnyWordSpec
 import parsing.metadata.VersionScheme
-import parsing.types.{ParsedWorkload, Participants}
+import parsing.types.ModuleParticipants
 import printing.yaml.MetadataYamlPrinter
+import validator.ModuleWorkload
 
 import java.util.UUID
 
@@ -38,17 +39,17 @@ final class MetadataYamlPrinterSpec extends AnyWordSpec with PrinterSpec {
     }
 
     "print module relation" in {
-      val parent0 = ModuleRelationOutput.Parent(List(m1))
+      val parent0 = ModuleRelationProtocol.Parent(List(m1))
       val res0 = s"relation:\n  children: module.$m1\n"
       assert(run(printer.moduleRelation(parent0)) === res0)
-      val parent1 = ModuleRelationOutput.Parent(List(m1, m2))
+      val parent1 = ModuleRelationProtocol.Parent(List(m1, m2))
       val res1 =
         s"""relation:
          |  children:
          |    - module.$m1
          |    - module.$m2\n""".stripMargin
       assert(run(printer.moduleRelation(parent1)) === res1)
-      val child = ModuleRelationOutput.Child(m1)
+      val child = ModuleRelationProtocol.Child(m1)
       val res2 = s"relation:\n  parent: module.$m1\n"
       assert(run(printer.moduleRelation(child)) === res2)
     }
@@ -97,8 +98,8 @@ final class MetadataYamlPrinterSpec extends AnyWordSpec with PrinterSpec {
 
     "print assessment methods mandatory" in {
       val values1 = List(
-        AssessmentMethodEntryOutput("project", None, Nil),
-        AssessmentMethodEntryOutput("exam", None, Nil)
+        ModuleAssessmentMethodEntryProtocol("project", None, Nil),
+        ModuleAssessmentMethodEntryProtocol("exam", None, Nil)
       )
       val res1 =
         s"""assessment_methods_mandatory:
@@ -106,8 +107,8 @@ final class MetadataYamlPrinterSpec extends AnyWordSpec with PrinterSpec {
            |  - method: assessment.project\n""".stripMargin
       assert(run(printer.assessmentMethodsMandatory(values1)) == res1)
       val values2 = List(
-        AssessmentMethodEntryOutput("exam", Some(100), Nil),
-        AssessmentMethodEntryOutput("project", None, Nil)
+        ModuleAssessmentMethodEntryProtocol("exam", Some(100), Nil),
+        ModuleAssessmentMethodEntryProtocol("project", None, Nil)
       )
       val res2 =
         s"""assessment_methods_mandatory:
@@ -116,8 +117,12 @@ final class MetadataYamlPrinterSpec extends AnyWordSpec with PrinterSpec {
            |  - method: assessment.project\n""".stripMargin
       assert(run(printer.assessmentMethodsMandatory(values2)) == res2)
       val values3 = List(
-        AssessmentMethodEntryOutput("project", None, Nil),
-        AssessmentMethodEntryOutput("exam", Some(100), List("def", "abc"))
+        ModuleAssessmentMethodEntryProtocol("project", None, Nil),
+        ModuleAssessmentMethodEntryProtocol(
+          "exam",
+          Some(100),
+          List("def", "abc")
+        )
       )
       val res3 =
         s"""assessment_methods_mandatory:
@@ -131,7 +136,7 @@ final class MetadataYamlPrinterSpec extends AnyWordSpec with PrinterSpec {
     }
 
     "print workload" in {
-      val workload = ParsedWorkload(1, 2, 3, 4, 5, 6)
+      val workload = ModuleWorkload(1, 2, 3, 4, 5, 6, 0, 0)
       val res =
         s"""workload:
           |  lecture: 1
@@ -144,17 +149,17 @@ final class MetadataYamlPrinterSpec extends AnyWordSpec with PrinterSpec {
     }
 
     "print recommended prerequisites" in {
-      val entry0 = PrerequisiteEntryOutput("", Nil, Nil)
+      val entry0 = ModulePrerequisiteEntryProtocol("", Nil, Nil)
       val res0 = ""
       assert(run(printer.recommendedPrerequisites(entry0)) == res0)
 
-      val entry1 = PrerequisiteEntryOutput("abc", Nil, Nil)
+      val entry1 = ModulePrerequisiteEntryProtocol("abc", Nil, Nil)
       val res1 =
         s"""recommended_prerequisites:
           |  text: abc\n""".stripMargin
       assert(run(printer.recommendedPrerequisites(entry1)) == res1)
 
-      val entry2 = PrerequisiteEntryOutput("abc", List(m2, m1), Nil)
+      val entry2 = ModulePrerequisiteEntryProtocol("abc", List(m2, m1), Nil)
       val res2 =
         s"""recommended_prerequisites:
            |  text: abc
@@ -164,7 +169,7 @@ final class MetadataYamlPrinterSpec extends AnyWordSpec with PrinterSpec {
       assert(run(printer.recommendedPrerequisites(entry2)) == res2)
 
       val entry3 =
-        PrerequisiteEntryOutput("abc", List(m1, m2), List("def", "abc"))
+        ModulePrerequisiteEntryProtocol("abc", List(m1, m2), List("def", "abc"))
       val res3 =
         s"""recommended_prerequisites:
            |  text: abc
@@ -176,7 +181,8 @@ final class MetadataYamlPrinterSpec extends AnyWordSpec with PrinterSpec {
            |    - study_program.def\n""".stripMargin
       assert(run(printer.recommendedPrerequisites(entry3)) == res3)
 
-      val entry4 = PrerequisiteEntryOutput("abc", Nil, List("abc", "def"))
+      val entry4 =
+        ModulePrerequisiteEntryProtocol("abc", Nil, List("abc", "def"))
       val res4 =
         s"""recommended_prerequisites:
            |  text: abc
@@ -185,7 +191,7 @@ final class MetadataYamlPrinterSpec extends AnyWordSpec with PrinterSpec {
            |    - study_program.def\n""".stripMargin
       assert(run(printer.recommendedPrerequisites(entry4)) == res4)
 
-      val entry5 = PrerequisiteEntryOutput("", Nil, List("abc", "def"))
+      val entry5 = ModulePrerequisiteEntryProtocol("", Nil, List("abc", "def"))
       val res5 =
         s"""recommended_prerequisites:
            |  study_programs:
@@ -203,7 +209,7 @@ final class MetadataYamlPrinterSpec extends AnyWordSpec with PrinterSpec {
     }
 
     "print participants" in {
-      val participants = Participants(0, 10)
+      val participants = ModuleParticipants(0, 10)
       val res =
         s"""participants:
           |  min: 0
@@ -240,9 +246,9 @@ final class MetadataYamlPrinterSpec extends AnyWordSpec with PrinterSpec {
 
     "print po mandatory" in {
       val po1 = List(
-        POMandatoryOutput("abc", None, List(1), Nil),
-        POMandatoryOutput("ghi", None, List(1, 2), List(2, 1)),
-        POMandatoryOutput("def", None, List(2, 1), Nil)
+        ModulePOMandatoryProtocol("abc", None, List(1)),
+        ModulePOMandatoryProtocol("ghi", None, List(1, 2)),
+        ModulePOMandatoryProtocol("def", None, List(2, 1))
       )
       val res1 =
         s"""po_mandatory:
@@ -255,17 +261,26 @@ final class MetadataYamlPrinterSpec extends AnyWordSpec with PrinterSpec {
           |  - study_program: study_program.ghi
           |    recommended_semester:
           |      - 1
-          |      - 2
-          |    recommended_semester_part_time:
-          |      - 1
           |      - 2\n""".stripMargin
       assert(run(printer.poMandatory(po1)) == res1)
     }
 
     "print po optional" in {
       val po1 = List(
-        POOptionalOutput("abc", None, m1, partOfCatalog = true, List(1)),
-        POOptionalOutput("def", None, m1, partOfCatalog = false, List(2, 1))
+        ModulePOOptionalProtocol(
+          "abc",
+          None,
+          m1,
+          partOfCatalog = true,
+          List(1)
+        ),
+        models.ModulePOOptionalProtocol(
+          "def",
+          None,
+          m1,
+          partOfCatalog = false,
+          List(2, 1)
+        )
       )
       val res1 =
         s"""po_optional:
@@ -291,50 +306,50 @@ final class MetadataYamlPrinterSpec extends AnyWordSpec with PrinterSpec {
         "de",
         1,
         "ws",
-        ParsedWorkload(10, 10, 10, 10, 10, 10),
+        ModuleWorkload(10, 10, 10, 10, 10, 10, 10, 10),
         "active",
         "gm",
-        Some(Participants(0, 10)),
+        Some(ModuleParticipants(0, 10)),
         Some(
-          ModuleRelationOutput.Parent(List(m1, m2))
+          ModuleRelationProtocol.Parent(List(m1, m2))
         ),
         List("ald"),
         List("ald", "abe"),
-        AssessmentMethodsOutput(
+        ModuleAssessmentMethodsProtocol(
           List(
-            AssessmentMethodEntryOutput(
+            ModuleAssessmentMethodEntryProtocol(
               "written-exam",
               Some(100),
               List("practical")
             )
           ),
           List(
-            AssessmentMethodEntryOutput("written-exam", None, Nil)
+            ModuleAssessmentMethodEntryProtocol("written-exam", None, Nil)
           )
         ),
-        PrerequisitesOutput(
+        ModulePrerequisitesProtocol(
           Some(
-            PrerequisiteEntryOutput("abc", List(m1), Nil)
+            ModulePrerequisiteEntryProtocol("abc", List(m1), Nil)
           ),
           Some(
-            PrerequisiteEntryOutput("", Nil, List("po1", "po2"))
+            ModulePrerequisiteEntryProtocol("", Nil, List("po1", "po2"))
           )
         ),
-        POOutput(
+        ModulePOProtocol(
           List(
-            POMandatoryOutput("po1", None, List(1, 2), List(1)),
-            POMandatoryOutput("po2", None, List(1), Nil),
-            POMandatoryOutput("po3", None, List(1), Nil)
+            ModulePOMandatoryProtocol("po1", None, List(1, 2)),
+            ModulePOMandatoryProtocol("po2", None, List(1)),
+            ModulePOMandatoryProtocol("po3", None, List(1))
           ),
           List(
-            POOptionalOutput(
+            models.ModulePOOptionalProtocol(
               "po4",
               None,
               m1,
               partOfCatalog = false,
               List(1, 2)
             ),
-            POOptionalOutput(
+            models.ModulePOOptionalProtocol(
               "po5",
               None,
               m2,
@@ -400,7 +415,6 @@ final class MetadataYamlPrinterSpec extends AnyWordSpec with PrinterSpec {
           |    recommended_semester:
           |      - 1
           |      - 2
-          |    recommended_semester_part_time: 1
           |  - study_program: study_program.po2
           |    recommended_semester: 1
           |  - study_program: study_program.po3

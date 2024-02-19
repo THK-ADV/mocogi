@@ -4,20 +4,16 @@ import models.core._
 import ops.EitherOps.EOps
 import parser.ParsingError
 import parsing.metadata.MetadataCompositeParser
-import parsing.types.{Content, ParsedMetadata}
+import parsing.types.{ModuleContent, ParsedMetadata}
 import service.core._
 
 import java.util.UUID
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
-trait MetadataParsingService {
-  def parseMany(prints: Seq[(Option[UUID], Print)]): ParsingResult
-  def parse(print: Print): Future[Either[ParsingError, (ParsedMetadata, Content, Content)]]
-}
-
+// TODO add support for a raw parser which parses ids only and does not validate at all
 @Singleton
-final class MetadataParsingServiceImpl @Inject() (
+final class MetadataParsingService @Inject() (
     private val metadataParser: MetadataCompositeParser,
     private val contentParsingService: ContentParsingService,
     private val locationService: LocationService,
@@ -26,14 +22,14 @@ final class MetadataParsingServiceImpl @Inject() (
     private val assessmentMethodService: AssessmentMethodService,
     private val moduleTypeService: ModuleTypeService,
     private val seasonService: SeasonService,
-    private val personService: PersonService,
+    private val personService: IdentityService,
     private val focusAreaService: FocusAreaService,
     private val globalCriteriaService: GlobalCriteriaService,
     private val poService: POService,
     private val competenceService: CompetenceService,
     private val specializationService: SpecializationService,
     private implicit val ctx: ExecutionContext
-) extends MetadataParsingService {
+) {
 
   private def parser() =
     for {
@@ -58,7 +54,7 @@ final class MetadataParsingServiceImpl @Inject() (
         moduleTypes,
         seasons,
         persons,
-        focusAreas.map(f => FocusAreaPreview(f.abbrev)),
+        focusAreas.map(f => FocusAreaID(f.id)),
         competences,
         globalCriteria,
         pos,
@@ -87,9 +83,11 @@ final class MetadataParsingServiceImpl @Inject() (
       Either.cond(errs.isEmpty, parses, errs)
     }
 
-  override def parse(
+  def parse(
       print: Print
-  ): Future[Either[ParsingError, (ParsedMetadata, Content, Content)]] =
+  ): Future[
+    Either[ParsingError, (ParsedMetadata, ModuleContent, ModuleContent)]
+  ] =
     parser().map { p =>
       val (res, rest) = p.parse(print.value)
       res.flatMap { parsedMetadata =>

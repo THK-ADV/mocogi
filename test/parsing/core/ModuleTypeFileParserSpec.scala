@@ -5,7 +5,6 @@ import models.core.ModuleType
 import org.scalatest.EitherValues
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
-import parsing.core.ModuleTypeFileParser
 import parsing.{ParserSpecHelper, withFile0}
 
 class ModuleTypeFileParserSpec
@@ -15,7 +14,7 @@ class ModuleTypeFileParserSpec
     with GuiceOneAppPerSuite
     with FakeApplication {
 
-  val parser = app.injector.instanceOf(classOf[ModuleTypeFileParser]).fileParser
+  val parser = ModuleTypeFileParser.fileParser
 
   "A Module Type Parser" should {
     "parse a single module type" in {

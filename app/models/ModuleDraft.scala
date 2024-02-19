@@ -1,16 +1,9 @@
 package models
 
-import controllers.formats.ModuleCompendiumProtocolFormat
-import models.MergeRequestStatus.{Closed, Open}
-import models.ModuleDraftState.{
-  Published,
-  Unknown,
-  ValidForPublication,
-  ValidForReview,
-  WaitingForChanges,
-  WaitingForReview
-}
-import play.api.libs.json.{JsValue, Json}
+import git.{Branch, CommitId, MergeRequestId, MergeRequestStatus}
+import git.MergeRequestStatus.{Closed, Open}
+import models.ModuleDraftState.{Published, Unknown, ValidForPublication, ValidForReview, WaitingForChanges, WaitingForPublication, WaitingForReview}
+import play.api.libs.json.JsValue
 import service.Print
 
 import java.time.LocalDateTime
@@ -24,8 +17,8 @@ case class ModuleDraft(
     branch: Branch,
     source: ModuleDraftSource,
     data: JsValue,
-    moduleCompendium: JsValue,
-    print: Print,
+    validated: JsValue, // TODO unused
+    print: Print, // TODO unused
     keysToBeReviewed: Set[String],
     modifiedKeys: Set[String],
     lastCommit: Option[CommitId],
@@ -33,10 +26,10 @@ case class ModuleDraft(
     lastModified: LocalDateTime
 )
 
-object ModuleDraft extends ModuleCompendiumProtocolFormat {
+object ModuleDraft {
   final implicit class Ops(private val self: ModuleDraft) extends AnyVal {
-    def protocol(): ModuleCompendiumProtocol =
-      Json.fromJson(self.data).get
+    def protocol(): ModuleProtocol =
+      ModuleProtocol.format.reads(self.data).get
 
     def mergeRequestId: Option[MergeRequestId] =
       self.mergeRequest.map(_._1)
@@ -59,8 +52,14 @@ object ModuleDraft extends ModuleCompendiumProtocolFormat {
       ) ValidForReview
       else if (
         self.lastCommit.isDefined &&
+        self.keysToBeReviewed.nonEmpty &&
         self.mergeRequestStatus.contains(Open)
       ) WaitingForReview
+      else if (
+        self.lastCommit.isDefined &&
+        self.keysToBeReviewed.isEmpty &&
+        self.mergeRequestStatus.contains(Open)
+      ) WaitingForPublication
       else if (
         self.lastCommit.isDefined &&
         self.mergeRequestStatus.contains(Closed)

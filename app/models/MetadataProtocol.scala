@@ -1,12 +1,9 @@
 package models
 
-import database.{
-  AssessmentMethodsOutput,
-  ModuleRelationOutput,
-  POOutput,
-  PrerequisitesOutput
-}
-import parsing.types.{ParsedWorkload, Participants}
+import controllers.JsonNullWritable
+import parsing.types.ModuleParticipants
+import play.api.libs.json.{Format, Json}
+import validator.ModuleWorkload
 
 import java.util.UUID
 
@@ -18,17 +15,21 @@ case class MetadataProtocol(
     language: String,
     duration: Int,
     season: String,
-    workload: ParsedWorkload,
+    workload: ModuleWorkload,
     status: String,
     location: String,
-    participants: Option[Participants],
-    moduleRelation: Option[ModuleRelationOutput],
+    participants: Option[ModuleParticipants],
+    moduleRelation: Option[ModuleRelationProtocol],
     moduleManagement: List[String],
     lecturers: List[String],
-    assessmentMethods: AssessmentMethodsOutput,
-    prerequisites: PrerequisitesOutput,
-    po: POOutput,
+    assessmentMethods: ModuleAssessmentMethodsProtocol,
+    prerequisites: ModulePrerequisitesProtocol,
+    po: ModulePOProtocol,
     competences: List[String],
     globalCriteria: List[String],
     taughtWith: List[UUID]
 )
+
+object MetadataProtocol extends JsonNullWritable {
+  implicit def format: Format[MetadataProtocol] = Json.format
+}

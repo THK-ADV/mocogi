@@ -1,15 +1,16 @@
 package service.core
 
-import database.repo.LanguageRepository
-import models.core.Language
-import parsing.core.LanguageFileParser
+import database.repo.core.LanguageRepository
+import models.core.ModuleLanguage
+import parsing.core.{FileParser, LanguageFileParser}
 
 import javax.inject.{Inject, Singleton}
-
-trait LanguageService extends SimpleYamlService[Language]
+import scala.concurrent.ExecutionContext
 
 @Singleton
-final class LanguageServiceImpl @Inject() (
+final class LanguageService @Inject() (
     val repo: LanguageRepository,
-    val parser: LanguageFileParser
-) extends LanguageService
+    val ctx: ExecutionContext
+) extends SimpleYamlService[ModuleLanguage] {
+  override def fileParser: FileParser[ModuleLanguage] = LanguageFileParser
+}

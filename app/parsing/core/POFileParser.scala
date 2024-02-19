@@ -1,8 +1,8 @@
 package parsing.core
 
 import models.core.PO
-import parser.Parser.{newline, optional, prefixTo, zeroOrMoreSpaces}
-import parser.ParserOps.{P0, P2, P3, P4, P5, P6}
+import parser.Parser._
+import parser.ParserOps.{P0, P2, P3, P4}
 import parsing._
 
 object POFileParser {
@@ -16,18 +16,13 @@ object POFileParser {
       .skip(zeroOrMoreSpaces)
       .zip(posIntForKey("version"))
       .skip(zeroOrMoreSpaces)
-      .take(dateForKey("date"))
+      .skip(dateForKey("date"))
       .skip(zeroOrMoreSpaces)
       .take(dateForKey("date_from"))
       .skip(zeroOrMoreSpaces)
       .take(dateForKey("date_to").option)
       .skip(zeroOrMoreSpaces)
-      .take(
-        multipleValueParser(
-          "modification_dates",
-          prefixTo("\n").flatMap(localDateParser)
-        ).option.map(_.getOrElse(Nil))
-      )
+      .skip(optional(skipFirst(range("modification_dates:", "program:"))))
       .skip(zeroOrMoreSpaces)
       .take(
         singleValueParser[String](
@@ -36,6 +31,8 @@ object POFileParser {
         )(programs.sorted.reverse)
       )
       .skip(zeroOrMoreSpaces)
-      .map(PO.tupled)
+      .map { case (id, version, dateFrom, dateTo, studyProgram) =>
+        PO(id, version, studyProgram, dateFrom, dateTo)
+      }
       .all()
 }

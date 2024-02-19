@@ -1,7 +1,6 @@
 package providers
 
 import config.KafkaConfig
-import controllers.formats.ModuleCompendiumFormat
 import org.apache.kafka.common.serialization.Serializer
 import play.api.inject.ApplicationLifecycle
 import play.api.libs.json.Json
@@ -11,13 +10,11 @@ import validator.Metadata
 import javax.inject.{Inject, Provider, Singleton}
 import scala.util.control.NonFatal
 
-private class MetadataSerializer
-    extends Serializer[Metadata]
-    with ModuleCompendiumFormat {
+private class MetadataSerializer extends Serializer[Metadata] {
   override def serialize(topic: String, data: Metadata) =
     topic match {
       case "metadata" =>
-        try Json.toBytes(metaDataFormat.writes(data))
+        try Json.toBytes(Json.toJson(data))
         catch { case NonFatal(_) => Array.empty[Byte] }
       case _ =>
         Array.empty[Byte]

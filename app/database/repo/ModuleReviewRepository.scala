@@ -1,8 +1,10 @@
 package database.repo
 
-import database.table.{ModuleReviewTable, PersonTable, StudyProgramTable}
-import models.core.Person
-import models.{ModuleReview, ModuleReviewStatus, StudyProgramShort}
+import database.table.ModuleReviewTable
+import database.table.core.IdentityTable
+import database.view.StudyProgramViewRepository
+import models.core.Identity
+import models.{ModuleReview, ModuleReviewStatus}
 import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfigProvider}
 import slick.jdbc.JdbcProfile
 
@@ -14,6 +16,7 @@ import scala.concurrent.{ExecutionContext, Future}
 @Singleton
 final class ModuleReviewRepository @Inject() (
     val dbConfigProvider: DatabaseConfigProvider,
+    val studyProgramViewRepo: StudyProgramViewRepository,
     implicit val ctx: ExecutionContext
 ) extends Repository[
       ModuleReview.DB,
@@ -27,11 +30,10 @@ final class ModuleReviewRepository @Inject() (
 
   protected val tableQuery = TableQuery[ModuleReviewTable]
 
+  private val studyProgramQuery = studyProgramViewRepo.tableQuery
+
   def delete(moduleId: UUID): Future[Int] =
     db.run(tableQuery.filter(_.moduleDraft === moduleId).delete)
-
-  def deleteMany(moduleIds: Seq[UUID]): Future[Int] =
-    db.run(tableQuery.filter(_.moduleDraft.inSet(moduleIds)).delete)
 
   def get(id: UUID): Future[Option[ModuleReview.DB]] =
     db.run(tableQuery.filter(_.id === id).result.map(_.headOption))
@@ -52,26 +54,21 @@ final class ModuleReviewRepository @Inject() (
         .update((status, comment, Some(person), Some(LocalDateTime.now)))
     )
 
-  def getAtomicByModule(moduleId: UUID): Future[Seq[ModuleReview.Atomic]] = {
-    val spQuery = for {
-      sp <- TableQuery[StudyProgramTable]
-      g <- sp.gradeFk
-    } yield (sp.abbrev, sp.deLabel, sp.enLabel, g)
-
+  def getAtomicByModule(moduleId: UUID): Future[Seq[ModuleReview.Atomic]] =
     db.run(
       tableQuery
         .filter(_.moduleDraft === moduleId)
-        .join(spQuery)
-        .on(_.studyProgram === _._1)
-        .joinLeft(TableQuery[PersonTable])
+        .join(studyProgramQuery)
+        .on(_.studyProgram === _.studyProgramId)
+        .joinLeft(TableQuery[IdentityTable])
         .on(_._1.respondedBy === _.id)
         .result
         .map(_.map { case ((r, sp), p) =>
           r.copy(
-            studyProgram = StudyProgramShort(sp),
+            studyProgram = sp,
             respondedBy = p.collect {
-              case p if p.kind == Person.DefaultKind =>
-                Person.Default(
+              case p if p.kind == Identity.PersonKind =>
+                Identity.Person(
                   p.id,
                   p.lastname,
                   p.firstname,
@@ -85,7 +82,6 @@ final class ModuleReviewRepository @Inject() (
           )
         })
     )
-  }
 
   override protected def retrieve(
       query: Query[ModuleReviewTable, ModuleReview.DB, Seq]

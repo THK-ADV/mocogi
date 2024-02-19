@@ -1,5 +1,7 @@
 package database
 
+import auth.CampusId
+import git.{Branch, CommitId, MergeRequestId, MergeRequestStatus}
 import models._
 import play.api.libs.json.{JsValue, Json}
 import service.Print

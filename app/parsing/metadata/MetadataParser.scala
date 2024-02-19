@@ -7,16 +7,16 @@ import parsing.types._
 trait MetadataParser {
   val versionScheme: VersionScheme
   def parser(implicit
-      locations: Seq[Location],
-      languages: Seq[Language],
-      status: Seq[Status],
+      locations: Seq[ModuleLocation],
+      languages: Seq[ModuleLanguage],
+      status: Seq[ModuleStatus],
       assessmentMethods: Seq[AssessmentMethod],
       moduleTypes: Seq[ModuleType],
       seasons: Seq[Season],
-      persons: Seq[Person],
-      focusAreas: Seq[FocusAreaPreview],
-      competences: Seq[Competence],
-      globalCriteria: Seq[GlobalCriteria],
+      identities: Seq[Identity],
+      focusAreas: Seq[FocusAreaID],
+      competences: Seq[ModuleCompetence],
+      globalCriteria: Seq[ModuleGlobalCriteria],
       pos: Seq[PO],
       specializations: Seq[Specialization]
   ): Parser[ParsedMetadata]

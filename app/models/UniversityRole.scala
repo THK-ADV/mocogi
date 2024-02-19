@@ -1,11 +1,9 @@
 package models
 
-import play.api.libs.json.{Json, Writes}
+import models.core.IDLabel
+import play.api.libs.json.Writes
 
-sealed trait UniversityRole {
-  def id: String
-  def deLabel: String
-  def enLabel: String
+sealed trait UniversityRole extends IDLabel {
   override def toString = id
 }
 
@@ -28,10 +26,5 @@ object UniversityRole {
     }
 
   implicit def writes: Writes[UniversityRole] =
-    r =>
-      Json.obj(
-        "id" -> r.id,
-        "deLabel" -> r.deLabel,
-        "enLabel" -> r.enLabel
-      )
+    Writes.of[IDLabel].contramap(identity)
 }

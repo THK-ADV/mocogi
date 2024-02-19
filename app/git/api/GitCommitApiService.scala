@@ -1,7 +1,6 @@
 package git.api
 
-import git.{GitCommitAction, GitCommitActionType, GitConfig}
-import models.{Branch, CommitId}
+import git.{Branch, CommitId, GitCommitAction, GitCommitActionType, GitConfig}
 import play.api.http.ContentTypes
 import play.api.libs.json.{JsValue, Json}
 import play.api.libs.ws.{WSClient, WSResponse}

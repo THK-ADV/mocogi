@@ -1,11 +1,11 @@
 package printing.yaml
 
-import database._
-import models.MetadataProtocol
+import models._
 import parsing.metadata.VersionScheme
-import parsing.types.{ParsedWorkload, Participants}
+import parsing.types.ModuleParticipants
 import printer.Printer
 import printer.Printer.{always, newline, prefix, whitespace}
+import validator.ModuleWorkload
 
 import java.util.UUID
 import javax.inject.Singleton
@@ -17,15 +17,14 @@ final class MetadataYamlPrinter(identLevel: Int) {
 
   implicit val showInt: Int => String = _.toString
 
-  implicit val assessmentMethodEntryOutputOrd
-      : Ordering[AssessmentMethodEntryOutput] =
-    Ordering.String.on[AssessmentMethodEntryOutput](_.method)
+  implicit val ameOrd: Ordering[ModuleAssessmentMethodEntryProtocol] =
+    Ordering.by[ModuleAssessmentMethodEntryProtocol, String](_.method)
 
-  implicit val poMandatoryOutputOrd: Ordering[POMandatoryOutput] =
-    Ordering.by[POMandatoryOutput, String](_.po)
+  implicit val pomOrd: Ordering[ModulePOMandatoryProtocol] =
+    Ordering.by[ModulePOMandatoryProtocol, String](_.po)
 
-  implicit val poOptionalOutputOrd: Ordering[POOptionalOutput] =
-    Ordering.by[POOptionalOutput, String](_.po)
+  implicit val poeOrd: Ordering[ModulePOOptionalProtocol] =
+    Ordering.by[ModulePOOptionalProtocol, String](_.po)
 
   def printer(versionScheme: VersionScheme): Printer[(UUID, MetadataProtocol)] =
     Printer { case ((id, metadata), input) =>
@@ -91,11 +90,11 @@ final class MetadataYamlPrinter(identLevel: Int) {
   def versionScheme(versionScheme: VersionScheme) =
     prefix(s"v${versionScheme.number}${versionScheme.label}")
 
-  def moduleRelation(r: ModuleRelationOutput) = {
+  def moduleRelation(r: ModuleRelationProtocol) = {
     val relation = r match {
-      case ModuleRelationOutput.Parent(children) =>
+      case ModuleRelationProtocol.Parent(children) =>
         list(prefix("children:"), children, "module", identLevel)
-      case ModuleRelationOutput.Child(parent) =>
+      case ModuleRelationProtocol.Child(parent) =>
         entry("parent", s"module.$parent")
     }
 
@@ -182,7 +181,7 @@ final class MetadataYamlPrinter(identLevel: Int) {
 
   private def assessmentMethods(
       key: Printer[Unit],
-      value: List[AssessmentMethodEntryOutput]
+      value: List[ModuleAssessmentMethodEntryProtocol]
   ) = {
     val deepness = identLevel + 2
     key
@@ -220,13 +219,17 @@ final class MetadataYamlPrinter(identLevel: Int) {
       )
   }
 
-  def assessmentMethodsMandatory(value: List[AssessmentMethodEntryOutput]) =
+  def assessmentMethodsMandatory(
+      value: List[ModuleAssessmentMethodEntryProtocol]
+  ) =
     assessmentMethods(prefix("assessment_methods_mandatory:"), value)
 
-  def assessmentMethodsOptional(value: List[AssessmentMethodEntryOutput]) =
+  def assessmentMethodsOptional(
+      value: List[ModuleAssessmentMethodEntryProtocol]
+  ) =
     assessmentMethods(prefix("assessment_methods_optional:"), value)
 
-  def workload(workload: ParsedWorkload) =
+  def workload(workload: ModuleWorkload) =
     prefix("workload:")
       .skip(newline)
       .skip(
@@ -264,7 +267,7 @@ final class MetadataYamlPrinter(identLevel: Int) {
 
   private def prerequisites(
       key: Printer[Unit],
-      value: PrerequisiteEntryOutput
+      value: ModulePrerequisiteEntryProtocol
   ) = {
     if (value.text.isEmpty && value.pos.isEmpty && value.modules.isEmpty)
       always[Unit]()
@@ -306,10 +309,10 @@ final class MetadataYamlPrinter(identLevel: Int) {
         )
   }
 
-  def recommendedPrerequisites(value: PrerequisiteEntryOutput) =
+  def recommendedPrerequisites(value: ModulePrerequisiteEntryProtocol) =
     prerequisites(prefix("recommended_prerequisites:"), value)
 
-  def requiredPrerequisites(value: PrerequisiteEntryOutput) =
+  def requiredPrerequisites(value: ModulePrerequisiteEntryProtocol) =
     prerequisites(prefix("required_prerequisites:"), value)
 
   def status(value: String) =
@@ -318,7 +321,7 @@ final class MetadataYamlPrinter(identLevel: Int) {
   def location(value: String) =
     entry("location", s"location.$value")
 
-  def participants(value: Participants) =
+  def participants(value: ModuleParticipants) =
     prefix("participants:")
       .skip(newline)
       .skip(
@@ -337,7 +340,7 @@ final class MetadataYamlPrinter(identLevel: Int) {
   def taughtWith(value: List[UUID]) =
     list(prefix("taught_with:"), value, "module", 0)
 
-  def poMandatory(value: List[POMandatoryOutput]) = {
+  def poMandatory(value: List[ModulePOMandatoryProtocol]) = {
     val deepness = identLevel + 2
     prefix("po_mandatory:")
       .skip(newline)
@@ -360,26 +363,12 @@ final class MetadataYamlPrinter(identLevel: Int) {
                     )
                   )
               )
-              .skipOpt(
-                Option.when(e.recommendedSemesterPartTime.nonEmpty)(
-                  whitespace
-                    .repeat(deepness)
-                    .skip(
-                      list(
-                        prefix("recommended_semester_part_time:"),
-                        e.recommendedSemesterPartTime,
-                        "",
-                        deepness
-                      )
-                    )
-                )
-              )
           })
           .reduce(_.skip(_))
       )
   }
 
-  def poOptional(value: List[POOptionalOutput]) = {
+  def poOptional(value: List[ModulePOOptionalProtocol]) = {
     val deepness = identLevel + 2
     prefix("po_optional:")
       .skip(newline)

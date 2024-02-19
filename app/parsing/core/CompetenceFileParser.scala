@@ -1,9 +1,7 @@
 package parsing.core
 
-import models.core.Competence
-import javax.inject.Singleton
+import models.core.ModuleCompetence
 
-@Singleton
-class CompetenceFileParser extends LabelDescFileParser[Competence] {
-  override protected def makeType = Competence.tupled
+object CompetenceFileParser extends LabelDescFileParser[ModuleCompetence] {
+  override protected def makeType = (ModuleCompetence.apply _).tupled
 }

@@ -1,61 +1,20 @@
 package service.core
 
-import database.InsertOrUpdateResult
-import database.repo.SpecializationRepository
+import database.repo.core.SpecializationRepository
 import models.core.Specialization
+import parser.Parser
 import parsing.core.SpecializationFileParser
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
-trait SpecializationService {
-  def all(): Future[Seq[Specialization]]
-  def create(input: String): Future[List[Specialization]]
-  def createOrUpdate(
-      input: String
-  ): Future[List[(InsertOrUpdateResult, Specialization)]]
-}
-
 @Singleton
-final class SpecializationServiceImpl @Inject() (
+final class SpecializationService @Inject() (
     val repo: SpecializationRepository,
-    val poService: POService,
+    private val poService: POService,
     implicit val ctx: ExecutionContext
-) extends SpecializationService {
+) extends AsyncParserYamlService[Specialization] {
 
-  override def all(): Future[Seq[Specialization]] =
-    repo.all()
-
-  override def create(input: String): Future[List[Specialization]] =
-    for {
-      pos <- poService.allIds()
-      specs <- SpecializationFileParser
-        .fileParser(pos)
-        .parse(input)
-        ._1
-        .fold(Future.failed, xs => repo.createMany(xs).map(_ => xs))
-    } yield specs
-
-  override def createOrUpdate(
-      input: String
-  ): Future[List[(InsertOrUpdateResult, Specialization)]] = {
-    def go(xs: List[Specialization]) =
-      Future.sequence(
-        xs.map(x =>
-          repo.exists(x.abbrev).flatMap {
-            case true  => repo.update(x).map(InsertOrUpdateResult.Update -> _)
-            case false => repo.create(x).map(InsertOrUpdateResult.Insert -> _)
-          }
-        )
-      )
-
-    for {
-      pos <- poService.allIds()
-      specs <- SpecializationFileParser
-        .fileParser(pos)
-        .parse(input)
-        ._1
-        .fold(Future.failed, go)
-    } yield specs
-  }
+  override def parser: Future[Parser[List[Specialization]]] =
+    poService.allIds().map(SpecializationFileParser.fileParser(_))
 }

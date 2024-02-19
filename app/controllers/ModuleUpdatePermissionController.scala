@@ -1,8 +1,7 @@
 package controllers
 
-import auth.AuthorizationAction
+import auth.{AuthorizationAction, CampusId}
 import controllers.actions.{ModuleUpdatePermissionCheck, PermissionCheck}
-import models.CampusId
 import play.api.libs.json.Json
 import play.api.mvc.{AbstractController, ControllerComponents}
 import service.ModuleUpdatePermissionService

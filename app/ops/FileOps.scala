@@ -13,15 +13,49 @@ object FileOps {
         StandardCopyOption.REPLACE_EXISTING
       )
 
+    def move(folder: Path) =
+      try {
+        Right(
+          Files.move(
+            self,
+            folder.resolve(self.getFileName),
+            StandardCopyOption.REPLACE_EXISTING
+          )
+        )
+      } catch {
+        case NonFatal(e) => Left(e.getMessage)
+      }
+
+    def copy(folder: Path) =
+      try {
+        Right(
+          Files.copy(
+            self,
+            folder.resolve(self.getFileName),
+            StandardCopyOption.REPLACE_EXISTING
+          )
+        )
+      } catch {
+        case NonFatal(e) => Left(e.getMessage)
+      }
+
     def deleteDirectory(): Unit =
       Files
         .walk(self)
         .sorted(Comparator.reverseOrder())
-        .forEach(p => Files.delete(p))
+        .forEach(p => Files.deleteIfExists(p))
+
+    def deleteContentsOfDirectory(): Unit =
+      if (Files.isDirectory(self))
+        Files
+          .walk(self)
+          .filter(p => self.toAbsolutePath != p.toAbsolutePath)
+          .forEach(p => Files.deleteIfExists(p))
+      else ()
 
     def createFile(
         name: String,
-        content: StringBuilder
+        content: String
     ): Either[String, Path] = {
       try {
         val file = self.resolve(name)

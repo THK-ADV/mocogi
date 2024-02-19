@@ -1,9 +1,7 @@
 package parsing.core
 
-import models.core.Status
-import javax.inject.Singleton
+import models.core.ModuleStatus
 
-@Singleton
-final class StatusFileParser extends LabelFileParser[Status] {
-  override protected def makeType = Status.tupled
+object StatusFileParser extends LabelFileParser[ModuleStatus] {
+  override protected def makeType = (ModuleStatus.apply _).tupled
 }

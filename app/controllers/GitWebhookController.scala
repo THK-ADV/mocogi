@@ -1,9 +1,8 @@
 package controllers
 
+import _root_.webhook.{GitMergeEventHandler, GitPushEventHandler}
 import controllers.GitWebhookController.GitlabTokenHeader
-import controllers.formats.ThrowableWrites
 import git._
-import git.webhook.GitPushEventHandlingActor
 import play.api.libs.json._
 import play.api.mvc._
 
@@ -20,15 +19,23 @@ object GitWebhookController {
 class GitWebhookController @Inject() (
     cc: ControllerComponents,
     gitConfig: GitConfig,
-    gitMergeEventHandlingActor: GitPushEventHandlingActor,
+    gitPushEventHandler: GitPushEventHandler,
+    gitMergeEventHandler: GitMergeEventHandler,
     implicit val ctx: ExecutionContext
-) extends AbstractController(cc)
-    with ThrowableWrites {
+) extends AbstractController(cc) {
 
   def onPushEvent() =
     isAuthenticated(
       Action(parse.json) { implicit r =>
-        gitMergeEventHandlingActor.handle(r.body)
+        gitPushEventHandler.handle(r.body)
+        NoContent
+      }
+    )
+
+  def onMergeEvent() =
+    isAuthenticated(
+      Action(parse.json) { implicit r =>
+        gitMergeEventHandler.handle(r.body)
         NoContent
       }
     )

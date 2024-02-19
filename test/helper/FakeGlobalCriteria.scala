@@ -1,24 +1,24 @@
 package helper
 
-import models.core.GlobalCriteria
+import models.core.ModuleGlobalCriteria
 
 trait FakeGlobalCriteria {
-  implicit def fakeGlobalCriteria: Seq[GlobalCriteria] = Seq(
-    GlobalCriteria(
+  implicit def fakeGlobalCriteria: Seq[ModuleGlobalCriteria] = Seq(
+    ModuleGlobalCriteria(
       "internationalization",
       "Internationalisierung",
       "...",
       "Internationalization",
       "..."
     ),
-    GlobalCriteria(
+    ModuleGlobalCriteria(
       "interdisciplinarity",
       "Interdisziplinarität",
       "...",
       "Interdisciplinarity",
       "..."
     ),
-    GlobalCriteria(
+    ModuleGlobalCriteria(
       "digitization",
       "Digitalisierung",
       "...",

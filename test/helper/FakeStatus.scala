@@ -1,10 +1,10 @@
 package helper
 
-import models.core.Status
+import models.core.ModuleStatus
 
 trait FakeStatus {
-  implicit def fakeStatus: Seq[Status] = Seq(
-    Status("active", "Aktiv", "--"),
-    Status("inactive", "Inaktiv", "--")
+  implicit def fakeStatus: Seq[ModuleStatus] = Seq(
+    ModuleStatus("active", "Aktiv", "--"),
+    ModuleStatus("inactive", "Inaktiv", "--")
   )
 }

@@ -14,7 +14,7 @@ final class SeasonFileParserSpec
     with GuiceOneAppPerSuite
     with FakeApplication {
 
-  val parser = app.injector.instanceOf(classOf[SeasonFileParser]).fileParser
+  val parser = SeasonFileParser.fileParser
 
   "A Season File Parser" should {
     "parse a single season" in {

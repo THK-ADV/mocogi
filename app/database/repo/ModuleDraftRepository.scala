@@ -2,6 +2,7 @@ package database.repo
 
 import database.table
 import database.table.ModuleDraftTable
+import git.{CommitId, MergeRequestId, MergeRequestStatus}
 import models._
 import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfigProvider}
 import play.api.libs.json.JsValue
@@ -14,53 +15,11 @@ import java.util.UUID
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
-trait ModuleDraftRepository {
-  def create(moduleDraft: ModuleDraft): Future[ModuleDraft]
-
-  def isAuthorOf(moduleId: UUID, personId: String): Future[Boolean]
-
-  def allByAuthor(personId: String): Future[Seq[ModuleDraft]]
-
-  def updateDraft(
-      moduleId: UUID,
-      moduleTitle: String,
-      moduleAbbrev: String,
-      data: JsValue,
-      mc: JsValue,
-      print: Print,
-      keysToBeReviewed: Set[String],
-      modifiedKeys: Set[String],
-      lastCommit: CommitId,
-      mergeRequest: Option[(MergeRequestId, MergeRequestStatus)]
-  ): Future[Int]
-
-  def delete(moduleId: UUID): Future[Int]
-
-  def deleteDrafts(moduleIds: Seq[UUID]): Future[Int]
-
-  def getByModule(moduleId: UUID): Future[ModuleDraft]
-
-  def getByModuleOpt(moduleId: UUID): Future[Option[ModuleDraft]]
-
-  def hasModuleDraft(moduleId: UUID): Future[Boolean]
-
-  def updateMergeRequestStatus(
-      moduleId: UUID,
-      status: MergeRequestStatus
-  ): Future[Unit]
-
-  def updateMergeRequest(
-      moduleId: UUID,
-      mergeRequest: Option[(MergeRequestId, MergeRequestStatus)]
-  ): Future[Unit]
-}
-
 @Singleton
-final class ModuleDraftRepositoryImpl @Inject() (
+final class ModuleDraftRepository @Inject() (
     val dbConfigProvider: DatabaseConfigProvider,
     implicit val ctx: ExecutionContext
-) extends ModuleDraftRepository
-    with Repository[ModuleDraft, ModuleDraft, ModuleDraftTable]
+) extends Repository[ModuleDraft, ModuleDraft, ModuleDraftTable]
     with HasDatabaseConfigProvider[JdbcProfile] {
   import profile.api._
   import table.{
@@ -79,19 +38,19 @@ final class ModuleDraftRepositoryImpl @Inject() (
   ) =
     db.run(query.result)
 
-  override def allByAuthor(personId: String): Future[Seq[ModuleDraft]] =
+  def allByAuthor(personId: String): Future[Seq[ModuleDraft]] =
     db.run(tableQuery.filter(_.author === personId).result)
 
   def delete(moduleId: UUID): Future[Int] =
     db.run(tableQuery.filter(_.module === moduleId).delete)
 
-  override def deleteDrafts(moduleIds: Seq[UUID]) =
+  def deleteDrafts(moduleIds: Seq[UUID]) =
     db.run(tableQuery.filter(_.module.inSet(moduleIds)).delete)
 
-  override def hasModuleDraft(moduleId: UUID) =
+  def hasModuleDraft(moduleId: UUID) =
     db.run(tableQuery.filter(_.module === moduleId).exists.result)
 
-  override def updateMergeRequestStatus(
+  def updateMergeRequestStatus(
       moduleId: UUID,
       status: MergeRequestStatus
   ) =
@@ -103,7 +62,7 @@ final class ModuleDraftRepositoryImpl @Inject() (
         .map(_ => ())
     )
 
-  override def updateMergeRequest(
+  def updateMergeRequest(
       moduleId: UUID,
       mergeRequest: Option[(MergeRequestId, MergeRequestStatus)]
   ) =
@@ -120,7 +79,7 @@ final class ModuleDraftRepositoryImpl @Inject() (
       moduleTitle: String,
       moduleAbbrev: String,
       data: JsValue,
-      mc: JsValue,
+      module: JsValue,
       print: Print,
       keysToBeReviewed: Set[String],
       modifiedKeys: Set[String],
@@ -135,8 +94,8 @@ final class ModuleDraftRepositoryImpl @Inject() (
             a.moduleTitle,
             a.moduleAbbrev,
             a.data,
-            a.moduleCompendium,
-            a.moduleCompendiumPrint,
+            a.moduleValidated,
+            a.modulePrint,
             a.keysToBeReviewed,
             a.modifiedKeys,
             a.lastCommit,
@@ -150,7 +109,7 @@ final class ModuleDraftRepositoryImpl @Inject() (
             moduleTitle,
             moduleAbbrev,
             data,
-            mc,
+            module,
             print,
             keysToBeReviewed,
             modifiedKeys,
@@ -175,10 +134,10 @@ final class ModuleDraftRepositoryImpl @Inject() (
         )
     )
 
-  override def getByModuleOpt(moduleId: UUID) =
+  def getByModuleOpt(moduleId: UUID) =
     db.run(tableQuery.filter(_.module === moduleId).result.map(_.headOption))
 
-  override def isAuthorOf(moduleId: UUID, personId: String) =
+  def isAuthorOf(moduleId: UUID, personId: String) =
     db.run(
       tableQuery
         .filter(a => a.module === moduleId && a.author === personId)

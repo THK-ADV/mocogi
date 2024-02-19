@@ -1,15 +1,16 @@
 package service.core
 
-import database.repo.LocationRepository
-import models.core.Location
-import parsing.core.LocationFileParser
+import database.repo.core.LocationRepository
+import models.core.ModuleLocation
+import parsing.core.{FileParser, LocationFileParser}
 
 import javax.inject.{Inject, Singleton}
-
-trait LocationService extends SimpleYamlService[Location]
+import scala.concurrent.ExecutionContext
 
 @Singleton
-final class LocationServiceImpl @Inject() (
+final class LocationService @Inject() (
     val repo: LocationRepository,
-    val parser: LocationFileParser
-) extends LocationService
+    val ctx: ExecutionContext
+) extends SimpleYamlService[ModuleLocation] {
+  override def fileParser: FileParser[ModuleLocation] = LocationFileParser
+}

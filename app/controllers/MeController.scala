@@ -2,8 +2,7 @@ package controllers
 
 import auth.AuthorizationAction
 import controllers.actions.PersonAction
-import controllers.formats.PersonFormat
-import database.repo.{PersonRepository, StudyProgramPersonRepository}
+import database.repo.core.{IdentityRepository, StudyProgramPersonRepository}
 import play.api.libs.json.Json
 import play.api.mvc.{AbstractController, ControllerComponents}
 
@@ -15,11 +14,10 @@ final class MeController @Inject() (
     cc: ControllerComponents,
     auth: AuthorizationAction,
     studyProgramPersonRepository: StudyProgramPersonRepository,
-    val personRepository: PersonRepository,
+    val identityRepository: IdentityRepository,
     implicit val ctx: ExecutionContext
 ) extends AbstractController(cc)
-    with PersonAction
-    with PersonFormat {
+    with PersonAction {
 
   def me() =
     auth andThen personAction async { r =>

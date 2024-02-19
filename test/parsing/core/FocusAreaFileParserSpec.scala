@@ -29,7 +29,7 @@ final class FocusAreaFileParserSpec
           |    ko""".stripMargin
       val (res, rest) = fileParser.parse(input)
       val fa = res.value.head
-      assert(fa.abbrev == "ar")
+      assert(fa.id == "ar")
       assert(fa.program == itm)
       assert(fa.deLabel == "ok")
       assert(fa.enLabel == "ok")
@@ -56,7 +56,7 @@ final class FocusAreaFileParserSpec
           |  de_desc: test""".stripMargin
       val (res, rest) = fileParser.parse(input)
       val fa1 = res.value.head
-      assert(fa1.abbrev == "ar")
+      assert(fa1.id == "ar")
       assert(fa1.program == itm)
       assert(fa1.deLabel == "ok")
       assert(fa1.enLabel == "ok")
@@ -64,7 +64,7 @@ final class FocusAreaFileParserSpec
       assert(fa1.enDesc.isEmpty)
 
       val fa2 = res.value(1)
-      assert(fa2.abbrev == "pup")
+      assert(fa2.id == "pup")
       assert(fa2.program == itm)
       assert(fa2.deLabel == "ok")
       assert(fa2.enLabel.isEmpty)
@@ -72,7 +72,7 @@ final class FocusAreaFileParserSpec
       assert(fa2.enDesc.isEmpty)
 
       val fa3 = res.value(2)
-      assert(fa3.abbrev == "bui")
+      assert(fa3.id == "bui")
       assert(fa3.program == itm)
       assert(fa3.deLabel == "ok")
       assert(fa3.enLabel.isEmpty)

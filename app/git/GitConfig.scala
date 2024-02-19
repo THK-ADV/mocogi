@@ -5,14 +5,15 @@ import java.util.UUID
 case class GitConfig(
     gitToken: Option[UUID],
     accessToken: String,
-    moduleModeToken: Option[UUID],
     baseUrl: String,
     projectId: Int,
-    mainBranch: String,
-    draftBranch: String,
-    modulesRootFolder: String,
-    coreRootFolder: String,
-    moduleCompendiumRootFolder: String,
+    mainBranch: Branch,
+    draftBranch: Branch,
+    modulesFolder: String,
+    coreFolder: String,
+    moduleCatalogsFolder: String,
     autoApprovedLabel: String,
-    reviewApprovedLabel: String
+    reviewRequiredLabel: String,
+    defaultEmail: String,
+    defaultUser: String
 )

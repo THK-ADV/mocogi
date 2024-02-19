@@ -26,10 +26,14 @@ object FutureOps {
   implicit class SeqOps[A](private val self: Future[Seq[A]]) extends AnyVal {
     def single(implicit ctx: ExecutionContext): Future[A] = {
       self.flatMap(xs =>
-        if (xs.size > 1)
-          abort(s"expected one element, but found: $xs")
-        else
-          Future.successful(xs.head)
+        xs.size match {
+          case 1 =>
+            Future.successful(xs.head)
+          case 0 =>
+            abort(s"expected one element, but found none")
+          case _ =>
+            abort(s"expected one element, but found: $xs")
+        }
       )
     }
   }

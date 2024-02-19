@@ -1,8 +1,9 @@
 package models
 
-import play.api.libs.json.{Json, Writes}
+import models.core.IDLabel
+import play.api.libs.json.Writes
 
-sealed trait ModuleUpdatePermissionType {
+sealed trait ModuleUpdatePermissionType extends IDLabel {
   def id: String
   def deLabel: String
   def enLabel: String
@@ -30,10 +31,5 @@ object ModuleUpdatePermissionType {
     }
 
   implicit def writes: Writes[ModuleUpdatePermissionType] =
-    o =>
-      Json.obj(
-        "id" -> o.id,
-        "deLabel" -> o.deLabel,
-        "enLabel" -> o.enLabel
-      )
+    Writes.of[IDLabel].contramap(identity)
 }

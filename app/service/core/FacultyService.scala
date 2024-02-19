@@ -1,16 +1,16 @@
 package service.core
 
-import database.repo.FacultyRepository
+import database.repo.core.FacultyRepository
 import models.core.Faculty
 import parsing.core.FacultyFileParser
 
 import javax.inject.{Inject, Singleton}
-
-trait FacultyService extends SimpleYamlService[Faculty]
+import scala.concurrent.ExecutionContext
 
 @Singleton
-final class FacultyServiceImpl @Inject() (
-    val repo: FacultyRepository
-) extends FacultyService {
-  override def parser = FacultyFileParser
+final class FacultyService @Inject() (
+    val repo: FacultyRepository,
+    val ctx: ExecutionContext
+) extends SimpleYamlService[Faculty] {
+  override def fileParser = FacultyFileParser
 }

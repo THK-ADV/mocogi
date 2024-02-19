@@ -1,16 +1,16 @@
 package service.core
 
-import database.repo.GlobalCriteriaRepository
-import models.core.GlobalCriteria
+import database.repo.core.GlobalCriteriaRepository
+import models.core.ModuleGlobalCriteria
 import parsing.core.GlobalCriteriaFileParser
 
 import javax.inject.{Inject, Singleton}
-
-trait GlobalCriteriaService extends SimpleYamlService[GlobalCriteria]
+import scala.concurrent.ExecutionContext
 
 @Singleton
-final class GlobalCriteriaServiceImpl @Inject() (
-    val repo: GlobalCriteriaRepository
-) extends GlobalCriteriaService {
-  override def parser = GlobalCriteriaFileParser
+final class GlobalCriteriaService @Inject() (
+    val repo: GlobalCriteriaRepository,
+    val ctx: ExecutionContext
+) extends SimpleYamlService[ModuleGlobalCriteria] {
+  override def fileParser = GlobalCriteriaFileParser
 }

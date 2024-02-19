@@ -1,11 +1,11 @@
-import parsing.types.{Content, ParsedMetadata}
+import parsing.types.{ModuleContent, ParsedMetadata}
 
 import scala.concurrent.{ExecutionContext, Future}
 
 package object service {
   type Result[A] = Future[Either[Seq[PipelineError], Seq[A]]]
 
-  type ParsingResult = Result[(Print, ParsedMetadata, Content, Content)]
+  type ParsingResult = Result[(Print, ParsedMetadata, ModuleContent, ModuleContent)]
 
   def continueWith[A, B](e: Either[PipelineError, A])(
       f: A => Future[Either[PipelineError, B]]

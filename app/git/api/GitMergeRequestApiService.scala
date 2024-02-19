@@ -1,7 +1,7 @@
 package git.api
 
-import git.GitConfig
-import models.{Branch, MergeRequestId, MergeRequestStatus}
+import git.{Branch, GitConfig, MergeRequestId, MergeRequestStatus}
+import play.api.libs.json.JsArray
 import play.api.libs.ws.{EmptyBody, WSClient}
 import play.mvc.Http.Status
 
@@ -21,7 +21,7 @@ final class GitMergeRequestApiService @Inject() (
       title: String,
       description: String,
       needsApproval: Boolean,
-      labels: List[String]
+      label: String
   ): Future[(MergeRequestId, MergeRequestStatus)] =
     ws
       .url(mergeRequestUrl)
@@ -35,7 +35,7 @@ final class GitMergeRequestApiService @Inject() (
         "squash_on_merge" -> true.toString,
         "squash" -> true.toString,
         "approvals_before_merge" -> (if (needsApproval) 1 else 0).toString,
-        "labels" -> labels.mkString(",")
+        "labels" -> label
       )
       .post(EmptyBody)
       .flatMap { res =>
@@ -48,34 +48,6 @@ final class GitMergeRequestApiService @Inject() (
           )
         else Future.failed(parseErrorMessage(res))
       }
-
-  def canBeMerged(id: MergeRequestId): Future[Unit] = {
-    def go(trys: Int): Future[Unit] =
-      ws
-        .url(s"${this.mergeRequestUrl}/${id.value}")
-        .withHttpHeaders(tokenHeader())
-        .get()
-        .flatMap { res =>
-          if (res.status != Status.OK)
-            Future.failed(parseErrorMessage(res))
-          else {
-            val mergeStatus = res.json.\("merge_status").validate[String]
-            val canBeMerged =
-              mergeStatus.map(_ == "can_be_merged").getOrElse(false)
-            if (trys <= 0)
-              Future.failed(
-                new Throwable(
-                  "timeout trying to check merge status to be mergeable"
-                )
-              )
-            else {
-              if (canBeMerged) Future.unit
-              else go(trys - 1)
-            }
-          }
-        }
-    go(15)
-  }
 
   def delete(id: MergeRequestId): Future[Unit] =
     ws
@@ -134,6 +106,36 @@ final class GitMergeRequestApiService @Inject() (
         if (res.status == Status.CREATED) Future.unit
         else Future.failed(parseErrorMessage(res))
       }
+
+  def hasOpenedMergeRequests(targetBranch: Branch) =
+    ws
+      .url(this.mergeRequestUrl)
+      .withHttpHeaders(tokenHeader())
+      .withQueryStringParameters(
+        "target_branch" -> targetBranch.value,
+        "state" -> "opened"
+      )
+      .get()
+      .flatMap { res =>
+        if (res.status == Status.OK)
+          res.json match {
+            case JsArray(xs) => Future.successful(xs.nonEmpty)
+            case other =>
+              Future.failed(
+                new Throwable(
+                  s"expected result to be an json array, but was $other"
+                )
+              )
+          }
+        else Future.failed(parseErrorMessage(res))
+      }
+
+  def get(mergeRequestId: MergeRequestId) =
+    ws
+      .url(s"${this.mergeRequestUrl}/${mergeRequestId.value}")
+      .withHttpHeaders(tokenHeader())
+      .get()
+      .map(a => (a.status, a.json))
 
   private def mergeRequestUrl =
     s"${projectsUrl()}/merge_requests"

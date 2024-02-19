@@ -1,11 +1,11 @@
 package helper
 
-import models.core.Competence
+import models.core.ModuleCompetence
 
 trait FakeCompetences {
-  implicit def fakeCompetences: Seq[Competence] = Seq(
-    Competence("develop-visions", "Develop Visions", "...", "Develop Visions", "..."),
-    Competence("analyze-domains", "Analyze Domains", "...", "Analyze Domains", "..."),
-    Competence("model-systems", "Model Systems", "...", "Model Systems", "..."),
+  implicit def fakeCompetences: Seq[ModuleCompetence] = Seq(
+    ModuleCompetence("develop-visions", "Develop Visions", "...", "Develop Visions", "..."),
+    ModuleCompetence("analyze-domains", "Analyze Domains", "...", "Analyze Domains", "..."),
+    ModuleCompetence("model-systems", "Model Systems", "...", "Model Systems", "..."),
   )
 }

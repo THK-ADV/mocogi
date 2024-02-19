@@ -2,34 +2,32 @@ package git.publisher
 
 import akka.actor.{Actor, ActorRef, Props}
 import database.view.{ModuleViewRepository, StudyProgramViewRepository}
-import git.GitFilesBroker.Changes
 import git.publisher.CoreDataPublisher.ParsingValidation
-import git.{GitFileContent, GitFilePath}
+import git.{GitChanges, GitFileContent, GitFilePath}
 import play.api.Logging
 import service.core._
 
 import javax.inject.Singleton
+import scala.collection.mutable.ListBuffer
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
 object CoreDataPublisher {
   def props(
-      folderPrefix: String,
       locationService: LocationService,
       languageService: LanguageService,
       statusService: StatusService,
       assessmentMethodService: AssessmentMethodService,
       moduleTypeService: ModuleTypeService,
       seasonService: SeasonService,
-      personService: PersonService,
+      identityService: IdentityService,
       focusAreaService: FocusAreaService,
       globalCriteriaService: GlobalCriteriaService,
       poService: POService,
       competenceService: CompetenceService,
       facultyService: FacultyService,
-      gradeService: GradeService,
+      degreeService: DegreeService,
       studyProgramService: StudyProgramService,
-      studyFormTypeService: StudyFormTypeService,
       specializationService: SpecializationService,
       studyProgramViewRepository: StudyProgramViewRepository,
       moduleViewRepository: ModuleViewRepository,
@@ -37,22 +35,20 @@ object CoreDataPublisher {
   ) =
     Props(
       new CoreDataPublisherImpl(
-        folderPrefix,
         locationService,
         languageService,
         statusService,
         assessmentMethodService,
         moduleTypeService,
         seasonService,
-        personService,
+        identityService,
         focusAreaService,
         globalCriteriaService,
         poService,
         competenceService,
         facultyService,
-        gradeService,
+        degreeService,
         studyProgramService,
-        studyFormTypeService,
         specializationService,
         studyProgramViewRepository,
         moduleViewRepository,
@@ -60,112 +56,190 @@ object CoreDataPublisher {
       )
     )
 
+  private object Filenames {
+    val location = "location"
+    val lang = "lang"
+    val status = "status"
+    val assessment = "assessment"
+    val module_type = "module_type"
+    val season = "season"
+    val person = "person"
+    val focus_area = "focus_area"
+    val global_criteria = "global_criteria"
+    val po = "po"
+    val competence = "competence"
+    val faculty = "faculty"
+    val grade = "grade"
+    val program = "program"
+    val specialization = "specialization"
+  }
+
+  private class Graph[A](vertices: List[A], edges: List[(Int, Int)]) {
+    private val numVertices = vertices.size
+    private val adjacency =
+      Array.fill(numVertices)(Array.fill(numVertices)(false))
+
+    edges.foreach { case (a, b) => adjacency(a)(b) = true }
+
+    private def hasDependency(r: Int, todo: ListBuffer[Int]): Boolean =
+      todo.exists(c => adjacency(r)(c))
+
+    def topoSort(): List[A] = {
+      val result = ListBuffer.empty[A]
+      val todo = ListBuffer.tabulate(numVertices)(identity)
+      while (todo.nonEmpty) {
+        val indexToRemove = todo.indexWhere(r => !hasDependency(r, todo))
+        if (indexToRemove != -1) {
+          val removedVertex = todo.remove(indexToRemove)
+          result += vertices(removedVertex)
+        } else {
+          throw new Exception("Graph has cycles")
+        }
+      }
+      result.toList
+    }
+  }
+
+  private def coreFileDependencies = Map(
+    Filenames.person -> List(Filenames.faculty),
+    Filenames.program -> List(Filenames.grade, Filenames.person),
+    Filenames.po -> List(Filenames.program),
+    Filenames.specialization -> List(Filenames.po),
+    Filenames.focus_area -> List(Filenames.program)
+  )
+
   private final class CoreDataPublisherImpl(
-      private val folderPrefix: String,
       private val locationService: LocationService,
       private val languageService: LanguageService,
       private val statusService: StatusService,
       private val assessmentMethodService: AssessmentMethodService,
       private val moduleTypeService: ModuleTypeService,
       private val seasonService: SeasonService,
-      private val personService: PersonService,
+      private val identityService: IdentityService,
       private val focusAreaService: FocusAreaService,
       private val globalCriteriaService: GlobalCriteriaService,
       private val poService: POService,
       private val competenceService: CompetenceService,
       private val facultyService: FacultyService,
-      private val gradeService: GradeService,
+      private val degreeService: DegreeService,
       private val studyProgramService: StudyProgramService,
-      private val studyFormTypeService: StudyFormTypeService,
       private val specializationService: SpecializationService,
       private val studyProgramViewRepository: StudyProgramViewRepository,
       private val moduleViewRepository: ModuleViewRepository,
       private implicit val ctx: ExecutionContext
   ) extends Actor
       with Logging {
+
     override def receive = { case ParsingValidation(changes) =>
+      val order = topologicalSort(changes)
+      val updates = order.foldLeft(Future.unit) { case (acc, a) =>
+        logger.info(a._1)
+        acc.flatMap(_ => createOrUpdate(a._1, a._2))
+      }
       val res = for {
-        res <- Future.sequence(
-          (changes.modified ::: changes.added).map(a =>
-            createOrUpdate(a._1, a._2)
-          )
-        )
+        _ <- updates
         _ <- studyProgramViewRepository.refreshView()
         _ <- moduleViewRepository.refreshView()
-      } yield res
-
+      } yield ()
       res onComplete {
-        case Success(s) =>
-          s.foreach { case (path, content, either) =>
-            either match {
-              case Left(size) =>
-                logSuccess(path, content, size)
-              case Right(errMsg) =>
-                logFailure(path, content, errMsg)
-            }
-          }
+        case Success(_) => logger.info("finished!")
         case Failure(t) => logFailure(t)
       }
     }
 
+    private def topologicalSort(
+        changes: GitChanges[List[(GitFilePath, GitFileContent)]]
+    ): Seq[(String, GitFileContent)] = {
+      val allCoreFiles = changes.modified ::: changes.added
+
+      val deps = coreFileDependencies
+      val vertices = allCoreFiles.map(_._1.fileName)
+      val edges = vertices.flatMap { f =>
+        deps.get(f) match {
+          case Some(value) =>
+            val self = vertices.indexOf(f)
+            value.collect {
+              case d if vertices.contains(d) => (self, vertices.indexOf(d))
+            }
+          case None => Nil
+        }
+      }
+      val sorted = new Graph(vertices, edges).topoSort()
+      sorted.map(a => (a, allCoreFiles.find(_._1.fileName == a).get._2))
+    }
+
     /*TODO add support for deletion.
-            if an entry doesn't exists anymore in a yaml file, it will not be deleted currently.
-            instead, each entry will be either created (if new) or updated (if already exists).*/
+                if an entry doesn't exists anymore in a yaml file, it will not be deleted currently.
+                instead, each entry will be either created (if new) or updated (if already exists).
+     */
     private def createOrUpdate(
-        path: GitFilePath,
+        filename: String,
         content: GitFileContent
-    ): Future[(GitFilePath, GitFileContent, Either[Int, String])] =
-      path.value
-        .stripPrefix(s"$folderPrefix/")
-        .split('.')
-        .headOption match {
-        case Some(value) =>
-          val res = value match {
-            case "location" =>
-              locationService.createOrUpdate(content.value)
-            case "lang" =>
-              languageService.createOrUpdate(content.value)
-            case "status" =>
-              statusService.createOrUpdate(content.value)
-            case "assessment" =>
-              assessmentMethodService.createOrUpdate(content.value)
-            case "module_type" =>
-              moduleTypeService.createOrUpdate(content.value)
-            case "season" =>
-              seasonService.createOrUpdate(content.value)
-            case "person" =>
-              personService.createOrUpdate(content.value)
-            case "focus_area" =>
-              focusAreaService.createOrUpdate(content.value)
-            case "global_criteria" =>
-              globalCriteriaService.createOrUpdate(content.value)
-            case "po" =>
-              poService.createOrUpdate(content.value)
-            case "competence" =>
-              competenceService.createOrUpdate(content.value)
-            case "faculty" =>
-              facultyService.createOrUpdate(content.value)
-            case "grade" =>
-              gradeService.createOrUpdate(content.value)
-            case "program" =>
-              studyProgramService.createOrUpdate(content.value)
-            case "study_form" =>
-              studyFormTypeService.createOrUpdate(content.value)
-            case "specialization" =>
-              specializationService.createOrUpdate(content.value)
-            case other =>
-              logFailure(path, content, s"unknown core data found: $other")
-              Future.successful(Nil)
-          }
-          res.map(xs => (path, content, Left(xs.size)))
-        case None =>
-          Future.successful(
-            (
-              path,
-              content,
-              Right(s"expected path to be filename.yaml, but was $path")
-            )
-          )
+    ): Future[Unit] =
+      filename match {
+        case Filenames.location =>
+          locationService
+            .createOrUpdate(content.value)
+            .map(a => logSuccess(filename, a.size))
+        case Filenames.lang =>
+          languageService
+            .createOrUpdate(content.value)
+            .map(a => logSuccess(filename, a.size))
+        case Filenames.status =>
+          statusService
+            .createOrUpdate(content.value)
+            .map(a => logSuccess(filename, a.size))
+        case Filenames.assessment =>
+          assessmentMethodService
+            .createOrUpdate(content.value)
+            .map(a => logSuccess(filename, a.size))
+        case Filenames.module_type =>
+          moduleTypeService
+            .createOrUpdate(content.value)
+            .map(a => logSuccess(filename, a.size))
+        case Filenames.season =>
+          seasonService
+            .createOrUpdate(content.value)
+            .map(a => logSuccess(filename, a.size))
+        case Filenames.person =>
+          identityService
+            .createOrUpdate(content.value)
+            .map(a => logSuccess(filename, a.size))
+        case Filenames.focus_area =>
+          focusAreaService
+            .createOrUpdate(content.value)
+            .map(a => logSuccess(filename, a.size))
+        case Filenames.global_criteria =>
+          globalCriteriaService
+            .createOrUpdate(content.value)
+            .map(a => logSuccess(filename, a.size))
+        case Filenames.po =>
+          poService
+            .createOrUpdate(content.value)
+            .map(a => logSuccess(filename, a.size))
+        case Filenames.competence =>
+          competenceService
+            .createOrUpdate(content.value)
+            .map(a => logSuccess(filename, a.size))
+        case Filenames.faculty =>
+          facultyService
+            .createOrUpdate(content.value)
+            .map(a => logSuccess(filename, a.size))
+        case Filenames.grade =>
+          degreeService
+            .createOrUpdate(content.value)
+            .map(a => logSuccess(filename, a.size))
+        case Filenames.program =>
+          studyProgramService
+            .createOrUpdate(content.value)
+            .map(a => logSuccess(filename, a.size))
+        case Filenames.specialization =>
+          specializationService
+            .createOrUpdate(content.value)
+            .map(a => logSuccess(filename, a.size))
+        case _ =>
+          logUnknownFile(filename)
+          Future.unit
       }
 
     private def logFailure(error: Throwable): Unit =
@@ -175,32 +249,24 @@ object CoreDataPublisher {
                        "\n           "
                      )}""".stripMargin)
 
-    private def logFailure(
-        path: GitFilePath,
-        content: GitFileContent,
-        error: String
-    ): Unit =
-      logger.error(s"""failed to create or update core data file
-           |  - file path: ${path.value}
-           |  - file content size: ${content.value.length}
-           |  - message: $error""".stripMargin)
+    private def logUnknownFile(filename: String): Unit =
+      logger.info(s"no handler found for file $filename")
 
-    private def logSuccess(
-        path: GitFilePath,
-        content: GitFileContent,
-        size: Int
-    ): Unit =
+    private def logSuccess(filename: String, size: Int): Unit =
       logger.info(s"""successfully created or updated core data file
-           |  - file path: ${path.value}
-           |  - file content size: ${content.value.length}
+           |  - file name: $filename
            |  - result: $size""".stripMargin)
   }
 
-  private case class ParsingValidation(changes: Changes)
+  private case class ParsingValidation(
+      changes: GitChanges[List[(GitFilePath, GitFileContent)]]
+  )
 }
 
 @Singleton
 case class CoreDataPublisher(private val value: ActorRef) {
-  def notifySubscribers(changes: Changes): Unit =
-    value ! ParsingValidation(changes)
+  def notifySubscribers(
+      coreFiles: GitChanges[List[(GitFilePath, GitFileContent)]]
+  ): Unit =
+    value ! ParsingValidation(coreFiles)
 }

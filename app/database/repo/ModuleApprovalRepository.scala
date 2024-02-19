@@ -1,10 +1,11 @@
 package database.repo
 
 import com.google.inject.Inject
+import database.repo.core.StudyProgramPersonRepository
 import database.table.{ModuleDraftTable, ModuleReviewTable}
 import models.ModuleReviewStatus
 import models.ModuleReviewStatus.Pending
-import models.core.Person
+import models.core.Identity
 import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfigProvider}
 import slick.jdbc.JdbcProfile
 
@@ -61,7 +62,7 @@ final class ModuleApprovalRepository @Inject() (
       .join(moduleDraftTable)
       .on(_._1._1.moduleDraft === _.module)
       .flatMap(a =>
-        a._2.authorFk.filter(_.kind === Person.DefaultKind).map(a -> _)
+        a._2.authorFk.filter(_.kind === Identity.PersonKind).map(a -> _)
       )
       .map { case ((((r, spp), _), d), p) =>
         (
@@ -72,7 +73,7 @@ final class ModuleApprovalRepository @Inject() (
           r.role,
           r.studyProgram,
           r.status,
-          spp.map(s => (s._2.abbrev, s._2.deLabel, s._2.enLabel, s._3)),
+          spp.map(s => (s._2.id, s._2.deLabel, s._2.enLabel, s._3)),
           r.id
         )
       }

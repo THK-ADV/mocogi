@@ -1,20 +1,12 @@
 package database.view
 
-import models.SpecializationShort
+import models.core.{Degree, IDLabel}
+import models.{POCore, StudyProgramView}
 import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfigProvider}
 import slick.jdbc.JdbcProfile
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
-
-case class StudyProgramAtomic(
-    poAbbrev: String,
-    studyProgramAbbrev: String,
-    studyProgramLabel: String,
-    grade: String,
-    version: Int,
-    specialization: Option[SpecializationShort]
-)
 
 @Singleton
 final class StudyProgramViewRepository @Inject() (
@@ -24,78 +16,137 @@ final class StudyProgramViewRepository @Inject() (
     with MaterializedView {
   import profile.api._
 
-  override def name: String = "study_program_atomic"
+  override def name: String = "study_program_view"
 
-  final class StudyProgramView(tag: Tag)
-      extends Table[StudyProgramAtomic](tag, name) {
+  val tableQuery = TableQuery[StudyProgramViewTable]
 
-    def poAbbrev = column[String]("po_abbrev")
+  def all(): Future[Seq[StudyProgramView]] =
+    db.run(tableQuery.result)
 
-    def studyProgramAbbrev = column[String]("sp_abbrev")
+  final class StudyProgramViewTable(tag: Tag)
+      extends Table[StudyProgramView](tag, name) {
 
-    def studyProgramLabel = column[String]("sp_label")
+    def fullPo = specializationId.fold(poId)(identity)
 
-    def grade = column[String]("grade_label")
+    def studyProgramDeLabel = column[String]("sp_de_label")
 
-    def version = column[Int]("po_version")
+    def studyProgramEnLabel = column[String]("sp_en_label")
 
-    def specializationAbbrev = column[Option[String]]("spec_abbrev")
+    def studyProgramId = column[String]("sp_id")
+
+    def degreeId = column[String]("degree_id")
+
+    def degreeDeLabel = column[String]("degree_de_label")
+
+    def degreeEnLabel = column[String]("degree_en_label")
+
+    def degreeDeDesc = column[String]("degree_de_desc")
+
+    def degreeEnDesc = column[String]("degree_en_desc")
+
+    def poId = column[String]("po_id")
+
+    def poVersion = column[Int]("po_version")
+
+    def specializationId = column[Option[String]]("spec_id")
 
     def specializationLabel = column[Option[String]]("spec_label")
 
     override def * = (
-      poAbbrev,
-      studyProgramAbbrev,
-      studyProgramLabel,
-      grade,
-      version,
-      specializationAbbrev,
+      poId,
+      poVersion,
+      studyProgramId,
+      studyProgramDeLabel,
+      studyProgramEnLabel,
+      degreeId,
+      degreeDeLabel,
+      degreeEnLabel,
+      degreeDeDesc,
+      degreeEnDesc,
+      specializationId,
       specializationLabel
     ) <> (mapRow, unmapRow)
-  }
 
-  val tableQuery = TableQuery[StudyProgramView]
+    private def mapRow: (
+        (
+            String,
+            Int,
+            String,
+            String,
+            String,
+            String,
+            String,
+            String,
+            String,
+            String,
+            Option[String],
+            Option[String]
+        )
+    ) => StudyProgramView = {
+      case (
+            poId,
+            poVersion,
+            studyProgramId,
+            studyProgramDeLabel,
+            studyProgramEnLabel,
+            degreeId,
+            degreeDeLabel,
+            degreeEnLabel,
+            degreeDeDesc,
+            degreeEnDesc,
+            specializationId,
+            specializationLabel
+          ) =>
+        StudyProgramView(
+          studyProgramId,
+          studyProgramDeLabel,
+          studyProgramEnLabel,
+          POCore(poId, poVersion),
+          Degree(
+            degreeId,
+            degreeDeLabel,
+            degreeDeDesc,
+            degreeEnLabel,
+            degreeEnDesc
+          ),
+          specializationId
+            .zip(specializationLabel)
+            .map(s => IDLabel(s._1, s._2, s._2))
+        )
+    }
 
-  def all(): Future[Seq[StudyProgramAtomic]] =
-    db.run(tableQuery.result)
-
-  def mapRow: (
-      (String, String, String, String, Int, Option[String], Option[String])
-  ) => StudyProgramAtomic = {
-    case (
-          poAbbrev,
-          studyProgramAbbrev,
-          studyProgramLabel,
-          grade,
-          version,
-          specializationAbbrev,
-          specializationLabel
-        ) =>
-      StudyProgramAtomic(
-        poAbbrev,
-        studyProgramAbbrev,
-        studyProgramLabel,
-        grade,
-        version,
-        specializationAbbrev
-          .zip(specializationLabel)
-          .map((SpecializationShort.apply _).tupled)
-      )
-  }
-
-  def unmapRow: StudyProgramAtomic => Option[
-    (String, String, String, String, Int, Option[String], Option[String])
-  ] = { a =>
-    Option(
+    private def unmapRow: StudyProgramView => Option[
       (
-        a.poAbbrev,
-        a.studyProgramAbbrev,
-        a.studyProgramLabel,
-        a.grade,
-        a.version,
-        a.specialization.map(_.abbrev),
-        a.specialization.map(_.label)
+          String,
+          Int,
+          String,
+          String,
+          String,
+          String,
+          String,
+          String,
+          String,
+          String,
+          Option[String],
+          Option[String]
       )
-    )
+    ] = { a =>
+      Option(
+        (
+          a.po.id,
+          a.po.version,
+          a.id,
+          a.deLabel,
+          a.enLabel,
+          a.degree.id,
+          a.degree.deLabel,
+          a.degree.enLabel,
+          a.degree.deDesc,
+          a.degree.enDesc,
+          a.specialization.map(_.id),
+          a.specialization.map(_.deLabel)
+        )
+      )
+    }
   }
 }

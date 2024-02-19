@@ -15,7 +15,7 @@ final class SpecializationFileParserSpec
     with FakePOs {
 
   implicit def poAbbrevs(implicit pos: Seq[PO]): Seq[String] =
-    pos.map(_.abbrev)
+    pos.map(_.id)
 
   "A Specialization File Parser" should {
     "parse a single specialization" in {
@@ -26,7 +26,7 @@ final class SpecializationFileParserSpec
       val (res, rest) = fileParser.parse(input)
       assert(rest.isEmpty)
       val entry = res.value.head
-      assert(entry.abbrev == "inf1_abc")
+      assert(entry.id == "inf1_abc")
       assert(entry.label == "ABC")
       assert(entry.po == "inf1")
     }
@@ -43,11 +43,11 @@ final class SpecializationFileParserSpec
       val (res, rest) = fileParser.parse(input)
       assert(rest.isEmpty)
       val entry1 = res.value.head
-      assert(entry1.abbrev == "inf1_abc")
+      assert(entry1.id == "inf1_abc")
       assert(entry1.label == "ABC")
       assert(entry1.po == "inf1")
       val entry2 = res.value(1)
-      assert(entry2.abbrev == "wi1_def")
+      assert(entry2.id == "wi1_def")
       assert(entry2.label == "WI")
       assert(entry2.po == "wi1")
     }

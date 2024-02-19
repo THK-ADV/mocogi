@@ -1,29 +1,17 @@
 package models
 
+import models.core.IDLabel
 import play.api.libs.json.{Json, Writes}
 
-sealed trait ModuleReviewSummaryStatus {
-  def id: String
-  def deLabel: String
-  def enLabel: String
-}
+sealed trait ModuleReviewSummaryStatus extends IDLabel
 
 object ModuleReviewSummaryStatus {
   implicit def writes: Writes[ModuleReviewSummaryStatus] = {
-    case s @ WaitingForChanges =>
-      Json.obj(
-        "id" -> s.id,
-        "deLabel" -> s.deLabel,
-        "enLabel" -> s.enLabel
-      )
+    case s @ WaitingForChanges => IDLabel.writes.writes(s)
     case s @ WaitingForReview(approved, needed) =>
-      Json.obj(
-        "id" -> s.id,
-        "deLabel" -> s.deLabel,
-        "enLabel" -> s.enLabel,
-        "approved" -> approved,
-        "needed" -> needed
-      )
+      IDLabel.writes
+        .writes(s)
+        .++(Json.obj("approved" -> approved, "needed" -> needed))
   }
 
   case object WaitingForChanges extends ModuleReviewSummaryStatus {

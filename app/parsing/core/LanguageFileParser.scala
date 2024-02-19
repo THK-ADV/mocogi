@@ -1,9 +1,7 @@
 package parsing.core
 
-import models.core.Language
-import javax.inject.Singleton
+import models.core.ModuleLanguage
 
-@Singleton
-final class LanguageFileParser extends LabelFileParser[Language] {
-  override protected def makeType = Language.tupled
+object LanguageFileParser extends LabelFileParser[ModuleLanguage] {
+  override protected def makeType = (ModuleLanguage.apply _).tupled
 }

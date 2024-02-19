@@ -1,7 +1,8 @@
 package database.view
 
 import database.table.stringToInts
-import models.SpecializationShort
+import models.core.{Degree, IDLabel}
+import models._
 import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfigProvider}
 import slick.jdbc.JdbcProfile
 
@@ -10,34 +11,6 @@ import javax.inject.{Inject, Singleton}
 import scala.collection.mutable
 import scala.concurrent.{ExecutionContext, Future}
 
-case class StudyProgramModuleAssociation[Semester](
-    poAbbrev: String,
-    studyProgramAbbrev: String,
-    studyProgramLabel: String,
-    grade: String,
-    version: Int,
-    specialization: Option[SpecializationShort],
-    mandatory: Boolean,
-    recommendedSemester: Semester
-)
-
-case class PersonShort(
-    id: String,
-    abbrev: String,
-    kind: String,
-    title: String,
-    firstname: String,
-    lastname: String
-)
-
-case class ModuleAtomic[ModuleManagement, StudyProgram](
-    id: UUID,
-    title: String,
-    abbrev: String,
-    ects: Double,
-    moduleManagement: ModuleManagement,
-    studyProgram: StudyProgram
-)
 @Singleton
 final class ModuleViewRepository @Inject() (
     val dbConfigProvider: DatabaseConfigProvider,
@@ -46,25 +19,24 @@ final class ModuleViewRepository @Inject() (
     with MaterializedView {
   import profile.api._
 
-  private type DbEntry = ModuleAtomic[
-    PersonShort,
+  private type DbEntry = ModuleView[
+    ModuleManagement,
     StudyProgramModuleAssociation[String]
   ]
 
-  type Entry = ModuleAtomic[
-    Iterable[PersonShort],
+  type Entry = ModuleView[
+    Iterable[ModuleManagement],
     Iterable[StudyProgramModuleAssociation[Iterable[Int]]]
   ]
 
-  override def name: String = "module_atomic"
+  override def name: String = "module_view"
 
-  private val tableQuery = TableQuery[ModuleView]
+  private val tableQuery = TableQuery[ModuleViewTable]
 
   def all(): Future[Iterable[Entry]] =
     db.run(
       tableQuery.result.map(_.groupBy(_.id).map { case (_, deps) =>
-        // TODO can this be removed via query?
-        val moduleManagement = mutable.HashSet[PersonShort]()
+        val moduleManagement = mutable.HashSet[ModuleManagement]()
         val studyPrograms =
           mutable.HashSet[StudyProgramModuleAssociation[Iterable[Int]]]()
         deps.foreach { dep =>
@@ -82,47 +54,64 @@ final class ModuleViewRepository @Inject() (
       })
     )
 
-  private final class ModuleView(tag: Tag) extends Table[DbEntry](tag, name) {
+  private final class ModuleViewTable(tag: Tag)
+      extends Table[DbEntry](tag, name) {
     private def id = column[UUID]("id")
     private def title = column[String]("title")
     private def abbrev = column[String]("abbrev")
     private def ects = column[Double]("ects")
-    private def personId = column[String]("module_management_id")
-    private def personKind = column[String]("module_management_kind")
-    private def personAbbrev = column[String]("module_management_abbrev")
-    private def personTitle = column[String]("module_management_title")
-    private def personFirstname = column[String]("module_management_firstname")
-    private def personLastname = column[String]("module_management_lastname")
-    private def poAbbrev = column[String]("po_abbrev")
-    private def poVersion = column[Int]("po_version")
-    private def studyProgramAbbrev = column[String]("sp_abbrev")
-    private def studyProgramDeLabel = column[String]("sp_label")
-    private def gradeDeLabel = column[String]("grade_label")
-    private def specializationAbbrev = column[Option[String]]("spec_abbrev")
-    private def specializationLabel = column[Option[String]]("spec_label")
+    private def moduleManagementId = column[String]("module_management_id")
+    private def moduleManagementKind = column[String]("module_management_kind")
+    private def moduleManagementAbbrev =
+      column[String]("module_management_abbreviation")
+    private def moduleManagementTitle =
+      column[String]("module_management_title")
+    private def moduleManagementFirstname =
+      column[String]("module_management_firstname")
+    private def moduleManagementLastname =
+      column[String]("module_management_lastname")
     private def recommendedSemester = column[String]("recommended_semester")
     private def mandatory = column[Boolean]("mandatory")
+    private def studyProgramDeLabel = column[String]("sp_de_label")
+    private def studyProgramEnLabel = column[String]("sp_en_label")
+    private def studyProgramId = column[String]("sp_id")
+    private def degreeId = column[String]("degree_id")
+    private def degreeDeLabel = column[String]("degree_de_label")
+    private def degreeEnLabel = column[String]("degree_en_label")
+    private def degreeDeDesc = column[String]("degree_de_desc")
+    private def degreeEnDesc = column[String]("degree_en_desc")
+    private def poId = column[String]("po_id")
+    private def poVersion = column[Int]("po_version")
+    private def specializationId = column[Option[String]]("spec_id")
+    private def specializationLabel = column[Option[String]]("spec_label")
 
     override def * = (
       id,
       title,
       abbrev,
       ects,
-      personId,
-      personKind,
-      personAbbrev,
-      personTitle,
-      personFirstname,
-      personLastname,
-      poAbbrev,
-      poVersion,
-      studyProgramAbbrev,
-      studyProgramDeLabel,
-      gradeDeLabel,
-      specializationAbbrev,
-      specializationLabel,
+      (
+        moduleManagementId,
+        moduleManagementKind,
+        moduleManagementAbbrev,
+        moduleManagementTitle,
+        moduleManagementFirstname,
+        moduleManagementLastname
+      ),
       recommendedSemester,
-      mandatory
+      mandatory,
+      poId,
+      poVersion,
+      studyProgramId,
+      studyProgramDeLabel,
+      studyProgramEnLabel,
+      degreeId,
+      degreeDeLabel,
+      degreeEnLabel,
+      degreeDeDesc,
+      degreeEnDesc,
+      specializationId,
+      specializationLabel
     ) <> (mapRow, unmapRow)
 
     private def mapRow: (
@@ -131,21 +120,21 @@ final class ModuleViewRepository @Inject() (
             String,
             String,
             Double,
+            (String, String, String, String, String, String),
             String,
-            String,
-            String,
-            String,
-            String,
-            String,
+            Boolean,
             String,
             Int,
             String,
             String,
             String,
-            Option[String],
-            Option[String],
             String,
-            Boolean
+            String,
+            String,
+            String,
+            String,
+            Option[String],
+            Option[String]
         )
     ) => DbEntry = {
       case (
@@ -153,44 +142,59 @@ final class ModuleViewRepository @Inject() (
             title,
             abbrev,
             ects,
-            personId,
-            personKind,
-            personAbbrev,
-            personTitle,
-            personFirstname,
-            personLastname,
-            poAbbrev,
-            poVersion,
-            studyProgramAbbrev,
-            studyProgramDeLabel,
-            gradeDeLabel,
-            specializationAbbrev,
-            specializationLabel,
+            (
+              moduleManagementId,
+              moduleManagementKind,
+              moduleManagementAbbrev,
+              moduleManagementTitle,
+              moduleManagementFirstname,
+              moduleManagementLastname
+            ),
             recommendedSemester,
-            mandatory
+            mandatory,
+            poId,
+            poVersion,
+            studyProgramId,
+            studyProgramDeLabel,
+            studyProgramEnLabel,
+            degreeId,
+            degreeDeLabel,
+            degreeEnLabel,
+            degreeDeDesc,
+            degreeEnDesc,
+            specializationId,
+            specializationLabel
           ) =>
-        ModuleAtomic[PersonShort, StudyProgramModuleAssociation[String]](
+        ModuleView[ModuleManagement, StudyProgramModuleAssociation[String]](
           id,
           title,
           abbrev,
           ects,
-          PersonShort(
-            personId,
-            personAbbrev,
-            personKind,
-            personTitle,
-            personFirstname,
-            personLastname
+          ModuleManagement(
+            moduleManagementId,
+            moduleManagementAbbrev,
+            moduleManagementKind,
+            moduleManagementTitle,
+            moduleManagementFirstname,
+            moduleManagementLastname
           ),
           StudyProgramModuleAssociation(
-            poAbbrev,
-            studyProgramAbbrev,
-            studyProgramDeLabel,
-            gradeDeLabel,
-            poVersion,
-            specializationAbbrev
-              .zip(specializationLabel)
-              .map((SpecializationShort.apply _).tupled),
+            StudyProgramView(
+              studyProgramId,
+              studyProgramDeLabel,
+              studyProgramEnLabel,
+              POCore(poId, poVersion),
+              Degree(
+                degreeId,
+                degreeDeLabel,
+                degreeDeDesc,
+                degreeEnLabel,
+                degreeEnDesc
+              ),
+              specializationId
+                .zip(specializationLabel)
+                .map(s => IDLabel(s._1, s._2, s._2))
+            ),
             mandatory,
             recommendedSemester
           )
@@ -203,21 +207,21 @@ final class ModuleViewRepository @Inject() (
           String,
           String,
           Double,
+          (String, String, String, String, String, String),
           String,
-          String,
-          String,
-          String,
-          String,
-          String,
+          Boolean,
           String,
           Int,
           String,
           String,
           String,
-          Option[String],
-          Option[String],
           String,
-          Boolean
+          String,
+          String,
+          String,
+          String,
+          Option[String],
+          Option[String]
       )
     ] = { a =>
       Option(
@@ -226,21 +230,28 @@ final class ModuleViewRepository @Inject() (
           a.title,
           a.abbrev,
           a.ects,
-          a.moduleManagement.id,
-          a.moduleManagement.kind,
-          a.moduleManagement.abbrev,
-          a.moduleManagement.title,
-          a.moduleManagement.firstname,
-          a.moduleManagement.lastname,
-          a.studyProgram.poAbbrev,
-          a.studyProgram.version,
-          a.studyProgram.studyProgramAbbrev,
-          a.studyProgram.studyProgramLabel,
-          a.studyProgram.grade,
-          a.studyProgram.specialization.map(_.abbrev),
-          a.studyProgram.specialization.map(_.label),
+          (
+            a.moduleManagement.id,
+            a.moduleManagement.kind,
+            a.moduleManagement.abbreviation,
+            a.moduleManagement.title,
+            a.moduleManagement.firstname,
+            a.moduleManagement.lastname
+          ),
           a.studyProgram.recommendedSemester,
-          a.studyProgram.mandatory
+          a.studyProgram.mandatory,
+          a.studyProgram.studyProgram.po.id,
+          a.studyProgram.studyProgram.po.version,
+          a.studyProgram.studyProgram.id,
+          a.studyProgram.studyProgram.deLabel,
+          a.studyProgram.studyProgram.enLabel,
+          a.studyProgram.studyProgram.degree.id,
+          a.studyProgram.studyProgram.degree.deLabel,
+          a.studyProgram.studyProgram.degree.enLabel,
+          a.studyProgram.studyProgram.degree.deDesc,
+          a.studyProgram.studyProgram.degree.enDesc,
+          a.studyProgram.studyProgram.specialization.map(_.id),
+          a.studyProgram.studyProgram.specialization.map(_.deLabel)
         )
       )
     }

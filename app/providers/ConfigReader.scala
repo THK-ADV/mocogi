@@ -5,10 +5,22 @@ import play.api.Configuration
 
 import java.util.UUID
 import javax.inject.{Inject, Singleton}
+import scala.jdk.CollectionConverters.IteratorHasAsScala
 import scala.util.Try
 
 @Singleton
 final class ConfigReader @Inject() (config: Configuration) {
+
+  val res = for {
+    trigger <- config.underlying
+      .getConfigList("bigbang.trigger")
+      .iterator()
+      .asScala
+    date = trigger.getString("date")
+    semester = trigger.getString("semester")
+  } yield (date, semester)
+
+  res.foreach(println)
 
   def htmlCmd: String = config.nonEmptyString("pandoc.htmlCmd")
 
@@ -27,28 +39,16 @@ final class ConfigReader @Inject() (config: Configuration) {
   def enOutputFolderPath: String =
     config.nonEmptyString("pandoc.enOutputFolderPath")
 
-  def moduleCompendiumFolderPath: String = config.nonEmptyString(
-    "pandoc.moduleCompendiumFolderPath"
+  def moduleCatalogOutputFolderPath: String = config.nonEmptyString(
+    "pandoc.moduleCatalogOutputFolderPath"
   )
 
-  def wpfCatalogueFolderPath: String = config.nonEmptyString(
-    "pandoc.wpfCatalogueFolderPath"
-  )
-
-  def moduleCompendiumFolderPath: String = nonEmptyString(
-    "pandoc.moduleCompendiumFolderPath"
-  )
-
-  def wpfCatalogueFolderPath: String = nonEmptyString(
-    "pandoc.wpfCatalogueFolderPath"
+  def electivesCatalogOutputFolderPath: String = config.nonEmptyString(
+    "pandoc.electivesCatalogOutputFolderPath"
   )
 
   def gitToken: Option[UUID] = config
     .getOptional[String]("git.token")
-    .flatMap(s => Try(UUID.fromString(s)).toOption)
-
-  def moduleModeToken: Option[UUID] = config
-    .getOptional[String]("git.moduleModeToken")
     .flatMap(s => Try(UUID.fromString(s)).toOption)
 
   def accessToken: String = config.nonEmptyString("git.accessToken")
@@ -59,12 +59,12 @@ final class ConfigReader @Inject() (config: Configuration) {
 
   def draftBranch: String = config.nonEmptyString("git.draftBranch")
 
-  def modulesRootFolder: String = config.nonEmptyString("git.modulesRootFolder")
+  def gitModulesFolder: String = config.nonEmptyString("git.modulesFolder")
 
-  def coreRootFolder: String = config.nonEmptyString("git.coreRootFolder")
+  def gitCoreFolder: String = config.nonEmptyString("git.coreFolder")
 
-  def moduleCompendiumRootFolder: String =
-    config.nonEmptyString("git.moduleCompendiumRootFolder")
+  def gitModuleCatalogsFolder: String =
+    config.nonEmptyString("git.moduleCatalogsFolder")
 
   def projectId: Int = config.int("git.projectId")
 
@@ -80,20 +80,14 @@ final class ConfigReader @Inject() (config: Configuration) {
 
   def autoApprovedLabel: String = config.nonEmptyString("git.autoApprovedLabel")
 
-  def reviewApprovedLabel: String =
-    config.nonEmptyString("git.reviewApprovedLabel")
+  def reviewRequiredLabel: String =
+    config.nonEmptyString("git.reviewRequiredLabel")
 
-  def repoPath: String = config.nonEmptyString("glab.repoPath")
+  def bigBangLabel = config.nonEmptyString("git.bigBangLabel")
 
-  def mcPath: String = config.nonEmptyString("glab.mcPath")
+  def moduleCatalogLabel = config.nonEmptyString("git.moduleCatalogLabel")
 
-  def pushScriptPath: String = config.nonEmptyString("glab.pushScriptPath")
+  def defaultEmail = config.nonEmptyString("git.defaultEmail")
 
-  def switchBranchScriptPath: String = config.nonEmptyString(
-    "glab.switchBranchScriptPath"
-  )
-
-  def diffPreviewScriptPath: String = config.nonEmptyString(
-    "glab.diffPreviewScriptPath"
-  )
+  def defaultUser = config.nonEmptyString("git.defaultUser")
 }

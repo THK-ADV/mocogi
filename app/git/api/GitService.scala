@@ -1,7 +1,10 @@
 package git.api
 
-import git.GitConfig
+import git.{Branch, GitConfig, GitFilePath}
 import play.api.libs.ws.WSResponse
+
+import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
 
 trait GitService {
   def config: GitConfig
@@ -23,4 +26,10 @@ trait GitService {
         errs => new Throwable(errs.mkString("\n")),
         msg => new Throwable(msg)
       )
+
+  private def urlEncoded(path: GitFilePath) =
+    URLEncoder.encode(path.value, StandardCharsets.UTF_8)
+
+  def fileUrl(path: GitFilePath, branch: Branch) =
+    s"${config.baseUrl}/projects/${config.projectId}/repository/files/${urlEncoded(path)}/raw?ref=${branch.value}"
 }

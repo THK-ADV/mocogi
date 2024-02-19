@@ -1,13 +1,10 @@
 package models
 
 import models.ModuleDraftState.{ValidForPublication, ValidForReview}
-import play.api.libs.json.{Json, Writes}
+import models.core.IDLabel
+import play.api.libs.json.Writes
 
-sealed trait ModuleDraftState {
-  def id: String
-  def deLabel: String
-  def enLabel: String
-
+sealed trait ModuleDraftState extends IDLabel {
   def canRequestReview: Boolean =
     this == ValidForReview || this == ValidForPublication
 
@@ -16,18 +13,16 @@ sealed trait ModuleDraftState {
         ModuleDraftState.ValidForPublication |
         ModuleDraftState.WaitingForChanges =>
       true
-    case ModuleDraftState.WaitingForReview | ModuleDraftState.Unknown => false
+    case ModuleDraftState.WaitingForReview | ModuleDraftState.Unknown |
+        ModuleDraftState.WaitingForPublication =>
+      false
   }
 }
 
 object ModuleDraftState {
-  implicit val writes: Writes[ModuleDraftState] =
-    (status: ModuleDraftState) =>
-      Json.obj(
-        "id" -> status.id,
-        "deLabel" -> status.deLabel,
-        "enLabel" -> status.enLabel
-      )
+
+  implicit def writes: Writes[ModuleDraftState] =
+    Writes.of[IDLabel].contramap(identity)
 
   case object Published extends ModuleDraftState {
     override def id: String = "published"
@@ -57,6 +52,12 @@ object ModuleDraftState {
     override def id: String = "waiting_for_review"
     override def deLabel: String = "Warte auf Review"
     override def enLabel: String = "Waiting for review"
+  }
+
+  case object WaitingForPublication extends ModuleDraftState {
+    override def id: String = "waiting_for_publication"
+    override def deLabel: String = "Warte auf Veröffentlichung"
+    override def enLabel: String = "Waiting for publication"
   }
 
   case object Unknown extends ModuleDraftState {

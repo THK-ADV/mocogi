@@ -1,9 +1,7 @@
 package parsing.core
 
 import models.core.ModuleType
-import javax.inject.Singleton
 
-@Singleton
-final class ModuleTypeFileParser extends LabelFileParser[ModuleType] {
-  override protected def makeType = ModuleType.tupled
+object ModuleTypeFileParser extends LabelFileParser[ModuleType] {
+  override protected def makeType = (ModuleType.apply _).tupled
 }

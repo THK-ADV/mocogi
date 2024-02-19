@@ -1,17 +1,15 @@
 package service
 
-import database.POOutput
-import database.repo.StudyProgramDirectorsRepository.StudyProgramDirector
-import database.repo.{
-  ModuleDraftRepository,
-  ModuleReviewRepository,
-  StudyProgramDirectorsRepository
-}
+import database.repo.core.StudyProgramDirectorsRepository
+import database.repo.core.StudyProgramDirectorsRepository.StudyProgramDirector
+import database.repo.{ModuleDraftRepository, ModuleReviewRepository}
+import git.{MergeRequestId, MergeRequestStatus}
 import git.api.GitMergeRequestApiService
 import models.ModuleReviewStatus.{Approved, Pending, Rejected}
 import models._
-import models.core.Person
+import models.core.Identity
 import ops.FutureOps.Ops
+import play.api.Logging
 
 import java.util.UUID
 import javax.inject.{Inject, Singleton}
@@ -26,7 +24,7 @@ final class ModuleReviewService @Inject() (
     private val api: GitMergeRequestApiService,
     private val keysToReview: ModuleKeysToReview,
     private implicit val ctx: ExecutionContext
-) {
+) extends Logging {
 
   private type MergeRequest = (MergeRequestId, MergeRequestStatus)
 
@@ -39,7 +37,7 @@ final class ModuleReviewService @Inject() (
     *   Author of the merge request
     * @return
     */
-  def create(moduleId: UUID, author: Person.Default): Future[Unit] =
+  def create(moduleId: UUID, author: Identity.Person): Future[Unit] =
     for {
       draft <- draftRepo
         .getByModule(moduleId)
@@ -96,7 +94,7 @@ final class ModuleReviewService @Inject() (
     */
   def update(
       id: UUID,
-      reviewer: Person.Default,
+      reviewer: Identity.Person,
       approve: Boolean,
       comment: Option[String]
   ): Future[Unit] = {
@@ -160,7 +158,7 @@ final class ModuleReviewService @Inject() (
 
   private def createApproveReview(
       draft: ModuleDraft,
-      author: Person.Default
+      author: Identity.Person
   ): Future[MergeRequest] = {
     val protocol = draft.protocol()
     val roles = requiredRoles(draft.keysToBeReviewed)
@@ -170,14 +168,14 @@ final class ModuleReviewService @Inject() (
         .flatMap(role =>
           directors
             .filter(_.role == role)
-            .distinctBy(_.studyProgramAbbrev)
+            .distinctBy(_.studyProgramId)
             .map(d =>
               ModuleReview(
                 UUID.randomUUID,
                 draft.module,
                 role,
                 Pending,
-                d.studyProgramAbbrev,
+                d.studyProgramId,
                 None,
                 None,
                 None
@@ -189,15 +187,15 @@ final class ModuleReviewService @Inject() (
       directors.groupBy(_.role).flatMap { case (role, dirs) =>
         dirs
           .filter(_.role == role)
-          .distinctBy(_.studyProgramAbbrev)
+          .distinctBy(_.studyProgramId)
           .map { dir =>
             val possibleDirs = dirs
               .filter(d =>
-                d.role == role && d.studyProgramAbbrev == dir.studyProgramAbbrev
+                d.role == role && d.studyProgramId == dir.studyProgramId
               )
               .map(d => s"${d.directorFirstname} ${d.directorLastname}")
               .mkString(", ")
-            s"${role.id.toUpperCase} ${dir.studyProgramLabel} ${dir.studyProgramGradeLabel} ($possibleDirs)"
+            s"${role.id.toUpperCase} ${dir.studyProgramLabel} ${dir.studyProgramDegreeLabel} ($possibleDirs)"
           }
       }
 
@@ -216,17 +214,15 @@ final class ModuleReviewService @Inject() (
 
   private def createAutoAcceptedReview(
       draft: ModuleDraft,
-      author: Person.Default
+      author: Identity.Person
   ): Future[MergeRequest] =
     for {
-      (mergeRequestId, _) <- createMergeRequest(
+      (mergeRequestId, status) <- createMergeRequest(
         draft,
         mrTitle(author, draft.protocol().metadata),
         mrDesc(draft.modifiedKeys, Nil, Nil),
         needsApproval = false
       )
-      _ <- api.canBeMerged(mergeRequestId)
-      status <- api.merge(mergeRequestId)
     } yield (mergeRequestId, status)
 
   private def createMergeRequest(
@@ -237,17 +233,15 @@ final class ModuleReviewService @Inject() (
   ): Future[MergeRequest] =
     api.create(
       draft.branch,
-      Branch(api.config.draftBranch),
+      api.config.draftBranch,
       title,
       description,
       needsApproval,
-      List(
-        if (needsApproval) api.config.reviewApprovedLabel
-        else api.config.autoApprovedLabel
-      )
+      if (needsApproval) api.config.reviewRequiredLabel
+      else api.config.autoApprovedLabel
     )
 
-  private def mrTitle(author: Person.Default, metadata: MetadataProtocol) =
+  private def mrTitle(author: Identity.Person, metadata: MetadataProtocol) =
     s"${author.fullName}: ${metadata.title} (${metadata.abbrev})"
 
   private def mrDesc(
@@ -281,16 +275,16 @@ final class ModuleReviewService @Inject() (
     }
 
   private def studyProgramDirectors(
-      po: POOutput,
+      po: ModulePOProtocol,
       roles: Set[UniversityRole]
   ): Future[Seq[StudyProgramDirector]] = {
     def affectedPos(): Set[String] =
       (po.mandatory.isEmpty, po.optional.isEmpty) match {
         case (true, true) =>
           Set.empty
-        case (false, false) => // Default + WPF
+        case (false, false) => // Default + Elective
           po.mandatory.map(_.po).toSet
-        case (true, false) => // WPF only
+        case (true, false) => // Elective only
           po.optional.map(_.po).toSet
         case (false, true) => // Default only
           po.mandatory.map(_.po).toSet

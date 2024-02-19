@@ -1,87 +1,34 @@
 package service.core
 
-import database.InsertOrUpdateResult
-import database.repo.{StudyProgramOutput, StudyProgramRepository}
-import models.StudyProgramShort
+import database.repo.core.StudyProgramRepository
 import models.core.StudyProgram
+import parser.Parser
 import parsing.core.StudyProgramFileParser
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
-trait StudyProgramService {
-  def all(): Future[Seq[StudyProgramOutput]]
-  def allShort(): Future[Seq[StudyProgramShort]]
-  def allIds(): Future[Seq[String]]
-  def create(input: String): Future[List[StudyProgram]]
-  def createOrUpdate(
-      input: String
-  ): Future[List[(InsertOrUpdateResult, StudyProgram)]]
-}
-
 @Singleton
-final class StudyProgramServiceImpl @Inject() (
-    val repo: StudyProgramRepository,
-    val gradeService: GradeService,
-    val personService: PersonService,
-    val studyFormTypeService: StudyFormTypeService,
-    val languageService: LanguageService,
-    val seasonService: SeasonService,
-    val locationService: LocationService,
+final class StudyProgramService @Inject() (
+    private val repo: StudyProgramRepository,
+    private val degreeService: DegreeService,
+    private val personService: IdentityService,
     implicit val ctx: ExecutionContext
-) extends StudyProgramService {
+) extends YamlService[StudyProgram] {
 
-  def all(): Future[Seq[StudyProgramOutput]] =
+  override protected def parser: Future[Parser[List[StudyProgram]]] =
+    for {
+      degrees <- degreeService.all()
+      people <- personService.all()
+    } yield StudyProgramFileParser.fileParser(degrees, people)
+
+  override def createOrUpdateMany(
+      xs: Seq[StudyProgram]
+  ): Future[Seq[StudyProgram]] = repo.createOrUpdateMany(xs)
+
+  def all(): Future[Seq[StudyProgram]] =
     repo.all()
 
-  override def allShort() =
-    repo.allShort()
-
-  override def allIds() =
+  def allIds() =
     repo.allIds()
-
-  def create(input: String): Future[List[StudyProgram]] =
-    createFromInput(input, xs => repo.createMany(xs).map(_ => xs))
-
-  def createOrUpdate(
-      input: String
-  ): Future[List[(InsertOrUpdateResult, StudyProgram)]] =
-    createFromInput(
-      input,
-      xs =>
-        Future.sequence(
-          xs.map(sp =>
-            repo.exists(sp).flatMap {
-              case true => repo.update(sp).map(InsertOrUpdateResult.Update -> _)
-              case false =>
-                repo.create(sp).map(InsertOrUpdateResult.Insert -> _)
-            }
-          )
-        )
-    )
-
-  private def createFromInput[A](
-      input: String,
-      createMany: List[StudyProgram] => Future[List[A]]
-  ): Future[List[A]] =
-    for {
-      grades <- gradeService.all()
-      people <- personService.all()
-      studyFormTypes <- studyFormTypeService.all()
-      languages <- languageService.all()
-      seasons <- seasonService.all()
-      locations <- locationService.all()
-      programs <- StudyProgramFileParser
-        .fileParser(
-          grades,
-          people,
-          studyFormTypes,
-          languages,
-          seasons,
-          locations
-        )
-        .parse(input)
-        ._1
-        .fold(Future.failed, createMany)
-    } yield programs
 }

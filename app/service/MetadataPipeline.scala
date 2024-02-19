@@ -1,11 +1,17 @@
 package service
 
-import database._
-import git.GitFilePath
+import models._
 import ops.EitherOps.{EOps, EThrowableOps}
 import ops.FutureOps.EitherOps
-import parsing.types.{ModuleCompendium, ParsedModuleRelation}
-import validator.{ValidationError, Workload}
+import parsing.metadata.VersionScheme
+import parsing.types.{
+  Module,
+  ModuleContent,
+  ParsedMetadata,
+  ParsedModuleRelation
+}
+import printing.yaml.ModuleYamlPrinter
+import validator.{Metadata, ModuleWorkload, ValidationError}
 
 import java.util.UUID
 import javax.inject.{Inject, Singleton}
@@ -14,28 +20,32 @@ import scala.concurrent.{ExecutionContext, Future}
 @Singleton
 final class MetadataPipeline @Inject() (
     private val parser: MetadataParsingService,
-    private val moduleCompendiumService: ModuleCompendiumService,
+    private val moduleService: ModuleService,
+    private val moduleYamlPrinter: ModuleYamlPrinter,
     implicit val ctx: ExecutionContext
 ) {
-  def parse(print: Print, path: GitFilePath): Future[ModuleCompendiumOutput] =
+
+  // TODO implement raw parsing and use it where needed
+  def parseRaw(print: Print) = ???
+
+  def parse(print: Print): Future[ModuleProtocol] =
     parser.parse(print).flatMap {
       case Right((metadata, de, en)) =>
         Future.successful(
-          ModuleCompendiumOutput(
-            path.value,
-            MetadataOutput(
-              metadata.id,
+          ModuleProtocol(
+            Some(metadata.id),
+            MetadataProtocol(
               metadata.title,
               metadata.abbrev,
-              metadata.kind.abbrev,
+              metadata.kind.id,
               metadata.credits.fold(
                 identity,
                 _.foldLeft(0.0) { case (acc, e) => acc + e.ectsValue }
               ),
-              metadata.language.abbrev,
+              metadata.language.id,
               metadata.duration,
-              metadata.season.abbrev,
-              Workload(
+              metadata.season.id,
+              ModuleWorkload(
                 metadata.workload.lecture,
                 metadata.workload.seminar,
                 metadata.workload.practical,
@@ -45,70 +55,69 @@ final class MetadataPipeline @Inject() (
                 0,
                 0
               ),
-              metadata.status.abbrev,
-              metadata.location.abbrev,
+              metadata.status.id,
+              metadata.location.id,
               metadata.participants,
               metadata.relation.map {
                 case ParsedModuleRelation.Parent(children) =>
-                  ModuleRelationOutput.Parent(children)
+                  ModuleRelationProtocol.Parent(children)
                 case ParsedModuleRelation.Child(parent) =>
-                  ModuleRelationOutput.Child(parent)
+                  ModuleRelationProtocol.Child(parent)
               },
               metadata.responsibilities.moduleManagement.map(_.id),
               metadata.responsibilities.lecturers.map(_.id),
-              AssessmentMethodsOutput(
+              ModuleAssessmentMethodsProtocol(
                 metadata.assessmentMethods.mandatory.map(a =>
-                  AssessmentMethodEntryOutput(
-                    a.method.abbrev,
+                  ModuleAssessmentMethodEntryProtocol(
+                    a.method.id,
                     a.percentage,
-                    a.precondition.map(_.abbrev)
+                    a.precondition.map(_.id)
                   )
                 ),
                 metadata.assessmentMethods.optional.map(a =>
-                  AssessmentMethodEntryOutput(
-                    a.method.abbrev,
+                  ModuleAssessmentMethodEntryProtocol(
+                    a.method.id,
                     a.percentage,
-                    a.precondition.map(_.abbrev)
+                    a.precondition.map(_.id)
                   )
                 )
               ),
-              PrerequisitesOutput(
+              ModulePrerequisitesProtocol(
                 metadata.prerequisites.recommended.map(e =>
-                  PrerequisiteEntryOutput(
+                  ModulePrerequisiteEntryProtocol(
                     e.text,
                     e.modules,
-                    e.studyPrograms.map(_.abbrev)
+                    e.studyPrograms.map(_.id)
                   )
                 ),
                 metadata.prerequisites.required.map(e =>
-                  PrerequisiteEntryOutput(
+                  ModulePrerequisiteEntryProtocol(
                     e.text,
                     e.modules,
-                    e.studyPrograms.map(_.abbrev)
+                    e.studyPrograms.map(_.id)
                   )
                 )
               ),
-              POOutput(
+              ModulePOProtocol(
                 metadata.pos.mandatory.map(a =>
-                  POMandatoryOutput(
-                    a.po.abbrev,
-                    a.specialization.map(_.abbrev),
-                    a.recommendedSemester,
-                    a.recommendedSemesterPartTime
+                  ModulePOMandatoryProtocol(
+                    a.po.id,
+                    a.specialization.map(_.id),
+                    a.recommendedSemester
                   )
                 ),
                 metadata.pos.optional.map(a =>
-                  POOptionalOutput(
-                    a.po.abbrev,
-                    a.specialization.map(_.abbrev),
+                  ModulePOOptionalProtocol(
+                    a.po.id,
+                    a.specialization.map(_.id),
                     a.instanceOf,
                     a.partOfCatalog,
                     a.recommendedSemester
                   )
                 )
               ),
-              metadata.competences.map(_.abbrev),
-              metadata.globalCriteria.map(_.abbrev),
+              metadata.competences.map(_.id),
+              metadata.globalCriteria.map(_.id),
               metadata.taughtWith
             ),
             de.normalize(),
@@ -118,10 +127,10 @@ final class MetadataPipeline @Inject() (
       case Left(value) => Future.failed(value)
     }
 
-  def parseValidate(print: Print): Future[ModuleCompendium] =
+  def parseValidate(print: Print): Future[Module] =
     for {
       (metadata, de, en) <- parser.parse(print).unwrap
-      existing <- moduleCompendiumService.allModules(Map.empty)
+      existing <- moduleService.allModuleCore(Map.empty)
       metadata <- MetadataValidatingService
         .validate(existing, metadata)
         .mapErr(errs =>
@@ -129,17 +138,59 @@ final class MetadataPipeline @Inject() (
             .Validator(ValidationError(errs), Some(metadata.id))
         )
         .toFuture
-    } yield ModuleCompendium(metadata, de, en)
+    } yield Module(metadata, de, en)
 
   def parseValidateMany(
       prints: Seq[(Option[UUID], Print)]
-  ): Future[Either[Seq[PipelineError], Seq[(Print, ModuleCompendium)]]] =
+  ): Future[Either[Seq[PipelineError], Seq[(Print, Module)]]] =
     for {
       parsed <- parser.parseMany(prints)
-      existing <- moduleCompendiumService.allModules(Map.empty)
+      existing <- moduleService.allModuleCore(Map.empty)
     } yield parsed match {
       case Left(value) => Left(value)
       case Right(parsed) =>
         MetadataValidatingService.validateMany(existing, parsed)
     }
+
+  def printParseValidate(
+      protocol: ModuleProtocol,
+      versionScheme: VersionScheme,
+      moduleId: UUID
+  ): Future[Either[PipelineError, (Module, Print)]] = {
+    def print(): Either[PipelineError, Print] =
+      moduleYamlPrinter
+        .print(versionScheme, moduleId, protocol)
+        .bimap(
+          PipelineError.Printer(_, Some(moduleId)),
+          Print.apply
+        )
+
+    def parse(
+        print: Print
+    ): Future[
+      Either[PipelineError, (ParsedMetadata, ModuleContent, ModuleContent)]
+    ] =
+      parser
+        .parse(print)
+        .map(_.bimap(PipelineError.Parser(_, Some(moduleId)), identity))
+
+    def validate(
+        metadata: ParsedMetadata
+    ): Future[Either[PipelineError, Metadata]] =
+      moduleService.allModuleCore(Map.empty).map { existing =>
+        MetadataValidatingService
+          .validate(existing, metadata)
+          .bimap(
+            errs =>
+              PipelineError
+                .Validator(ValidationError(errs), Some(metadata.id)),
+            identity
+          )
+      }
+
+    for {
+      parsed <- continueWith(print())(parse)
+      validated <- continueWith(parsed)(a => validate(a._2._1))
+    } yield validated.map(t => (Module(t._2, t._1._2._2, t._1._2._3), t._1._1))
+  }
 }

@@ -1,15 +1,16 @@
 package service.core
 
-import database.repo.SeasonRepository
+import database.repo.core.SeasonRepository
 import models.core.Season
-import parsing.core.SeasonFileParser
+import parsing.core.{FileParser, SeasonFileParser}
 
 import javax.inject.{Inject, Singleton}
-
-trait SeasonService extends SimpleYamlService[Season]
+import scala.concurrent.ExecutionContext
 
 @Singleton
-final class SeasonServiceImpl @Inject() (
+final class SeasonService @Inject() (
     val repo: SeasonRepository,
-    val parser: SeasonFileParser
-) extends SeasonService
+    val ctx: ExecutionContext
+) extends SimpleYamlService[Season] {
+  override def fileParser: FileParser[Season] = SeasonFileParser
+}

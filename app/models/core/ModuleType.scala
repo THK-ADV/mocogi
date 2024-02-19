@@ -1,4 +1,10 @@
 package models.core
 
-case class ModuleType(abbrev: String, deLabel: String, enLabel: String)
-    extends AbbrevLabelLike
+import play.api.libs.json.{Json, Writes}
+
+case class ModuleType(id: String, deLabel: String, enLabel: String)
+    extends IDLabel
+
+object ModuleType {
+  implicit def writes: Writes[ModuleType] = Json.writes
+}
