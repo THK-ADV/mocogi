@@ -8,11 +8,22 @@ services:
     expose:
       - 5432
     environment:
-      POSTGRES_USER: ${USERNAME}
-      POSTGRES_PASSWORD: ${PASSWORD}
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
       POSTGRES_DB: ${DB_NAME}
     volumes:
       - psql_vol:/var/lib/postgresql/data
+
+  core:
+    container_name: mocogi-core
+    image: mocogi-core
+    restart: always
+    build:
+      context: .
+      dockerfile: Dockerfile_Dependencies
+      args:
+        PANDOC_PLATFORM_SUFFIX: arm64
+  #        PANDOC_PLATFORM_SUFFIX: amd64
 
   backend:
     container_name: mocogi-backend
@@ -23,6 +34,15 @@ services:
     volumes:
       - backend_logs_vol:/mocogi/logs
       - app_vol:/mocogi/output
+    environment:
+      GITHUB_TOKEN: ${GITHUB_TOKEN}
+      GIT_ACCESS_TOKEN: ${GIT_ACCESS_TOKEN}
+      GIT_WEBHOOK_TOKEN: ${GIT_WEBHOOK_TOKEN}
+      GIT_HOST: ${GIT_HOST}
+      GIT_API_ENDPOINT: ${GIT_API_ENDPOINT}
+      GIT_PROJECT_ID: ${GIT_PROJECT_ID}
+      KAFKA_HOST: ${KAFKA_HOST}
+      KAFKA_APP_ID: ${KAFKA_APP_ID}
     build:
       context: .
       dockerfile: Dockerfile
