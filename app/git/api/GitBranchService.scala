@@ -1,7 +1,6 @@
 package git.api
 
-import models.Branch
-
+import git.Branch
 import java.util.UUID
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}

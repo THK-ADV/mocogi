@@ -1,6 +1,7 @@
 package database.table
 
 import database.table.core.IdentityTable
+import git.{Branch, CommitId, MergeRequestId, MergeRequestStatus}
 import models._
 import play.api.libs.json.JsValue
 import service.Print

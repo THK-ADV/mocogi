@@ -1,8 +1,8 @@
 package database.repo.core
 
+import auth.CampusId
 import database.repo.Repository
 import database.table.core._
-import models.CampusId
 import models.core.Identity
 import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfigProvider}
 import slick.jdbc.JdbcProfile

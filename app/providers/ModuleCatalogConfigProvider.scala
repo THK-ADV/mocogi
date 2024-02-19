@@ -1,7 +1,7 @@
 package providers
 
 import catalog.ModuleCatalogConfig
-import models.Branch
+import git.Branch
 
 import javax.inject.{Inject, Provider, Singleton}
 

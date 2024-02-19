@@ -1,4 +1,4 @@
-package models
+package git
 
 case class CommitId(value: String) extends AnyVal {
   override def toString = value

@@ -1,4 +1,4 @@
-package models
+package catalog
 
 import models.core.Label
 import play.api.libs.json.{Json, Writes}

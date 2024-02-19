@@ -1,7 +1,8 @@
 package database.table
 
+import auth.CampusId
 import models.ModuleUpdatePermissionType.{Granted, Inherited}
-import models.{CampusId, ModuleUpdatePermissionType}
+import models.ModuleUpdatePermissionType
 import slick.jdbc.PostgresProfile.api._
 
 import java.util.UUID

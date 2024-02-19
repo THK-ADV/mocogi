@@ -1,7 +1,7 @@
 package controllers
 
+import catalog.{ElectivesFile, Semester}
 import models.core.IDLabel
-import models.{ElectivesFile, Semester}
 import play.api.libs.json.{JsArray, Json}
 import play.api.mvc.{AbstractController, ControllerComponents}
 import providers.ConfigReader

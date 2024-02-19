@@ -4,7 +4,7 @@ import akka.actor.{Actor, ActorRef, Props}
 import catalog.PreviewMergeActor.CreateMergeRequest
 import database.repo.ModuleCatalogGenerationRequestRepository
 import git.api.GitMergeRequestApiService
-import models.{ModuleCatalogGenerationRequest, Semester}
+import models.ModuleCatalogGenerationRequest
 import ops.FutureOps.Ops
 import ops.LoggerOps
 import play.api.Logging

@@ -1,7 +1,6 @@
 package git.api
 
-import git.{GitConfig, GitFileContent, GitFilePath}
-import models.Branch
+import git.{Branch, GitConfig, GitFileContent, GitFilePath}
 import play.api.libs.ws.WSClient
 
 import javax.inject.{Inject, Singleton}

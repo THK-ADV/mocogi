@@ -1,6 +1,5 @@
-package git.api
+package git
 
-import git.GitFilePath
 import play.api.libs.json.Reads
 
 case class Diff(diff: String, path: GitFilePath)

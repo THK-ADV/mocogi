@@ -1,7 +1,6 @@
 package git.api
 
-import git.GitConfig
-import models.Branch
+import git.{Branch, GitConfig}
 import play.api.libs.ws.{EmptyBody, WSClient}
 import play.mvc.Http.Status
 

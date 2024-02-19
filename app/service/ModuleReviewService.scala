@@ -3,6 +3,7 @@ package service
 import database.repo.core.StudyProgramDirectorsRepository
 import database.repo.core.StudyProgramDirectorsRepository.StudyProgramDirector
 import database.repo.{ModuleDraftRepository, ModuleReviewRepository}
+import git.{MergeRequestId, MergeRequestStatus}
 import git.api.GitMergeRequestApiService
 import models.ModuleReviewStatus.{Approved, Pending, Rejected}
 import models._

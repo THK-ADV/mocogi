@@ -1,7 +1,6 @@
 package providers
 
-import git.GitConfig
-import models.Branch
+import git.{Branch, GitConfig}
 
 import javax.inject.{Inject, Provider, Singleton}
 

@@ -1,7 +1,5 @@
 package git
 
-import models.Branch
-
 import java.util.UUID
 
 case class GitConfig(

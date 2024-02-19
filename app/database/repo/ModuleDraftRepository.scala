@@ -2,6 +2,7 @@ package database.repo
 
 import database.table
 import database.table.ModuleDraftTable
+import git.{CommitId, MergeRequestId, MergeRequestStatus}
 import models._
 import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfigProvider}
 import play.api.libs.json.JsValue

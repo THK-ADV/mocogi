@@ -1,5 +1,6 @@
 package printing.latex
 
+import catalog.Semester
 import models._
 import models.core._
 import monocle.Lens
@@ -8,14 +9,7 @@ import ops.StringBuilderOps.SBOps
 import parsing.types.ModuleContent
 import play.api.Logging
 import printing.pandoc.PandocApi
-import printing.{
-  IDLabelDescOps,
-  LabelOps,
-  PrintingLanguage,
-  fmtCommaSeparated,
-  fmtDouble,
-  fmtIdentity
-}
+import printing.{IDLabelDescOps, LabelOps, PrintingLanguage, fmtCommaSeparated, fmtDouble, fmtIdentity}
 
 import java.util.UUID
 import javax.inject.{Inject, Singleton}

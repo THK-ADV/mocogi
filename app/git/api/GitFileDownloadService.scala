@@ -1,8 +1,8 @@
 package git.api
 
 import com.google.inject.Inject
-import git.{GitConfig, GitFileContent, GitFilePath}
-import models.{Branch, ModuleProtocol}
+import git.{Branch, GitConfig, GitFileContent, GitFilePath}
+import models.ModuleProtocol
 import printing.PrintingLanguage
 import printing.html.ModuleHTMLPrinter
 import printing.pandoc.{PrinterOutput, PrinterOutputType}

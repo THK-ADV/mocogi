@@ -1,8 +1,8 @@
 package database.repo
 
+import auth.CampusId
 import database.table.{ModuleTable, ModuleUpdatePermissionTable}
 import models.{
-  CampusId,
   ModuleCore,
   ModuleUpdatePermission,
   ModuleUpdatePermissionType

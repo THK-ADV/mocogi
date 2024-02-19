@@ -1,6 +1,6 @@
 package catalog
 
-import models.{Semester, StudyProgramView}
+import models.StudyProgramView
 import printing.PrintingLanguage
 
 import java.nio.file.Path

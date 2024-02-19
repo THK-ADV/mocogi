@@ -1,15 +1,8 @@
 package models
 
-import models.MergeRequestStatus.{Closed, Open}
-import models.ModuleDraftState.{
-  Published,
-  Unknown,
-  ValidForPublication,
-  ValidForReview,
-  WaitingForChanges,
-  WaitingForPublication,
-  WaitingForReview
-}
+import git.{Branch, CommitId, MergeRequestId, MergeRequestStatus}
+import git.MergeRequestStatus.{Closed, Open}
+import models.ModuleDraftState.{Published, Unknown, ValidForPublication, ValidForReview, WaitingForChanges, WaitingForPublication, WaitingForReview}
 import play.api.libs.json.JsValue
 import service.Print
 

@@ -1,13 +1,9 @@
 package webhook
 
 import akka.actor.{Actor, ActorRef, Props}
-import catalog.ModuleCatalogService
-import database.repo.{
-  ModuleCatalogGenerationRequestRepository,
-  ModuleDraftRepository,
-  ModuleReviewRepository
-}
-import git.GitConfig
+import catalog.{ModuleCatalogService, Semester}
+import database.repo.{ModuleCatalogGenerationRequestRepository, ModuleDraftRepository, ModuleReviewRepository}
+import git.{Branch, GitConfig, MergeRequestId}
 import git.api.{GitBranchService, GitMergeRequestApiService}
 import models._
 import ops.LoggerOps

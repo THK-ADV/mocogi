@@ -4,8 +4,7 @@ import akka.actor.{Actor, ActorRef, Props}
 import git.GitChanges.CategorizedGitFilePaths
 import git.api.GitFileDownloadService
 import git.publisher.{CoreDataPublisher, ModulePublisher}
-import git.{GitChanges, GitConfig, GitFilePath}
-import models.{Branch, CommitId}
+import git.{Branch, CommitId, GitChanges, GitConfig, GitFilePath}
 import ops.LoggerOps
 import play.api.Logging
 import play.api.libs.json._

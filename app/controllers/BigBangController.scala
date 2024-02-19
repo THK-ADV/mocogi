@@ -1,9 +1,8 @@
 package controllers
 
 import auth.AuthorizationAction
-import catalog.{ModuleCatalogService, PreviewMergeActor}
+import catalog.{ModuleCatalogService, PreviewMergeActor, Semester}
 import controllers.actions.{AdminCheck, PermissionCheck}
-import models.Semester
 import play.api.mvc.{AbstractController, ControllerComponents}
 
 import javax.inject.{Inject, Singleton}

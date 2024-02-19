@@ -1,7 +1,6 @@
 package git.api
 
-import git.GitConfig
-import models.{Branch, MergeRequestId, MergeRequestStatus}
+import git.{Branch, GitConfig, MergeRequestId, MergeRequestStatus}
 import play.api.libs.json.JsArray
 import play.api.libs.ws.{EmptyBody, WSClient}
 import play.mvc.Http.Status

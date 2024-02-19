@@ -1,12 +1,9 @@
 package database.repo
 
+import catalog.Semester
 import database.table.ModuleCatalogGenerationRequestTable
-import models.{
-  MergeRequestId,
-  MergeRequestStatus,
-  ModuleCatalogGenerationRequest,
-  Semester
-}
+import git.{MergeRequestId, MergeRequestStatus}
+import models.ModuleCatalogGenerationRequest
 import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfigProvider}
 import slick.jdbc.JdbcProfile
 

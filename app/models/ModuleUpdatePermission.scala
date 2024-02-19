@@ -1,5 +1,6 @@
 package models
 
+import auth.CampusId
 import play.api.libs.json.{Json, Writes}
 
 import java.util.UUID

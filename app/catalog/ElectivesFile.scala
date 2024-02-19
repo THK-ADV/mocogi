@@ -1,6 +1,6 @@
-package models
+package catalog
 
-import models.ElectivesFile.fileExt
+import catalog.ElectivesFile.fileExt
 
 import java.nio.file.Path
 

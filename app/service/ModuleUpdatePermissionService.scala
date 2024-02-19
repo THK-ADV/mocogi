@@ -1,10 +1,10 @@
 package service
 
+import auth.CampusId
 import database.repo.ModuleUpdatePermissionRepository
 import models.ModuleUpdatePermissionType.{Granted, Inherited}
 import models.core.Identity
 import models.{
-  CampusId,
   ModuleCore,
   ModuleUpdatePermission,
   ModuleUpdatePermissionType

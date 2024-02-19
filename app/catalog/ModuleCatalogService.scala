@@ -5,12 +5,8 @@ import database.repo.core._
 import database.repo.{ModuleCatalogRepository, ModuleRepository}
 import database.table.ModuleCatalogEntry
 import database.view.StudyProgramViewRepository
-import git.GitFilePath
-import git.api.{
-  GitAvailabilityChecker,
-  GitBranchApiService,
-  GitMergeRequestApiService
-}
+import git.{Branch, GitFilePath, MergeRequestId, MergeRequestStatus}
+import git.api.{GitAvailabilityChecker, GitBranchApiService, GitMergeRequestApiService}
 import models._
 import ops.FileOps.FileOps0
 import play.api.Logging

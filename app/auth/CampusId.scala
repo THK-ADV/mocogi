@@ -1,4 +1,4 @@
-package models
+package auth
 
 import play.api.libs.json.Format
 

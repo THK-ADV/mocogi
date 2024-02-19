@@ -1,8 +1,7 @@
 package catalog
 
 import git.api.{GitCommitApiService, GitFileApiService}
-import git.{GitCommitAction, GitCommitActionType, GitFilePath}
-import models.{Branch, Semester}
+import git.{Branch, GitCommitAction, GitCommitActionType, GitFilePath}
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}

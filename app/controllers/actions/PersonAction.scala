@@ -1,9 +1,8 @@
 package controllers.actions
 
-import auth.UserTokenRequest
+import auth.{CampusId, UserTokenRequest}
 import controllers.actions.PersonAction.PersonRequest
 import database.repo.core.IdentityRepository
-import models.CampusId
 import models.core.Identity
 import play.api.libs.json.Json
 import play.api.mvc.Results.BadRequest

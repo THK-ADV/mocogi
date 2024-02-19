@@ -1,6 +1,5 @@
 package git
 
-import models.{Branch, CommitId}
 import org.scalatest.TryValues
 import org.scalatest.wordspec.AnyWordSpec
 import play.api.libs.json.{JsError, JsSuccess, JsValue, Json}

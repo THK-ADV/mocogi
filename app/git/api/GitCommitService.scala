@@ -1,6 +1,6 @@
 package git.api
 
-import git.{GitCommitAction, GitCommitActionType, GitFilePath}
+import git.{Branch, CommitId, GitCommitAction, GitCommitActionType, GitFilePath}
 import models._
 import models.core.Identity
 import service.Print

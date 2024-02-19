@@ -1,6 +1,6 @@
 package catalog
 
-import models.Branch
+import git.Branch
 
 case class ModuleCatalogConfig(
     tmpFolderPath: String,

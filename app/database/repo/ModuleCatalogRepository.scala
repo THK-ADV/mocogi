@@ -1,8 +1,8 @@
 package database.repo
 
-import database.table.{ModuleCatalogEntry, ModuleCatalog}
+import catalog.{ModuleCatalogList, Semester}
+import database.table.{ModuleCatalog, ModuleCatalogEntry}
 import database.view.StudyProgramViewRepository
-import models.{ModuleCatalogList, Semester}
 import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfigProvider}
 import slick.jdbc.JdbcProfile
 
@@ -35,7 +35,7 @@ final class ModuleCatalogRepository @Inject() (
         .on(_.fullPo === _.fullPo)
         .result
         .map(_.map { case (mcl, sp) =>
-          ModuleCatalogList(
+          catalog.ModuleCatalogList(
             sp,
             Semester(mcl.semester),
             mcl.deUrl,

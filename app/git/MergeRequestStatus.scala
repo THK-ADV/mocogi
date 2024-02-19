@@ -1,4 +1,4 @@
-package models
+package git
 
 sealed trait MergeRequestStatus {
   def id: String

@@ -1,7 +1,6 @@
 package git.api
 
-import git.{GitConfig, GitFilePath}
-import models.Branch
+import git.{Branch, GitConfig, GitFilePath}
 import play.api.libs.ws.WSResponse
 
 import java.net.URLEncoder
