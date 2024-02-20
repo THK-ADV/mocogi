@@ -6,21 +6,23 @@ import parser.ParserOps.P0
 import parsing.types.ParsedModuleRelation
 import parsing.{multipleValueParser, uuidParser}
 
+import java.util.UUID
+
 object ModuleRelationParser {
 
-  def moduleRelationParser: Parser[Option[ParsedModuleRelation]] = {
-    def go: Parser[ParsedModuleRelation] = oneOf(
+  def raw: Parser[Option[Either[UUID, List[UUID]]]] = {
+    def go: Parser[Either[UUID, List[UUID]]] = oneOf(
       prefix("parent:")
         .skip(zeroOrMoreSpaces)
         .skip(prefix("module."))
         .take(prefixTo("\n") or rest)
         .flatMap(uuidParser)
-        .map[ParsedModuleRelation](ParsedModuleRelation.Child.apply),
+        .map(Left.apply),
       multipleValueParser(
         "children",
         skipFirst(prefix("module.")).take(prefixTo("\n")).flatMap(uuidParser),
         1
-      ).map[ParsedModuleRelation](ParsedModuleRelation.Parent.apply)
+      ).map(Right.apply)
     )
 
     prefix("relation:")
@@ -29,4 +31,14 @@ object ModuleRelationParser {
       .take(go)
       .option
   }
+
+  def parser: Parser[Option[ParsedModuleRelation]] =
+    raw.map(
+      _.map(
+        _.fold(
+          ParsedModuleRelation.Child.apply,
+          ParsedModuleRelation.Parent.apply
+        )
+      )
+    )
 }

@@ -8,7 +8,7 @@ import parsing.{multipleValueParser, uuidParser}
 import java.util.UUID
 
 object ModuleTaughtWithParser {
-  def taughtWithParser: Parser[List[UUID]] =
+  def parser: Parser[List[UUID]] =
     multipleValueParser(
       "taught_with",
       prefix("module.")

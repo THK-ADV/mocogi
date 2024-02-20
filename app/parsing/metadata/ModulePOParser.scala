@@ -1,15 +1,23 @@
 package parsing.metadata
 
 import models.core.{PO, Specialization}
+import models.{
+  ModulePOMandatoryProtocol,
+  ModulePOOptionalProtocol,
+  ModulePOProtocol
+}
 import parser.Parser
 import parser.Parser._
 import parser.ParserOps._
-import parsing.types.{ModulePOMandatory, ParsedPOOptional}
+import parsing.types.{ModulePOMandatory, ParsedPOOptional, ParsedPOs}
 import parsing.{multipleValueParser, uuidParser}
 
 object ModulePOParser {
 
+  private def studyProgramKey = "study_program"
+  private def studyProgramPrefix = "study_program."
   def modulePOMandatoryKey = "po_mandatory:"
+  def modulePOElectiveKey = "po_optional:"
 
   def studyProgramParser(implicit
       pos: Seq[PO],
@@ -18,7 +26,7 @@ object ModulePOParser {
     val pos0 = pos.sortBy(_.program).reverse
     val specializations0 = specializations.sortBy(_.id).reverse
     val poParser = oneOf(
-      pos0.map(s => prefix(s"study_program.${s.id}").map(_ => s)): _*
+      pos0.map(s => prefix(s"$studyProgramPrefix${s.id}").map(_ => s)): _*
     )
     val specializationsParser: Parser[Option[Specialization]] =
       (char.map(_.toString) or Parser.rest)
@@ -28,10 +36,27 @@ object ModulePOParser {
               .map(Some.apply)
           else always(None)
         }
-    prefix("- study_program:")
+    prefix(s"- $studyProgramKey:")
       .skip(zeroOrMoreSpaces)
       .take(poParser)
       .zip(specializationsParser)
+  }
+
+  def studyProgramParserRaw: Parser[(String, Option[String])] = {
+    val poParser = skipFirst(prefix(studyProgramPrefix))
+      .take(prefixTo("\n").or(rest))
+      .map(_.trim)
+
+    prefix(s"- $studyProgramKey:")
+      .skip(zeroOrMoreSpaces)
+      .take(poParser)
+      .flatMap { po =>
+        po.split('.').length match {
+          case 1 => always((po.split('.').head, None))
+          case 2 => always((po.split('.').head, Some(po.split('.')(1))))
+          case _ => never("po and one specialization at most")
+        }
+      }
   }
 
   private def recommendedSemesterParser =
@@ -77,7 +102,7 @@ object ModulePOParser {
       pos: Seq[PO],
       specializations: Seq[Specialization]
   ): Parser[List[ParsedPOOptional]] =
-    prefix("po_optional:")
+    prefix(modulePOElectiveKey)
       .skip(zeroOrMoreSpaces)
       .take(
         studyProgramParser
@@ -92,4 +117,48 @@ object ModulePOParser {
             ParsedPOOptional(po, spec, io, cat, recSem)
           })
       )
+
+  def parser(implicit pos: Seq[PO], specializations: Seq[Specialization]) =
+    mandatoryParser.option
+      .map(_.getOrElse(Nil))
+      .zip(electiveParser.option.map(_.getOrElse(Nil)))
+      .map(ParsedPOs.tupled)
+
+  def mandatoryParserRaw: Parser[List[ModulePOMandatoryProtocol]] =
+    prefix(modulePOMandatoryKey)
+      .skip(zeroOrMoreSpaces)
+      .take(
+        studyProgramParserRaw
+          .skip(zeroOrMoreSpaces)
+          .zip(recommendedSemesterParser)
+          .skip(zeroOrMoreSpaces)
+          .skip(recommendedSemesterPartTimeParser)
+          .many(zeroOrMoreSpaces)
+          .map(_.map { case ((po, spec), recSem) =>
+            ModulePOMandatoryProtocol(po, spec, recSem)
+          })
+      )
+
+  def electiveParserRaw: Parser[List[ModulePOOptionalProtocol]] =
+    prefix(modulePOElectiveKey)
+      .skip(zeroOrMoreSpaces)
+      .take(
+        studyProgramParserRaw
+          .skip(zeroOrMoreSpaces)
+          .zip(instanceOfParser)
+          .skip(zeroOrMoreSpaces)
+          .take(partOfCatalogParser)
+          .skip(zeroOrMoreSpaces)
+          .take(recommendedSemesterParser)
+          .many(zeroOrMoreSpaces)
+          .map(_.map { case ((po, spec), io, cat, recSem) =>
+            ModulePOOptionalProtocol(po, spec, io, cat, recSem)
+          })
+      )
+
+  def raw =
+    mandatoryParserRaw.option
+      .map(_.getOrElse(Nil))
+      .zip(electiveParserRaw.option.map(_.getOrElse(Nil)))
+      .map((ModulePOProtocol.apply _).tupled)
 }

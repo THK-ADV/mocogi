@@ -19,15 +19,15 @@ class ModuleContentParserSpec
 
       assert(rest.isEmpty)
 
-      assert(de.learningOutcome == "\n")
-      assert(en.learningOutcome == "\n")
-      assert(de.content == "\n")
-      assert(en.content == "\n")
-      assert(de.teachingAndLearningMethods == "\n")
-      assert(en.teachingAndLearningMethods == "\n")
-      assert(de.recommendedReading == "\n")
-      assert(en.recommendedReading == "\n")
-      assert(de.particularities == "\n")
+      assert(de.learningOutcome == "")
+      assert(en.learningOutcome == "")
+      assert(de.content == "")
+      assert(en.content == "")
+      assert(de.teachingAndLearningMethods == "")
+      assert(en.teachingAndLearningMethods == "")
+      assert(de.recommendedReading == "")
+      assert(en.recommendedReading == "")
+      assert(de.particularities == "")
       assert(en.particularities == "")
     }
 
@@ -38,20 +38,20 @@ class ModuleContentParserSpec
 
       assert(rest.isEmpty)
 
-      assert(de.learningOutcome == "\nProgrammieren lernen\n\n")
-      assert(en.learningOutcome == "\nLearn to code\n\n")
-      assert(de.content == "\n- Klassen\n- Vererbung\n- Polymorphie\n\n")
-      assert(en.content == "\n- Classes\n- Inheritance\n- Polymorphism\n\n")
-      assert(de.teachingAndLearningMethods == "\nSlides, Whiteboard\n\n")
-      assert(en.teachingAndLearningMethods == "\n")
+      assert(de.learningOutcome == "Programmieren lernen")
+      assert(en.learningOutcome == "Learn to code")
+      assert(de.content == "- Klassen\n- Vererbung\n- Polymorphie")
+      assert(en.content == "- Classes\n- Inheritance\n- Polymorphism")
+      assert(de.teachingAndLearningMethods == "Slides, Whiteboard")
+      assert(en.teachingAndLearningMethods == "")
       assert(
-        de.recommendedReading == "\nProgrammieren lernen mit Kotlin. Kohls, Dobrynin, Leonhardt\n\n"
+        de.recommendedReading == "Programmieren lernen mit Kotlin. Kohls, Dobrynin, Leonhardt"
       )
       assert(
-        en.recommendedReading == "\nProgrammieren lernen mit Kotlin. Kohls, Dobrynin, Leonhardt\n\n"
+        en.recommendedReading == "Programmieren lernen mit Kotlin. Kohls, Dobrynin, Leonhardt"
       )
-      assert(de.particularities == "\nnichts\n\n")
-      assert(en.particularities == "\nnothing")
+      assert(de.particularities == "nichts")
+      assert(en.particularities == "nothing")
     }
   }
 }

@@ -1,32 +1,44 @@
 package parsing.metadata
 
-import helper.{FakeApplication, FakeModuleTypes}
+import helper.FakeModuleTypes
 import models.core.ModuleType
 import org.scalatest.EitherValues
 import org.scalatest.wordspec.AnyWordSpec
-import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import parsing.ParserSpecHelper
+import parsing.metadata.ModuleTypeParser.raw
 
 class ModuleTypeParserSpec
     extends AnyWordSpec
     with ParserSpecHelper
     with EitherValues
-    with GuiceOneAppPerSuite
-    with FakeApplication
     with FakeModuleTypes {
 
-  val parser = app.injector.instanceOf(classOf[ModuleTypeParser]).parser
+  import ModuleTypeParser.parser
 
   "A Module Type Parser" should {
     "parse module types if they are valid" in {
-      val (res1, rest1) =
-        parser.parse("type: type.module\n")
+      val input1 = "type: type.module\n"
+      val (res1, rest1) = parser.parse(input1)
       assert(res1.value == ModuleType("module", "Modul", "--"))
       assert(rest1.isEmpty)
 
-      val (res2, rest2) =
-        parser.parse("type: type.generic_module\n")
-      assert(res2.value == ModuleType("generic_module", "Generisches Modul", "--"))
+      val input2 = "type: type.generic_module\n"
+      val (res2, rest2) = parser.parse(input2)
+      assert(
+        res2.value == ModuleType("generic_module", "Generisches Modul", "--")
+      )
+      assert(rest2.isEmpty)
+    }
+
+    "parse raw module types" in {
+      val input1 = "type: type.module\n"
+      val (res1, rest1) = raw.parse(input1)
+      assert(res1.value == "module")
+      assert(rest1.isEmpty)
+
+      val input2 = "type: type.generic_module\n"
+      val (res2, rest2) = raw.parse(input2)
+      assert(res2.value == "generic_module")
       assert(rest2.isEmpty)
     }
 

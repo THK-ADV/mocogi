@@ -1,23 +1,19 @@
 package parsing.metadata
 
-import helper.{FakeApplication, FakeLocations}
+import helper.FakeLocations
 import models.core.ModuleLocation
 import org.scalatest.EitherValues
 import org.scalatest.wordspec.AnyWordSpec
-import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import parsing.ParserSpecHelper
 
 class ModuleLocationParserSpec
     extends AnyWordSpec
     with ParserSpecHelper
     with EitherValues
-    with GuiceOneAppPerSuite
-    with FakeApplication
     with FakeLocations {
 
-  val parser = app.injector
-    .instanceOf(classOf[ModuleLocationParser])
-    .parser
+  val parser = ModuleLocationParser.parser
+  val raw = ModuleLocationParser.raw
 
   "A Location Parser" should {
     "parse a valid location" in {
@@ -27,6 +23,16 @@ class ModuleLocationParserSpec
 
       val (res2, rest2) = parser.parse("location: location.dz\n")
       assert(res2.value == ModuleLocation("dz", "Deutz", "--"))
+      assert(rest2.isEmpty)
+    }
+
+    "parse a valid location raw" in {
+      val (res1, rest1) = raw.parse("location: location.gm\n")
+      assert(res1.value == "gm")
+      assert(rest1.isEmpty)
+
+      val (res2, rest2) = raw.parse("location: location.dz\n")
+      assert(res2.value == "dz")
       assert(rest2.isEmpty)
     }
 

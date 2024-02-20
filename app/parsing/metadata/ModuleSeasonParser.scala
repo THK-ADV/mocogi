@@ -3,15 +3,20 @@ package parsing.metadata
 import models.core.Season
 import parser.Parser
 import parsing.helper.SingleValueParser
+import parsing.singleValueRawParser
 
-import javax.inject.Singleton
+object ModuleSeasonParser extends SingleValueParser[Season] {
+  private def key = "frequency"
+  private def prefix = "season."
 
-@Singleton
-final class ModuleSeasonParser extends SingleValueParser[Season] {
-  def parser(implicit seasons: Seq[Season]): Parser[Season] =
+  def parser(implicit seasons: Seq[Season]): Parser[Season] = {
     itemParser(
-      "frequency",
+      key,
       seasons.sortBy(_.id).reverse,
-      x => s"season.${x.id}"
+      x => s"$prefix${x.id}"
     )
+  }
+
+  def raw: Parser[String] =
+    singleValueRawParser(key, prefix)
 }

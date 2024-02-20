@@ -3,15 +3,21 @@ package parsing.metadata
 import models.core.ModuleStatus
 import parser.Parser
 import parsing.helper.SingleValueParser
+import parsing.metadata.ModuleTypeParser.{key, prefix}
+import parsing.singleValueRawParser
 
-import javax.inject.Singleton
+object ModuleStatusParser extends SingleValueParser[ModuleStatus] {
+  private def key = "status"
+  private def prefix = "status."
 
-@Singleton
-final class ModuleStatusParser extends SingleValueParser[ModuleStatus] {
-  def parser(implicit status: Seq[ModuleStatus]): Parser[ModuleStatus] =
+  def parser(implicit status: Seq[ModuleStatus]): Parser[ModuleStatus] = {
     itemParser(
-      "status",
+      key,
       status.sortBy(_.id).reverse,
-      x => s"status.${x.id}"
+      x => s"$prefix${x.id}"
     )
+  }
+
+  def raw: Parser[String] =
+    singleValueRawParser(key, prefix)
 }

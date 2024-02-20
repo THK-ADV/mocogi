@@ -1,22 +1,19 @@
 package parsing.metadata
 
-import helper.{FakeApplication, FakeIdentities}
+import helper.FakeIdentities
 import models.core.{Identity, PersonStatus}
 import org.scalatest.EitherValues
 import org.scalatest.wordspec.AnyWordSpec
-import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import parsing.ParserSpecHelper
 
 class IdentityParserSpec
     extends AnyWordSpec
     with ParserSpecHelper
     with EitherValues
-    with GuiceOneAppPerSuite
-    with FakeApplication
     with FakeIdentities {
 
-  val parser =
-    app.injector.instanceOf(classOf[IdentityParser]).parser
+  val parser = IdentityParser.parser
+  val raw = IdentityParser.raw
 
   "A People Parser" when {
     "parse single people" should {
@@ -37,6 +34,13 @@ class IdentityParserSpec
             )
           )
         )
+        assert(rest1.isEmpty)
+      }
+
+      "return a person if the input is simple raw" in {
+        val input = "person.ald\n"
+        val (res1, rest1) = raw.parse(input)
+        assert(res1.value == List("ald"))
         assert(rest1.isEmpty)
       }
 
@@ -100,6 +104,16 @@ class IdentityParserSpec
             )
           )
         )
+        assert(rest1.isEmpty)
+      }
+
+      "return 2 persons which are only seperated by dashes raw" in {
+        val input =
+          """-person.ald
+            |-person.abe
+            |""".stripMargin
+        val (res1, rest1) = raw.parse(input)
+        assert(res1.value == List("ald", "abe"))
         assert(rest1.isEmpty)
       }
 

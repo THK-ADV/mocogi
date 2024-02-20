@@ -84,14 +84,14 @@ object ModuleContentParser {
               deC2,
               deC3,
               deC4
-            ),
+            ).normalize(),
             ModuleContent(
               enC0,
               enC1,
               enC2,
               enC3,
               enC4
-            )
+            ).normalize()
           )
       }
 }

@@ -2,15 +2,21 @@ package parsing.metadata
 
 import models.core.ModuleGlobalCriteria
 import parser.Parser
-import parsing.multipleValueParser
+import parsing.{multipleValueParser, multipleValueRawParser}
 
 object ModuleGlobalCriteriaParser {
-  def globalCriteriaParser(implicit
+  private def key = "global_criteria"
+  private def prefix = "global_criteria."
+
+  def parser(implicit
       globalCriteria: Seq[ModuleGlobalCriteria]
   ): Parser[List[ModuleGlobalCriteria]] =
     multipleValueParser(
-      "global_criteria",
-      (g: ModuleGlobalCriteria) => s"global_criteria.${g.id}",
+      key,
+      (g: ModuleGlobalCriteria) => s"$prefix${g.id}",
       0
     )(globalCriteria.sortBy(_.id).reverse)
+
+  def raw: Parser[List[String]] =
+    multipleValueRawParser(key, prefix)
 }

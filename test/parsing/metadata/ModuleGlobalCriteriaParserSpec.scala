@@ -5,7 +5,7 @@ import models.core.ModuleGlobalCriteria
 import org.scalatest.EitherValues
 import org.scalatest.wordspec.AnyWordSpec
 import parsing.ParserSpecHelper
-import parsing.metadata.ModuleGlobalCriteriaParser.globalCriteriaParser
+import parsing.metadata.ModuleGlobalCriteriaParser.parser
 
 final class ModuleGlobalCriteriaParserSpec
     extends AnyWordSpec
@@ -18,7 +18,7 @@ final class ModuleGlobalCriteriaParserSpec
         """global_criteria:
           |  - global_criteria.internationalization
           |  - global_criteria.digitization""".stripMargin
-      val (res, rest) = globalCriteriaParser.parse(input)
+      val (res, rest) = parser.parse(input)
       assert(rest.isEmpty)
       assert(
         res.value == List(
@@ -42,7 +42,7 @@ final class ModuleGlobalCriteriaParserSpec
 
     "parse no global criteria if empty" in {
       val input = "global_criteria:"
-      val (res, rest) = globalCriteriaParser.parse(input)
+      val (res, rest) = parser.parse(input)
       assert(rest.isEmpty)
       assert(res.value.isEmpty)
     }

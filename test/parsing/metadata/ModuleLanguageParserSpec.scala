@@ -1,23 +1,19 @@
 package parsing.metadata
 
-import helper.{FakeApplication, FakeLanguages}
+import helper.FakeLanguages
 import models.core.ModuleLanguage
 import org.scalatest.EitherValues
 import org.scalatest.wordspec.AnyWordSpec
-import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import parsing.ParserSpecHelper
 
 class ModuleLanguageParserSpec
     extends AnyWordSpec
     with ParserSpecHelper
     with EitherValues
-    with GuiceOneAppPerSuite
-    with FakeApplication
     with FakeLanguages {
 
-  val parser = app.injector
-    .instanceOf(classOf[ModuleLanguageParser])
-    .parser
+  val parser = ModuleLanguageParser.parser
+  val raw = ModuleLanguageParser.raw
 
   "A Language Parser" should {
     "parse a valid language" in {
@@ -30,7 +26,23 @@ class ModuleLanguageParserSpec
       assert(rest2.isEmpty)
 
       val (res3, rest3) = parser.parse("language: lang.de_en\n")
-      assert(res3.value == ModuleLanguage("de_en", "Deutsch und Englisch", "--"))
+      assert(
+        res3.value == ModuleLanguage("de_en", "Deutsch und Englisch", "--")
+      )
+      assert(rest3.isEmpty)
+    }
+
+    "parse a valid language raw" in {
+      val (res1, rest1) = raw.parse("language: lang.de\n")
+      assert(res1.value == "de")
+      assert(rest1.isEmpty)
+
+      val (res2, rest2) = raw.parse("language: lang.en\n")
+      assert(res2.value == "en")
+      assert(rest2.isEmpty)
+
+      val (res3, rest3) = raw.parse("language: lang.de_en\n")
+      assert(res3.value == "de_en")
       assert(rest3.isEmpty)
     }
 

@@ -3,15 +3,20 @@ package parsing.metadata
 import models.core.ModuleLocation
 import parser.Parser
 import parsing.helper.SingleValueParser
+import parsing.metadata.ModuleTypeParser.{key, prefix}
+import parsing.singleValueRawParser
 
-import javax.inject.Singleton
+object ModuleLocationParser extends SingleValueParser[ModuleLocation] {
+  private def key = "location"
+  private def prefix = "location."
 
-@Singleton
-final class ModuleLocationParser extends SingleValueParser[ModuleLocation] {
   def parser(implicit locations: Seq[ModuleLocation]): Parser[ModuleLocation] =
     itemParser(
-      "location",
+      key,
       locations.sortBy(_.id).reverse,
-      m => s"location.${m.id}"
+      m => s"$prefix${m.id}"
     )
+
+  def raw: Parser[String] =
+    singleValueRawParser(key, prefix)
 }

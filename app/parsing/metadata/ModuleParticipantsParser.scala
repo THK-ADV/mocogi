@@ -8,7 +8,7 @@ import parsing.types.ModuleParticipants
 
 object ModuleParticipantsParser {
 
-  def participantsParser: Parser[ModuleParticipants] =
+  def parser: Parser[ModuleParticipants] =
     skipFirst(prefix("participants:"))
       .skip(zeroOrMoreSpaces)
       .take(intForKey("min"))

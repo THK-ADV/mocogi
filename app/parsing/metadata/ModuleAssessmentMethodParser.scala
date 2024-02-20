@@ -1,21 +1,35 @@
 package parsing.metadata
 
 import models.core.AssessmentMethod
+import models.{
+  ModuleAssessmentMethodEntryProtocol,
+  ModuleAssessmentMethodsProtocol
+}
 import parser.Parser
 import parser.Parser._
 import parser.ParserOps.{P0, P2}
 import parsing.multipleValueParser
-import parsing.types.ModuleAssessmentMethodEntry
+import parsing.types.{ModuleAssessmentMethodEntry, ModuleAssessmentMethods}
 
 object ModuleAssessmentMethodParser {
+
+  private def assessmentPrefix = "assessment."
+  private def preconditionKey = "precondition"
+  private def mandatoryKey = "assessment_methods_mandatory"
+  private def electiveKey = "assessment_methods_optional"
 
   private def assessmentMethodParser(implicit
       assessmentMethods: Seq[AssessmentMethod]
   ): Parser[AssessmentMethod] =
     oneOf(
       assessmentMethods
-        .map(a => prefix(s"assessment.${a.id}").map(_ => a)): _*
+        .map(a => prefix(s"$assessmentPrefix${a.id}").map(_ => a)): _*
     )
+
+  private def assessmentMethodParserRaw: Parser[String] =
+    skipFirst(prefix(assessmentPrefix))
+      .take(prefixTo("\n").or(rest))
+      .map(_.trim)
 
   private def methodParser(implicit
       assessmentMethods: Seq[AssessmentMethod]
@@ -23,6 +37,11 @@ object ModuleAssessmentMethodParser {
     prefix("- method:")
       .skip(zeroOrMoreSpaces)
       .take(assessmentMethodParser)
+
+  private def methodParserRaw: Parser[String] =
+    prefix("- method:")
+      .skip(zeroOrMoreSpaces)
+      .take(assessmentMethodParserRaw)
 
   private def percentageParser: Parser[Option[Double]] =
     prefix("percentage:")
@@ -33,8 +52,23 @@ object ModuleAssessmentMethodParser {
   private def preconditionParser(implicit
       assessmentMethods: Seq[AssessmentMethod]
   ): Parser[List[AssessmentMethod]] =
-    multipleValueParser("precondition", assessmentMethodParser, 1).option
+    multipleValueParser(preconditionKey, assessmentMethodParser, 1).option
       .map(_.getOrElse(Nil))
+
+  private def preconditionParserRaw: Parser[List[String]] = {
+    val dashes =
+      zeroOrMoreSpaces
+        .skip(prefix("-"))
+        .skip(zeroOrMoreSpaces)
+        .take(assessmentMethodParserRaw)
+        .many(minimum = 1)
+    prefix(s"$preconditionKey:")
+      .skip(zeroOrMoreSpaces)
+      .skip(optional(newline))
+      .take(assessmentMethodParserRaw.map(a => List(a)) or dashes)
+      .option
+      .map(_.getOrElse(Nil))
+  }
 
   private def parser(key: String)(implicit
       assessmentMethods: Seq[AssessmentMethod]
@@ -51,17 +85,46 @@ object ModuleAssessmentMethodParser {
           .map(_.map((ModuleAssessmentMethodEntry.apply _).tupled))
       )
 
+  private def raw(
+      key: String
+  ): Parser[List[ModuleAssessmentMethodEntryProtocol]] =
+    prefix(s"$key:")
+      .skip(zeroOrMoreSpaces)
+      .take(
+        methodParserRaw
+          .skip(zeroOrMoreSpaces)
+          .zip(percentageParser)
+          .skip(zeroOrMoreSpaces)
+          .take(preconditionParserRaw)
+          .many(zeroOrMoreSpaces)
+          .map(_.map((ModuleAssessmentMethodEntryProtocol.apply _).tupled))
+      )
+
   def mandatoryParser(implicit
-      assessmentMethods: Seq[AssessmentMethod]
+      xs: Seq[AssessmentMethod]
   ): Parser[List[ModuleAssessmentMethodEntry]] =
-    parser("assessment_methods_mandatory")(
-      assessmentMethods.sortBy(_.id).reverse
-    )
+    parser(mandatoryKey)(xs.sortBy(_.id).reverse)
 
   def electiveParser(implicit
-      assessmentMethods: Seq[AssessmentMethod]
+      xs: Seq[AssessmentMethod]
   ): Parser[List[ModuleAssessmentMethodEntry]] =
-    parser("assessment_methods_optional")(
-      assessmentMethods.sortBy(_.id).reverse
-    )
+    parser(electiveKey)(xs.sortBy(_.id).reverse)
+
+  def parser(implicit
+      xs: Seq[AssessmentMethod]
+  ): Parser[ModuleAssessmentMethods] =
+    mandatoryParser
+      .zip(electiveParser.option.map(_.getOrElse(Nil)))
+      .map((ModuleAssessmentMethods.apply _).tupled)
+
+  def mandatoryParserRaw: Parser[List[ModuleAssessmentMethodEntryProtocol]] =
+    raw(mandatoryKey)
+
+  def electiveParserRaw: Parser[List[ModuleAssessmentMethodEntryProtocol]] =
+    raw(electiveKey)
+
+  def raw: Parser[ModuleAssessmentMethodsProtocol] =
+    mandatoryParserRaw
+      .zip(electiveParserRaw.option.map(_.getOrElse(Nil)))
+      .map((ModuleAssessmentMethodsProtocol.apply _).tupled)
 }
