@@ -5,7 +5,7 @@ import models.core.ModuleCompetence
 import org.scalatest.EitherValues
 import org.scalatest.wordspec.AnyWordSpec
 import parsing.ParserSpecHelper
-import parsing.metadata.ModuleCompetencesParser.competencesParser
+import parsing.metadata.ModuleCompetencesParser.{parser, raw}
 
 final class ModuleCompetencesParserSpec
     extends AnyWordSpec
@@ -18,7 +18,7 @@ final class ModuleCompetencesParserSpec
         """competences:
           |  - competence.analyze-domains
           |  - competence.model-systems""".stripMargin
-      val (res, rest) = competencesParser.parse(input)
+      val (res, rest) = parser.parse(input)
       assert(rest.isEmpty)
       assert(
         res.value == List(
@@ -40,9 +40,24 @@ final class ModuleCompetencesParserSpec
       )
     }
 
+    "parse multiple competences raw" in {
+      val input =
+        """competences:
+          |  - competence.analyze-domains
+          |  - competence.model-systems""".stripMargin
+      val (res, rest) = raw.parse(input)
+      assert(rest.isEmpty)
+      assert(
+        res.value == List(
+          "analyze-domains",
+          "model-systems"
+        )
+      )
+    }
+
     "parse no competences if empty" in {
       val input = "competences:"
-      val (res, rest) = competencesParser.parse(input)
+      val (res, rest) = parser.parse(input)
       assert(rest.isEmpty)
       assert(res.value.isEmpty)
     }

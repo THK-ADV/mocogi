@@ -191,12 +191,34 @@ package object parsing {
     minimum
   )
 
+  def singleValueRawParser(key: String, prefix: String): Parser[String] =
+    keyParser(key)
+      .skip(Parser.prefix(prefix))
+      .take(prefixTo("\n").or(rest))
+      .map(_.trim)
+
+  def multipleValueRawParser(
+      key: String,
+      prefix: String
+  ): Parser[List[String]] =
+    keyParser(key)
+      .take(
+        skipFirst(zeroOrMoreSpaces)
+          .skip(Parser.prefix("-"))
+          .skip(zeroOrMoreSpaces)
+          .take(
+            skipFirst(Parser.prefix(prefix))
+              .take(prefixTo("\n").or(rest))
+              .map(_.trim)
+          )
+          .many()
+      )
+
   private val localDatePattern = DateTimeFormatter.ofPattern("dd.MM.yyyy")
 
   def localDateParser(string: String): Parser[LocalDate] =
     localDateParser(string, localDatePattern)
 
-  // TODO test
   def localDateParser(
       string: String,
       pattern: DateTimeFormatter
@@ -207,7 +229,6 @@ package object parsing {
         never(s"date with format $pattern. error: ${t.getMessage}")
     }
 
-  // TODO test
   def singleLineCommentParser(): Parser[Unit] =
     prefix("#").skip(prefix(_ != '\n').skip(newline))
 

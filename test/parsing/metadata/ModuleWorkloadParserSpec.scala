@@ -3,7 +3,7 @@ package parsing.metadata
 import org.scalatest.EitherValues
 import org.scalatest.wordspec.AnyWordSpec
 import parsing.ParserSpecHelper
-import parsing.metadata.ModuleWorkloadParser.workloadParser
+import parsing.metadata.ModuleWorkloadParser.parser
 import parsing.types.ParsedWorkload
 
 class ModuleWorkloadParserSpec
@@ -21,7 +21,7 @@ class ModuleWorkloadParserSpec
           |  exercise: 18
           |  project_supervision: 0
           |  project_work: 0""".stripMargin
-      val (res, rest) = workloadParser.parse(input)
+      val (res, rest) = parser.parse(input)
       assert(res.value == ParsedWorkload(36, 0, 18, 18, 0, 0))
       assert(rest.isEmpty)
     }
@@ -35,7 +35,7 @@ class ModuleWorkloadParserSpec
           |  exercise: 18
           |  project_supervision: 0
           |  project_work: 0""".stripMargin
-      val (res, rest) = workloadParser.parse(input)
+      val (res, rest) = parser.parse(input)
       res match {
         case Right(_) => fail()
         case Left(e) =>

@@ -60,6 +60,23 @@ final class ModuleECTSParserSpec
       assert(rest.isEmpty)
     }
 
+    "parse ects with contributions to focus areas raw" in {
+      val input =
+        """ects:
+          |  contributions_to_focus_areas:
+          |    gak:
+          |      num: 0
+          |      de_desc:
+          |    acs:
+          |      num: 6
+          |      de_desc: |
+          |        Text1
+          |        Text2""".stripMargin
+      val (res, rest) = ectsContributionsToFocusAreasParserRaw.parse(input)
+      assert(res.value == 6)
+      assert(rest.isEmpty)
+    }
+
     "parse ects with contributions to focus areas with de and en desc set or not" in {
       val input =
         """ects:
@@ -96,7 +113,7 @@ final class ModuleECTSParserSpec
 
     "parse a simple or a complex ects value" in {
       val simpleInput = "ects: 5"
-      val (res1, rest1) = ectsParser.parse(simpleInput)
+      val (res1, rest1) = parser.parse(simpleInput)
       assert(res1.value.left.value == 5)
       assert(rest1.isEmpty)
 
@@ -113,7 +130,7 @@ final class ModuleECTSParserSpec
           |      de_desc: |
           |        Text1
           |        Text2""".stripMargin
-      val (res2, rest2) = ectsParser.parse(complexInput)
+      val (res2, rest2) = parser.parse(complexInput)
       assert(
         res2.value.value == List(
           ModuleECTSFocusAreaContribution(
@@ -130,6 +147,30 @@ final class ModuleECTSParserSpec
           )
         )
       )
+      assert(rest2.isEmpty)
+    }
+
+    "parse a simple or a complex ects value raw" in {
+      val simpleInput = "ects: 5"
+      val (res1, rest1) = raw.parse(simpleInput)
+      assert(res1.value == 5)
+      assert(rest1.isEmpty)
+
+      val complexInput =
+        """ects:
+          |  contributions_to_focus_areas:
+          |    gak:
+          |      num: 4
+          |      de_desc: |
+          |        Text1
+          |        Text2
+          |    acs:
+          |      num: 6
+          |      de_desc: |
+          |        Text1
+          |        Text2""".stripMargin
+      val (res2, rest2) = raw.parse(complexInput)
+      assert(res2.value == 10)
       assert(rest2.isEmpty)
     }
   }

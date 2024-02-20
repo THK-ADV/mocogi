@@ -6,15 +6,11 @@ import parser.Parser._
 import parser.ParserOps._
 import parsing.types.ModuleResponsibilities
 
-import javax.inject.{Inject, Singleton}
+object ModuleResponsibilitiesParser {
 
-@Singleton
-class ModuleResponsibilitiesParser @Inject() (identityParser: IdentityParser) {
-
-  def parser(implicit
-      identities: Seq[Identity]
-  ): Parser[ModuleResponsibilities] = {
-    val parser0 = identityParser.parser(identities)
+  private def inner[A](
+      identityParser: Parser[List[A]]
+  ): Parser[(List[A], List[A])] = {
     prefix("responsibilities:")
       .skip(zeroOrMoreSpaces)
       .skip(optional(newline))
@@ -23,13 +19,21 @@ class ModuleResponsibilitiesParser @Inject() (identityParser: IdentityParser) {
       .skip(zeroOrMoreSpaces)
       .skip(optional(newline))
       .skip(zeroOrMoreSpaces)
-      .take(parser0)
+      .take(identityParser)
       .skip(zeroOrMoreSpaces)
       .skip(prefix("lecturers:"))
       .skip(zeroOrMoreSpaces)
       .skip(optional(newline))
       .skip(zeroOrMoreSpaces)
-      .zip(parser0)
-      .map((ModuleResponsibilities.apply _).tupled)
+      .zip(identityParser)
   }
+
+  def parser(implicit
+      identities: Seq[Identity]
+  ): Parser[ModuleResponsibilities] =
+    inner(IdentityParser.parser(identities))
+      .map((ModuleResponsibilities.apply _).tupled)
+
+  def raw: Parser[(List[String], List[String])] =
+    inner(IdentityParser.raw)
 }

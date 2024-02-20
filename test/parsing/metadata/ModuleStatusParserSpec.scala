@@ -1,21 +1,19 @@
 package parsing.metadata
 
-import helper.{FakeApplication, FakeStatus}
+import helper.FakeStatus
 import models.core.ModuleStatus
 import org.scalatest.EitherValues
 import org.scalatest.wordspec.AnyWordSpec
-import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import parsing.ParserSpecHelper
 
 class ModuleStatusParserSpec
     extends AnyWordSpec
     with ParserSpecHelper
     with EitherValues
-    with GuiceOneAppPerSuite
-    with FakeApplication
     with FakeStatus {
 
-  val parser = app.injector.instanceOf(classOf[ModuleStatusParser]).parser
+  val parser = ModuleStatusParser.parser
+  val raw = ModuleStatusParser.raw
 
   "A Status Parser" should {
     "parse a valid status" in {
@@ -25,6 +23,16 @@ class ModuleStatusParserSpec
 
       val (res2, rest2) = parser.parse("status: status.inactive\n")
       assert(res2.value == ModuleStatus("inactive", "Inaktiv", "--"))
+      assert(rest2.isEmpty)
+    }
+
+    "parse a valid status raw" in {
+      val (res1, rest1) = raw.parse("status: status.active\n")
+      assert(res1.value == "active")
+      assert(rest1.isEmpty)
+
+      val (res2, rest2) = raw.parse("status: status.inactive\n")
+      assert(res2.value == "inactive")
       assert(rest2.isEmpty)
     }
 

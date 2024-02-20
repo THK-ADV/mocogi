@@ -5,17 +5,16 @@ import ops.EitherOps.EOps
 import parser.ParsingError
 import parsing.metadata.MetadataCompositeParser
 import parsing.types.{ModuleContent, ParsedMetadata}
+import play.api.Logging
 import service.core._
 
 import java.util.UUID
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
-// TODO add support for a raw parser which parses ids only and does not validate at all
 @Singleton
 final class MetadataParsingService @Inject() (
     private val metadataParser: MetadataCompositeParser,
-    private val contentParsingService: ContentParsingService,
     private val locationService: LocationService,
     private val languageService: LanguageService,
     private val statusService: StatusService,
@@ -29,22 +28,34 @@ final class MetadataParsingService @Inject() (
     private val competenceService: CompetenceService,
     private val specializationService: SpecializationService,
     private implicit val ctx: ExecutionContext
-) {
+) extends Logging {
 
-  private def parser() =
+  private def parser = {
+    val locations = locationService.all()
+    val languages = languageService.all()
+    val status = statusService.all()
+    val assessmentMethods = assessmentMethodService.all()
+    val moduleTypes = moduleTypeService.all()
+    val seasons = seasonService.all()
+    val persons = personService.all()
+    val focusAreas = focusAreaService.all().map(_.map(f => FocusAreaID(f.id)))
+    val globalCriteria = globalCriteriaService.all()
+    val pos = poService.all()
+    val competences = competenceService.all()
+    val specializations = specializationService.all()
     for {
-      locations <- locationService.all()
-      languages <- languageService.all()
-      status <- statusService.all()
-      assessmentMethods <- assessmentMethodService.all()
-      moduleTypes <- moduleTypeService.all()
-      seasons <- seasonService.all()
-      persons <- personService.all()
-      focusAreas <- focusAreaService.all()
-      globalCriteria <- globalCriteriaService.all()
-      pos <- poService.all()
-      competences <- competenceService.all()
-      specializations <- specializationService.all()
+      locations <- locations
+      languages <- languages
+      status <- status
+      assessmentMethods <- assessmentMethods
+      moduleTypes <- moduleTypes
+      seasons <- seasons
+      persons <- persons
+      focusAreas <- focusAreas
+      globalCriteria <- globalCriteria
+      pos <- pos
+      competences <- competences
+      specializations <- specializations
     } yield metadataParser
       .parser(
         locations,
@@ -54,15 +65,16 @@ final class MetadataParsingService @Inject() (
         moduleTypes,
         seasons,
         persons,
-        focusAreas.map(f => FocusAreaID(f.id)),
+        focusAreas,
         competences,
         globalCriteria,
         pos,
         specializations
       )
+  }
 
   def parseMany(prints: Seq[(Option[UUID], Print)]): ParsingResult =
-    parser().map { p =>
+    parser.map { p =>
       val (errs, parses) = prints.partitionMap { case (id, print) =>
         val parseRes = p.parse(print.value)
         val res = parseRes._1.bimap(
@@ -73,7 +85,7 @@ final class MetadataParsingService @Inject() (
         res match {
           case Left((id, err)) => Left(PipelineError.Parser(err, id))
           case Right((print, parsedMetadata)) =>
-            contentParsingService.parse(rest.value)._1 match {
+            ContentParsingService.parse(rest.value)._1 match {
               case Left(err) =>
                 Left(PipelineError.Parser(err, Some(parsedMetadata.id)))
               case Right((de, en)) => Right((print, parsedMetadata, de, en))
@@ -88,10 +100,10 @@ final class MetadataParsingService @Inject() (
   ): Future[
     Either[ParsingError, (ParsedMetadata, ModuleContent, ModuleContent)]
   ] =
-    parser().map { p =>
+    parser.map { p =>
       val (res, rest) = p.parse(print.value)
       res.flatMap { parsedMetadata =>
-        contentParsingService.parse(rest)._1.map { case (de, en) =>
+        ContentParsingService.parse(rest)._1.map { case (de, en) =>
           (parsedMetadata, de, en)
         }
       }

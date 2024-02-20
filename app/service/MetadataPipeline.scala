@@ -4,14 +4,9 @@ import models._
 import ops.EitherOps.{EOps, EThrowableOps}
 import ops.FutureOps.EitherOps
 import parsing.metadata.VersionScheme
-import parsing.types.{
-  Module,
-  ModuleContent,
-  ParsedMetadata,
-  ParsedModuleRelation
-}
+import parsing.types.{Module, ModuleContent, ParsedMetadata}
 import printing.yaml.ModuleYamlPrinter
-import validator.{Metadata, ModuleWorkload, ValidationError}
+import validator.{Metadata, ValidationError}
 
 import java.util.UUID
 import javax.inject.{Inject, Singleton}
@@ -24,109 +19,6 @@ final class MetadataPipeline @Inject() (
     private val moduleYamlPrinter: ModuleYamlPrinter,
     implicit val ctx: ExecutionContext
 ) {
-
-  // TODO implement raw parsing and use it where needed
-  def parseRaw(print: Print) = ???
-
-  def parse(print: Print): Future[ModuleProtocol] =
-    parser.parse(print).flatMap {
-      case Right((metadata, de, en)) =>
-        Future.successful(
-          ModuleProtocol(
-            Some(metadata.id),
-            MetadataProtocol(
-              metadata.title,
-              metadata.abbrev,
-              metadata.kind.id,
-              metadata.credits.fold(
-                identity,
-                _.foldLeft(0.0) { case (acc, e) => acc + e.ectsValue }
-              ),
-              metadata.language.id,
-              metadata.duration,
-              metadata.season.id,
-              ModuleWorkload(
-                metadata.workload.lecture,
-                metadata.workload.seminar,
-                metadata.workload.practical,
-                metadata.workload.exercise,
-                metadata.workload.projectSupervision,
-                metadata.workload.projectWork,
-                0,
-                0
-              ),
-              metadata.status.id,
-              metadata.location.id,
-              metadata.participants,
-              metadata.relation.map {
-                case ParsedModuleRelation.Parent(children) =>
-                  ModuleRelationProtocol.Parent(children)
-                case ParsedModuleRelation.Child(parent) =>
-                  ModuleRelationProtocol.Child(parent)
-              },
-              metadata.responsibilities.moduleManagement.map(_.id),
-              metadata.responsibilities.lecturers.map(_.id),
-              ModuleAssessmentMethodsProtocol(
-                metadata.assessmentMethods.mandatory.map(a =>
-                  ModuleAssessmentMethodEntryProtocol(
-                    a.method.id,
-                    a.percentage,
-                    a.precondition.map(_.id)
-                  )
-                ),
-                metadata.assessmentMethods.optional.map(a =>
-                  ModuleAssessmentMethodEntryProtocol(
-                    a.method.id,
-                    a.percentage,
-                    a.precondition.map(_.id)
-                  )
-                )
-              ),
-              ModulePrerequisitesProtocol(
-                metadata.prerequisites.recommended.map(e =>
-                  ModulePrerequisiteEntryProtocol(
-                    e.text,
-                    e.modules,
-                    e.studyPrograms.map(_.id)
-                  )
-                ),
-                metadata.prerequisites.required.map(e =>
-                  ModulePrerequisiteEntryProtocol(
-                    e.text,
-                    e.modules,
-                    e.studyPrograms.map(_.id)
-                  )
-                )
-              ),
-              ModulePOProtocol(
-                metadata.pos.mandatory.map(a =>
-                  ModulePOMandatoryProtocol(
-                    a.po.id,
-                    a.specialization.map(_.id),
-                    a.recommendedSemester
-                  )
-                ),
-                metadata.pos.optional.map(a =>
-                  ModulePOOptionalProtocol(
-                    a.po.id,
-                    a.specialization.map(_.id),
-                    a.instanceOf,
-                    a.partOfCatalog,
-                    a.recommendedSemester
-                  )
-                )
-              ),
-              metadata.competences.map(_.id),
-              metadata.globalCriteria.map(_.id),
-              metadata.taughtWith
-            ),
-            de.normalize(),
-            en.normalize()
-          )
-        )
-      case Left(value) => Future.failed(value)
-    }
-
   def parseValidate(print: Print): Future[Module] =
     for {
       (metadata, de, en) <- parser.parse(print).unwrap

@@ -17,14 +17,14 @@ final class ModuleParticipantsParserSpec
         """participants:
           |  min: 4
           |  max: 20""".stripMargin
-      val (res1, rest1) = participantsParser.parse(input1)
+      val (res1, rest1) = parser.parse(input1)
       assert(rest1.isEmpty)
       assert(res1.value == ModuleParticipants(4, 20))
     }
 
     "fail parsing participants if no value is provided" in {
       assertError(
-        participantsParser,
+        parser,
         """participants:
           |  min:
           |  max: 20""".stripMargin,
@@ -32,7 +32,7 @@ final class ModuleParticipantsParserSpec
         Some("max: 20")
       )
       assertError(
-        participantsParser,
+        parser,
         """participants:
           |  min: 0
           |  max: """.stripMargin,
@@ -43,21 +43,21 @@ final class ModuleParticipantsParserSpec
 
     "fail parsing participants if min / max keys are missing or in different order" in {
       assertError(
-        participantsParser,
+        parser,
         """participants:
           |  max: 20""".stripMargin,
         "min:",
         Some("max: 20")
       )
       assertError(
-        participantsParser,
+        parser,
         """participants:
           |  min: 20""".stripMargin,
         "max:",
         Some("")
       )
       assertError(
-        participantsParser,
+        parser,
         """participants:
           |  max: 30
           |  min: 20""".stripMargin,
@@ -68,7 +68,7 @@ final class ModuleParticipantsParserSpec
 
     "fail parsing participants if min is higher than max" in {
       assertError(
-        participantsParser,
+        parser,
         """participants:
           |  min: 30
           |  max: 20""".stripMargin,

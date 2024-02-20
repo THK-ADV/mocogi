@@ -4,43 +4,27 @@ import models.core._
 import parser.Parser
 import parser.Parser._
 import parser.ParserOps._
-import parsing.metadata.ModuleCompetencesParser.competencesParser
-import parsing.metadata.ModuleECTSParser.ectsParser
-import parsing.metadata.ModuleGlobalCriteriaParser.globalCriteriaParser
-import parsing.metadata.ModuleParticipantsParser.participantsParser
-import parsing.metadata.ModulePrerequisitesParser.{
-  recommendedPrerequisitesParser,
-  requiredPrerequisitesParser
-}
-import parsing.metadata.ModuleRelationParser.moduleRelationParser
-import parsing.metadata.ModuleTaughtWithParser.taughtWithParser
-import parsing.metadata.ModuleWorkloadParser.workloadParser
 import parsing.types._
-import parsing.{posIntForKey, singleLineStringForKey, uuidParser}
 
 import java.util.UUID
-import javax.inject.{Inject, Singleton}
 
-@Singleton
-final class THKV1Parser @Inject() (
-    responsibilitiesParser: ModuleResponsibilitiesParser,
-    seasonParser: ModuleSeasonParser,
-    statusParser: ModuleStatusParser,
-    moduleTypeParser: ModuleTypeParser,
-    locationParser: ModuleLocationParser,
-    languageParser: ModuleLanguageParser
-) extends MetadataParser {
+object THKV1Parser {
+  import parsing.{posIntForKey, singleLineStringForKey, uuidParser}
+
+  def idParser: Parser[UUID] =
+    singleLineStringForKey("id").flatMap(uuidParser)
+
+  def titleParser = singleLineStringForKey("title")
+
+  def abbreviationParser = singleLineStringForKey("abbreviation")
+
+  def durationParser = posIntForKey("duration")
+}
+
+final class THKV1Parser extends MetadataParser {
+  import THKV1Parser.{abbreviationParser, durationParser, idParser, titleParser}
+
   override val versionScheme = VersionScheme(1, "s")
-
-  val idParser: Parser[UUID] =
-    singleLineStringForKey("id")
-      .flatMap(uuidParser)
-
-  val titleParser = singleLineStringForKey("title")
-
-  val abbreviationParser = singleLineStringForKey("abbreviation")
-
-  val durationParser = posIntForKey("duration")
 
   def parser(implicit
       locations: Seq[ModuleLocation],
@@ -59,49 +43,31 @@ final class THKV1Parser @Inject() (
     idParser
       .zip(titleParser)
       .take(abbreviationParser)
-      .take(moduleTypeParser.parser)
-      .take(moduleRelationParser)
-      .take(ectsParser)
+      .take(ModuleTypeParser.parser)
+      .take(ModuleRelationParser.parser)
+      .take(ModuleECTSParser.parser)
       .skip(optional(newline))
-      .take(languageParser.parser)
+      .take(ModuleLanguageParser.parser)
       .take(durationParser)
       .skip(newline)
-      .take(seasonParser.parser)
-      .take(responsibilitiesParser.parser)
-      .take(
-        ModuleAssessmentMethodParser.mandatoryParser
-          .zip(
-            ModuleAssessmentMethodParser.electiveParser.option.map(
-              _.getOrElse(Nil)
-            )
-          )
-          .map((ModuleAssessmentMethods.apply _).tupled)
-      )
-      .take(workloadParser)
+      .take(ModuleSeasonParser.parser)
+      .take(ModuleResponsibilitiesParser.parser)
+      .take(ModuleAssessmentMethodParser.parser)
+      .take(ModuleWorkloadParser.parser)
       .skip(newline)
-      .take(
-        recommendedPrerequisitesParser.option
-          .zip(requiredPrerequisitesParser.option)
-          .skip(optional(newline))
-          .map(ParsedPrerequisites.tupled)
-      )
-      .take(statusParser.parser)
-      .take(locationParser.parser)
+      .take(ModulePrerequisitesParser.parser)
+      .take(ModuleStatusParser.parser)
+      .take(ModuleLocationParser.parser)
       .skip(optional(newline))
+      .take(ModulePOParser.parser)
       .take(
-        ModulePOParser.mandatoryParser.option
-          .map(_.getOrElse(Nil))
-          .zip(ModulePOParser.electiveParser.option.map(_.getOrElse(Nil)))
-          .map(ParsedPOs.tupled)
-      )
-      .take(
-        participantsParser.option
+        ModuleParticipantsParser.parser.option
           .skip(zeroOrMoreSpaces)
-          .zip(competencesParser.option)
+          .zip(ModuleCompetencesParser.parser.option)
           .skip(zeroOrMoreSpaces)
-          .take(globalCriteriaParser.option)
+          .take(ModuleGlobalCriteriaParser.parser.option)
           .skip(zeroOrMoreSpaces)
-          .take(taughtWithParser.option.map(_.getOrElse(Nil)))
+          .take(ModuleTaughtWithParser.parser.option.map(_.getOrElse(Nil)))
           .skip(zeroOrMoreSpaces)
       )
       .map {

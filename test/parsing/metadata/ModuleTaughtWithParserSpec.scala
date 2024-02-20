@@ -3,7 +3,7 @@ package parsing.metadata
 import org.scalatest.EitherValues
 import org.scalatest.wordspec.AnyWordSpec
 import parsing.ParserSpecHelper
-import parsing.metadata.ModuleTaughtWithParser.taughtWithParser
+import parsing.metadata.ModuleTaughtWithParser.parser
 
 import java.util.UUID
 
@@ -16,7 +16,7 @@ final class ModuleTaughtWithParserSpec
     "parse a single module which is taught with" in {
       val m1 = UUID.randomUUID
       val input = s"taught_with: module.$m1"
-      val (res, rest) = taughtWithParser.parse(input)
+      val (res, rest) = parser.parse(input)
       assert(rest.isEmpty)
       assert(res.value == List(m1))
     }
@@ -28,7 +28,7 @@ final class ModuleTaughtWithParserSpec
         s"""taught_with:
           |  - module.$m1
           |  - module.$m2""".stripMargin
-      val (res, rest) = taughtWithParser.parse(input)
+      val (res, rest) = parser.parse(input)
       assert(rest.isEmpty)
       assert(res.value == List(m1, m2))
     }

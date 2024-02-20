@@ -30,12 +30,12 @@ class THKV1ParserSpec
     with FakePOs
     with FakeSpecializations {
 
+  import THKV1Parser._
   val parser = app.injector.instanceOf(classOf[THKV1Parser])
 
-  val moduleCodeParser = parser.idParser
-  val moduleTitleParser = parser.titleParser
-  val moduleAbbrevParser = parser.abbreviationParser
-  val durationParser = parser.durationParser
+  val moduleCodeParser = idParser
+  val moduleTitleParser = titleParser
+  val moduleAbbrevParser = abbreviationParser
   val metadataParser = parser.parser
 
   "A Metadata Parser" when {

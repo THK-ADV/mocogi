@@ -3,6 +3,8 @@ package git.api
 import com.google.inject.Inject
 import git.{Branch, GitConfig, GitFileContent, GitFilePath}
 import models.ModuleProtocol
+import ops.EitherOps.EThrowableOps
+import parsing.RawModuleParser
 import printing.PrintingLanguage
 import printing.html.ModuleHTMLPrinter
 import printing.pandoc.{PrinterOutput, PrinterOutputType}
@@ -28,7 +30,11 @@ final class GitFileDownloadService @Inject() (
       content <- downloadFileContent(GitFilePath(id), config.draftBranch)
       res <- content match {
         case Some(content) =>
-          pipeline.parse(Print(content.value)).map(Some.apply)
+          RawModuleParser.parser
+            .parse(content.value)
+            ._1
+            .map(Some.apply)
+            .toFuture
         case None =>
           Future.successful(None)
       }

@@ -8,7 +8,7 @@ import parsing.types.ParsedWorkload
 
 object ModuleWorkloadParser {
 
-  def workloadParser: Parser[ParsedWorkload] =
+  def parser: Parser[ParsedWorkload] =
     prefix("workload:")
       .skip(zeroOrMoreSpaces)
       .take(posIntForKey("lecture"))

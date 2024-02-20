@@ -41,7 +41,32 @@ object ModuleECTSParser {
       .take(focusAreaParser.many())
   }
 
-  def ectsParser(implicit
+  def ectsContributionsToFocusAreasParserRaw = {
+    val focusAreaParser: Parser[Double] =
+      skipFirst(prefixTo(":"))
+        .skip(zeroOrMoreSpaces)
+        .skip(prefix("num:"))
+        .skip(zeroOrMoreSpaces)
+        .take(double)
+        .skip(zeroOrMoreSpaces)
+        .skip(stringForKey("de_desc"))
+        .skip(zeroOrMoreSpaces)
+        .skip(stringForKey("en_desc").option.map(_.getOrElse("")))
+
+    skipFirst(prefix("ects:"))
+      .skip(prefixTo("contributions_to_focus_areas:"))
+      .skip(zeroOrMoreSpaces)
+      .skip(removeIndentation(3))
+      .take(focusAreaParser.many().map(_.sum))
+  }
+
+  def raw: Parser[Double] =
+    oneOf(
+      ectsValueParser,
+      ectsContributionsToFocusAreasParserRaw
+    )
+
+  def parser(implicit
       focusAreas: Seq[FocusAreaID]
   ): Parser[Either[Double, List[ModuleECTSFocusAreaContribution]]] = {
     oneOf(

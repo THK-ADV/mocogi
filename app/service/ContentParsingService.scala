@@ -2,19 +2,18 @@ package service
 
 import parser.Parser.{skipFirst, zeroOrMoreSpaces}
 import parser.ParserOps.P0
-import parser.ParsingError
+import parser.{Parser, ParsingError}
 import parsing.content.ModuleContentParser.contentParser
 import parsing.types.ModuleContent
 
-import javax.inject.Singleton
-
-@Singleton
-final class ContentParsingService {
-  private val parser =
+object ContentParsingService {
+  def parser: Parser[(ModuleContent, ModuleContent)] =
     skipFirst(zeroOrMoreSpaces)
       .take(contentParser)
 
-  def parse(input: String): (Either[ParsingError, (ModuleContent, ModuleContent)], Rest) = {
+  def parse(
+      input: String
+  ): (Either[ParsingError, (ModuleContent, ModuleContent)], Rest) = {
     val (res, rest) = parser.parse(input)
     (res, Rest(rest))
   }
