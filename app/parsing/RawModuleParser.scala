@@ -1,6 +1,6 @@
 package parsing
 
-import models.{MetadataProtocol, ModuleProtocol, ModuleRelationProtocol}
+import models.{MetadataProtocol, ModuleProtocol, ModuleRelationProtocol, ModuleWorkload}
 import parser.Parser
 import parser.Parser.{prefix, zeroOrMoreSpaces}
 import parser.ParserOps.{
@@ -31,7 +31,6 @@ import parsing.metadata.THKV1Parser.{
 import parsing.metadata._
 import parsing.types.ParsedModuleRelation
 import service.ContentParsingService
-import validator.ModuleWorkload
 
 object RawModuleParser {
   def parser: Parser[ModuleProtocol] =
@@ -101,16 +100,7 @@ object RawModuleParser {
               lang,
               dur,
               season,
-              ModuleWorkload(
-                workload.lecture,
-                workload.seminar,
-                workload.practical,
-                workload.exercise,
-                workload.projectSupervision,
-                workload.projectWork,
-                0,
-                0
-              ),
+              ModuleWorkload.fromParsed(workload),
               status,
               location,
               parts,

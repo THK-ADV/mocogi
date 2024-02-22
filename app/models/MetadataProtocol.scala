@@ -3,7 +3,6 @@ package models
 import controllers.JsonNullWritable
 import parsing.types.ModuleParticipants
 import play.api.libs.json.{Format, Json}
-import validator.ModuleWorkload
 
 import java.util.UUID
 

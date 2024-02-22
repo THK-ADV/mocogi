@@ -1,6 +1,6 @@
 package validator
 
-import models.ModuleCore
+import models.{Metadata, ModuleCore, ModulePOOptional, ModulePOs, ModulePrerequisiteEntry, ModulePrerequisites, ModuleRelation, ModuleWorkload}
 import parsing.types._
 
 import java.util.UUID
@@ -155,7 +155,7 @@ object MetadataValidator {
   def posValidator(lookup: Lookup): Validator[ParsedPOs, ModulePOs] =
     poOptionalValidator(lookup)
       .pullback[ParsedPOs](_.optional)
-      .map((pos, poOpt) => ModulePOs(pos.mandatory, poOpt))
+      .map((pos, poOpt) => models.ModulePOs(pos.mandatory, poOpt))
 
   def moduleRelationValidator(
       lookup: Lookup

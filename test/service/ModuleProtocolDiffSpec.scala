@@ -3,7 +3,6 @@ package service
 import models._
 import org.scalatest.wordspec.AnyWordSpec
 import parsing.types.{ModuleContent, ModuleParticipants}
-import validator.ModuleWorkload
 
 import java.util.UUID
 

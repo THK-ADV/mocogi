@@ -6,7 +6,7 @@ import ops.FutureOps.EitherOps
 import parsing.metadata.VersionScheme
 import parsing.types.{Module, ModuleContent, ParsedMetadata}
 import printing.yaml.ModuleYamlPrinter
-import validator.{Metadata, ValidationError}
+import validator.ValidationError
 
 import java.util.UUID
 import javax.inject.{Inject, Singleton}

@@ -1,6 +1,6 @@
 package validator
 
-import models.ModuleCore
+import models.{Metadata, ModuleCore, ModulePOOptional, ModulePOs, ModulePrerequisiteEntry, ModulePrerequisites, ModuleRelation, ModuleWorkload}
 import models.core._
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatest.{EitherValues, OptionValues}

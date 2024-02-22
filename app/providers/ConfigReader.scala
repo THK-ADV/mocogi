@@ -22,6 +22,11 @@ final class ConfigReader @Inject() (config: Configuration) {
 
   res.foreach(println)
 
+  println(gitToken)
+  println(accessToken)
+  println(baseUrl)
+  println(projectId)
+
   def htmlCmd: String = config.nonEmptyString("pandoc.htmlCmd")
 
   def pdfCmd: String = config.nonEmptyString("pandoc.pdfCmd")
@@ -68,9 +73,11 @@ final class ConfigReader @Inject() (config: Configuration) {
 
   def projectId: Int = config.int("git.projectId")
 
-  def kafkaServerUrl: String = config.nonEmptyString("kafka.serverUrl")
+  def kafkaServerUrl: Option[String] =
+    config.getOptional[String]("kafka.serverUrl")
 
-  def kafkaApplicationId: String = config.nonEmptyString("kafka.applicationId")
+  def kafkaApplicationId: Option[String] =
+    config.getOptional[String]("kafka.applicationId")
 
   def moduleKeysToReviewFromSgl: Seq[String] =
     config.list("moduleKeysToReview.sgl")

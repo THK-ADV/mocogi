@@ -1,6 +1,5 @@
-package validator
+package models
 
-import models.ModuleCore
 import models.core._
 import parsing.types._
 import play.api.libs.json.{Json, Writes}

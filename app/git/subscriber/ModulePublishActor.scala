@@ -2,9 +2,9 @@ package git.subscriber
 
 import akka.actor.{Actor, Props}
 import git.subscriber.ModuleSubscribers.CreatedOrUpdated
+import models.Metadata
 import play.api.Logging
 import publisher.{KafkaPublisher, Record}
-import validator.Metadata
 
 import scala.annotation.unused
 import scala.util.{Failure, Success}

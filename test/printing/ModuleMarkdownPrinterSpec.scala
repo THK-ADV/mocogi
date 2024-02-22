@@ -1,13 +1,12 @@
 package printing
 
-import models.ModuleCore
 import models.core._
+import models._
 import org.scalatest.EitherValues
 import org.scalatest.wordspec.AnyWordSpec
 import parsing.types._
 import parsing.withFile0
 import printing.markdown.ModuleMarkdownPrinter
-import validator._
 
 import java.time.{LocalDate, LocalDateTime}
 import java.util.UUID

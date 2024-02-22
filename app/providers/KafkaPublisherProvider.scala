@@ -1,11 +1,11 @@
 package providers
 
 import config.KafkaConfig
+import models.Metadata
 import org.apache.kafka.common.serialization.Serializer
 import play.api.inject.ApplicationLifecycle
 import play.api.libs.json.Json
 import publisher.KafkaPublisher
-import validator.Metadata
 
 import javax.inject.{Inject, Provider, Singleton}
 import scala.util.control.NonFatal
@@ -25,11 +25,14 @@ private class MetadataSerializer extends Serializer[Metadata] {
 final class KafkaPublisherProvider @Inject() (
     config: ConfigReader,
     applicationLifecycle: ApplicationLifecycle
-) extends Provider[KafkaPublisher[Metadata]] {
+) extends Provider[Option[KafkaPublisher[Metadata]]] {
 
-  override def get(): KafkaPublisher[Metadata] =
-    new KafkaPublisher(
-      KafkaConfig(config.kafkaServerUrl, config.kafkaApplicationId),
+  override def get(): Option[KafkaPublisher[Metadata]] =
+    for {
+      kafkaServerUrl <- config.kafkaServerUrl
+      kafkaApplicationId <- config.kafkaApplicationId
+    } yield new KafkaPublisher(
+      KafkaConfig(kafkaServerUrl, kafkaApplicationId),
       "metadata",
       applicationLifecycle.addStopHook,
       classOf[MetadataSerializer]

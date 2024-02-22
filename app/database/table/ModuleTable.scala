@@ -1,8 +1,8 @@
 package database.table
 
+import models.ModuleWorkload
 import parsing.types.ModuleContent
 import slick.jdbc.PostgresProfile.api._
-import validator.ModuleWorkload
 
 import java.time.LocalDateTime
 import java.util.UUID

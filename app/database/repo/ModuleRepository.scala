@@ -6,7 +6,6 @@ import models._
 import parsing.types.{Module, _}
 import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfigProvider}
 import slick.jdbc.JdbcProfile
-import validator._
 
 import java.time.LocalDateTime
 import java.util.UUID

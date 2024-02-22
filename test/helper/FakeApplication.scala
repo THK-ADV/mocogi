@@ -14,9 +14,9 @@ trait FakeApplication {
 
   protected def dbEnabled: Boolean = false
 
-  val fakeConfig = {
-    if (dbEnabled) {
-      Configuration(
+  def fakeConfig = {
+    val config = if (dbEnabled) {
+      Seq(
         "slick.dbs.default.db.url" -> "jdbc:postgresql://localhost:5432/postgres",
         "slick.dbs.default.db.user" -> "postgres",
         "slick.dbs.default.db.databaseName" -> "postgres",
@@ -25,12 +25,13 @@ trait FakeApplication {
         "play.evolutions.db.default.enabled" -> "false"
       )
     } else {
-      Configuration(
+      Seq(
         "slick.dbs.default.db.connectionPool" -> "disabled",
         "play.evolutions.db.default.enabled" -> "false",
         "play.evolutions.db.default.autoApply" -> "false"
       )
     }
+    Configuration(config: _*)
   }
 
   implicit lazy val materializer: Materializer = app.materializer

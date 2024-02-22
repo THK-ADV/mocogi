@@ -1,6 +1,6 @@
 package printing.markdown
 
-import models.StudyProgramView
+import models.{Metadata, ModulePOs, ModulePrerequisiteEntry, ModuleRelation, StudyProgramView}
 import models.core.Identity
 import parsing.types._
 import printer.Printer
@@ -13,7 +13,6 @@ import printing.{
   fmtIdentity,
   localDatePattern
 }
-import validator.{Metadata, ModulePOs, ModulePrerequisiteEntry, ModuleRelation}
 
 import java.time.LocalDateTime
 import javax.inject.Singleton

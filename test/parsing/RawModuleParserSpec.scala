@@ -4,7 +4,6 @@ import models._
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatest.{EitherValues, OptionValues}
 import parsing.types.ModuleParticipants
-import validator.ModuleWorkload
 
 import java.util.UUID
 
@@ -47,7 +46,7 @@ final class RawModuleParserSpec
         )
       )
       assert(metadata.assessmentMethods.optional.isEmpty)
-      assert(metadata.workload == ModuleWorkload(36, 0, 18, 18, 0, 0, 0, 0))
+      assert(metadata.workload == ModuleWorkload(36, 0, 18, 18, 0, 0))
       assert(metadata.prerequisites.required.isEmpty)
       assert(
         metadata.prerequisites.recommended.contains(
@@ -142,7 +141,7 @@ final class RawModuleParserSpec
           ModuleAssessmentMethodEntryProtocol("written-exam", None, Nil)
         )
       )
-      assert(metadata.workload == ModuleWorkload(30, 0, 10, 10, 0, 0, 0, 0))
+      assert(metadata.workload == ModuleWorkload(30, 0, 10, 10, 0, 0))
       assert(metadata.prerequisites.required.isEmpty)
       assert(metadata.prerequisites.recommended.isEmpty)
       assert(metadata.status == "active")
@@ -210,7 +209,7 @@ final class RawModuleParserSpec
       )
 
       assert(metadata.assessmentMethods.optional.isEmpty)
-      assert(metadata.workload == ModuleWorkload(36, 0, 18, 18, 0, 0, 0, 0))
+      assert(metadata.workload == ModuleWorkload(36, 0, 18, 18, 0, 0))
       assert(metadata.prerequisites.required.isEmpty)
       assert(
         metadata.prerequisites.recommended.contains(

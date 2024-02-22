@@ -1,6 +1,5 @@
-package validator
+package models
 
-import models.ModuleCore
 import models.core.PO
 import play.api.libs.json.{Json, Writes}
 

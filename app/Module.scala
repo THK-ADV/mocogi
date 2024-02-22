@@ -5,7 +5,7 @@ import com.google.inject.{AbstractModule, TypeLiteral}
 import git.GitConfig
 import git.publisher.{CoreDataPublisher, ModulePublisher}
 import git.subscriber.ModuleSubscribers
-import models.ModuleKeysToReview
+import models.{Metadata, ModuleKeysToReview}
 import ops.ConfigurationOps.Ops
 import parsing.metadata.MetadataParser
 import play.api.{Configuration, Environment}
@@ -15,7 +15,6 @@ import printing.yaml.MetadataYamlPrinter
 import providers._
 import publisher.KafkaPublisher
 import service.core._
-import validator.Metadata
 import webhook.{GitMergeEventHandler, GitPushEventHandler}
 
 import scala.annotation.unused
