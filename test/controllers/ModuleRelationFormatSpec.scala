@@ -1,9 +1,8 @@
 package controllers
 
-import models.ModuleCore
+import models.{ModuleCore, ModuleRelation}
 import org.scalatest.wordspec.AnyWordSpec
 import play.api.libs.json.Json
-import validator.ModuleRelation
 
 import java.util.UUID
 

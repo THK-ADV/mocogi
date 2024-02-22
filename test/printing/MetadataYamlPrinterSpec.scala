@@ -5,7 +5,6 @@ import org.scalatest.wordspec.AnyWordSpec
 import parsing.metadata.VersionScheme
 import parsing.types.ModuleParticipants
 import printing.yaml.MetadataYamlPrinter
-import validator.ModuleWorkload
 
 import java.util.UUID
 

@@ -11,13 +11,10 @@ object ConfigurationOps {
     def nonEmptyString(key: String): String =
       self.getOptional[String](key) match {
         case Some(value) if value.nonEmpty => value
-        case _ => throw new Throwable(s"$key must be set")
-      }
-
-    def emptyString(key: String): Option[String] =
-      self.getOptional[String](key) match {
-        case Some(value) if value.nonEmpty => Some(value)
-        case _                             => None
+        case other =>
+          throw new Throwable(
+            s"expected a non empty string for key $key, but found $other"
+          )
       }
 
     def int(key: String): Int =

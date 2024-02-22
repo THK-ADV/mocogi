@@ -1,8 +1,8 @@
 package service
 
-import models.ModuleCore
+import models.{Metadata, ModuleCore}
 import ops.EitherOps.EOps
-import parsing.types.{ModuleContent, Module, ParsedMetadata}
+import parsing.types.{Module, ModuleContent, ParsedMetadata}
 import validator._
 
 object MetadataValidatingService {

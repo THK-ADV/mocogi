@@ -1,8 +1,7 @@
-package validator
+package models
 
 sealed trait ModuleRelation
 
-import models.ModuleCore
 import play.api.libs.json.{Json, Writes}
 
 object ModuleRelation {

@@ -34,15 +34,6 @@ services:
     volumes:
       - backend_logs_vol:/mocogi/logs
       - app_vol:/mocogi/output
-    environment:
-      GITHUB_TOKEN: ${GITHUB_TOKEN}
-      GIT_ACCESS_TOKEN: ${GIT_ACCESS_TOKEN}
-      GIT_WEBHOOK_TOKEN: ${GIT_WEBHOOK_TOKEN}
-      GIT_HOST: ${GIT_HOST}
-      GIT_API_ENDPOINT: ${GIT_API_ENDPOINT}
-      GIT_PROJECT_ID: ${GIT_PROJECT_ID}
-      KAFKA_HOST: ${KAFKA_HOST}
-      KAFKA_APP_ID: ${KAFKA_APP_ID}
     build:
       context: .
       dockerfile: Dockerfile

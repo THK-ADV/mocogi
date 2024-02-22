@@ -1,11 +1,11 @@
 package providers
 
 import config.KafkaConfig
+import models.Metadata
 import org.apache.kafka.common.serialization.Serializer
 import play.api.inject.ApplicationLifecycle
 import play.api.libs.json.Json
 import publisher.KafkaPublisher
-import validator.Metadata
 
 import javax.inject.{Inject, Provider, Singleton}
 import scala.util.control.NonFatal

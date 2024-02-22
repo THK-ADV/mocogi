@@ -1,10 +1,10 @@
 package parsing.types
 
+import models.Metadata
 import monocle.Monocle.toAppliedFocusOps
 import monocle.Traversal
 import monocle.macros.GenLens
 import play.api.libs.json.{Json, Writes}
-import validator.Metadata
 
 case class Module(
     metadata: Metadata,

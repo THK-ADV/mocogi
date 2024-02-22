@@ -5,7 +5,6 @@ import parsing.metadata.VersionScheme
 import parsing.types.ModuleParticipants
 import printer.Printer
 import printer.Printer.{always, newline, prefix, whitespace}
-import validator.ModuleWorkload
 
 import java.util.UUID
 import javax.inject.Singleton
