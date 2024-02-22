@@ -46,6 +46,7 @@ build
 
 .env
 conf/application-prod.conf
+conf/application.conf
 conf/keycloak.json
 tmp/
 output/
