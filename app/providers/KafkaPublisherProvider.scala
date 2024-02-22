@@ -25,14 +25,11 @@ private class MetadataSerializer extends Serializer[Metadata] {
 final class KafkaPublisherProvider @Inject() (
     config: ConfigReader,
     applicationLifecycle: ApplicationLifecycle
-) extends Provider[Option[KafkaPublisher[Metadata]]] {
+) extends Provider[KafkaPublisher[Metadata]] {
 
-  override def get(): Option[KafkaPublisher[Metadata]] =
-    for {
-      kafkaServerUrl <- config.kafkaServerUrl
-      kafkaApplicationId <- config.kafkaApplicationId
-    } yield new KafkaPublisher(
-      KafkaConfig(kafkaServerUrl, kafkaApplicationId),
+  override def get(): KafkaPublisher[Metadata] =
+    new KafkaPublisher(
+      KafkaConfig(config.kafkaServerUrl, config.kafkaApplicationId),
       "metadata",
       applicationLifecycle.addStopHook,
       classOf[MetadataSerializer]
