@@ -56,6 +56,7 @@ final class THKV1Parser extends MetadataParser {
       .take(ModuleWorkloadParser.parser)
       .skip(newline)
       .take(ModulePrerequisitesParser.parser)
+      .skip(zeroOrMoreSpaces)
       .take(ModuleStatusParser.parser)
       .take(ModuleLocationParser.parser)
       .skip(optional(newline))
