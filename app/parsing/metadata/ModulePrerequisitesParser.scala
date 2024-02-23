@@ -55,7 +55,6 @@ object ModulePrerequisitesParser {
         .many()
     prefix(s"$studyProgramsKey:")
       .skip(zeroOrMoreSpaces)
-      .skip(optional(newline))
       .take(singleParser.map(a => List(a)) or dashes)
       .option
       .map(_.getOrElse(Nil))
@@ -93,8 +92,9 @@ object ModulePrerequisitesParser {
 
   def parser(implicit xs: Seq[PO]) =
     recommendedPrerequisitesParser.option
+      .skip(zeroOrMoreSpaces)
       .zip(requiredPrerequisitesParser.option)
-      .skip(optional(newline))
+      .skip(zeroOrMoreSpaces)
       .map(ParsedPrerequisites.tupled)
 
   def recommendedPrerequisitesParserRaw

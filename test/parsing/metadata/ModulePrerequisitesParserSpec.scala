@@ -141,5 +141,21 @@ class ModulePrerequisitesParserSpec
       )
       assert(rest.isEmpty)
     }
+
+    "parse without dashes" in {
+      val input = """recommended_prerequisites:
+                    |  text: dadasssdasd
+                    |  modules: module.5941afae-a356-4dce-9e9b-1b70371c8202
+                    |required_prerequisites:
+                    |  text: test
+                    |  modules: module.438d1da2-cf41-4978-a9d3-e53f74f1e2ad
+                    |  study_programs:
+                    |    - study_program.wi1
+                    |    - study_program.inf1
+                    |status: status.inactive""".stripMargin
+      val (res, rest) = ModulePrerequisitesParser.parser.parse(input)
+      assert(res.isRight)
+      assert(rest == "status: status.inactive")
+    }
   }
 }
