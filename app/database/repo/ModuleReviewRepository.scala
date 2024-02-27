@@ -1,9 +1,8 @@
 package database.repo
 
 import database.table.ModuleReviewTable
-import database.table.core.IdentityTable
-import database.view.StudyProgramViewRepository
-import models.core.Identity
+import database.table.core.{IdentityTable, StudyProgramTable}
+import models.core.{IDLabel, Identity}
 import models.{ModuleReview, ModuleReviewStatus}
 import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfigProvider}
 import slick.jdbc.JdbcProfile
@@ -16,7 +15,6 @@ import scala.concurrent.{ExecutionContext, Future}
 @Singleton
 final class ModuleReviewRepository @Inject() (
     val dbConfigProvider: DatabaseConfigProvider,
-    val studyProgramViewRepo: StudyProgramViewRepository,
     implicit val ctx: ExecutionContext
 ) extends Repository[
       ModuleReview.DB,
@@ -29,8 +27,6 @@ final class ModuleReviewRepository @Inject() (
   import profile.api._
 
   protected val tableQuery = TableQuery[ModuleReviewTable]
-
-  private val studyProgramQuery = studyProgramViewRepo.tableQuery
 
   def delete(moduleId: UUID): Future[Int] =
     db.run(tableQuery.filter(_.moduleDraft === moduleId).delete)
@@ -58,14 +54,14 @@ final class ModuleReviewRepository @Inject() (
     db.run(
       tableQuery
         .filter(_.moduleDraft === moduleId)
-        .join(studyProgramQuery)
-        .on(_.studyProgram === _.studyProgramId)
+        .join(TableQuery[StudyProgramTable])
+        .on(_.studyProgram === _.id)
         .joinLeft(TableQuery[IdentityTable])
         .on(_._1.respondedBy === _.id)
         .result
         .map(_.map { case ((r, sp), p) =>
           r.copy(
-            studyProgram = sp,
+            studyProgram = IDLabel(sp.id, sp.deLabel, sp.enLabel),
             respondedBy = p.collect {
               case p if p.kind == Identity.PersonKind =>
                 Identity.Person(

@@ -154,7 +154,6 @@ final class ModuleDraftService @Inject() (
               person,
               commitMessage(modifiedKeys -- draft.modifiedKeys),
               draft.module,
-              draft.source,
               print
             )
             _ <- moduleDraftRepository.updateDraft(
@@ -203,7 +202,6 @@ final class ModuleDraftService @Inject() (
             person,
             commitMsg,
             moduleId,
-            status,
             print
           )
           moduleDraft = ModuleDraft(

@@ -1,8 +1,8 @@
 package database.table
 
 import auth.CampusId
-import models.ModuleUpdatePermissionType.{Granted, Inherited}
 import models.ModuleUpdatePermissionType
+import models.ModuleUpdatePermissionType.{Granted, Inherited}
 import slick.jdbc.PostgresProfile.api._
 
 import java.util.UUID
@@ -28,9 +28,6 @@ final class ModuleUpdatePermissionTable(tag: Tag)
     val granted: ModuleUpdatePermissionType = Granted
     kind === granted
   }
-
-  def moduleFk =
-    foreignKey("module", module, TableQuery[ModuleTable])(_.id)
 
   def * = (module, campusId, kind)
 }

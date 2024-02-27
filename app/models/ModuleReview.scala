@@ -1,7 +1,7 @@
 package models
 
 import controllers.JsonNullWritable
-import models.core.Identity
+import models.core.{IDLabel, Identity}
 import play.api.libs.json.{Json, Writes}
 
 import java.time.LocalDateTime
@@ -20,7 +20,7 @@ case class ModuleReview[StudyProgram, Person](
 
 object ModuleReview extends JsonNullWritable {
   type DB = ModuleReview[String, String]
-  type Atomic = ModuleReview[StudyProgramView, Identity.Person]
+  type Atomic = ModuleReview[IDLabel, Identity.Person]
 
   implicit def writesDb: Writes[DB] = Json.writes
 
