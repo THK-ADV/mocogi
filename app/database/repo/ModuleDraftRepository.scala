@@ -38,14 +38,8 @@ final class ModuleDraftRepository @Inject() (
   ) =
     db.run(query.result)
 
-  def allByAuthor(personId: String): Future[Seq[ModuleDraft]] =
-    db.run(tableQuery.filter(_.author === personId).result)
-
   def delete(moduleId: UUID): Future[Int] =
     db.run(tableQuery.filter(_.module === moduleId).delete)
-
-  def deleteDrafts(moduleIds: Seq[UUID]) =
-    db.run(tableQuery.filter(_.module.inSet(moduleIds)).delete)
 
   def hasModuleDraft(moduleId: UUID) =
     db.run(tableQuery.filter(_.module === moduleId).exists.result)

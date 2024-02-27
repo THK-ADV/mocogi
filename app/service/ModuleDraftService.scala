@@ -36,9 +36,6 @@ final class ModuleDraftService @Inject() (
   def hasModuleDraft(moduleId: UUID) =
     moduleDraftRepository.hasModuleDraft(moduleId)
 
-  def allByPerson(personId: String): Future[Seq[ModuleDraft]] =
-    moduleDraftRepository.allByAuthor(personId)
-
   def isAuthorOf(moduleId: UUID, personId: String) =
     moduleDraftRepository.isAuthorOf(moduleId, personId)
 

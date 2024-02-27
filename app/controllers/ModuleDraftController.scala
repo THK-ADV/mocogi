@@ -9,7 +9,7 @@ import controllers.actions.{
   VersionSchemeAction
 }
 import database.repo.core.IdentityRepository
-import models.{ModuleCore, ModuleDraft, ModuleDraftSource, ModuleProtocol}
+import models.{ModuleDraft, ModuleProtocol}
 import play.api.Logging
 import play.api.libs.json.{Json, Writes}
 import play.api.mvc.{AbstractController, ControllerComponents}
@@ -24,7 +24,7 @@ import service.{
 
 import java.util.UUID
 import javax.inject.{Inject, Singleton}
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 final class ModuleDraftController @Inject() (
@@ -47,34 +47,17 @@ final class ModuleDraftController @Inject() (
 
   def moduleDrafts() =
     auth andThen personAction async { r =>
-      def toJson(m: ModuleCore, d: Option[ModuleDraft], isPrivileged: Boolean) =
-        Json.obj(
-          "module" -> m,
-          "moduleDraft" -> d,
-          "moduleDraftState" -> d.state(),
-          "privilegedForModule" -> isPrivileged
-        )
-
-      for { // TODO care: business logic in controller
+      for {
         modules <- moduleUpdatePermissionService
           .allForCampusId(r.request.campusId)
-        drafts <- moduleDraftService.allByPerson(r.person.id)
-      } yield {
-        val (added, modified) =
-          drafts.partition(_.source == ModuleDraftSource.Added)
-        val liveModules = modules.map { case (kind, module) =>
-          val draft = modified.find(_.module == module.id)
-          toJson(module, draft, isPrivileged = kind.isInherited)
-        }
-        val createdModules = added.map { draft =>
-          toJson(
-            ModuleCore(draft.module, draft.moduleTitle, draft.moduleAbbrev),
-            Some(draft),
-            draft.author == r.person.id
-          )
-        }
-        Ok(Json.toJson(liveModules ++ createdModules))
-      }
+      } yield Ok(Json.toJson(modules.map { case (module, kind, draft) =>
+        Json.obj(
+          "module" -> module,
+          "moduleDraft" -> draft,
+          "moduleDraftState" -> draft.state(),
+          "privilegedForModule" -> kind.isInherited
+        )
+      }))
     }
 
   def keys(moduleId: UUID) =
@@ -105,9 +88,14 @@ final class ModuleDraftController @Inject() (
       new VersionSchemeAction(VersionSchemeHeader) async { r =>
         moduleDraftService
           .createNew(r.body, r.request.person, r.versionScheme)
-          .map {
-            case Left(err)    => BadRequest(Json.toJson(err))
-            case Right(draft) => Ok(Json.toJson(draft))
+          .flatMap {
+            case Left(err) => Future.successful(BadRequest(Json.toJson(err)))
+            case Right(draft) =>
+              moduleUpdatePermissionService
+                .createOrUpdateInherited(
+                  Seq((draft.module, List(r.request.person)))
+                )
+                .map(_ => Ok(Json.toJson(draft)))
           }
       }
 
