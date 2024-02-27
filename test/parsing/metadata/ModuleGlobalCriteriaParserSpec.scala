@@ -6,6 +6,7 @@ import org.scalatest.EitherValues
 import org.scalatest.wordspec.AnyWordSpec
 import parsing.ParserSpecHelper
 import parsing.metadata.ModuleGlobalCriteriaParser.parser
+import parsing.metadata.ModuleGlobalCriteriaParser.raw
 
 final class ModuleGlobalCriteriaParserSpec
     extends AnyWordSpec
@@ -36,6 +37,32 @@ final class ModuleGlobalCriteriaParserSpec
             "Digitization",
             "..."
           )
+        )
+      )
+    }
+
+    "parse multiple global criteria raw" in {
+      val input =
+        """global_criteria:
+          |  - global_criteria.internationalization
+          |  - global_criteria.digitization""".stripMargin
+      val (res, rest) = raw.parse(input)
+      assert(rest.isEmpty)
+      assert(
+        res.value == List(
+          "internationalization",
+          "digitization"
+        )
+      )
+    }
+
+    "parse global criteria raw" in {
+      val input = "global_criteria: global_criteria.internationalization"
+      val (res, rest) = raw.parse(input)
+      assert(rest.isEmpty)
+      assert(
+        res.value == List(
+          "internationalization"
         )
       )
     }

@@ -30,6 +30,7 @@ final class GitFileDownloadService @Inject() (
       content <- downloadFileContent(GitFilePath(id), config.draftBranch)
       res <- content match {
         case Some(content) =>
+          println(content)
           RawModuleParser.parser
             .parse(content.value)
             ._1

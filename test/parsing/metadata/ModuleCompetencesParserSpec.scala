@@ -40,6 +40,13 @@ final class ModuleCompetencesParserSpec
       )
     }
 
+    "parse a competence raw" in {
+      val input = "competences: competence.analyze-domains\nrest"
+      val (res, rest) = raw.parse(input)
+      assert(rest == "rest")
+      assert(res.value == List("analyze-domains"))
+    }
+
     "parse multiple competences raw" in {
       val input =
         """competences:
