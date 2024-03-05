@@ -1,9 +1,14 @@
 package database.repo
 
 import auth.CampusId
-import database.table.{ModuleTable, ModuleUpdatePermissionTable}
+import database.table.{
+  ModuleDraftTable,
+  ModuleTable,
+  ModuleUpdatePermissionTable
+}
 import models.{
   ModuleCore,
+  ModuleDraft,
   ModuleUpdatePermission,
   ModuleUpdatePermissionType
 }
@@ -110,11 +115,27 @@ final class ModuleUpdatePermissionRepository @Inject() (
 
   def allForCampusId(
       campusId: CampusId
-  ): Future[Seq[(ModuleUpdatePermissionType, ModuleCore)]] = {
-    val query = for {
-      q <- tableQuery if q.campusId === campusId
-      m <- q.moduleFk
-    } yield (q.kind, (m.id, m.title, m.abbrev))
-    db.run(query.result.map(_.map(a => (a._1, (ModuleCore.apply _).tupled(a._2)))))
-  }
+  ): Future[
+    Seq[(ModuleCore, ModuleUpdatePermissionType, Option[ModuleDraft])]
+  ] =
+    db.run(
+      tableQuery
+        .filter(_.campusId === campusId)
+        .joinLeft(TableQuery[ModuleTable].map(a => (a.id, a.title, a.abbrev)))
+        .on(_.module === _._1)
+        .joinLeft(TableQuery[ModuleDraftTable])
+        .on(_._1.module === _.module)
+        .filter(a => a._1._2.isDefined || a._2.isDefined)
+        .result
+        .map(_.map { case (((_, _, kind), core), draft) =>
+          val moduleCore = core
+            .map((ModuleCore.apply _).tupled)
+            .orElse(
+              draft
+                .map(d => ModuleCore(d.module, d.moduleTitle, d.moduleAbbrev))
+            )
+            .get
+          (moduleCore, kind, draft)
+        })
+    )
 }

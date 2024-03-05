@@ -36,9 +36,6 @@ final class ModuleDraftService @Inject() (
   def hasModuleDraft(moduleId: UUID) =
     moduleDraftRepository.hasModuleDraft(moduleId)
 
-  def allByPerson(personId: String): Future[Seq[ModuleDraft]] =
-    moduleDraftRepository.allByAuthor(personId)
-
   def isAuthorOf(moduleId: UUID, personId: String) =
     moduleDraftRepository.isAuthorOf(moduleId, personId)
 
@@ -157,7 +154,6 @@ final class ModuleDraftService @Inject() (
               person,
               commitMessage(modifiedKeys -- draft.modifiedKeys),
               draft.module,
-              draft.source,
               print
             )
             _ <- moduleDraftRepository.updateDraft(
@@ -206,7 +202,6 @@ final class ModuleDraftService @Inject() (
             person,
             commitMsg,
             moduleId,
-            status,
             print
           )
           moduleDraft = ModuleDraft(

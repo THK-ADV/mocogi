@@ -102,7 +102,7 @@ object GitMergeEventHandler {
               case (gitConfig.draftBranch, gitConfig.mainBranch, "merge")
                   if labels.contains(bigBangLabel) =>
                 scheduleModuleCatalogCreation
-              case (semesterBranch, gitConfig.mainBranch, "open")
+              case (_, gitConfig.mainBranch, "open")
                   if labels.contains(moduleCatalogLabel) =>
                 scheduleModuleCatalogMerge
               case (semesterBranch, gitConfig.mainBranch, "merge")

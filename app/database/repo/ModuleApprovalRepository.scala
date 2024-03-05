@@ -77,7 +77,7 @@ final class ModuleApprovalRepository @Inject() (
           r.id
         )
       }
-      .distinctOn(a => (a._1, a._4, a._5))
+      .distinctOn(a => (a._1, a._4, a._5, a._6))
     db.run(query.result)
   }
 }

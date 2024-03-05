@@ -3,6 +3,7 @@ package service
 import ops.FileOps.FileOps0
 
 import java.nio.file.Path
+import scala.annotation.unused
 import scala.sys.process.{Process, ProcessLogger, _}
 import scala.util.control.NonFatal
 
@@ -60,6 +61,7 @@ object LatexCompiler {
     }
   }
 
+  @unused
   def execRes(
       process: ProcessBuilder
   )(

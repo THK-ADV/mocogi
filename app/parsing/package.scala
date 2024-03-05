@@ -200,19 +200,22 @@ package object parsing {
   def multipleValueRawParser(
       key: String,
       prefix: String
-  ): Parser[List[String]] =
+  ): Parser[List[String]] = {
+    val single =
+      skipFirst(Parser.prefix(prefix))
+        .take(prefixTo("\n").or(rest))
+        .map(_.trim)
+
+    val dashes =
+      skipFirst(zeroOrMoreSpaces)
+        .skip(Parser.prefix("-"))
+        .skip(zeroOrMoreSpaces)
+        .take(single)
+        .many()
+
     keyParser(key)
-      .take(
-        skipFirst(zeroOrMoreSpaces)
-          .skip(Parser.prefix("-"))
-          .skip(zeroOrMoreSpaces)
-          .take(
-            skipFirst(Parser.prefix(prefix))
-              .take(prefixTo("\n").or(rest))
-              .map(_.trim)
-          )
-          .many()
-      )
+      .take(single.map(a => List(a)) or dashes)
+  }
 
   private val localDatePattern = DateTimeFormatter.ofPattern("dd.MM.yyyy")
 

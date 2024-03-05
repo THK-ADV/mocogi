@@ -3,7 +3,6 @@ package parsing.metadata
 import models.core.ModuleLocation
 import parser.Parser
 import parsing.helper.SingleValueParser
-import parsing.metadata.ModuleTypeParser.{key, prefix}
 import parsing.singleValueRawParser
 
 object ModuleLocationParser extends SingleValueParser[ModuleLocation] {
