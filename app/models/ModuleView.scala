@@ -14,6 +14,7 @@ case class ModuleView[ModuleManagement, StudyProgram](
 case class StudyProgramModuleAssociation[Semester](
     studyProgram: StudyProgramView,
     mandatory: Boolean,
+    focus: Boolean,
     recommendedSemester: Semester
 )
 

@@ -13,8 +13,9 @@ case class ParsedPOs(
 case class ParsedPOOptional(
     po: PO,
     specialization: Option[Specialization],
-    instanceOf: UUID,
+    instanceOf: Option[UUID],
     partOfCatalog: Boolean,
+    isFocus: Boolean,
     recommendedSemester: List[Int]
 )
 

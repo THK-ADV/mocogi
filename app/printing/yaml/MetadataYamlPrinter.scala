@@ -378,15 +378,22 @@ final class MetadataYamlPrinter(identLevel: Int) {
               .repeat(identLevel)
               .skip(prefix(s"- study_program: study_program.${e.po}"))
               .skip(newline)
-              .skip(
-                whitespace
-                  .repeat(deepness)
-                  .skip(entry("instance_of", s"module.${e.instanceOf}"))
+              .skipOpt(
+                e.instanceOf.map(id =>
+                  whitespace
+                    .repeat(deepness)
+                    .skip(entry("instance_of", s"module.$id"))
+                )
               )
               .skip(
                 whitespace
                   .repeat(deepness)
                   .skip(entry("part_of_catalog", e.partOfCatalog.toString))
+              )
+              .skip(
+                whitespace
+                  .repeat(deepness)
+                  .skip(entry("focus", e.isFocus.toString))
               )
               .skip(
                 whitespace

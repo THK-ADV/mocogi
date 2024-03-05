@@ -30,11 +30,11 @@ object ModuleKeyService {
     *   If at least one key does not match
     */
   private def validate(xs: List[ModuleKey]): Unit = {
-    val moduleKeys = xs.map(_.id)
+    val moduleKeys = xs.map(_.id).toSet
     val keys = fields
-    val unmatched = moduleKeys.filterNot(keys.contains)
-    if (unmatched.nonEmpty)
-      throw new Throwable(s"unmatched module keys: ${unmatched.mkString(", ")}")
+    val diff = moduleKeys.diff(keys) ++ keys.diff(moduleKeys)
+    if (diff.nonEmpty)
+      throw new Throwable(s"unmatched module keys: ${diff.mkString(", ")}")
   }
 
   /** Parses all module keys defined in path.

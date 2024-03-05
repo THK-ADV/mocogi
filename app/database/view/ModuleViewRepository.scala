@@ -1,8 +1,8 @@
 package database.view
 
 import database.table.stringToInts
-import models.core.{Degree, IDLabel}
 import models._
+import models.core.{Degree, IDLabel}
 import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfigProvider}
 import slick.jdbc.JdbcProfile
 
@@ -72,6 +72,7 @@ final class ModuleViewRepository @Inject() (
       column[String]("module_management_lastname")
     private def recommendedSemester = column[String]("recommended_semester")
     private def mandatory = column[Boolean]("mandatory")
+    private def focus = column[Boolean]("focus")
     private def studyProgramDeLabel = column[String]("sp_de_label")
     private def studyProgramEnLabel = column[String]("sp_en_label")
     private def studyProgramId = column[String]("sp_id")
@@ -100,6 +101,7 @@ final class ModuleViewRepository @Inject() (
       ),
       recommendedSemester,
       mandatory,
+      focus,
       poId,
       poVersion,
       studyProgramId,
@@ -122,6 +124,7 @@ final class ModuleViewRepository @Inject() (
             Double,
             (String, String, String, String, String, String),
             String,
+            Boolean,
             Boolean,
             String,
             Int,
@@ -152,6 +155,7 @@ final class ModuleViewRepository @Inject() (
             ),
             recommendedSemester,
             mandatory,
+            focus,
             poId,
             poVersion,
             studyProgramId,
@@ -196,6 +200,7 @@ final class ModuleViewRepository @Inject() (
                 .map(s => IDLabel(s._1, s._2, s._2))
             ),
             mandatory,
+            focus,
             recommendedSemester
           )
         )
@@ -209,6 +214,7 @@ final class ModuleViewRepository @Inject() (
           Double,
           (String, String, String, String, String, String),
           String,
+          Boolean,
           Boolean,
           String,
           Int,
@@ -240,6 +246,7 @@ final class ModuleViewRepository @Inject() (
           ),
           a.studyProgram.recommendedSemester,
           a.studyProgram.mandatory,
+          a.studyProgram.focus,
           a.studyProgram.studyProgram.po.id,
           a.studyProgram.studyProgram.po.version,
           a.studyProgram.studyProgram.id,

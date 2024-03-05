@@ -8,8 +8,9 @@ import java.util.UUID
 case class ModulePOOptionalProtocol(
     po: String,
     specialization: Option[String],
-    instanceOf: UUID,
+    instanceOf: Option[UUID],
     partOfCatalog: Boolean,
+    isFocus: Boolean,
     recommendedSemester: List[Int]
 )
 

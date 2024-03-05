@@ -16,8 +16,9 @@ object ModulePOs {
 case class ModulePOOptional(
     po: PO,
     specialization: Option[Specialization],
-    instanceOf: ModuleCore,
+    instanceOf: Option[ModuleCore],
     partOfCatalog: Boolean,
+    isFocus: Boolean,
     recommendedSemester: List[Int]
 )
 

@@ -243,7 +243,59 @@ class ModulePOParserSpec
       val (res, rest) = electiveParser.parse(input)
       assert(
         res.value == List(
-          ParsedPOOptional(wi1, None, m1, partOfCatalog = false, List(3))
+          ParsedPOOptional(
+            wi1,
+            None,
+            Some(m1),
+            partOfCatalog = false,
+            isFocus = false,
+            List(3)
+          )
+        )
+      )
+      assert(rest.isEmpty)
+    }
+
+    "parse a single optional po with no specialization and instance of" in {
+      val input =
+        s"""po_optional:
+           |  - study_program: study_program.wi1
+           |    part_of_catalog: false
+           |    recommended_semester: 3""".stripMargin
+      val (res, rest) = electiveParser.parse(input)
+      assert(
+        res.value == List(
+          ParsedPOOptional(
+            wi1,
+            None,
+            None,
+            partOfCatalog = false,
+            isFocus = false,
+            List(3)
+          )
+        )
+      )
+      assert(rest.isEmpty)
+    }
+
+    "parse a single optional po with no specialization, instance of but focus" in {
+      val input =
+        s"""po_optional:
+           |  - study_program: study_program.wi1
+           |    part_of_catalog: false
+           |    focus: true
+           |    recommended_semester: 3""".stripMargin
+      val (res, rest) = electiveParser.parse(input)
+      assert(
+        res.value == List(
+          ParsedPOOptional(
+            wi1,
+            None,
+            None,
+            partOfCatalog = false,
+            isFocus = true,
+            List(3)
+          )
         )
       )
       assert(rest.isEmpty)
@@ -263,8 +315,54 @@ class ModulePOParserSpec
           ModulePOOptionalProtocol(
             "wi1",
             None,
-            m1,
+            Some(m1),
             partOfCatalog = false,
+            isFocus = false,
+            List(3)
+          )
+        )
+      )
+      assert(rest.isEmpty)
+    }
+
+    "parse a single optional po with no specialization raw and no instance of" in {
+      val input =
+        s"""po_optional:
+          |  - study_program: study_program.wi1
+          |    part_of_catalog: false
+          |    recommended_semester: 3""".stripMargin
+      val (res, rest) = electiveParserRaw.parse(input)
+      assert(
+        res.value == List(
+          ModulePOOptionalProtocol(
+            "wi1",
+            None,
+            None,
+            partOfCatalog = false,
+            isFocus = false,
+            List(3)
+          )
+        )
+      )
+      assert(rest.isEmpty)
+    }
+
+    "parse a single optional po with no specialization raw, no instance of but focus" in {
+      val input =
+        s"""po_optional:
+          |  - study_program: study_program.wi1
+          |    part_of_catalog: false
+          |    focus: true
+          |    recommended_semester: 3""".stripMargin
+      val (res, rest) = electiveParserRaw.parse(input)
+      assert(
+        res.value == List(
+          ModulePOOptionalProtocol(
+            "wi1",
+            None,
+            None,
+            partOfCatalog = false,
+            isFocus = true,
             List(3)
           )
         )
@@ -283,7 +381,14 @@ class ModulePOParserSpec
       val (res, rest) = electiveParser.parse(input)
       assert(
         res.value == List(
-          ParsedPOOptional(wi1, Some(vi), m1, partOfCatalog = false, List(3))
+          ParsedPOOptional(
+            wi1,
+            Some(vi),
+            Some(m1),
+            partOfCatalog = false,
+            isFocus = false,
+            List(3)
+          )
         )
       )
       assert(rest.isEmpty)
@@ -303,8 +408,9 @@ class ModulePOParserSpec
           ModulePOOptionalProtocol(
             "wi1",
             Some("wi1_vi"),
-            m1,
+            Some(m1),
             partOfCatalog = false,
+            isFocus = false,
             List(3)
           )
         )
@@ -322,7 +428,38 @@ class ModulePOParserSpec
       val (res, rest) = electiveParser.parse(input)
       assert(
         res.value == List(
-          ParsedPOOptional(wi1, None, m1, partOfCatalog = false, Nil)
+          ParsedPOOptional(
+            wi1,
+            None,
+            Some(m1),
+            partOfCatalog = false,
+            isFocus = false,
+            Nil
+          )
+        )
+      )
+      assert(rest.isEmpty)
+    }
+
+    "parse a single optional po where recommended semester is missing but focus is provided" in {
+      val m1 = UUID.randomUUID
+      val input =
+        s"""po_optional:
+           |  - study_program: study_program.wi1
+           |    instance_of: module.$m1
+           |    part_of_catalog: false
+           |    focus: true""".stripMargin
+      val (res, rest) = electiveParser.parse(input)
+      assert(
+        res.value == List(
+          ParsedPOOptional(
+            wi1,
+            None,
+            Some(m1),
+            partOfCatalog = false,
+            isFocus = true,
+            Nil
+          )
         )
       )
       assert(rest.isEmpty)
@@ -338,49 +475,94 @@ class ModulePOParserSpec
       val (res, rest) = electiveParserRaw.parse(input)
       assert(
         res.value == List(
-          ModulePOOptionalProtocol("wi1", None, m1, partOfCatalog = false, Nil)
+          ModulePOOptionalProtocol(
+            "wi1",
+            None,
+            Some(m1),
+            partOfCatalog = false,
+            isFocus = false,
+            Nil
+          )
+        )
+      )
+      assert(rest.isEmpty)
+    }
+
+    "parse a single optional po where recommended semester is missing raw but focus is provided" in {
+      val m1 = UUID.randomUUID
+      val input =
+        s"""po_optional:
+           |  - study_program: study_program.wi1
+           |    instance_of: module.$m1
+           |    part_of_catalog: false
+           |    focus: true""".stripMargin
+      val (res, rest) = electiveParserRaw.parse(input)
+      assert(
+        res.value == List(
+          ModulePOOptionalProtocol(
+            "wi1",
+            None,
+            Some(m1),
+            partOfCatalog = false,
+            isFocus = true,
+            Nil
+          )
         )
       )
       assert(rest.isEmpty)
     }
 
     "parse many optional pos" in {
-      val m1 = UUID.randomUUID
       val m2 = UUID.randomUUID
       val input =
         s"""po_optional:
           |  - study_program: study_program.wi1
-          |    instance_of: module.$m1
           |    part_of_catalog: false
+          |    focus: false
           |    recommended_semester: 3
           |  - study_program: study_program.inf1
           |    instance_of: module.$m2
           |    part_of_catalog: true
+          |    focus: true
           |    recommended_semester:
           |      - 3
           |      - 1""".stripMargin
       val (res, rest) = electiveParser.parse(input)
       assert(
         res.value == List(
-          ParsedPOOptional(wi1, None, m1, partOfCatalog = false, List(3)),
-          ParsedPOOptional(inf1, None, m2, partOfCatalog = true, List(3, 1))
+          ParsedPOOptional(
+            wi1,
+            None,
+            None,
+            partOfCatalog = false,
+            isFocus = false,
+            List(3)
+          ),
+          ParsedPOOptional(
+            inf1,
+            None,
+            Some(m2),
+            partOfCatalog = true,
+            isFocus = true,
+            List(3, 1)
+          )
         )
       )
       assert(rest.isEmpty)
     }
 
     "parse many optional pos raw" in {
-      val m1 = UUID.randomUUID
       val m2 = UUID.randomUUID
       val input =
         s"""po_optional:
           |  - study_program: study_program.wi1
-          |    instance_of: module.$m1
           |    part_of_catalog: false
+          |    focus: false
           |    recommended_semester: 3
           |  - study_program: study_program.inf1
           |    instance_of: module.$m2
           |    part_of_catalog: true
+          |    focus: true
           |    recommended_semester:
           |      - 3
           |      - 1""".stripMargin
@@ -390,15 +572,17 @@ class ModulePOParserSpec
           ModulePOOptionalProtocol(
             "wi1",
             None,
-            m1,
+            None,
             partOfCatalog = false,
+            isFocus = false,
             List(3)
           ),
           ModulePOOptionalProtocol(
             "inf1",
             None,
-            m2,
+            Some(m2),
             partOfCatalog = true,
+            isFocus = true,
             List(3, 1)
           )
         )

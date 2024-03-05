@@ -73,8 +73,9 @@ final class RawModuleParserSpec
           ModulePOOptionalProtocol(
             "wi1",
             None,
-            UUID.fromString("d1cecfbc-a314-42f6-99b3-be92f22c3295"),
+            Some(UUID.fromString("d1cecfbc-a314-42f6-99b3-be92f22c3295")),
             partOfCatalog = false,
+            isFocus = false,
             List(3)
           )
         )
@@ -232,8 +233,9 @@ final class RawModuleParserSpec
           ModulePOOptionalProtocol(
             "wi1",
             None,
-            UUID.fromString("d1cecfbc-a314-42f6-99b3-be92f22c3295"),
+            Some(UUID.fromString("d1cecfbc-a314-42f6-99b3-be92f22c3295")),
             partOfCatalog = false,
+            isFocus = false,
             List(3)
           )
         )

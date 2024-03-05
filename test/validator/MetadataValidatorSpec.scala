@@ -1,6 +1,6 @@
 package validator
 
-import models.{Metadata, ModuleCore, ModulePOOptional, ModulePOs, ModulePrerequisiteEntry, ModulePrerequisites, ModuleRelation, ModuleWorkload}
+import models._
 import models.core._
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatest.{EitherValues, OptionValues}
@@ -33,7 +33,14 @@ final class MetadataValidatorSpec
     ParsedPrerequisiteEntry("", modules, Nil)
 
   private def poOpt(module: UUID) =
-    ParsedPOOptional(sp, None, module, partOfCatalog = false, Nil)
+    ParsedPOOptional(
+      sp,
+      None,
+      Some(module),
+      partOfCatalog = false,
+      isFocus = false,
+      Nil
+    )
 
   val m1 = ModuleCore(UUID.randomUUID, "t1", "m1")
   val m2 = ModuleCore(UUID.randomUUID, "t1", "m2")
@@ -80,7 +87,8 @@ final class MetadataValidatorSpec
         val am2 = ModuleAssessmentMethods(List(method(None)), Nil)
         assert(assessmentMethodsValidator.validate(am2).value == am2)
 
-        val am3 = ModuleAssessmentMethods(List(method(None)), List(method(None)))
+        val am3 =
+          ModuleAssessmentMethods(List(method(None)), List(method(None)))
         assert(assessmentMethodsValidator.validate(am3).value == am3)
 
         val am4 =
@@ -208,9 +216,13 @@ final class MetadataValidatorSpec
     "validating ects" should {
       "pass if ects value is set via contributions to focus areas" in {
         val ects1 = List(ectsContrib(5))
-        assert(ectsValidator.validate(Right(ects1)).value == ModuleECTS(5, ects1))
+        assert(
+          ectsValidator.validate(Right(ects1)).value == ModuleECTS(5, ects1)
+        )
         val ects2 = List(ectsContrib(5), ectsContrib(3))
-        assert(ectsValidator.validate(Right(ects2)).value == ModuleECTS(8, ects2))
+        assert(
+          ectsValidator.validate(Right(ects2)).value == ModuleECTS(8, ects2)
+        )
       }
 
       "pass if ects value is already set" in {
@@ -402,15 +414,36 @@ final class MetadataValidatorSpec
           poOptionalValidator(lookup)
             .validate(List(poOpt(m1.id)))
             .value == List(
-            ModulePOOptional(sp, None, m1, partOfCatalog = false, Nil)
+            ModulePOOptional(
+              sp,
+              None,
+              Some(m1),
+              partOfCatalog = false,
+              isFocus = false,
+              Nil
+            )
           )
         )
         assert(
           poOptionalValidator(lookup)
             .validate(List(poOpt(m1.id), poOpt(m2.id)))
             .value == List(
-            ModulePOOptional(sp, None, m1, partOfCatalog = false, Nil),
-            ModulePOOptional(sp, None, m2, partOfCatalog = false, Nil)
+            ModulePOOptional(
+              sp,
+              None,
+              Some(m1),
+              partOfCatalog = false,
+              isFocus = false,
+              Nil
+            ),
+            ModulePOOptional(
+              sp,
+              None,
+              Some(m2),
+              partOfCatalog = false,
+              isFocus = false,
+              Nil
+            )
           )
         )
         assert(poOptionalValidator(lookup).validate(Nil).value == Nil)
@@ -432,7 +465,16 @@ final class MetadataValidatorSpec
           .validate(ParsedPOs(Nil, List(poOpt(m1.id))))
           .value == ModulePOs(
           Nil,
-          List(ModulePOOptional(sp, None, m1, partOfCatalog = false, Nil))
+          List(
+            ModulePOOptional(
+              sp,
+              None,
+              Some(m1),
+              partOfCatalog = false,
+              isFocus = false,
+              Nil
+            )
+          )
         )
         posValidator(lookup)
           .validate(ParsedPOs(Nil, Nil))
@@ -518,7 +560,14 @@ final class MetadataValidatorSpec
           ParsedPOs(
             List(ModulePOMandatory(sp, None, List(1))),
             List(
-              ParsedPOOptional(sp, None, m2.id, partOfCatalog = false, List(2))
+              ParsedPOOptional(
+                sp,
+                None,
+                Some(m2.id),
+                partOfCatalog = false,
+                isFocus = false,
+                List(2)
+              )
             )
           ),
           Some(ModuleParticipants(10, 20)),
@@ -544,7 +593,16 @@ final class MetadataValidatorSpec
           ivm1.location,
           ModulePOs(
             List(ModulePOMandatory(sp, None, List(1))),
-            List(ModulePOOptional(sp, None, m2, partOfCatalog = false, List(2)))
+            List(
+              ModulePOOptional(
+                sp,
+                None,
+                Some(m2),
+                partOfCatalog = false,
+                isFocus = false,
+                List(2)
+              )
+            )
           ),
           Some(ModuleParticipants(10, 20)),
           Nil,
@@ -599,7 +657,14 @@ final class MetadataValidatorSpec
           ParsedPOs(
             List(ModulePOMandatory(sp, None, List(1))),
             List(
-              ParsedPOOptional(sp, None, m1.id, partOfCatalog = false, List(2))
+              ParsedPOOptional(
+                sp,
+                None,
+                Some(m1.id),
+                partOfCatalog = false,
+                isFocus = false,
+                List(2)
+              )
             )
           ),
           Some(ModuleParticipants(20, 15)),

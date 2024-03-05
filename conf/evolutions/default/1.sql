@@ -283,8 +283,9 @@ create table module_po_optional
     "id"                   uuid    not null PRIMARY KEY,
     "module"               uuid    not null,
     "po"                   text    not null,
-    "instance_of"          uuid    not null,
+    "instance_of"          uuid null,
     "part_of_catalog"      boolean not null,
+    "focus"                boolean not null,
     "recommended_semester" text    not null,
     "specialization"       text null,
     FOREIGN KEY (specialization) REFERENCES specialization (id),
@@ -441,7 +442,8 @@ select module.id                                as id,
        study_program_view.spec_label,
        study_program_view.spec_id,
        module_po_mandatory.recommended_semester as recommended_semester,
-       true                                     as mandatory
+       true                                     as mandatory,
+       false                                    as focus
 from module
          join module_responsibility on module.id = module_responsibility.module and
                                        module_responsibility.responsibility_type = 'module_management'
@@ -472,7 +474,8 @@ select module.id                               as id,
        study_program_view.spec_label,
        study_program_view.spec_id,
        module_po_optional.recommended_semester as recommended_semester,
-       false                                   as mandatory
+       false                                   as mandatory,
+       module_po_optional.focus                as focus
 from module
          join module_responsibility on module.id = module_responsibility.module and
                                        module_responsibility.responsibility_type = 'module_management'

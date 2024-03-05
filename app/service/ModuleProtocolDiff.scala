@@ -26,37 +26,44 @@ object ModuleProtocolDiff extends Logging {
 
   val fields: Set[String] =
     allFields[ModuleProtocol].foldLeft(Set.empty[String]) { case (acc, prop) =>
-      val simplified = prop match {
-        case "metadata.po.optional.recommendedSemester" |
-            "metadata.po.optional.partOfCatalog" |
-            "metadata.po.optional.instanceOf" |
-            "metadata.po.optional.specialization" | "metadata.po.optional.po" =>
-          "metadata.po.optional"
-        case "metadata.po.mandatory.recommendedSemester" |
-            "metadata.po.mandatory.specialization" |
-            "metadata.po.mandatory.po" =>
-          "metadata.po.mandatory"
-        case "metadata.prerequisites.required.pos" |
-            "metadata.prerequisites.required.modules" |
-            "metadata.prerequisites.required.text" =>
-          "metadata.prerequisites.required"
-        case "metadata.prerequisites.recommended.pos" |
-            "metadata.prerequisites.recommended.modules" |
-            "metadata.prerequisites.recommended.text" =>
-          "metadata.prerequisites.recommended"
-        case "metadata.assessmentMethods.optional.precondition" |
-            "metadata.assessmentMethods.optional.percentage" |
-            "metadata.assessmentMethods.optional.method" =>
-          "metadata.assessmentMethods.optional"
-        case "metadata.assessmentMethods.mandatory.precondition" |
-            "metadata.assessmentMethods.mandatory.percentage" |
-            "metadata.assessmentMethods.mandatory.method" =>
-          "metadata.assessmentMethods.mandatory"
-        case "metadata.participants.max" | "metadata.participants.min" =>
-          "metadata.participants"
-        case other => other
+      prop match {
+        case "id" | "metadata.workload.total" | "metadata.workload.selfStudy" =>
+          acc // skip
+        case other =>
+          val simplified = other match {
+            case "metadata.po.optional.recommendedSemester" |
+                "metadata.po.optional.partOfCatalog" |
+                "metadata.po.optional.isFocus" |
+                "metadata.po.optional.instanceOf" |
+                "metadata.po.optional.specialization" |
+                "metadata.po.optional.po" =>
+              "metadata.po.optional"
+            case "metadata.po.mandatory.recommendedSemester" |
+                "metadata.po.mandatory.specialization" |
+                "metadata.po.mandatory.po" =>
+              "metadata.po.mandatory"
+            case "metadata.prerequisites.required.pos" |
+                "metadata.prerequisites.required.modules" |
+                "metadata.prerequisites.required.text" =>
+              "metadata.prerequisites.required"
+            case "metadata.prerequisites.recommended.pos" |
+                "metadata.prerequisites.recommended.modules" |
+                "metadata.prerequisites.recommended.text" =>
+              "metadata.prerequisites.recommended"
+            case "metadata.assessmentMethods.optional.precondition" |
+                "metadata.assessmentMethods.optional.percentage" |
+                "metadata.assessmentMethods.optional.method" =>
+              "metadata.assessmentMethods.optional"
+            case "metadata.assessmentMethods.mandatory.precondition" |
+                "metadata.assessmentMethods.mandatory.percentage" |
+                "metadata.assessmentMethods.mandatory.method" =>
+              "metadata.assessmentMethods.mandatory"
+            case "metadata.participants.max" | "metadata.participants.min" =>
+              "metadata.participants"
+            case other => other
+          }
+          acc + simplified
       }
-      acc + simplified
     }
 
   def nonEmptyKeys(p: ModuleProtocol): Set[String] =

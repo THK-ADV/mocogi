@@ -264,8 +264,9 @@ final class ModuleRepository @Inject() (
           metadata.id,
           po.po.id,
           po.specialization.map(_.id),
-          po.instanceOf.id,
+          po.instanceOf.map(_.id),
           po.partOfCatalog,
+          po.isFocus,
           po.recommendedSemester
         )
       )
@@ -480,11 +481,12 @@ final class ModuleRepository @Inject() (
                 )
               )
               poO.foreach(po =>
-                poOptional += models.ModulePOOptionalProtocol(
+                poOptional += ModulePOOptionalProtocol(
                   po.po,
                   po.specialization,
                   po.instanceOf,
                   po.partOfCatalog,
+                  po.focus,
                   po.recommendedSemester
                 )
               )

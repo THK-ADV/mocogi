@@ -269,15 +269,17 @@ final class MetadataYamlPrinterSpec extends AnyWordSpec with PrinterSpec {
         ModulePOOptionalProtocol(
           "abc",
           None,
-          m1,
+          Some(m1),
           partOfCatalog = true,
+          isFocus = true,
           List(1)
         ),
-        models.ModulePOOptionalProtocol(
+        ModulePOOptionalProtocol(
           "def",
           None,
-          m1,
+          None,
           partOfCatalog = false,
+          isFocus = true,
           List(2, 1)
         )
       )
@@ -286,10 +288,11 @@ final class MetadataYamlPrinterSpec extends AnyWordSpec with PrinterSpec {
            |  - study_program: study_program.abc
            |    instance_of: module.$m1
            |    part_of_catalog: true
+           |    focus: true
            |    recommended_semester: 1
            |  - study_program: study_program.def
-           |    instance_of: module.$m1
            |    part_of_catalog: false
+           |    focus: true
            |    recommended_semester:
            |      - 1
            |      - 2\n""".stripMargin
@@ -344,15 +347,17 @@ final class MetadataYamlPrinterSpec extends AnyWordSpec with PrinterSpec {
             models.ModulePOOptionalProtocol(
               "po4",
               None,
-              m1,
+              Some(m1),
               partOfCatalog = false,
+              isFocus = false,
               List(1, 2)
             ),
             models.ModulePOOptionalProtocol(
               "po5",
               None,
-              m2,
+              Some(m2),
               partOfCatalog = true,
+              isFocus = true,
               List(1)
             )
           )
@@ -422,12 +427,14 @@ final class MetadataYamlPrinterSpec extends AnyWordSpec with PrinterSpec {
           |  - study_program: study_program.po4
           |    instance_of: module.$m1
           |    part_of_catalog: false
+          |    focus: false
           |    recommended_semester:
           |      - 1
           |      - 2
           |  - study_program: study_program.po5
           |    instance_of: module.$m2
           |    part_of_catalog: true
+          |    focus: true
           |    recommended_semester: 1
           |participants:
           |  min: 0
