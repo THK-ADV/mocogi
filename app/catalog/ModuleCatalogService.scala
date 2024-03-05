@@ -65,7 +65,7 @@ final class ModuleCatalogService @Inject() (
           )
           deleteBranch(branch).flatMap(_ => Future.failed(e))
         }
-      (mrId, mrStatus) <- createMergeRequest
+      (mrId, _) <- createMergeRequest
         .recoverWith { case NonFatal(e) =>
           logger.error("failed to create merge request! recovering...")
           deleteAllFiles(

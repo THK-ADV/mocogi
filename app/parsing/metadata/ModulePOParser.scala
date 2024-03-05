@@ -17,7 +17,7 @@ object ModulePOParser {
   private def studyProgramKey = "study_program"
   private def studyProgramPrefix = "study_program."
   def modulePOMandatoryKey = "po_mandatory:"
-  def modulePOElectiveKey = "po_optional:"
+  private def modulePOElectiveKey = "po_optional:"
 
   def studyProgramParser(implicit
       pos: Seq[PO],
