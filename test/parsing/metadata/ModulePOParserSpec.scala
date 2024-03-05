@@ -247,7 +247,6 @@ class ModulePOParserSpec
             wi1,
             None,
             Some(m1),
-            partOfCatalog = false,
             isFocus = false,
             List(3)
           )
@@ -269,7 +268,6 @@ class ModulePOParserSpec
             wi1,
             None,
             None,
-            partOfCatalog = false,
             isFocus = false,
             List(3)
           )
@@ -292,7 +290,6 @@ class ModulePOParserSpec
             wi1,
             None,
             None,
-            partOfCatalog = false,
             isFocus = true,
             List(3)
           )
@@ -316,7 +313,6 @@ class ModulePOParserSpec
             "wi1",
             None,
             Some(m1),
-            partOfCatalog = false,
             isFocus = false,
             List(3)
           )
@@ -338,7 +334,6 @@ class ModulePOParserSpec
             "wi1",
             None,
             None,
-            partOfCatalog = false,
             isFocus = false,
             List(3)
           )
@@ -361,7 +356,6 @@ class ModulePOParserSpec
             "wi1",
             None,
             None,
-            partOfCatalog = false,
             isFocus = true,
             List(3)
           )
@@ -385,7 +379,6 @@ class ModulePOParserSpec
             wi1,
             Some(vi),
             Some(m1),
-            partOfCatalog = false,
             isFocus = false,
             List(3)
           )
@@ -409,7 +402,6 @@ class ModulePOParserSpec
             "wi1",
             Some("wi1_vi"),
             Some(m1),
-            partOfCatalog = false,
             isFocus = false,
             List(3)
           )
@@ -432,7 +424,6 @@ class ModulePOParserSpec
             wi1,
             None,
             Some(m1),
-            partOfCatalog = false,
             isFocus = false,
             Nil
           )
@@ -456,7 +447,6 @@ class ModulePOParserSpec
             wi1,
             None,
             Some(m1),
-            partOfCatalog = false,
             isFocus = true,
             Nil
           )
@@ -479,7 +469,6 @@ class ModulePOParserSpec
             "wi1",
             None,
             Some(m1),
-            partOfCatalog = false,
             isFocus = false,
             Nil
           )
@@ -503,7 +492,6 @@ class ModulePOParserSpec
             "wi1",
             None,
             Some(m1),
-            partOfCatalog = false,
             isFocus = true,
             Nil
           )
@@ -534,7 +522,6 @@ class ModulePOParserSpec
             wi1,
             None,
             None,
-            partOfCatalog = false,
             isFocus = false,
             List(3)
           ),
@@ -542,7 +529,6 @@ class ModulePOParserSpec
             inf1,
             None,
             Some(m2),
-            partOfCatalog = true,
             isFocus = true,
             List(3, 1)
           )
@@ -573,7 +559,6 @@ class ModulePOParserSpec
             "wi1",
             None,
             None,
-            partOfCatalog = false,
             isFocus = false,
             List(3)
           ),
@@ -581,7 +566,6 @@ class ModulePOParserSpec
             "inf1",
             None,
             Some(m2),
-            partOfCatalog = true,
             isFocus = true,
             List(3, 1)
           )

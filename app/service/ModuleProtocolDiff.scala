@@ -32,7 +32,6 @@ object ModuleProtocolDiff extends Logging {
         case other =>
           val simplified = other match {
             case "metadata.po.optional.recommendedSemester" |
-                "metadata.po.optional.partOfCatalog" |
                 "metadata.po.optional.isFocus" |
                 "metadata.po.optional.instanceOf" |
                 "metadata.po.optional.specialization" |

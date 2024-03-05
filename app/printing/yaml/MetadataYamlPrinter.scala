@@ -388,11 +388,6 @@ final class MetadataYamlPrinter(identLevel: Int) {
               .skip(
                 whitespace
                   .repeat(deepness)
-                  .skip(entry("part_of_catalog", e.partOfCatalog.toString))
-              )
-              .skip(
-                whitespace
-                  .repeat(deepness)
                   .skip(entry("focus", e.isFocus.toString))
               )
               .skip(

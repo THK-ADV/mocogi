@@ -122,7 +122,6 @@ final class ModuleRepository @Inject() (
     )
 
   def allFromPos(pos: Seq[String]) = {
-    // TODO expand to optional if "partOfCatalog" is set
     val isMandatoryPO = isMandatoryPOQuery(pos)
     retrieve(tableQuery.filter(_.id.in(isMandatoryPO)))
   }
@@ -265,7 +264,6 @@ final class ModuleRepository @Inject() (
           po.po.id,
           po.specialization.map(_.id),
           po.instanceOf.map(_.id),
-          po.partOfCatalog,
           po.isFocus,
           po.recommendedSemester
         )
@@ -485,7 +483,6 @@ final class ModuleRepository @Inject() (
                   po.po,
                   po.specialization,
                   po.instanceOf,
-                  po.partOfCatalog,
                   po.focus,
                   po.recommendedSemester
                 )

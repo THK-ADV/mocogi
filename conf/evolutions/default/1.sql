@@ -284,7 +284,6 @@ create table module_po_optional
     "module"               uuid    not null,
     "po"                   text    not null,
     "instance_of"          uuid null,
-    "part_of_catalog"      boolean not null,
     "focus"                boolean not null,
     "recommended_semester" text    not null,
     "specialization"       text null,

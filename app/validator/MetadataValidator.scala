@@ -157,7 +157,6 @@ object MetadataValidator {
                     po.po,
                     po.specialization,
                     Some(module),
-                    po.partOfCatalog,
                     po.isFocus,
                     po.recommendedSemester
                   )
@@ -170,7 +169,6 @@ object MetadataValidator {
                 po.po,
                 po.specialization,
                 None,
-                po.partOfCatalog,
                 po.isFocus,
                 po.recommendedSemester
               )

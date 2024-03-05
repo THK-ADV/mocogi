@@ -270,7 +270,6 @@ final class MetadataYamlPrinterSpec extends AnyWordSpec with PrinterSpec {
           "abc",
           None,
           Some(m1),
-          partOfCatalog = true,
           isFocus = true,
           List(1)
         ),
@@ -278,7 +277,6 @@ final class MetadataYamlPrinterSpec extends AnyWordSpec with PrinterSpec {
           "def",
           None,
           None,
-          partOfCatalog = false,
           isFocus = true,
           List(2, 1)
         )
@@ -287,11 +285,9 @@ final class MetadataYamlPrinterSpec extends AnyWordSpec with PrinterSpec {
         s"""po_optional:
            |  - study_program: study_program.abc
            |    instance_of: module.$m1
-           |    part_of_catalog: true
            |    focus: true
            |    recommended_semester: 1
            |  - study_program: study_program.def
-           |    part_of_catalog: false
            |    focus: true
            |    recommended_semester:
            |      - 1
@@ -348,7 +344,6 @@ final class MetadataYamlPrinterSpec extends AnyWordSpec with PrinterSpec {
               "po4",
               None,
               Some(m1),
-              partOfCatalog = false,
               isFocus = false,
               List(1, 2)
             ),
@@ -356,7 +351,6 @@ final class MetadataYamlPrinterSpec extends AnyWordSpec with PrinterSpec {
               "po5",
               None,
               Some(m2),
-              partOfCatalog = true,
               isFocus = true,
               List(1)
             )
@@ -426,14 +420,12 @@ final class MetadataYamlPrinterSpec extends AnyWordSpec with PrinterSpec {
           |po_optional:
           |  - study_program: study_program.po4
           |    instance_of: module.$m1
-          |    part_of_catalog: false
           |    focus: false
           |    recommended_semester:
           |      - 1
           |      - 2
           |  - study_program: study_program.po5
           |    instance_of: module.$m2
-          |    part_of_catalog: true
           |    focus: true
           |    recommended_semester: 1
           |participants:

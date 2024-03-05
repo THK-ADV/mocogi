@@ -76,10 +76,12 @@ object ModulePOParser {
       .flatMap(uuidParser)
       .option
 
+  // TODO remove at some point
   private def partOfCatalogParser =
     prefix("part_of_catalog:")
       .skip(zeroOrMoreSpaces)
       .take(boolean)
+      .option
 
   private def focusParser =
     prefix("focus:")
@@ -117,14 +119,14 @@ object ModulePOParser {
           .skip(zeroOrMoreSpaces)
           .zip(instanceOfParser)
           .skip(zeroOrMoreSpaces)
-          .take(partOfCatalogParser)
+          .skip(partOfCatalogParser)
           .skip(zeroOrMoreSpaces)
           .take(focusParser)
           .skip(zeroOrMoreSpaces)
           .take(recommendedSemesterParser)
           .many(zeroOrMoreSpaces)
-          .map(_.map { case ((po, spec), instanceOf, partOf, focus, recSem) =>
-            ParsedPOOptional(po, spec, instanceOf, partOf, focus, recSem)
+          .map(_.map { case ((po, spec), instanceOf, focus, recSem) =>
+            ParsedPOOptional(po, spec, instanceOf, focus, recSem)
           })
       )
 
@@ -157,14 +159,14 @@ object ModulePOParser {
           .skip(zeroOrMoreSpaces)
           .zip(instanceOfParser)
           .skip(zeroOrMoreSpaces)
-          .take(partOfCatalogParser)
+          .skip(partOfCatalogParser)
           .skip(zeroOrMoreSpaces)
           .take(focusParser)
           .skip(zeroOrMoreSpaces)
           .take(recommendedSemesterParser)
           .many(zeroOrMoreSpaces)
-          .map(_.map { case ((po, spec), io, cat, focus, recSem) =>
-            ModulePOOptionalProtocol(po, spec, io, cat, focus, recSem)
+          .map(_.map { case ((po, spec), io, focus, recSem) =>
+            ModulePOOptionalProtocol(po, spec, io, focus, recSem)
           })
       )
 

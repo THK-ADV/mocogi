@@ -37,7 +37,6 @@ final class MetadataValidatorSpec
       sp,
       None,
       Some(module),
-      partOfCatalog = false,
       isFocus = false,
       Nil
     )
@@ -418,7 +417,6 @@ final class MetadataValidatorSpec
               sp,
               None,
               Some(m1),
-              partOfCatalog = false,
               isFocus = false,
               Nil
             )
@@ -432,7 +430,6 @@ final class MetadataValidatorSpec
               sp,
               None,
               Some(m1),
-              partOfCatalog = false,
               isFocus = false,
               Nil
             ),
@@ -440,7 +437,6 @@ final class MetadataValidatorSpec
               sp,
               None,
               Some(m2),
-              partOfCatalog = false,
               isFocus = false,
               Nil
             )
@@ -470,7 +466,6 @@ final class MetadataValidatorSpec
               sp,
               None,
               Some(m1),
-              partOfCatalog = false,
               isFocus = false,
               Nil
             )
@@ -564,7 +559,6 @@ final class MetadataValidatorSpec
                 sp,
                 None,
                 Some(m2.id),
-                partOfCatalog = false,
                 isFocus = false,
                 List(2)
               )
@@ -598,7 +592,6 @@ final class MetadataValidatorSpec
                 sp,
                 None,
                 Some(m2),
-                partOfCatalog = false,
                 isFocus = false,
                 List(2)
               )
@@ -661,7 +654,6 @@ final class MetadataValidatorSpec
                 sp,
                 None,
                 Some(m1.id),
-                partOfCatalog = false,
                 isFocus = false,
                 List(2)
               )

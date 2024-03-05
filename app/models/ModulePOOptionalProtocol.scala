@@ -9,7 +9,6 @@ case class ModulePOOptionalProtocol(
     po: String,
     specialization: Option[String],
     instanceOf: Option[UUID],
-    partOfCatalog: Boolean,
     isFocus: Boolean,
     recommendedSemester: List[Int]
 )

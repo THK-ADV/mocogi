@@ -10,7 +10,6 @@ case class ModulePOOptionalDbEntry(
     po: String,
     specialization: Option[String],
     instanceOf: Option[UUID],
-    partOfCatalog: Boolean,
     focus: Boolean,
     recommendedSemester: List[Int]
 )
@@ -28,8 +27,6 @@ final class ModulePOOptionalTable(tag: Tag)
 
   def instanceOf = column[Option[UUID]]("instance_of")
 
-  def partOfCatalog = column[Boolean]("part_of_catalog")
-
   def focus = column[Boolean]("focus")
 
   def recommendedSemester = column[List[Int]]("recommended_semester")
@@ -42,7 +39,6 @@ final class ModulePOOptionalTable(tag: Tag)
     po,
     specialization,
     instanceOf,
-    partOfCatalog,
     focus,
     recommendedSemester
   ) <> (ModulePOOptionalDbEntry.tupled, ModulePOOptionalDbEntry.unapply)
