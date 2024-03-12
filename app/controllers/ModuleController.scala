@@ -6,7 +6,7 @@ import git.api.GitFileDownloadService
 import models.{ModuleManagement, StudyProgramModuleAssociation}
 import ops.FutureOps.OptionOps
 import play.api.libs.Files.DefaultTemporaryFileCreator
-import play.api.libs.json.{Json, Writes}
+import play.api.libs.json.{JsArray, Json, Writes}
 import play.api.mvc.{
   AbstractController,
   AnyContent,
@@ -50,7 +50,11 @@ final class ModuleController @Inject() (
       if (request.getQueryString("select").contains("metadata"))
         service
           .allMetadata()
-          .map(xs => Ok(Json.toJson(xs)))
+          .map(xs =>
+            Ok(JsArray(xs.map { case (id, metadata) =>
+              Json.obj("id" -> id, "metadata" -> metadata)
+            }))
+          )
       else if (request.isExtended)
         moduleViewRepository
           .all()

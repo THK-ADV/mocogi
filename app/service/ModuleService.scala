@@ -31,5 +31,5 @@ final class ModuleService @Inject() (
     repo.allModuleCore(filter)
 
   def allMetadata() =
-    repo.all(Map.empty).map(_.map(_.metadata))
+    repo.all(Map.empty).map(_.map(a => (a.id, a.metadata)))
 }
