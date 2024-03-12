@@ -29,4 +29,7 @@ final class ModuleService @Inject() (
 
   def allModuleCore(filter: Map[String, Seq[String]]) =
     repo.allModuleCore(filter)
+
+  def allMetadata() =
+    repo.all(Map.empty).map(_.map(_.metadata))
 }

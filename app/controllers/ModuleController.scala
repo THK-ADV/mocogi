@@ -47,7 +47,11 @@ final class ModuleController @Inject() (
 
   def all() =
     Action.async { request =>
-      if (request.isExtended)
+      if (request.getQueryString("select").contains("metadata"))
+        service
+          .allMetadata()
+          .map(xs => Ok(Json.toJson(xs)))
+      else if (request.isExtended)
         moduleViewRepository
           .all()
           .map(xs => Ok(Json.toJson(xs)))
