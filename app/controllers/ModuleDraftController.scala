@@ -14,13 +14,8 @@ import play.api.Logging
 import play.api.libs.json.{Json, Writes}
 import play.api.mvc.{AbstractController, ControllerComponents}
 import service.PipelineError.parsingErrorWrites
+import service._
 import service.core.{ModuleKeyService, StudyProgramService}
-import service.{
-  ModuleDraftService,
-  ModuleReviewService,
-  ModuleService,
-  ModuleUpdatePermissionService
-}
 
 import java.util.UUID
 import javax.inject.{Inject, Singleton}
@@ -37,6 +32,7 @@ final class ModuleDraftController @Inject() (
     val identityRepository: IdentityRepository,
     val moduleService: ModuleService,
     val moduleKeyService: ModuleKeyService,
+    val moduleApprovalService: ModuleApprovalService,
     implicit val ctx: ExecutionContext
 ) extends AbstractController(cc)
     with ModuleDraftCheck
@@ -63,7 +59,7 @@ final class ModuleDraftController @Inject() (
   def keys(moduleId: UUID) =
     auth andThen
       personAction andThen
-      hasPermissionToEditDraft(moduleId) async { _ =>
+      hasPermissionToViewDraft(moduleId, moduleApprovalService) async { _ =>
         moduleDraftService
           .getByModuleOpt(moduleId)
           .map { draft =>

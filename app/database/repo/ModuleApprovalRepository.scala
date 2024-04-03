@@ -32,6 +32,17 @@ final class ModuleApprovalRepository @Inject() (
       tableQuery.filter(_.moduleDraft === moduleDraftId).map(_.status).result
     )
 
+  def canApproveModule(moduleId: UUID, person: String): Future[Boolean] = {
+    val spp = studyProgramPersonRepository.directorsQuery(person).map(_._1)
+    val query = tableQuery
+      .join(spp)
+      .on((r, spp) =>
+        r.studyProgram === spp.studyProgram && r.role === spp.role && r.moduleDraft === moduleId
+      )
+      .exists
+    db.run(query.result)
+  }
+
   def hasPendingApproval(reviewId: UUID, person: String): Future[Boolean] = {
     val pending: ModuleReviewStatus = Pending
     val spp = studyProgramPersonRepository.directorsQuery(person).map(_._1)

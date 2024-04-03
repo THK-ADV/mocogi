@@ -63,8 +63,9 @@ final class ModuleDraftApprovalController @Inject() (
   def getByModule(moduleId: UUID) =
     auth andThen
       personAction andThen
-      hasPermissionToEditDraft(moduleId) async { _ =>
-        reviewService.allByModule(moduleId).map(xs => Ok(Json.toJson(xs)))
+      hasPermissionToViewDraft(moduleId, approvalService) async {
+        _ => // TODO this should not be in ModuleDraftCheck
+          reviewService.allByModule(moduleId).map(xs => Ok(Json.toJson(xs)))
       }
 
   def update(@unused moduleId: UUID, reviewId: UUID) =

@@ -46,7 +46,6 @@ class ModulePOParserSpec
     "parse a study program with specialization raw" in {
       val input = "- study_program: study_program.wi1.wi1_vi"
       val (res1, rest1) = studyProgramParserRaw.parse(input)
-      println(res1.value)
       assert(rest1.isEmpty)
       assert(res1.value._1 == "wi1")
       assert(res1.value._2.value == "wi1_vi")

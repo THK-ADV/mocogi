@@ -17,6 +17,16 @@ final class ModuleApprovalService @Inject() (
     private implicit val ctx: ExecutionContext
 ) {
 
+  /** Returns if the given person has the privilege to approve the given module
+    * @param moduleId
+    *   to check
+    * @param person
+    *   to check
+    * @return
+    */
+  def canApproveModule(moduleId: UUID, person: String): Future[Boolean] =
+    approvalRepository.canApproveModule(moduleId, person)
+
   /** Returns the ModuleReviewSummaryStatus for the given module
     * @param moduleId
     *   ID of the module
