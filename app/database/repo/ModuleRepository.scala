@@ -1,5 +1,6 @@
 package database.repo
 
+import cats.data.NonEmptyList
 import database._
 import database.table._
 import models._
@@ -310,16 +311,16 @@ final class ModuleRepository @Inject() (
   }
 
   private def moduleRelations(metadata: Metadata): List[ModuleRelationDbEntry] =
-    metadata.relation.fold(List.empty[ModuleRelationDbEntry]) {
-      case ModuleRelation.Parent(children) =>
-        children.map(child =>
+    metadata.relation match {
+      case Some(ModuleRelation.Parent(children)) =>
+        children.toList.map(child =>
           ModuleRelationDbEntry(
             metadata.id,
             ModuleRelationType.Parent,
             child.id
           )
         )
-      case ModuleRelation.Child(parent) =>
+      case Some(ModuleRelation.Child(parent)) =>
         List(
           ModuleRelationDbEntry(
             metadata.id,
@@ -327,6 +328,8 @@ final class ModuleRepository @Inject() (
             parent.id
           )
         )
+      case None =>
+        Nil
     }
 
   private def contributionsToFocusAreas(
@@ -344,21 +347,24 @@ final class ModuleRepository @Inject() (
 
   private def responsibilities(
       metadata: Metadata
-  ): List[ModuleResponsibilityDbEntry] =
+  ): List[ModuleResponsibilityDbEntry] = {
+    val result = ListBuffer.empty[ModuleResponsibilityDbEntry]
     metadata.responsibilities.lecturers.map(p =>
-      ModuleResponsibilityDbEntry(
+      result += ModuleResponsibilityDbEntry(
         metadata.id,
         p.id,
         ResponsibilityType.Lecturer
       )
-    ) :::
-      metadata.responsibilities.moduleManagement.map(p =>
-        ModuleResponsibilityDbEntry(
-          metadata.id,
-          p.id,
-          ResponsibilityType.ModuleManagement
-        )
+    )
+    metadata.responsibilities.moduleManagement.map(p =>
+      result += ModuleResponsibilityDbEntry(
+        metadata.id,
+        p.id,
+        ResponsibilityType.ModuleManagement
       )
+    )
+    result.toList
+  }
 
   private def metadataAssessmentMethods(
       metadata: Metadata
@@ -542,7 +548,11 @@ final class ModuleRepository @Inject() (
           r.relationType match {
             case ModuleRelationType.Parent =>
               ModuleRelationProtocol
-                .Parent(relations.map(_.relationModule).toList)
+                .Parent(
+                  NonEmptyList.fromListUnsafe(
+                    relations.map(_.relationModule).toList
+                  )
+                )
             case ModuleRelationType.Child =>
               ModuleRelationProtocol.Child(r.relationModule)
           }
@@ -563,8 +573,8 @@ final class ModuleRepository @Inject() (
             m.location,
             participants,
             relation,
-            moduleManagement.toList,
-            lecturer.toList,
+            NonEmptyList.fromListUnsafe(moduleManagement.toList),
+            NonEmptyList.fromListUnsafe(lecturer.toList),
             ModuleAssessmentMethodsProtocol(
               mandatoryAssessmentMethods
                 .map(a =>

@@ -1,5 +1,6 @@
 package parsing.metadata
 
+import cats.data.NonEmptyList
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatest.{EitherValues, OptionValues}
 import parsing.ParserSpecHelper
@@ -24,7 +25,9 @@ class ModuleRelationParserSpec
           |  - module.$m1
           |  - module.$m2\n""".stripMargin
       val (res1, rest1) = parser.parse(input1)
-      assert(res1.value.value == ParsedModuleRelation.Parent(List(m1, m2)))
+      assert(
+        res1.value.value == ParsedModuleRelation.Parent(NonEmptyList.of(m1, m2))
+      )
       assert(rest1.isEmpty)
 
       val input2 =
@@ -32,14 +35,18 @@ class ModuleRelationParserSpec
           | children:
           |  - module.$m1\n""".stripMargin
       val (res2, rest2) = parser.parse(input2)
-      assert(res2.value.value == ParsedModuleRelation.Parent(List(m1)))
+      assert(
+        res2.value.value == ParsedModuleRelation.Parent(NonEmptyList.one(m1))
+      )
       assert(rest2.isEmpty)
 
       val input3 =
         s"""relation:
           | children: module.$m1\n""".stripMargin
       val (res3, rest3) = parser.parse(input3)
-      assert(res3.value.value == ParsedModuleRelation.Parent(List(m1)))
+      assert(
+        res3.value.value == ParsedModuleRelation.Parent(NonEmptyList.one(m1))
+      )
       assert(rest3.isEmpty)
     }
 

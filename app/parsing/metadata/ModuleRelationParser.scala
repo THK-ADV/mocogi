@@ -1,17 +1,18 @@
 package parsing.metadata
 
+import cats.data.NonEmptyList
 import parser.Parser
 import parser.Parser._
 import parser.ParserOps.P0
 import parsing.types.ParsedModuleRelation
-import parsing.{multipleValueParser, uuidParser}
+import parsing.{ParserListOps, multipleValueParser, uuidParser}
 
 import java.util.UUID
 
 object ModuleRelationParser {
 
-  def raw: Parser[Option[Either[UUID, List[UUID]]]] = {
-    def go: Parser[Either[UUID, List[UUID]]] = oneOf(
+  def raw: Parser[Option[Either[UUID, NonEmptyList[UUID]]]] = {
+    def go: Parser[Either[UUID, NonEmptyList[UUID]]] = oneOf(
       prefix("parent:")
         .skip(zeroOrMoreSpaces)
         .skip(prefix("module."))
@@ -20,9 +21,10 @@ object ModuleRelationParser {
         .map(Left.apply),
       multipleValueParser(
         "children",
-        skipFirst(prefix("module.")).take(prefixTo("\n")).flatMap(uuidParser),
-        1
-      ).map(Right.apply)
+        skipFirst(prefix("module.")).take(prefixTo("\n")).flatMap(uuidParser)
+      )
+        .nel()
+        .map(Right.apply)
     )
 
     prefix("relation:")

@@ -1,14 +1,18 @@
 package parsing.metadata
 
+import cats.data.NonEmptyList
 import models.core.Identity
 import parser.Parser
 import parser.Parser._
 import parser.ParserOps._
+import parsing.ParserListOps
 
 object IdentityParser {
   private def prefix = "person."
 
-  def parser(implicit identities: Seq[Identity]): Parser[List[Identity]] = {
+  def parser(implicit
+      identities: Seq[Identity]
+  ): Parser[NonEmptyList[Identity]] = {
     val single =
       oneOf(
         identities
@@ -28,10 +32,10 @@ object IdentityParser {
         .take(single)
         .many()
 
-    single.map(a => List(a)) or dashes
+    single.map(a => NonEmptyList.one(a)) or dashes.nel()
   }
 
-  def raw: Parser[List[String]] = {
+  def raw: Parser[NonEmptyList[String]] = {
     val single =
       skipFirst(Parser.prefix(prefix))
         .take(prefixTo("\n").or(rest))
@@ -44,6 +48,6 @@ object IdentityParser {
         .take(single)
         .many()
 
-    single.map(a => List(a)) or dashes
+    single.map(a => NonEmptyList.one(a)) or dashes.nel()
   }
 }

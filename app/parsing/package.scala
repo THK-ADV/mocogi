@@ -1,3 +1,5 @@
+import cats.data.NonEmptyList
+
 import java.io.File
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -10,6 +12,14 @@ package object parsing {
   import parser.Parser
   import parser.Parser._
   import parser.ParserOps._
+
+  implicit class ParserListOps[A](private val parser: Parser[List[A]]) {
+    def nel(): Parser[NonEmptyList[A]] =
+      parser.flatMap(xs =>
+        if (xs.isEmpty) never("one entry")
+        else always(NonEmptyList.fromListUnsafe(xs))
+      )
+  }
 
   def removeIndentation(level: Int = 1): Parser[Unit] = Parser { input =>
     val indentations = level * 2
@@ -158,15 +168,14 @@ package object parsing {
 
   def multipleValueParser[A](
       key: String,
-      singleParser: Parser[A],
-      minimum: Int = 0
+      singleParser: Parser[A]
   ): Parser[List[A]] = {
     val dashes =
       zeroOrMoreSpaces
         .skip(prefix("-"))
         .skip(zeroOrMoreSpaces)
         .take(singleParser)
-        .many(minimum = minimum)
+        .many()
 
     prefix(s"$key:")
       .skip(zeroOrMoreSpaces)
@@ -176,8 +185,7 @@ package object parsing {
 
   def multipleValueParser[A](
       key: String,
-      optionPrefix: A => String,
-      minimum: Int
+      optionPrefix: A => String
   )(implicit
       options: Seq[A]
   ): Parser[List[A]] = multipleValueParser(
@@ -187,8 +195,7 @@ package object parsing {
         prefix(optionPrefix(o))
           .map(_ => o)
       ): _*
-    ),
-    minimum
+    )
   )
 
   def singleValueRawParser(key: String, prefix: String): Parser[String] =

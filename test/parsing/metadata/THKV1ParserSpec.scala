@@ -1,5 +1,6 @@
 package parsing.metadata
 
+import cats.data.NonEmptyList
 import helper._
 import models.core._
 import org.scalatest.wordspec.AnyWordSpec
@@ -115,7 +116,7 @@ class THKV1ParserSpec
         assert(metadata.season == Season("ws", "Wintersemester", "--"))
         assert(
           metadata.responsibilities == ModuleResponsibilities(
-            List(
+            NonEmptyList.one(
               Identity.Person(
                 "ald",
                 "Dobrynin",
@@ -127,7 +128,7 @@ class THKV1ParserSpec
                 PersonStatus.Active
               )
             ),
-            List(
+            NonEmptyList.of(
               Identity.Person(
                 "ald",
                 "Dobrynin",
@@ -253,7 +254,7 @@ class THKV1ParserSpec
         assert(metadata.relation.isEmpty)
         assert(
           metadata.credits == Right(
-            List(
+            NonEmptyList.of(
               ModuleECTSFocusAreaContribution(FocusAreaID("gak"), 3.5, "", ""),
               ModuleECTSFocusAreaContribution(
                 FocusAreaID("acs"),
@@ -269,7 +270,7 @@ class THKV1ParserSpec
         assert(metadata.season == Season("ss", "Sommersemester", "--"))
         assert(
           metadata.responsibilities == ModuleResponsibilities(
-            List(
+            NonEmptyList.one(
               Identity.Person(
                 "ald",
                 "Dobrynin",
@@ -281,7 +282,7 @@ class THKV1ParserSpec
                 PersonStatus.Active
               )
             ),
-            List(
+            NonEmptyList.one(
               Identity.Person(
                 "ald",
                 "Dobrynin",

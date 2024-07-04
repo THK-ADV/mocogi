@@ -1,5 +1,6 @@
 package database.repo.core
 
+import cats.data.NonEmptyList
 import database.table.core.{
   StudyProgramDbEntry,
   StudyProgramPersonDbEntry,
@@ -41,10 +42,10 @@ class StudyProgramRepository @Inject() (
   ): Future[Seq[StudyProgram]] = {
     def directors(x: StudyProgram) = {
       val directors = ListBuffer.empty[StudyProgramPersonDbEntry]
-      x.programDirectors.foreach(p =>
+      x.programDirectors.map(p =>
         directors += StudyProgramPersonDbEntry(p, x.id, UniversityRole.SGL)
       )
-      x.examDirectors.foreach(p =>
+      x.examDirectors.map(p =>
         directors += StudyProgramPersonDbEntry(p, x.id, UniversityRole.PAV)
       )
       directors.toList
@@ -115,8 +116,8 @@ class StudyProgramRepository @Inject() (
             sp.internalAbbreviation,
             sp.externalAbbreviation,
             sp.degree,
-            directors.toList,
-            examDirectors.toList
+            NonEmptyList.fromListUnsafe(directors.toList),
+            NonEmptyList.fromListUnsafe(examDirectors.toList)
           )
         }.toSeq)
     )

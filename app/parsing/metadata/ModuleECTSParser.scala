@@ -1,5 +1,6 @@
 package parsing.metadata
 
+import cats.data.NonEmptyList
 import models.core.FocusAreaID
 import parser.Parser
 import parser.Parser._
@@ -38,7 +39,7 @@ object ModuleECTSParser {
       .skip(prefixTo("contributions_to_focus_areas:"))
       .skip(zeroOrMoreSpaces)
       .skip(removeIndentation(3))
-      .take(focusAreaParser.many())
+      .take(focusAreaParser.many().nel())
   }
 
   def ectsContributionsToFocusAreasParserRaw = {
@@ -68,7 +69,7 @@ object ModuleECTSParser {
 
   def parser(implicit
       focusAreas: Seq[FocusAreaID]
-  ): Parser[Either[Double, List[ModuleECTSFocusAreaContribution]]] = {
+  ): Parser[Either[Double, NonEmptyList[ModuleECTSFocusAreaContribution]]] = {
     oneOf(
       ectsValueParser.map(Left.apply),
       ectsContributionsToFocusAreasParser(focusAreas.sortBy(_.id).reverse)

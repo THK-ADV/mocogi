@@ -1,7 +1,8 @@
 package printing
 
-import models.core._
+import cats.data.NonEmptyList
 import models._
+import models.core._
 import org.scalatest.EitherValues
 import org.scalatest.wordspec.AnyWordSpec
 import parsing.types._
@@ -30,8 +31,8 @@ final class ModuleMarkdownPrinterSpec extends AnyWordSpec with EitherValues {
         1,
         Season("season", "season", "season"),
         ModuleResponsibilities(
-          List(Identity.Unknown("unknown", "unknown")),
-          List(Identity.Unknown("unknown", "unknown"))
+          NonEmptyList.one(Identity.Unknown("unknown", "unknown")),
+          NonEmptyList.one(Identity.Unknown("unknown", "unknown"))
         ),
         ModuleAssessmentMethods(
           List(

@@ -1,6 +1,7 @@
 package validator
 
-import models.{Metadata, ModuleCore, ModulePOOptional, ModulePOs, ModulePrerequisiteEntry, ModulePrerequisites, ModuleRelation, ModuleWorkload}
+import cats.data.NonEmptyList
+import models._
 import models.core._
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatest.{EitherValues, OptionValues}
@@ -80,7 +81,8 @@ final class MetadataValidatorSpec
         val am2 = ModuleAssessmentMethods(List(method(None)), Nil)
         assert(assessmentMethodsValidator.validate(am2).value == am2)
 
-        val am3 = ModuleAssessmentMethods(List(method(None)), List(method(None)))
+        val am3 =
+          ModuleAssessmentMethods(List(method(None)), List(method(None)))
         assert(assessmentMethodsValidator.validate(am3).value == am3)
 
         val am4 =
@@ -208,9 +210,13 @@ final class MetadataValidatorSpec
     "validating ects" should {
       "pass if ects value is set via contributions to focus areas" in {
         val ects1 = List(ectsContrib(5))
-        assert(ectsValidator.validate(Right(ects1)).value == ModuleECTS(5, ects1))
+        assert(
+          ectsValidator.validate(Right(ects1)).value == ModuleECTS(5, ects1)
+        )
         val ects2 = List(ectsContrib(5), ectsContrib(3))
-        assert(ectsValidator.validate(Right(ects2)).value == ModuleECTS(8, ects2))
+        assert(
+          ectsValidator.validate(Right(ects2)).value == ModuleECTS(8, ects2)
+        )
       }
 
       "pass if ects value is already set" in {
@@ -471,15 +477,11 @@ final class MetadataValidatorSpec
       "pass if children are found" in {
         assert(
           moduleRelationValidator(lookup)
-            .validate(Some(ParsedModuleRelation.Parent(List(m1.id, m2.id))))
+            .validate(
+              Some(ParsedModuleRelation.Parent(NonEmptyList.of(m1.id, m2.id)))
+            )
             .value
-            .value == ModuleRelation.Parent(List(m1, m2))
-        )
-        assert(
-          moduleRelationValidator(lookup)
-            .validate(Some(ParsedModuleRelation.Parent(Nil)))
-            .value
-            .value == ModuleRelation.Parent(Nil)
+            .value == ModuleRelation.Parent(NonEmptyList.of(m1, m2))
         )
       }
 
@@ -487,7 +489,9 @@ final class MetadataValidatorSpec
         val random = UUID.randomUUID
         assert(
           moduleRelationValidator(lookup)
-            .validate(Some(ParsedModuleRelation.Parent(List(m1.id, random))))
+            .validate(
+              Some(ParsedModuleRelation.Parent(NonEmptyList.of(m1.id, random)))
+            )
             .left
             .value == List(s"module in 'module relation' not found: $random")
         )
@@ -506,7 +510,10 @@ final class MetadataValidatorSpec
           ModuleLanguage("", "", ""),
           1,
           Season("", "", ""),
-          ModuleResponsibilities(Nil, Nil),
+          ModuleResponsibilities(
+            NonEmptyList.one(Identity.Unknown("id", "label")),
+            NonEmptyList.one(Identity.Unknown("id", "label"))
+          ),
           ModuleAssessmentMethods(
             List(method(Some(50)), method(Some(50))),
             List(method(None))
@@ -587,7 +594,10 @@ final class MetadataValidatorSpec
           ModuleLanguage("", "", ""),
           1,
           Season("", "", ""),
-          ModuleResponsibilities(Nil, Nil),
+          ModuleResponsibilities(
+            NonEmptyList.one(Identity.Unknown("id", "label")),
+            NonEmptyList.one(Identity.Unknown("id", "label"))
+          ),
           ModuleAssessmentMethods(
             List(method(Some(50)), method(Some(50))),
             List(method(None))
@@ -607,7 +617,6 @@ final class MetadataValidatorSpec
           Nil,
           Nil
         )
-
         assert(
           validateMany(Seq(ivm1), 10, lookup).head.left.value == List(
             "title must be set, but was empty",

@@ -13,8 +13,7 @@ object ModuleGlobalCriteriaParser {
   ): Parser[List[ModuleGlobalCriteria]] =
     multipleValueParser(
       key,
-      (g: ModuleGlobalCriteria) => s"$prefix${g.id}",
-      0
+      (g: ModuleGlobalCriteria) => s"$prefix${g.id}"
     )(globalCriteria.sortBy(_.id).reverse)
 
   def raw: Parser[List[String]] =

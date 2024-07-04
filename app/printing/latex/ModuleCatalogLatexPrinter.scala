@@ -9,7 +9,14 @@ import ops.StringBuilderOps.SBOps
 import parsing.types.ModuleContent
 import play.api.Logging
 import printing.pandoc.PandocApi
-import printing.{IDLabelDescOps, LabelOps, PrintingLanguage, fmtCommaSeparated, fmtDouble, fmtIdentity}
+import printing.{
+  IDLabelDescOps,
+  LabelOps,
+  PrintingLanguage,
+  fmtCommaSeparated,
+  fmtDouble,
+  fmtIdentity
+}
 
 import java.util.UUID
 import javax.inject.{Inject, Singleton}
@@ -202,7 +209,7 @@ final class ModuleCatalogLatexPrinter @Inject() (pandocApi: PandocApi)
         lang.moduleCoordinatorLabel,
         fmtCommaSeparated(
           people
-            .filter(p => module.metadata.moduleManagement.contains(p.id))
+            .filter(p => module.metadata.moduleManagement.exists(_ == p.id))
             .sorted,
           "\\newline "
         )(fmtIdentity)
@@ -210,7 +217,9 @@ final class ModuleCatalogLatexPrinter @Inject() (pandocApi: PandocApi)
       row(
         lang.lecturersLabel,
         fmtCommaSeparated(
-          people.filter(p => module.metadata.lecturers.contains(p.id)).sorted,
+          people
+            .filter(p => module.metadata.lecturers.exists(_ == p.id))
+            .sorted,
           "\\newline "
         )(fmtIdentity)
       )

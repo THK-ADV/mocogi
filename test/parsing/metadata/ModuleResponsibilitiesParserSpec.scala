@@ -1,5 +1,6 @@
 package parsing.metadata
 
+import cats.data.NonEmptyList
 import helper.FakeIdentities
 import org.scalatest.EitherValues
 import org.scalatest.wordspec.AnyWordSpec
@@ -22,8 +23,8 @@ class ModuleResponsibilitiesParserSpec
           |lecturers:person.ald
           |""".stripMargin
       val (res, rest) = parser.parse(resp)
-      assert(res.value.moduleManagement.map(_.id) == List("abe"))
-      assert(res.value.lecturers.map(_.id) == List("ald"))
+      assert(res.value.moduleManagement.map(_.id) == NonEmptyList.one("abe"))
+      assert(res.value.lecturers.map(_.id) == NonEmptyList.one("ald"))
       assert(rest.isEmpty)
     }
 
@@ -34,8 +35,8 @@ class ModuleResponsibilitiesParserSpec
           |lecturers:person.ald
           |""".stripMargin
       val (res, rest) = raw.parse(resp)
-      assert(res.value._1 == List("abe"))
-      assert(res.value._2 == List("ald"))
+      assert(res.value._1 == NonEmptyList.one("abe"))
+      assert(res.value._2 == NonEmptyList.one("ald"))
       assert(rest.isEmpty)
     }
 
@@ -46,8 +47,8 @@ class ModuleResponsibilitiesParserSpec
           | lecturers: person.ald
           |""".stripMargin
       val (res, rest) = parser.parse(resp)
-      assert(res.value.moduleManagement.map(_.id) == List("abe"))
-      assert(res.value.lecturers.map(_.id) == List("ald"))
+      assert(res.value.moduleManagement.map(_.id) == NonEmptyList.one("abe"))
+      assert(res.value.lecturers.map(_.id) == NonEmptyList.one("ald"))
       assert(rest.isEmpty)
     }
 
@@ -60,8 +61,10 @@ class ModuleResponsibilitiesParserSpec
           |lecturers:person.ald
           |""".stripMargin
       val (res, rest) = parser.parse(resp)
-      assert(res.value.moduleManagement.map(_.id) == List("abe", "ddu"))
-      assert(res.value.lecturers.map(_.id) == List("ald"))
+      assert(
+        res.value.moduleManagement.map(_.id) == NonEmptyList.of("abe", "ddu")
+      )
+      assert(res.value.lecturers.map(_.id) == NonEmptyList.one("ald"))
       assert(rest.isEmpty)
     }
 
@@ -74,8 +77,8 @@ class ModuleResponsibilitiesParserSpec
           |lecturers:person.ald
           |""".stripMargin
       val (res, rest) = raw.parse(resp)
-      assert(res.value._1 == List("abe", "ddu"))
-      assert(res.value._2 == List("ald"))
+      assert(res.value._1 == NonEmptyList.of("abe", "ddu"))
+      assert(res.value._2 == NonEmptyList.one("ald"))
       assert(rest.isEmpty)
     }
 
@@ -88,8 +91,10 @@ class ModuleResponsibilitiesParserSpec
           | lecturers: person.ald
           |""".stripMargin
       val (res, rest) = parser.parse(resp)
-      assert(res.value.moduleManagement.map(_.id) == List("abe", "ddu"))
-      assert(res.value.lecturers.map(_.id) == List("ald"))
+      assert(
+        res.value.moduleManagement.map(_.id) == NonEmptyList.of("abe", "ddu")
+      )
+      assert(res.value.lecturers.map(_.id) == NonEmptyList.one("ald"))
       assert(rest.isEmpty)
     }
 
@@ -102,8 +107,8 @@ class ModuleResponsibilitiesParserSpec
           |-person.ddu
           |""".stripMargin
       val (res, rest) = parser.parse(resp)
-      assert(res.value.moduleManagement.map(_.id) == List("abe"))
-      assert(res.value.lecturers.map(_.id) == List("ald", "ddu"))
+      assert(res.value.moduleManagement.map(_.id) == NonEmptyList.one("abe"))
+      assert(res.value.lecturers.map(_.id) == NonEmptyList.of("ald", "ddu"))
       assert(rest.isEmpty)
     }
 
@@ -116,8 +121,8 @@ class ModuleResponsibilitiesParserSpec
           |-person.ddu
           |""".stripMargin
       val (res, rest) = raw.parse(resp)
-      assert(res.value._1 == List("abe"))
-      assert(res.value._2 == List("ald", "ddu"))
+      assert(res.value._1 == NonEmptyList.one("abe"))
+      assert(res.value._2 == NonEmptyList.of("ald", "ddu"))
       assert(rest.isEmpty)
     }
 
@@ -130,8 +135,8 @@ class ModuleResponsibilitiesParserSpec
           | - person.ddu
           |""".stripMargin
       val (res, rest) = parser.parse(resp)
-      assert(res.value.moduleManagement.map(_.id) == List("abe"))
-      assert(res.value.lecturers.map(_.id) == List("ald", "ddu"))
+      assert(res.value.moduleManagement.map(_.id) == NonEmptyList.one("abe"))
+      assert(res.value.lecturers.map(_.id) == NonEmptyList.of("ald", "ddu"))
       assert(rest.isEmpty)
     }
 
@@ -146,8 +151,10 @@ class ModuleResponsibilitiesParserSpec
           |  - person.ddu
           |""".stripMargin
       val (res, rest) = parser.parse(resp)
-      assert(res.value.moduleManagement.map(_.id) == List("abe", "ald"))
-      assert(res.value.lecturers.map(_.id) == List("ald", "ddu"))
+      assert(
+        res.value.moduleManagement.map(_.id) == NonEmptyList.of("abe", "ald")
+      )
+      assert(res.value.lecturers.map(_.id) == NonEmptyList.of("ald", "ddu"))
       assert(rest.isEmpty)
     }
 
@@ -162,8 +169,8 @@ class ModuleResponsibilitiesParserSpec
           |  - person.ddu
           |""".stripMargin
       val (res, rest) = raw.parse(resp)
-      assert(res.value._1 == List("abe", "ald"))
-      assert(res.value._2 == List("ald", "ddu"))
+      assert(res.value._1 == NonEmptyList.of("abe", "ald"))
+      assert(res.value._2 == NonEmptyList.of("ald", "ddu"))
       assert(rest.isEmpty)
     }
 
@@ -178,8 +185,10 @@ class ModuleResponsibilitiesParserSpec
           |  - person.ddu
           |""".stripMargin
       val (res, rest) = parser.parse(resp)
-      assert(res.value.moduleManagement.map(_.id) == List("abe", "ald"))
-      assert(res.value.lecturers.map(_.id) == List("ald", "ddu"))
+      assert(
+        res.value.moduleManagement.map(_.id) == NonEmptyList.of("abe", "ald")
+      )
+      assert(res.value.lecturers.map(_.id) == NonEmptyList.of("ald", "ddu"))
       assert(rest.isEmpty)
     }
   }

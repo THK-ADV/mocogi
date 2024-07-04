@@ -1,5 +1,6 @@
 package parsing.metadata
 
+import cats.data.NonEmptyList
 import models.core.Identity
 import parser.Parser
 import parser.Parser._
@@ -9,8 +10,8 @@ import parsing.types.ModuleResponsibilities
 object ModuleResponsibilitiesParser {
 
   private def inner[A](
-      identityParser: Parser[List[A]]
-  ): Parser[(List[A], List[A])] = {
+      identityParser: Parser[NonEmptyList[A]]
+  ): Parser[(NonEmptyList[A], NonEmptyList[A])] = {
     prefix("responsibilities:")
       .skip(zeroOrMoreSpaces)
       .skip(optional(newline))
@@ -34,6 +35,6 @@ object ModuleResponsibilitiesParser {
     inner(IdentityParser.parser(identities))
       .map((ModuleResponsibilities.apply _).tupled)
 
-  def raw: Parser[(List[String], List[String])] =
+  def raw: Parser[(NonEmptyList[String], NonEmptyList[String])] =
     inner(IdentityParser.raw)
 }

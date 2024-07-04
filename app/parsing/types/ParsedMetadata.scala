@@ -1,6 +1,7 @@
 package parsing.types
 
-import models.core.{ModuleCompetence, ModuleGlobalCriteria, ModuleLanguage, ModuleLocation, ModuleType, Season, ModuleStatus}
+import cats.data.NonEmptyList
+import models.core.{ModuleCompetence, ModuleGlobalCriteria, ModuleLanguage, ModuleLocation, ModuleStatus, ModuleType, Season}
 
 import java.util.UUID
 
@@ -10,7 +11,7 @@ case class ParsedMetadata(
     abbrev: String,
     kind: ModuleType,
     relation: Option[ParsedModuleRelation],
-    credits: Either[Double, List[ModuleECTSFocusAreaContribution]],
+    credits: Either[Double, NonEmptyList[ModuleECTSFocusAreaContribution]],
     language: ModuleLanguage,
     duration: Int,
     season: Season,

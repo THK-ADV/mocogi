@@ -1,5 +1,6 @@
 package parsing.metadata.mocks
 
+import cats.data.NonEmptyList
 import models.core._
 import parser.Parser.always
 import parsing.metadata.{MetadataParser, VersionScheme}
@@ -34,7 +35,10 @@ class FakeMetadataParser extends MetadataParser {
       ModuleLanguage("", "", ""),
       0,
       Season("", "", ""),
-      ModuleResponsibilities(Nil, Nil),
+      ModuleResponsibilities(
+        NonEmptyList.one(Identity.Unknown("id", "label")),
+        NonEmptyList.one(Identity.Unknown("id", "label"))
+      ),
       ModuleAssessmentMethods(Nil, Nil),
       ParsedWorkload(0, 0, 0, 0, 0, 0),
       ParsedPrerequisites(None, None),

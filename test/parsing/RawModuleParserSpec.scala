@@ -1,5 +1,6 @@
 package parsing
 
+import cats.data.NonEmptyList
 import models._
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatest.{EitherValues, OptionValues}
@@ -38,8 +39,8 @@ final class RawModuleParserSpec
       assert(metadata.language == "de")
       assert(metadata.duration == 1)
       assert(metadata.season == "ws")
-      assert(metadata.moduleManagement == List("ald"))
-      assert(metadata.lecturers == List("ald", "abe"))
+      assert(metadata.moduleManagement == NonEmptyList.one("ald"))
+      assert(metadata.lecturers == NonEmptyList.of("ald", "abe"))
       assert(
         metadata.assessmentMethods.mandatory == List(
           ModuleAssessmentMethodEntryProtocol("written-exam", None, Nil)
@@ -124,8 +125,8 @@ final class RawModuleParserSpec
       assert(metadata.language == "en")
       assert(metadata.duration == 1)
       assert(metadata.season == "ss")
-      assert(metadata.moduleManagement == List("ald"))
-      assert(metadata.lecturers == List("ald"))
+      assert(metadata.moduleManagement == NonEmptyList.one("ald"))
+      assert(metadata.lecturers == NonEmptyList.one("ald"))
       assert(
         metadata.assessmentMethods.mandatory == List(
           ModuleAssessmentMethodEntryProtocol(
@@ -200,8 +201,8 @@ final class RawModuleParserSpec
       assert(metadata.language == "de")
       assert(metadata.duration == 1)
       assert(metadata.season == "ws")
-      assert(metadata.moduleManagement == List("ald"))
-      assert(metadata.lecturers == List("ald", "abe"))
+      assert(metadata.moduleManagement == NonEmptyList.one("ald"))
+      assert(metadata.lecturers == NonEmptyList.of("ald", "abe"))
       assert(
         metadata.assessmentMethods.mandatory == List(
           ModuleAssessmentMethodEntryProtocol("written-exam", None, Nil)

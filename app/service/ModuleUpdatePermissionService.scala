@@ -1,15 +1,11 @@
 package service
 
 import auth.CampusId
+import cats.data.NonEmptyList
 import database.repo.ModuleUpdatePermissionRepository
 import models.ModuleUpdatePermissionType.{Granted, Inherited}
 import models.core.Identity
-import models.{
-  ModuleCore,
-  ModuleDraft,
-  ModuleUpdatePermission,
-  ModuleUpdatePermissionType
-}
+import models.{ModuleCore, ModuleDraft, ModuleUpdatePermission, ModuleUpdatePermissionType}
 
 import java.util.UUID
 import javax.inject.{Inject, Singleton}
@@ -20,7 +16,7 @@ final class ModuleUpdatePermissionService @Inject() (
     private val repo: ModuleUpdatePermissionRepository,
     implicit val ctx: ExecutionContext
 ) {
-  def createOrUpdateInherited(modules: Seq[(UUID, List[Identity])]) = {
+  def createOrUpdateInherited(modules: Seq[(UUID, NonEmptyList[Identity])]) = {
     def entries() =
       modules.flatMap { case (module, management) =>
         management.collect {
