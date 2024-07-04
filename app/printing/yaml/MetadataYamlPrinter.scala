@@ -47,10 +47,10 @@ final class MetadataYamlPrinter(identLevel: Int) {
             metadata.lecturers
           )
         )
-        .skip(
-          assessmentMethodsMandatory(
-            NonEmptyList.fromListUnsafe(metadata.assessmentMethods.mandatory)
-          )
+        .skipOpt(
+          NonEmptyList
+            .fromList(metadata.assessmentMethods.mandatory)
+            .map(assessmentMethodsMandatory)
         )
         .skipOpt(
           NonEmptyList
@@ -66,7 +66,7 @@ final class MetadataYamlPrinter(identLevel: Int) {
         )
         .skip(status(metadata.status))
         .skip(location(metadata.location))
-        .skip(poMandatory(metadata.po.mandatory))
+        .skipOpt(NonEmptyList.fromList(metadata.po.mandatory).map(poMandatory))
         .skipOpt(NonEmptyList.fromList(metadata.po.optional).map(poOptional))
         .skipOpt(metadata.participants.map(participants))
         .skipOpt(NonEmptyList.fromList(metadata.competences).map(competences))
@@ -353,7 +353,7 @@ final class MetadataYamlPrinter(identLevel: Int) {
   def taughtWith(value: NonEmptyList[UUID]) =
     list(prefix("taught_with:"), value, "module", 0)
 
-  def poMandatory(value: List[ModulePOMandatoryProtocol]) = {
+  def poMandatory(value: NonEmptyList[ModulePOMandatoryProtocol]) = {
     val deepness = identLevel + 2
     prefix("po_mandatory:")
       .skip(newline)

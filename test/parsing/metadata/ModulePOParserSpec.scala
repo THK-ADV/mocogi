@@ -231,6 +231,13 @@ class ModulePOParserSpec
       assert(rest.isEmpty)
     }
 
+    "dont parse a single po if there is none" in {
+      val (res, rest) = parser.parse("foo: bar")
+      assert(res.value.mandatory.isEmpty)
+      assert(res.value.optional.isEmpty)
+      assert(rest == "foo: bar")
+    }
+
     "parse a single optional po with no specialization" in {
       val m1 = UUID.randomUUID
       val input =

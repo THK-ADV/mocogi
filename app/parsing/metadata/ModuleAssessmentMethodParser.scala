@@ -103,28 +103,28 @@ object ModuleAssessmentMethodParser {
   def mandatoryParser(implicit
       xs: Seq[AssessmentMethod]
   ): Parser[List[ModuleAssessmentMethodEntry]] =
-    parser(mandatoryKey)(xs.sortBy(_.id).reverse)
+    parser(mandatoryKey)(xs.sortBy(_.id).reverse).option.map(_.getOrElse(Nil))
 
   def electiveParser(implicit
       xs: Seq[AssessmentMethod]
   ): Parser[List[ModuleAssessmentMethodEntry]] =
-    parser(electiveKey)(xs.sortBy(_.id).reverse)
+    parser(electiveKey)(xs.sortBy(_.id).reverse).option.map(_.getOrElse(Nil))
 
   def parser(implicit
       xs: Seq[AssessmentMethod]
   ): Parser[ModuleAssessmentMethods] =
     mandatoryParser
-      .zip(electiveParser.option.map(_.getOrElse(Nil)))
+      .zip(electiveParser)
       .map((ModuleAssessmentMethods.apply _).tupled)
 
   def mandatoryParserRaw: Parser[List[ModuleAssessmentMethodEntryProtocol]] =
-    raw(mandatoryKey)
+    raw(mandatoryKey).option.map(_.getOrElse(Nil))
 
   def electiveParserRaw: Parser[List[ModuleAssessmentMethodEntryProtocol]] =
-    raw(electiveKey)
+    raw(electiveKey).option.map(_.getOrElse(Nil))
 
   def raw: Parser[ModuleAssessmentMethodsProtocol] =
     mandatoryParserRaw
-      .zip(electiveParserRaw.option.map(_.getOrElse(Nil)))
+      .zip(electiveParserRaw)
       .map((ModuleAssessmentMethodsProtocol.apply _).tupled)
 }

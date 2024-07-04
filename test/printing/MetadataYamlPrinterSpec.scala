@@ -245,7 +245,7 @@ final class MetadataYamlPrinterSpec extends AnyWordSpec with PrinterSpec {
     }
 
     "print po mandatory" in {
-      val po1 = List(
+      val po1 = NonEmptyList.of(
         ModulePOMandatoryProtocol("abc", None, List(1)),
         ModulePOMandatoryProtocol("ghi", None, List(1, 2)),
         ModulePOMandatoryProtocol("def", None, List(2, 1))
