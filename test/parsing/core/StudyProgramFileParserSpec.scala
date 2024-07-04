@@ -1,5 +1,6 @@
 package parsing.core
 
+import cats.data.NonEmptyList
 import helper._
 import models.core._
 import org.scalatest.EitherValues
@@ -59,7 +60,7 @@ final class StudyProgramFileParserSpec
       val input = "program_director: person.ald"
       val (res, rest) = programDirectorParser.parse(input)
       assert(
-        res.value == List(
+        res.value == NonEmptyList.one(
           Identity.Person(
             "ald",
             "Dobrynin",
@@ -79,7 +80,7 @@ final class StudyProgramFileParserSpec
       val input = "exam_director: person.ald"
       val (res, rest) = examDirectorParser.parse(input)
       assert(
-        res.value == List(
+        res.value == NonEmptyList.one(
           Identity.Person(
             "ald",
             "Dobrynin",
@@ -99,7 +100,7 @@ final class StudyProgramFileParserSpec
       val input = "program_director:  - person.ald\n  -person.abe"
       val (res, rest) = programDirectorParser.parse(input)
       assert(
-        res.value == List(
+        res.value == NonEmptyList.of(
           Identity.Person(
             "ald",
             "Dobrynin",
@@ -129,7 +130,7 @@ final class StudyProgramFileParserSpec
       val input = "exam_director:  - person.ald\n  -person.abe"
       val (res, rest) = examDirectorParser.parse(input)
       assert(
-        res.value == List(
+        res.value == NonEmptyList.of(
           Identity.Person(
             "ald",
             "Dobrynin",
@@ -168,10 +169,14 @@ final class StudyProgramFileParserSpec
       assert(sp1.externalAbbreviation == "dsc")
       assert(sp1.degree == msc.id)
       assert(
-        sp1.programDirectors == fakeIdentities.filter(_.id == "ald").map(_.id)
+        sp1.programDirectors == NonEmptyList.one(
+          fakeIdentities.find(_.id == "ald").get.id
+        )
       )
       assert(
-        sp1.examDirectors == fakeIdentities.filter(_.id == "ald").map(_.id)
+        sp1.examDirectors == NonEmptyList.one(
+          fakeIdentities.find(_.id == "ald").get.id
+        )
       )
 
       val sp2 = res.value(1)
@@ -182,14 +187,22 @@ final class StudyProgramFileParserSpec
       assert(sp2.externalAbbreviation == "inf1")
       assert(sp2.degree == bsc.id)
       assert(
-        sp2.programDirectors == fakeIdentities
-          .filter(a => a.id == "ald" || a.id == "abe")
-          .map(_.id)
+        sp2.programDirectors == NonEmptyList
+          .fromFoldable(
+            fakeIdentities
+              .filter(a => a.id == "ald" || a.id == "abe")
+              .map(_.id)
+          )
+          .get
       )
       assert(
-        sp2.examDirectors == fakeIdentities
-          .filter(a => a.id == "ald" || a.id == "abe")
-          .map(_.id)
+        sp2.examDirectors == NonEmptyList
+          .fromFoldable(
+            fakeIdentities
+              .filter(a => a.id == "ald" || a.id == "abe")
+              .map(_.id)
+          )
+          .get
       )
 
       val sp3 = res.value(2)
@@ -200,10 +213,14 @@ final class StudyProgramFileParserSpec
       assert(sp3.externalAbbreviation == "gme")
       assert(sp3.degree == beng.id)
       assert(
-        sp3.programDirectors == fakeIdentities.filter(_.id == "ald").map(_.id)
+        sp3.programDirectors == NonEmptyList.one(
+          fakeIdentities.find(_.id == "ald").get.id
+        )
       )
       assert(
-        sp3.examDirectors == fakeIdentities.filter(_.id == "abe").map(_.id)
+        sp3.examDirectors == NonEmptyList.one(
+          fakeIdentities.find(_.id == "abe").get.id
+        )
       )
 
       val sp4 = res.value(3)
@@ -214,10 +231,14 @@ final class StudyProgramFileParserSpec
       assert(sp4.externalAbbreviation == "ait")
       assert(sp4.degree == meng.id)
       assert(
-        sp4.programDirectors == fakeIdentities.filter(_.id == "ald").map(_.id)
+        sp4.programDirectors == NonEmptyList.one(
+          fakeIdentities.find(_.id == "ald").get.id
+        )
       )
       assert(
-        sp4.examDirectors == fakeIdentities.filter(_.id == "ald").map(_.id)
+        sp4.examDirectors == NonEmptyList.one(
+          fakeIdentities.find(_.id == "ald").get.id
+        )
       )
     }
 
@@ -232,8 +253,6 @@ final class StudyProgramFileParserSpec
       assert(sp.internalAbbreviation.isEmpty)
       assert(sp.externalAbbreviation.nonEmpty)
       assert(sp.degree.nonEmpty)
-      assert(sp.programDirectors.nonEmpty)
-      assert(sp.examDirectors.nonEmpty)
       assert(rest.isEmpty)
     }
 
@@ -248,8 +267,6 @@ final class StudyProgramFileParserSpec
       assert(sp.internalAbbreviation.isEmpty)
       assert(sp.externalAbbreviation.isEmpty)
       assert(sp.degree.nonEmpty)
-      assert(sp.programDirectors.nonEmpty)
-      assert(sp.examDirectors.nonEmpty)
       assert(rest.isEmpty)
     }
 
@@ -264,8 +281,6 @@ final class StudyProgramFileParserSpec
       assert(sp.internalAbbreviation.isEmpty)
       assert(sp.externalAbbreviation.isEmpty)
       assert(sp.degree.nonEmpty)
-      assert(sp.programDirectors.nonEmpty)
-      assert(sp.examDirectors.nonEmpty)
       assert(rest.isEmpty)
     }
 
@@ -280,8 +295,6 @@ final class StudyProgramFileParserSpec
       assert(sp.internalAbbreviation.isEmpty)
       assert(sp.externalAbbreviation.isEmpty)
       assert(sp.degree.nonEmpty)
-      assert(sp.programDirectors.nonEmpty)
-      assert(sp.examDirectors.nonEmpty)
       assert(rest.isEmpty)
     }
 
@@ -296,8 +309,6 @@ final class StudyProgramFileParserSpec
       assert(sp.internalAbbreviation.isEmpty)
       assert(sp.externalAbbreviation.isEmpty)
       assert(sp.degree.nonEmpty)
-      assert(sp.programDirectors.nonEmpty)
-      assert(sp.examDirectors.nonEmpty)
       assert(rest.isEmpty)
     }
 
@@ -312,8 +323,6 @@ final class StudyProgramFileParserSpec
       assert(sp.internalAbbreviation.isEmpty)
       assert(sp.externalAbbreviation.isEmpty)
       assert(sp.degree.nonEmpty)
-      assert(sp.programDirectors.nonEmpty)
-      assert(sp.examDirectors.nonEmpty)
       assert(rest.isEmpty)
     }
 
@@ -328,8 +337,6 @@ final class StudyProgramFileParserSpec
       assert(sp.internalAbbreviation.isEmpty)
       assert(sp.externalAbbreviation.isEmpty)
       assert(sp.degree.nonEmpty)
-      assert(sp.programDirectors.nonEmpty)
-      assert(sp.examDirectors.nonEmpty)
       assert(rest.isEmpty)
     }
 
@@ -344,8 +351,6 @@ final class StudyProgramFileParserSpec
       assert(sp.internalAbbreviation.isEmpty)
       assert(sp.externalAbbreviation.isEmpty)
       assert(sp.degree.nonEmpty)
-      assert(sp.programDirectors.nonEmpty)
-      assert(sp.examDirectors.nonEmpty)
       assert(rest.isEmpty)
     }
 
@@ -360,8 +365,6 @@ final class StudyProgramFileParserSpec
       assert(sp.internalAbbreviation.isEmpty)
       assert(sp.externalAbbreviation.isEmpty)
       assert(sp.degree.nonEmpty)
-      assert(sp.programDirectors.nonEmpty)
-      assert(sp.examDirectors.nonEmpty)
       assert(rest.isEmpty)
     }
 
@@ -376,8 +379,6 @@ final class StudyProgramFileParserSpec
       assert(sp.internalAbbreviation.isEmpty)
       assert(sp.externalAbbreviation.isEmpty)
       assert(sp.degree.nonEmpty)
-      assert(sp.programDirectors.nonEmpty)
-      assert(sp.examDirectors.nonEmpty)
       assert(rest.isEmpty)
     }
 
@@ -392,8 +393,6 @@ final class StudyProgramFileParserSpec
       assert(sp.internalAbbreviation.isEmpty)
       assert(sp.externalAbbreviation.isEmpty)
       assert(sp.degree.nonEmpty)
-      assert(sp.programDirectors.nonEmpty)
-      assert(sp.examDirectors.nonEmpty)
       assert(rest.isEmpty)
     }
 
@@ -408,8 +407,6 @@ final class StudyProgramFileParserSpec
       assert(sp.internalAbbreviation.isEmpty)
       assert(sp.externalAbbreviation.isEmpty)
       assert(sp.degree.nonEmpty)
-      assert(sp.programDirectors.nonEmpty)
-      assert(sp.examDirectors.nonEmpty)
       assert(rest.isEmpty)
     }
 
@@ -424,8 +421,6 @@ final class StudyProgramFileParserSpec
       assert(sp.internalAbbreviation.isEmpty)
       assert(sp.externalAbbreviation.isEmpty)
       assert(sp.degree.nonEmpty)
-      assert(sp.programDirectors.nonEmpty)
-      assert(sp.examDirectors.nonEmpty)
       assert(rest.isEmpty)
     }
 
@@ -440,8 +435,6 @@ final class StudyProgramFileParserSpec
       assert(sp.internalAbbreviation.isEmpty)
       assert(sp.externalAbbreviation.isEmpty)
       assert(sp.degree.nonEmpty)
-      assert(sp.programDirectors.nonEmpty)
-      assert(sp.examDirectors.nonEmpty)
       assert(rest.isEmpty)
     }
 
@@ -456,8 +449,6 @@ final class StudyProgramFileParserSpec
       assert(sp.internalAbbreviation.isEmpty)
       assert(sp.externalAbbreviation.isEmpty)
       assert(sp.degree.nonEmpty)
-      assert(sp.programDirectors.nonEmpty)
-      assert(sp.examDirectors.nonEmpty)
       assert(rest.isEmpty)
     }
 
@@ -472,8 +463,6 @@ final class StudyProgramFileParserSpec
       assert(sp.internalAbbreviation.isEmpty)
       assert(sp.externalAbbreviation.isEmpty)
       assert(sp.degree.nonEmpty)
-      assert(sp.programDirectors.nonEmpty)
-      assert(sp.examDirectors.nonEmpty)
       assert(rest.isEmpty)
     }
   }

@@ -1,5 +1,6 @@
 package parsing.core
 
+import cats.data.NonEmptyList
 import models.core._
 import parser.Parser
 import parser.Parser._
@@ -27,13 +28,20 @@ object StudyProgramFileParser {
 
   def programDirectorParser(implicit
       persons: Seq[Identity]
-  ): Parser[List[Identity]] =
-    multipleValueParser("program_director", p => s"person.${p.id}", 1)
+  ): Parser[NonEmptyList[Identity]] =
+    multipleValueParser(
+      "program_director",
+      (p: Identity) => s"person.${p.id}"
+    )
+      .nel()
 
   def examDirectorParser(implicit
       persons: Seq[Identity]
-  ): Parser[List[Identity]] =
-    multipleValueParser("exam_director", p => s"person.${p.id}", 1)
+  ): Parser[NonEmptyList[Identity]] =
+    multipleValueParser(
+      "exam_director",
+      (p: Identity) => s"person.${p.id}"
+    ).nel()
 
   def fileParser(implicit
       degrees: Seq[Degree],

@@ -52,7 +52,7 @@ object ModuleAssessmentMethodParser {
   private def preconditionParser(implicit
       assessmentMethods: Seq[AssessmentMethod]
   ): Parser[List[AssessmentMethod]] =
-    multipleValueParser(preconditionKey, assessmentMethodParser, 1).option
+    multipleValueParser(preconditionKey, assessmentMethodParser).option
       .map(_.getOrElse(Nil))
 
   private def preconditionParserRaw: Parser[List[String]] = {

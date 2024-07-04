@@ -1,5 +1,6 @@
 package parsing.metadata
 
+import cats.data.NonEmptyList
 import helper.FakeFocusAreas
 import models.core.FocusAreaID
 import org.scalatest.EitherValues
@@ -41,22 +42,24 @@ final class ModuleECTSParserSpec
           |        Text2""".stripMargin
       val (res, rest) =
         ectsContributionsToFocusAreasParser.parse(input)
+
       assert(
-        res.value.head == ModuleECTSFocusAreaContribution(
-          FocusAreaID("gak"),
-          0,
-          "",
-          ""
+        res.value == NonEmptyList.of(
+          ModuleECTSFocusAreaContribution(
+            FocusAreaID("gak"),
+            0,
+            "",
+            ""
+          ),
+          ModuleECTSFocusAreaContribution(
+            FocusAreaID("acs"),
+            6,
+            "Text1\nText2\n",
+            ""
+          )
         )
       )
-      assert(
-        res.value(1) == ModuleECTSFocusAreaContribution(
-          FocusAreaID("acs"),
-          6,
-          "Text1\nText2\n",
-          ""
-        )
-      )
+
       assert(rest.isEmpty)
     }
 
@@ -93,19 +96,19 @@ final class ModuleECTSParserSpec
       val (res, rest) =
         ectsContributionsToFocusAreasParser.parse(input)
       assert(
-        res.value.head == ModuleECTSFocusAreaContribution(
-          FocusAreaID("gak"),
-          0,
-          "a",
-          ""
-        )
-      )
-      assert(
-        res.value(1) == ModuleECTSFocusAreaContribution(
-          FocusAreaID("acs"),
-          6,
-          "a\nb\n",
-          "c"
+        res.value == NonEmptyList.of(
+          ModuleECTSFocusAreaContribution(
+            FocusAreaID("gak"),
+            0,
+            "a",
+            ""
+          ),
+          ModuleECTSFocusAreaContribution(
+            FocusAreaID("acs"),
+            6,
+            "a\nb\n",
+            "c"
+          )
         )
       )
       assert(rest.isEmpty)
@@ -132,7 +135,7 @@ final class ModuleECTSParserSpec
           |        Text2""".stripMargin
       val (res2, rest2) = parser.parse(complexInput)
       assert(
-        res2.value.value == List(
+        res2.value.value == NonEmptyList.of(
           ModuleECTSFocusAreaContribution(
             FocusAreaID("gak"),
             4,

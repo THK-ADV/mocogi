@@ -1,6 +1,7 @@
 package validator
 
-import models.{Metadata, ModuleCore, ModulePOOptional, ModulePOs, ModulePrerequisiteEntry, ModulePrerequisites, ModuleRelation, ModuleWorkload}
+import cats.data.NonEmptyList
+import models._
 import parsing.types._
 
 import java.util.UUID
@@ -14,7 +15,10 @@ object MetadataValidator {
     def sum(xs: List[ModuleAssessmentMethodEntry]): Double =
       xs.foldLeft(0.0) { case (acc, a) => acc + a.percentage.getOrElse(0.0) }
 
-    def go(xs: List[ModuleAssessmentMethodEntry], name: String): List[String] = {
+    def go(
+        xs: List[ModuleAssessmentMethodEntry],
+        name: String
+    ): List[String] = {
       val s = sum(xs)
       if (s == 0 || s == 100.0) Nil
       else List(s"$name sum must be null or 100, but was $s")
@@ -40,8 +44,9 @@ object MetadataValidator {
       case None => Right(None)
     }
 
-  def ectsValidator
-      : Validator[Either[Double, List[ModuleECTSFocusAreaContribution]], ModuleECTS] =
+  def ectsValidator: Validator[Either[Double, List[
+    ModuleECTSFocusAreaContribution
+  ]], ModuleECTS] =
     Validator {
       case Left(ectsValue) =>
         Either.cond(
@@ -117,7 +122,9 @@ object MetadataValidator {
   def prerequisitesEntryValidator(
       label: String,
       lookup: Lookup
-  ): Validator[Option[ParsedPrerequisiteEntry], Option[ModulePrerequisiteEntry]] =
+  ): Validator[Option[ParsedPrerequisiteEntry], Option[
+    ModulePrerequisiteEntry
+  ]] =
     moduleValidator(label, lookup)
       .pullback[Option[ParsedPrerequisiteEntry]](
         _.map(_.modules).getOrElse(Nil)
@@ -161,14 +168,17 @@ object MetadataValidator {
       lookup: Lookup
   ): Validator[Option[ParsedModuleRelation], Option[ModuleRelation]] =
     moduleValidator("module relation", lookup)
-      .pullback[Option[ParsedModuleRelation]](_.map {
-        case ParsedModuleRelation.Parent(children) => children
-        case ParsedModuleRelation.Child(parent)    => List(parent)
-      }.getOrElse(Nil))
+      .pullback[Option[ParsedModuleRelation]] {
+        case Some(ParsedModuleRelation.Parent(children)) => children.toList
+        case Some(ParsedModuleRelation.Child(parent))    => List(parent)
+        case None                                        => Nil
+      }
       .map((r, ms) =>
         r.map {
-          case ParsedModuleRelation.Parent(_) => ModuleRelation.Parent(ms)
-          case ParsedModuleRelation.Child(_)  => ModuleRelation.Child(ms.head)
+          case ParsedModuleRelation.Parent(_) =>
+            ModuleRelation.Parent(NonEmptyList.fromListUnsafe(ms))
+          case ParsedModuleRelation.Child(_) =>
+            ModuleRelation.Child(ms.head)
         }
       )
 
@@ -192,7 +202,7 @@ object MetadataValidator {
     participantsValidator.pullback(_.participants)
 
   def ectsValidatorAdapter: Validator[ParsedMetadata, ModuleECTS] =
-    ectsValidator.pullback(_.credits)
+    ectsValidator.pullback(_.credits.map(_.toList))
 
   def prerequisitesValidatorAdapter(
       lookup: Lookup
@@ -219,7 +229,9 @@ object MetadataValidator {
           .map((_, workload) => (ects, workload))
       )
 
-  def posValidatorAdapter(lookup: Lookup): Validator[ParsedMetadata, ModulePOs] =
+  def posValidatorAdapter(
+      lookup: Lookup
+  ): Validator[ParsedMetadata, ModulePOs] =
     posValidator(lookup).pullback(_.pos)
 
   def moduleRelationValidatorAdapter(

@@ -1,5 +1,6 @@
 package printing
 
+import cats.data.NonEmptyList
 import models._
 import org.scalatest.wordspec.AnyWordSpec
 import parsing.metadata.VersionScheme
@@ -38,10 +39,10 @@ final class MetadataYamlPrinterSpec extends AnyWordSpec with PrinterSpec {
     }
 
     "print module relation" in {
-      val parent0 = ModuleRelationProtocol.Parent(List(m1))
+      val parent0 = ModuleRelationProtocol.Parent(NonEmptyList.one(m1))
       val res0 = s"relation:\n  children: module.$m1\n"
       assert(run(printer.moduleRelation(parent0)) === res0)
-      val parent1 = ModuleRelationProtocol.Parent(List(m1, m2))
+      val parent1 = ModuleRelationProtocol.Parent(NonEmptyList.of(m1, m2))
       val res1 =
         s"""relation:
          |  children:
@@ -70,8 +71,8 @@ final class MetadataYamlPrinterSpec extends AnyWordSpec with PrinterSpec {
     }
 
     "print responsibilities" in {
-      val moduleManagement1 = List("ald")
-      val lecturers1 = List("ald", "abe")
+      val moduleManagement1 = NonEmptyList.one("ald")
+      val lecturers1 = NonEmptyList.of("ald", "abe")
       val res1 =
         s"""responsibilities:
            |  module_management: person.ald
@@ -81,7 +82,7 @@ final class MetadataYamlPrinterSpec extends AnyWordSpec with PrinterSpec {
       assert(
         run(printer.responsibilities(moduleManagement1, lecturers1)) === res1
       )
-      val moduleManagement2 = List("ald", "abe")
+      val moduleManagement2 = NonEmptyList.of("ald", "abe")
       val res2 =
         s"""responsibilities:
            |  module_management:
@@ -96,7 +97,7 @@ final class MetadataYamlPrinterSpec extends AnyWordSpec with PrinterSpec {
     }
 
     "print assessment methods mandatory" in {
-      val values1 = List(
+      val values1 = NonEmptyList.of(
         ModuleAssessmentMethodEntryProtocol("project", None, Nil),
         ModuleAssessmentMethodEntryProtocol("exam", None, Nil)
       )
@@ -105,7 +106,7 @@ final class MetadataYamlPrinterSpec extends AnyWordSpec with PrinterSpec {
            |  - method: assessment.exam
            |  - method: assessment.project\n""".stripMargin
       assert(run(printer.assessmentMethodsMandatory(values1)) == res1)
-      val values2 = List(
+      val values2 = NonEmptyList.of(
         ModuleAssessmentMethodEntryProtocol("exam", Some(100), Nil),
         ModuleAssessmentMethodEntryProtocol("project", None, Nil)
       )
@@ -115,7 +116,7 @@ final class MetadataYamlPrinterSpec extends AnyWordSpec with PrinterSpec {
            |    percentage: 100.0
            |  - method: assessment.project\n""".stripMargin
       assert(run(printer.assessmentMethodsMandatory(values2)) == res2)
-      val values3 = List(
+      val values3 = NonEmptyList.of(
         ModuleAssessmentMethodEntryProtocol("project", None, Nil),
         ModuleAssessmentMethodEntryProtocol(
           "exam",
@@ -217,7 +218,7 @@ final class MetadataYamlPrinterSpec extends AnyWordSpec with PrinterSpec {
     }
 
     "print competences" in {
-      val competences = List("def", "abc")
+      val competences = NonEmptyList.of("def", "abc")
       val res =
         s"""competences:
           |  - competence.abc
@@ -226,7 +227,7 @@ final class MetadataYamlPrinterSpec extends AnyWordSpec with PrinterSpec {
     }
 
     "print global criteria" in {
-      val globalCriteria = List("abc", "def")
+      val globalCriteria = NonEmptyList.of("abc", "def")
       val res =
         s"""global_criteria:
           |  - global_criteria.abc
@@ -235,7 +236,7 @@ final class MetadataYamlPrinterSpec extends AnyWordSpec with PrinterSpec {
     }
 
     "print taught with" in {
-      val taughtWith = List(m1, m2)
+      val taughtWith = NonEmptyList.of(m1, m2)
       val res =
         s"""taught_with:
           |  - module.$m1
@@ -265,7 +266,7 @@ final class MetadataYamlPrinterSpec extends AnyWordSpec with PrinterSpec {
     }
 
     "print po optional" in {
-      val po1 = List(
+      val po1 = NonEmptyList.of(
         ModulePOOptionalProtocol(
           "abc",
           None,
@@ -310,10 +311,10 @@ final class MetadataYamlPrinterSpec extends AnyWordSpec with PrinterSpec {
         "gm",
         Some(ModuleParticipants(0, 10)),
         Some(
-          ModuleRelationProtocol.Parent(List(m1, m2))
+          ModuleRelationProtocol.Parent(NonEmptyList.of(m1, m2))
         ),
-        List("ald"),
-        List("ald", "abe"),
+        NonEmptyList.one("ald"),
+        NonEmptyList.of("ald", "abe"),
         ModuleAssessmentMethodsProtocol(
           List(
             ModuleAssessmentMethodEntryProtocol(
@@ -353,7 +354,7 @@ final class MetadataYamlPrinterSpec extends AnyWordSpec with PrinterSpec {
               None,
               m2,
               partOfCatalog = true,
-              List(1)
+              Nil
             )
           )
         ),
@@ -428,7 +429,6 @@ final class MetadataYamlPrinterSpec extends AnyWordSpec with PrinterSpec {
           |  - study_program: study_program.po5
           |    instance_of: module.$m2
           |    part_of_catalog: true
-          |    recommended_semester: 1
           |participants:
           |  min: 0
           |  max: 10

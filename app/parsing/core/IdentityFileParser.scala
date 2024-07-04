@@ -1,10 +1,11 @@
 package parsing.core
 
+import cats.data.NonEmptyList
 import models.core.{Faculty, Identity, PersonStatus}
 import parser.Parser
 import parser.Parser._
 import parser.ParserOps.{P2, P3, P4, P5, P6, P7}
-import parsing.{multipleValueParser, singleLineStringForKey}
+import parsing.{ParserListOps, multipleValueParser, singleLineStringForKey}
 
 object IdentityFileParser {
 
@@ -25,12 +26,13 @@ object IdentityFileParser {
     singleLineStringForKey("status")
       .map(PersonStatus.apply)
 
-  def facultiesParser(implicit faculties: Seq[Faculty]): Parser[List[Faculty]] =
+  def facultiesParser(implicit
+      faculties: Seq[Faculty]
+  ): Parser[NonEmptyList[Faculty]] =
     multipleValueParser(
       "faculty",
-      a => s"faculty.${a.id}",
-      1
-    )
+      (a: Faculty) => s"faculty.${a.id}"
+    ).nel()
 
   def personParser(implicit
       faculties: Seq[Faculty]
@@ -43,7 +45,7 @@ object IdentityFileParser {
       .skip(zeroOrMoreSpaces)
       .take(singleLineStringForKey("title"))
       .skip(zeroOrMoreSpaces)
-      .take(facultiesParser)
+      .take(facultiesParser.map(_.toList))
       .skip(zeroOrMoreSpaces)
       .take(singleLineStringForKey("abbreviation"))
       .skip(zeroOrMoreSpaces)

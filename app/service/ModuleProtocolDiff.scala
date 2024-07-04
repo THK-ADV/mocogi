@@ -103,9 +103,9 @@ object ModuleProtocolDiff extends Logging {
         case "metadata.assessmentMethods.mandatory" =>
           takeIf(p.metadata.assessmentMethods.mandatory.nonEmpty)
         case "metadata.lecturers" =>
-          takeIf(p.metadata.lecturers.nonEmpty)
+          takeIf(true)
         case "metadata.moduleManagement" =>
-          takeIf(p.metadata.moduleManagement.nonEmpty)
+          takeIf(true)
         case "metadata.moduleRelation" =>
           takeIf(p.metadata.moduleRelation.nonEmpty)
         case "metadata.participants" =>
@@ -155,15 +155,14 @@ object ModuleProtocolDiff extends Logging {
     fields.foldLeft(
       (existing, existingUpdatedKeys)
     ) { case ((existing, existingUpdatedKeys), field) =>
-      def go[A](lens: Lens[ModuleProtocol, A]) =
-        if (lens.get(existing) != lens.get(newP)) {
-          logger.info(
-            s"""update of $field
-               |from:\t${lens.get(existing)}
-               |to:\t${lens.get(newP)}""".stripMargin
-          )
-          val newAcc = lens.replace(lens.get(newP)).apply(existing)
-          if (origin.exists(mco => lens.get(mco) == lens.get(newP))) {
+      def go[A](lens: Lens[ModuleProtocol, A]) = {
+        val lensExisting = lens.get(existing)
+        val lensNewProtocol = lens.get(newP)
+        if (lensExisting != lensNewProtocol) {
+          val id = existing.id.fold("-")(_.toString)
+          log(field, lensExisting, lensNewProtocol, id)
+          val newAcc = lens.replace(lensNewProtocol).apply(existing)
+          if (origin.exists(mco => lens.get(mco) == lensNewProtocol)) {
             (newAcc, existingUpdatedKeys - field)
           } else {
             val newKeys = existingUpdatedKeys + field
@@ -172,6 +171,7 @@ object ModuleProtocolDiff extends Logging {
         } else {
           (existing, existingUpdatedKeys)
         }
+      }
 
       field match {
         case "enContent.particularities" =>
@@ -277,4 +277,22 @@ object ModuleProtocolDiff extends Logging {
           (existing, existingUpdatedKeys)
       }
     }
+
+  private def log[A](
+      field: String,
+      lensExisting: A,
+      lensNewProtocol: A,
+      id: String
+  ): Unit =
+    logger.info(
+      s"""updating module
+         |=====================================
+         |module: $id
+         |property: $field
+         |from:
+         |$lensExisting
+         |to:
+         |$lensNewProtocol
+         |=====================================""".stripMargin
+    )
 }

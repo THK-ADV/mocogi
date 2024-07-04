@@ -1,5 +1,6 @@
 package service
 
+import cats.data.NonEmptyList
 import models._
 import org.scalatest.wordspec.AnyWordSpec
 import parsing.types.{ModuleContent, ModuleParticipants}
@@ -24,8 +25,8 @@ final class ModuleProtocolDiffSpec extends AnyWordSpec {
       "location",
       None,
       None,
-      List("a"),
-      List("a"),
+      NonEmptyList.one("a"),
+      NonEmptyList.one("a"),
       ModuleAssessmentMethodsProtocol(
         List(ModuleAssessmentMethodEntryProtocol("method", None, Nil)),
         Nil
@@ -65,10 +66,10 @@ final class ModuleProtocolDiffSpec extends AnyWordSpec {
         .focus(_.metadata.ects)
         .replace(1.0)
         .focus(_.metadata.moduleManagement)
-        .modify(xs => xs ::: List("b"))
+        .modify(_ ::: NonEmptyList.one("b"))
         .focus(_.metadata.po.mandatory)
-        .modify(xs =>
-          xs ::: List(
+        .modify(
+          _ ::: List(
             ModulePOMandatoryProtocol("po2", Some("spec"), List(1, 2, 3))
           )
         )
@@ -83,7 +84,7 @@ final class ModuleProtocolDiffSpec extends AnyWordSpec {
       assert(updatedKeys.contains("metadata.participants"))
       assert(updated.metadata.title == "new title")
       assert(updated.metadata.ects == 1.0)
-      assert(updated.metadata.moduleManagement == List("a", "b"))
+      assert(updated.metadata.moduleManagement == NonEmptyList.of("a", "b"))
       assert(
         updated.metadata.po.mandatory == List(
           ModulePOMandatoryProtocol("po1", None, List(1)),

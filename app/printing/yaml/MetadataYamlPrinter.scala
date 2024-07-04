@@ -1,5 +1,6 @@
 package printing.yaml
 
+import cats.data.NonEmptyList
 import models._
 import parsing.metadata.VersionScheme
 import parsing.types.ModuleParticipants
@@ -15,6 +16,9 @@ final class MetadataYamlPrinter(identLevel: Int) {
   implicit val showUUID: UUID => String = _.toString
 
   implicit val showInt: Int => String = _.toString
+
+  implicit def toCatsOrder[A](implicit ord: Ordering[A]): cats.Order[A] =
+    cats.Order.fromOrdering(ord)
 
   implicit val ameOrd: Ordering[ModuleAssessmentMethodEntryProtocol] =
     Ordering.by[ModuleAssessmentMethodEntryProtocol, String](_.method)
@@ -45,13 +49,13 @@ final class MetadataYamlPrinter(identLevel: Int) {
         )
         .skip(
           assessmentMethodsMandatory(
-            metadata.assessmentMethods.mandatory
+            NonEmptyList.fromListUnsafe(metadata.assessmentMethods.mandatory)
           )
         )
         .skipOpt(
-          opt(metadata.assessmentMethods.optional).map(
-            assessmentMethodsOptional
-          )
+          NonEmptyList
+            .fromList(metadata.assessmentMethods.optional)
+            .map(assessmentMethodsOptional)
         )
         .skip(workload(metadata.workload))
         .skipOpt(
@@ -63,17 +67,16 @@ final class MetadataYamlPrinter(identLevel: Int) {
         .skip(status(metadata.status))
         .skip(location(metadata.location))
         .skip(poMandatory(metadata.po.mandatory))
-        .skipOpt(opt(metadata.po.optional).map(poOptional))
+        .skipOpt(NonEmptyList.fromList(metadata.po.optional).map(poOptional))
         .skipOpt(metadata.participants.map(participants))
-        .skipOpt(opt(metadata.competences).map(competences))
-        .skipOpt(opt(metadata.globalCriteria).map(globalCriteria))
-        .skipOpt(opt(metadata.taughtWith).map(taughtWith))
+        .skipOpt(NonEmptyList.fromList(metadata.competences).map(competences))
+        .skipOpt(
+          NonEmptyList.fromList(metadata.globalCriteria).map(globalCriteria)
+        )
+        .skipOpt(NonEmptyList.fromList(metadata.taughtWith).map(taughtWith))
         .skip(closer())
         .print((), input)
     }
-
-  private def opt[A](xs: List[A]): Option[List[A]] =
-    Option.when(xs.nonEmpty)(xs)
 
   private def entry(key: String, value: String) =
     prefix(s"$key: $value").skip(newline)
@@ -92,7 +95,12 @@ final class MetadataYamlPrinter(identLevel: Int) {
   def moduleRelation(r: ModuleRelationProtocol) = {
     val relation = r match {
       case ModuleRelationProtocol.Parent(children) =>
-        list(prefix("children:"), children, "module", identLevel)
+        list(
+          prefix("children:"),
+          children,
+          "module",
+          identLevel
+        )
       case ModuleRelationProtocol.Child(parent) =>
         entry("parent", s"module.$parent")
     }
@@ -105,7 +113,7 @@ final class MetadataYamlPrinter(identLevel: Int) {
 
   def list[A](
       key: Printer[Unit],
-      list: List[A],
+      list: NonEmptyList[A],
       prefixLabel: String,
       identLevel: Int
   )(implicit
@@ -131,7 +139,7 @@ final class MetadataYamlPrinter(identLevel: Int) {
                 .skip(prefix(s"- ${value(id)}"))
                 .skip(newline)
             )
-            .reduce(_.skip(_))
+            .reduceLeft(_.skip(_))
         )
   }
 
@@ -160,8 +168,8 @@ final class MetadataYamlPrinter(identLevel: Int) {
     entry("frequency", s"season.$value")
 
   def responsibilities(
-      moduleManagement: List[String],
-      lecturers: List[String]
+      moduleManagement: NonEmptyList[String],
+      lecturers: NonEmptyList[String]
   ) = {
     prefix("responsibilities:")
       .skip(newline)
@@ -180,7 +188,7 @@ final class MetadataYamlPrinter(identLevel: Int) {
 
   private def assessmentMethods(
       key: Printer[Unit],
-      value: List[ModuleAssessmentMethodEntryProtocol]
+      value: NonEmptyList[ModuleAssessmentMethodEntryProtocol]
   ) = {
     val deepness = identLevel + 2
     key
@@ -200,31 +208,33 @@ final class MetadataYamlPrinter(identLevel: Int) {
                 )
               )
               .skipOpt(
-                Option.when(e.precondition.nonEmpty)(
-                  whitespace
-                    .repeat(deepness)
-                    .skip(
-                      list(
-                        prefix("precondition:"),
-                        e.precondition.sorted,
-                        "assessment",
-                        deepness
+                NonEmptyList
+                  .fromList(e.precondition)
+                  .map(xs =>
+                    whitespace
+                      .repeat(deepness)
+                      .skip(
+                        list(
+                          prefix("precondition:"),
+                          xs,
+                          "assessment",
+                          deepness
+                        )
                       )
-                    )
-                )
+                  )
               )
           })
-          .reduce(_.skip(_))
+          .reduceLeft(_.skip(_))
       )
   }
 
   def assessmentMethodsMandatory(
-      value: List[ModuleAssessmentMethodEntryProtocol]
+      value: NonEmptyList[ModuleAssessmentMethodEntryProtocol]
   ) =
     assessmentMethods(prefix("assessment_methods_mandatory:"), value)
 
   def assessmentMethodsOptional(
-      value: List[ModuleAssessmentMethodEntryProtocol]
+      value: NonEmptyList[ModuleAssessmentMethodEntryProtocol]
   ) =
     assessmentMethods(prefix("assessment_methods_optional:"), value)
 
@@ -279,32 +289,36 @@ final class MetadataYamlPrinter(identLevel: Int) {
           )
         )
         .skipOpt(
-          Option.when(value.modules.nonEmpty)(
-            whitespace
-              .repeat(identLevel)
-              .skip(
-                list(
-                  prefix("modules:"),
-                  value.modules,
-                  "module",
-                  identLevel
+          NonEmptyList
+            .fromList(value.modules)
+            .map(xs =>
+              whitespace
+                .repeat(identLevel)
+                .skip(
+                  list(
+                    prefix("modules:"),
+                    xs,
+                    "module",
+                    identLevel
+                  )
                 )
-              )
-          )
+            )
         )
         .skipOpt(
-          Option.when(value.pos.nonEmpty)(
-            whitespace
-              .repeat(identLevel)
-              .skip(
-                list(
-                  prefix("study_programs:"),
-                  value.pos,
-                  "study_program",
-                  identLevel
+          NonEmptyList
+            .fromList(value.pos)
+            .map(xs =>
+              whitespace
+                .repeat(identLevel)
+                .skip(
+                  list(
+                    prefix("study_programs:"),
+                    xs,
+                    "study_program",
+                    identLevel
+                  )
                 )
-              )
-          )
+            )
         )
   }
 
@@ -330,13 +344,13 @@ final class MetadataYamlPrinter(identLevel: Int) {
         whitespace.repeat(identLevel).skip(entry("max", value.max.toString))
       )
 
-  def competences(value: List[String]) =
+  def competences(value: NonEmptyList[String]) =
     list(prefix("competences:"), value, "competence", 0)
 
-  def globalCriteria(value: List[String]) =
+  def globalCriteria(value: NonEmptyList[String]) =
     list(prefix("global_criteria:"), value, "global_criteria", 0)
 
-  def taughtWith(value: List[UUID]) =
+  def taughtWith(value: NonEmptyList[UUID]) =
     list(prefix("taught_with:"), value, "module", 0)
 
   def poMandatory(value: List[ModulePOMandatoryProtocol]) = {
@@ -350,24 +364,29 @@ final class MetadataYamlPrinter(identLevel: Int) {
               .repeat(identLevel)
               .skip(prefix(s"- study_program: study_program.${e.po}"))
               .skip(newline)
-              .skip(
-                whitespace
-                  .repeat(deepness)
-                  .skip(
-                    list(
-                      prefix("recommended_semester:"),
-                      e.recommendedSemester,
-                      "",
-                      deepness
-                    )
-                  )
+              .skipOpt(
+                NonEmptyList
+                  .fromList(e.recommendedSemester)
+                  .map(xs => recommendedSemester(xs, deepness))
               )
           })
-          .reduce(_.skip(_))
+          .reduceLeft(_.skip(_))
       )
   }
 
-  def poOptional(value: List[ModulePOOptionalProtocol]) = {
+  def recommendedSemester(xs: NonEmptyList[Int], deepness: Int) =
+    whitespace
+      .repeat(deepness)
+      .skip(
+        list(
+          prefix("recommended_semester:"),
+          xs,
+          "",
+          deepness
+        )
+      )
+
+  def poOptional(value: NonEmptyList[ModulePOOptionalProtocol]) = {
     val deepness = identLevel + 2
     prefix("po_optional:")
       .skip(newline)
@@ -388,20 +407,13 @@ final class MetadataYamlPrinter(identLevel: Int) {
                   .repeat(deepness)
                   .skip(entry("part_of_catalog", e.partOfCatalog.toString))
               )
-              .skip(
-                whitespace
-                  .repeat(deepness)
-                  .skip(
-                    list(
-                      prefix("recommended_semester:"),
-                      e.recommendedSemester,
-                      "",
-                      deepness
-                    )
-                  )
+              .skipOpt(
+                NonEmptyList
+                  .fromList(e.recommendedSemester)
+                  .map(xs => recommendedSemester(xs, deepness))
               )
           })
-          .reduce(_.skip(_))
+          .reduceLeft(_.skip(_))
       )
   }
 }

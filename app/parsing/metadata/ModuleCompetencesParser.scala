@@ -13,8 +13,7 @@ object ModuleCompetencesParser {
   ): Parser[List[ModuleCompetence]] =
     multipleValueParser(
       key,
-      (c: ModuleCompetence) => s"$prefix${c.id}",
-      0
+      (c: ModuleCompetence) => s"$prefix${c.id}"
     )(competences.sortBy(_.id).reverse)
 
   def raw: Parser[List[String]] =

@@ -1,6 +1,7 @@
 package models
 
-import controllers.JsonNullWritable
+import cats.data.NonEmptyList
+import controllers.{JsonNullWritable, NelWrites}
 import parsing.types.ModuleParticipants
 import play.api.libs.json.{Format, Json}
 
@@ -19,8 +20,8 @@ case class MetadataProtocol(
     location: String,
     participants: Option[ModuleParticipants],
     moduleRelation: Option[ModuleRelationProtocol],
-    moduleManagement: List[String],
-    lecturers: List[String],
+    moduleManagement: NonEmptyList[String],
+    lecturers: NonEmptyList[String],
     assessmentMethods: ModuleAssessmentMethodsProtocol,
     prerequisites: ModulePrerequisitesProtocol,
     po: ModulePOProtocol,
@@ -29,6 +30,6 @@ case class MetadataProtocol(
     taughtWith: List[UUID]
 )
 
-object MetadataProtocol extends JsonNullWritable {
+object MetadataProtocol extends JsonNullWritable with NelWrites {
   implicit def format: Format[MetadataProtocol] = Json.format
 }

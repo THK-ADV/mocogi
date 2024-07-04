@@ -76,12 +76,17 @@ object ModuleProtocol {
           ).sortBy(_.po)
         )
 
-    private def strings = Traversal
+    private def lists = Traversal
       .applyN(
-        GenLens[ModuleProtocol](_.metadata.moduleManagement),
-        GenLens[ModuleProtocol](_.metadata.lecturers),
         GenLens[ModuleProtocol](_.metadata.competences),
         GenLens[ModuleProtocol](_.metadata.globalCriteria)
+      )
+      .modify(_.sorted)
+
+    private def nels = Traversal
+      .applyN(
+        GenLens[ModuleProtocol](_.metadata.moduleManagement),
+        GenLens[ModuleProtocol](_.metadata.lecturers)
       )
       .modify(_.sorted)
 
@@ -97,7 +102,8 @@ object ModuleProtocol {
 
     def normalize() = string
       .andThen(prerequisites)
-      .andThen(strings)
+      .andThen(lists)
+      .andThen(nels)
       .andThen(assessmentMethods)
       .andThen(poMandatory)
       .andThen(poOptional)

@@ -2,10 +2,12 @@ package models
 
 sealed trait ModuleRelation
 
+import cats.data.NonEmptyList
+import controllers.NelWrites
 import play.api.libs.json.{Json, Writes}
 
-object ModuleRelation {
-  case class Parent(children: List[ModuleCore]) extends ModuleRelation
+object ModuleRelation extends NelWrites {
+  case class Parent(children: NonEmptyList[ModuleCore]) extends ModuleRelation
   case class Child(parent: ModuleCore) extends ModuleRelation
 
   implicit def writes: Writes[ModuleRelation] = {

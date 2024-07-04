@@ -1,6 +1,7 @@
 package printing.markdown
 
-import models.{Metadata, ModulePOs, ModulePrerequisiteEntry, ModuleRelation, StudyProgramView}
+import cats.data.NonEmptyList
+import models._
 import models.core.Identity
 import parsing.types._
 import printer.Printer
@@ -26,14 +27,17 @@ final class ModuleMarkdownPrinter(
     prefix(s"| $key | $value |")
       .skip(newline)
 
-  private def rows(key: String, value: List[String]): Printer[Unit] =
+  private def rows(key: String, value: NonEmptyList[String]): Printer[Unit] =
     value.zipWithIndex
       .map { case (s, i) =>
         row(if (i == 0) key else "", s)
       }
-      .reduce(_ skip _)
+      .reduceLeft(_ skip _)
 
-  private def fmtPeople(label: String, xs: List[Identity]): Printer[Unit] = {
+  private def fmtPeople(
+      label: String,
+      xs: NonEmptyList[Identity]
+  ): Printer[Unit] = {
     rows(label, xs.map(fmtIdentity))
   }
 
@@ -87,10 +91,9 @@ final class ModuleMarkdownPrinter(
       }
       semester.fold(studyProgramWithPO)(s => s"$studyProgramWithPO $s")
     }
-
-    val xs = pos.mandatory
-    if (xs.isEmpty) row(label, lang.noneLabel)
-    else rows(label, xs.map(fmt))
+    NonEmptyList
+      .fromList(pos.mandatory)
+      .fold(row(label, lang.noneLabel))(xs => rows(label, xs.map(fmt)))
   }
 
   private def fmtModuleRelation(
@@ -100,7 +103,7 @@ final class ModuleMarkdownPrinter(
       case ModuleRelation.Parent(children) =>
         row(
           lang.parentLabel,
-          fmtCommaSeparated(children)(_.abbrev)
+          fmtCommaSeparated(children.toList)(_.abbrev)
         )
       case ModuleRelation.Child(parent) =>
         row(lang.childLabel, parent.abbrev)
@@ -110,16 +113,19 @@ final class ModuleMarkdownPrinter(
       label: String,
       ams: ModuleAssessmentMethods
   )(implicit lang: PrintingLanguage): Printer[Unit] =
-    rows(
-      label,
-      ams.mandatory
-        .map { am =>
-          val methodValue = lang.value(am.method)
-          am.percentage.fold(methodValue)(d =>
-            s"$methodValue (${fmtDouble(d)} %)"
-          )
-        }
-    )
+    NonEmptyList
+      .fromList(ams.mandatory)
+      .fold(row(label, lang.noneLabel)) { xs =>
+        rows(
+          label,
+          xs.map { am =>
+            val methodValue = lang.value(am.method)
+            am.percentage.fold(methodValue)(d =>
+              s"$methodValue (${fmtDouble(d)} %)"
+            )
+          }
+        )
+      }
 
   private def header(title: String) =
     prefix(s"## $title").skip(newline)

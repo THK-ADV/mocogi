@@ -1,5 +1,6 @@
 package controllers
 
+import cats.data.NonEmptyList
 import models.{ModuleCore, ModuleRelation}
 import org.scalatest.wordspec.AnyWordSpec
 import play.api.libs.json.Json
@@ -15,7 +16,7 @@ class ModuleRelationFormatSpec extends AnyWordSpec {
   "A Module Relation Format Spec" should {
     "convert a parent object to json" in {
       val parent: ModuleRelation =
-        ModuleRelation.Parent(List(m1, m2, m3))
+        ModuleRelation.Parent(NonEmptyList.of(m1, m2, m3))
       val json = ModuleRelation.writes.writes(parent)
       assert(
         json == Json.obj(
