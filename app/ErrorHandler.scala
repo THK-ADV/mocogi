@@ -1,4 +1,5 @@
 import controllers.ErrorHandler
+import play.api.Logging
 import play.api.http.HttpErrorHandler
 import play.api.libs.json.Json
 import play.api.mvc.Results._
@@ -10,7 +11,7 @@ import scala.concurrent._
 
 @unused
 @Singleton
-class ErrorHandler extends HttpErrorHandler {
+class ErrorHandler extends HttpErrorHandler with Logging {
 
   def onClientError(
       request: RequestHeader,
@@ -30,7 +31,11 @@ class ErrorHandler extends HttpErrorHandler {
   def onServerError(
       request: RequestHeader,
       exception: Throwable
-  ): Future[Result] =
+  ): Future[Result] = {
+    logger.error(
+      s"server error occurred on ${request.method} ${request.uri}",
+      exception
+    )
     Future.successful(
       ErrorHandler.internalServerError(
         request.toString(),
@@ -38,4 +43,5 @@ class ErrorHandler extends HttpErrorHandler {
         exception
       )
     )
+  }
 }
