@@ -200,7 +200,7 @@ TODO this check causes a problem when a merged key is modified because it doesn'
       case Left(err) => Future.successful(Left(err))
       case Right((module, print)) =>
         val commitMsg =
-          if (status == ModuleDraftSource.Added) "new module"
+          if (status.isAdded) "new module"
           else commitMessage(updatedKeys)
         for {
           branch <- gitBranchService.createModuleBranch(moduleId)

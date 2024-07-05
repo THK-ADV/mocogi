@@ -61,6 +61,19 @@ class IdentityRepository @Inject() (
         }.toSeq)
     )
 
+  def getCampusIds(ids: List[String]): Future[Seq[CampusId]] =
+    db.run(
+      tableQuery
+        .filter(a =>
+          a.id.inSet(ids) &&
+            a.kind === Identity.PersonKind &&
+            a.campusId.isDefined
+        )
+        .map(_.campusId.get)
+        .result
+        .map(_.map(CampusId.apply))
+    )
+
   def getByCampusId(campusId: CampusId): Future[Option[Identity.Person]] =
     db.run(
       tableQuery
