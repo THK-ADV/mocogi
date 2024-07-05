@@ -1,11 +1,15 @@
 package controllers
 
 import auth.AuthorizationAction
-import cats.data.NonEmptyList
 import controllers.ModuleDraftController.VersionSchemeHeader
-import controllers.actions.{ModuleDraftCheck, PermissionCheck, PersonAction, VersionSchemeAction}
+import controllers.actions.{
+  ModuleDraftCheck,
+  PermissionCheck,
+  PersonAction,
+  VersionSchemeAction
+}
 import database.repo.core.IdentityRepository
-import models.{ModuleDraft, ModuleProtocol}
+import models.{ModuleDraft, ModuleProtocol, ModuleUpdatePermissionType}
 import play.api.Logging
 import play.api.libs.json.{Json, Writes}
 import play.api.mvc.{AbstractController, ControllerComponents}
@@ -83,11 +87,16 @@ final class ModuleDraftController @Inject() (
           .flatMap {
             case Left(err) => Future.successful(BadRequest(Json.toJson(err)))
             case Right(draft) =>
-              moduleUpdatePermissionService
-                .createOrUpdateInherited(
-                  Seq((draft.module, NonEmptyList.one(r.request.person)))
-                )
-                .map(_ => Ok(Json.toJson(draft)))
+              for {
+                moduleManagement <- identityRepository
+                  .getCampusIds(r.body.metadata.moduleManagement.toList)
+                _ <- moduleUpdatePermissionService
+                  .replace(
+                    draft.module,
+                    moduleManagement.prepended(r.request.request.campusId),
+                    ModuleUpdatePermissionType.Inherited
+                  )
+              } yield Ok(Json.toJson(draft))
           }
       }
 

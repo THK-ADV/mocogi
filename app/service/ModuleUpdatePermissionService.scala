@@ -3,9 +3,14 @@ package service
 import auth.CampusId
 import cats.data.NonEmptyList
 import database.repo.ModuleUpdatePermissionRepository
-import models.ModuleUpdatePermissionType.{Granted, Inherited}
+import models.ModuleUpdatePermissionType.Inherited
 import models.core.Identity
-import models.{ModuleCore, ModuleDraft, ModuleUpdatePermission, ModuleUpdatePermissionType}
+import models.{
+  ModuleCore,
+  ModuleDraft,
+  ModuleUpdatePermission,
+  ModuleUpdatePermissionType
+}
 
 import java.util.UUID
 import javax.inject.{Inject, Singleton}
@@ -16,7 +21,7 @@ final class ModuleUpdatePermissionService @Inject() (
     private val repo: ModuleUpdatePermissionRepository,
     implicit val ctx: ExecutionContext
 ) {
-  def createOrUpdateInherited(modules: Seq[(UUID, NonEmptyList[Identity])]) = {
+  def overrideInherited(modules: Seq[(UUID, NonEmptyList[Identity])]) = {
     def entries() =
       modules.flatMap { case (module, management) =>
         management.collect {
@@ -30,10 +35,14 @@ final class ModuleUpdatePermissionService @Inject() (
     } yield created
   }
 
-  def replace(module: UUID, campusIds: List[CampusId]) =
+  def replace(
+      module: UUID,
+      campusIds: Seq[CampusId],
+      kind: ModuleUpdatePermissionType
+  ) =
     for {
-      _ <- repo.deleteByModules(Seq(module), Granted)
-      _ <- repo.createMany(campusIds.map(c => (module, c, Granted)))
+      _ <- repo.deleteByModules(Seq(module), kind)
+      _ <- repo.createMany(campusIds.map(c => (module, c, kind)))
     } yield ()
 
   def hasPermission(campusId: CampusId, module: UUID) =

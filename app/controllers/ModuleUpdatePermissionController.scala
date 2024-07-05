@@ -2,6 +2,7 @@ package controllers
 
 import auth.{AuthorizationAction, CampusId}
 import controllers.actions.{ModuleUpdatePermissionCheck, PermissionCheck}
+import models.ModuleUpdatePermissionType
 import play.api.libs.json.Json
 import play.api.mvc.{AbstractController, ControllerComponents}
 import service.ModuleUpdatePermissionService
@@ -39,7 +40,7 @@ final class ModuleUpdatePermissionController @Inject() (
     auth(parse.json[List[CampusId]]) andThen
       hasInheritedPermission(moduleId) async { r =>
         moduleUpdatePermissionService
-          .replace(moduleId, r.body)
+          .replace(moduleId, r.body, ModuleUpdatePermissionType.Granted)
           .map(_ => NoContent)
       }
 }

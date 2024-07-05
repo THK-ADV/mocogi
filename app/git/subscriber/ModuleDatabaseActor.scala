@@ -38,7 +38,7 @@ object ModuleDatabaseActor {
         val res = for {
           created <- moduleService.createOrUpdateMany(modules, timestamp)
           _ <- moduleViewRepository.refreshView()
-          permissions <- moduleUpdatePermissionService.createOrUpdateInherited(
+          permissions <- moduleUpdatePermissionService.overrideInherited(
             modules.map(a =>
               (
                 a.metadata.id,
