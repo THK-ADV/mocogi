@@ -55,8 +55,26 @@ final class SpecializationFileParserSpec
     "parse all in specialization.yaml" in {
       val (res, rest) =
         withFile0("test/parsing/res/specialization.yaml")(fileParser.parse)
-      assert(res.value.size == 5)
       assert(rest.isEmpty)
+      val first = res.value.find(_.id == "inf_mim4_hci").value
+      assert(first.label == "Human-Computer Interaction")
+      assert(first.po == "inf1")
+
+      val second = res.value.find(_.id == "inf_mim4_mppd").value
+      assert(second.label == "Multiperspective Product Development")
+      assert(second.po == "itm1")
+
+      val third = res.value.find(_.id == "inf_mim4_sc").value
+      assert(third.label == "Social Computing")
+      assert(third.po == "inf1")
+
+      val forth = res.value.find(_.id == "inf_mim4_vc").value
+      assert(forth.label == "Visual Computing")
+      assert(forth.po == "wi1")
+
+      val fifth = res.value.find(_.id == "inf_mim4_wtw").value
+      assert(fifth.label == "Weaving the Web")
+      assert(fifth.po == "mi1")
     }
   }
 }

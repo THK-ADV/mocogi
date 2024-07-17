@@ -1,20 +1,16 @@
 package parsing.core
 
-import helper.FakeApplication
 import models.core.ModuleStatus
 import org.scalatest.EitherValues
 import org.scalatest.wordspec.AnyWordSpec
-import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import parsing.{ParserSpecHelper, withFile0}
 
 final class ModuleStatusFileParserSpec
     extends AnyWordSpec
     with ParserSpecHelper
-    with EitherValues
-    with GuiceOneAppPerSuite
-    with FakeApplication {
+    with EitherValues {
 
-  val parser = StatusFileParser.fileParser
+  val parser = StatusFileParser.parser()
 
   "A Status Filer Parser" should {
     "parse a single status" in {
@@ -53,8 +49,8 @@ final class ModuleStatusFileParserSpec
         withFile0("test/parsing/res/status.yaml")(parser.parse)
       assert(
         res.value == List(
-          ModuleStatus("active", "Aktiv", "--"),
-          ModuleStatus("inactive", "Inaktiv", "--")
+          ModuleStatus("active", "Aktiv", ""),
+          ModuleStatus("inactive", "Inaktiv", "")
         )
       )
       assert(rest.isEmpty)

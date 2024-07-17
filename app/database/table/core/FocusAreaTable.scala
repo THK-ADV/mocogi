@@ -14,8 +14,8 @@ final class FocusAreaTable(tag: Tag)
     id,
     studyProgram,
     deLabel,
-    deDesc,
     enLabel,
+    deDesc,
     enDesc
   ) <> ((FocusArea.apply _).tupled, FocusArea.unapply)
 }

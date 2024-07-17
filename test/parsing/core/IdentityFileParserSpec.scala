@@ -1,18 +1,15 @@
 package parsing.core
 
-import helper.{FakeApplication, FakeFaculties}
+import helper.FakeFaculties
 import models.core.{Identity, PersonStatus}
 import org.scalatest.EitherValues
 import org.scalatest.wordspec.AnyWordSpec
-import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import parsing.{ParserSpecHelper, withFile0}
 
 final class IdentityFileParserSpec
     extends AnyWordSpec
     with ParserSpecHelper
     with EitherValues
-    with GuiceOneAppPerSuite
-    with FakeApplication
     with FakeFaculties {
 
   "A Person File Parser" should {
@@ -115,6 +112,34 @@ final class IdentityFileParserSpec
             "bar",
             "bar. baz.",
             List(f10, f03),
+            "ab",
+            "abc",
+            PersonStatus.Active
+          )
+        )
+      )
+      assert(rest1.isEmpty)
+    }
+
+    "parse a default person with empty title" in {
+      val input =
+        """abc:
+          |  lastname: foo
+          |  firstname: bar
+          |  title: ''
+          |  faculty: faculty.f10
+          |  abbreviation: ab
+          |  campusid: abc
+          |  status: active""".stripMargin
+      val (res1, rest1) = IdentityFileParser.parser.parse(input)
+      assert(
+        res1.value == List(
+          Identity.Person(
+            "abc",
+            "foo",
+            "bar",
+            "",
+            List(f10),
             "ab",
             "abc",
             PersonStatus.Active

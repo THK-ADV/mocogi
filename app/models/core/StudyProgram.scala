@@ -8,8 +8,6 @@ case class StudyProgram(
     id: String,
     deLabel: String,
     enLabel: String,
-    internalAbbreviation: String,
-    externalAbbreviation: String,
     degree: String,
     programDirectors: NonEmptyList[String],
     examDirectors: NonEmptyList[String]

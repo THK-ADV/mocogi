@@ -81,6 +81,11 @@ final class YamlParserSpec
       val (res3, rest3) = singleLineStringForKey("foo").parse(input3)
       assert(rest3 == "baz: bar")
       assert(res3.value == "bar")
+
+      val input4 = "foo: ''"
+      val (res4, rest4) = singleLineStringForKey("foo").parse(input4)
+      assert(rest4.isEmpty)
+      assert(res4.value.isEmpty)
     }
 
     "remove indentations" in {

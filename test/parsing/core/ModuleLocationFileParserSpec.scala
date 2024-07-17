@@ -1,20 +1,16 @@
 package parsing.core
 
-import helper.FakeApplication
 import models.core.ModuleLocation
 import org.scalatest.EitherValues
 import org.scalatest.wordspec.AnyWordSpec
-import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import parsing.{ParserSpecHelper, withFile0}
 
 class ModuleLocationFileParserSpec
     extends AnyWordSpec
     with ParserSpecHelper
-    with EitherValues
-    with GuiceOneAppPerSuite
-    with FakeApplication {
+    with EitherValues {
 
-  val parser = LocationFileParser.fileParser
+  val parser = LocationFileParser.parser()
 
   "A Location File Parser" should {
     "parse location file" when {
@@ -64,10 +60,10 @@ class ModuleLocationFileParserSpec
           withFile0("test/parsing/res/location.yaml")(parser.parse)
         assert(
           res.value == List(
-            ModuleLocation("gm", "Gummersbach", "--"),
-            ModuleLocation("dz", "Deutz", "--"),
-            ModuleLocation("remote", "Remote / Online", "--"),
-            ModuleLocation("other", "Sonstige / Variabel", "--")
+            ModuleLocation("gm", "Gummersbach", ""),
+            ModuleLocation("dz", "Deutz", ""),
+            ModuleLocation("remote", "Remote / Online", ""),
+            ModuleLocation("other", "Sonstige / Variabel", "")
           )
         )
         assert(rest.isEmpty)

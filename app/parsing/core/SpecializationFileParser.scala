@@ -1,20 +1,23 @@
 package parsing.core
 
+import io.circe.{Decoder, HCursor}
 import models.core.Specialization
-import parser.Parser.{prefixTo, zeroOrMoreSpaces}
-import parser.ParserOps.P2
-import parsing.{singleLineStringForKey, singleValueParser}
+import monocle.macros.GenLens
+import parsing.validator.POValidator
 
-object SpecializationFileParser {
+object SpecializationFileParser extends YamlFileParser[Specialization] {
   def fileParser(implicit pos: Seq[String]) =
-    prefixTo(":")
-      .skip(zeroOrMoreSpaces)
-      .zip(singleLineStringForKey("label"))
-      .skip(zeroOrMoreSpaces)
-      .take(
-        singleValueParser[String]("po", p => s"po.$p")(pos.sorted.reverse)
-      )
-      .skip(zeroOrMoreSpaces)
-      .map((Specialization.apply _).tupled)
-      .all()
+    super.fileParser(
+      new POValidator[Specialization](pos, GenLens[Specialization](_.po))
+    )
+
+  override protected def decoder: Decoder[Specialization] =
+    (c: HCursor) => {
+      val key = c.key.get
+      val obj = c.root.downField(key)
+      for {
+        label <- obj.get[String]("label")
+        po <- obj.get[String]("po")
+      } yield Specialization(key, label, po)
+    }
 }

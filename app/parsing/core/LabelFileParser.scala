@@ -1,21 +1,19 @@
 package parsing.core
 
-import parser.Parser
-import parser.Parser.{newline, optional, prefixTo, zeroOrMoreSpaces}
-import parser.ParserOps.P2
-import parsing.singleLineStringForKey
+import io.circe.{Decoder, HCursor}
+import models.core.IDLabel
 
-trait LabelFileParser[A] extends FileParser[A] {
+trait LabelFileParser[A <: IDLabel] extends YamlFileParser[A] {
+
   protected def makeType: ((String, String, String)) => A
 
-  val fileParser: Parser[List[A]] =
-    prefixTo(":")
-      .skip(newline)
-      .skip(zeroOrMoreSpaces)
-      .zip(singleLineStringForKey("de_label"))
-      .skip(zeroOrMoreSpaces)
-      .take(singleLineStringForKey("en_label"))
-      .skip(optional(newline))
-      .all()
-      .map(_.map(makeType))
+  override def decoder: Decoder[A] =
+    (c: HCursor) => {
+      val key = c.key.get
+      val obj = c.root.downField(key)
+      for {
+        deLabel <- obj.get[String]("de_label")
+        enLabel <- obj.get[String]("en_label")
+      } yield makeType(key, deLabel.trim, enLabel.trim)
+    }
 }

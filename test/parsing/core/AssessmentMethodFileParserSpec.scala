@@ -3,13 +3,14 @@ package parsing.core
 import models.core.AssessmentMethod
 import org.scalatest.EitherValues
 import org.scalatest.wordspec.AnyWordSpec
-import parsing.core.AssessmentMethodFileParser.fileParser
 import parsing.{ParserSpecHelper, withFile0}
 
 class AssessmentMethodFileParserSpec
     extends AnyWordSpec
     with ParserSpecHelper
     with EitherValues {
+
+  val parser = AssessmentMethodFileParser.parser()
 
   "A Assessment Method File Parser" should {
     "parse a single assessment method" in {
@@ -18,7 +19,7 @@ class AssessmentMethodFileParserSpec
           |  de_label: Klausurarbeiten
           |  en_label: written exam""".stripMargin
 
-      val (res, rest) = fileParser.parse(input)
+      val (res, rest) = parser.parse(input)
       assert(
         res.value == List(
           AssessmentMethod("written-exam", "Klausurarbeiten", "written exam")
@@ -44,7 +45,7 @@ class AssessmentMethodFileParserSpec
           |practical-report:
           |  de_label: Praktikumsbericht
           |  en_label: labwork report""".stripMargin
-      val (res, rest) = fileParser.parse(input)
+      val (res, rest) = parser.parse(input)
       assert(
         res.value == List(
           AssessmentMethod("project", "Projektarbeit", "project"),
@@ -66,10 +67,36 @@ class AssessmentMethodFileParserSpec
 
     "parse all assessment methods in assessment.yaml" in {
       val (res, rest) =
-        withFile0("test/parsing/res/assessment.yaml")(
-          fileParser.parse
-        )
-      assert(res.value.size == 22)
+        withFile0("test/parsing/res/assessment.yaml")(parser.parse)
+      val ids = List(
+        "tbd",
+        "written-exam",
+        "written-exam-answer-choice-method",
+        "oral-exams",
+        "presentation",
+        "home-assignment",
+        "project",
+        "project-documentation",
+        "portfolio",
+        "practical-report",
+        "practical-semester-report",
+        "practical",
+        "test",
+        "thesis",
+        "abstract",
+        "e-assessment",
+        "single-choice",
+        "multiple-choice",
+        "certificate",
+        "continous-report",
+        "attendance",
+        "verbal-cooperation"
+      )
+      res.value.zip(ids).foreach { case (am, id) =>
+        assert(am.id == id)
+        assert(am.deLabel.nonEmpty)
+        assert(am.enLabel.isEmpty)
+      }
       assert(rest.isEmpty)
     }
   }

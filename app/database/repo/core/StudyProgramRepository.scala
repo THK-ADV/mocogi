@@ -113,8 +113,6 @@ class StudyProgramRepository @Inject() (
             sp.id,
             sp.deLabel,
             sp.enLabel,
-            sp.internalAbbreviation,
-            sp.externalAbbreviation,
             sp.degree,
             NonEmptyList.fromListUnsafe(directors.toList),
             NonEmptyList.fromListUnsafe(examDirectors.toList)
@@ -127,8 +125,6 @@ class StudyProgramRepository @Inject() (
       sp.id,
       sp.deLabel,
       sp.enLabel,
-      sp.internalAbbreviation,
-      sp.externalAbbreviation,
       sp.degree
     )
 }

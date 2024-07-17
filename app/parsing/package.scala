@@ -1,10 +1,13 @@
 import cats.data.NonEmptyList
+import cats.syntax.either._
+import io.circe.{ACursor, Decoder, HCursor}
 
 import java.io.File
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.UUID
 import scala.annotation.tailrec
+import scala.collection.mutable.ListBuffer
 import scala.io.Source
 import scala.util.Try
 
@@ -19,6 +22,17 @@ package object parsing {
         if (xs.isEmpty) never("one entry")
         else always(NonEmptyList.fromListUnsafe(xs))
       )
+  }
+
+  implicit class CursorOps(private val self: ACursor) extends AnyVal {
+    def getNonEmptyList(key: String): Decoder.Result[NonEmptyList[String]] = {
+      val field = self.downField(key)
+      if (field.downArray.succeeded) {
+        field.as[NonEmptyList[String]]
+      } else {
+        field.as[String].map(NonEmptyList.one)
+      }
+    }
   }
 
   def removeIndentation(level: Int = 1): Parser[Unit] = Parser { input =>
@@ -46,7 +60,10 @@ package object parsing {
   def singleLineStringForKey(key: String): Parser[String] =
     keyParser(key)
       .take(prefixTo("\n").or(rest))
-      .map(_.trim)
+      .map { s =>
+        val s0 = s.trim
+        if (s0 == "''") "" else s0
+      }
 
   def doubleForKey(key: String): Parser[Double] =
     keyParser(key)
@@ -60,10 +77,6 @@ package object parsing {
     intForKey(key).flatMap(i =>
       if (i >= 0) always(i) else never("int to be positive")
     )
-
-  def dateForKey(key: String): Parser[LocalDate] =
-    singleLineStringForKey(key)
-      .flatMap(localDateParser)
 
   sealed trait MultilineStringStrategy
   case object > extends MultilineStringStrategy
@@ -145,26 +158,28 @@ package object parsing {
       singleLineStringForKey(key)
     )
 
+  implicit def decoderList[A](implicit decoder: Decoder[A]): Decoder[List[A]] =
+    (c: HCursor) => {
+      val builder = ListBuffer.empty[A]
+      c.keys.foreach(
+        _.foreach(key =>
+          c.get[A](key) match {
+            case Left(value) =>
+              return Decoder.failed(value)
+            case Right(value) =>
+              builder += value
+          }
+        )
+      )
+      Right(builder.result())
+    }
+
   def withFile0[A](path: String)(input: String => A): A = {
     val s = Source.fromFile(new File(path))
     val res = input(s.mkString)
     s.close()
     res
   }
-
-  def singleValueParser[A](key: String, optionPrefix: A => String)(implicit
-      options: Seq[A]
-  ): Parser[A] =
-    prefix(s"$key:")
-      .skip(zeroOrMoreSpaces)
-      .take(
-        oneOf(
-          options.map(o =>
-            prefix(optionPrefix(o))
-              .map(_ => o)
-          ): _*
-        )
-      )
 
   def multipleValueParser[A](
       key: String,
@@ -226,21 +241,13 @@ package object parsing {
 
   private val localDatePattern = DateTimeFormatter.ofPattern("dd.MM.yyyy")
 
-  def localDateParser(string: String): Parser[LocalDate] =
-    localDateParser(string, localDatePattern)
-
-  def localDateParser(
-      string: String,
-      pattern: DateTimeFormatter
-  ): Parser[LocalDate] =
-    try always(LocalDate.parse(string, pattern))
-    catch {
-      case t: Throwable =>
-        never(s"date with format $pattern. error: ${t.getMessage}")
+  implicit def localDateDecoder: Decoder[LocalDate] =
+    Decoder.decodeString.emap { str =>
+      Either
+        .catchNonFatal(LocalDate.parse(str, localDatePattern))
+        .left
+        .map(_.getMessage)
     }
-
-  def singleLineCommentParser(): Parser[Unit] =
-    prefix("#").skip(prefix(_ != '\n').skip(newline))
 
   def uuidParser(string: String): Parser[UUID] =
     Try(UUID.fromString(string)).fold(_ => never("uuid"), always)

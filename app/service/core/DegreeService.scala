@@ -12,5 +12,5 @@ final class DegreeService @Inject() (
     val repo: DegreeRepository,
     val ctx: ExecutionContext
 ) extends SimpleYamlService[Degree] {
-  override def fileParser = DegreeFileParser
+  override def fileParser = DegreeFileParser.parser()
 }

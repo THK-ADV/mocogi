@@ -3,5 +3,10 @@ package parsing.core
 import models.core.ModuleCompetence
 
 object CompetenceFileParser extends LabelDescFileParser[ModuleCompetence] {
-  override protected def makeType = (ModuleCompetence.apply _).tupled
+  def parser() = this.fileParser()
+
+  override protected def makeType = {
+    case (id, deLabel, enLabel, deDesc, enDesc) =>
+      ModuleCompetence(id, deLabel, deDesc, enLabel, enDesc)
+  }
 }

@@ -1,36 +1,31 @@
 package parsing.core
 
+import io.circe.{Decoder, HCursor}
 import models.core.FocusArea
+import monocle.macros.GenLens
 import parser.Parser
-import parser.Parser.{newline, optional, prefixTo, zeroOrMoreSpaces}
-import parser.ParserOps.{P0, P2, P3, P4, P5}
-import parsing._
+import parsing.validator.StudyProgramValidator
 
-object FocusAreaFileParser {
-  def fileParser(implicit
-      programs: Seq[String]
-  ): Parser[List[FocusArea]] =
-    removeIndentation()
-      .take(
-        optional(singleLineCommentParser())
-          .take(prefixTo(":"))
-          .skip(newline)
-          .skip(zeroOrMoreSpaces)
-          .zip(
-            singleValueParser[String](
-              "program",
-              p => s"program.$p"
-            )(programs.sorted.reverse)
-          )
-          .skip(zeroOrMoreSpaces)
-          .take(singleLineStringForKey("de_label"))
-          .skip(zeroOrMoreSpaces)
-          .take(singleLineStringForKey("en_label").option.map(_.getOrElse("")))
-          .skip(zeroOrMoreSpaces)
-          .take(stringForKey("de_desc").option.map(_.getOrElse("")))
-          .skip(zeroOrMoreSpaces)
-          .take(stringForKey("en_desc").option.map(_.getOrElse("")))
-          .map((FocusArea.apply _).tupled)
-          .all(zeroOrMoreSpaces)
+object FocusAreaFileParser extends YamlFileParser[FocusArea] {
+
+  def fileParser(implicit programs: Seq[String]): Parser[List[FocusArea]] =
+    super.fileParser(
+      new StudyProgramValidator[FocusArea](
+        programs,
+        GenLens[FocusArea](_.program)
       )
+    )
+
+  override def decoder: Decoder[FocusArea] =
+    (c: HCursor) => {
+      val key = c.key.get
+      val obj = c.root.downField(key)
+      for {
+        program <- obj.get[String]("program")
+        deLabel <- obj.get[String]("de_label")
+        enLabel <- obj.getOrElse[String]("en_label")("")
+        deDesc <- obj.getOrElse[String]("de_desc")("")
+        enDesc <- obj.getOrElse[String]("en_desc")("")
+      } yield FocusArea(key, program, deLabel, enLabel, deDesc, enDesc)
+    }
 }

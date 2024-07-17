@@ -7,5 +7,10 @@ import javax.inject.Singleton
 
 @Singleton
 final class ModuleKeyParser extends LabelDescFileParser[ModuleKey] {
-  override protected def makeType = (ModuleKey.apply _).tupled
+  def parser() = super.fileParser()
+
+  override protected def makeType = {
+    case (id, deLabel, enLabel, deDesc, enDesc) =>
+      ModuleKey(id, deLabel, deDesc, enLabel, enDesc)
+  }
 }

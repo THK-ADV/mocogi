@@ -2,7 +2,8 @@ package service.core
 
 import database.repo.core.CompetenceRepository
 import models.core.ModuleCompetence
-import parsing.core.{CompetenceFileParser, FileParser}
+import parser.Parser
+import parsing.core.CompetenceFileParser
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
@@ -12,5 +13,6 @@ final class CompetenceService @Inject() (
     val repo: CompetenceRepository,
     val ctx: ExecutionContext
 ) extends SimpleYamlService[ModuleCompetence] {
-  override def fileParser: FileParser[ModuleCompetence] = CompetenceFileParser
+  override def fileParser: Parser[List[ModuleCompetence]] =
+    CompetenceFileParser.parser()
 }

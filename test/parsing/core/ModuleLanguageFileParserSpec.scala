@@ -1,20 +1,16 @@
 package parsing.core
 
-import helper.FakeApplication
 import models.core.ModuleLanguage
 import org.scalatest.EitherValues
 import org.scalatest.wordspec.AnyWordSpec
-import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import parsing.{ParserSpecHelper, withFile0}
 
 final class ModuleLanguageFileParserSpec
     extends AnyWordSpec
     with ParserSpecHelper
-    with EitherValues
-    with GuiceOneAppPerSuite
-    with FakeApplication {
+    with EitherValues {
 
-  val parser = LanguageFileParser.fileParser
+  val parser = LanguageFileParser.parser()
 
   "A Language File Parser" should {
     "parse a single language" in {
@@ -57,9 +53,9 @@ final class ModuleLanguageFileParserSpec
       val (res, rest) = withFile0("test/parsing/res/lang.yaml")(parser.parse)
       assert(
         res.value == List(
-          ModuleLanguage("de", "Deutsch", "--"),
-          ModuleLanguage("en", "Englisch", "--"),
-          ModuleLanguage("de_en", "Deutsch und Englisch", "--")
+          ModuleLanguage("de", "Deutsch", ""),
+          ModuleLanguage("en", "Englisch", ""),
+          ModuleLanguage("de_en", "Deutsch und Englisch", "")
         )
       )
       assert(rest.isEmpty)
