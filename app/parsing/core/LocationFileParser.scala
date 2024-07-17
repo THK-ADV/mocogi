@@ -3,5 +3,9 @@ package parsing.core
 import models.core.ModuleLocation
 
 object LocationFileParser extends LabelFileParser[ModuleLocation] {
-  override protected def makeType = (ModuleLocation.apply _).tupled
+  def parser() = super.fileParser()
+
+  override protected def makeType = { case (id, deLabel, enLabel) =>
+    ModuleLocation(id, deLabel, enLabel)
+  }
 }

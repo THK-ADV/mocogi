@@ -14,6 +14,7 @@ lazy val `mocogi` = (project in file("."))
     semanticdbVersion := scalafixSemanticdb.revision,
     scalacOptions += "-Wunused:imports",
     resolvers += "Akka Snapshot Repository" at "https://repo.akka.io/snapshots/",
+    resolvers += Resolver.sonatypeRepo("snapshots"),
     libraryDependencies ++= play,
     libraryDependencies ++= guiceDeps,
     libraryDependencies ++= playJson,
@@ -23,7 +24,8 @@ lazy val `mocogi` = (project in file("."))
     libraryDependencies += kafka,
     libraryDependencies ++= keycloak,
     libraryDependencies ++= optics,
-    libraryDependencies += "org.scala-lang.modules" %% "scala-parallel-collections" % "1.0.4",
+    libraryDependencies += parallelCollections,
+    libraryDependencies += circle,
     externalResolvers ++= Seq(
       "GitHub <THK-ADV> Apache Maven Packages" at "https://maven.pkg.github.com/THK-ADV/nebulak"
     ),
@@ -60,6 +62,10 @@ lazy val database = Seq(
 )
 
 lazy val kafka = "de.th-koeln.inf.adv" %% "kafka-pubsub" % "0.3"
+
+lazy val circle = "io.circe" %% "circe-yaml" % "1.15.0"
+
+lazy val parallelCollections = "org.scala-lang.modules" %% "scala-parallel-collections" % "1.0.4"
 
 lazy val playJson = Seq(
   "com.typesafe.play" %% "play-json" % "2.10.0-RC9",

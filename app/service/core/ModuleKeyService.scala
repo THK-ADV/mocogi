@@ -46,7 +46,7 @@ object ModuleKeyService {
     *   Content of the file
     */
   private def parse(parser: ModuleKeyParser, path: String): List[ModuleKey] =
-    withFile0(path)(parser.fileParser.parse)._1
+    withFile0(path)(parser.parser().parse)._1
       .fold(throw _, identity)
 
   private class Impl(moduleKeys: List[ModuleKey]) extends ModuleKeyService {

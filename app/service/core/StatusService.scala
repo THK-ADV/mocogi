@@ -2,7 +2,8 @@ package service.core
 
 import database.repo.core.StatusRepository
 import models.core.ModuleStatus
-import parsing.core.{FileParser, StatusFileParser}
+import parser.Parser
+import parsing.core.StatusFileParser
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
@@ -12,5 +13,6 @@ final class StatusService @Inject() (
     val repo: StatusRepository,
     val ctx: ExecutionContext
 ) extends SimpleYamlService[ModuleStatus] {
-  override def fileParser: FileParser[ModuleStatus] = StatusFileParser
+  override def fileParser: Parser[List[ModuleStatus]] =
+    StatusFileParser.parser()
 }

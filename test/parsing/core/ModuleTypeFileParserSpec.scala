@@ -1,20 +1,16 @@
 package parsing.core
 
-import helper.FakeApplication
 import models.core.ModuleType
 import org.scalatest.EitherValues
 import org.scalatest.wordspec.AnyWordSpec
-import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import parsing.{ParserSpecHelper, withFile0}
 
 class ModuleTypeFileParserSpec
     extends AnyWordSpec
     with ParserSpecHelper
-    with EitherValues
-    with GuiceOneAppPerSuite
-    with FakeApplication {
+    with EitherValues {
 
-  val parser = ModuleTypeFileParser.fileParser
+  val parser = ModuleTypeFileParser.parser()
 
   "A Module Type Parser" should {
     "parse a single module type" in {
@@ -52,8 +48,8 @@ class ModuleTypeFileParserSpec
         withFile0("test/parsing/res/types.yaml")(parser.parse)
       assert(
         res.value == List(
-          ModuleType("module", "Module", "--"),
-          ModuleType("generic_module", "Generisches Modul", "--")
+          ModuleType("module", "Module", ""),
+          ModuleType("generic_module", "Generisches Modul", "")
         )
       )
       assert(rest.isEmpty)

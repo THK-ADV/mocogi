@@ -19,7 +19,7 @@ all-ing-prof:
 abc:
   lastname: foo
   firstname: bar
-  title: bar. baz.
+  title: ''
   faculty: faculty.f10
   abbreviation: abc
   campusid: abc

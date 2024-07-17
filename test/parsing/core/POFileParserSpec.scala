@@ -95,9 +95,70 @@ class POFileParserSpec
     }
 
     "parse all in po.yaml" in {
-      val (res, rest) =
-        withFile0("test/parsing/res/po.yaml")(fileParser.parse)
-      assert(res.value.size == 44)
+      val (res, rest) = withFile0("test/parsing/res/po.yaml")(fileParser.parse)
+      val ids = List(
+        "ing_gme1",
+        "ing_gme3",
+        "ing_gme4",
+        "ing_ait1",
+        "ing_ait2",
+        "ing_ait3",
+        "inf_coco1",
+        "inf_dsi1",
+        "ing_een1",
+        "ing_een2",
+        "ing_een3",
+        "ing_een4",
+        "inf_inf1",
+        "inf_inf1_flex",
+        "inf_inf2",
+        "inf_itm1",
+        "inf_itm2",
+        "inf_mi2",
+        "inf_mi3",
+        "inf_mi4",
+        "inf_mi5",
+        "inf_mim2",
+        "inf_mim3",
+        "inf_mim4",
+        "inf_mim5",
+        "ing_pdpd1",
+        "ing_pdpd2",
+        "ing_pdpd3",
+        "ing_pdpd4",
+        "ing_pdpd5",
+        "inf_wsc1",
+        "inf_wi1",
+        "inf_wi2",
+        "inf_wi3",
+        "inf_wi4",
+        "inf_wi5",
+        "inf_wiv1",
+        "inf_wiv2",
+        "inf_wivm1",
+        "inf_wivm2",
+        "ing_wiw1",
+        "ing_wiw2",
+        "ing_wiw3",
+        "ing_wiw4",
+        "ing_wiwm1",
+        "ing_wiwm2"
+      )
+      res.value.zip(ids).foreach { case (po, id) =>
+        assert(po.id == id)
+        assert(po.program == "inf_inf")
+      }
+
+      val ait2 = res.value.find(_.id == "ing_ait2").value
+      assert(ait2.version == 2)
+      assert(ait2.dateFrom == LocalDate.of(2013, 9, 1))
+      assert(ait2.dateTo.value == LocalDate.of(2023, 8, 31))
+
+      val ait3 = res.value.find(_.id == "ing_ait3").value
+      assert(ait3.version == 3)
+      assert(ait3.dateFrom == LocalDate.of(2020, 9, 1))
+      assert(ait3.dateTo.isEmpty)
+
       assert(rest.isEmpty)
     }
   }

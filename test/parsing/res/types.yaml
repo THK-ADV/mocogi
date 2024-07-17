@@ -1,7 +1,7 @@
 module:
   de_label: Module
-  en_label: --
+  en_label: ''
 
 generic_module:
   de_label: Generisches Modul
-  en_label: --
+  en_label: ''

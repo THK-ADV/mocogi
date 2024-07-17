@@ -24,7 +24,6 @@ digitization:
   de_desc:
     Desc1
   en_label: Digitization
-  en_desc:
 
 internationalization:
   de_label: Internationalisierung

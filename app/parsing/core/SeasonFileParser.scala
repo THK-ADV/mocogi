@@ -3,5 +3,9 @@ package parsing.core
 import models.core.Season
 
 object SeasonFileParser extends LabelFileParser[Season] {
-  override protected def makeType = (Season.apply _).tupled
+  def parser() = super.fileParser()
+
+  override protected def makeType = { case (id, deLabel, enLabel) =>
+    Season(id, deLabel, enLabel)
+  }
 }

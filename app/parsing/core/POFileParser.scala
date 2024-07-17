@@ -1,38 +1,33 @@
 package parsing.core
 
+import io.circe.{Decoder, HCursor}
 import models.core.PO
-import parser.Parser._
-import parser.ParserOps.{P0, P2, P3, P4}
+import monocle.macros.GenLens
 import parsing._
+import parsing.validator.StudyProgramValidator
 
-object POFileParser {
+import java.time.LocalDate
+
+object POFileParser extends YamlFileParser[PO] {
 
   def fileParser(implicit
       programs: Seq[String]
-  ) =
-    optional(singleLineCommentParser())
-      .take(prefixTo(":"))
-      .skip(newline)
-      .skip(zeroOrMoreSpaces)
-      .zip(posIntForKey("version"))
-      .skip(zeroOrMoreSpaces)
-      .skip(dateForKey("date"))
-      .skip(zeroOrMoreSpaces)
-      .take(dateForKey("date_from"))
-      .skip(zeroOrMoreSpaces)
-      .take(dateForKey("date_to").option)
-      .skip(zeroOrMoreSpaces)
-      .skip(optional(skipFirst(range("modification_dates:", "program:"))))
-      .skip(zeroOrMoreSpaces)
-      .take(
-        singleValueParser[String](
-          "program",
-          p => s"program.$p"
-        )(programs.sorted.reverse)
-      )
-      .skip(zeroOrMoreSpaces)
-      .map { case (id, version, dateFrom, dateTo, studyProgram) =>
-        PO(id, version, studyProgram, dateFrom, dateTo)
-      }
-      .all()
+  ) = super.fileParser(
+    new StudyProgramValidator[PO](
+      programs,
+      GenLens[PO](_.program)
+    )
+  )
+
+  override def decoder: Decoder[PO] =
+    (c: HCursor) => {
+      val key = c.key.get
+      val obj = c.root.downField(key)
+      for {
+        version <- obj.get[Int]("version")
+        dateFrom <- obj.get[LocalDate]("date_from")
+        dateTo <- obj.get[Option[LocalDate]]("date_to")
+        program <- obj.get[String]("program")
+      } yield PO(key, version, program, dateFrom, dateTo)
+    }
 }

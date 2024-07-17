@@ -11,18 +11,19 @@ ar:
     Professional action in the field of digital systems requires a wide range of personal and social skills. These include more classic skills such as project and time management, creativity techniques, teamwork and creation and presentation of scientific papers and texts.
     The field of the digital with its multi-layered interrelationships furthermore requires a high degree of reflection and problem-solving skills and the ability to work in interdisciplinary, intercultural and English-speaking contexts.
     Acting Responsibly, however, has not only a personal but also a societal aspect, i.e. acting responsibly in a societal context. This includes e.g. an ethical reflection of one’s own actions, effects of impact of digital technologies on socio-technical contexts, etc.
+
 acs:
   program: program.inf_inf
   de_label: Architecting and Coding Software
   en_label: Architecting and Coding Software
   de_desc: |
     Das Handlungsfeld “Architecting and Coding Software” beschäftigt sich mit Methoden und Werkzeugen, um Software sowie softwarebasierte digitale Systeme und Technologien zu konzipieren, zu implementieren, zu testen und weiter zu entwickeln. Besondere Schwerpunkte dabei sind die Architektur großer und potentiell stark verteilter IT-Landschaften, Best Practices beim Coding und Hosting komplexer Anwendungen, sowie Methoden zum Anforderungsverständnis verschiedenster Domänen.
-    Im Bereich der Softwareentwicklung modellieren und abstrahieren Absolvent*innen die fachlichen Aspekte von Anwendungssystemen. Sie dekomponieren Problemstellungen in Teilprobleme, die in dedizierten Software-Komponenten durch eine Implementierung gelöst werden.
-    Weitere Aktivitäten der Absolvent*innen in diesem Handlungsfeld werden beispielsweise sein:
+    Im Bereich der Softwareentwicklung modellieren und abstrahieren AbsolventInnen die fachlichen Aspekte von Anwendungssystemen. Sie dekomponieren Problemstellungen in Teilprobleme, die in dedizierten Software-Komponenten durch eine Implementierung gelöst werden.
+    Weitere Aktivitäten der AbsolventInnen in diesem Handlungsfeld werden beispielsweise sein:
     - Fachliche Modellierung einer Anwendungsdomäne unter Anwendung von Standardmethoden der Anforderungserhebung und -analyse,  
     - Entwerfen von Software-Architekturen, unter Auswahl des jeweils angemessenen Architekturstils,  
     - Design und Implementation von konsistenten, robusten und performanten APIs,  
-    - Design und Implementation von auf die Bedürfnisse der Nutzer*innen angepasste User Interfaces,  
+    - Design und Implementation von auf die Bedürfnisse der NutzerInnen angepasste User Interfaces,  
     - Schreiben von Sourcecode, unter Beachtung aktueller Methoden und Praktiken zur Umsetzung von robustem, gut wartbarem, langlebigen und nachhaltig wartbarem Code,  
     - Bewertung und Auswahl eines für die Problemstellung und die Randbedingungen der Organisation angepassten Software- und Hardwarestacks,  
     - Auswahl von Methoden und Tools für Entwicklung, Hosting und Test  
@@ -30,7 +31,7 @@ acs:
     - Testen von Sourcecode und Komponenten, inklusive dem Aufbau einer Testautomatisierung und der Etablierung einer “Culture of Automation”,  
     - das Absichern von Software Systemen,  
     - das Bereitstellen und Inbetriebnehmen von Software-Systemen,  
-    - Wahrnehmung einer Innovator*innen- und Multiplikator*innen-Rolle in der eigenen Organisation für alle oben genannten Aspekte
+    - Wahrnehmung einer InnovatorInnen- und MultiplikatorInnen-Rolle in der eigenen Organisation für alle oben genannten Aspekte
   en_desc: |
     The focus area “Architecting and Coding Software” deals with methods and tools for designing software and software-based digital systems and technologies. Special emphasis is placed on the architecture of large and potentially highly distributed IT landscapes, best practices in coding and hosting complex applications and methods for understanding the requirements of a wide variety of domains.
     In the field of software development, graduates model and abstract the functional aspects of application systems. They decompose problems into subproblems, which are solved in dedicated software components through an implementation.
@@ -47,42 +48,46 @@ acs:
     - Securing software systems,  
     - Deploying and commissioning software systems,  
     - Assuming an innovator and multiplier role in one’s own organization for all of the above-mentioned aspects.
+
 dip:
   program: program.inf_inf
   de_label: Designing Innovations and Products
   en_label: Designing Innovations and Products
   de_desc: |
-    Digitalisierung bzw. Digitale Transformation umfasst die Veränderung, Vereinfachung, Automatisierung oder auch Neuschaffung von Prozessen, Produkten und Kund*innenerlebnissen mit Informationstechnologie. Durch Digitalisierung wird der Wandel in Gesellschaft und Wirtschaft vorangetrieben. Neben evolutionärer Weiterentwicklung finden disruptive Sprünge statt. Es entstehen neue, durch Digitalisierung getriebene und durch neue Technologien ermöglichte innovative Prozesse, Produkte und Dienstleistungen.
-    In diesem Bereich tätige Personen realisieren nicht nur informationsverarbeitende Systeme, sondern gestalten diese reflektiert, mit selbst gesteckten Zielen und mit Gedanken an spätere Anwender*innen. Sie implantieren ihre Ergebnisse in sozialen, ökonomischen und kulturellen Kontexten. Zudem suchen, erörtern und bewirken sie Interferenzen möglicher Produkte mit diesen Kontexten, bspw. in den Dimensionen Mensch-Maschine-Interaktion und Gesellschaft-Technologie-Wechselwirkung.
+    Digitalisierung bzw. Digitale Transformation umfasst die Veränderung, Vereinfachung, Automatisierung oder auch Neuschaffung von Prozessen, Produkten und KundInnenerlebnissen mit Informationstechnologie. Durch Digitalisierung wird der Wandel in Gesellschaft und Wirtschaft vorangetrieben. Neben evolutionärer Weiterentwicklung finden disruptive Sprünge statt. Es entstehen neue, durch Digitalisierung getriebene und durch neue Technologien ermöglichte innovative Prozesse, Produkte und Dienstleistungen.
+    In diesem Bereich tätige Personen realisieren nicht nur informationsverarbeitende Systeme, sondern gestalten diese reflektiert, mit selbst gesteckten Zielen und mit Gedanken an spätere AnwenderInnen. Sie implantieren ihre Ergebnisse in sozialen, ökonomischen und kulturellen Kontexten. Zudem suchen, erörtern und bewirken sie Interferenzen möglicher Produkte mit diesen Kontexten, bspw. in den Dimensionen Mensch-Maschine-Interaktion und Gesellschaft-Technologie-Wechselwirkung.
     Das Handeln im Feld »Designing Innovations and Products« ist charakterisiert durch interdisziplinäres, exploratives und kreatives Denken mit Fokus auf Geschäfts- und Betreibermodellen für innovative Produkte und Dienstleistungen.
   en_desc: |
     Digitization, or digital transformation, involves changing, simplifying, automating or even creating new processes, products and customer experiences with information technology. Digitization drives change in society and the economy. In addition to evolutionary further development, disruptive leaps are taking place. New innovative processes, products and services are created that are driven by digitization and enabled by new technologies.
     People working in this field not only realize information-processing systems, but also design them reflectively, with self-imposed goals and with thoughts of later users. They implant their results in social, economic and cultural contexts. Furthermore, they search for, discuss and cause interferences of possible products with these contexts, e.g. in the dimensions of human-machine-interaction and society-technology-interaction.
     The activities in the field of “Designing Innovations and Products” are characterized by interdisciplinary, explorative and creative thinking with a focus on business and operating models for innovative products and services.
+
 eb:
   program: program.inf_inf
   de_label: Empowering Business
   en_label: Empowering Business
   de_desc: |
-    Das Handlungsfeld Empowering Business ist durch das Entwickeln von Geschäftsfähigkeiten unter Nutzung digitaler Dienste geprägt. Dabei sind die Analyse, Optimierung, beziehungsweise Neugestaltung flexibler und anpassungsfähiger soziotechnischer Systeme so auszurichten, dass eine stabile Geschäftsentwicklung nachhaltig unterstützt wird. Das beinhaltet beispielsweise die Förderung von Kund*innenbeziehungen, die Entlastung der Unternehmensmitarbeiter*innen sowie die digitale Unterstützung überbetrieblicher Netzwerke wie auch innerbetrieblicher Prozesse.
+    Das Handlungsfeld Empowering Business ist durch das Entwickeln von Geschäftsfähigkeiten unter Nutzung digitaler Dienste geprägt. Dabei sind die Analyse, Optimierung, beziehungsweise Neugestaltung flexibler und anpassungsfähiger soziotechnischer Systeme so auszurichten, dass eine stabile Geschäftsentwicklung nachhaltig unterstützt wird. Das beinhaltet beispielsweise die Förderung von KundInnenbeziehungen, die Entlastung der UnternehmensmitarbeiterInnen sowie die digitale Unterstützung überbetrieblicher Netzwerke wie auch innerbetrieblicher Prozesse.
     Die dazu einzusetzenden Instrumente sind unter Anderem die Digitalisierung von Prozessen, die Prozessoptimierung, inklusive Automatisierung, bzw Flexibilisierung. Weitergehend gilt es neue Geschäftsmodelle durch den Einsatz von digitalen Anwendungen und zukunftsorientierten Technologien, zum Beispiel KI zu ermöglichen.
   en_desc: |
     The Empowering Business focus area is characterized by the development of business capabilities using digital services. The analysis, optimization, and redesign of flexible and adaptable socio-technical systems must be aligned in such a way that stable business development is supported in the long term. This includes, for example, the promotion of customer relationships, the relief of company employees and the digital support of inter-company networks as well as internal processes.
     The instruments to be used for this purpose include the digitalization of processes, process optimization, including automation, and flexibilization. Furthermore, new business models must be made possible through the use of digital applications and future-oriented technologies, such as AI.
+
 gak:
   program: program.inf_inf
   de_label: Generating and Accessing Knowledge
   en_label: Generating and Accessing Knowledge
-  de_desc: |
+  de_desc: >
     Das Handlungsfeld Generating and Accessing Knowledge umfasst den gesamten digitalen Erzeugungsprozess von Daten über Informationen zu Wissen. Hierbei stehen sowohl Themen der Datenakquise, -verarbeitung und -analyse (z.B. mit mathematisch-statistischen Verfahren), der Informationstrukturierung als auch die Wissensorganisation im Zentrum. Neben technischen und Informatik-nahen Aspekten wird vermehrt eine informationswissenschaftliche Sicht auf die Herausforderungen, Herangehensweisen und Lösungen geworfen. Konkret finden diese Methoden und Techniken bspw. Anwendung im Bereich Knowledge Discovery, wobei ein weitreichendes Themenfeld von Forschungsdaten(-managment) bis hin zu Techniken der künstlichen Intelligenz und des maschinellen Lernens zum Einsatz kommt.
-  en_desc: |
+  en_desc: >
     The Generating and Accessing Knowledge focus area covers the entire digital generation process from data to information to knowledge. The focus is on data acquisition, processing and analysis (e.g., with mathematical-statistical methods), information structuring and knowledge organization. In addition to technical and computer science-related aspects, an information science perspective is increasingly cast on the challenges, approaches and solutions. In concrete terms, these methods and techniques are applied, for example, in the area of knowledge discovery, where a wide range of topics from research data (management) to techniques of artificial intelligence and machine learning are used.
+
 mri:
   program: program.inf_inf
   de_label: Managing and Running IT
   en_label: Managing and Running IT
   de_desc: |
-    Das Handlungsfeld Managing and Running IT zielt auf umfassendes Expert*innenwissen für den Aufbau, den Betrieb und die Weiterentwicklung der IT unter Berücksichtigung von Effektivität, Effizienz und Sicherheit sowie zur Unterstützung der digitalen Transformation. Dazu gehört sowohl die anforderungsgerechte Gestaltung der IT und die Erkundung neuer IT-Einsatzszenarien und -Technologien als auch Führungs- und Budgetverantwortung.
+    Das Handlungsfeld Managing and Running IT zielt auf umfassendes ExpertInnenwissen für den Aufbau, den Betrieb und die Weiterentwicklung der IT unter Berücksichtigung von Effektivität, Effizienz und Sicherheit sowie zur Unterstützung der digitalen Transformation. Dazu gehört sowohl die anforderungsgerechte Gestaltung der IT und die Erkundung neuer IT-Einsatzszenarien und -Technologien als auch Führungs- und Budgetverantwortung.
     Weiter sind im Rahmen der digitalen Transformation von Organisationen und ihren Geschäftsprozessen die Mitwirkung an der Weiterentwicklung der IT-Strategie, das Setzen wesentlicher Gestaltungsimpulse im Unternehmen und die Fähigkeit, diese auf Managementebene und in Teams zu vertreten, wesentliche Aspekte. Umsetzbarkeit, Akzeptanz, Marktfähigkeit und Wertbeitrag sind dabei stets ebenso im Fokus wie die Minimierung der mit dem Einsatz von IT verbundenen Risiken.
   en_desc: |
     The Managing and Running IT focus area aims to provide comprehensive expert knowledge for setting up, operating and further developing IT, taking into account effectiveness, efficiency and security, as well as for supporting digital transformation. This includes designing IT to meet requirements and exploring new IT deployment scenarios and technologies, as well as management and budget responsibility.
@@ -94,20 +99,22 @@ ppr:
   de_label: Planung und Projekierung
   de_desc: >
     In der Elektrotechnik und in der Automatisierungstechnik werden unter Planung und Projektierung alle Arbeitsvorgänge verstanden, die von der Angebotsphase bis zur vollständigen Inbetriebnahme eines automatisierungstechnischen Systems erforderlich sind.
-    Im Handlungsfeld Planung und Projektierung entwerfen und realisieren Automatisierungsingenieur*innen neue automatisierungstechnische Systeme, indem sie auf Basis von fundiertem Fachwissen Teilsysteme auswählen, beschaffen, konfigurieren und zu einem Gesamtsystem integrieren, um neue oder bestehende Produkte, Anlagen, Maschinen, Prozesse, Verfahren oder Dienstleistungen zu entwickeln oder zu verbessern.
-    Produzierende Unternehmen, die die Auftraggeber von Planungs- und Projektierungsleistungen sind, verfügen entweder über eigene Fachabteilungen mit Fokus auf Planung und Projektierung oder weisen diese Aufgaben Ingenieur*innen zu, die in Produktion und Instandhaltung tätig sind. Unabhängig von dieser organisationstechnischen Entscheidung wird insbesondere in den Bereichen Automatisierungs- und Elektrotechnik das Gros an Planungs- und Projektierungsleistungen von externen Dienstleistungsunternehmen erbracht, die auf genau dieses Handlungsfeld spezialisiert sind. Bei Herstellern von Automatisierungssystemen ist zudem eine Trendwende zu beobachten: Nach jahrzehntelangem Abbau werden in jüngerer Zeit verstärkt personelle Ressourcen für das Handlungsfeld Planung und Projektierung aufgebaut.
+    Im Handlungsfeld Planung und Projektierung entwerfen und realisieren AutomatisierungsingenieurInnen neue automatisierungstechnische Systeme, indem sie auf Basis von fundiertem Fachwissen Teilsysteme auswählen, beschaffen, konfigurieren und zu einem Gesamtsystem integrieren, um neue oder bestehende Produkte, Anlagen, Maschinen, Prozesse, Verfahren oder Dienstleistungen zu entwickeln oder zu verbessern.
+    Produzierende Unternehmen, die die Auftraggeber von Planungs- und Projektierungsleistungen sind, verfügen entweder über eigene Fachabteilungen mit Fokus auf Planung und Projektierung oder weisen diese Aufgaben IngenieurInnen zu, die in Produktion und Instandhaltung tätig sind. Unabhängig von dieser organisationstechnischen Entscheidung wird insbesondere in den Bereichen Automatisierungs- und Elektrotechnik das Gros an Planungs- und Projektierungsleistungen von externen Dienstleistungsunternehmen erbracht, die auf genau dieses Handlungsfeld spezialisiert sind. Bei Herstellern von Automatisierungssystemen ist zudem eine Trendwende zu beobachten: Nach jahrzehntelangem Abbau werden in jüngerer Zeit verstärkt personelle Ressourcen für das Handlungsfeld Planung und Projektierung aufgebaut.
+
 bin:
   program: program.inf_inf
   de_label: Betrieb und Instandhaltung
   de_desc: |
-    Der Betrieb (groß-) technischer Anlagen ist in der Regel komplex und kapitalintensiv. Sowohl in der Fertigungs- als auch in der Prozessindustrie sind heutzutage alle Produktionsanlagen durchgängig automatisiert. Neben der Instandhaltung, die primär dazu dient, die Verfügbarkeit der Anlagen zu gewährleisten, stellt die kontinuierliche Optimierung aller Parameter, die Einfluss auf die Profitabilität einer Anlage bzw. eines Anlagenkomplexes haben, eine Kernaufgabe für alle Ingenieur*innen dar, die in den Bereichen Betrieb und Instandhaltung tätig sind. 
-    Im Handlungsfeld Betrieb und Instandhaltung ermöglichen Automatisierungsingenieur*innen das Betreiben von Anlagen, Maschinen, Prozessen oder Verfahren, indem sie auf Basis von fundiertem Fachwissen das Verhalten von (automatisierungs- und elektro-) technischen Systemen analysieren und bewerten sowie diese bei Bedarf reparieren und verbessern, um die mit dem Betrieb der Anlagen, Maschinen, Prozesse oder Verfahren in der Regel verbundene Gewinnerzielungsabsicht zu realisieren.
+    Der Betrieb (groß-) technischer Anlagen ist in der Regel komplex und kapitalintensiv. Sowohl in der Fertigungs- als auch in der Prozessindustrie sind heutzutage alle Produktionsanlagen durchgängig automatisiert. Neben der Instandhaltung, die primär dazu dient, die Verfügbarkeit der Anlagen zu gewährleisten, stellt die kontinuierliche Optimierung aller Parameter, die Einfluss auf die Profitabilität einer Anlage bzw. eines Anlagenkomplexes haben, eine Kernaufgabe für alle IngenieurInnen dar, die in den Bereichen Betrieb und Instandhaltung tätig sind. 
+    Im Handlungsfeld Betrieb und Instandhaltung ermöglichen AutomatisierungsingenieurInnen das Betreiben von Anlagen, Maschinen, Prozessen oder Verfahren, indem sie auf Basis von fundiertem Fachwissen das Verhalten von (automatisierungs- und elektro-) technischen Systemen analysieren und bewerten sowie diese bei Bedarf reparieren und verbessern, um die mit dem Betrieb der Anlagen, Maschinen, Prozesse oder Verfahren in der Regel verbundene Gewinnerzielungsabsicht zu realisieren.
     Die reine Instandhaltung aller automatisierungs- und elektrotechnischen Einrichtungen einer Produktionsanlage repräsentiert ein traditionelles Arbeitsfeld für FH-Ingenieure, die im Idealfall vor dem Studium eine fachspezifische Lehre abgeschlossen haben. Ähnliches gilt für die Inbetriebnahme von Maschinen und Anlagen, die häufig international erfolgt.
+
 ipp:
   program: program.inf_inf
   de_label: Integration von Planung, Projektierung, Betrieb und Instandhaltung
   de_desc: >
-    In Abhängigkeit von Größe und Organisationsstruktur eines produzierenden Unternehmens sind Automatisierungsingenieur*innen aus dem Bereich Betrieb und Instandhaltung auch für die Planung und Projektierung von Anlagenmodifikationen und Anlagenerweiterungen der von ihnen betreuten Anlagen zuständig und verantwortlich. In der betrieblichen Praxis agieren sie in dieser Funktion als Auftraggeber für unternehmensinterne Facheinheiten oder externe Lieferanten. 
+    In Abhängigkeit von Größe und Organisationsstruktur eines produzierenden Unternehmens sind AutomatisierungsingenieurInnen aus dem Bereich Betrieb und Instandhaltung auch für die Planung und Projektierung von Anlagenmodifikationen und Anlagenerweiterungen der von ihnen betreuten Anlagen zuständig und verantwortlich. In der betrieblichen Praxis agieren sie in dieser Funktion als Auftraggeber für unternehmensinterne Facheinheiten oder externe Lieferanten. 
 
 # Allgemeiner Maschinenbau (Ba)
 man:
@@ -115,28 +122,29 @@ man:
   de_label: Fertigung
   en_label: Manufacturing
   de_desc: |
-    Im Handlungsfeld Fertigung sollen die Absolvent*innen in der Lage ihre Werkstücke und anderen geometrisch definierte feste Körper wirtschaftlich herzustellen. Ausgangspunkt sind dabei die Konstruktionsunterlagen, die die Form der Werkstücke, die zulässigen Maß- und Formabweichungen, die Oberflächenbeschaffenheit und den Werkstoff festlegen, sowie die zu verwendenden Mess- und Prüfmittel.
+    Im Handlungsfeld Fertigung sollen die AbsolventInnen in der Lage ihre Werkstücke und anderen geometrisch definierte feste Körper wirtschaftlich herzustellen. Ausgangspunkt sind dabei die Konstruktionsunterlagen, die die Form der Werkstücke, die zulässigen Maß- und Formabweichungen, die Oberflächenbeschaffenheit und den Werkstoff festlegen, sowie die zu verwendenden Mess- und Prüfmittel.
     In der Fertigungstechnik werden Stückgüter hergestellt. Dabei kann es sich um Produkte für den Endverbraucher handeln, um die Fertigungsmittel die zur Fertigung benötigt werden, wie Werkzeuge, Maschinen und Anlagen oder um Produkte, die noch weiterverarbeitet werden müssen wie Bleche oder Halbzeuge.
     Weitere Teilgebiete sind die Fertigungsmesstechnik, die Fertigungsplanung und -steuerung, die Organisationsformen der Fertigung wie die Werkstattfertigung oder die Serienfertigung und das Qualitätsmanagement.
     Grenzgebiete zu nahestehenden Wissenschaften sind die Unternehmenslogistik und die Fabrikplanung.
+
 con:
   program: program.inf_inf
   de_label: Konstruktion
   en_label: Construction
   de_desc: |
-    Im Handlungsfeld Konstruktion sollen die Absolvent*innen in der Lage sein, den Entwurf eines technischen Produkts (Maschine, Anlage, Apparat oder Gerät) so auszuarbeiten, dass seine Fertigung möglich wird. Arbeitsergebnis sind die zur Fertigung nötigen Unterlagen.
+    Im Handlungsfeld Konstruktion sollen die AbsolventInnen in der Lage sein, den Entwurf eines technischen Produkts (Maschine, Anlage, Apparat oder Gerät) so auszuarbeiten, dass seine Fertigung möglich wird. Arbeitsergebnis sind die zur Fertigung nötigen Unterlagen.
     Die Konstruktion beinhaltet einen digitalen Entwicklungsprozess des Produkts, wobei dessen Funktionen durch Anwendung zumeist physikalischer Gesetze (in der Mehrheit mechanische und elektrische Gesetze) erarbeitet und mit Hilfe digitalen Prototypen erprobt werden.
     Typische Werkzeuge für diesen digitalen Entwicklungsprozess sind CIM (Computer Integrated Manufacturing), CAD (Computer-Aided Design = rechnerunterstütztes Konstruieren), FEM (Finite-Elemente-Methode), CFD (Computer Fluid Dynamics = numerische Strömungsmechanik), welche in diesem Handlungsfeld integriert sind.
+
 een:
   program: program.inf_inf
   de_label: Umwelttechnik
   en_label: Environmental Engineering
   de_desc: |
-    Im Handlungsfeld Umwelttechnik sollen die Absolvent*innen in enger Zusammenarbeit mit dem Lehr- und Forschungsstandort :metabolon der TH-Köln in der Lage sein, Maschinen und Anlagen zu entwickeln, welche durch spezielle technische und technologische Verfahren dem Schutz der Umwelt dienen.
+    Im Handlungsfeld Umwelttechnik sollen die AbsolventInnen in enger Zusammenarbeit mit dem Lehr- und Forschungsstandort :metabolon der TH-Köln in der Lage sein, Maschinen und Anlagen zu entwickeln, welche durch spezielle technische und technologische Verfahren dem Schutz der Umwelt dienen.
     Grundlage bilden verschiedenste Wertschöpfungsketten aus den Bereichen Forst- und Landwirtschaft, Produktion von Gütern sowie Abfall-/Wasserwirtschaft. Das Hauptaugenmerk neuer Technologien liegt dabei auf der nachhaltigen Bewirtschaftung bislang ungenutzter regenerativer Ressourcen und der umweltverträglichen Kreislaufführung von produzierten Rest- und Abfallstoffen.
     Ziel ist dabei auch, ungenutzte bzw. derzeit noch nicht verwendbare regenerative Energiequellen zu erschließen. Hierbei werden nicht nur die Bereitstellung, Aufbereitung und Umwandlung untersucht, sondern auch die Verwertung und Weiterverarbeitung von Zwischen- und Endprodukten optimiert.
     Im Handlungsfeld „Umwelttechnik“ beschäftigen sich die Studierende insbesondere mit den aktuellen und langfristig relevanten Themen der Nachhaltigkeit aus einer technischen Sicht unter Berücksichtigung der Ökologie, Ökonomie und gesellschaftlicher Akzeptanz.
-
 
 # Wirtschaftsingenieurwesen
 ele:
@@ -156,27 +164,84 @@ een-wiw:
 uin:
   program: program.inf_inf
   de_label: Unternehmensführung und Innovationsmanagement
+
 iwe:
   program: program.inf_inf
   de_label: Industrielles Wertschöpfungsmanagement
+
 dmo:
   program: program.inf_inf
   de_label: Methoden der datenbasierten Modellierung und Optimierung
   de_desc: Datenbasierte Analytik, Maschinelles Lernen, Softwarebasierte Optimierung etc.
+
 ere:
   program: program.inf_inf
   de_label: Energie- und Ressourcenmanagement
 
 # Medieninformatik (BA)
+#PO4
 sc:
   program: program.inf_inf
   de_label: Social Computing
+
 vc:
   program: program.inf_inf
   de_label: Visual Computing
+
 ww:
   program: program.inf_inf
   de_label: Web Development
+
+#PO5
+dux:
+  program: program.inf_inf
+  de_label: Designing for User experiences
+  de_desc: |
+    Im Handlungsfeld Designing for User Experiences befassen sich MedieninformatikerInnen mit der Ausgestaltung digitaler Anwendungen und ggf. deren Einbettung in digitale Ökosysteme von Unternehmen oder Institutionen, deren Nutzung dann in spezifische Erlebnisse von BenuzterInnen mündet. 
+    Die Ausgestaltung umfasst die Analyse relevanter Nutzungskontexte, die Durchführung von Benutzerforschung, das konzeptionelle Design digitaler Anwendungen und die Entwicklung von Interaktionskonzepten für die zu adressierenden Nutzergruppen, die Erstellung von Prototypen und Wireframes, sowie die enge Zusammenarbeit mit EntwicklerInnen. 
+    Das Ziel ist es funktionale, ästhetische, inklusive und nachhaltige Nutzungserlebnisse und -schnittstellen zu schaffen. 
+    Dabei werden veschiedene Methoden, Prinzipien und Techniken aus Design, Mensch-Computer-Interaktion und Design Thinking angewandt. 
+    Formative, entwicklungsbegleitende und summative Evaluationen sowie kontinuierliche Anpassungen gewährleisten, dass die Lösungen den Bedürfnissen und den Erfordernissen der BenutzerInnen langfristig entsprechen. 
+    Der Fokus liegt darauf, zielgerichtet eine effektive, effiziente, zugängliche und positiv erlebte Interaktion zwischen BenutzerInnen und digitalen Produkten zu schaffen.
+
+dev:
+  program: program.inf_inf
+  de_label: Developing interactive and distributed Systems
+  de_desc: |
+    Durch die Planung von Systemarchitekturen, die Umsetzung von Frontend- und Backend-Funktionalitäten, den Entwurf von Software-Systemen und Datenbankstrukturen sowie die Implementierung von Sicherheitsmaßnahmen schaffen MedieninformatikerInnen qualitativ hochwertige Softwarelösungen. 
+    Durch enge Zusammenarbeit im Team tragen MedieninformatikerInnen dazu bei, innovative und zuverlässige Systeme zu schaffen, die den Anforderungen der Stakeholder gerecht werden.
+
+crea:
+  program: program.inf_inf
+  de_label: Driving creation Process
+  de_desc: |
+    Im Handlungsfeld Driving Creation Processes steuern AbsolventInnen verschiedene Prozesse der Produktentwicklung entlang des Innovation Funnels, von der frühen Ermittlung von Bedürfnissen und Bedarfen, über die Konzeption und die Entwicklung bis zur Markteinführung. 
+    Dies umfasst Innovationsmanagement, Produktentwicklung, Projektmanagement und die erfolgreiche Positionierung eines neuen Produkts im Markt. 
+    Marktforschung, Wirtschaftlichkeitsbetrachtung, frühes Prototyping inkl. der Entwicklung von Minimum Viable Products, Qualitätssicherung und die Berücksichtigung rechtlicher, ethischer und nachhaltiger Aspekte gehören ebenso zu den Aufgaben. 
+    Der Fokus liegt darauf, innovative Ideen nicht nur zu generieren, sondern auch effektiv auf den Markt zu bringen und dabei die Bedürfnisse der Zielgruppe zu erfüllen.
+
+indi:
+  program: program.inf_inf
+  de_label: Enhancing Interactions on different Scales
+  de_desc: |
+    MedieninformatikerInnen agieren als ArchitektInnen nachhaltiger, anforderungsgerechter und ethisch verantwortlicher digitaler Produkte. 
+    Mit Hilfe von Analysen, Studien und Experimenten wird sichergestellt, dass entwickelte Produkte nicht nur funktional sind, sondern auch sinnvoll, effizient und effektiv in verschiedenen Kontexten nutzbar sind. 
+    Die Umsetzung von «Situated Interaction» gewährleistet, dass Interaktionen auf die spezifischen Umgebungen, Erfahrungen, Fähigkeiten, Erwartungen und Bedürfnisse der NutzerInnen abgestimmt sind.
+
+exa:
+  program: program.inf_inf
+  de_label: Exploring advanced interactive Media
+  de_desc: |
+    Im Handlungsfeld Exploring Advanced Interactive Media gestalten MedieninformatikerInnen experimentelle und innovative interaktive Produkte und Services. 
+    Durch Erkenntnisse und Inspiration aus anderen Disziplinen, kreative Konzeption und Prototyping werden neue Technologien, Trends und Anwendungsszenarien erkundet. 
+    Für die Medieninformatik sind Technologien aus den Bereichen Virtual Reality (VR), Augmented Reality (AR), Mixed Reality (MR), Ubiquitous Computing und Machine Learning zukunftsweisend. 
+    Daraus resultieren beispielsweise neue Kontexte für intelligente Sprach- und Textverarbeitung sowie multimodale Interfaces als Spielwiesen für fortschrittliche Interaktionsformen.
+    
+    Die Integration von Haptik, Gestensteuerung, künstlicher Intelligenz und experimentellen Benutzungsschnittstellen steht im Fokus, um immersive, alltagstaugliche und zukunftsweisende digitale Nutzungserlebnisse zu schaffen. 
+    Neben technischen Neuerungen betrachten MedieninformatikerInnen hier auch Trends in der Interaktion, wie etwa spielerische Interaktionen im Kontext von Gamification und Serious Games oder neue Entwicklungen in der Visualisierung im Umfeld von Datenanalyse.
+    
+    Die frühzeitige Einbindung von AnwenderInnen und deren Perspektiven in den Entwicklungsprozess stellt sicher, dass diese fortschrittlichen interaktiven Medien nicht nur technologisch exploriert werden, sondern auch den Anforderungen in den potentiellen Einsatzgebieten gerecht werden. 
+    MedieninformatikerInnen treiben somit aktiv die Entwicklung und Erforschung modernster Interaktionstechnologien voran und gehen in eigenen Lösugen über den Stand der Technik hinaus.
 
 # Automotion & IT
 fen:
@@ -184,11 +249,11 @@ fen:
   de_label: Forschung und Entwicklung
   de_desc: |
     "Forschung und Entwicklung (F&E) umfasst alle planvollen und systematischen Aktivitäten auf der Basis wissenschaftlicher Methoden, deren Ziel der Erwerb neuen Wissens ist".
-    Traditionell wird zwischen Grundlagenforschung und angewandter Forschung unterschieden. Für Absolvent*innen des Masterstudiengangs Automation & IT ist insbesondere die angewandte Forschung von Bedeutung, in der neue oder bestehende Produkte, Anlagen, Maschinen, Prozesse, Verfahren oder Dienstleistungen entwickelt oder verbessert werden.  
-    Gemäß obiger Definition ist das Ziel von F&E der Erwerb neuen Wissens. Dies setzt naturgemäß voraus, dass die Forscher*in oder Entwickler*in mit dem für die spezifische Aufgabenstellung relevanten Fakten-, konzeptuellem, prozeduralem und metakognitiven Wissen in der erforderlichen Tiefe vertraut ist.
-    Im Handlungsfeld Forschung und Entwicklung generieren Forscher*innen oder Entwickler*innen neues Wissen, indem sie vorhandenes Fakten-, konzeptuelles, prozedurales und metakognitives Wissen anwenden, analysieren und bewerten, um neue oder bestehende Produkte, Anlagen, Maschinen, Prozesse, Verfahren oder Dienstleistungen zu entwickeln oder zu verbessern.
+    Traditionell wird zwischen Grundlagenforschung und angewandter Forschung unterschieden. Für AbsolventInnen des Masterstudiengangs Automation & IT ist insbesondere die angewandte Forschung von Bedeutung, in der neue oder bestehende Produkte, Anlagen, Maschinen, Prozesse, Verfahren oder Dienstleistungen entwickelt oder verbessert werden.  
+    Gemäß obiger Definition ist das Ziel von F&E der Erwerb neuen Wissens. Dies setzt naturgemäß voraus, dass die ForscherIn oder EntwicklerIn mit dem für die spezifische Aufgabenstellung relevanten Fakten-, konzeptuellem, prozeduralem und metakognitiven Wissen in der erforderlichen Tiefe vertraut ist.
+    Im Handlungsfeld Forschung und Entwicklung generieren ForscherInnen oder EntwicklerInnen neues Wissen, indem sie vorhandenes Fakten-, konzeptuelles, prozedurales und metakognitives Wissen anwenden, analysieren und bewerten, um neue oder bestehende Produkte, Anlagen, Maschinen, Prozesse, Verfahren oder Dienstleistungen zu entwickeln oder zu verbessern.
     F&E im Bereich Automatisierungstechnik ist nicht nur auf Hersteller automatisierungstechnischer Systeme oder Komponenten beschränkt. Heutzutage enthalten nahezu alle technischen Geräte, Maschinen oder Anlagen automatisierungstechnische Komponenten. Die Entwicklung dieser Komponenten erfordert eigene F&E-Aktivitäten, die in Relation zum Umfang und zur Komplexität dieser Komponenten stehen.
-    Ein klassischer, nach wie vor erfolgreicher Berufsweg im Ingenieurwesen und somit auch in der Automatisierungstechnik besteht aus den Stufen Bachelor, Master, Promotion, mehrjährige Tätigkeit in Forschung und Entwicklung, daran anschließende Tätigkeiten in Planung und Projektierung oder Betrieb und Instandhaltung, wobei letztere in der Regel mit zunehmender Verantwortung und einem hierarchischen Aufstieg verbunden sind. Alternativ ist für Ingenieur*innen mit hoher wissenschaftlicher Qualifikation eine Rückkehr in die akademische Welt durch Annahme einer Professur möglich.
+    Ein klassischer, nach wie vor erfolgreicher Berufsweg im Ingenieurwesen und somit auch in der Automatisierungstechnik besteht aus den Stufen Bachelor, Master, Promotion, mehrjährige Tätigkeit in Forschung und Entwicklung, daran anschließende Tätigkeiten in Planung und Projektierung oder Betrieb und Instandhaltung, wobei letztere in der Regel mit zunehmender Verantwortung und einem hierarchischen Aufstieg verbunden sind. Alternativ ist für IngenieurInnen mit hoher wissenschaftlicher Qualifikation eine Rückkehr in die akademische Welt durch Annahme einer Professur möglich.
     Die Fakultät für Ingenieurwissenschaften und Informatik der TH Köln unterstützt diesen Werdegang indem sie Studierenden mit Interesse an Automation & IT ein aufeinander aufbauendes Angebot über Bachelor- und Masterstudium mit anschließender Promotion bietet, wobei in der Vergangenheit die Institute
     •	Data Science, Engineering, and Analytics (Professor Bartz-Beielstein)
     •	:metabolon Institut (früher Institut für Automation & IT, Prof. Bongards)
@@ -200,18 +265,19 @@ pup:
   de_label: Planung und Projektierung
   de_desc: |
     In der Automatisierungstechnik werden unter Planung und Projektierung alle Arbeitsvorgänge verstanden, die von der Angebotsphase bis zur vollständigen Inbetriebnahme eines automatisierungstechnischen Systems erforderlich sind.
-    Im Handlungsfeld Planung und Projektierung entwerfen und realisieren Automatisierungsingenieur*innen neue automatisierungstechnische Systeme, indem sie auf Basis von fundiertem Fachwissen Teilsysteme auswählen, beschaffen, konfigurieren und zu einem Gesamtsystem integrieren, um neue oder bestehende Produkte, Anlagen, Maschinen, Prozesse, Verfahren oder Dienstleistungen zu entwickeln oder zu verbessern.
-    Produzierende Unternehmen, die die Auftraggeber von Planungs- und Projektierungsleistungen sind, verfügen entweder über eigene Fachabteilungen mit Fokus auf Planung und Projektierung oder weisen diese Aufgaben Ingenieur*innen zu, die in Produktion und Instandhaltung tätig sind. Unabhängig von dieser organisationstechnischen Entscheidung wird insbesondere in den Bereichen Automatisierungs- und Elektrotechnik das Gros an Planungs- und Projektierungsleistungen von externen Dienstleistungsunternehmen erbracht, die auf genau dieses Handlungsfeld spezialisiert sind. Bei Herstellern von Automatisierungssystemen ist zudem eine Trendwende zu beobachten: Nach jahrzehntelangem Abbau werden in jüngerer Zeit verstärkt personelle Ressourcen für das Handlungsfeld Planung und Projektierung aufgebaut.
+    Im Handlungsfeld Planung und Projektierung entwerfen und realisieren AutomatisierungsingenieurInnen neue automatisierungstechnische Systeme, indem sie auf Basis von fundiertem Fachwissen Teilsysteme auswählen, beschaffen, konfigurieren und zu einem Gesamtsystem integrieren, um neue oder bestehende Produkte, Anlagen, Maschinen, Prozesse, Verfahren oder Dienstleistungen zu entwickeln oder zu verbessern.
+    Produzierende Unternehmen, die die Auftraggeber von Planungs- und Projektierungsleistungen sind, verfügen entweder über eigene Fachabteilungen mit Fokus auf Planung und Projektierung oder weisen diese Aufgaben IngenieurInnen zu, die in Produktion und Instandhaltung tätig sind. Unabhängig von dieser organisationstechnischen Entscheidung wird insbesondere in den Bereichen Automatisierungs- und Elektrotechnik das Gros an Planungs- und Projektierungsleistungen von externen Dienstleistungsunternehmen erbracht, die auf genau dieses Handlungsfeld spezialisiert sind. Bei Herstellern von Automatisierungssystemen ist zudem eine Trendwende zu beobachten: Nach jahrzehntelangem Abbau werden in jüngerer Zeit verstärkt personelle Ressourcen für das Handlungsfeld Planung und Projektierung aufgebaut.
+
 bui:
   program: program.inf_inf
   de_label: Betrieb und Instandhaltung
   de_desc: |
-    Der Betrieb (groß-) technischer Anlagen ist in der Regel komplex und kapitalintensiv. Sowohl in der Fertigungs- als auch in der Prozessindustrie sind heutzutage alle Produktionsanlagen durchgängig automatisiert. Neben der Instandhaltung, die primär dazu dient, die Verfügbarkeit der Anlagen zu gewährleisten, stellt die kontinuierliche Optimierung aller Parameter, die Einfluss auf die Profitabilität einer Anlage bzw. eines Anlagenkomplexes haben, eine Kernaufgabe für alle Ingenieur*innen dar, die in den Bereichen Betrieb und Instandhaltung tätig sind.
-    Im Handlungsfeld Betrieb und Instandhaltung ermöglichen Automatisierungsingenieur*innen das Betreiben von Anlagen, Maschinen, Prozessen oder Verfahren, indem sie auf Basis von fundiertem Fachwissen das Verhalten von (automatisierungs- und elektro-) technischen Systemen analysieren und bewerten sowie diese bei Bedarf reparieren und verbessern, um die mit dem Betrieb der Anlagen, Maschinen, Prozesse oder Verfahren in der Regel verbundene Gewinnerzielungsabsicht zu realisieren.
-    Die reine Instandhaltung aller automatisierungs- und elektrotechnischen Einrichtungen einer Produktionsanlage repräsentiert ein traditionelles Arbeitsfeld für FH-Ingenieure, die im Idealfall vor dem Studium eine fachspezifische Lehre abgeschlossen haben. Dieses Arbeitsfeld bleibt auch zukünftig bestehen und stellt kein vorrangiges Arbeitsfeld für Automatisierungsingenieur*innen mit einem eher theoretisch ausgerichteten Profil dar, das sie beispielsweise über ein Masterstudium mit eventuell anschließender Promotion erworben haben.
+    Der Betrieb (groß-) technischer Anlagen ist in der Regel komplex und kapitalintensiv. Sowohl in der Fertigungs- als auch in der Prozessindustrie sind heutzutage alle Produktionsanlagen durchgängig automatisiert. Neben der Instandhaltung, die primär dazu dient, die Verfügbarkeit der Anlagen zu gewährleisten, stellt die kontinuierliche Optimierung aller Parameter, die Einfluss auf die Profitabilität einer Anlage bzw. eines Anlagenkomplexes haben, eine Kernaufgabe für alle IngenieurInnen dar, die in den Bereichen Betrieb und Instandhaltung tätig sind.
+    Im Handlungsfeld Betrieb und Instandhaltung ermöglichen AutomatisierungsingenieurInnen das Betreiben von Anlagen, Maschinen, Prozessen oder Verfahren, indem sie auf Basis von fundiertem Fachwissen das Verhalten von (automatisierungs- und elektro-) technischen Systemen analysieren und bewerten sowie diese bei Bedarf reparieren und verbessern, um die mit dem Betrieb der Anlagen, Maschinen, Prozesse oder Verfahren in der Regel verbundene Gewinnerzielungsabsicht zu realisieren.
+    Die reine Instandhaltung aller automatisierungs- und elektrotechnischen Einrichtungen einer Produktionsanlage repräsentiert ein traditionelles Arbeitsfeld für FH-Ingenieure, die im Idealfall vor dem Studium eine fachspezifische Lehre abgeschlossen haben. Dieses Arbeitsfeld bleibt auch zukünftig bestehen und stellt kein vorrangiges Arbeitsfeld für AutomatisierungsingenieurInnen mit einem eher theoretisch ausgerichteten Profil dar, das sie beispielsweise über ein Masterstudium mit eventuell anschließender Promotion erworben haben.
+
 ppb:
   program: program.inf_inf
   de_label: Planung, Projektierung, Betrieb und Instandhaltung
   de_desc: >
-    In Abhängigkeit von Größe und Organisationsstruktur eines produzierenden Unternehmens sind Automatisierungsingenieur*innen aus dem Bereich Betrieb und Instandhaltung auch für die Planung und Projektierung von Anlagenmodifikationen und Anlagenerweiterungen der von ihnen betreuten Anlagen zuständig und verantwortlich. In der betrieblichen Praxis agieren sie in dieser Funktion als Auftraggeber für unternehmensinterne Facheinheiten oder externe Lieferanten. In Produktionsanlagen, die von größeren Mitarbeiterteams betreut werden, werden insbesondere in Führungspositionen häufig Ingenieur*innen mit Masterabschluss oder Promotion eingesetzt.
-
+    In Abhängigkeit von Größe und Organisationsstruktur eines produzierenden Unternehmens sind AutomatisierungsingenieurInnen aus dem Bereich Betrieb und Instandhaltung auch für die Planung und Projektierung von Anlagenmodifikationen und Anlagenerweiterungen der von ihnen betreuten Anlagen zuständig und verantwortlich. In der betrieblichen Praxis agieren sie in dieser Funktion als Auftraggeber für unternehmensinterne Facheinheiten oder externe Lieferanten. In Produktionsanlagen, die von größeren Mitarbeiterteams betreut werden, werden insbesondere in Führungspositionen häufig IngenieurInnen mit Masterabschluss oder Promotion eingesetzt.

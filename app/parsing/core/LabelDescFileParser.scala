@@ -1,30 +1,21 @@
 package parsing.core
 
+import io.circe.{Decoder, HCursor}
 import models.core.IDLabelDesc
-import parser.Parser
-import parser.Parser._
-import parser.ParserOps.{P0, P2, P3, P4}
-import parsing.{removeIndentation, singleLineStringForKey, stringForKey}
 
-trait LabelDescFileParser[A <: IDLabelDesc] extends FileParser[A] {
+trait LabelDescFileParser[A <: IDLabelDesc] extends YamlFileParser[A] {
+
   protected def makeType: ((String, String, String, String, String)) => A
 
-  val fileParser: Parser[List[A]] = {
-    skipFirst(removeIndentation())
-      .take(
-        prefixTo(":")
-          .skip(newline)
-          .skip(zeroOrMoreSpaces)
-          .zip(singleLineStringForKey("de_label"))
-          .skip(zeroOrMoreSpaces)
-          .take(stringForKey("de_desc"))
-          .skip(zeroOrMoreSpaces)
-          .take(singleLineStringForKey("en_label"))
-          .skip(zeroOrMoreSpaces)
-          .take(stringForKey("en_desc"))
-          .skip(optional(newline))
-          .all()
-          .map(_.map(makeType))
-      )
-  }
+  override def decoder: Decoder[A] =
+    (c: HCursor) => {
+      val key = c.key.get
+      val obj = c.root.downField(key)
+      for {
+        deLabel <- obj.get[String]("de_label")
+        enLabel <- obj.get[String]("en_label")
+        deDesc <- obj.getOrElse[String]("de_desc")("")
+        enDesc <- obj.getOrElse[String]("en_desc")("")
+      } yield makeType(key, deLabel.trim, enLabel.trim, deDesc.trim, enDesc.trim)
+    }
 }

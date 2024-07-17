@@ -102,8 +102,6 @@ create table study_program
     "id"                    text PRIMARY KEY,
     "de_label"              text not null,
     "en_label"              text not null,
-    "internal_abbreviation" text not null,
-    "external_abbreviation" text not null,
     "degree"                text not null,
     FOREIGN KEY (degree) REFERENCES degree (id)
 );

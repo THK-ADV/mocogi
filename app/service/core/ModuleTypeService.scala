@@ -2,7 +2,8 @@ package service.core
 
 import database.repo.core.ModuleTypeRepository
 import models.core.ModuleType
-import parsing.core.{FileParser, ModuleTypeFileParser}
+import parser.Parser
+import parsing.core.ModuleTypeFileParser
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
@@ -12,5 +13,6 @@ final class ModuleTypeService @Inject() (
     val repo: ModuleTypeRepository,
     val ctx: ExecutionContext
 ) extends SimpleYamlService[ModuleType] {
-  override def fileParser: FileParser[ModuleType] = ModuleTypeFileParser
+  override def fileParser: Parser[List[ModuleType]] =
+    ModuleTypeFileParser.parser()
 }

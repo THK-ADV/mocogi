@@ -5,7 +5,9 @@ ing_gme:
   en_url: https://www.th-koeln.de/en/academics/general-mechanical-engineering-bachelors-program_7323.php
   grade: grade.beng
   program_director: person.ald
-  exam_director: person.ald
+  exam_director:
+    - person.ald
+    - person.ddu
   accreditation_until: 30.09.2026
   study_form:
     - type: study_form.full

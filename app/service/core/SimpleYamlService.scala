@@ -2,12 +2,11 @@ package service.core
 
 import database.repo.Repository
 import parser.Parser
-import parsing.core.FileParser
 
 import scala.concurrent.Future
 
 trait SimpleYamlService[A] extends YamlService[A] {
-  def fileParser: FileParser[A]
+  def fileParser: Parser[List[A]]
   def repo: Repository[A, A, _]
 
   def createOrUpdateMany(xs: Seq[A]): Future[Seq[A]] =
@@ -17,5 +16,5 @@ trait SimpleYamlService[A] extends YamlService[A] {
     repo.all()
 
   override def parser: Future[Parser[List[A]]] =
-    Future.successful(fileParser.fileParser)
+    Future.successful(fileParser)
 }

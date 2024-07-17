@@ -19,7 +19,7 @@ object IdentityFileParser {
   def groupParser: Parser[Identity] =
     prefixTo(":")
       .skip(zeroOrMoreSpaces)
-      .zip(singleLineStringForKey("label").map(s => if (s == "--") "" else s))
+      .zip(singleLineStringForKey("label"))
       .map(Identity.Group.tupled)
 
   def statusParser: Parser[PersonStatus] =

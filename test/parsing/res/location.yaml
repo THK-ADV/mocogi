@@ -1,15 +1,15 @@
 gm:
   de_label: Gummersbach
-  en_label: --
+  en_label: ''
 
 dz:
   de_label: Deutz
-  en_label: --
+  en_label: ''
 
 remote:
   de_label: Remote / Online
-  en_label: --
+  en_label: ''
 
 other:
   de_label: Sonstige / Variabel
-  en_label: --
+  en_label: ''
