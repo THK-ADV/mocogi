@@ -30,7 +30,7 @@ object FutureOps {
           case 1 =>
             Future.successful(xs.head)
           case 0 =>
-            abort(s"expected one element, but found none")
+            abort("expected one element, but found none")
           case _ =>
             abort(s"expected one element, but found: $xs")
         }
