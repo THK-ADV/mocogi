@@ -3,6 +3,7 @@ package providers
 import akka.actor.ActorSystem
 import database.view.{ModuleViewRepository, StudyProgramViewRepository}
 import git.subscriber._
+import kafka.ModulePublisher
 import printing.html.ModuleHTMLPrinter
 import printing.pandoc.PrinterOutputType
 import service.{ModuleService, ModuleUpdatePermissionService}
@@ -15,7 +16,6 @@ final class ModuleSubscribersProvider @Inject() (
     printer: ModuleHTMLPrinter,
     system: ActorSystem,
     metadataService: ModuleService,
-//    publisher: KafkaPublisher[Metadata],
     studyProgramViewRepo: StudyProgramViewRepository,
     moduleViewRepository: ModuleViewRepository,
     moduleUpdatePermissionService: ModuleUpdatePermissionService,
@@ -36,7 +36,6 @@ final class ModuleSubscribersProvider @Inject() (
             ctx
           )
         ),
-        // system.actorOf(ModulePublishActor.props(publisher)),
         system.actorOf(
           ModuleDatabaseActor
             .props(
@@ -45,6 +44,14 @@ final class ModuleSubscribersProvider @Inject() (
               moduleUpdatePermissionService,
               ctx
             )
+        ),
+        system.actorOf(
+          ModulePublishActor.props(
+            new ModulePublisher(
+              configReader.kafkaServerUrl,
+              configReader.kafkaModuleTopic
+            )
+          )
         )
       )
     )

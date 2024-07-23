@@ -97,7 +97,7 @@ final class ModuleCatalogLatexPrinter @Inject() (pandocApi: PandocApi)
       diffs: Seq[(ModuleCore, Set[String])]
   )(implicit builder: StringBuilder) = {
     if (diffs.nonEmpty) {
-      builder.append(s"\\textbf{Module Diffs}\n\n")
+      builder.append("\\textbf{Module Diffs}\n\n")
       diffs.foreach { case (module, diffs) =>
         builder.append(s"${module.title} (${module.id})\n")
         builder.append("\\begin{itemize}\n")

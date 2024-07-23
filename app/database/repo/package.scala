@@ -13,7 +13,7 @@ package object repo {
           case 1 =>
             DBIO.successful(xs.head)
           case 0 =>
-            DBIO.failed(new Throwable(s"expected one element, but found none"))
+            DBIO.failed(new Throwable("expected one element, but found none"))
           case _ =>
             DBIO.failed(new Throwable(s"expected one element, but found: $xs"))
         }

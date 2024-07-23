@@ -5,7 +5,7 @@ import com.google.inject.{AbstractModule, TypeLiteral}
 import git.GitConfig
 import git.publisher.{CoreDataPublisher, ModulePublisher}
 import git.subscriber.ModuleSubscribers
-import models.{Metadata, ModuleKeysToReview}
+import models.ModuleKeysToReview
 import ops.ConfigurationOps.Ops
 import parsing.metadata.MetadataParser
 import play.api.{Configuration, Environment}
@@ -13,7 +13,6 @@ import printing.markdown.ModuleMarkdownPrinter
 import printing.pandoc.PandocApi
 import printing.yaml.MetadataYamlPrinter
 import providers._
-import publisher.KafkaPublisher
 import service.core._
 import webhook.{GitMergeEventHandler, GitPushEventHandler}
 
@@ -65,9 +64,6 @@ class Module(@unused environment: Environment, configuration: Configuration)
     bind(new TypeLiteral[Set[MetadataParser]] {})
       .toProvider(classOf[MetadataParserProvider])
       .asEagerSingleton()
-    bind(new TypeLiteral[KafkaPublisher[Metadata]] {})
-      .toProvider(classOf[KafkaPublisherProvider])
-      .asEagerSingleton()
     bind(new TypeLiteral[Authorization[UserToken]] {})
       .toProvider(classOf[AuthorizationProvider])
       .asEagerSingleton()
@@ -82,6 +78,5 @@ class Module(@unused environment: Environment, configuration: Configuration)
     bind(classOf[String])
       .annotatedWith(Names.named("gitHost"))
       .toInstance(configuration.nonEmptyString("git.host"))
-
   }
 }

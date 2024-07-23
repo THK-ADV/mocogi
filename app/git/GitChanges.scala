@@ -24,7 +24,7 @@ object GitChanges {
   ): GitChanges[List[(GitFilePath, GitFileContent)]] =
     GitChanges(Nil, modified, Nil, CommitId.empty, LocalDateTime.now())
 
-  final implicit class ListOps(val self: GitChanges[List[GitFilePath]])
+  final implicit class ListOps(private val self: GitChanges[List[GitFilePath]])
       extends AnyVal {
     def categorized(implicit config: GitConfig): CategorizedGitFilePaths = {
       val modules = ListBuffer.empty[GitFilePath]
