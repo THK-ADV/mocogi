@@ -2,6 +2,7 @@ package ops
 
 import play.api.Logging
 
+import java.io.{PrintWriter, StringWriter}
 import scala.annotation.unused
 
 trait LoggerOps { self: Logging =>
@@ -20,6 +21,12 @@ trait LoggerOps { self: Logging =>
   def log[A](a: A): A = {
     logger.info(a.toString)
     a
+  }
+
+  def logStackTrace(t: Throwable): Unit = {
+    val writer = new StringWriter
+    t.printStackTrace(new PrintWriter(writer))
+    logger.error(writer.toString)
   }
 
   def logSuccess(msg: String): Unit =

@@ -61,11 +61,12 @@ lazy val database = Seq(
   "org.postgresql" % "postgresql" % "42.5.4"
 )
 
-lazy val kafka = "de.th-koeln.inf.adv" %% "kafka-pubsub" % "0.3"
+lazy val kafka = "org.apache.kafka" % "kafka-clients" % "3.7.1"
 
 lazy val circle = "io.circe" %% "circe-yaml" % "1.15.0"
 
-lazy val parallelCollections = "org.scala-lang.modules" %% "scala-parallel-collections" % "1.0.4"
+lazy val parallelCollections =
+  "org.scala-lang.modules" %% "scala-parallel-collections" % "1.0.4"
 
 lazy val playJson = Seq(
   "com.typesafe.play" %% "play-json" % "2.10.0-RC9",

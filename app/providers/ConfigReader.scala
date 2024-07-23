@@ -70,7 +70,7 @@ final class ConfigReader @Inject() (config: Configuration) {
 
   def kafkaServerUrl: String = config.nonEmptyString("kafka.serverUrl")
 
-  def kafkaApplicationId: String = config.nonEmptyString("kafka.applicationId")
+  def kafkaModuleTopic: String = config.nonEmptyString("kafka.topic.module")
 
   def moduleKeysToReviewFromSgl: Seq[String] =
     config.list("moduleKeysToReview.sgl")
