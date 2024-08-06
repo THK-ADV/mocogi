@@ -19,6 +19,14 @@ class LanguageRepository @Inject() (
 
   protected val tableQuery = TableQuery[LanguageTable]
 
-  override protected def retrieve(query: Query[LanguageTable, ModuleLanguage, Seq]) =
+  override protected def retrieve(
+      query: Query[LanguageTable, ModuleLanguage, Seq]
+  ) =
     db.run(query.result)
+
+  def allIds() =
+    db.run(tableQuery.map(_.id).result)
+
+  def deleteMany(ids: Seq[String]) =
+    db.run(tableQuery.filter(_.id inSet ids).delete)
 }

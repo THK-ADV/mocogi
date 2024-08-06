@@ -33,7 +33,7 @@ final class MetadataPipeline @Inject() (
     } yield Module(metadata, de, en)
 
   def parseValidateMany(
-      prints: Seq[(Option[UUID], Print)]
+      prints: Seq[Print]
   ): Future[Either[Seq[PipelineError], Seq[(Print, Module)]]] =
     for {
       parsed <- parser.parseMany(prints)

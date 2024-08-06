@@ -15,7 +15,7 @@ final class IdentityService @Inject() (
     implicit val ctx: ExecutionContext
 ) extends YamlService[Identity] {
 
-  override protected def parser =
+  override def parser =
     facultyService.all().map(IdentityFileParser.parser(_))
 
   override def createOrUpdateMany(

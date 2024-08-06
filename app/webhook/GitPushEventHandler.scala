@@ -1,16 +1,16 @@
 package webhook
 
 import akka.actor.{Actor, ActorRef, Props}
-import git.GitChanges.CategorizedGitFilePaths
+import git._
 import git.api.GitFileDownloadService
 import git.publisher.{CoreDataPublisher, ModulePublisher}
-import git.{Branch, CommitId, GitChanges, GitConfig, GitFilePath}
 import ops.LoggerOps
 import play.api.Logging
 import play.api.libs.json._
 
 import java.time.LocalDateTime
 import javax.inject.Singleton
+import scala.collection.mutable.ListBuffer
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
@@ -68,7 +68,7 @@ object GitPushEventHandler {
       }
     } yield mergeCommit
 
-  def parse(json: JsValue) =
+  def parse(json: JsValue)(implicit gitConfig: GitConfig) =
     for {
       branch <- parseBranch(json)
       afterCommit <- parseCommit(json, "after")
@@ -79,8 +79,44 @@ object GitPushEventHandler {
       )
     } yield (
       branch,
-      GitChanges(added, modified, deleted, afterCommit, timestamp)
+      GitChanges(toGitFiles(added, modified, deleted), afterCommit, timestamp)
     )
+
+  def toGitFiles(
+      added: List[GitFilePath],
+      modified: List[GitFilePath],
+      deleted: List[GitFilePath]
+  )(implicit gitConfig: GitConfig): List[GitFile] = {
+    val builder = ListBuffer.empty[GitFile]
+    added.foreach { path =>
+      val status = GitFileStatus.Added
+      builder += path.fold(
+        GitFile.ModuleFile(path, _, status),
+        GitFile.CoreFile(path, status),
+        GitFile.ModuleCatalogFile(path, status),
+        GitFile.Other(path, status)
+      )
+    }
+    modified.foreach { path =>
+      val status = GitFileStatus.Modified
+      builder += path.fold(
+        GitFile.ModuleFile(path, _, status),
+        GitFile.CoreFile(path, status),
+        GitFile.ModuleCatalogFile(path, status),
+        GitFile.Other(path, status)
+      )
+    }
+    deleted.foreach { path =>
+      val status = GitFileStatus.Removed
+      builder += path.fold(
+        GitFile.ModuleFile(path, _, status),
+        GitFile.CoreFile(path, status),
+        GitFile.ModuleCatalogFile(path, status),
+        GitFile.Other(path, status)
+      )
+    }
+    builder.toList
+  }
 
   def props(
       downloadService: GitFileDownloadService,
@@ -111,67 +147,73 @@ object GitPushEventHandler {
     override def receive: Receive = { case HandleEvent(json) =>
       logger.info("start handling git push event")
       parse(json) match {
-        case JsSuccess((branch, changes), _) =>
-          branch.value match {
-            case gitConfig.mainBranch.value =>
-              downloadAndUpdateDatabase(branch, changes).onComplete {
-                case Success(_) => logger.info("finished!")
-                case Failure(e) => logFailure(e)
+        case JsSuccess((branch, gitChanges), _) =>
+          if (!branch.isMainBranch) {
+            logger.info(
+              s"can't handle action on branch ${branch.value}"
+            )
+          } else {
+            val (moduleFiles, coreFiles) = filesToDownload(gitChanges.entries)
+            if (moduleFiles.isEmpty && coreFiles.isEmpty) {
+              logger.info("can't handle empty changes")
+            } else {
+              downloadGitFiles(branch, moduleFiles, coreFiles) onComplete {
+                case Success((moduleFiles, coreFiles)) =>
+                  modulePublisher.notifySubscribers(
+                    moduleFiles,
+                    gitChanges.timestamp
+                  )
+                  coreDataPublisher.notifySubscribers(
+                    coreFiles
+                  )
+                  logger.info("finished!")
+                case Failure(e) =>
+                  logFailure(e)
               }
-            case _ =>
-              logger.info(s"no action for branch $branch")
+            }
           }
         case JsError(errors) =>
           logUnhandedEvent(logger, errors)
       }
     }
 
-    private def downloadAndUpdateDatabase(
+    private def filesToDownload(files: List[GitFile]) = {
+      val moduleFiles = ListBuffer.empty[GitFile.ModuleFile]
+      val coreFiles = ListBuffer.empty[GitFile.CoreFile]
+      files foreach {
+        case module: GitFile.ModuleFile if !module.status.isRemoved =>
+          moduleFiles += module
+        case core: GitFile.CoreFile if !core.status.isRemoved =>
+          coreFiles += core
+        case _ => ()
+      }
+      (moduleFiles.toList, coreFiles.toList)
+    }
+
+    private def downloadGitFiles(
         branch: Branch,
-        changes: GitChanges[List[GitFilePath]]
+        moduleFiles: List[GitFile.ModuleFile],
+        coreFiles: List[GitFile.CoreFile]
     ) = {
-      val CategorizedGitFilePaths(modules, core, _) = changes.categorized
-
-      if (modules.nonEmpty) {
-        logger.info(s"downloading modules files ${mkString(modules)}")
-      }
-      if (core.nonEmpty) {
-        logger.info(s"downloading core files ${mkString(core)}")
-      }
-
+      logger.info(s"downloading ${moduleFiles.size + coreFiles.size} files...")
+      val downloadedModuleFiles = Future.sequence(
+        moduleFiles.map(file =>
+          downloadService
+            .downloadFileContent(file.path, branch)
+            .collect { case Some(content) => (file, content) }
+        )
+      )
+      val downloadedCoreFiles = Future.sequence(
+        coreFiles.map(file =>
+          downloadService
+            .downloadFileContent(file.path, branch)
+            .collect { case Some(content) => (file, content) }
+        )
+      )
       for {
-        modules <- Future.sequence(
-          modules.map(path =>
-            downloadService
-              .downloadFileContent(path, branch)
-              .collect { case Some(content) => path -> content }
-          )
-        )
-        cores <- Future.sequence(
-          core.map(path =>
-            downloadService
-              .downloadFileContent(path, branch)
-              .collect { case Some(content) => path -> content }
-          )
-        )
-      } yield {
-        if (modules.nonEmpty) {
-          logger.info(
-            "publishing modules to subscribers ..."
-          )
-          modulePublisher.notifySubscribers(
-            changes.copy(added = Nil, modified = modules)
-          )
-        }
-        if (cores.nonEmpty) {
-          logger.info(
-            "publishing core files to subscribers ..."
-          )
-          coreDataPublisher.notifySubscribers(
-            changes.copy(added = Nil, modified = cores)
-          )
-        }
-      }
+        downloadedModuleFiles <- downloadedModuleFiles
+        downloadedCoreFiles <- downloadedCoreFiles
+      } yield (downloadedModuleFiles, downloadedCoreFiles)
     }
   }
 }

@@ -3,6 +3,11 @@ package providers
 import akka.actor.ActorSystem
 import database.view.{ModuleViewRepository, StudyProgramViewRepository}
 import git.publisher.CoreDataPublisher
+import git.subscriber.CoreDataPublishActor
+import kafka.Topics
+import models.core._
+import ops.ConfigurationOps.Ops
+import play.api.Configuration
 import service.core._
 
 import javax.inject.{Inject, Provider, Singleton}
@@ -28,7 +33,8 @@ final class CoreDataPublisherProvider @Inject() (
     specializationService: SpecializationService,
     studyProgramViewRepository: StudyProgramViewRepository,
     moduleViewRepository: ModuleViewRepository,
-    ctx: ExecutionContext
+    ctx: ExecutionContext,
+    config: Configuration
 ) extends Provider[CoreDataPublisher] {
   override def get() = CoreDataPublisher(
     system.actorOf(
@@ -50,8 +56,38 @@ final class CoreDataPublisherProvider @Inject() (
         specializationService,
         studyProgramViewRepository,
         moduleViewRepository,
+        new CoreDataPublishActor(
+          system.actorOf(
+            CoreDataPublishActor.props(
+              config.nonEmptyString("kafka.serverUrl"),
+              kafkaTopics[ModuleLocation]("moduleLocation"),
+              kafkaTopics[ModuleLanguage]("moduleLanguage"),
+              kafkaTopics[ModuleStatus]("moduleStatus"),
+              kafkaTopics[AssessmentMethod]("assessmentMethod"),
+              kafkaTopics[ModuleType]("moduleType"),
+              kafkaTopics[Season]("season"),
+              kafkaTopics[Identity]("identity"),
+              kafkaTopics[FocusArea]("focusArea"),
+              kafkaTopics[ModuleGlobalCriteria]("globalCriteria"),
+              kafkaTopics[PO]("po"),
+              kafkaTopics[ModuleCompetence]("competence"),
+              kafkaTopics[Faculty]("faculty"),
+              kafkaTopics[Degree]("degree"),
+              kafkaTopics[StudyProgram]("studyProgram"),
+              kafkaTopics[Specialization]("specialization"),
+              ctx
+            )
+          )
+        ),
         ctx
       )
     )
   )
+
+  private def kafkaTopics[A](mainTopic: String): Topics[A] =
+    Topics(
+      config.nonEmptyString(s"kafka.topic.$mainTopic.created"),
+      config.nonEmptyString(s"kafka.topic.$mainTopic.updated"),
+      config.nonEmptyString(s"kafka.topic.$mainTopic.deleted")
+    )
 }

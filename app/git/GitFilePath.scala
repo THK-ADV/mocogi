@@ -71,5 +71,17 @@ object GitFilePath {
     def isModuleCatalog(implicit gitConfig: GitConfig): Boolean =
       self.value.startsWith(gitConfig.moduleCatalogsFolder) && self.value
         .endsWith(catalogFileExt)
+
+    def fold[A](module: UUID => A, core: => A, catalog: => A, other: => A)(
+        implicit gitConfig: GitConfig
+    ): A =
+      self.moduleId match {
+        case Some(id) =>
+          module(id)
+        case None =>
+          if (self.isCore) core
+          else if (self.isModuleCatalog) catalog
+          else other
+      }
   }
 }

@@ -2,10 +2,12 @@ package git.subscriber
 
 import akka.actor.{Actor, Props}
 import database.view.ModuleViewRepository
-import git.subscriber.ModuleSubscribers.CreatedOrUpdated
+import git.subscriber.ModuleSubscribers.Handle
+import parsing.types.Module
 import play.api.Logging
 import service.{ModuleService, ModuleUpdatePermissionService}
 
+import java.time.LocalDateTime
 import scala.concurrent.ExecutionContext
 import scala.util.{Failure, Success}
 
@@ -34,21 +36,8 @@ object ModuleDatabaseActor {
       with Logging {
 
     override def receive = {
-      case CreatedOrUpdated(modules, timestamp) if modules.nonEmpty =>
-        val res = for {
-          created <- moduleService.createOrUpdateMany(modules, timestamp)
-          _ <- moduleViewRepository.refreshView()
-          permissions <- moduleUpdatePermissionService.overrideInherited(
-            modules.map(a =>
-              (
-                a.metadata.id,
-                a.metadata.responsibilities.moduleManagement
-              )
-            )
-          )
-        } yield (created, permissions)
-
-        res onComplete {
+      case Handle(modules, timestamp) if modules.nonEmpty =>
+        update(modules.map(_._1), timestamp) onComplete {
           case Success((modules, permissions)) =>
             logger.info(
               s"successfully created or updated $modules modules and ${permissions.size} permission entries"
@@ -63,5 +52,22 @@ object ModuleDatabaseActor {
             )
         }
     }
+
+    private def update(
+        modules: Seq[Module],
+        timestamp: LocalDateTime
+    ) =
+      for {
+        created <- moduleService.createOrUpdateMany(modules, timestamp)
+        _ <- moduleViewRepository.refreshView()
+        permissions <- moduleUpdatePermissionService.overrideInherited(
+          modules.map(a =>
+            (
+              a.metadata.id,
+              a.metadata.responsibilities.moduleManagement
+            )
+          )
+        )
+      } yield (created, permissions)
   }
 }

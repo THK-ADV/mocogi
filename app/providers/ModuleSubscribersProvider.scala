@@ -3,7 +3,9 @@ package providers
 import akka.actor.ActorSystem
 import database.view.{ModuleViewRepository, StudyProgramViewRepository}
 import git.subscriber._
-import kafka.ModulePublisher
+import kafka.Topics
+import ops.ConfigurationOps.Ops
+import play.api.Configuration
 import printing.html.ModuleHTMLPrinter
 import printing.pandoc.PrinterOutputType
 import service.{ModuleService, ModuleUpdatePermissionService}
@@ -19,6 +21,7 @@ final class ModuleSubscribersProvider @Inject() (
     studyProgramViewRepo: StudyProgramViewRepository,
     moduleViewRepository: ModuleViewRepository,
     moduleUpdatePermissionService: ModuleUpdatePermissionService,
+    config: Configuration,
     configReader: ConfigReader,
     ctx: ExecutionContext
 ) extends Provider[ModuleSubscribers] {
@@ -47,12 +50,27 @@ final class ModuleSubscribersProvider @Inject() (
         ),
         system.actorOf(
           ModulePublishActor.props(
-            new ModulePublisher(
-              configReader.kafkaServerUrl,
-              configReader.kafkaModuleTopic
+            kafkaServerUrl,
+            ctx,
+            Topics(
+              kafkaModuleCreatedTopic,
+              kafkaModuleUpdatedTopic,
+              kafkaModuleDeletedTopic
             )
           )
         )
       )
     )
+
+  private def kafkaServerUrl: String =
+    config.nonEmptyString("kafka.serverUrl")
+
+  private def kafkaModuleCreatedTopic: String =
+    config.nonEmptyString("kafka.topic.module.created")
+
+  private def kafkaModuleUpdatedTopic: String =
+    config.nonEmptyString("kafka.topic.module.updated")
+
+  private def kafkaModuleDeletedTopic: String =
+    config.nonEmptyString("kafka.topic.module.deleted")
 }

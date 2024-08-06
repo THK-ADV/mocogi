@@ -87,6 +87,9 @@ class StudyProgramRepository @Inject() (
     db.run(query.result.map(_.map(a => (IDLabel(a._1, a._2, a._3), a._4))))
   }
 
+  def deleteMany(ids: Seq[String]) =
+    db.run(tableQuery.filter(_.id inSet ids).delete)
+
   private def retrieve(
       query: Query[StudyProgramTable, StudyProgramDbEntry, Seq]
   ) =

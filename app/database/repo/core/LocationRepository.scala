@@ -19,6 +19,14 @@ class LocationRepository @Inject() (
 
   protected val tableQuery = TableQuery[LocationTable]
 
-  override protected def retrieve(query: Query[LocationTable, ModuleLocation, Seq]) =
+  override protected def retrieve(
+      query: Query[LocationTable, ModuleLocation, Seq]
+  ) =
     db.run(query.result)
+
+  def allIds() =
+    db.run(tableQuery.map(_.id).result)
+
+  def deleteMany(ids: Seq[String]) =
+    db.run(tableQuery.filter(_.id inSet ids).delete)
 }

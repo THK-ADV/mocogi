@@ -2,7 +2,7 @@ package git.subscriber
 
 import akka.actor.{Actor, Props}
 import database.view.StudyProgramViewRepository
-import git.subscriber.ModuleSubscribers.CreatedOrUpdated
+import git.subscriber.ModuleSubscribers.Handle
 import models.StudyProgramView
 import parsing.types.Module
 import play.api.Logging
@@ -41,16 +41,16 @@ object ModulePrintingActor {
       with Logging {
 
     override def receive = {
-      case CreatedOrUpdated(modules, lastModified) if modules.nonEmpty =>
+      case Handle(modules, lastModified) if modules.nonEmpty =>
         studyProgramViewRepo.all() onComplete {
           case Success(sps) =>
-            modules.par.foreach(module =>
+            modules.par.foreach { case (module, _) =>
               print(
                 lastModified,
                 module,
                 sp => sps.find(_.id == sp)
               )
-            )
+            }
           case Failure(t) =>
             logger.error(
               s"""failed to print module

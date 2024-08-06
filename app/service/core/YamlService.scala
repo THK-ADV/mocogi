@@ -6,7 +6,7 @@ import parser.Parser
 import scala.concurrent.{ExecutionContext, Future}
 
 trait YamlService[A] {
-  protected def parser: Future[Parser[List[A]]]
+  def parser: Future[Parser[List[A]]]
   implicit def ctx: ExecutionContext
 
   def createOrUpdateMany(xs: Seq[A]): Future[Seq[A]]
