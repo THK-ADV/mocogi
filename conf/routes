@@ -7,6 +7,8 @@ GET           /                                                controllers.HomeC
 
 GET           /me                                              controllers.MeController.me()
 
+GET           /createViews                                     controllers.BootstrapController.createViews()
+
 # Big Bang
 GET           /bigbang                                         controllers.BigBangController.go()
 GET           /bigbangCatalogs                                 controllers.BigBangController.goCatalogs()
