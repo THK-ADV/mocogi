@@ -1,6 +1,7 @@
 package models.core
 
 import database.table.core.IdentityDbEntry
+import monocle.Lens
 import play.api.libs.json.{JsObject, JsString, Json, Writes}
 
 sealed trait Identity {
@@ -152,4 +153,11 @@ object Identity {
     case unknown: Unknown =>
       unknownWrites.writes(unknown)
   }
+
+  def idLens =
+    Lens[Identity, String](_.id)(id => {
+      case p: Identity.Person  => p.copy(id = id)
+      case g: Identity.Group   => g.copy(id = id)
+      case u: Identity.Unknown => u.copy(id = id)
+    })
 }

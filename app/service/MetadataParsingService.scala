@@ -1,14 +1,13 @@
 package service
 
+import cats.syntax.either._
 import models.core._
-import ops.EitherOps.EOps
 import parser.ParsingError
 import parsing.metadata.MetadataCompositeParser
 import parsing.types.{ModuleContent, ParsedMetadata}
 import play.api.Logging
 import service.core._
 
-import java.util.UUID
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -73,22 +72,21 @@ final class MetadataParsingService @Inject() (
       )
   }
 
-  def parseMany(prints: Seq[(Option[UUID], Print)]): ParsingResult =
+  def parseMany(prints: Seq[Print]): ParsingResult =
     parser.map { p =>
-      val (errs, parses) = prints.partitionMap { case (id, print) =>
+      val (errs, parses) = prints.partitionMap { print =>
         val parseRes = p.parse(print.value)
-        val res = parseRes._1.bimap(
-          (id, _),
-          (print, _)
-        )
+        val res = parseRes._1.bimap(identity, (print, _))
         val rest = Rest(parseRes._2)
         res match {
-          case Left((id, err)) => Left(PipelineError.Parser(err, id))
+          case Left(err) =>
+            Left(PipelineError.Parser(err, None))
           case Right((print, parsedMetadata)) =>
             ContentParsingService.parse(rest.value)._1 match {
               case Left(err) =>
                 Left(PipelineError.Parser(err, Some(parsedMetadata.id)))
-              case Right((de, en)) => Right((print, parsedMetadata, de, en))
+              case Right((de, en)) =>
+                Right((print, parsedMetadata, de, en))
             }
         }
       }

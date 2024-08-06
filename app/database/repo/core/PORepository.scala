@@ -30,4 +30,7 @@ final class PORepository @Inject() (
       query: Query[POTable, PO, Seq]
   ): Future[Seq[PO]] =
     db.run(query.result)
+
+  def deleteMany(ids: Seq[String]) =
+    db.run(tableQuery.filter(_.id inSet ids).delete)
 }

@@ -2,8 +2,13 @@ package git.publisher
 
 import akka.actor.{Actor, ActorRef, Props}
 import database.view.{ModuleViewRepository, StudyProgramViewRepository}
-import git.publisher.CoreDataPublisher.ParsingValidation
-import git.{GitChanges, GitFileContent, GitFilePath}
+import git.publisher.CoreDataPublisher.Handle
+import git.subscriber.CoreDataPublishActor
+import git.{GitFile, GitFileContent}
+import models.core._
+import monocle.Lens
+import monocle.macros.GenLens
+import ops.EitherOps.EThrowableOps
 import play.api.Logging
 import service.core._
 
@@ -31,10 +36,11 @@ object CoreDataPublisher {
       specializationService: SpecializationService,
       studyProgramViewRepository: StudyProgramViewRepository,
       moduleViewRepository: ModuleViewRepository,
+      publishActor: CoreDataPublishActor,
       ctx: ExecutionContext
   ) =
     Props(
-      new CoreDataPublisherImpl(
+      new Impl(
         locationService,
         languageService,
         statusService,
@@ -52,6 +58,7 @@ object CoreDataPublisher {
         specializationService,
         studyProgramViewRepository,
         moduleViewRepository,
+        publishActor,
         ctx
       )
     )
@@ -108,7 +115,34 @@ object CoreDataPublisher {
     Filenames.focus_area -> List(Filenames.program)
   )
 
-  private final class CoreDataPublisherImpl(
+  def toCreate(e: Seq[String], v: Seq[String]) =
+    v diff e
+
+  def toDelete(e: Seq[String], v: List[String]) =
+    e diff v
+
+  def toUpdate(e: Seq[String], v: List[String]) =
+    e intersect v
+
+  def split[A](
+      allIds: Seq[String],
+      locations: List[A],
+      id: Lens[A, String]
+  ): (Seq[A], Seq[A], Seq[String]) = {
+    val vIds = locations.map(id.get)
+    val toCreate =
+      this
+        .toCreate(allIds, vIds)
+        .map(i => locations.find(a => id.get(a) == i).get)
+    val toUpdate =
+      this
+        .toUpdate(allIds, vIds)
+        .map(i => locations.find(a => id.get(a) == i).get)
+    val toDelete = this.toDelete(allIds, vIds)
+    (toCreate, toUpdate, toDelete)
+  }
+
+  private final class Impl(
       private val locationService: LocationService,
       private val languageService: LanguageService,
       private val statusService: StatusService,
@@ -126,15 +160,16 @@ object CoreDataPublisher {
       private val specializationService: SpecializationService,
       private val studyProgramViewRepository: StudyProgramViewRepository,
       private val moduleViewRepository: ModuleViewRepository,
+      private val publishActor: CoreDataPublishActor,
       private implicit val ctx: ExecutionContext
   ) extends Actor
       with Logging {
 
-    override def receive = { case ParsingValidation(changes) =>
-      val order = topologicalSort(changes)
-      val updates = order.foldLeft(Future.unit) { case (acc, a) =>
-        logger.info(a._1)
-        acc.flatMap(_ => createOrUpdate(a._1, a._2))
+    override def receive = { case Handle(coreFiles) =>
+      val order = topologicalSort(coreFiles)
+      val updates = order.foldLeft(Future.unit) {
+        case (acc, (filename, _, content)) =>
+          acc.flatMap(_ => createOrUpdate(filename, content))
       }
       val res = for {
         _ <- updates
@@ -148,12 +183,10 @@ object CoreDataPublisher {
     }
 
     private def topologicalSort(
-        changes: GitChanges[List[(GitFilePath, GitFileContent)]]
-    ): Seq[(String, GitFileContent)] = {
-      val allCoreFiles = changes.modified ::: changes.added
-
+        coreFiles: List[(GitFile.CoreFile, GitFileContent)]
+    ): Seq[(String, GitFile.CoreFile, GitFileContent)] = {
       val deps = coreFileDependencies
-      val vertices = allCoreFiles.map(_._1.fileName)
+      val vertices = coreFiles.map(_._1.path.fileName)
       val edges = vertices.flatMap { f =>
         deps.get(f) match {
           case Some(value) =>
@@ -165,82 +198,189 @@ object CoreDataPublisher {
         }
       }
       val sorted = new Graph(vertices, edges).topoSort()
-      sorted.map(a => (a, allCoreFiles.find(_._1.fileName == a).get._2))
+      sorted.map { filename =>
+        val (coreFile, content) =
+          coreFiles.find(_._1.path.fileName == filename).get
+        (filename, coreFile, content)
+      }
     }
 
-    /*TODO add support for deletion.
-                if an entry doesn't exists anymore in a yaml file, it will not be deleted currently.
-                instead, each entry will be either created (if new) or updated (if already exists).
-     */
     private def createOrUpdate(
         filename: String,
         content: GitFileContent
-    ): Future[Unit] =
+    ): Future[Unit] = {
+      def go[A](
+          ids: => Future[Seq[String]],
+          yamlService: YamlService[A],
+          getId: Lens[A, String],
+          deleteMany: Seq[String] => Future[Int],
+          publish: (Seq[A], Seq[A], Seq[String]) => Unit
+      ) =
+        for {
+          parser <- yamlService.parser
+          parsedValues <- parser.parse(content.value)._1.toFuture
+          existing <- ids
+          (toCreate, toUpdate, toDelete) = split[A](
+            existing,
+            parsedValues,
+            getId
+          )
+          _ <- yamlService.createOrUpdateMany(toCreate.appendedAll(toUpdate))
+          _ <- deleteMany(toDelete)
+        } yield {
+          logSuccess(filename, toCreate, toUpdate, toDelete)
+          publish(toCreate, toUpdate, toDelete)
+        }
+
       filename match {
         case Filenames.location =>
-          locationService
-            .createOrUpdate(content.value)
-            .map(a => logSuccess(filename, a.size))
+          go(
+            locationService.repo.allIds(),
+            locationService,
+            GenLens[ModuleLocation](_.id),
+            locationService.repo.deleteMany,
+            publishActor.publishLocations
+          )
         case Filenames.lang =>
-          languageService
-            .createOrUpdate(content.value)
-            .map(a => logSuccess(filename, a.size))
+          go(
+            languageService.repo.allIds(),
+            languageService,
+            GenLens[ModuleLanguage](_.id),
+            languageService.repo.deleteMany,
+            publishActor.publishLanguages
+          )
         case Filenames.status =>
-          statusService
-            .createOrUpdate(content.value)
-            .map(a => logSuccess(filename, a.size))
+          go(
+            statusService.repo.allIds(),
+            statusService,
+            GenLens[ModuleStatus](_.id),
+            statusService.repo.deleteMany,
+            publishActor.publishModuleStatus
+          )
         case Filenames.assessment =>
-          assessmentMethodService
-            .createOrUpdate(content.value)
-            .map(a => logSuccess(filename, a.size))
+          go(
+            assessmentMethodService.repo.allIds(),
+            assessmentMethodService,
+            GenLens[AssessmentMethod](_.id),
+            assessmentMethodService.repo.deleteMany,
+            publishActor.publishAssessmentMethods
+          )
         case Filenames.module_type =>
-          moduleTypeService
-            .createOrUpdate(content.value)
-            .map(a => logSuccess(filename, a.size))
+          go(
+            moduleTypeService.repo.allIds(),
+            moduleTypeService,
+            GenLens[ModuleType](_.id),
+            moduleTypeService.repo.deleteMany,
+            publishActor.publishModuleTypes
+          )
         case Filenames.season =>
-          seasonService
-            .createOrUpdate(content.value)
-            .map(a => logSuccess(filename, a.size))
+          go(
+            seasonService.repo.allIds(),
+            seasonService,
+            GenLens[Season](_.id),
+            seasonService.repo.deleteMany,
+            publishActor.publishSeasons
+          )
         case Filenames.person =>
-          identityService
-            .createOrUpdate(content.value)
-            .map(a => logSuccess(filename, a.size))
+          go(
+            identityService.repo.allIds(),
+            identityService,
+            Identity.idLens,
+            identityService.repo.deleteMany,
+            publishActor.publishIdentities
+          )
         case Filenames.focus_area =>
-          focusAreaService
-            .createOrUpdate(content.value)
-            .map(a => logSuccess(filename, a.size))
+          go(
+            focusAreaService.repo.allIds(),
+            focusAreaService,
+            GenLens[FocusArea](_.id),
+            focusAreaService.repo.deleteMany,
+            publishActor.publishFocusAreas
+          )
         case Filenames.global_criteria =>
-          globalCriteriaService
-            .createOrUpdate(content.value)
-            .map(a => logSuccess(filename, a.size))
+          go(
+            globalCriteriaService.repo.allIds(),
+            globalCriteriaService,
+            GenLens[ModuleGlobalCriteria](_.id),
+            globalCriteriaService.repo.deleteMany,
+            publishActor.publishModuleGlobalCriteria
+          )
         case Filenames.po =>
-          poService
-            .createOrUpdate(content.value)
-            .map(a => logSuccess(filename, a.size))
+          go(
+            poService.repo.allIds(),
+            poService,
+            GenLens[PO](_.id),
+            poService.repo.deleteMany,
+            publishActor.publishPOs
+          )
         case Filenames.competence =>
-          competenceService
-            .createOrUpdate(content.value)
-            .map(a => logSuccess(filename, a.size))
+          go(
+            competenceService.repo.allIds(),
+            competenceService,
+            GenLens[ModuleCompetence](_.id),
+            competenceService.repo.deleteMany,
+            publishActor.publishModuleCompetences
+          )
         case Filenames.faculty =>
-          facultyService
-            .createOrUpdate(content.value)
-            .map(a => logSuccess(filename, a.size))
+          go(
+            facultyService.repo.allIds(),
+            facultyService,
+            GenLens[Faculty](_.id),
+            facultyService.repo.deleteMany,
+            publishActor.publishFaculties
+          )
         case Filenames.grade =>
-          degreeService
-            .createOrUpdate(content.value)
-            .map(a => logSuccess(filename, a.size))
+          go(
+            degreeService.repo.allIds(),
+            degreeService,
+            GenLens[Degree](_.id),
+            degreeService.repo.deleteMany,
+            publishActor.publishDegrees
+          )
         case Filenames.program =>
-          studyProgramService
-            .createOrUpdate(content.value)
-            .map(a => logSuccess(filename, a.size))
+          go(
+            studyProgramService.allIds(),
+            studyProgramService,
+            GenLens[StudyProgram](_.id),
+            studyProgramService.deleteMany,
+            publishActor.publishStudyPrograms
+          )
         case Filenames.specialization =>
-          specializationService
-            .createOrUpdate(content.value)
-            .map(a => logSuccess(filename, a.size))
+          go(
+            specializationService.repo.allIds(),
+            specializationService,
+            GenLens[Specialization](_.id),
+            specializationService.repo.deleteMany,
+            publishActor.publishSpecializations
+          )
         case _ =>
           logUnknownFile(filename)
           Future.unit
       }
+    }
+
+    private def logSuccess[A](
+        filename: String,
+        toCreate: Seq[A],
+        toUpdate: Seq[A],
+        toDelete: Seq[String]
+    ): Unit = {
+      if (toCreate.nonEmpty) {
+        logger.info(
+          s"successfully created ${toCreate.size} $filename files"
+        )
+      }
+      if (toUpdate.nonEmpty) {
+        logger.info(
+          s"successfully updated ${toUpdate.size} $filename files"
+        )
+      }
+      if (toDelete.nonEmpty) {
+        logger.info(
+          s"successfully deleted ${toDelete.size} $filename files"
+        )
+      }
+    }
 
     private def logFailure(error: Throwable): Unit =
       logger.error(s"""failed to create or update core data file
@@ -251,22 +391,17 @@ object CoreDataPublisher {
 
     private def logUnknownFile(filename: String): Unit =
       logger.info(s"no handler found for file $filename")
-
-    private def logSuccess(filename: String, size: Int): Unit =
-      logger.info(s"""successfully created or updated core data file
-           |  - file name: $filename
-           |  - result: $size""".stripMargin)
   }
 
-  private case class ParsingValidation(
-      changes: GitChanges[List[(GitFilePath, GitFileContent)]]
-  )
+  private case class Handle(
+      coreFiles: List[(GitFile.CoreFile, GitFileContent)]
+  ) extends AnyVal
 }
 
 @Singleton
 case class CoreDataPublisher(private val value: ActorRef) {
   def notifySubscribers(
-      coreFiles: GitChanges[List[(GitFilePath, GitFileContent)]]
+      coreFiles: List[(GitFile.CoreFile, GitFileContent)]
   ): Unit =
-    value ! ParsingValidation(coreFiles)
+    value ! Handle(coreFiles)
 }

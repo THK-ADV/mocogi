@@ -4,9 +4,10 @@ import auth.AuthorizationAction
 import controllers.actions.{AdminCheck, PermissionCheck}
 import git.api.{GitFileDownloadService, GitRepositoryApiService}
 import git.publisher.{CoreDataPublisher, ModulePublisher}
-import git.{GitChanges, GitConfig}
+import git.{GitConfig, GitFile, GitFileStatus}
 import play.api.mvc.{AbstractController, ControllerComponents}
 
+import java.time.LocalDateTime
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -33,12 +34,12 @@ final class GitController @Inject() (
             downloadService
               .downloadFileContent(path, gitConfig.mainBranch)
               .collect { case Some(content) =>
-                path -> content
+                (GitFile.CoreFile(path, GitFileStatus.Modified), content)
               }
           )
         )
       } yield {
-        coreDataPublisher.notifySubscribers(GitChanges(contents))
+        coreDataPublisher.notifySubscribers(contents)
         NoContent
       }
     }
@@ -47,17 +48,26 @@ final class GitController @Inject() (
     auth andThen isAdmin async { _ =>
       for {
         paths <- gitRepositoryApiService.listModuleFiles()
-        contents <- Future.sequence(
-          paths.map(path =>
-            downloadService
-              .downloadFileContent(path, gitConfig.mainBranch)
-              .collect { case Some(content) =>
-                path -> content
-              }
-          )
+        modules <- Future.sequence(
+          paths.collect {
+            case path if path.isModule(gitConfig) =>
+              downloadService
+                .downloadFileContent(path, gitConfig.mainBranch)
+                .collect { case Some(content) =>
+                  (
+                    GitFile.ModuleFile(
+                      path,
+                      path.moduleId(gitConfig).get,
+                      GitFileStatus.Modified
+                    ),
+                    content
+                  )
+                }
+          }
         )
       } yield {
-        modulePublisher.notifySubscribers(GitChanges(contents))
+        // unable to retrieve the real last modified date
+        modulePublisher.notifySubscribers(modules, LocalDateTime.now())
         NoContent
       }
     }

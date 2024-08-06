@@ -68,10 +68,6 @@ final class ConfigReader @Inject() (config: Configuration) {
 
   def projectId: Int = config.int("git.projectId")
 
-  def kafkaServerUrl: String = config.nonEmptyString("kafka.serverUrl")
-
-  def kafkaModuleTopic: String = config.nonEmptyString("kafka.topic.module")
-
   def moduleKeysToReviewFromSgl: Seq[String] =
     config.list("moduleKeysToReview.sgl")
 

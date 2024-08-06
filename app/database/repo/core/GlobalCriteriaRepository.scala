@@ -13,7 +13,11 @@ import scala.concurrent.ExecutionContext
 class GlobalCriteriaRepository @Inject() (
     val dbConfigProvider: DatabaseConfigProvider,
     implicit val ctx: ExecutionContext
-) extends Repository[ModuleGlobalCriteria, ModuleGlobalCriteria, GlobalCriteriaTable]
+) extends Repository[
+      ModuleGlobalCriteria,
+      ModuleGlobalCriteria,
+      GlobalCriteriaTable
+    ]
     with HasDatabaseConfigProvider[JdbcProfile] {
   import profile.api._
   protected val tableQuery = TableQuery[GlobalCriteriaTable]
@@ -22,4 +26,10 @@ class GlobalCriteriaRepository @Inject() (
       query: Query[GlobalCriteriaTable, ModuleGlobalCriteria, Seq]
   ) =
     db.run(query.result)
+
+  def allIds() =
+    db.run(tableQuery.map(_.id).result)
+
+  def deleteMany(ids: Seq[String]) =
+    db.run(tableQuery.filter(_.id inSet ids).delete)
 }

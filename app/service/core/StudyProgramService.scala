@@ -16,7 +16,7 @@ final class StudyProgramService @Inject() (
     implicit val ctx: ExecutionContext
 ) extends YamlService[StudyProgram] {
 
-  override protected def parser: Future[Parser[List[StudyProgram]]] =
+  override def parser: Future[Parser[List[StudyProgram]]] =
     for {
       degrees <- degreeService.all()
       people <- personService.all()
@@ -24,11 +24,15 @@ final class StudyProgramService @Inject() (
 
   override def createOrUpdateMany(
       xs: Seq[StudyProgram]
-  ): Future[Seq[StudyProgram]] = repo.createOrUpdateMany(xs)
+  ): Future[Seq[StudyProgram]] =
+    repo.createOrUpdateMany(xs)
 
   def all(): Future[Seq[StudyProgram]] =
     repo.all()
 
   def allIds() =
     repo.allIds()
+
+  def deleteMany(ids: Seq[String]) =
+    repo.deleteMany(ids)
 }
