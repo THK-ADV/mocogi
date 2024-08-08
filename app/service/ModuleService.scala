@@ -32,4 +32,7 @@ final class ModuleService @Inject() (
 
   def allMetadata() =
     repo.all(Map.empty).map(_.map(a => (a.id, a.metadata)))
+
+  def allGenericModules() =
+    repo.allGenericModules()
 }
