@@ -59,6 +59,14 @@ final class ModuleController @Inject() (
         moduleViewRepository
           .all()
           .map(xs => Ok(Json.toJson(xs)))
+      else if (request.getQueryString("type").contains("generic"))
+        service
+          .allGenericModules()
+          .map(xs =>
+            Ok(JsArray(xs.map { case (module, pos) =>
+              Json.toJsObject(module) + ("pos" -> Json.toJson(pos))
+            }))
+          )
       else
         service
           .allModuleCore(request.queryString)

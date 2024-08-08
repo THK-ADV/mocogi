@@ -122,6 +122,19 @@ final class ModuleRepository @Inject() (
         .map(_.map((ModuleCore.apply _).tupled))
     )
 
+  def allGenericModules() =
+    db.run(
+      tableQuery
+        .filter(_.moduleType === "generic_module")
+        .join(poMandatoryTable)
+        .on(_.id === _.module)
+        .map { case (m, po) => ((m.id, m.title, m.abbrev), po.po) }
+        .result
+        .map(_.groupBy(_._1).map { case (m, pos) =>
+          (ModuleCore(m._1, m._2, m._3), pos.map(_._2))
+        }.toSeq)
+    )
+
   def allFromPos(pos: Seq[String]) = {
     // TODO expand to optional if "partOfCatalog" is set
     val isMandatoryPO = isMandatoryPOQuery(pos)
