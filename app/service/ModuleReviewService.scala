@@ -30,7 +30,7 @@ final class ModuleReviewService @Inject() (
 
   /** Either creates a merge request with fresh reviewers based on modified keys
     * which need to be reviewed or a merge request which is accepted and merged
-    * instantly. The module draft is updated by the merge request id afterwards.
+    * instantly. The module draft is updated by the merge request id afterward.
     * @param moduleId
     *   ID of the module draft
     * @param author
@@ -269,9 +269,7 @@ final class ModuleReviewService @Inject() (
       keysToBeReviewed: Set[String]
   ): Set[UniversityRole] =
     keysToBeReviewed.foldLeft(Set.empty[UniversityRole]) { case (acc, key) =>
-      if (keysToReview.isSGLReview(key)) acc + UniversityRole.SGL
-      else if (keysToReview.isPAVReview(key)) acc + UniversityRole.PAV
-      else acc
+      if (keysToReview.isPAVReview(key)) acc + UniversityRole.PAV else acc
     }
 
   private def studyProgramDirectors(

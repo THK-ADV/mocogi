@@ -9,7 +9,6 @@ final class ModuleKeysToReviewProvider @Inject() (config: ConfigReader)
     extends Provider[ModuleKeysToReview] {
   override def get(): ModuleKeysToReview =
     ModuleKeysToReview(
-      config.moduleKeysToReviewFromSgl.toSet,
       config.moduleKeysToReviewFromPav.toSet
     )
 }

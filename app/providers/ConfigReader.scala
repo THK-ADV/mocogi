@@ -68,9 +68,6 @@ final class ConfigReader @Inject() (config: Configuration) {
 
   def projectId: Int = config.int("git.projectId")
 
-  def moduleKeysToReviewFromSgl: Seq[String] =
-    config.list("moduleKeysToReview.sgl")
-
   def moduleKeysToReviewFromPav: Seq[String] =
     config.list("moduleKeysToReview.pav")
 
