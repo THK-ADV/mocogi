@@ -141,7 +141,7 @@ object ModuleProtocolDiff extends Logging {
         case "metadata.title" =>
           takeIf(p.metadata.title.nonEmpty)
         case other =>
-          logger.error(s"unsupported key: $other")
+          logger.info(s"unsupported key: $other")
           acc
       }
     }
@@ -273,7 +273,7 @@ object ModuleProtocolDiff extends Logging {
         case "id" | "metadata.workload.total" | "metadata.workload.selfStudy" =>
           (existing, existingUpdatedKeys)
         case other =>
-          logger.error(s"unsupported key: $other")
+          logger.info(s"unsupported key: $other")
           (existing, existingUpdatedKeys)
       }
     }

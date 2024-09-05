@@ -17,26 +17,32 @@ object ErrorHandler {
 
   def internalServerError(
       request: String,
-      message: String,
-      error: Throwable
+      throwable: Throwable
   ) = InternalServerError(
     Json.obj(
       "type" -> "server error",
       "request" -> request,
-      "message" -> message,
-      "trace" -> trace(error)
+      "message" -> throwable.getMessage
     )
   )
 
   def badRequest(
       request: String,
-      message: String,
-      error: Throwable
+      throwable: Throwable
   ) = BadRequest(
     Json.obj(
       "request" -> request,
-      "message" -> message,
-      "trace" -> trace(error)
+      "message" -> throwable.getMessage
+    )
+  )
+
+  def badRequest(
+      request: String,
+      message: String
+  ) = BadRequest(
+    Json.obj(
+      "request" -> request,
+      "message" -> message
     )
   )
 }

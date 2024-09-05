@@ -30,7 +30,7 @@ final class FileController @Inject() (
         Ok.sendFile(content = path.toFile, fileName = f => Some(f.getName))
       } catch {
         case NonFatal(e) =>
-          ErrorHandler.badRequest(r.toString(), e.getMessage, e)
+          ErrorHandler.badRequest(r.toString(), e)
       }
     }
 }
