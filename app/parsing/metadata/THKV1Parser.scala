@@ -26,6 +26,9 @@ final class THKV1Parser extends MetadataParser {
 
   override val versionScheme = VersionScheme(1, "s")
 
+  // TODO replace with real data at some point
+  implicit def allExamPhases: List[ExamPhase] = ExamPhase.all.toList
+
   def parser(implicit
       locations: Seq[ModuleLocation],
       languages: Seq[ModuleLanguage],
@@ -53,6 +56,13 @@ final class THKV1Parser extends MetadataParser {
       .take(ModuleSeasonParser.parser)
       .take(ModuleResponsibilitiesParser.parser)
       .take(ModuleAssessmentMethodParser.parser)
+      .skip(zeroOrMoreSpaces)
+      .take(
+        ExaminerParser.parser
+          .skip(zeroOrMoreSpaces)
+          .zip(ExamPhaseParser.parser)
+          .skip(zeroOrMoreSpaces)
+      )
       .take(ModuleWorkloadParser.parser)
       .skip(newline)
       .take(ModulePrerequisitesParser.parser)
@@ -84,6 +94,7 @@ final class THKV1Parser extends MetadataParser {
               season,
               resp,
               assessmentMethods,
+              (examiner, examPhases),
               workload,
               prerequisites,
               status,
@@ -103,6 +114,8 @@ final class THKV1Parser extends MetadataParser {
             season,
             resp,
             assessmentMethods,
+            examiner,
+            examPhases,
             workload,
             prerequisites,
             status,

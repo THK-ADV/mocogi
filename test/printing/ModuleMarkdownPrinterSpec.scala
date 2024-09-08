@@ -44,6 +44,8 @@ final class ModuleMarkdownPrinterSpec extends AnyWordSpec with EitherValues {
           ),
           Nil
         ),
+        Examiner(Identity.NN, Identity.NN),
+        ExamPhase.all,
         ModuleWorkload(0, 0, 34, 11, 0, 0, 105, 150),
         ModulePrerequisites(None, None),
         ModuleStatus("status", "status", "status"),

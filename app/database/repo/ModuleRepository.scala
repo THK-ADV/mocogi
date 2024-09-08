@@ -238,6 +238,11 @@ final class ModuleRepository @Inject() (
       module.metadata.location.id,
       module.metadata.participants.map(_.min),
       module.metadata.participants.map(_.max),
+      Examiner(
+        module.metadata.examiner.first.id,
+        module.metadata.examiner.second.id
+      ),
+      module.metadata.examPhases.map(_.id),
       module.deContent,
       module.enContent
     )
@@ -610,6 +615,8 @@ final class ModuleRepository @Inject() (
                 )
                 .toList
             ),
+            m.examiner,
+            m.examPhases,
             ModulePrerequisitesProtocol(
               recommendedPrerequisite.map(a =>
                 a._2.copy(

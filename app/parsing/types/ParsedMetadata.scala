@@ -1,7 +1,17 @@
 package parsing.types
 
 import cats.data.NonEmptyList
-import models.core.{ModuleCompetence, ModuleGlobalCriteria, ModuleLanguage, ModuleLocation, ModuleStatus, ModuleType, Season}
+import models.Examiner
+import models.core.{
+  ExamPhase,
+  ModuleCompetence,
+  ModuleGlobalCriteria,
+  ModuleLanguage,
+  ModuleLocation,
+  ModuleStatus,
+  ModuleType,
+  Season
+}
 
 import java.util.UUID
 
@@ -17,6 +27,8 @@ case class ParsedMetadata(
     season: Season,
     responsibilities: ModuleResponsibilities,
     assessmentMethods: ModuleAssessmentMethods,
+    examiner: Examiner.Default,
+    examPhases: NonEmptyList[ExamPhase],
     workload: ParsedWorkload,
     prerequisites: ParsedPrerequisites,
     status: ModuleStatus,

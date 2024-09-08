@@ -269,6 +269,8 @@ object MetadataValidator {
             m.season,
             m.responsibilities,
             am,
+            m.examiner,
+            m.examPhases,
             wl,
             pre,
             m.status,

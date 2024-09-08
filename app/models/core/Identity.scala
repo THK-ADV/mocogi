@@ -16,6 +16,8 @@ object Identity {
   val GroupKind = "group"
   val UnknownKind = "unknown"
 
+  lazy val NN: Identity = Unknown("nn", "N.N.")
+
   case class Person(
       id: String,
       lastname: String,

@@ -1,6 +1,11 @@
 package parsing
 
-import models.{MetadataProtocol, ModuleProtocol, ModuleRelationProtocol, ModuleWorkload}
+import models.{
+  MetadataProtocol,
+  ModuleProtocol,
+  ModuleRelationProtocol,
+  ModuleWorkload
+}
 import parser.Parser
 import parser.Parser.{prefix, zeroOrMoreSpaces}
 import parser.ParserOps.{
@@ -12,7 +17,6 @@ import parser.ParserOps.{
   P14,
   P15,
   P16,
-  P17,
   P2,
   P3,
   P4,
@@ -37,10 +41,10 @@ object RawModuleParser {
     prefix("---")
       .skip(VersionSchemeParser.parser)
       .skip(zeroOrMoreSpaces)
-      .take(idParser)
-      .zip(titleParser)
-      .take(abbreviationParser)
-      .take(ModuleTypeParser.raw)
+      .take(
+        idParser.zip(titleParser).take(abbreviationParser)
+      )
+      .zip(ModuleTypeParser.raw)
       .take(ModuleRelationParser.parser.map(_.map(toModuleRelation)))
       .take(ModuleECTSParser.raw)
       .skip(zeroOrMoreSpaces)
@@ -50,6 +54,11 @@ object RawModuleParser {
       .take(ModuleSeasonParser.raw)
       .take(ModuleResponsibilitiesParser.raw)
       .take(ModuleAssessmentMethodParser.raw)
+      .skip(zeroOrMoreSpaces)
+      .take(
+        ExaminerParser.raw.skip(zeroOrMoreSpaces).zip(ExamPhaseParser.raw)
+      )
+      .skip(zeroOrMoreSpaces)
       .take(ModuleWorkloadParser.parser)
       .skip(zeroOrMoreSpaces)
       .take(ModulePrerequisitesParser.raw)
@@ -71,9 +80,7 @@ object RawModuleParser {
       .take(ContentParsingService.parser)
       .map {
         case (
-              id,
-              title,
-              abbrev,
+              (id, title, abbrev),
               moduleType,
               relation,
               credits,
@@ -82,6 +89,7 @@ object RawModuleParser {
               season,
               (management, lectures),
               assessments,
+              (examiner, examPhases),
               workload,
               prerequisites,
               status,
@@ -108,6 +116,8 @@ object RawModuleParser {
               management,
               lectures,
               assessments,
+              examiner,
+              examPhases,
               prerequisites,
               pos,
               competences,

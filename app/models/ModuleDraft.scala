@@ -1,9 +1,18 @@
 package models
 
-import git.{Branch, CommitId, MergeRequestId, MergeRequestStatus}
+import controllers.json.ModuleJson
 import git.MergeRequestStatus.{Closed, Open}
-import models.ModuleDraftState.{Published, Unknown, ValidForPublication, ValidForReview, WaitingForChanges, WaitingForPublication, WaitingForReview}
-import play.api.libs.json.JsValue
+import git.{Branch, CommitId, MergeRequestId, MergeRequestStatus}
+import models.ModuleDraftState.{
+  Published,
+  Unknown,
+  ValidForPublication,
+  ValidForReview,
+  WaitingForChanges,
+  WaitingForPublication,
+  WaitingForReview
+}
+import play.api.libs.json.{JsError, JsSuccess, JsValue}
 import service.Print
 
 import java.time.LocalDateTime
@@ -29,7 +38,13 @@ case class ModuleDraft(
 object ModuleDraft {
   final implicit class Ops(private val self: ModuleDraft) extends AnyVal {
     def protocol(): ModuleProtocol =
-      ModuleProtocol.format.reads(self.data).get
+      ModuleJson.reads.reads(self.data) match {
+        case JsSuccess(value, _) => value.toProtocol
+        case JsError(_) =>
+          throw new Exception(
+            s"Unable to parse module draft with ID ${self.module} to JSON"
+          )
+      }
 
     def mergeRequestId: Option[MergeRequestId] =
       self.mergeRequest.map(_._1)

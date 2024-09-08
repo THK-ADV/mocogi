@@ -2,13 +2,16 @@ package printing.yaml
 
 import cats.data.NonEmptyList
 import models._
-import parsing.metadata.VersionScheme
+import models.core.ExamPhase
+import parsing.metadata.{ExamPhaseParser, ExaminerParser, VersionScheme}
 import parsing.types.ModuleParticipants
 import printer.Printer
 import printer.Printer.{always, newline, prefix, whitespace}
 
 import java.util.UUID
 import javax.inject.Singleton
+
+// TODO replace all keys with those from Parser
 
 @Singleton
 final class MetadataYamlPrinter(identLevel: Int) {
@@ -28,6 +31,9 @@ final class MetadataYamlPrinter(identLevel: Int) {
 
   implicit val poeOrd: Ordering[ModulePOOptionalProtocol] =
     Ordering.by[ModulePOOptionalProtocol, String](_.po)
+
+  implicit val exmpOrd: Ordering[ExamPhase] =
+    Ordering.by[ExamPhase, String](_.id)
 
   def printer(versionScheme: VersionScheme): Printer[(UUID, MetadataProtocol)] =
     Printer { case ((id, metadata), input) =>
@@ -57,6 +63,8 @@ final class MetadataYamlPrinter(identLevel: Int) {
             .fromList(metadata.assessmentMethods.optional)
             .map(assessmentMethodsOptional)
         )
+        .skip(examiner(metadata.examiner))
+        .skip(examPhases(metadata.examPhases))
         .skip(workload(metadata.workload))
         .skipOpt(
           metadata.prerequisites.recommended.map(recommendedPrerequisites)
@@ -142,6 +150,18 @@ final class MetadataYamlPrinter(identLevel: Int) {
             .reduceLeft(_.skip(_))
         )
   }
+
+  def examiner(e: Examiner.ID) =
+    entry(ExaminerParser.firstKey, ExaminerParser.prefix + e.first)
+      .skip(entry(ExaminerParser.secondKey, ExaminerParser.prefix + e.second))
+
+  def examPhases(xs: NonEmptyList[String]) =
+    list(
+      prefix(s"${ExamPhaseParser.key}:"),
+      xs,
+      ExamPhaseParser.prefix.dropRight(1),
+      0
+    )
 
   def moduleType(moduleType: String) =
     entry("type", s"type.$moduleType")

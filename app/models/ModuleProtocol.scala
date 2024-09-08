@@ -2,7 +2,6 @@ package models
 
 import monocle.Traversal
 import monocle.macros.GenLens
-import monocle.syntax.all._
 import parsing.types.ModuleContent
 import play.api.libs.json.{Format, Json}
 
@@ -20,6 +19,8 @@ object ModuleProtocol {
   implicit def format: Format[ModuleProtocol] = Json.format
 
   final implicit class Ops(private val self: ModuleProtocol) extends AnyVal {
+    import monocle.syntax.all._
+
     private def string = Traversal
       .applyN(
         GenLens[ModuleProtocol](_.metadata.title),
@@ -86,7 +87,8 @@ object ModuleProtocol {
     private def nels = Traversal
       .applyN(
         GenLens[ModuleProtocol](_.metadata.moduleManagement),
-        GenLens[ModuleProtocol](_.metadata.lecturers)
+        GenLens[ModuleProtocol](_.metadata.lecturers),
+        GenLens[ModuleProtocol](_.metadata.examPhases)
       )
       .modify(_.sorted)
 

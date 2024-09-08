@@ -518,6 +518,8 @@ final class MetadataValidatorSpec
             List(method(Some(50)), method(Some(50))),
             List(method(None))
           ),
+          Examiner(Identity.NN, Identity.NN),
+          ExamPhase.all,
           ParsedWorkload(5, 0, 0, 0, 0, 0),
           ParsedPrerequisites(None, None),
           ModuleStatus("", "", ""),
@@ -545,6 +547,8 @@ final class MetadataValidatorSpec
           ivm1.season,
           ivm1.responsibilities,
           ivm1.assessmentMethods,
+          ivm1.examiner,
+          ivm1.examPhases,
           ModuleWorkload(5, 0, 0, 0, 0, 0, 5, 10),
           ModulePrerequisites(None, None),
           ivm1.status,
@@ -602,6 +606,8 @@ final class MetadataValidatorSpec
             List(method(Some(50)), method(Some(50))),
             List(method(None))
           ),
+          Examiner(Identity.NN, Identity.NN),
+          ExamPhase.all,
           ParsedWorkload(5, 0, 0, 0, 0, 0),
           ParsedPrerequisites(None, None),
           ModuleStatus("", "", ""),

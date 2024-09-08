@@ -297,6 +297,22 @@ final class MetadataYamlPrinterSpec extends AnyWordSpec with PrinterSpec {
       assert(run(printer.poOptional(po1)) == res1)
     }
 
+    "print examiner" in {
+      val examiner = Examiner("ald", "abe")
+      assert(
+        run(
+          printer.examiner(examiner)
+        ) === "first_examiner: person.ald\nsecond_examiner: person.abe\n"
+      )
+    }
+
+    "print exam phases" in {
+      val examPhases = NonEmptyList.of("b", "a")
+      val input = printer.examPhases(examPhases)
+      val output = "exam_phases:\n  - exam_phase.a\n  - exam_phase.b\n"
+      assert(run(input) == output)
+    }
+
     "print" in {
       val metadata = models.MetadataProtocol(
         "Module A",
@@ -327,6 +343,8 @@ final class MetadataYamlPrinterSpec extends AnyWordSpec with PrinterSpec {
             ModuleAssessmentMethodEntryProtocol("written-exam", None, Nil)
           )
         ),
+        Examiner("ald", "abe"),
+        NonEmptyList.of("a", "b"),
         ModulePrerequisitesProtocol(
           Some(
             ModulePrerequisiteEntryProtocol("abc", List(m1), Nil)
@@ -394,6 +412,11 @@ final class MetadataYamlPrinterSpec extends AnyWordSpec with PrinterSpec {
           |    precondition: assessment.practical
           |assessment_methods_optional:
           |  - method: assessment.written-exam
+          |first_examiner: person.ald
+          |second_examiner: person.abe
+          |exam_phases:
+          |  - exam_phase.a
+          |  - exam_phase.b
           |workload:
           |  lecture: 10
           |  seminar: 10

@@ -8,8 +8,9 @@ import controllers.actions.{
   PersonAction,
   VersionSchemeAction
 }
+import controllers.json.ModuleJson
 import database.repo.core.IdentityRepository
-import models.{ModuleDraft, ModuleProtocol, ModuleUpdatePermissionType}
+import models._
 import play.api.Logging
 import play.api.libs.json.{Json, Writes}
 import play.api.mvc.{AbstractController, ControllerComponents}
@@ -79,11 +80,11 @@ final class ModuleDraftController @Inject() (
       }
 
   def createNewModuleDraft() =
-    auth(parse.json[ModuleProtocol]) andThen
+    auth(parse.json[ModuleJson]) andThen
       personAction andThen
       new VersionSchemeAction(VersionSchemeHeader) async { r =>
         moduleDraftService
-          .createNew(r.body, r.request.person, r.versionScheme)
+          .createNew(r.body.toProtocol, r.request.person, r.versionScheme)
           .flatMap {
             case Left(err) => Future.successful(BadRequest(Json.toJson(err)))
             case Right(draft) =>
@@ -101,14 +102,14 @@ final class ModuleDraftController @Inject() (
       }
 
   def createOrUpdateModuleDraft(moduleId: UUID) =
-    auth(parse.json[ModuleProtocol]) andThen
+    auth(parse.json[ModuleJson]) andThen
       personAction andThen
       hasPermissionToEditDraft(moduleId) andThen
       new VersionSchemeAction(VersionSchemeHeader) async { r =>
         moduleDraftService
           .createOrUpdate(
             moduleId,
-            r.body,
+            r.body.toProtocol,
             r.request.person,
             r.versionScheme
           )

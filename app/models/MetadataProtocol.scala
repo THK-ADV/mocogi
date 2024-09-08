@@ -23,6 +23,8 @@ case class MetadataProtocol(
     moduleManagement: NonEmptyList[String],
     lecturers: NonEmptyList[String],
     assessmentMethods: ModuleAssessmentMethodsProtocol,
+    examiner: Examiner.ID,
+    examPhases: NonEmptyList[String],
     prerequisites: ModulePrerequisitesProtocol,
     po: ModulePOProtocol,
     competences: List[String],

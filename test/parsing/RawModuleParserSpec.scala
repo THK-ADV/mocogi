@@ -2,6 +2,7 @@ package parsing
 
 import cats.data.NonEmptyList
 import models._
+import models.core.{ExamPhase, Identity}
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatest.{EitherValues, OptionValues}
 import parsing.types.ModuleParticipants
@@ -105,6 +106,10 @@ final class RawModuleParserSpec
       )
       assert(deContent.particularities == "nichts")
       assert(enContent.particularities == "nothing")
+      assert(metadata.examiner.first == Identity.NN.id)
+      assert(metadata.examiner.second == Identity.NN.id)
+      assert(metadata.examPhases.size == 1)
+      assert(metadata.examPhases.head == ExamPhase.none.id)
     }
 
     "parse module2.md" in {
@@ -175,6 +180,9 @@ final class RawModuleParserSpec
       assert(enContent.recommendedReading == "")
       assert(deContent.particularities == "")
       assert(enContent.particularities == "")
+      assert(metadata.examiner.first == "ald")
+      assert(metadata.examiner.second == "abe")
+      assert(metadata.examPhases == NonEmptyList.of("a", "b"))
     }
 
     "parse module3.md" in {

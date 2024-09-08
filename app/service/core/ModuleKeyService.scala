@@ -3,7 +3,7 @@ package service.core
 import models.ModuleKey
 import parsing.modulekeys.ModuleKeyParser
 import parsing.withFile0
-import service.ModuleProtocolDiff.fields
+import service.ModuleProtocolDiff.{fields, ignoredFields}
 
 /** Provides a lookup function for resolving module keys into a localized
   * representation
@@ -32,7 +32,11 @@ object ModuleKeyService {
   private def validate(xs: List[ModuleKey]): Unit = {
     val moduleKeys = xs.map(_.id)
     val keys = fields
-    val unmatched = moduleKeys.filterNot(keys.contains)
+    val unmatched = moduleKeys
+      .filterNot(keys.contains)
+      .appendedAll(keys.filterNot(moduleKeys.contains))
+      .filterNot(ignoredFields.contains)
+      .distinct
     if (unmatched.nonEmpty)
       throw new Throwable(s"unmatched module keys: ${unmatched.mkString(", ")}")
   }
