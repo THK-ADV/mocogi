@@ -6,8 +6,8 @@ import parsing.helper.SingleValueParser
 import parsing.singleValueRawParser
 
 object ModuleStatusParser extends SingleValueParser[ModuleStatus] {
-  private def key = "status"
-  private def prefix = "status."
+  def key = "status"
+  def prefix = "status."
 
   def parser(implicit status: Seq[ModuleStatus]): Parser[ModuleStatus] = {
     itemParser(

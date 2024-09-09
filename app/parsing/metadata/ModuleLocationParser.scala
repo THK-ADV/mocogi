@@ -6,8 +6,8 @@ import parsing.helper.SingleValueParser
 import parsing.singleValueRawParser
 
 object ModuleLocationParser extends SingleValueParser[ModuleLocation] {
-  private def key = "location"
-  private def prefix = "location."
+  def key = "location"
+  def prefix = "location."
 
   def parser(implicit locations: Seq[ModuleLocation]): Parser[ModuleLocation] =
     itemParser(

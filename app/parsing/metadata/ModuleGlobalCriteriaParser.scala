@@ -5,8 +5,8 @@ import parser.Parser
 import parsing.{multipleValueParser, multipleValueRawParser}
 
 object ModuleGlobalCriteriaParser {
-  private def key = "global_criteria"
-  private def prefix = "global_criteria."
+  def key = "global_criteria"
+  def prefix = "global_criteria."
 
   def parser(implicit
       globalCriteria: Seq[ModuleGlobalCriteria]

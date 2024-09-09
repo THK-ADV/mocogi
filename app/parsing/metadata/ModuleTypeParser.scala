@@ -6,8 +6,8 @@ import parsing.helper.SingleValueParser
 import parsing.singleValueRawParser
 
 object ModuleTypeParser extends SingleValueParser[ModuleType] {
-  private def key = "type"
-  private def prefix = "type."
+  def key = "type"
+  def prefix = "type."
 
   def parser(implicit moduleTypes: Seq[ModuleType]): Parser[ModuleType] =
     itemParser(

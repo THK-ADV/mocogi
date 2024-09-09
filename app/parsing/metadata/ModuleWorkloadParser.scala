@@ -8,19 +8,33 @@ import parsing.types.ParsedWorkload
 
 object ModuleWorkloadParser {
 
+  def projectWorkKey = "project_work"
+
+  def projectSupervisionKey = "project_supervision"
+
+  def exerciseKey = "exercise"
+
+  def practicalKey = "practical"
+
+  def seminarKey = "seminar"
+
+  def lectureKey = "lecture"
+
+  def key = "workload"
+
   def parser: Parser[ParsedWorkload] =
-    prefix("workload:")
+    prefix(key + ":")
       .skip(zeroOrMoreSpaces)
-      .take(posIntForKey("lecture"))
+      .take(posIntForKey(lectureKey))
       .skip(zeroOrMoreSpaces)
-      .zip(posIntForKey("seminar"))
+      .zip(posIntForKey(seminarKey))
       .skip(zeroOrMoreSpaces)
-      .take(posIntForKey("practical"))
+      .take(posIntForKey(practicalKey))
       .skip(zeroOrMoreSpaces)
-      .take(posIntForKey("exercise"))
+      .take(posIntForKey(exerciseKey))
       .skip(zeroOrMoreSpaces)
-      .take(posIntForKey("project_supervision"))
+      .take(posIntForKey(projectSupervisionKey))
       .skip(zeroOrMoreSpaces)
-      .take(posIntForKey("project_work"))
+      .take(posIntForKey(projectWorkKey))
       .map(a => ParsedWorkload(a._1, a._2, a._3, a._4, a._5, a._6))
 }

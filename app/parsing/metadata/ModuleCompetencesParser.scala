@@ -5,8 +5,8 @@ import parser.Parser
 import parsing.{multipleValueParser, multipleValueRawParser}
 
 object ModuleCompetencesParser {
-  private def key = "competences"
-  private def prefix = "competence."
+  def key = "competences"
+  def prefix = "competence."
 
   def parser(implicit
       competences: Seq[ModuleCompetence]

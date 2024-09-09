@@ -8,10 +8,13 @@ import parsing.{multipleValueParser, uuidParser}
 import java.util.UUID
 
 object ModuleTaughtWithParser {
+  def key = "taught_with"
+  def modulePrefix = "module."
+
   def parser: Parser[List[UUID]] =
     multipleValueParser(
-      "taught_with",
-      prefix("module.")
+      key,
+      prefix(modulePrefix)
         .take(prefixTo("\n").or(rest))
         .flatMap(uuidParser)
     )

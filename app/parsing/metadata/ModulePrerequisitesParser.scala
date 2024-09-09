@@ -17,19 +17,22 @@ import java.util.UUID
 
 object ModulePrerequisitesParser {
 
-  private def recommendedKey = "recommended_prerequisites"
-  private def requiredKey = "required_prerequisites"
-  private def studyProgramsKey = "study_programs"
-  private def studyProgramsPrefix = "study_program."
+  def recommendedKey = "recommended_prerequisites"
+  def requiredKey = "required_prerequisites"
+  def studyProgramsKey = "study_programs"
+  def modulesKey = "modules"
+  def studyProgramsPrefix = "study_program."
+  def modulesPrefix = "module."
+  def textKey = "text"
 
   private def textParser: Parser[String] =
-    stringForKey("text").option
+    stringForKey(textKey).option
       .map(_.getOrElse(""))
 
   private def modulesParser: Parser[List[UUID]] =
     multipleValueParser(
-      "modules",
-      skipFirst(prefix("module.")).take(prefixTo("\n")).flatMap(uuidParser)
+      modulesKey,
+      skipFirst(prefix(modulesPrefix)).take(prefixTo("\n")).flatMap(uuidParser)
     ).option.map(_.getOrElse(Nil))
 
   private def studyProgramsParser(implicit pos: Seq[PO]): Parser[List[PO]] =

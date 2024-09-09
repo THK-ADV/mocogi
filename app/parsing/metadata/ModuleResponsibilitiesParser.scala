@@ -9,20 +9,26 @@ import parsing.types.ModuleResponsibilities
 
 object ModuleResponsibilitiesParser {
 
+  def key = "responsibilities"
+
+  def moduleManagementKey = "module_management"
+
+  def lecturersKey = "lecturers"
+
   private def inner[A](
       identityParser: Parser[NonEmptyList[A]]
   ): Parser[(NonEmptyList[A], NonEmptyList[A])] = {
-    prefix("responsibilities:")
+    prefix(s"$key:")
       .skip(zeroOrMoreSpaces)
       .skip(optional(newline))
       .skip(zeroOrMoreSpaces)
-      .skip(prefix("module_management:"))
+      .skip(prefix(s"$moduleManagementKey:"))
       .skip(zeroOrMoreSpaces)
       .skip(optional(newline))
       .skip(zeroOrMoreSpaces)
       .take(identityParser)
       .skip(zeroOrMoreSpaces)
-      .skip(prefix("lecturers:"))
+      .skip(prefix(s"$lecturersKey:"))
       .skip(zeroOrMoreSpaces)
       .skip(optional(newline))
       .skip(zeroOrMoreSpaces)

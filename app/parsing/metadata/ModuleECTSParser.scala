@@ -10,8 +10,10 @@ import parsing.{doubleForKey, removeIndentation, stringForKey}
 
 object ModuleECTSParser {
 
+  def key = "ects"
+
   def ectsValueParser =
-    doubleForKey("ects")
+    doubleForKey(key)
 
   def ectsContributionsToFocusAreasParser(implicit
       focusAreas: Seq[FocusAreaID]

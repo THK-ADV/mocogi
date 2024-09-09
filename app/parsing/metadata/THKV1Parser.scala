@@ -11,14 +11,22 @@ import java.util.UUID
 object THKV1Parser {
   import parsing.{posIntForKey, singleLineStringForKey, uuidParser}
 
+  def idKey = "id"
+
+  def titleKey = "title"
+
+  def abbreviationKey = "abbreviation"
+
+  def durationKey = "duration"
+
   def idParser: Parser[UUID] =
-    singleLineStringForKey("id").flatMap(uuidParser)
+    singleLineStringForKey(idKey).flatMap(uuidParser)
 
-  def titleParser = singleLineStringForKey("title")
+  def titleParser = singleLineStringForKey(titleKey)
 
-  def abbreviationParser = singleLineStringForKey("abbreviation")
+  def abbreviationParser = singleLineStringForKey(abbreviationKey)
 
-  def durationParser = posIntForKey("duration")
+  def durationParser = posIntForKey(durationKey)
 }
 
 final class THKV1Parser extends MetadataParser {
