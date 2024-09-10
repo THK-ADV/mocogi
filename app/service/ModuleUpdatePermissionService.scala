@@ -66,4 +66,7 @@ final class ModuleUpdatePermissionService @Inject() (
     Seq[(ModuleCore, ModuleUpdatePermissionType, Option[ModuleDraft])]
   ] =
     repo.allForCampusId(campusId)
+
+  def delete(module: UUID) =
+    repo.delete(module)
 }

@@ -133,6 +133,7 @@ final class ModuleDraftController @Inject() (
         for {
           _ <- moduleDraftReviewService.delete(moduleId)
           _ <- moduleDraftService.delete(moduleId)
+          _ <- moduleUpdatePermissionService.delete(moduleId)
         } yield NoContent
       }
 
