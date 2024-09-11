@@ -1,6 +1,7 @@
 package database.table
 
-import models.ModuleWorkload
+import cats.data.NonEmptyList
+import models.{Examiner, ModuleWorkload}
 import parsing.types.ModuleContent
 import slick.jdbc.PostgresProfile.api._
 
@@ -22,6 +23,8 @@ case class ModuleDbEntry(
     location: String,
     participantsMin: Option[Int],
     participantsMax: Option[Int],
+    examiner: Examiner.ID,
+    examPhases: NonEmptyList[String],
     deContent: ModuleContent,
     enContent: ModuleContent
 )
@@ -90,6 +93,12 @@ final class ModuleTable(tag: Tag) extends Table[ModuleDbEntry](tag, "module") {
 
   def particularitiesEn = column[String]("particularities_en")
 
+  def firstExaminer = column[String]("first_examiner")
+
+  def secondExaminer = column[String]("second_examiner")
+
+  def examPhases = column[List[String]]("exam_phases")
+
   override def * = (
     id,
     lastModified,
@@ -113,6 +122,7 @@ final class ModuleTable(tag: Tag) extends Table[ModuleDbEntry](tag, "module") {
     status,
     location,
     (participantsMin, participantsMax),
+    (firstExaminer, secondExaminer, examPhases),
     (
       learningOutcomeDe,
       learningOutcomeEn
@@ -150,6 +160,7 @@ final class ModuleTable(tag: Tag) extends Table[ModuleDbEntry](tag, "module") {
           String,
           String,
           (Option[Int], Option[Int]),
+          (String, String, List[String]),
           (String, String),
           (String, String),
           (String, String),
@@ -180,6 +191,7 @@ final class ModuleTable(tag: Tag) extends Table[ModuleDbEntry](tag, "module") {
           status,
           location,
           (participantsMin, participantsMax),
+          (firstExaminer, secondExaminer, examPhases),
           (
             learningOutcomeDe,
             learningOutcomeEn
@@ -225,6 +237,8 @@ final class ModuleTable(tag: Tag) extends Table[ModuleDbEntry](tag, "module") {
         location,
         participantsMin,
         participantsMax,
+        Examiner(firstExaminer, secondExaminer),
+        NonEmptyList.fromListUnsafe(examPhases),
         ModuleContent(
           learningOutcomeDe,
           moduleContentDe,
@@ -257,6 +271,7 @@ final class ModuleTable(tag: Tag) extends Table[ModuleDbEntry](tag, "module") {
         String,
         String,
         (Option[Int], Option[Int]),
+        (String, String, List[String]),
         (String, String),
         (String, String),
         (String, String),
@@ -289,6 +304,7 @@ final class ModuleTable(tag: Tag) extends Table[ModuleDbEntry](tag, "module") {
           a.status,
           a.location,
           (a.participantsMin, a.participantsMax),
+          (a.examiner.first, a.examiner.second, a.examPhases.toList),
           (
             a.deContent.learningOutcome,
             a.enContent.learningOutcome

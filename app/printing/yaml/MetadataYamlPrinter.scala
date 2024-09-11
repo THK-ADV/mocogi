@@ -2,13 +2,16 @@ package printing.yaml
 
 import cats.data.NonEmptyList
 import models._
-import parsing.metadata.VersionScheme
+import models.core.ExamPhase
+import parsing.metadata._
 import parsing.types.ModuleParticipants
 import printer.Printer
 import printer.Printer.{always, newline, prefix, whitespace}
 
 import java.util.UUID
 import javax.inject.Singleton
+
+// TODO replace all keys with those from Parser
 
 @Singleton
 final class MetadataYamlPrinter(identLevel: Int) {
@@ -28,6 +31,9 @@ final class MetadataYamlPrinter(identLevel: Int) {
 
   implicit val poeOrd: Ordering[ModulePOOptionalProtocol] =
     Ordering.by[ModulePOOptionalProtocol, String](_.po)
+
+  implicit val exmpOrd: Ordering[ExamPhase] =
+    Ordering.by[ExamPhase, String](_.id)
 
   def printer(versionScheme: VersionScheme): Printer[(UUID, MetadataProtocol)] =
     Printer { case ((id, metadata), input) =>
@@ -57,6 +63,8 @@ final class MetadataYamlPrinter(identLevel: Int) {
             .fromList(metadata.assessmentMethods.optional)
             .map(assessmentMethodsOptional)
         )
+        .skip(examiner(metadata.examiner))
+        .skip(examPhases(metadata.examPhases))
         .skip(workload(metadata.workload))
         .skipOpt(
           metadata.prerequisites.recommended.map(recommendedPrerequisites)
@@ -143,47 +151,66 @@ final class MetadataYamlPrinter(identLevel: Int) {
         )
   }
 
+  def examiner(e: Examiner.ID) =
+    entry(ExaminerParser.firstKey, ExaminerParser.prefix + e.first)
+      .skip(entry(ExaminerParser.secondKey, ExaminerParser.prefix + e.second))
+
+  def examPhases(xs: NonEmptyList[String]) =
+    list(
+      prefix(s"${ExamPhaseParser.key}:"),
+      xs,
+      ExamPhaseParser.prefix.dropRight(1),
+      0
+    )
+
   def moduleType(moduleType: String) =
-    entry("type", s"type.$moduleType")
+    entry(ModuleTypeParser.key, ModuleTypeParser.prefix + moduleType)
 
   def abbreviation(abbrev: String) =
-    entry("abbreviation", abbrev)
+    entry(THKV1Parser.abbreviationKey, abbrev)
 
   def title(title: String) =
-    entry("title", title)
+    entry(THKV1Parser.titleKey, title)
 
   def id(value: UUID) =
-    entry("id", value.toString)
+    entry(THKV1Parser.idKey, value.toString)
 
   def ects(value: Double) =
-    entry("ects", value.toString)
+    entry(ModuleECTSParser.key, value.toString)
 
   def language(value: String) =
-    entry("language", s"lang.$value")
+    entry(ModuleLanguageParser.key, ModuleLanguageParser.prefix + value)
 
   def duration(value: Int) =
-    entry("duration", value.toString)
+    entry(THKV1Parser.durationKey, value.toString)
 
   def frequency(value: String) =
-    entry("frequency", s"season.$value")
+    entry(ModuleSeasonParser.key, ModuleSeasonParser.prefix + value)
 
   def responsibilities(
       moduleManagement: NonEmptyList[String],
       lecturers: NonEmptyList[String]
   ) = {
-    prefix("responsibilities:")
+    prefix(s"${ModuleResponsibilitiesParser.key}:")
       .skip(newline)
       .skip(whitespace.repeat(identLevel))
       .skip(
         list(
-          prefix("module_management:"),
+          prefix(s"${ModuleResponsibilitiesParser.moduleManagementKey}:"),
           moduleManagement,
           "person",
           identLevel
         )
       )
       .skip(whitespace.repeat(identLevel))
-      .skip(list(prefix("lecturers:"), lecturers, "person", identLevel))
+      .skip(
+        list(
+          prefix(s"${ModuleResponsibilitiesParser.lecturersKey}:"),
+          lecturers,
+          "person",
+          identLevel
+        )
+      )
   }
 
   private def assessmentMethods(
@@ -198,7 +225,11 @@ final class MetadataYamlPrinter(identLevel: Int) {
           .map(e => {
             whitespace
               .repeat(identLevel)
-              .skip(prefix(s"- method: assessment.${e.method}"))
+              .skip(
+                prefix(
+                  s"- method: ${ModuleAssessmentMethodParser.assessmentPrefix}${e.method}"
+                )
+              )
               .skip(newline)
               .skipOpt(
                 e.percentage.map(d =>
@@ -215,9 +246,12 @@ final class MetadataYamlPrinter(identLevel: Int) {
                       .repeat(deepness)
                       .skip(
                         list(
-                          prefix("precondition:"),
+                          prefix(
+                            s"${ModuleAssessmentMethodParser.preconditionKey}:"
+                          ),
                           xs,
-                          "assessment",
+                          ModuleAssessmentMethodParser.assessmentPrefix
+                            .dropRight(1),
                           deepness
                         )
                       )
@@ -231,47 +265,72 @@ final class MetadataYamlPrinter(identLevel: Int) {
   def assessmentMethodsMandatory(
       value: NonEmptyList[ModuleAssessmentMethodEntryProtocol]
   ) =
-    assessmentMethods(prefix("assessment_methods_mandatory:"), value)
+    assessmentMethods(
+      prefix(s"${ModuleAssessmentMethodParser.mandatoryKey}:"),
+      value
+    )
 
   def assessmentMethodsOptional(
       value: NonEmptyList[ModuleAssessmentMethodEntryProtocol]
   ) =
-    assessmentMethods(prefix("assessment_methods_optional:"), value)
+    assessmentMethods(
+      prefix(s"${ModuleAssessmentMethodParser.electiveKey}:"),
+      value
+    )
 
   def workload(workload: ModuleWorkload) =
-    prefix("workload:")
+    prefix(s"${ModuleWorkloadParser.key}:")
       .skip(newline)
       .skip(
         whitespace
           .repeat(identLevel)
-          .skip(entry("lecture", workload.lecture.toString))
-      )
-      .skip(
-        whitespace
-          .repeat(identLevel)
-          .skip(entry("seminar", workload.seminar.toString))
-      )
-      .skip(
-        whitespace
-          .repeat(identLevel)
-          .skip(entry("practical", workload.practical.toString))
-      )
-      .skip(
-        whitespace
-          .repeat(identLevel)
-          .skip(entry("exercise", workload.exercise.toString))
-      )
-      .skip(
-        whitespace
-          .repeat(identLevel)
           .skip(
-            entry("project_supervision", workload.projectSupervision.toString)
+            entry(ModuleWorkloadParser.lectureKey, workload.lecture.toString)
           )
       )
       .skip(
         whitespace
           .repeat(identLevel)
-          .skip(entry("project_work", workload.projectWork.toString))
+          .skip(
+            entry(ModuleWorkloadParser.seminarKey, workload.seminar.toString)
+          )
+      )
+      .skip(
+        whitespace
+          .repeat(identLevel)
+          .skip(
+            entry(
+              ModuleWorkloadParser.practicalKey,
+              workload.practical.toString
+            )
+          )
+      )
+      .skip(
+        whitespace
+          .repeat(identLevel)
+          .skip(
+            entry(ModuleWorkloadParser.exerciseKey, workload.exercise.toString)
+          )
+      )
+      .skip(
+        whitespace
+          .repeat(identLevel)
+          .skip(
+            entry(
+              ModuleWorkloadParser.projectSupervisionKey,
+              workload.projectSupervision.toString
+            )
+          )
+      )
+      .skip(
+        whitespace
+          .repeat(identLevel)
+          .skip(
+            entry(
+              ModuleWorkloadParser.projectWorkKey,
+              workload.projectWork.toString
+            )
+          )
       )
 
   private def prerequisites(
@@ -285,7 +344,9 @@ final class MetadataYamlPrinter(identLevel: Int) {
         .skip(newline)
         .skipOpt(
           Option.when(value.text.nonEmpty)(
-            whitespace.repeat(identLevel).skip(entry("text", value.text))
+            whitespace
+              .repeat(identLevel)
+              .skip(entry(ModulePrerequisitesParser.textKey, value.text))
           )
         )
         .skipOpt(
@@ -296,9 +357,9 @@ final class MetadataYamlPrinter(identLevel: Int) {
                 .repeat(identLevel)
                 .skip(
                   list(
-                    prefix("modules:"),
+                    prefix(s"${ModulePrerequisitesParser.modulesKey}:"),
                     xs,
-                    "module",
+                    ModulePrerequisitesParser.modulesPrefix.dropRight(1),
                     identLevel
                   )
                 )
@@ -312,9 +373,9 @@ final class MetadataYamlPrinter(identLevel: Int) {
                 .repeat(identLevel)
                 .skip(
                   list(
-                    prefix("study_programs:"),
+                    prefix(s"${ModulePrerequisitesParser.studyProgramsKey}:"),
                     xs,
-                    "study_program",
+                    ModulePrerequisitesParser.studyProgramsPrefix.dropRight(1),
                     identLevel
                   )
                 )
@@ -323,46 +384,72 @@ final class MetadataYamlPrinter(identLevel: Int) {
   }
 
   def recommendedPrerequisites(value: ModulePrerequisiteEntryProtocol) =
-    prerequisites(prefix("recommended_prerequisites:"), value)
+    prerequisites(
+      prefix(s"${ModulePrerequisitesParser.recommendedKey}:"),
+      value
+    )
 
   def requiredPrerequisites(value: ModulePrerequisiteEntryProtocol) =
-    prerequisites(prefix("required_prerequisites:"), value)
+    prerequisites(prefix(s"${ModulePrerequisitesParser.requiredKey}:"), value)
 
   def status(value: String) =
-    entry("status", s"status.$value")
+    entry(ModuleStatusParser.key, ModuleStatusParser.prefix + value)
 
   def location(value: String) =
-    entry("location", s"location.$value")
+    entry(ModuleLocationParser.key, ModuleLocationParser.prefix + value)
 
   def participants(value: ModuleParticipants) =
-    prefix("participants:")
+    prefix(s"${ModuleParticipantsParser.key}:")
       .skip(newline)
       .skip(
-        whitespace.repeat(identLevel).skip(entry("min", value.min.toString))
+        whitespace
+          .repeat(identLevel)
+          .skip(entry(ModuleParticipantsParser.minKey, value.min.toString))
       )
       .skip(
-        whitespace.repeat(identLevel).skip(entry("max", value.max.toString))
+        whitespace
+          .repeat(identLevel)
+          .skip(entry(ModuleParticipantsParser.maxKey, value.max.toString))
       )
 
   def competences(value: NonEmptyList[String]) =
-    list(prefix("competences:"), value, "competence", 0)
+    list(
+      prefix(s"${ModuleCompetencesParser.key}:"),
+      value,
+      ModuleCompetencesParser.prefix.dropRight(1),
+      0
+    )
 
   def globalCriteria(value: NonEmptyList[String]) =
-    list(prefix("global_criteria:"), value, "global_criteria", 0)
+    list(
+      prefix(s"${ModuleGlobalCriteriaParser.key}:"),
+      value,
+      ModuleGlobalCriteriaParser.prefix.dropRight(1),
+      0
+    )
 
   def taughtWith(value: NonEmptyList[UUID]) =
-    list(prefix("taught_with:"), value, "module", 0)
+    list(
+      prefix(s"${ModuleTaughtWithParser.key}:"),
+      value,
+      ModuleTaughtWithParser.modulePrefix.dropRight(1),
+      0
+    )
 
   def poMandatory(value: NonEmptyList[ModulePOMandatoryProtocol]) = {
     val deepness = identLevel + 2
-    prefix("po_mandatory:")
+    prefix(ModulePOParser.modulePOMandatoryKey)
       .skip(newline)
       .skip(
         value.sorted
           .map(e => {
             whitespace
               .repeat(identLevel)
-              .skip(prefix(s"- study_program: study_program.${e.po}"))
+              .skip(
+                prefix(
+                  s"- ${ModulePOParser.studyProgramKey}: ${ModulePOParser.studyProgramPrefix}${e.po}"
+                )
+              )
               .skip(newline)
               .skipOpt(
                 NonEmptyList
@@ -379,7 +466,7 @@ final class MetadataYamlPrinter(identLevel: Int) {
       .repeat(deepness)
       .skip(
         list(
-          prefix("recommended_semester:"),
+          prefix(s"${ModulePOParser.recommendedSemesterKey}:"),
           xs,
           "",
           deepness
@@ -388,24 +475,38 @@ final class MetadataYamlPrinter(identLevel: Int) {
 
   def poOptional(value: NonEmptyList[ModulePOOptionalProtocol]) = {
     val deepness = identLevel + 2
-    prefix("po_optional:")
+    prefix(ModulePOParser.modulePOElectiveKey)
       .skip(newline)
       .skip(
         value.sorted
           .map(e => {
             whitespace
               .repeat(identLevel)
-              .skip(prefix(s"- study_program: study_program.${e.po}"))
+              .skip(
+                prefix(
+                  s"- ${ModulePOParser.studyProgramKey}: ${ModulePOParser.studyProgramPrefix}${e.po}"
+                )
+              )
               .skip(newline)
               .skip(
                 whitespace
                   .repeat(deepness)
-                  .skip(entry("instance_of", s"module.${e.instanceOf}"))
+                  .skip(
+                    entry(
+                      ModulePOParser.instanceOfKey,
+                      s"${ModulePOParser.modulePrefix}${e.instanceOf}"
+                    )
+                  )
               )
               .skip(
                 whitespace
                   .repeat(deepness)
-                  .skip(entry("part_of_catalog", e.partOfCatalog.toString))
+                  .skip(
+                    entry(
+                      ModulePOParser.partOfCatalogKey,
+                      e.partOfCatalog.toString
+                    )
+                  )
               )
               .skipOpt(
                 NonEmptyList

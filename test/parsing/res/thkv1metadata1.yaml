@@ -15,6 +15,9 @@ responsibilities:
     - person.abe
 assessment_methods_mandatory:
   - method: assessment.written-exam
+first_examiner: person.ald
+second_examiner: person.abe
+exam_phases: exam_phase.none
 workload:
   lecture: 36
   seminar: 0

@@ -188,3 +188,18 @@ enContent.particularities:
   de_desc: --
   en_label: --
   en_desc: --
+metadata.examPhases:
+  de_label: Prüfungszeiträume
+  de_desc: --
+  en_label: --
+  en_desc: --
+metadata.examiner.first:
+  de_label: Erstprüfer
+  de_desc: --
+  en_label: --
+  en_desc: --
+metadata.examiner.second:
+  de_label: Zweitprüfer
+  de_desc: --
+  en_label: --
+  en_desc: --

@@ -34,6 +34,8 @@ trait FakeIdentities extends FakeFaculties {
       "ddu",
       PersonStatus.Active
     ),
-    Identity.Unknown("nn", "N.N")
+    unknown
   )
+
+  def unknown = Identity.NN
 }

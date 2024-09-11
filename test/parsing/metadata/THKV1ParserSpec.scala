@@ -237,6 +237,9 @@ class THKV1ParserSpec
           )
         )
         assert(metadata.taughtWith.isEmpty)
+        assert(metadata.examiner.first == fakeIdentities.find(_.id == "ald").value)
+        assert(metadata.examiner.second == fakeIdentities.find(_.id == "abe").value)
+        assert(metadata.examPhases == NonEmptyList.one(ExamPhase.none))
       }
 
       "thkv1metadata2.yaml" in {
@@ -342,6 +345,9 @@ class THKV1ParserSpec
           )
         )
         assert(rest.isEmpty)
+        assert(metadata.examiner.first == Identity.NN)
+        assert(metadata.examiner.second == Identity.NN)
+        assert(metadata.examPhases == NonEmptyList.one(ExamPhase.none))
       }
 
       "thkv1metadata3.yaml" in {
@@ -356,6 +362,9 @@ class THKV1ParserSpec
         assert(res.value.pos.mandatory.isEmpty)
         assert(res.value.pos.optional.size == 1)
         assert(rest.isEmpty)
+        assert(metadata.examiner.first == Identity.NN)
+        assert(metadata.examiner.second == Identity.NN)
+        assert(metadata.examPhases == NonEmptyList.one(ExamPhase.none))
       }
     }
   }

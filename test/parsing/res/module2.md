@@ -27,6 +27,11 @@ assessment_methods_mandatory:
     percentage: 30
 assessment_methods_optional:
   - method: assessment.written-exam
+first_examiner: person.ald 
+second_examiner: person.abe
+exam_phases:
+  - exam_phase.a
+  - exam_phase.b
 workload:
   lecture: 30
   seminar: 0

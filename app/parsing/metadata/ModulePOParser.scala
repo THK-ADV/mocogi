@@ -14,10 +14,14 @@ import parsing.{multipleValueParser, uuidParser}
 
 object ModulePOParser {
 
-  private def studyProgramKey = "study_program"
-  private def studyProgramPrefix = "study_program."
+  def studyProgramKey = "study_program"
+  def studyProgramPrefix = "study_program."
   def modulePOMandatoryKey = "po_mandatory:"
-  private def modulePOElectiveKey = "po_optional:"
+  def modulePOElectiveKey = "po_optional:"
+  def instanceOfKey = "instance_of"
+  def modulePrefix = "module."
+  def partOfCatalogKey = "part_of_catalog"
+  def recommendedSemesterKey = "recommended_semester"
 
   def studyProgramParser(implicit
       pos: Seq[PO],
@@ -60,7 +64,7 @@ object ModulePOParser {
   }
 
   private def recommendedSemesterParser =
-    multipleValueParser("recommended_semester", int).option.map(
+    multipleValueParser(recommendedSemesterKey, int).option.map(
       _.getOrElse(Nil)
     )
 
@@ -70,13 +74,13 @@ object ModulePOParser {
     )
 
   private def instanceOfParser =
-    prefix("instance_of:")
+    prefix(s"$instanceOfKey:")
       .skip(zeroOrMoreSpaces)
-      .take(prefix("module.").take(prefixTo("\n").or(rest)))
+      .take(prefix(modulePrefix).take(prefixTo("\n").or(rest)))
       .flatMap(uuidParser)
 
   private def partOfCatalogParser =
-    prefix("part_of_catalog:")
+    prefix(s"${partOfCatalogKey}:")
       .skip(zeroOrMoreSpaces)
       .take(boolean)
 

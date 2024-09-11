@@ -70,6 +70,9 @@ final class ModuleUpdatePermissionRepository @Inject() (
         .delete
     )
 
+  def delete(module: UUID) =
+    db.run(tableQuery.filter(_.module === module).delete)
+
   def allFromUser(campusId: CampusId) =
     db.run(
       tableQuery

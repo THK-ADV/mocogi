@@ -24,6 +24,9 @@ object ModuleProtocolDiff extends Logging {
     rec(typeOf[T]).map(_.mkString("."))
   }
 
+  val ignoredFields: Set[String] =
+    Set("metadata.workload.total", "metadata.workload.selfStudy", "id")
+
   val fields: Set[String] =
     allFields[ModuleProtocol].foldLeft(Set.empty[String]) { case (acc, prop) =>
       val simplified = prop match {
@@ -140,6 +143,12 @@ object ModuleProtocolDiff extends Logging {
           takeIf(p.metadata.abbrev.nonEmpty)
         case "metadata.title" =>
           takeIf(p.metadata.title.nonEmpty)
+        case "metadata.examiner.first" =>
+          takeIf(p.metadata.examiner.first.nonEmpty)
+        case "metadata.examiner.second" =>
+          takeIf(p.metadata.examiner.second.nonEmpty)
+        case "metadata.examPhases" =>
+          takeIf(true)
         case other =>
           logger.info(s"unsupported key: $other")
           acc
@@ -270,7 +279,13 @@ object ModuleProtocolDiff extends Logging {
           go(GenLens[ModuleProtocol].apply(_.metadata.abbrev))
         case "metadata.title" =>
           go(GenLens[ModuleProtocol].apply(_.metadata.title))
-        case "id" | "metadata.workload.total" | "metadata.workload.selfStudy" =>
+        case "metadata.examiner.first" =>
+          go(GenLens[ModuleProtocol].apply(_.metadata.examiner.first))
+        case "metadata.examiner.second" =>
+          go(GenLens[ModuleProtocol].apply(_.metadata.examiner.second))
+        case "metadata.examPhases" =>
+          go(GenLens[ModuleProtocol].apply(_.metadata.examPhases))
+        case ignoredField if ignoredFields.contains(ignoredField) =>
           (existing, existingUpdatedKeys)
         case other =>
           logger.info(s"unsupported key: $other")

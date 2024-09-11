@@ -42,7 +42,7 @@ final class ModuleUpdatePermissionService @Inject() (
   ) =
     for {
       _ <- repo.deleteByModules(Seq(module), kind)
-      _ <- repo.createMany(campusIds.map(c => (module, c, kind)))
+      _ <- repo.createMany(campusIds.distinct.map(c => (module, c, kind)))
     } yield ()
 
   def hasPermission(campusId: CampusId, module: UUID) =
@@ -66,4 +66,7 @@ final class ModuleUpdatePermissionService @Inject() (
     Seq[(ModuleCore, ModuleUpdatePermissionType, Option[ModuleDraft])]
   ] =
     repo.allForCampusId(campusId)
+
+  def delete(module: UUID) =
+    repo.delete(module)
 }

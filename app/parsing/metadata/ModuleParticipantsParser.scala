@@ -8,12 +8,18 @@ import parsing.types.ModuleParticipants
 
 object ModuleParticipantsParser {
 
+  def key = "participants"
+
+  def minKey = "min"
+
+  def maxKey = "max"
+
   def parser: Parser[ModuleParticipants] =
-    skipFirst(prefix("participants:"))
+    skipFirst(prefix(s"$key:"))
       .skip(zeroOrMoreSpaces)
-      .take(intForKey("min"))
+      .take(intForKey(minKey))
       .skip(zeroOrMoreSpaces)
-      .zip(intForKey("max"))
+      .zip(intForKey(maxKey))
       .flatMap { case (min, max) =>
         if (min <= max) always(ModuleParticipants(min, max))
         else never(s"min $min should be lower than max $max")

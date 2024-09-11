@@ -2,6 +2,7 @@ package service
 
 import cats.data.NonEmptyList
 import models._
+import models.core.ExamPhase
 import org.scalatest.wordspec.AnyWordSpec
 import parsing.types.{ModuleContent, ModuleParticipants}
 
@@ -31,6 +32,8 @@ final class ModuleProtocolDiffSpec extends AnyWordSpec {
         List(ModuleAssessmentMethodEntryProtocol("method", None, Nil)),
         Nil
       ),
+      Examiner.NN,
+      NonEmptyList.one(ExamPhase.none.id),
       ModulePrerequisitesProtocol(None, None),
       ModulePOProtocol(
         List(ModulePOMandatoryProtocol("po1", None, List(1))),
@@ -75,13 +78,18 @@ final class ModuleProtocolDiffSpec extends AnyWordSpec {
         )
         .focus(_.metadata.participants)
         .replace(Some(ModuleParticipants(0, 10)))
+        .focus(_.metadata.examiner.first)
+        .replace("ald")
+        .focus(_.metadata.examPhases)
+        .modify(_ ::: NonEmptyList.one("a"))
       val (updated, updatedKeys) = diff(existing, newP, None, Set.empty)
-      assert(updatedKeys.size == 5)
+      assert(updatedKeys.size == 7)
       assert(updatedKeys.contains("metadata.title"))
       assert(updatedKeys.contains("metadata.ects"))
       assert(updatedKeys.contains("metadata.moduleManagement"))
       assert(updatedKeys.contains("metadata.po.mandatory"))
       assert(updatedKeys.contains("metadata.participants"))
+      assert(updatedKeys.contains("metadata.examiner.first"))
       assert(updated.metadata.title == "new title")
       assert(updated.metadata.ects == 1.0)
       assert(updated.metadata.moduleManagement == NonEmptyList.of("a", "b"))
@@ -92,6 +100,10 @@ final class ModuleProtocolDiffSpec extends AnyWordSpec {
         )
       )
       assert(updated.metadata.participants.contains(ModuleParticipants(0, 10)))
+      assert(updated.metadata.examiner.first == "ald")
+      assert(
+        updated.metadata.examPhases == existing.metadata.examPhases.append("a")
+      )
     }
 
     "undo update if its changed to the origin value" in {
@@ -135,6 +147,8 @@ final class ModuleProtocolDiffSpec extends AnyWordSpec {
               existing0.metadata.moduleManagement,
               existing0.metadata.lecturers,
               existing0.metadata.assessmentMethods,
+              existing0.metadata.examiner,
+              existing0.metadata.examPhases,
               existing0.metadata.prerequisites,
               existing0.metadata.po,
               existing0.metadata.competences,

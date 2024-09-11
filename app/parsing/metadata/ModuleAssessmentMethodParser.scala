@@ -13,10 +13,10 @@ import parsing.types.{ModuleAssessmentMethodEntry, ModuleAssessmentMethods}
 
 object ModuleAssessmentMethodParser {
 
-  private def assessmentPrefix = "assessment."
-  private def preconditionKey = "precondition"
-  private def mandatoryKey = "assessment_methods_mandatory"
-  private def electiveKey = "assessment_methods_optional"
+  def assessmentPrefix = "assessment."
+  def preconditionKey = "precondition"
+  def mandatoryKey = "assessment_methods_mandatory"
+  def electiveKey = "assessment_methods_optional"
 
   private def assessmentMethodParser(implicit
       assessmentMethods: Seq[AssessmentMethod]

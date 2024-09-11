@@ -11,20 +11,31 @@ import java.util.UUID
 object THKV1Parser {
   import parsing.{posIntForKey, singleLineStringForKey, uuidParser}
 
+  def idKey = "id"
+
+  def titleKey = "title"
+
+  def abbreviationKey = "abbreviation"
+
+  def durationKey = "duration"
+
   def idParser: Parser[UUID] =
-    singleLineStringForKey("id").flatMap(uuidParser)
+    singleLineStringForKey(idKey).flatMap(uuidParser)
 
-  def titleParser = singleLineStringForKey("title")
+  def titleParser = singleLineStringForKey(titleKey)
 
-  def abbreviationParser = singleLineStringForKey("abbreviation")
+  def abbreviationParser = singleLineStringForKey(abbreviationKey)
 
-  def durationParser = posIntForKey("duration")
+  def durationParser = posIntForKey(durationKey)
 }
 
 final class THKV1Parser extends MetadataParser {
   import THKV1Parser.{abbreviationParser, durationParser, idParser, titleParser}
 
   override val versionScheme = VersionScheme(1, "s")
+
+  // TODO replace with real data at some point
+  implicit def allExamPhases: List[ExamPhase] = ExamPhase.all.toList
 
   def parser(implicit
       locations: Seq[ModuleLocation],
@@ -53,6 +64,13 @@ final class THKV1Parser extends MetadataParser {
       .take(ModuleSeasonParser.parser)
       .take(ModuleResponsibilitiesParser.parser)
       .take(ModuleAssessmentMethodParser.parser)
+      .skip(zeroOrMoreSpaces)
+      .take(
+        ExaminerParser.parser
+          .skip(zeroOrMoreSpaces)
+          .zip(ExamPhaseParser.parser)
+          .skip(zeroOrMoreSpaces)
+      )
       .take(ModuleWorkloadParser.parser)
       .skip(newline)
       .take(ModulePrerequisitesParser.parser)
@@ -84,6 +102,7 @@ final class THKV1Parser extends MetadataParser {
               season,
               resp,
               assessmentMethods,
+              (examiner, examPhases),
               workload,
               prerequisites,
               status,
@@ -103,6 +122,8 @@ final class THKV1Parser extends MetadataParser {
             season,
             resp,
             assessmentMethods,
+            examiner,
+            examPhases,
             workload,
             prerequisites,
             status,

@@ -1,5 +1,6 @@
 package models
 
+import cats.data.NonEmptyList
 import models.core._
 import parsing.types._
 import play.api.libs.json.{Json, Writes}
@@ -18,6 +19,8 @@ case class Metadata(
     season: Season,
     responsibilities: ModuleResponsibilities,
     assessmentMethods: ModuleAssessmentMethods,
+    examiner: Examiner.Default,
+    examPhases: NonEmptyList[ExamPhase],
     workload: ModuleWorkload,
     prerequisites: ModulePrerequisites,
     status: ModuleStatus,
