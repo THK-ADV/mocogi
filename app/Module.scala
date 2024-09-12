@@ -13,7 +13,6 @@ import printing.markdown.ModuleMarkdownPrinter
 import printing.pandoc.PandocApi
 import printing.yaml.MetadataYamlPrinter
 import providers._
-import service.core._
 import webhook.{GitMergeEventHandler, GitPushEventHandler}
 
 import scala.annotation.unused
@@ -44,9 +43,6 @@ class Module(@unused environment: Environment, configuration: Configuration)
       .asEagerSingleton()
     bind(classOf[ModuleKeysToReview])
       .toProvider(classOf[ModuleKeysToReviewProvider])
-      .asEagerSingleton()
-    bind(classOf[ModuleKeyService])
-      .toProvider(classOf[ModuleKeyServiceProvider])
       .asEagerSingleton()
     bind(classOf[PreviewMergeActor])
       .toProvider(classOf[PreviewMergeActorProvider])

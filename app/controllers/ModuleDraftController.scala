@@ -12,11 +12,12 @@ import controllers.json.ModuleJson
 import database.repo.core.IdentityRepository
 import models._
 import play.api.Logging
-import play.api.libs.json.{Json, Writes}
+import play.api.i18n.{I18nSupport, Messages}
+import play.api.libs.json.{JsValue, Json, Writes}
 import play.api.mvc.{AbstractController, ControllerComponents}
 import service.PipelineError.parsingErrorWrites
 import service._
-import service.core.{ModuleKeyService, StudyProgramService}
+import service.core.StudyProgramService
 
 import java.util.UUID
 import javax.inject.{Inject, Singleton}
@@ -32,7 +33,6 @@ final class ModuleDraftController @Inject() (
     val studyProgramService: StudyProgramService,
     val identityRepository: IdentityRepository,
     val moduleService: ModuleService,
-    val moduleKeyService: ModuleKeyService,
     val moduleApprovalService: ModuleApprovalService,
     implicit val ctx: ExecutionContext
 ) extends AbstractController(cc)
@@ -40,7 +40,8 @@ final class ModuleDraftController @Inject() (
     with PermissionCheck
     with PersonAction
     with JsonNullWritable
-    with Logging {
+    with Logging
+    with I18nSupport {
 
   def moduleDrafts() =
     auth andThen personAction async { r =>
@@ -50,7 +51,8 @@ final class ModuleDraftController @Inject() (
       } yield Ok(Json.toJson(modules.map { case (module, kind, draft) =>
         Json.obj(
           "module" -> module,
-          "moduleDraft" -> draft,
+          "moduleDraft" -> draft
+            .map(moduleDraftWrites(r.messages).writes),
           "moduleDraftState" -> draft.state(),
           "privilegedForModule" -> kind.isInherited
         )
@@ -60,23 +62,27 @@ final class ModuleDraftController @Inject() (
   def keys(moduleId: UUID) =
     auth andThen
       personAction andThen
-      hasPermissionToViewDraft(moduleId, moduleApprovalService) async { _ =>
-        moduleDraftService
-          .getByModuleOpt(moduleId)
-          .map { draft =>
-            val reviewed = draft
-              .map(d => moduleKeyService.lookup(d.keysToBeReviewed))
-              .getOrElse(Set.empty)
-            val modified = draft
-              .map(d => moduleKeyService.lookup(d.modifiedKeys))
-              .getOrElse(Set.empty)
-            Ok(
-              Json.obj(
-                "keysToBeReviewed" -> reviewed,
-                "modifiedKeys" -> modified
+      hasPermissionToViewDraft(moduleId, moduleApprovalService) async {
+        request =>
+          moduleDraftService
+            .getByModuleOpt(moduleId)
+            .map { draft =>
+              val messages = request.messages
+              val (reviewed, modified) = draft
+                .map(d =>
+                  (
+                    d.keysToBeReviewed.map(moduleKeyToJson(_, messages)),
+                    d.modifiedKeys.map(moduleKeyToJson(_, messages))
+                  )
+                )
+                .getOrElse((Set.empty, Set.empty))
+              Ok(
+                Json.obj(
+                  "keysToBeReviewed" -> reviewed,
+                  "modifiedKeys" -> modified
+                )
               )
-            )
-          }
+            }
       }
 
   def createNewModuleDraft() =
@@ -97,7 +103,7 @@ final class ModuleDraftController @Inject() (
                     moduleManagement.prepended(r.request.request.campusId),
                     ModuleUpdatePermissionType.Inherited
                   )
-              } yield Ok(Json.toJson(draft))
+              } yield Ok(moduleDraftWrites(r.messages).writes(draft))
           }
       }
 
@@ -137,14 +143,22 @@ final class ModuleDraftController @Inject() (
         } yield NoContent
       }
 
-  implicit val moduleDraftFmt: Writes[ModuleDraft] =
+  private def moduleKeyToJson(key: String, messages: Messages): JsValue =
+    Json.obj(
+      "id" -> key,
+      "label" -> messages(s"$key.label"),
+      "desc" -> messages(s"$key.desc")
+    )
+
+  private def moduleDraftWrites(messages: Messages): Writes[ModuleDraft] =
     Writes.apply(d =>
       Json.obj(
         "module" -> d.module,
         "author" -> d.author,
         "status" -> d.source,
         "data" -> d.data,
-        "keysToBeReviewed" -> moduleKeyService.lookup(d.keysToBeReviewed),
+        "keysToBeReviewed" -> d.keysToBeReviewed
+          .map(moduleKeyToJson(_, messages)),
         "mergeRequestId" -> d.mergeRequest.map(_._1.value),
         "lastModified" -> d.lastModified
       )
