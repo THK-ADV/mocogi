@@ -1,37 +1,38 @@
-<configuration>
-  <conversionRule conversionWord="coloredLevel" converterClass="play.api.libs.logback.ColoredLevel"/>
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE configuration>
 
-  <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+<configuration>
+  <import class="ch.qos.logback.classic.encoder.PatternLayoutEncoder"/>
+  <import class="ch.qos.logback.core.rolling.RollingFileAppender"/>
+  <import class="ch.qos.logback.core.ConsoleAppender"/>
+  <import class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy"/>
+
+  <appender name="FILE" class="RollingFileAppender">
     <file>${application.home:-.}/logs/application.log</file>
-    <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-      <!-- Daily rollover with compression -->
+    <rollingPolicy class="TimeBasedRollingPolicy">
       <fileNamePattern>${application.home:-.}/logs/application-log-%d{yyyy-MM-dd}.gz</fileNamePattern>
-      <!-- keep 30 days worth of history -->
       <maxHistory>30</maxHistory>
     </rollingPolicy>
-    <encoder>
+    <encoder class="PatternLayoutEncoder">
       <pattern>%date{yyyy-MM-dd HH:mm:ss ZZZZ} [%level] from %logger in %thread - %message%n%xException</pattern>
     </encoder>
   </appender>
 
-  <appender name="ACCESS_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+  <appender name="ACCESS_FILE" class="RollingFileAppender">
     <file>${application.home:-.}/logs/access.log</file>
-    <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-      <!-- daily rollover with compression -->
+    <rollingPolicy class="TimeBasedRollingPolicy">
       <fileNamePattern>${application.home:-.}/logs/access-log-%d{yyyy-MM-dd}.gz</fileNamePattern>
-      <!-- keep 60 days worth of history -->
       <maxHistory>60</maxHistory>
     </rollingPolicy>
-    <encoder>
+    <encoder class="PatternLayoutEncoder">
       <pattern>%date{yyyy-MM-dd HH:mm:ss ZZZZ} %message%n</pattern>
-      <!-- this quadruples logging throughput -->
       <immediateFlush>false</immediateFlush>
     </encoder>
   </appender>
 
-  <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
-    <encoder>
-      <pattern>%date{yyyy-MM-dd HH:mm:ss ZZZZ} %coloredLevel %logger{15} - %message%n%xException{10}</pattern>
+  <appender name="STDOUT" class="ConsoleAppender">
+    <encoder class="PatternLayoutEncoder">
+      <pattern>%date{yyyy-MM-dd HH:mm:ss ZZZZ} %highlight(%-5level) %logger{15} - %message%n%xException{10}</pattern>
     </encoder>
   </appender>
 
@@ -45,7 +46,6 @@
     <appender-ref ref="FILE"/>
     <appender-ref ref="STDOUT"/>
   </root>
-
   <logger name="access" level="INFO" additivity="false">
     <appender-ref ref="ACCESS_FILE"/>
     <appender-ref ref="STDOUT"/>

@@ -1,7 +1,7 @@
 val playSlickVersion = "5.1.0"
 val guiceVersion = "5.1.0"
-val scalaTestVersion = "3.2.15"
-val keycloakVersion = "22.0.1"
+val scalaTestVersion = "3.2.19"
+val keycloakVersion = "24.0.3"
 
 lazy val `mocogi` = (project in file("."))
   .enablePlugins(PlayScala)
@@ -9,9 +9,9 @@ lazy val `mocogi` = (project in file("."))
     name := "mocogi",
     maintainer := "Alexander Dobrynin <alexander.dobrynin@th-koeln.de>",
     version := "1.0",
-    scalaVersion := "2.13.10",
-    semanticdbEnabled := true,
-    semanticdbVersion := scalafixSemanticdb.revision,
+    scalaVersion := "2.13.14",
+    // semanticdbEnabled := true,
+    // semanticdbVersion := scalafixSemanticdb.revision,
     scalacOptions += "-Wunused:imports",
     resolvers += "Akka Snapshot Repository" at "https://repo.akka.io/snapshots/",
     resolvers += Resolver.sonatypeRepo("snapshots"),
@@ -49,8 +49,7 @@ lazy val play = Seq(
 lazy val test = Seq(
   "org.scalactic" %% "scalactic" % scalaTestVersion,
   "org.scalatest" %% "scalatest" % scalaTestVersion % "test",
-  "org.scalatestplus.play" %% "scalatestplus-play" % "5.1.0" % "test",
-  "org.mockito" % "mockito-core" % "5.5.0" % Test
+  "org.scalatestplus.play" %% "scalatestplus-play" % "7.0.1" % "test"
 )
 
 lazy val parser = "de.th-koeln.inf.adv" %% "nebulak" % "0.12"
@@ -58,10 +57,10 @@ lazy val parser = "de.th-koeln.inf.adv" %% "nebulak" % "0.12"
 lazy val database = Seq(
   "com.typesafe.play" %% "play-slick" % playSlickVersion,
   "com.typesafe.play" %% "play-slick-evolutions" % playSlickVersion,
-  "org.postgresql" % "postgresql" % "42.5.4"
+  "org.postgresql" % "postgresql" % "42.7.3"
 )
 
-lazy val kafka = "org.apache.kafka" % "kafka-clients" % "3.7.1"
+lazy val kafka = "org.apache.kafka" % "kafka-clients" % "3.8.0"
 
 lazy val circle = "io.circe" %% "circe-yaml" % "1.15.0"
 
@@ -69,8 +68,8 @@ lazy val parallelCollections =
   "org.scala-lang.modules" %% "scala-parallel-collections" % "1.0.4"
 
 lazy val playJson = Seq(
-  "com.typesafe.play" %% "play-json" % "2.10.0-RC9",
-  "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.15.2" // jackson-databind 2.15.2
+  "com.typesafe.play" %% "play-json" % "2.10.5",
+  "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.17.2" // jackson-databind 2.15.2
 )
 
 lazy val guiceDeps = Seq(
@@ -82,7 +81,7 @@ lazy val guiceDeps = Seq(
 val keycloak = Seq(
   "org.keycloak" % "keycloak-core" % keycloakVersion,
   "org.keycloak" % "keycloak-adapter-core" % keycloakVersion,
-  "org.jboss.logging" % "jboss-logging" % "3.5.1.Final"
+  "org.jboss.logging" % "jboss-logging" % "3.5.3.Final"
 )
 
 val optics = Seq(

@@ -37,17 +37,18 @@ object ModuleRelationProtocol extends NelWrites {
             case other =>
               JsError(s"expected kind to be parent or child, but was $other")
           },
-      {
-        case ModuleRelationProtocol.Parent(children) =>
-          Json.obj(
-            "kind" -> "parent",
-            "children" -> Json.toJson(children)
-          )
-        case ModuleRelationProtocol.Child(parent) =>
-          Json.obj(
-            "kind" -> "child",
-            "parent" -> Json.toJson(parent)
-          )
-      }
+      (p: ModuleRelationProtocol) =>
+        p match {
+          case ModuleRelationProtocol.Parent(children) =>
+            Json.obj(
+              "kind" -> "parent",
+              "children" -> Json.toJson(children)
+            )
+          case ModuleRelationProtocol.Child(parent) =>
+            Json.obj(
+              "kind" -> "child",
+              "parent" -> Json.toJson(parent)
+            )
+        }
     )
 }
