@@ -1,12 +1,16 @@
 package webhook
 
-import akka.actor.{Actor, ActorRef, Props}
 import catalog.{ModuleCatalogService, Semester}
-import database.repo.{ModuleCatalogGenerationRequestRepository, ModuleDraftRepository, ModuleReviewRepository}
-import git.{Branch, GitConfig, MergeRequestId}
+import database.repo.{
+  ModuleCatalogGenerationRequestRepository,
+  ModuleDraftRepository,
+  ModuleReviewRepository
+}
 import git.api.{GitBranchService, GitMergeRequestApiService}
+import git.{Branch, GitConfig, MergeRequestId}
 import models._
 import ops.LoggerOps
+import org.apache.pekko.actor.{Actor, ActorRef, Props}
 import play.api.Logging
 import play.api.libs.json._
 

@@ -1,9 +1,9 @@
 package providers
 
-import akka.actor.ActorSystem
 import catalog.PreviewMergeActor
 import database.repo.ModuleCatalogGenerationRequestRepository
 import git.api.GitMergeRequestApiService
+import org.apache.pekko.actor.ActorSystem
 
 import javax.inject.{Inject, Provider, Singleton}
 import scala.concurrent.ExecutionContext

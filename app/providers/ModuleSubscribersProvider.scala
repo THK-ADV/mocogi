@@ -1,10 +1,10 @@
 package providers
 
-import akka.actor.ActorSystem
 import database.view.{ModuleViewRepository, StudyProgramViewRepository}
 import git.subscriber._
 import kafka.Topics
 import ops.ConfigurationOps.Ops
+import org.apache.pekko.actor.ActorSystem
 import play.api.Configuration
 import printing.html.ModuleHTMLPrinter
 import printing.pandoc.PrinterOutputType

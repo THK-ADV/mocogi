@@ -1,6 +1,5 @@
 package git.subscriber
 
-import akka.actor.{Actor, ActorRef, Props}
 import git.subscriber.CoreDataPublishActor._
 import kafka.{KafkaPublisher, Topics}
 import models.core._
@@ -8,6 +7,7 @@ import monocle.Lens
 import monocle.macros.GenLens
 import ops.LoggerOps
 import org.apache.kafka.clients.producer.KafkaProducer
+import org.apache.pekko.actor.{Actor, ActorRef, Props}
 import play.api.Logging
 import play.api.libs.json.Writes
 

@@ -1,4 +1,4 @@
-val playSlickVersion = "5.1.0"
+val playSlickVersion = "6.1.1"
 val guiceVersion = "5.1.0"
 val scalaTestVersion = "3.2.19"
 val keycloakVersion = "24.0.3"
@@ -14,10 +14,9 @@ lazy val `mocogi` = (project in file("."))
     // semanticdbVersion := scalafixSemanticdb.revision,
     scalacOptions += "-Wunused:imports",
     resolvers += "Akka Snapshot Repository" at "https://repo.akka.io/snapshots/",
-    resolvers += Resolver.sonatypeRepo("snapshots"),
+    resolvers ++= Resolver.sonatypeOssRepos("snapshots"),
     libraryDependencies ++= play,
     libraryDependencies ++= guiceDeps,
-    libraryDependencies ++= playJson,
     libraryDependencies ++= test,
     libraryDependencies ++= database,
     libraryDependencies += parser,
@@ -43,7 +42,8 @@ lazy val `mocogi` = (project in file("."))
 lazy val play = Seq(
   specs2 % Test,
   ws,
-  ehcache
+  ehcache,
+  "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.17.2" // jackson-databind 2.15.2
 )
 
 lazy val test = Seq(
@@ -55,8 +55,8 @@ lazy val test = Seq(
 lazy val parser = "de.th-koeln.inf.adv" %% "nebulak" % "0.12"
 
 lazy val database = Seq(
-  "com.typesafe.play" %% "play-slick" % playSlickVersion,
-  "com.typesafe.play" %% "play-slick-evolutions" % playSlickVersion,
+  "org.playframework" %% "play-slick" % playSlickVersion,
+  "org.playframework" %% "play-slick-evolutions" % playSlickVersion,
   "org.postgresql" % "postgresql" % "42.7.3"
 )
 
@@ -66,11 +66,6 @@ lazy val circle = "io.circe" %% "circe-yaml" % "1.15.0"
 
 lazy val parallelCollections =
   "org.scala-lang.modules" %% "scala-parallel-collections" % "1.0.4"
-
-lazy val playJson = Seq(
-  "com.typesafe.play" %% "play-json" % "2.10.5",
-  "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.17.2" // jackson-databind 2.15.2
-)
 
 lazy val guiceDeps = Seq(
   guice,

@@ -1,9 +1,9 @@
 package git.publisher
 
-import akka.actor.{Actor, ActorRef, Props}
 import git.publisher.ModulePublisher.NotifySubscribers
 import git.subscriber.ModuleSubscribers
 import git.{GitFile, GitFileContent}
+import org.apache.pekko.actor.{Actor, ActorRef, Props}
 import play.api.Logging
 import service._
 

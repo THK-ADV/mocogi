@@ -1,12 +1,12 @@
 package providers
 
-import akka.actor.ActorSystem
 import database.view.{ModuleViewRepository, StudyProgramViewRepository}
 import git.publisher.CoreDataPublisher
 import git.subscriber.CoreDataPublishActor
 import kafka.Topics
 import models.core._
 import ops.ConfigurationOps.Ops
+import org.apache.pekko.actor.ActorSystem
 import play.api.Configuration
 import service.core._
 

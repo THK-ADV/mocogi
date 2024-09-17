@@ -1,12 +1,12 @@
 package catalog
 
-import akka.actor.{Actor, ActorRef, Props}
 import catalog.PreviewMergeActor.CreateMergeRequest
 import database.repo.ModuleCatalogGenerationRequestRepository
 import git.api.GitMergeRequestApiService
 import models.ModuleCatalogGenerationRequest
 import ops.FutureOps.Ops
 import ops.LoggerOps
+import org.apache.pekko.actor.{Actor, ActorRef, Props}
 import play.api.Logging
 
 import javax.inject.Singleton
