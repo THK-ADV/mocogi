@@ -4,7 +4,9 @@ import auth.AuthorizationAction
 import controllers.actions.{DirectorCheck, PermissionCheck, PersonAction}
 import database.repo.ModuleCatalogRepository
 import database.repo.core.{IdentityRepository, StudyProgramPersonRepository}
+import models.{FullPoId, UniversityRole}
 import ops.FileOps.FileOps0
+import play.api.i18n.I18nSupport
 import play.api.libs.Files.DefaultTemporaryFileCreator
 import play.api.libs.json.Json
 import play.api.mvc.{AbstractController, ControllerComponents}
@@ -28,7 +30,8 @@ final class ModuleCatalogController @Inject() (
 ) extends AbstractController(cc)
     with DirectorCheck
     with PermissionCheck
-    with PersonAction {
+    with PersonAction
+    with I18nSupport {
 
   def allFromSemester(semester: String) =
     Action.async(_ =>
@@ -38,14 +41,22 @@ final class ModuleCatalogController @Inject() (
   def getPreview(studyProgram: String, po: String) =
     auth andThen
       personAction andThen
-      isDirector(studyProgram) async { r =>
+      hasRoleInStudyProgram(
+        List(UniversityRole.SGL, UniversityRole.PAV),
+        studyProgram
+      ) async { r =>
         r.headers.get(HeaderNames.ACCEPT) match {
           case Some(MimeTypes.PDF) =>
-            val lang = r.parseLang()
+            val lang = r.lang.toPrintingLang()
             val filename = s"${lang.id}_draft_$po"
             val file = fileCreator.create(filename, ".tex")
             previewService
-              .previewCatalog(po, lang, file)
+              .previewCatalog(
+                FullPoId(po),
+                lang,
+                r.lang,
+                file
+              )
               .map(path =>
                 Ok.sendPath(
                   path,
@@ -59,7 +70,7 @@ final class ModuleCatalogController @Inject() (
           case _ =>
             Future.successful(
               UnsupportedMediaType(
-                s"expected media type: ${MimeTypes.JSON} or ${MimeTypes.PDF}"
+                s"expected media type: ${MimeTypes.PDF}"
               )
             )
         }

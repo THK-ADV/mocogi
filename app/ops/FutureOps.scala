@@ -6,7 +6,7 @@ import scala.concurrent.{ExecutionContext, Future}
 object FutureOps {
 
   def abort[A](msg: String): Future[A] =
-    Future.failed(new Throwable(msg))
+    Future.failed(new Exception(msg))
 
   implicit class Ops[A](private val self: Future[A]) extends AnyVal {
     def abortIf(pred: A => Boolean, msg: => String)(implicit

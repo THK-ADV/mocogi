@@ -4,13 +4,14 @@ import database.repo.core._
 import database.view.StudyProgramViewRepository
 import git.GitConfig
 import git.api.{GitDiffApiService, GitFileDownloadService}
-import models.{ModuleCore, ModuleProtocol, StudyProgramView}
+import models.{FullPoId, ModuleCore, ModuleProtocol, StudyProgramView}
 import ops.EitherOps.EStringThrowOps
 import parsing.metadata.ModulePOParser
 import play.api.Logging
+import play.api.i18n.Lang
 import play.api.libs.Files.TemporaryFile
 import printing.PrintingLanguage
-import printing.latex.ModuleCatalogLatexPrinter
+import printing.latex.{ModuleCatalogLatexPrinter, Payload}
 import service.LatexCompiler.{compile, getPdf}
 
 import java.nio.file.{Files, Path}
@@ -36,29 +37,33 @@ final class ModulePreviewService @Inject() (
   implicit def gitConfig: GitConfig = diffApiService.config
 
   def previewCatalog(
-      poId: String,
+      fullPoId: FullPoId,
       pLang: PrintingLanguage,
+      lang: Lang,
       latexFile: TemporaryFile
   ): Future[Path] = {
     val studyPrograms = studyProgramViewRepo.all()
 
     for {
       studyPrograms <- studyPrograms
-      studyProgram <- studyPrograms.find(_.po.id == poId) match {
+      studyProgram <- studyPrograms.find(_.fullPoId == fullPoId) match {
         case Some(value) =>
           Future.successful(value)
         case None =>
           Future.failed(
-            new Throwable(s"study program's po $poId needs to be valid")
+            new Exception(s"study program's po $fullPoId needs to be valid")
           )
       }
-      liveModules <- moduleService.allFromPoMandatory(poId)
-      previewModules <- getPreviewModules(poId, liveModules.map(_.id.get))
+      liveModules <- moduleService.allFromPoMandatory(fullPoId.id)
+      changedModule <- changedModuleFromPreview(
+        fullPoId.id,
+        liveModules.map(_.id.get)
+      )
       modules = liveModules
-        .filterNot(m => previewModules.exists(_.id == m.id))
-        .appendedAll(previewModules)
-      diffs = diff(liveModules, previewModules)
-      content <- print(studyProgram, modules, studyPrograms, pLang, diffs)
+        .filterNot(m => changedModule.exists(_.id == m.id))
+        .appendedAll(changedModule)
+      diffs = diff(liveModules, changedModule)
+      content <- print(studyProgram, modules, studyPrograms, pLang, lang, diffs)
       path = Files.writeString(latexFile, content.toString)
       pdf <- compile(path).flatMap(_ => getPdf(path)).toFuture
     } yield pdf
@@ -66,9 +71,9 @@ final class ModulePreviewService @Inject() (
 
   private def diff(
       liveModules: Seq[ModuleProtocol],
-      previewModule: Seq[ModuleProtocol]
+      changedModules: Seq[ModuleProtocol]
   ): Seq[(ModuleCore, Set[String])] =
-    previewModule.map { p =>
+    changedModules.map { p =>
       val diffs = liveModules.find(_.id == p.id) match {
         case Some(existing) =>
           val (_, diffs) = ModuleProtocolDiff.diff(
@@ -84,7 +89,7 @@ final class ModulePreviewService @Inject() (
       (ModuleCore(p.id.get, p.metadata.title, p.metadata.abbrev), diffs)
     }
 
-  private def getPreviewModules(poId: String, liveModules: Seq[UUID]) =
+  private def changedModuleFromPreview(poId: String, liveModules: Seq[UUID]) =
     diffApiService
       .compare(gitConfig.mainBranch, gitConfig.draftBranch)
       .flatMap { diffs =>
@@ -107,24 +112,28 @@ final class ModulePreviewService @Inject() (
       modules: Seq[ModuleProtocol],
       studyPrograms: Seq[StudyProgramView],
       pLang: PrintingLanguage,
+      lang: Lang,
       diffs: Seq[(ModuleCore, Set[String])]
   ): Future[StringBuilder] =
     for {
       mts <- moduleTypeRepository.all()
-      lang <- languageRepository.all()
+      langs <- languageRepository.all()
       seasons <- seasonRepository.all()
       people <- identityRepository.all()
       ams <- assessmentMethodRepository.all()
-    } yield printer.print(
-      studyProgram,
-      None,
-      modules,
-      mts,
-      lang,
-      seasons,
-      people,
-      ams,
-      studyPrograms,
-      diffs
-    )(pLang)
+    } yield printer.preview(
+      diffs,
+      Payload(
+        studyProgram,
+        modules,
+        mts,
+        langs,
+        seasons,
+        people,
+        ams,
+        studyPrograms
+      ),
+      pLang,
+      lang
+    )
 }

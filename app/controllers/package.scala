@@ -1,3 +1,4 @@
+import play.api.i18n.Lang
 import play.api.libs.json.{Json, Reads, Writes}
 import play.api.mvc.{AnyContent, Request}
 import printing.PrintingLanguage
@@ -12,6 +13,12 @@ package object controllers {
       "type" -> "throwable",
       "message" -> t.getMessage
     )
+
+  implicit class LangOps(private val self: Lang) extends AnyVal {
+    def toPrintingLang(): PrintingLanguage =
+      if (self.code.startsWith("de")) PrintingLanguage.German
+      else PrintingLanguage.English
+  }
 
   implicit class RequestOps(private val self: Request[AnyContent])
       extends AnyVal {
@@ -30,7 +37,6 @@ package object controllers {
 
   object MimeTypes {
     val JSON = "application/json"
-
     val PDF = "application/pdf"
   }
 }

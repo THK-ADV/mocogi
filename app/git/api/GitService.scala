@@ -23,8 +23,8 @@ trait GitService {
       .\("message")
       .validate[String]
       .fold(
-        errs => new Throwable(errs.mkString("\n")),
-        msg => new Throwable(msg)
+        errs => new Exception(errs.mkString("\n")),
+        msg => new Exception(msg)
       )
 
   private def urlEncoded(path: GitFilePath) =

@@ -8,10 +8,12 @@ import monocle.macros.GenLens
 import ops.StringBuilderOps.SBOps
 import parsing.types.ModuleContent
 import play.api.Logging
+import play.api.i18n.{Lang, MessagesApi}
 import printing.pandoc.PandocApi
 import printing.{
   IDLabelDescOps,
   LabelOps,
+  LabelOptOps,
   PrintingLanguage,
   fmtCommaSeparated,
   fmtDouble,
@@ -24,8 +26,10 @@ import javax.inject.{Inject, Singleton}
 /** Style from: https://www.overleaf.com/learn/latex/Page_size_and_margins
   */
 @Singleton
-final class ModuleCatalogLatexPrinter @Inject() (pandocApi: PandocApi)
-    extends Logging {
+final class ModuleCatalogLatexPrinter @Inject() (
+    pandocApi: PandocApi,
+    val messagesApi: MessagesApi
+) extends Logging {
 
   private implicit def identityOrd: Ordering[Identity] =
     Ordering
@@ -45,67 +49,114 @@ final class ModuleCatalogLatexPrinter @Inject() (pandocApi: PandocApi)
         case u: Identity.Unknown => u.id
       })
 
-  def print(
-      studyProgram: StudyProgramView,
+  // TODO: replace PrintingLanguage with Lang
+
+  def preview(
+      diffs: Seq[(ModuleCore, Set[String])],
+      payload: Payload,
+      pLang: PrintingLanguage,
+      lang: Lang
+  ) =
+    print(None, payload, List(diffContent(diffs)), pLang, lang)
+
+  def default(
+      semester: Semester,
+      payload: Payload,
+      pLang: PrintingLanguage,
+      lang: Lang
+  ) =
+    print(
+      Some(semester),
+      payload,
+      List(prologContent, studyPlanContent),
+      pLang,
+      lang
+    )
+
+  private def prologContent: IntroContent =
+    (pLang, lang, builder) => {
+      chapter(pLang.prologHeadline)(builder)
+    }
+
+  private def studyPlanContent: IntroContent =
+    (pLang, lang, builder) => {
+      chapter(pLang.studyPlanHeadline)(builder)
+    }
+
+  private def layoutContent: IntroContent =
+    (pLang, lang, builder) => {
+      builder.append("\\layout*\n")
+    }
+
+  private def diffContent(diffs: Seq[(ModuleCore, Set[String])]): IntroContent =
+    (pLang, lang, builder) => {
+      if (diffs.nonEmpty) {
+        builder.append(s"\\section*{${escape("Module Diffs")}}\n")
+        builder.append(
+          s"Liste aller Moduländerungen in der aktuellen Bearbeitungsphase:\n"
+        )
+        diffs
+          .sortBy(_._1.title)
+          .foreach { case (module, changedKeys) =>
+            builder.append(s"\\subsection*{${escape(module.title)}}\n")
+            builder.append(s"ID: ${module.id}\n")
+            builder.append("\\begin{itemize}\n")
+            changedKeys.toList.sorted.foreach { key =>
+              val normalizedKey = {
+                // TODO: remove if language prefix is dropped
+                if (key.startsWith("deContent") || key.startsWith("enContent"))
+                  "content" + key.dropWhile(_ != '.')
+                else key
+              }
+              val label = messagesApi(normalizedKey + ".label")(lang)
+              builder.append(s"\\item $label\n")
+            }
+            builder.append("\\end{itemize}\n")
+          }
+      }
+    }
+
+  private def print(
       semester: Option[Semester],
-      entries: Seq[ModuleProtocol],
-      moduleTypes: Seq[ModuleType],
-      languages: Seq[ModuleLanguage],
-      seasons: Seq[Season],
-      people: Seq[Identity],
-      assessmentMethods: Seq[AssessmentMethod],
-      studyProgramViews: Seq[StudyProgramView],
-      diffs: Seq[(ModuleCore, Set[String])] = Seq.empty
-  )(implicit lang: PrintingLanguage): StringBuilder = {
+      payload: Payload,
+      introContent: List[IntroContent],
+      pLang: PrintingLanguage,
+      lang: Lang
+  ): StringBuilder = {
+    implicit val impl_lang: PrintingLanguage = pLang
     implicit val builder: StringBuilder = new StringBuilder()
     builder.append("\\documentclass[article, 11pt, oneside]{book}\n")
     packages(semester.isEmpty)
     commands
     builder.append("\\begin{document}\n")
-    builder.append(s"\\selectlanguage{${lang.fold("ngerman", "english")}}\n")
-    title(studyProgram, semester)
+    builder.append(s"\\selectlanguage{${pLang.fold("ngerman", "english")}}\n")
+    title(payload.studyProgram, semester)
     builder.append("\\maketitle\n")
     newPage
-    builder.append("\\layout*\n")
-    newPage
-    renderDiffs(diffs)
     builder.append("\\tableofcontents\n")
+    newPage
     headlineFormats
-    chapter(lang.prologHeadline)
-    newPage
-    chapter(lang.moduleHeadline)
-    newPage
-    modules(
-      studyProgram.po.id,
-      entries.filter(_.metadata.po.mandatory.exists { a =>
-        a.po == studyProgram.po.id && a.specialization
-          .zip(studyProgram.specialization)
-          .fold(true)(a => a._1 == a._2.id)
-      }),
-      moduleTypes,
-      languages,
-      seasons,
-      people,
-      assessmentMethods,
-      studyProgramViews
-    )
-    chapter(lang.studyPlanHeadline)
-    builder.append("\\end{document}")
-  }
-
-  private def renderDiffs(
-      diffs: Seq[(ModuleCore, Set[String])]
-  )(implicit builder: StringBuilder) = {
-    if (diffs.nonEmpty) {
-      builder.append("\\textbf{Module Diffs}\n\n")
-      diffs.foreach { case (module, diffs) =>
-        builder.append(s"${module.title} (${module.id})\n")
-        builder.append("\\begin{itemize}\n")
-        diffs.foreach(d => builder.append(s"\\item $d\n"))
-        builder.append("\\end{itemize}\n")
-      }
+    introContent.foreach { c =>
+      c.printWithNewPage(pLang, lang, builder)
       newPage
     }
+    chapter(pLang.moduleHeadline)
+    newPage
+    modules(
+      payload.studyProgram.po.id,
+      payload.entries.filter(_.metadata.po.mandatory.exists { a =>
+        a.po == payload.studyProgram.po.id && a.specialization
+          .zip(payload.studyProgram.specialization)
+          .fold(true)(a => a._1 == a._2.id)
+      }),
+      payload.moduleTypes,
+      payload.languages,
+      payload.seasons,
+      payload.people,
+      payload.assessmentMethods,
+      payload.studyProgramViews
+    )
+    builder.append("\\end{document}")
   }
 
   private def modules(
@@ -157,7 +208,8 @@ final class ModuleCatalogLatexPrinter @Inject() (pandocApi: PandocApi)
           module.metadata.po.mandatory
             .sortBy(_.po)
             .collect {
-              case p if p.po != po =>
+              case p
+                  if p.po != po && studyProgramViews.exists(_.po.id == p.po) =>
                 val builder = new StringBuilder()
                 val studyProgram = studyProgramViews.find(_.po.id == p.po).get
                 val spLabel = escape(
@@ -189,7 +241,6 @@ final class ModuleCatalogLatexPrinter @Inject() (pandocApi: PandocApi)
         lang.moduleTypeLabel,
         moduleTypes
           .find(_.id == module.metadata.moduleType)
-          .get
           .localizedLabel
       )
       row(lang.ectsLabel, fmtDouble(module.metadata.ects))
@@ -197,13 +248,12 @@ final class ModuleCatalogLatexPrinter @Inject() (pandocApi: PandocApi)
         lang.languageLabel,
         languages
           .find(_.id == module.metadata.language)
-          .get
           .localizedLabel
       )
       row(lang.durationLabel, lang.durationValue(module.metadata.duration))
       row(
         lang.frequencyLabel,
-        seasons.find(_.id == module.metadata.season).get.localizedLabel
+        seasons.find(_.id == module.metadata.season).localizedLabel
       )
       row(
         lang.moduleCoordinatorLabel,
@@ -231,7 +281,6 @@ final class ModuleCatalogLatexPrinter @Inject() (pandocApi: PandocApi)
         ) { a =>
           val method = assessmentMethods
             .find(_.id == a.method)
-            .get
             .localizedLabel
           a.percentage.fold(method)(d => s"$method (${fmtDouble(d)} \\%)")
         }
@@ -271,9 +320,10 @@ final class ModuleCatalogLatexPrinter @Inject() (pandocApi: PandocApi)
     else
       entries
         .sortBy(_.metadata.title)
-        .foreach { e =>
-          go(e)
-          newPage
+        .collect {
+          case m if ModuleStatus.isActive(m.metadata.status) =>
+            go(m)
+            newPage
         }
   }
 

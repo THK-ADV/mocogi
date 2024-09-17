@@ -5,13 +5,18 @@ import database.repo.core._
 import database.repo.{ModuleCatalogRepository, ModuleRepository}
 import database.table.ModuleCatalogEntry
 import database.view.StudyProgramViewRepository
+import git.api.{
+  GitAvailabilityChecker,
+  GitBranchApiService,
+  GitMergeRequestApiService
+}
 import git.{Branch, GitFilePath, MergeRequestId, MergeRequestStatus}
-import git.api.{GitAvailabilityChecker, GitBranchApiService, GitMergeRequestApiService}
 import models._
 import ops.FileOps.FileOps0
 import play.api.Logging
+import play.api.i18n.Lang
 import printing.PrintingLanguage
-import printing.latex.ModuleCatalogLatexPrinter
+import printing.latex.{ModuleCatalogLatexPrinter, Payload}
 import service.LatexCompiler
 
 import java.nio.file.{Files, Path, Paths, StandardCopyOption}
@@ -163,17 +168,21 @@ final class ModuleCatalogService @Inject() (
     } yield {
       def print(sp: StudyProgramView, pLang: PrintingLanguage) = {
         logger.info(s"printing ${sp.fullPoId}...")
-        printer.print(
-          sp,
-          Some(semester),
-          ms,
-          mts,
-          lang,
-          seasons,
-          people,
-          ams,
-          sps
-        )(pLang)
+        printer.default(
+          semester,
+          Payload(
+            sp,
+            ms,
+            mts,
+            lang,
+            seasons,
+            people,
+            ams,
+            sps
+          ),
+          pLang,
+          Lang.defaultLang // TODO replace with real lang
+        )
       }
 
       def compileAndRecover(
