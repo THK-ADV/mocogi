@@ -22,12 +22,12 @@ final class MeController @Inject() (
   def me() =
     auth andThen personAction async { r =>
       studyProgramPersonRepository
-        .getDirectors(r.person.id)
+        .getStudyProgramPrivileges(r.person.id)
         .map(xs =>
           Ok(
             Json.obj(
               "me" -> Json.toJson(r.person),
-              "director" -> Json.toJson(xs)
+              "privileges" -> Json.toJson(xs)
             )
           )
         )

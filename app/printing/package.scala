@@ -213,6 +213,12 @@ package object printing {
       }
   }
 
+  final implicit class LabelOptOps(private val self: Option[Label])
+      extends AnyVal {
+    def localizedLabel(implicit lang: PrintingLanguage): String =
+      self.fold("???")(_.localizedLabel)
+  }
+
   final implicit class LabelOps(private val self: Label) extends AnyVal {
     def localizedLabel(implicit lang: PrintingLanguage): String =
       lang.fold(self.deLabel, self.enLabel)

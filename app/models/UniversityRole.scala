@@ -27,4 +27,6 @@ object UniversityRole {
 
   implicit def writes: Writes[UniversityRole] =
     Writes.of[IDLabel].contramap(identity)
+
+  def all() = List(SGL, PAV)
 }

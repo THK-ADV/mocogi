@@ -3,7 +3,7 @@ package database.repo.core
 import com.google.inject.Inject
 import database.table.core.StudyProgramPersonTable
 import database.view.StudyProgramViewRepository
-import models.{StudyProgramDirector, UniversityRole}
+import models.{StudyProgramPrivileges, UniversityRole}
 import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfigProvider}
 import slick.jdbc.JdbcProfile
 
@@ -30,31 +30,36 @@ final class StudyProgramPersonRepository @Inject() (
       g <- sp.degreeFk
     } yield (q, sp, g)
 
-  def hasRole(
+  def hasRoles(
       person: String,
       studyProgram: String,
-      role: UniversityRole
+      roles: List[UniversityRole]
   ): Future[Boolean] =
     db.run(
       studyProgramPersonTable
         .filter(a =>
-          a.person === person && a.studyProgram === studyProgram && a.role === role
+          a.person === person &&
+            a.studyProgram === studyProgram
+            && a.role.inSet(roles)
         )
         .exists
         .result
     )
 
-  def getDirectors(person: String): Future[Iterable[StudyProgramDirector]] =
+  def getStudyProgramPrivileges(
+      person: String
+  ): Future[Iterable[StudyProgramPrivileges]] =
     db.run(
       studyProgramPersonTable
         .filter(_.person === person)
         .join(studyProgramViewTable)
         .on(_.studyProgram === _.studyProgramId)
         .result
-        .map(_.groupBy(_._1.person).map { case (_, xs) =>
-          val person = xs.head._1
-          val studyPrograms = xs.map(_._2)
-          StudyProgramDirector(person.person, person.role, studyPrograms)
+        .map(_.groupBy(_._2.fullPoId.id).map { case (_, xs) =>
+          assert(xs.size <= UniversityRole.all().size)
+          val studyProgram = xs.head._2
+          val roles = xs.map(_._1.role)
+          StudyProgramPrivileges(studyProgram, roles.toSet)
         })
     )
 }

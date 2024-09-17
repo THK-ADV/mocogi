@@ -299,15 +299,15 @@ object ModuleProtocolDiff extends Logging {
       lensNewProtocol: A,
       id: String
   ): Unit =
-    logger.info(
+    logger.debug(
       s"""updating module
-         |=====================================
-         |module: $id
-         |property: $field
-         |from:
-         |$lensExisting
-         |to:
-         |$lensNewProtocol
-         |=====================================""".stripMargin
+        |=====================================
+        |module: $id
+        |property: $field
+        |from:
+        |$lensExisting
+        |to:
+        |$lensNewProtocol
+        |=====================================""".stripMargin
     )
 }
