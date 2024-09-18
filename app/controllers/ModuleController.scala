@@ -89,7 +89,10 @@ final class ModuleController @Inject() (
     auth.async { _ =>
       draftService
         .getByModuleOpt(id)
-        .map(_.map(_.data))
+        /* instead of accessing .data we first parse it to ModuleJSON to consider nullable values,
+        then parse it to ModuleProtocol and serialize to JSON
+         */
+        .map(_.map(d => Json.toJson(d.protocol())))
         .or(getFromPreview(id).map(_.map(module => Json.toJson(module))))
         .map {
           case Some(js) => Ok(js)
