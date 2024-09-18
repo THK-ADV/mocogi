@@ -22,5 +22,5 @@ final class ModuleGlobalCriteriaTable(tag: Tag)
   override def * = (
     module,
     globalCriteria
-  ) <> (ModuleGlobalCriteriaDbEntry.tupled, ModuleGlobalCriteriaDbEntry.unapply)
+  ) <> (ModuleGlobalCriteriaDbEntry.apply, ModuleGlobalCriteriaDbEntry.unapply)
 }

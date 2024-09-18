@@ -1,4 +1,4 @@
-package service
+package service.modulediff
 
 import models.ModuleProtocol
 import monocle.Lens
@@ -7,65 +7,53 @@ import play.api.Logging
 
 object ModuleProtocolDiff extends Logging {
 
-  import scala.reflect.runtime.universe._
-
-  private def allFields[T: TypeTag]: List[String] = {
-    def rec(tpe: Type): List[List[Name]] = {
-      val collected = tpe.members.collect {
-        case m: MethodSymbol if m.isCaseAccessor => m
-      }.toList
-      if (collected.isEmpty) List(Nil)
-      else
-        collected.flatMap { m =>
-          val opt = m.returnType.typeArgs.flatMap(rec)
-          (if (opt.isEmpty) rec(m.returnType) else opt).map(m.name :: _)
-        }
-    }
-    rec(typeOf[T]).map(_.mkString("."))
-  }
-
-  val ignoredFields: Set[String] =
-    Set("metadata.workload.total", "metadata.workload.selfStudy", "id")
-
-  val fields: Set[String] =
-    allFields[ModuleProtocol].foldLeft(Set.empty[String]) { case (acc, prop) =>
-      val simplified = prop match {
-        case "metadata.po.optional.recommendedSemester" |
-            "metadata.po.optional.partOfCatalog" |
-            "metadata.po.optional.instanceOf" |
-            "metadata.po.optional.specialization" | "metadata.po.optional.po" =>
-          "metadata.po.optional"
-        case "metadata.po.mandatory.recommendedSemester" |
-            "metadata.po.mandatory.specialization" |
-            "metadata.po.mandatory.po" =>
-          "metadata.po.mandatory"
-        case "metadata.prerequisites.required.pos" |
-            "metadata.prerequisites.required.modules" |
-            "metadata.prerequisites.required.text" =>
-          "metadata.prerequisites.required"
-        case "metadata.prerequisites.recommended.pos" |
-            "metadata.prerequisites.recommended.modules" |
-            "metadata.prerequisites.recommended.text" =>
-          "metadata.prerequisites.recommended"
-        case "metadata.assessmentMethods.optional.precondition" |
-            "metadata.assessmentMethods.optional.percentage" |
-            "metadata.assessmentMethods.optional.method" =>
-          "metadata.assessmentMethods.optional"
-        case "metadata.assessmentMethods.mandatory.precondition" |
-            "metadata.assessmentMethods.mandatory.percentage" |
-            "metadata.assessmentMethods.mandatory.method" =>
-          "metadata.assessmentMethods.mandatory"
-        case "metadata.participants.max" | "metadata.participants.min" =>
-          "metadata.participants"
-        case other => other
-      }
-      acc + simplified
-    }
+  val fields = List(
+    "deContent.learningOutcome",
+    "deContent.content",
+    "deContent.teachingAndLearningMethods",
+    "deContent.recommendedReading",
+    "deContent.particularities",
+    "enContent.learningOutcome",
+    "enContent.content",
+    "enContent.teachingAndLearningMethods",
+    "enContent.recommendedReading",
+    "enContent.particularities",
+    "metadata.title",
+    "metadata.abbrev",
+    "metadata.moduleType",
+    "metadata.ects",
+    "metadata.language",
+    "metadata.duration",
+    "metadata.season",
+    "metadata.workload.lecture",
+    "metadata.workload.seminar",
+    "metadata.workload.practical",
+    "metadata.workload.exercise",
+    "metadata.workload.projectSupervision",
+    "metadata.workload.projectWork",
+    "metadata.status",
+    "metadata.location",
+    "metadata.participants",
+    "metadata.moduleRelation",
+    "metadata.moduleManagement",
+    "metadata.lecturers",
+    "metadata.assessmentMethods.mandatory",
+    "metadata.assessmentMethods.optional",
+    "metadata.examiner.first",
+    "metadata.examiner.second",
+    "metadata.examPhases",
+    "metadata.prerequisites.recommended",
+    "metadata.prerequisites.required",
+    "metadata.po.mandatory",
+    "metadata.po.optional",
+    "metadata.competences",
+    "metadata.globalCriteria",
+    "metadata.taughtWith"
+  )
 
   def nonEmptyKeys(p: ModuleProtocol): Set[String] =
     fields.foldLeft(Set.empty[String]) { case (acc, field) =>
       def takeIf(p: Boolean): Set[String] = if (p) acc + field else acc
-
       field match {
         case "enContent.particularities" =>
           takeIf(p.enContent.particularities.nonEmpty)
@@ -165,6 +153,7 @@ object ModuleProtocolDiff extends Logging {
       (existing, existingUpdatedKeys)
     ) { case ((existing, existingUpdatedKeys), field) =>
       def go[A](lens: Lens[ModuleProtocol, A]) = {
+        // Get the object which should be updated
         val lensExisting = lens.get(existing)
         val lensNewProtocol = lens.get(newP)
         if (lensExisting != lensNewProtocol) {
@@ -285,8 +274,6 @@ object ModuleProtocolDiff extends Logging {
           go(GenLens[ModuleProtocol].apply(_.metadata.examiner.second))
         case "metadata.examPhases" =>
           go(GenLens[ModuleProtocol].apply(_.metadata.examPhases))
-        case ignoredField if ignoredFields.contains(ignoredField) =>
-          (existing, existingUpdatedKeys)
         case other =>
           logger.info(s"unsupported key: $other")
           (existing, existingUpdatedKeys)
@@ -310,4 +297,5 @@ object ModuleProtocolDiff extends Logging {
         |$lensNewProtocol
         |=====================================""".stripMargin
     )
+
 }

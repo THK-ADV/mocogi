@@ -50,6 +50,6 @@ final class StudyProgramDirectorsRepository @Inject() (
       s.id,
       a.role
     )
-    db.run(query.result.map(_.map(StudyProgramDirector.tupled)))
+    db.run(query.result.map(_.map(StudyProgramDirector.apply)))
   }
 }

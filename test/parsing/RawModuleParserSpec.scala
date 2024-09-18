@@ -1,8 +1,9 @@
 package parsing
 
 import cats.data.NonEmptyList
-import models._
-import models.core.{ExamPhase, Identity}
+import models.*
+import models.core.ExamPhases.ExamPhase
+import models.core.Identity
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatest.{EitherValues, OptionValues}
 import parsing.types.ModuleParticipants

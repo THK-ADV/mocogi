@@ -12,5 +12,5 @@ final class AssessmentMethodTable(tag: Tag)
     id,
     deLabel,
     enLabel
-  ) <> ((AssessmentMethod.apply _).tupled, AssessmentMethod.unapply)
+  ) <> ((AssessmentMethod.apply _).apply, AssessmentMethod.unapply)
 }

@@ -27,5 +27,5 @@ final class ModuleRelationTable(tag: Tag)
     module,
     relationType,
     relationModule
-  ) <> (ModuleRelationDbEntry.tupled, ModuleRelationDbEntry.unapply)
+  ) <> (ModuleRelationDbEntry.apply, ModuleRelationDbEntry.unapply)
 }

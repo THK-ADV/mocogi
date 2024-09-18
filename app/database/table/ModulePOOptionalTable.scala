@@ -41,5 +41,5 @@ final class ModulePOOptionalTable(tag: Tag)
     instanceOf,
     partOfCatalog,
     recommendedSemester
-  ) <> (ModulePOOptionalDbEntry.tupled, ModulePOOptionalDbEntry.unapply)
+  ) <> (ModulePOOptionalDbEntry.apply, ModulePOOptionalDbEntry.unapply)
 }

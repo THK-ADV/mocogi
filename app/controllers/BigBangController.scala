@@ -3,7 +3,12 @@ package controllers
 import auth.AuthorizationAction
 import catalog.{ModuleCatalogService, PreviewMergeActor, Semester}
 import controllers.actions.{AdminCheck, PermissionCheck}
-import play.api.mvc.{AbstractController, ControllerComponents}
+import play.api.mvc.{
+  AbstractController,
+  AnyContent,
+  ControllerComponents,
+  Request
+}
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
@@ -22,7 +27,7 @@ final class BigBangController @Inject() (
   private def semester = "wise_2024"
 
   def go() =
-    auth andThen isAdmin apply { _ =>
+    auth andThen isAdmin apply { (_: Request[AnyContent]) =>
       actor.createMergeRequest(Semester(semester))
       NoContent
     }

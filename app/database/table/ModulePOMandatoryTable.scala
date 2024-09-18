@@ -31,5 +31,5 @@ final class ModulePOMandatoryTable(tag: Tag)
     po,
     specialization,
     recommendedSemester
-  ) <> (ModulePOMandatoryDbEntry.tupled, ModulePOMandatoryDbEntry.unapply)
+  ) <> (ModulePOMandatoryDbEntry.apply, ModulePOMandatoryDbEntry.unapply)
 }

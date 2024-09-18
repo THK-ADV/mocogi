@@ -1,6 +1,6 @@
 package service
 
-import database.repo.core._
+import database.repo.core.*
 import database.view.StudyProgramViewRepository
 import git.GitConfig
 import git.api.{GitDiffApiService, GitFileDownloadService}
@@ -13,6 +13,7 @@ import play.api.libs.Files.TemporaryFile
 import printing.PrintingLanguage
 import printing.latex.{ModuleCatalogLatexPrinter, Payload}
 import service.LatexCompiler.{compile, getPdf}
+import service.modulediff.ModuleProtocolDiff
 
 import java.nio.file.{Files, Path}
 import java.util.UUID

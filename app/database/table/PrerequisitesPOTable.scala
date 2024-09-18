@@ -22,5 +22,5 @@ final class PrerequisitesPOTable(tag: Tag)
   override def * = (
     prerequisites,
     po
-  ) <> (PrerequisitesPODbEntry.tupled, PrerequisitesPODbEntry.unapply)
+  ) <> (PrerequisitesPODbEntry.apply, PrerequisitesPODbEntry.unapply)
 }

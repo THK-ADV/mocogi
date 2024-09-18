@@ -33,5 +33,5 @@ final class ModuleResponsibilityTable(tag: Tag)
     module,
     identity,
     responsibilityType
-  ) <> (ModuleResponsibilityDbEntry.tupled, ModuleResponsibilityDbEntry.unapply)
+  ) <> (ModuleResponsibilityDbEntry.apply, ModuleResponsibilityDbEntry.unapply)
 }

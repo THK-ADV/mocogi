@@ -3,6 +3,7 @@ package git.api
 import git.{Branch, GitConfig}
 import play.api.libs.ws.{EmptyBody, WSClient}
 import play.mvc.Http.Status
+import play.api.libs.ws.writeableOf_WsBody
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}

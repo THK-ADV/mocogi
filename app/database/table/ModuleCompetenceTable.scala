@@ -19,5 +19,5 @@ final class ModuleCompetenceTable(tag: Tag)
   override def * = (
     module,
     competence
-  ) <> (ModuleCompetenceDbEntry.tupled, ModuleCompetenceDbEntry.unapply)
+  ) <> (ModuleCompetenceDbEntry.apply, ModuleCompetenceDbEntry.unapply)
 }

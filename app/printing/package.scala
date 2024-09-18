@@ -1,5 +1,5 @@
 import models.ModuleWorkload
-import models.core._
+import models.core.*
 
 import java.time.format.DateTimeFormatter
 import scala.annotation.unused

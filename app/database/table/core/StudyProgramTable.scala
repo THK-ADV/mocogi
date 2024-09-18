@@ -25,5 +25,5 @@ final class StudyProgramTable(tag: Tag)
       deLabel,
       enLabel,
       degree
-    ) <> (StudyProgramDbEntry.tupled, StudyProgramDbEntry.unapply)
+    ) <> (StudyProgramDbEntry.apply, StudyProgramDbEntry.unapply)
 }

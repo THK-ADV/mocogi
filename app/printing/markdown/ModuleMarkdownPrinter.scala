@@ -1,13 +1,14 @@
 package printing.markdown
 
 import cats.data.NonEmptyList
-import models._
+import models.*
 import models.core.Identity
-import parsing.types._
+import parsing.types.*
 import printer.Printer
 import printer.Printer.{newline, prefix}
 import printing.{
   LabelOps,
+  LanguageOps,
   PrintingLanguage,
   fmtCommaSeparated,
   fmtDouble,

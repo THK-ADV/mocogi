@@ -1,12 +1,13 @@
 package validator
 
 import cats.data.NonEmptyList
-import models._
-import models.core._
+import models.*
+import models.core.*
+import models.core.ExamPhases.ExamPhase
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatest.{EitherValues, OptionValues}
-import parsing.types._
-import validator.MetadataValidator._
+import parsing.types.*
+import validator.MetadataValidator.*
 
 import java.time.LocalDate
 import java.util.UUID

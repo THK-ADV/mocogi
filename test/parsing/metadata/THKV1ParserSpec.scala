@@ -1,12 +1,13 @@
 package parsing.metadata
 
 import cats.data.NonEmptyList
-import helper._
-import models.core._
+import helper.*
+import models.core.*
+import models.core.ExamPhases.ExamPhase
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatest.{EitherValues, OptionValues}
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
-import parsing.types._
+import parsing.types.*
 import parsing.{ParserSpecHelper, withFile0}
 
 import java.util.UUID

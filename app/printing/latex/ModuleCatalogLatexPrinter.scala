@@ -1,8 +1,8 @@
 package printing.latex
 
 import catalog.Semester
-import models._
-import models.core._
+import models.*
+import models.core.*
 import monocle.Lens
 import monocle.macros.GenLens
 import ops.StringBuilderOps.SBOps
@@ -14,6 +14,7 @@ import printing.{
   IDLabelDescOps,
   LabelOps,
   LabelOptOps,
+  LanguageOps,
   PrintingLanguage,
   fmtCommaSeparated,
   fmtDouble,

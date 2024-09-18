@@ -1,6 +1,6 @@
 package database.table
 
-import slick.jdbc.PostgresProfile.api._
+import slick.jdbc.PostgresProfile.api.*
 
 import java.util.UUID
 
@@ -23,5 +23,8 @@ final class ModuleAssessmentMethodPreconditionTable(tag: Tag)
   override def * = (
     assessmentMethod,
     moduleAssessmentMethod
-  ) <> (ModuleAssessmentMethodPreconditionDbEntry.tupled, ModuleAssessmentMethodPreconditionDbEntry.unapply)
+  ) <> (
+    ModuleAssessmentMethodPreconditionDbEntry.apply,
+    ModuleAssessmentMethodPreconditionDbEntry.unapply
+  )
 }

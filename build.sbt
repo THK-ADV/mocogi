@@ -2,6 +2,7 @@ val playSlickVersion = "6.1.1"
 val guiceVersion = "5.1.0"
 val scalaTestVersion = "3.2.19"
 val keycloakVersion = "24.0.3"
+val monocle = "3.3.0"
 
 lazy val `mocogi` = (project in file("."))
   .enablePlugins(PlayScala)
@@ -9,7 +10,7 @@ lazy val `mocogi` = (project in file("."))
     name := "mocogi",
     maintainer := "Alexander Dobrynin <alexander.dobrynin@th-koeln.de>",
     version := "1.0",
-    scalaVersion := "2.13.14",
+    scalaVersion := "3.3.3",
     // semanticdbEnabled := true,
     // semanticdbVersion := scalafixSemanticdb.revision,
     scalacOptions += "-Wunused:imports",
@@ -52,7 +53,7 @@ lazy val test = Seq(
   "org.scalatestplus.play" %% "scalatestplus-play" % "7.0.1" % "test"
 )
 
-lazy val parser = "de.th-koeln.inf.adv" %% "nebulak" % "0.12"
+lazy val parser = "de.th-koeln.inf.adv" %% "nebulak" % "0.13"
 
 lazy val database = Seq(
   "org.playframework" %% "play-slick" % playSlickVersion,
@@ -62,7 +63,7 @@ lazy val database = Seq(
 
 lazy val kafka = "org.apache.kafka" % "kafka-clients" % "3.8.0"
 
-lazy val circle = "io.circe" %% "circe-yaml" % "1.15.0"
+lazy val circle = "io.circe" %% "circe-yaml" % "0.16.0"
 
 lazy val parallelCollections =
   "org.scala-lang.modules" %% "scala-parallel-collections" % "1.0.4"
@@ -80,6 +81,6 @@ val keycloak = Seq(
 )
 
 val optics = Seq(
-  "dev.optics" %% "monocle-core" % "3.2.0",
-  "dev.optics" %% "monocle-macro" % "3.2.0"
+  "dev.optics" %% "monocle-core" % monocle,
+  "dev.optics" %% "monocle-macro" % monocle
 )

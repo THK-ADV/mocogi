@@ -9,7 +9,7 @@ import scala.concurrent.Future
 
 trait Filterable[Input, T <: Table[Input]] {
   self: HasDatabaseConfigProvider[JdbcProfile] =>
-  import profile.api._
+  import profile.api.*
 
   type Filter = Map[String, Seq[String]]
   type Pred = T => Rep[Boolean]

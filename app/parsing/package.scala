@@ -157,7 +157,7 @@ package object parsing {
       multilineStringForKey(key),
       singleLineStringForKey(key)
     )
-
+  
   implicit def decoderList[A](implicit decoder: Decoder[A]): Decoder[List[A]] =
     (c: HCursor) => {
       val builder = ListBuffer.empty[A]

@@ -12,7 +12,7 @@ class HomeController @Inject() (
     router: Provider[Router]
 ) extends AbstractController(cc) {
 
-  def index = Action { _ =>
+  def index = Action { (_: Request[AnyContent]) =>
     Ok(
       Json.obj(
         "msg" -> "it works",

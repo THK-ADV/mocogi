@@ -34,5 +34,5 @@ final class ModuleECTSFocusAreaContributionTable(tag: Tag)
     ectsValue,
     deDesc,
     enDesc
-  ) <> (ModuleECTSFocusAreaContributionDbEntry.tupled, ModuleECTSFocusAreaContributionDbEntry.unapply)
+  ) <> (ModuleECTSFocusAreaContributionDbEntry.apply, ModuleECTSFocusAreaContributionDbEntry.unapply)
 }

@@ -9,7 +9,7 @@ import parsing.metadata.VersionScheme
 import parsing.types._
 import play.api.Logging
 import play.api.libs.json._
-import service.ModuleProtocolDiff.{diff, nonEmptyKeys}
+import service.modulediff.ModuleProtocolDiff.{diff, nonEmptyKeys}
 
 import java.time.LocalDateTime
 import java.util.UUID

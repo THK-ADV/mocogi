@@ -1,8 +1,8 @@
 package database.view
 
 import database.table.stringToInts
+import models.*
 import models.core.{Degree, IDLabel}
-import models._
 import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfigProvider}
 import slick.jdbc.JdbcProfile
 
@@ -17,7 +17,7 @@ final class ModuleViewRepository @Inject() (
     implicit val ctx: ExecutionContext
 ) extends HasDatabaseConfigProvider[JdbcProfile]
     with MaterializedView {
-  import profile.api._
+  import profile.api.*
 
   private type DbEntry = ModuleView[
     ModuleManagement,
@@ -25,8 +25,8 @@ final class ModuleViewRepository @Inject() (
   ]
 
   type Entry = ModuleView[
-    Iterable[ModuleManagement],
-    Iterable[StudyProgramModuleAssociation[Iterable[Int]]]
+    Set[ModuleManagement],
+    Set[StudyProgramModuleAssociation[Iterable[Int]]]
   ]
 
   override def name: String = "module_view"
@@ -36,9 +36,9 @@ final class ModuleViewRepository @Inject() (
   def all(): Future[Iterable[Entry]] =
     db.run(
       tableQuery.result.map(_.groupBy(_.id).map { case (_, deps) =>
-        val moduleManagement = mutable.HashSet[ModuleManagement]()
+        val moduleManagement = mutable.Set[ModuleManagement]()
         val studyPrograms =
-          mutable.HashSet[StudyProgramModuleAssociation[Iterable[Int]]]()
+          mutable.Set[StudyProgramModuleAssociation[Iterable[Int]]]()
         deps.foreach { dep =>
           moduleManagement.add(dep.moduleManagement)
           studyPrograms.add(
@@ -48,8 +48,8 @@ final class ModuleViewRepository @Inject() (
           )
         }
         deps.head.copy(
-          moduleManagement = moduleManagement,
-          studyProgram = studyPrograms
+          moduleManagement = moduleManagement.toSet,
+          studyProgram = studyPrograms.toSet
         )
       })
     )

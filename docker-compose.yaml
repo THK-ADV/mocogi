@@ -34,6 +34,8 @@ services:
     volumes:
       - backend_logs_vol:/mocogi/logs
       - app_vol:/mocogi/output
+    depends_on:
+      - psql
     build:
       context: .
       dockerfile: Dockerfile

@@ -2,10 +2,11 @@ package parsing.metadata.mocks
 
 import cats.data.NonEmptyList
 import models.Examiner
-import models.core._
+import models.core.*
+import models.core.ExamPhases.ExamPhase
 import parser.Parser.always
 import parsing.metadata.{MetadataParser, VersionScheme}
-import parsing.types._
+import parsing.types.*
 
 import java.util.UUID
 

@@ -3,10 +3,10 @@ package parsing.metadata
 import cats.data.NonEmptyList
 import models.core.FocusAreaID
 import parser.Parser
-import parser.Parser._
+import parser.Parser.*
 import parser.ParserOps.{P0, P2}
 import parsing.types.ModuleECTSFocusAreaContribution
-import parsing.{doubleForKey, removeIndentation, stringForKey}
+import parsing.{ParserListOps, doubleForKey, removeIndentation, stringForKey}
 
 object ModuleECTSParser {
 

@@ -1,6 +1,6 @@
 # This Dockerfile provides all cli tools and dependencies for the mocogi backend.
 # It will be used as a base image in the production environment
-FROM openjdk:17.0.2-slim
+FROM eclipse-temurin:21.0.2_13-jre-jammy
 ARG PANDOC_PLATFORM_SUFFIX
 RUN apt-get update && apt-get install -y \
   latexmk \
