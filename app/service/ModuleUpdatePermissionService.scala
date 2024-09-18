@@ -67,6 +67,6 @@ final class ModuleUpdatePermissionService @Inject() (
   ] =
     repo.allForCampusId(campusId)
 
-  def delete(module: UUID) =
-    repo.delete(module)
+  def deleteGranted(module: UUID) =
+    repo.deleteGranted(module)
 }
