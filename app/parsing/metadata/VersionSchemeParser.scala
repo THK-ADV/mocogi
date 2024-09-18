@@ -9,5 +9,5 @@ object VersionSchemeParser {
     prefix("v")
       .take(double)
       .zip(prefix(_ != '\n'))
-      .map(VersionScheme.tupled)
+      .map(VersionScheme.apply)
 }

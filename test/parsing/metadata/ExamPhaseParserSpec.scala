@@ -1,7 +1,7 @@
 package parsing.metadata
 
 import cats.data.NonEmptyList
-import models.core.ExamPhase
+import models.core.ExamPhases.ExamPhase
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatest.{EitherValues, OptionValues}
 
@@ -12,7 +12,7 @@ class ExamPhaseParserSpec
 
   import ExamPhaseParser._
 
-  implicit val all: List[ExamPhase] = List(ExamPhase("none"))
+  implicit val all: List[ExamPhase] = List(ExamPhase.none)
 
   "A Exam Phase Parser" should {
     "parse a single examination phase" in {

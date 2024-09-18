@@ -30,5 +30,5 @@ final class ModulePrerequisitesTable(tag: Tag)
     module,
     prerequisiteType,
     text
-  ) <> (ModulePrerequisitesDbEntry.tupled, ModulePrerequisitesDbEntry.unapply)
+  ) <> (ModulePrerequisitesDbEntry.apply, ModulePrerequisitesDbEntry.unapply)
 }

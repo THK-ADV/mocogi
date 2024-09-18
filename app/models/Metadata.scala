@@ -1,8 +1,9 @@
 package models
 
 import cats.data.NonEmptyList
-import models.core._
-import parsing.types._
+import models.core.*
+import models.core.ExamPhases.ExamPhase
+import parsing.types.*
 import play.api.libs.json.{Json, Writes}
 
 import java.util.UUID

@@ -19,5 +19,5 @@ final class ModuleTaughtWithTable(tag: Tag)
   override def * = (
     module,
     moduleTaught
-  ) <> (ModuleTaughtWithDbEntry.tupled, ModuleTaughtWithDbEntry.unapply)
+  ) <> (ModuleTaughtWithDbEntry.apply, ModuleTaughtWithDbEntry.unapply)
 }

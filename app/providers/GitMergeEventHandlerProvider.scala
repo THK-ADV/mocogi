@@ -1,14 +1,10 @@
 package providers
 
-import akka.actor.ActorSystem
 import catalog.ModuleCatalogService
-import database.repo.{
-  ModuleCatalogGenerationRequestRepository,
-  ModuleDraftRepository,
-  ModuleReviewRepository
-}
+import database.repo.{ModuleCatalogGenerationRequestRepository, ModuleDraftRepository, ModuleReviewRepository}
 import git.GitConfig
 import git.api.{GitBranchService, GitMergeRequestApiService}
+import org.apache.pekko.actor.ActorSystem
 import webhook.GitMergeEventHandler
 
 import javax.inject.{Inject, Provider, Singleton}

@@ -21,5 +21,5 @@ final class ModuleCatalogGenerationRequestTable(tag: Tag)
     mergeRequestId,
     semesterId,
     mergeRequestStatus
-  ) <> (ModuleCatalogGenerationRequest.tupled, ModuleCatalogGenerationRequest.unapply)
+  ) <> (ModuleCatalogGenerationRequest.apply, ModuleCatalogGenerationRequest.unapply)
 }

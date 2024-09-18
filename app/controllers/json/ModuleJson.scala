@@ -2,8 +2,8 @@ package controllers.json
 
 import cats.data.NonEmptyList
 import controllers.{JsonNullWritable, NelWrites}
-import models._
-import models.core.ExamPhase
+import models.*
+import models.core.ExamPhases.ExamPhase
 import parsing.types.{ModuleContent, ModuleParticipants}
 import play.api.libs.json.{Json, Reads}
 

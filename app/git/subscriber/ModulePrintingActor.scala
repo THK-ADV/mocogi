@@ -1,9 +1,9 @@
 package git.subscriber
 
-import akka.actor.{Actor, Props}
 import database.view.StudyProgramViewRepository
 import git.subscriber.ModuleSubscribers.Handle
 import models.StudyProgramView
+import org.apache.pekko.actor.{Actor, Props}
 import parsing.types.Module
 import play.api.Logging
 import printing.PrintingLanguage

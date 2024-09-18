@@ -19,5 +19,5 @@ final class PrerequisitesModuleTable(tag: Tag)
   override def * = (
     prerequisites,
     module
-  ) <> (PrerequisitesModuleDbEntry.tupled, PrerequisitesModuleDbEntry.unapply)
+  ) <> (PrerequisitesModuleDbEntry.apply, PrerequisitesModuleDbEntry.unapply)
 }

@@ -1,7 +1,7 @@
 package parsing.metadata
 
 import cats.data.NonEmptyList
-import models.core.ExamPhase
+import models.core.ExamPhases.ExamPhase
 import parser.Parser
 import parsing.{ParserListOps, multipleValueParser, multipleValueRawParser}
 

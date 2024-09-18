@@ -1,6 +1,5 @@
 package git.publisher
 
-import akka.actor.{Actor, ActorRef, Props}
 import database.view.{ModuleViewRepository, StudyProgramViewRepository}
 import git.publisher.CoreDataPublisher.Handle
 import git.subscriber.CoreDataPublishActor
@@ -9,6 +8,7 @@ import models.core._
 import monocle.Lens
 import monocle.macros.GenLens
 import ops.EitherOps.EThrowableOps
+import org.apache.pekko.actor.{Actor, ActorRef, Props}
 import play.api.Logging
 import service.core._
 

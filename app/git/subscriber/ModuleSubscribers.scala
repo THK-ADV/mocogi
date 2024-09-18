@@ -1,8 +1,8 @@
 package git.subscriber
 
-import akka.actor.ActorRef
 import git.GitFile
 import git.subscriber.ModuleSubscribers.Handle
+import org.apache.pekko.actor.ActorRef
 import parsing.types.Module
 
 import java.time.LocalDateTime

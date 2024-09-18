@@ -14,13 +14,13 @@ object IdentityFileParser {
       .skip(prefix(":"))
       .skip(zeroOrMoreSpaces)
       .zip(singleLineStringForKey("label"))
-      .map(Identity.Unknown.tupled)
+      .map(Identity.Unknown.apply)
 
   def groupParser: Parser[Identity] =
     prefixTo(":")
       .skip(zeroOrMoreSpaces)
       .zip(singleLineStringForKey("label"))
-      .map(Identity.Group.tupled)
+      .map(Identity.Group.apply)
 
   def statusParser: Parser[PersonStatus] =
     singleLineStringForKey("status")
@@ -52,7 +52,7 @@ object IdentityFileParser {
       .take(singleLineStringForKey("campusid"))
       .skip(zeroOrMoreSpaces)
       .take(statusParser)
-      .map(Identity.Person.tupled)
+      .map(Identity.Person.apply)
 
   def parser(implicit faculties: Seq[Faculty]): Parser[List[Identity]] =
     oneOf(

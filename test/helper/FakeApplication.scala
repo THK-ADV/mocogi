@@ -1,7 +1,7 @@
 package helper
 
-import akka.stream.Materializer
 import database.table.ModuleDraftTable
+import org.apache.pekko.stream.Materializer
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.Configuration
 import play.api.db.slick.DatabaseConfigProvider

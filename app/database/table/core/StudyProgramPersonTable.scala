@@ -33,5 +33,5 @@ final class StudyProgramPersonTable(tag: Tag)
       person,
       studyProgram,
       role
-    ) <> (StudyProgramPersonDbEntry.tupled, StudyProgramPersonDbEntry.unapply)
+    ) <> (StudyProgramPersonDbEntry.apply, StudyProgramPersonDbEntry.unapply)
 }

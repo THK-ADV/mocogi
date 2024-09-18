@@ -6,7 +6,7 @@ import models.ModuleReviewStatus.{Approved, Pending, Rejected}
 import models.ModuleReviewSummaryStatus.{WaitingForChanges, WaitingForReview}
 import models.core.{IDLabel, Identity}
 import models.{ModuleReviewStatus, ModuleReviewSummaryStatus, ReviewerApproval}
-import monocle.Monocle.toAppliedFocusOps
+import monocle.syntax.all._
 
 import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}

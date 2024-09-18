@@ -2,16 +2,8 @@ package parsing.types
 
 import cats.data.NonEmptyList
 import models.Examiner
-import models.core.{
-  ExamPhase,
-  ModuleCompetence,
-  ModuleGlobalCriteria,
-  ModuleLanguage,
-  ModuleLocation,
-  ModuleStatus,
-  ModuleType,
-  Season
-}
+import models.core.ExamPhases.ExamPhase
+import models.core.{ModuleCompetence, ModuleGlobalCriteria, ModuleLanguage, ModuleLocation, ModuleStatus, ModuleType, Season}
 
 import java.util.UUID
 

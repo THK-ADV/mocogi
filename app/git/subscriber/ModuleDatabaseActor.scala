@@ -1,8 +1,8 @@
 package git.subscriber
 
-import akka.actor.{Actor, Props}
 import database.view.ModuleViewRepository
 import git.subscriber.ModuleSubscribers.Handle
+import org.apache.pekko.actor.{Actor, Props}
 import parsing.types.Module
 import play.api.Logging
 import service.{ModuleService, ModuleUpdatePermissionService}

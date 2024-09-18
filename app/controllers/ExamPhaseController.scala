@@ -1,9 +1,14 @@
 package controllers
 
-import models.core.ExamPhase
+import models.core.ExamPhases.ExamPhase
 import play.api.i18n.I18nSupport
 import play.api.libs.json.Json
-import play.api.mvc.{AbstractController, ControllerComponents}
+import play.api.mvc.{
+  AbstractController,
+  AnyContent,
+  ControllerComponents,
+  Request
+}
 
 import javax.inject.Inject
 import scala.concurrent.ExecutionContext
@@ -14,8 +19,8 @@ final class ExamPhaseController @Inject() (
 ) extends AbstractController(cc)
     with I18nSupport
     with NelWrites {
-  def all() = Action { request =>
-    val messages = request.messages
+  def all() = Action { (r: Request[AnyContent]) =>
+    val messages = r.messages
     Ok(
       Json.toJson(
         ExamPhase.all.map(e =>

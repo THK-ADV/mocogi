@@ -3,8 +3,8 @@ package parsing.metadata
 import models.core.PO
 import models.{ModulePrerequisiteEntryProtocol, ModulePrerequisitesProtocol}
 import parser.Parser
-import parser.Parser._
-import parser.ParserOps._
+import parser.Parser.*
+import parser.ParserOps.*
 import parsing.types.{ParsedPrerequisiteEntry, ParsedPrerequisites}
 import parsing.{
   multipleValueParser,
@@ -72,7 +72,7 @@ object ModulePrerequisitesParser {
       .take(textParser)
       .zip(modulesParser)
       .take(studyProgramsParser(pos.sortBy(_.id).reverse))
-      .map(ParsedPrerequisiteEntry.tupled)
+      .map(ParsedPrerequisiteEntry.apply)
 
   private def raw(key: String): Parser[ModulePrerequisiteEntryProtocol] =
     prefix(s"$key:")
@@ -98,7 +98,7 @@ object ModulePrerequisitesParser {
       .skip(zeroOrMoreSpaces)
       .zip(requiredPrerequisitesParser.option)
       .skip(zeroOrMoreSpaces)
-      .map(ParsedPrerequisites.tupled)
+      .map(ParsedPrerequisites.apply)
 
   def recommendedPrerequisitesParserRaw
       : Parser[ModulePrerequisiteEntryProtocol] =

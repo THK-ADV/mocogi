@@ -14,5 +14,5 @@ final class PersonInFacultyTable(tag: Tag)
   override def * = (
     person,
     faculty
-  ) <> (PersonInFaculty.tupled, PersonInFaculty.unapply)
+  ) <> (PersonInFaculty.apply, PersonInFaculty.unapply)
 }

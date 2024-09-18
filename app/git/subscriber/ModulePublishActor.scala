@@ -1,11 +1,11 @@
 package git.subscriber
 
-import akka.actor.{Actor, Props}
 import git.subscriber.ModuleSubscribers.Handle
 import git.{GitFile, GitFileStatus}
 import kafka.{KafkaPublisher, Topics}
 import monocle.macros.GenLens
 import ops.LoggerOps
+import org.apache.pekko.actor.{Actor, Props}
 import parsing.types.Module
 import play.api.Logging
 

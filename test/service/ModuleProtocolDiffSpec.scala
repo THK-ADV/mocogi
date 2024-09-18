@@ -1,15 +1,15 @@
 package service
 
 import cats.data.NonEmptyList
-import models._
-import models.core.ExamPhase
+import models.*
+import models.core.ExamPhases.ExamPhase
 import org.scalatest.wordspec.AnyWordSpec
 import parsing.types.{ModuleContent, ModuleParticipants}
 
 import java.util.UUID
 
 final class ModuleProtocolDiffSpec extends AnyWordSpec {
-  import ModuleProtocolDiff.diff
+  import service.modulediff.ModuleProtocolDiff.diff
 
   private val existing = ModuleProtocol(
     None,
@@ -60,8 +60,58 @@ final class ModuleProtocolDiffSpec extends AnyWordSpec {
   )
 
   "A Module Protocol Diff" should {
+
+    // TODO: this test fails because concurrent updates are not handled properly. A fix may be to apply updates of the properties to the module draft json by passing Lenses
+    "delta update even if changes are performed concurrently" ignore {
+      import monocle.syntax.all.*
+
+      // 2 concurrent changes
+      val newP1: ModuleProtocol = existing.focus(_.metadata.title).replace("A")
+      val newP2: ModuleProtocol = existing.focus(_.metadata.ects).replace(1.0)
+
+      // the first change is applied
+      val (updatedProtocol, updatedKeys) =
+        diff(existing, newP1, None, Set.empty)
+      assert(updatedKeys == Set("metadata.title"))
+      assert(updatedProtocol.metadata.title == "A")
+
+      // the second change is applied
+      val (updatedProtocol2, updatedKeys2) =
+        diff(updatedProtocol, newP2, None, updatedKeys)
+      assert(updatedKeys2 == Set("metadata.title", "metadata.ects"))
+      assert(updatedProtocol2.metadata.title == "A")
+      assert(updatedProtocol2.metadata.ects == 1.0)
+    }
+
+    "delta update even if changes are performed concurrently but the same key is changed" in {
+      import monocle.syntax.all.*
+
+      // 2 concurrent changes
+      val newP1: ModuleProtocol = existing
+        .focus(_.metadata.title)
+        .replace("A")
+      val newP2: ModuleProtocol = existing
+        .focus(_.metadata.title)
+        .replace("B")
+        .focus(_.metadata.ects)
+        .replace(1.0)
+
+      // the first change is applied
+      val (updatedProtocol, updatedKeys) =
+        diff(existing, newP1, None, Set.empty)
+      assert(updatedKeys == Set("metadata.title"))
+      assert(updatedProtocol.metadata.title == "A")
+
+      // the second change is applied
+      val (updatedProtocol2, updatedKeys2) =
+        diff(updatedProtocol, newP2, None, updatedKeys)
+      assert(updatedKeys2 == Set("metadata.title", "metadata.ects"))
+      assert(updatedProtocol2.metadata.title == "B")
+      assert(updatedProtocol2.metadata.ects == 1.0)
+    }
+
     "update a module by keys" in {
-      import monocle.syntax.all._
+      import monocle.syntax.all.*
 
       val newP = existing
         .focus(_.metadata.title)
@@ -107,7 +157,7 @@ final class ModuleProtocolDiffSpec extends AnyWordSpec {
     }
 
     "undo update if its changed to the origin value" in {
-      import monocle.syntax.all._
+      import monocle.syntax.all.*
       val existing0 = existing
         .focus(_.metadata.title)
         .replace("new title")

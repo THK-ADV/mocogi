@@ -1,8 +1,8 @@
 package auth
 
 import play.api.libs.json.Json
+import play.api.mvc.*
 import play.api.mvc.Results.Unauthorized
-import play.api.mvc._
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
@@ -11,9 +11,9 @@ import scala.util.{Failure, Success}
 @Singleton
 case class AuthorizationAction @Inject() (
     auth: Authorization[UserToken],
-    parser: BodyParsers.Default,
-    implicit val executionContext: ExecutionContext
-) extends ActionBuilder[UserTokenRequest, AnyContent] {
+    parser: BodyParsers.Default
+)(implicit val executionContext: ExecutionContext)
+    extends ActionBuilder[UserTokenRequest, AnyContent] {
 
   override def invokeBlock[A](
       request: Request[A],

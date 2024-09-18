@@ -1,9 +1,9 @@
 package providers
 
-import akka.actor.ActorSystem
 import git.GitConfig
 import git.api.GitFileDownloadService
 import git.publisher.{CoreDataPublisher, ModulePublisher}
+import org.apache.pekko.actor.ActorSystem
 import webhook.GitPushEventHandler
 
 import javax.inject.{Inject, Provider}

@@ -36,5 +36,5 @@ final class ModuleAssessmentMethodTable(tag: Tag)
     assessmentMethod,
     assessmentMethodType,
     percentage
-  ) <> (ModuleAssessmentMethodDbEntry.tupled, ModuleAssessmentMethodDbEntry.unapply)
+  ) <> (ModuleAssessmentMethodDbEntry.apply, ModuleAssessmentMethodDbEntry.unapply)
 }

@@ -3,7 +3,7 @@ package printing.yaml
 import parsing.types.ModuleContent
 import printer.Printer
 import printer.Printer.{newline, prefix}
-import printing.PrintingLanguage
+import printing.{LanguageOps, PrintingLanguage}
 import printing.PrintingLanguage.{English, German}
 
 import javax.inject.Singleton

@@ -126,7 +126,7 @@ object ModulePOParser {
     mandatoryParser.option
       .map(_.getOrElse(Nil))
       .zip(electiveParser.option.map(_.getOrElse(Nil)))
-      .map(ParsedPOs.tupled)
+      .map(ParsedPOs.apply)
 
   def mandatoryParserRaw: Parser[List[ModulePOMandatoryProtocol]] =
     prefix(modulePOMandatoryKey)

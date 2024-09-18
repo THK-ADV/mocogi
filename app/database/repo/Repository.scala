@@ -2,7 +2,7 @@ package database.repo
 
 import play.api.db.slick.HasDatabaseConfigProvider
 import slick.jdbc.JdbcProfile
-import slick.jdbc.PostgresProfile.api._
+import slick.jdbc.PostgresProfile.api.Table
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -15,7 +15,7 @@ trait Repository[Input, Output, T <: Table[Input]] {
   protected val tableQuery: TableQuery[T]
 
   protected def retrieve(
-      query: Query[T, T#TableElementType, Seq]
+      query: Query[T, Input, Seq]
   ): Future[Seq[Output]]
 
   def all(): Future[Seq[Output]] =

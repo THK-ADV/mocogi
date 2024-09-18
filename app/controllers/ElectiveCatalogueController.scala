@@ -3,7 +3,12 @@ package controllers
 import catalog.{ElectivesFile, Semester}
 import models.core.IDLabel
 import play.api.libs.json.{JsArray, Json}
-import play.api.mvc.{AbstractController, ControllerComponents}
+import play.api.mvc.{
+  AbstractController,
+  AnyContent,
+  ControllerComponents,
+  Request
+}
 import providers.ConfigReader
 
 import java.nio.file.{Files, Paths}
@@ -17,7 +22,7 @@ final class ElectiveCatalogueController @Inject() (
 ) extends AbstractController(cc) {
 
   def allFromSemester(semesterId: String) =
-    Action { _ =>
+    Action { (_: Request[AnyContent]) =>
       val semester = Semester(semesterId)
       val folder = Paths.get(configReader.electivesCatalogOutputFolderPath)
       val json = Files

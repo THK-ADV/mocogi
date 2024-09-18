@@ -100,7 +100,7 @@ final class ModuleController @Inject() (
   // Download File
 
   def getFile(id: UUID) =
-    Action { implicit r => getFile0(id) }
+    Action((r: Request[AnyContent]) => getFile0(id)(r))
 
   def getPreviewFile(id: UUID) =
     auth.async { implicit r => getPreviewFile0(id) }

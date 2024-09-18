@@ -1,10 +1,11 @@
 package parsing.metadata
 
-import models.core._
+import models.core.*
+import models.core.ExamPhases.ExamPhase
 import parser.Parser
-import parser.Parser._
-import parser.ParserOps._
-import parsing.types._
+import parser.Parser.*
+import parser.ParserOps.*
+import parsing.types.*
 
 import java.util.UUID
 

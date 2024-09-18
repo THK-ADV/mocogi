@@ -1,9 +1,8 @@
 package printing.yaml
 
 import cats.data.NonEmptyList
-import models._
-import models.core.ExamPhase
-import parsing.metadata._
+import models.*
+import parsing.metadata.*
 import parsing.types.ModuleParticipants
 import printer.Printer
 import printer.Printer.{always, newline, prefix, whitespace}
@@ -31,9 +30,6 @@ final class MetadataYamlPrinter(identLevel: Int) {
 
   implicit val poeOrd: Ordering[ModulePOOptionalProtocol] =
     Ordering.by[ModulePOOptionalProtocol, String](_.po)
-
-  implicit val exmpOrd: Ordering[ExamPhase] =
-    Ordering.by[ExamPhase, String](_.id)
 
   def printer(versionScheme: VersionScheme): Printer[(UUID, MetadataProtocol)] =
     Printer { case ((id, metadata), input) =>

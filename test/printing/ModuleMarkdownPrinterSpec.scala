@@ -1,11 +1,12 @@
 package printing
 
 import cats.data.NonEmptyList
-import models._
-import models.core._
+import models.*
+import models.core.*
+import models.core.ExamPhases.ExamPhase
 import org.scalatest.EitherValues
 import org.scalatest.wordspec.AnyWordSpec
-import parsing.types._
+import parsing.types.*
 import parsing.withFile0
 import printing.markdown.ModuleMarkdownPrinter
 

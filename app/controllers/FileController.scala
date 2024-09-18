@@ -1,7 +1,12 @@
 package controllers
 
 import controllers.Assets.Asset
-import play.api.mvc.{AbstractController, ControllerComponents}
+import play.api.mvc.{
+  AbstractController,
+  AnyContent,
+  ControllerComponents,
+  Request
+}
 import providers.ConfigReader
 
 import java.nio.file.Paths
@@ -23,7 +28,7 @@ final class FileController @Inject() (
 ) extends AbstractController(cc) {
 
   def get(asset: Asset) =
-    Action { r =>
+    Action { (r: Request[AnyContent]) =>
       try {
         val path =
           Paths.get(s"${configReader.outputFolderPath}/${asset.name}")
