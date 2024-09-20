@@ -1,15 +1,18 @@
-import cats.data.NonEmptyList
-import cats.syntax.either._
-import io.circe.{ACursor, Decoder, HCursor}
-
 import java.io.File
-import java.time.LocalDate
 import java.time.format.DateTimeFormatter
+import java.time.LocalDate
 import java.util.UUID
+
 import scala.annotation.tailrec
 import scala.collection.mutable.ListBuffer
 import scala.io.Source
 import scala.util.Try
+
+import cats.data.NonEmptyList
+import cats.syntax.either._
+import io.circe.ACursor
+import io.circe.Decoder
+import io.circe.HCursor
 
 package object parsing {
   import parser.Parser
@@ -33,6 +36,16 @@ package object parsing {
         field.as[String].map(NonEmptyList.one)
       }
     }
+
+    def getList(key: String): Decoder.Result[List[String]] = {
+      val field = self.downField(key)
+      if (field.downArray.succeeded) {
+        // Parsing to List[String] results to an empty list. Thus, Seq[String] is used as a workaround
+        field.as[Seq[String]].map(_.toList)
+      } else {
+        field.as[String].map(List(_))
+      }
+    }
   }
 
   def removeIndentation(level: Int = 1): Parser[Unit] = Parser { input =>
@@ -40,11 +53,11 @@ package object parsing {
 
     @tailrec
     def go(str: String, soFar: String): String = {
-      val currentLine = str.takeWhile(_ != '\n')
+      val currentLine   = str.takeWhile(_ != '\n')
       val leadingSpaces = currentLine.takeWhile(_ == ' ')
       val newLine =
         if (leadingSpaces.isEmpty) currentLine
-        else currentLine.drop(indentations min leadingSpaces.length)
+        else currentLine.drop(indentations.min(leadingSpaces.length))
       val nextStr = str.drop(currentLine.length + 1)
       if (nextStr.isEmpty) soFar + newLine
       else go(nextStr, soFar + newLine + "\n")
@@ -74,17 +87,16 @@ package object parsing {
       .take(int)
 
   def posIntForKey(key: String): Parser[Int] =
-    intForKey(key).flatMap(i =>
-      if (i >= 0) always(i) else never("int to be positive")
-    )
+    intForKey(key).flatMap(i => if (i >= 0) always(i) else never("int to be positive"))
 
   sealed trait MultilineStringStrategy
-  case object > extends MultilineStringStrategy
-  case object | extends MultilineStringStrategy
+  case object >     extends MultilineStringStrategy
+  case object |     extends MultilineStringStrategy
   case object Plain extends MultilineStringStrategy
 
   def multilineStringStrategy: Parser[MultilineStringStrategy] =
-    (prefixUntil("\n") or rest)
+    prefixUntil("\n")
+      .or(rest)
       .flatMap { str =>
         str.trim match {
           case ">" => always(>)
@@ -96,8 +108,8 @@ package object parsing {
 
   def shiftSpaces(xs: List[String]): List[String] = {
     def go(left: String, right: String): (String, String) = {
-      val leadingSpaces = right.takeWhile(_ == ' ')
-      val rightWithoutSpaces = right.stripPrefix(leadingSpaces)
+      val leadingSpaces            = right.takeWhile(_ == ' ')
+      val rightWithoutSpaces       = right.stripPrefix(leadingSpaces)
       val leftWithTrailingNewlines = left + ("\n" * leadingSpaces.length)
       (leftWithTrailingNewlines, rightWithoutSpaces)
     }
@@ -117,19 +129,20 @@ package object parsing {
       t: (MultilineStringStrategy, List[String])
   ): String = {
     val strategy = t._1
-    val values = shiftSpaces(t._2)
-    var pointer = 1
-    val str = values.foldLeft("") { case (acc, str) =>
-      val str0 = strategy match {
-        case > if !str.endsWith("\n") && pointer != values.size =>
-          str + " "
-        case Plain if !str.endsWith("\n") && pointer != values.size =>
-          str + " "
-        case | if pointer != values.size => str + '\n'
-        case _                           => str
-      }
-      pointer += 1
-      acc + str0
+    val values   = shiftSpaces(t._2)
+    var pointer  = 1
+    val str = values.foldLeft("") {
+      case (acc, str) =>
+        val str0 = strategy match {
+          case > if !str.endsWith("\n") && pointer != values.size =>
+            str + " "
+          case Plain if !str.endsWith("\n") && pointer != values.size =>
+            str + " "
+          case | if pointer != values.size => str + '\n'
+          case _                           => str
+        }
+        pointer += 1
+        acc + str0
     }
 
     strategy match {
@@ -157,7 +170,7 @@ package object parsing {
       multilineStringForKey(key),
       singleLineStringForKey(key)
     )
-  
+
   implicit def decoderList[A](implicit decoder: Decoder[A]): Decoder[List[A]] =
     (c: HCursor) => {
       val builder = ListBuffer.empty[A]
@@ -175,7 +188,7 @@ package object parsing {
     }
 
   def withFile0[A](path: String)(input: String => A): A = {
-    val s = Source.fromFile(new File(path))
+    val s   = Source.fromFile(new File(path))
     val res = input(s.mkString)
     s.close()
     res
@@ -195,15 +208,13 @@ package object parsing {
     prefix(s"$key:")
       .skip(zeroOrMoreSpaces)
       .skip(optional(newline))
-      .take(singleParser.map(a => List(a)) or dashes)
+      .take(singleParser.map(a => List(a)).or(dashes))
   }
 
   def multipleValueParser[A](
       key: String,
       optionPrefix: A => String
-  )(implicit
-      options: Seq[A]
-  ): Parser[List[A]] = multipleValueParser(
+  )(implicit options: Seq[A]): Parser[List[A]] = multipleValueParser(
     key,
     oneOf(
       options.map(o =>
@@ -236,7 +247,7 @@ package object parsing {
         .many()
 
     keyParser(key)
-      .take(single.map(a => List(a)) or dashes)
+      .take(single.map(a => List(a)).or(dashes))
   }
 
   private val localDatePattern = DateTimeFormatter.ofPattern("dd.MM.yyyy")

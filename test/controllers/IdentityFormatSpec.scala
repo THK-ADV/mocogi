@@ -1,8 +1,12 @@
 package controllers
 
-import models.core.{Faculty, Identity, PersonStatus}
+import models.core.Faculty
+import models.core.Identity
+import models.core.PersonStatus
 import org.scalatest.wordspec.AnyWordSpec
-import play.api.libs.json.{JsString, Writes}
+import play.api.libs.json.JsArray
+import play.api.libs.json.JsString
+import play.api.libs.json.Writes
 
 final class IdentityFormatSpec extends AnyWordSpec {
   "A Person Format Spec" should {
@@ -12,7 +16,7 @@ final class IdentityFormatSpec extends AnyWordSpec {
         "lastname",
         "firstname",
         "title",
-        List(Faculty("f1", "de", "en")),
+        List("f1"),
         "p1",
         "id",
         PersonStatus.Active
@@ -23,9 +27,7 @@ final class IdentityFormatSpec extends AnyWordSpec {
       assert((studentJson \ "firstname").get == JsString("firstname"))
       assert((studentJson \ "title").get == JsString("title"))
       assert(
-        (studentJson \ "faculties").get == Writes
-          .list[Faculty]
-          .writes(student.faculties)
+        (studentJson \ "faculties").get == JsArray(student.faculties.map(JsString.apply))
       )
       assert((studentJson \ "abbreviation").get == JsString("p1"))
       assert((studentJson \ "campusId").get == JsString("id"))

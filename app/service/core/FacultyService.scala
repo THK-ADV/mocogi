@@ -14,4 +14,7 @@ final class FacultyService @Inject() (
     val ctx: ExecutionContext
 ) extends SimpleYamlService[Faculty] {
   override def fileParser: Parser[List[Faculty]] = FacultyFileParser.parser()
+
+  def allIds() =
+    repo.allIds()
 }

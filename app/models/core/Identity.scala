@@ -2,7 +2,10 @@ package models.core
 
 import database.table.core.IdentityDbEntry
 import monocle.Lens
-import play.api.libs.json.{JsObject, JsString, Json, Writes}
+import play.api.libs.json.JsObject
+import play.api.libs.json.JsString
+import play.api.libs.json.Json
+import play.api.libs.json.Writes
 
 sealed trait Identity {
   def id: String
@@ -12,8 +15,8 @@ sealed trait Identity {
 }
 
 object Identity {
-  val PersonKind = "person"
-  val GroupKind = "group"
+  val PersonKind  = "person"
+  val GroupKind   = "group"
   val UnknownKind = "unknown"
 
   lazy val NN: Identity = Unknown("nn", "N.N.")
@@ -23,7 +26,7 @@ object Identity {
       lastname: String,
       firstname: String,
       title: String,
-      faculties: List[Faculty],
+      faculties: List[String],
       abbreviation: String,
       campusId: String,
       status: PersonStatus
@@ -38,15 +41,15 @@ object Identity {
   }
 
   case class Group(id: String, label: String) extends Identity {
-    override val kind = GroupKind
+    override val kind                     = GroupKind
     override def username: Option[String] = None
-    override def fullName: String = label
+    override def fullName: String         = label
   }
 
   case class Unknown(id: String, label: String) extends Identity {
-    override val kind = UnknownKind
+    override val kind                     = UnknownKind
     override def username: Option[String] = None
-    override def fullName: String = label
+    override def fullName: String         = label
   }
 
   def toPerson(p: IdentityDbEntry): Person =
@@ -72,7 +75,7 @@ object Identity {
           identity.lastname,
           identity.firstname,
           identity.title,
-          faculties,
+          faculties.map(_.id),
           identity.abbreviation,
           identity.campusId.get,
           identity.status
@@ -100,7 +103,7 @@ object Identity {
           lastname,
           firstname,
           title,
-          faculties.map(_.id),
+          faculties,
           abbreviation,
           Some(campusId),
           status,

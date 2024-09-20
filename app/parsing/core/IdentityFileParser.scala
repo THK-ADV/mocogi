@@ -1,63 +1,38 @@
 package parsing.core
 
-import cats.data.NonEmptyList
-import models.core.{Faculty, Identity, PersonStatus}
+import io.circe.Decoder
+import io.circe.HCursor
+import models.core.Identity
+import models.core.PersonStatus
 import parser.Parser
-import parser.Parser._
-import parser.ParserOps.{P2, P3, P4, P5, P6, P7}
-import parsing.{ParserListOps, multipleValueParser, singleLineStringForKey}
+import parser.Parser.*
+import parsing.validator.FacultyValidator
+import parsing.CursorOps
 
-object IdentityFileParser {
+object IdentityFileParser extends YamlFileParser[Identity] {
 
-  def unknownParser: Parser[Identity] =
-    literal("nn")
-      .skip(prefix(":"))
-      .skip(zeroOrMoreSpaces)
-      .zip(singleLineStringForKey("label"))
-      .map(Identity.Unknown.apply)
+  def fileParser(faculties: Seq[String]): Parser[List[Identity]] =
+    super.fileParser(new FacultyValidator(faculties))
 
-  def groupParser: Parser[Identity] =
-    prefixTo(":")
-      .skip(zeroOrMoreSpaces)
-      .zip(singleLineStringForKey("label"))
-      .map(Identity.Group.apply)
+  protected override def decoder: Decoder[Identity] =
+    (c: HCursor) => {
+      val key = c.key.get
+      val obj = c.root.downField(key)
 
-  def statusParser: Parser[PersonStatus] =
-    singleLineStringForKey("status")
-      .map(PersonStatus.apply)
-
-  def facultiesParser(implicit
-      faculties: Seq[Faculty]
-  ): Parser[NonEmptyList[Faculty]] =
-    multipleValueParser(
-      "faculty",
-      (a: Faculty) => s"faculty.${a.id}"
-    ).nel()
-
-  def personParser(implicit
-      faculties: Seq[Faculty]
-  ): Parser[Identity] =
-    prefixTo(":")
-      .skip(zeroOrMoreSpaces)
-      .zip(singleLineStringForKey("lastname"))
-      .skip(zeroOrMoreSpaces)
-      .take(singleLineStringForKey("firstname"))
-      .skip(zeroOrMoreSpaces)
-      .take(singleLineStringForKey("title"))
-      .skip(zeroOrMoreSpaces)
-      .take(facultiesParser.map(_.toList))
-      .skip(zeroOrMoreSpaces)
-      .take(singleLineStringForKey("abbreviation"))
-      .skip(zeroOrMoreSpaces)
-      .take(singleLineStringForKey("campusid"))
-      .skip(zeroOrMoreSpaces)
-      .take(statusParser)
-      .map(Identity.Person.apply)
-
-  def parser(implicit faculties: Seq[Faculty]): Parser[List[Identity]] =
-    oneOf(
-      unknownParser,
-      groupParser,
-      personParser
-    ).all(zeroOrMoreSpaces)
+      obj
+        .get[String]("label")
+        .map(l => if key == "nn" then Identity.Unknown(key, l) else Identity.Group(key, l))
+        .orElse(
+          for {
+            lastname     <- obj.get[String]("lastname")
+            firstname    <- obj.get[String]("firstname")
+            title        <- obj.getOrElse[String]("title")("")
+            faculties    <- obj.getList("faculty")
+            abbreviation <- obj.get[String]("abbreviation")
+            campusId     <- obj.getOrElse[String]("campusid")("")
+            status       <- obj.get[String]("status").map(PersonStatus.apply)
+          } yield Identity
+            .Person(key, lastname.trim, firstname.trim, title.trim, faculties, abbreviation.trim, campusId.trim, status)
+        )
+    }
 }

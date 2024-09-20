@@ -1,16 +1,18 @@
 package parsing.metadata
 
+import java.util.UUID
+
 import cats.data.NonEmptyList
 import helper.*
 import models.core.*
 import models.core.ExamPhases.ExamPhase
 import org.scalatest.wordspec.AnyWordSpec
-import org.scalatest.{EitherValues, OptionValues}
+import org.scalatest.EitherValues
+import org.scalatest.OptionValues
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import parsing.types.*
-import parsing.{ParserSpecHelper, withFile0}
-
-import java.util.UUID
+import parsing.withFile0
+import parsing.ParserSpecHelper
 
 class THKV1ParserSpec
     extends AnyWordSpec
@@ -35,10 +37,10 @@ class THKV1ParserSpec
   import THKV1Parser._
   val parser = app.injector.instanceOf(classOf[THKV1Parser])
 
-  val moduleCodeParser = idParser
-  val moduleTitleParser = titleParser
+  val moduleCodeParser   = idParser
+  val moduleTitleParser  = titleParser
   val moduleAbbrevParser = abbreviationParser
-  val metadataParser = parser.parser
+  val metadataParser     = parser.parser
 
   "A Metadata Parser" when {
     "parse module code" should {
@@ -123,7 +125,7 @@ class THKV1ParserSpec
                 "Dobrynin",
                 "Alexander",
                 "M.Sc.",
-                List(f10),
+                List(f10.id),
                 "ad",
                 "ald",
                 PersonStatus.Active
@@ -135,7 +137,7 @@ class THKV1ParserSpec
                 "Dobrynin",
                 "Alexander",
                 "M.Sc.",
-                List(f10),
+                List(f10.id),
                 "ad",
                 "ald",
                 PersonStatus.Active
@@ -145,7 +147,7 @@ class THKV1ParserSpec
                 "Bertels",
                 "Anja",
                 "B.Sc.",
-                List(f10),
+                List(f10.id),
                 "ab",
                 "abe",
                 PersonStatus.Active
@@ -280,7 +282,7 @@ class THKV1ParserSpec
                 "Dobrynin",
                 "Alexander",
                 "M.Sc.",
-                List(f10),
+                List(f10.id),
                 "ad",
                 "ald",
                 PersonStatus.Active
@@ -292,7 +294,7 @@ class THKV1ParserSpec
                 "Dobrynin",
                 "Alexander",
                 "M.Sc.",
-                List(f10),
+                List(f10.id),
                 "ad",
                 "ald",
                 PersonStatus.Active
