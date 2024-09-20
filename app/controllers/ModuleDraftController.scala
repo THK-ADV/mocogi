@@ -1,27 +1,31 @@
 package controllers
 
+import java.util.UUID
+import javax.inject.Inject
+import javax.inject.Singleton
+
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+
 import auth.AuthorizationAction
-import controllers.ModuleDraftController.VersionSchemeHeader
-import controllers.actions.{
-  ModuleDraftCheck,
-  PermissionCheck,
-  PersonAction,
-  VersionSchemeAction
-}
+import controllers.actions.ModuleDraftCheck
+import controllers.actions.PermissionCheck
+import controllers.actions.PersonAction
+import controllers.actions.VersionSchemeAction
 import controllers.json.ModuleJson
+import controllers.ModuleDraftController.VersionSchemeHeader
 import database.repo.core.IdentityRepository
 import models._
-import play.api.Logging
-import play.api.i18n.{I18nSupport, Messages}
-import play.api.libs.json.{JsValue, Json, Writes}
-import play.api.mvc.{AbstractController, ControllerComponents}
-import service.PipelineError.parsingErrorWrites
+import play.api.i18n.I18nSupport
+import play.api.i18n.Messages
+import play.api.libs.json.JsValue
+import play.api.libs.json.Json
+import play.api.libs.json.Writes
+import play.api.mvc.AbstractController
+import play.api.mvc.ControllerComponents
 import service._
 import service.core.StudyProgramService
-
-import java.util.UUID
-import javax.inject.{Inject, Singleton}
-import scala.concurrent.{ExecutionContext, Future}
+import service.PipelineError.parsingErrorWrites
 
 @Singleton
 final class ModuleDraftController @Inject() (
@@ -40,55 +44,51 @@ final class ModuleDraftController @Inject() (
     with PermissionCheck
     with PersonAction
     with JsonNullWritable
-    with Logging
     with I18nSupport {
 
   def moduleDrafts() =
-    auth andThen personAction async { r =>
+    auth.andThen(personAction).async { r =>
       for {
         modules <- moduleUpdatePermissionService
           .allForCampusId(r.request.campusId)
-      } yield Ok(Json.toJson(modules.map { case (module, kind, draft) =>
-        Json.obj(
-          "module" -> module,
-          "moduleDraft" -> draft
-            .map(moduleDraftWrites(r.messages).writes),
-          "moduleDraftState" -> draft.state(),
-          "privilegedForModule" -> kind.isInherited
-        )
+      } yield Ok(Json.toJson(modules.map {
+        case (module, kind, draft) =>
+          Json.obj(
+            "module" -> module,
+            "moduleDraft" -> draft
+              .map(moduleDraftWrites(r.messages).writes),
+            "moduleDraftState"    -> draft.state(),
+            "privilegedForModule" -> kind.isInherited
+          )
       }))
     }
 
   def keys(moduleId: UUID) =
-    auth andThen
-      personAction andThen
-      hasPermissionToViewDraft(moduleId, moduleApprovalService) async {
-        request =>
-          moduleDraftService
-            .getByModuleOpt(moduleId)
-            .map { draft =>
-              val messages = request.messages
-              val (reviewed, modified) = draft
-                .map(d =>
-                  (
-                    d.keysToBeReviewed.map(moduleKeyToJson(_, messages)),
-                    d.modifiedKeys.map(moduleKeyToJson(_, messages))
-                  )
-                )
-                .getOrElse((Set.empty, Set.empty))
-              Ok(
-                Json.obj(
-                  "keysToBeReviewed" -> reviewed,
-                  "modifiedKeys" -> modified
-                )
+    auth.andThen(personAction).andThen(hasPermissionToViewDraft(moduleId, moduleApprovalService)).async { request =>
+      moduleDraftService
+        .getByModuleOpt(moduleId)
+        .map { draft =>
+          val messages = request.messages
+          val (reviewed, modified) = draft
+            .map(d =>
+              (
+                d.keysToBeReviewed.map(moduleKeyToJson(_, messages)),
+                d.modifiedKeys.map(moduleKeyToJson(_, messages))
               )
-            }
-      }
+            )
+            .getOrElse((Set.empty, Set.empty))
+          Ok(
+            Json.obj(
+              "keysToBeReviewed" -> reviewed,
+              "modifiedKeys"     -> modified
+            )
+          )
+        }
+    }
 
   def createNewModuleDraft() =
-    auth(parse.json[ModuleJson]) andThen
-      personAction andThen
-      new VersionSchemeAction(VersionSchemeHeader) async { r =>
+    auth(parse.json[ModuleJson]).andThen(personAction).andThen(new VersionSchemeAction(VersionSchemeHeader)).async {
+      r =>
         moduleDraftService
           .createNew(r.body.toProtocol, r.request.person, r.versionScheme)
           .flatMap {
@@ -105,13 +105,14 @@ final class ModuleDraftController @Inject() (
                   )
               } yield Ok(moduleDraftWrites(r.messages).writes(draft))
           }
-      }
+    }
 
   def createOrUpdateModuleDraft(moduleId: UUID) =
-    auth(parse.json[ModuleJson]) andThen
-      personAction andThen
-      hasPermissionToEditDraft(moduleId) andThen
-      new VersionSchemeAction(VersionSchemeHeader) async { r =>
+    auth(parse.json[ModuleJson])
+      .andThen(personAction)
+      .andThen(hasPermissionToEditDraft(moduleId))
+      .andThen(new VersionSchemeAction(VersionSchemeHeader))
+      .async { r =>
         moduleDraftService
           .createOrUpdate(
             moduleId,
@@ -125,29 +126,28 @@ final class ModuleDraftController @Inject() (
           }
       }
 
-  /** Deletes the merge request, all reviews, the branch and module draft which
-    * are associated with the module id.
-    * @param moduleId
-    *   ID of the module draft which needs to be deleted
-    * @return
-    *   204 No Content
-    */
+  /**
+   * Deletes the merge request, all reviews, the branch and module draft which
+   * are associated with the module id.
+   * @param moduleId
+   *   ID of the module draft which needs to be deleted
+   * @return
+   *   204 No Content
+   */
   def deleteModuleDraft(moduleId: UUID) =
-    auth andThen
-      personAction andThen
-      hasPermissionToEditDraft(moduleId) async { _ =>
-        for {
-          _ <- moduleDraftReviewService.delete(moduleId)
-          _ <- moduleDraftService.delete(moduleId)
-          _ <- moduleUpdatePermissionService.deleteGranted(moduleId)
-        } yield NoContent
-      }
+    auth.andThen(personAction).andThen(hasPermissionToEditDraft(moduleId)).async { _ =>
+      for {
+        _ <- moduleDraftReviewService.delete(moduleId)
+        _ <- moduleDraftService.delete(moduleId)
+        _ <- moduleUpdatePermissionService.deleteGranted(moduleId)
+      } yield NoContent
+    }
 
   private def moduleKeyToJson(key: String, messages: Messages): JsValue =
     Json.obj(
-      "id" -> key,
+      "id"    -> key,
       "label" -> messages(s"$key.label"),
-      "desc" -> messages(s"$key.desc")
+      "desc"  -> messages(s"$key.desc")
     )
 
   private def moduleDraftWrites(messages: Messages): Writes[ModuleDraft] =
@@ -156,11 +156,11 @@ final class ModuleDraftController @Inject() (
         "module" -> d.module,
         "author" -> d.author,
         "status" -> d.source,
-        "data" -> d.data,
+        "data"   -> d.data,
         "keysToBeReviewed" -> d.keysToBeReviewed
           .map(moduleKeyToJson(_, messages)),
         "mergeRequestId" -> d.mergeRequest.map(_._1.value),
-        "lastModified" -> d.lastModified
+        "lastModified"   -> d.lastModified
       )
     )
 }

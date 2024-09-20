@@ -1,20 +1,27 @@
 package service
 
+import java.time.LocalDateTime
+import java.util.UUID
+import javax.inject.Inject
+import javax.inject.Singleton
+
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+import scala.util.Success
+
 import database.repo.ModuleDraftRepository
-import git.api.{GitBranchService, GitCommitService, GitFileDownloadService}
-import models._
+import git.api.GitBranchService
+import git.api.GitCommitService
+import git.api.GitFileDownloadService
+import models.*
 import models.core.Identity
 import ops.FutureOps.Ops
 import parsing.metadata.VersionScheme
-import parsing.types._
+import parsing.types.*
+import play.api.libs.json.*
 import play.api.Logging
-import play.api.libs.json._
-import service.modulediff.ModuleProtocolDiff.{diff, nonEmptyKeys}
-
-import java.time.LocalDateTime
-import java.util.UUID
-import javax.inject.{Inject, Singleton}
-import scala.concurrent.{ExecutionContext, Future}
+import service.modulediff.ModuleProtocolDiff.diff
+import service.modulediff.ModuleProtocolDiff.nonEmptyKeys
 
 @Singleton
 final class ModuleDraftService @Inject() (
@@ -54,14 +61,16 @@ final class ModuleDraftService @Inject() (
         UUID.randomUUID(),
         person,
         updatedKeys
-      )
+      ).andThen {
+        case Success(Right(d)) => logger.info(s"Successfully created module draft ${d.module} (${d.moduleTitle})")
+      }
   }
 
   def delete(moduleId: UUID): Future[Unit] =
     for {
       _ <- gitBranchService.deleteModuleBranch(moduleId)
       _ <- moduleDraftRepository.delete(moduleId).map(_ => ())
-    } yield ()
+    } yield logger.info(s"Successfully deleted module draft $moduleId")
 
   def createOrUpdate(
       moduleId: UUID,
@@ -74,13 +83,14 @@ final class ModuleDraftService @Inject() (
       .flatMap(hasDraft => {
         if (hasDraft)
           update(moduleId, protocol, person, versionScheme)
+            .map(_.map(_ => logger.info(s"Successfully updated module draft $moduleId (${protocol.metadata.title})")))
         else
           createFromExistingModule(
             moduleId,
             protocol,
             person,
             versionScheme
-          ).map(_.map(_ => ()))
+          ).map(_.map(_ => logger.info(s"Successfully created module draft $moduleId (${protocol.metadata.title})")))
       })
 
   private def abortNoChanges =
