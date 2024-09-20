@@ -14,7 +14,6 @@ object ExamPhases:
     def all: NonEmptyList[ExamPhase] =
       NonEmptyList.of(
         "wise_1",
-        "wise_2",
         "sose_1",
         "sose_2",
         none
