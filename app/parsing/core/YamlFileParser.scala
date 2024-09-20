@@ -1,9 +1,10 @@
 package parsing.core
 
 import cats.syntax.either._
-import io.circe.Decoder
 import io.circe.yaml.parser.parse
-import parser.{Parser, ParsingError}
+import io.circe.Decoder
+import parser.Parser
+import parser.ParsingError
 import parsing.validator.YamlFileParserValidator
 
 trait YamlFileParser[A] {

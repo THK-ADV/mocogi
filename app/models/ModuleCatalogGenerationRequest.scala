@@ -1,6 +1,7 @@
 package models
 
-import git.{MergeRequestId, MergeRequestStatus}
+import git.MergeRequestId
+import git.MergeRequestStatus
 
 case class ModuleCatalogGenerationRequest(
     mergeRequestId: MergeRequestId,

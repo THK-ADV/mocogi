@@ -1,5 +1,7 @@
 package parsing.metadata
 
+import java.util.UUID
+
 import models.core.*
 import models.core.ExamPhases.ExamPhase
 import parser.Parser
@@ -7,10 +9,10 @@ import parser.Parser.*
 import parser.ParserOps.*
 import parsing.types.*
 
-import java.util.UUID
-
 object THKV1Parser {
-  import parsing.{posIntForKey, singleLineStringForKey, uuidParser}
+  import parsing.posIntForKey
+  import parsing.singleLineStringForKey
+  import parsing.uuidParser
 
   def idKey = "id"
 
@@ -31,15 +33,18 @@ object THKV1Parser {
 }
 
 final class THKV1Parser extends MetadataParser {
-  import THKV1Parser.{abbreviationParser, durationParser, idParser, titleParser}
+  import THKV1Parser.abbreviationParser
+  import THKV1Parser.durationParser
+  import THKV1Parser.idParser
+  import THKV1Parser.titleParser
 
   override val versionScheme = VersionScheme(1, "s")
 
   // TODO replace with real data at some point
   implicit def allExamPhases: List[ExamPhase] = ExamPhase.all.toList
 
-  def parser(implicit
-      locations: Seq[ModuleLocation],
+  def parser(
+      implicit locations: Seq[ModuleLocation],
       languages: Seq[ModuleLanguage],
       status: Seq[ModuleStatus],
       assessmentMethods: Seq[AssessmentMethod],

@@ -1,14 +1,18 @@
 package parsing.metadata
 
-import helper.{FakePOs, FakeSpecializations}
-import models.{ModulePOMandatoryProtocol, ModulePOOptionalProtocol}
-import org.scalatest.wordspec.AnyWordSpec
-import org.scalatest.{EitherValues, OptionValues}
-import parsing.ParserSpecHelper
-import parsing.metadata.ModulePOParser._
-import parsing.types.{ModulePOMandatory, ParsedPOOptional}
-
 import java.util.UUID
+
+import helper.FakePOs
+import helper.FakeSpecializations
+import models.ModulePOMandatoryProtocol
+import models.ModulePOOptionalProtocol
+import org.scalatest.wordspec.AnyWordSpec
+import org.scalatest.EitherValues
+import org.scalatest.OptionValues
+import parsing.metadata.ModulePOParser._
+import parsing.types.ModulePOMandatory
+import parsing.types.ParsedPOOptional
+import parsing.ParserSpecHelper
 
 class ModulePOParserSpec
     extends AnyWordSpec
@@ -20,7 +24,7 @@ class ModulePOParserSpec
 
   "A PO Parser" should {
     "parse a study program with no specialization" in {
-      val input = "- study_program: study_program.wi1"
+      val input         = "- study_program: study_program.wi1"
       val (res1, rest1) = studyProgramParser.parse(input)
       assert(rest1.isEmpty)
       assert(res1.value._1.id == "wi1")
@@ -28,7 +32,7 @@ class ModulePOParserSpec
     }
 
     "parse a study program with no specialization raw" in {
-      val input = "- study_program: study_program.wi1"
+      val input         = "- study_program: study_program.wi1"
       val (res1, rest1) = studyProgramParserRaw.parse(input)
       assert(rest1.isEmpty)
       assert(res1.value._1 == "wi1")
@@ -36,7 +40,7 @@ class ModulePOParserSpec
     }
 
     "parse a study program with specialization" in {
-      val input = "- study_program: study_program.wi1.wi1_vi"
+      val input         = "- study_program: study_program.wi1.wi1_vi"
       val (res1, rest1) = studyProgramParser.parse(input)
       assert(rest1.isEmpty)
       assert(res1.value._1.id == "wi1")
@@ -44,7 +48,7 @@ class ModulePOParserSpec
     }
 
     "parse a study program with specialization raw" in {
-      val input = "- study_program: study_program.wi1.wi1_vi"
+      val input         = "- study_program: study_program.wi1.wi1_vi"
       val (res1, rest1) = studyProgramParserRaw.parse(input)
       assert(rest1.isEmpty)
       assert(res1.value._1 == "wi1")
@@ -52,7 +56,7 @@ class ModulePOParserSpec
     }
 
     "parse a study program with no specialization if specialization is not found in po" in {
-      val input = "- study_program: study_program.wi1.wi1_abc"
+      val input         = "- study_program: study_program.wi1.wi1_abc"
       val (res1, rest1) = studyProgramParser.parse(input)
       assert(rest1 == input)
       assert(
@@ -242,10 +246,10 @@ class ModulePOParserSpec
       val m1 = UUID.randomUUID
       val input =
         s"""po_optional:
-          |  - study_program: study_program.wi1
-          |    instance_of: module.$m1
-          |    part_of_catalog: false
-          |    recommended_semester: 3""".stripMargin
+           |  - study_program: study_program.wi1
+           |    instance_of: module.$m1
+           |    part_of_catalog: false
+           |    recommended_semester: 3""".stripMargin
       val (res, rest) = electiveParser.parse(input)
       assert(
         res.value == List(
@@ -259,10 +263,10 @@ class ModulePOParserSpec
       val m1 = UUID.randomUUID
       val input =
         s"""po_optional:
-          |  - study_program: study_program.wi1
-          |    instance_of: module.$m1
-          |    part_of_catalog: false
-          |    recommended_semester: 3""".stripMargin
+           |  - study_program: study_program.wi1
+           |    instance_of: module.$m1
+           |    part_of_catalog: false
+           |    recommended_semester: 3""".stripMargin
       val (res, rest) = electiveParserRaw.parse(input)
       assert(
         res.value == List(
@@ -282,10 +286,10 @@ class ModulePOParserSpec
       val m1 = UUID.randomUUID
       val input =
         s"""po_optional:
-          |  - study_program: study_program.wi1.wi1_vi
-          |    instance_of: module.$m1
-          |    part_of_catalog: false
-          |    recommended_semester: 3""".stripMargin
+           |  - study_program: study_program.wi1.wi1_vi
+           |    instance_of: module.$m1
+           |    part_of_catalog: false
+           |    recommended_semester: 3""".stripMargin
       val (res, rest) = electiveParser.parse(input)
       assert(
         res.value == List(
@@ -299,10 +303,10 @@ class ModulePOParserSpec
       val m1 = UUID.randomUUID
       val input =
         s"""po_optional:
-          |  - study_program: study_program.wi1.wi1_vi
-          |    instance_of: module.$m1
-          |    part_of_catalog: false
-          |    recommended_semester: 3""".stripMargin
+           |  - study_program: study_program.wi1.wi1_vi
+           |    instance_of: module.$m1
+           |    part_of_catalog: false
+           |    recommended_semester: 3""".stripMargin
       val (res, rest) = electiveParserRaw.parse(input)
       assert(
         res.value == List(
@@ -355,16 +359,16 @@ class ModulePOParserSpec
       val m2 = UUID.randomUUID
       val input =
         s"""po_optional:
-          |  - study_program: study_program.wi1
-          |    instance_of: module.$m1
-          |    part_of_catalog: false
-          |    recommended_semester: 3
-          |  - study_program: study_program.inf1
-          |    instance_of: module.$m2
-          |    part_of_catalog: true
-          |    recommended_semester:
-          |      - 3
-          |      - 1""".stripMargin
+           |  - study_program: study_program.wi1
+           |    instance_of: module.$m1
+           |    part_of_catalog: false
+           |    recommended_semester: 3
+           |  - study_program: study_program.inf1
+           |    instance_of: module.$m2
+           |    part_of_catalog: true
+           |    recommended_semester:
+           |      - 3
+           |      - 1""".stripMargin
       val (res, rest) = electiveParser.parse(input)
       assert(
         res.value == List(
@@ -380,16 +384,16 @@ class ModulePOParserSpec
       val m2 = UUID.randomUUID
       val input =
         s"""po_optional:
-          |  - study_program: study_program.wi1
-          |    instance_of: module.$m1
-          |    part_of_catalog: false
-          |    recommended_semester: 3
-          |  - study_program: study_program.inf1
-          |    instance_of: module.$m2
-          |    part_of_catalog: true
-          |    recommended_semester:
-          |      - 3
-          |      - 1""".stripMargin
+           |  - study_program: study_program.wi1
+           |    instance_of: module.$m1
+           |    part_of_catalog: false
+           |    recommended_semester: 3
+           |  - study_program: study_program.inf1
+           |    instance_of: module.$m2
+           |    part_of_catalog: true
+           |    recommended_semester:
+           |      - 3
+           |      - 1""".stripMargin
       val (res, rest) = electiveParserRaw.parse(input)
       assert(
         res.value == List(

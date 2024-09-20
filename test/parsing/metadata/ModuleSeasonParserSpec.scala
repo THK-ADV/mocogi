@@ -2,18 +2,14 @@ package parsing.metadata
 
 import helper.FakeSeasons
 import models.core.Season
-import org.scalatest.EitherValues
 import org.scalatest.wordspec.AnyWordSpec
+import org.scalatest.EitherValues
 import parsing.ParserSpecHelper
 
-class ModuleSeasonParserSpec
-    extends AnyWordSpec
-    with ParserSpecHelper
-    with EitherValues
-    with FakeSeasons {
+class ModuleSeasonParserSpec extends AnyWordSpec with ParserSpecHelper with EitherValues with FakeSeasons {
 
   val parser = ModuleSeasonParser.parser
-  val raw = ModuleSeasonParser.raw
+  val raw    = ModuleSeasonParser.raw
 
   "A Season Parser" should {
 

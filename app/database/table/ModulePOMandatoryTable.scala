@@ -1,8 +1,8 @@
 package database.table
 
-import slick.jdbc.PostgresProfile.api._
-
 import java.util.UUID
+
+import slick.jdbc.PostgresProfile.api._
 
 case class ModulePOMandatoryDbEntry(
     id: UUID,
@@ -12,8 +12,7 @@ case class ModulePOMandatoryDbEntry(
     recommendedSemester: List[Int]
 )
 
-final class ModulePOMandatoryTable(tag: Tag)
-    extends Table[ModulePOMandatoryDbEntry](tag, "module_po_mandatory") {
+final class ModulePOMandatoryTable(tag: Tag) extends Table[ModulePOMandatoryDbEntry](tag, "module_po_mandatory") {
 
   def id = column[UUID]("id", O.PrimaryKey)
 

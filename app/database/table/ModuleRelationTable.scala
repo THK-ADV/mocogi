@@ -1,9 +1,9 @@
 package database.table
 
+import java.util.UUID
+
 import models.ModuleRelationType
 import slick.jdbc.PostgresProfile.api._
-
-import java.util.UUID
 
 case class ModuleRelationDbEntry(
     module: UUID,

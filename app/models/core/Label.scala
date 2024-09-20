@@ -1,6 +1,7 @@
 package models.core
 
-import play.api.libs.json.{Json, OWrites}
+import play.api.libs.json.Json
+import play.api.libs.json.OWrites
 
 trait Label {
   def deLabel: String

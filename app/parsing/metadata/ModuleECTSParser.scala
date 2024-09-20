@@ -4,9 +4,13 @@ import cats.data.NonEmptyList
 import models.core.FocusAreaID
 import parser.Parser
 import parser.Parser.*
-import parser.ParserOps.{P0, P2}
+import parser.ParserOps.P0
+import parser.ParserOps.P2
+import parsing.doubleForKey
+import parsing.removeIndentation
+import parsing.stringForKey
 import parsing.types.ModuleECTSFocusAreaContribution
-import parsing.{ParserListOps, doubleForKey, removeIndentation, stringForKey}
+import parsing.ParserListOps
 
 object ModuleECTSParser {
 
@@ -15,9 +19,7 @@ object ModuleECTSParser {
   def ectsValueParser =
     doubleForKey(key)
 
-  def ectsContributionsToFocusAreasParser(implicit
-      focusAreas: Seq[FocusAreaID]
-  ) = {
+  def ectsContributionsToFocusAreasParser(implicit focusAreas: Seq[FocusAreaID]) = {
     val focusAreaParser: Parser[ModuleECTSFocusAreaContribution] =
       oneOf(
         focusAreas.map { f =>
@@ -31,8 +33,9 @@ object ModuleECTSParser {
             .zip(stringForKey("de_desc"))
             .skip(zeroOrMoreSpaces)
             .take(stringForKey("en_desc").option.map(_.getOrElse("")))
-            .map { case (value, deDesc, enDesc) =>
-              ModuleECTSFocusAreaContribution(f, value, deDesc, enDesc)
+            .map {
+              case (value, deDesc, enDesc) =>
+                ModuleECTSFocusAreaContribution(f, value, deDesc, enDesc)
             }
         }: _*
       )
@@ -69,8 +72,8 @@ object ModuleECTSParser {
       ectsContributionsToFocusAreasParserRaw
     )
 
-  def parser(implicit
-      focusAreas: Seq[FocusAreaID]
+  def parser(
+      implicit focusAreas: Seq[FocusAreaID]
   ): Parser[Either[Double, NonEmptyList[ModuleECTSFocusAreaContribution]]] = {
     oneOf(
       ectsValueParser.map(Left.apply),

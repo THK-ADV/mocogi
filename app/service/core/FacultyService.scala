@@ -1,12 +1,14 @@
 package service.core
 
+import javax.inject.Inject
+import javax.inject.Singleton
+
+import scala.concurrent.ExecutionContext
+
 import database.repo.core.FacultyRepository
 import models.core.Faculty
 import parser.Parser
 import parsing.core.FacultyFileParser
-
-import javax.inject.{Inject, Singleton}
-import scala.concurrent.ExecutionContext
 
 @Singleton
 final class FacultyService @Inject() (

@@ -14,12 +14,12 @@ object ModuleDraftSource {
     Format.of[String].bimap(apply, _.id)
 
   case object Added extends ModuleDraftSource {
-    override val id: String = "added"
+    override val id: String       = "added"
     override def isAdded: Boolean = true
   }
 
   case object Modified extends ModuleDraftSource {
-    override val id: String = "modified"
+    override val id: String       = "modified"
     override def isAdded: Boolean = false
   }
 

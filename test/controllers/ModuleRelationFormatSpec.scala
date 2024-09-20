@@ -1,11 +1,12 @@
 package controllers
 
+import java.util.UUID
+
 import cats.data.NonEmptyList
-import models.{ModuleCore, ModuleRelation}
+import models.ModuleCore
+import models.ModuleRelation
 import org.scalatest.wordspec.AnyWordSpec
 import play.api.libs.json.Json
-
-import java.util.UUID
 
 class ModuleRelationFormatSpec extends AnyWordSpec {
 
@@ -20,7 +21,7 @@ class ModuleRelationFormatSpec extends AnyWordSpec {
       val json = ModuleRelation.writes.writes(parent)
       assert(
         json == Json.obj(
-          "kind" -> "parent",
+          "kind"     -> "parent",
           "children" -> Json.toJson(List(m1, m2, m3))
         )
       )
@@ -28,7 +29,7 @@ class ModuleRelationFormatSpec extends AnyWordSpec {
 
     "convert a child object to json" in {
       val child: ModuleRelation = ModuleRelation.Child(m1)
-      val json = ModuleRelation.writes.writes(child)
+      val json                  = ModuleRelation.writes.writes(child)
       assert(json == Json.obj("kind" -> "child", "parent" -> Json.toJson(m1)))
     }
   }

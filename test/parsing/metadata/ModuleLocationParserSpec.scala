@@ -2,18 +2,14 @@ package parsing.metadata
 
 import helper.FakeLocations
 import models.core.ModuleLocation
-import org.scalatest.EitherValues
 import org.scalatest.wordspec.AnyWordSpec
+import org.scalatest.EitherValues
 import parsing.ParserSpecHelper
 
-class ModuleLocationParserSpec
-    extends AnyWordSpec
-    with ParserSpecHelper
-    with EitherValues
-    with FakeLocations {
+class ModuleLocationParserSpec extends AnyWordSpec with ParserSpecHelper with EitherValues with FakeLocations {
 
   val parser = ModuleLocationParser.parser
-  val raw = ModuleLocationParser.raw
+  val raw    = ModuleLocationParser.raw
 
   "A Location Parser" should {
     "parse a valid location" in {

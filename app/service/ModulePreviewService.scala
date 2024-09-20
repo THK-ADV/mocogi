@@ -1,24 +1,34 @@
 package service
 
+import java.nio.file.Files
+import java.nio.file.Path
+import java.util.UUID
+import javax.inject.Inject
+import javax.inject.Singleton
+
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+
 import database.repo.core.*
 import database.view.StudyProgramViewRepository
+import git.api.GitDiffApiService
+import git.api.GitFileDownloadService
 import git.GitConfig
-import git.api.{GitDiffApiService, GitFileDownloadService}
-import models.{FullPoId, ModuleCore, ModuleProtocol, StudyProgramView}
+import models.FullPoId
+import models.ModuleCore
+import models.ModuleProtocol
+import models.StudyProgramView
 import ops.EitherOps.EStringThrowOps
 import parsing.metadata.ModulePOParser
-import play.api.Logging
 import play.api.i18n.Lang
 import play.api.libs.Files.TemporaryFile
+import play.api.Logging
+import printing.latex.ModuleCatalogLatexPrinter
+import printing.latex.Payload
 import printing.PrintingLanguage
-import printing.latex.{ModuleCatalogLatexPrinter, Payload}
-import service.LatexCompiler.{compile, getPdf}
 import service.modulediff.ModuleProtocolDiff
-
-import java.nio.file.{Files, Path}
-import java.util.UUID
-import javax.inject.{Inject, Singleton}
-import scala.concurrent.{ExecutionContext, Future}
+import service.LatexCompiler.compile
+import service.LatexCompiler.getPdf
 
 @Singleton
 final class ModulePreviewService @Inject() (
@@ -117,11 +127,11 @@ final class ModulePreviewService @Inject() (
       diffs: Seq[(ModuleCore, Set[String])]
   ): Future[StringBuilder] =
     for {
-      mts <- moduleTypeRepository.all()
-      langs <- languageRepository.all()
+      mts     <- moduleTypeRepository.all()
+      langs   <- languageRepository.all()
       seasons <- seasonRepository.all()
-      people <- identityRepository.all()
-      ams <- assessmentMethodRepository.all()
+      people  <- identityRepository.all()
+      ams     <- assessmentMethodRepository.all()
     } yield printer.preview(
       diffs,
       Payload(

@@ -1,13 +1,10 @@
 package parsing.yaml
 
-import org.scalatest.EitherValues
 import org.scalatest.wordspec.AnyWordSpec
+import org.scalatest.EitherValues
 import parsing._
 
-final class YamlParserSpec
-    extends AnyWordSpec
-    with ParserSpecHelper
-    with EitherValues {
+final class YamlParserSpec extends AnyWordSpec with ParserSpecHelper with EitherValues {
 
   "A Yaml Parser Spec" when {
     "parse positive int" in {
@@ -16,7 +13,7 @@ final class YamlParserSpec
       assert(res1.value == 5)
 
       val (res2, rest2) = posIntForKey("key").parse("key: -1")
-      val expected = res2.left.value.expected
+      val expected      = res2.left.value.expected
       assert(rest2 == "key: -1")
       assert(expected == "int to be positive")
     }
@@ -67,22 +64,22 @@ final class YamlParserSpec
     }
 
     "parse a single string value" in {
-      val input1 = "foo: bar"
+      val input1        = "foo: bar"
       val (res1, rest1) = singleLineStringForKey("foo").parse(input1)
       assert(rest1.isEmpty)
       assert(res1.value == "bar")
 
-      val input2 = "foo: bar\n"
+      val input2        = "foo: bar\n"
       val (res2, rest2) = singleLineStringForKey("foo").parse(input2)
       assert(rest2.isEmpty)
       assert(res2.value == "bar")
 
-      val input3 = "foo: bar\nbaz: bar"
+      val input3        = "foo: bar\nbaz: bar"
       val (res3, rest3) = singleLineStringForKey("foo").parse(input3)
       assert(rest3 == "baz: bar")
       assert(res3.value == "bar")
 
-      val input4 = "foo: ''"
+      val input4        = "foo: ''"
       val (res4, rest4) = singleLineStringForKey("foo").parse(input4)
       assert(rest4.isEmpty)
       assert(res4.value.isEmpty)
@@ -237,7 +234,7 @@ final class YamlParserSpec
       assert(rest1.isEmpty)
       assert(res1.value == "paragraph1 paragraph2 paragraph3\n")
 
-      val input2 = "foo: bar"
+      val input2        = "foo: bar"
       val (res2, rest2) = stringForKey("foo").parse(input2)
       assert(rest2.isEmpty)
       assert(res2.value == "bar")
@@ -264,23 +261,23 @@ final class YamlParserSpec
     }
 
     "test shift spaces" in {
-      val input1 = List("paragraph1", " paragraph2")
+      val input1  = List("paragraph1", " paragraph2")
       val output1 = List("paragraph1\n", "paragraph2")
       assert(shiftSpaces(input1) == output1)
 
-      val input2 = List("paragraph1", "paragraph2")
+      val input2  = List("paragraph1", "paragraph2")
       val output2 = List("paragraph1", "paragraph2")
       assert(shiftSpaces(input2) == output2)
 
-      val input3 = List("paragraph1", " paragraph2", " paragraph3")
+      val input3  = List("paragraph1", " paragraph2", " paragraph3")
       val output3 = List("paragraph1\n", "paragraph2\n", "paragraph3")
       assert(shiftSpaces(input3) == output3)
 
-      val input4 = List("paragraph1", " paragraph2", "paragraph3")
+      val input4  = List("paragraph1", " paragraph2", "paragraph3")
       val output4 = List("paragraph1\n", "paragraph2", "paragraph3")
       assert(shiftSpaces(input4) == output4)
 
-      val input5 = List("paragraph1", "paragraph2", " paragraph3")
+      val input5  = List("paragraph1", "paragraph2", " paragraph3")
       val output5 = List("paragraph1", "paragraph2\n", "paragraph3")
       assert(shiftSpaces(input5) == output5)
     }

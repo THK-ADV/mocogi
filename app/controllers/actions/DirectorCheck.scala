@@ -1,18 +1,20 @@
 package controllers.actions
 
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+
 import controllers.actions.PersonAction.PersonRequest
 import database.repo.core.StudyProgramPersonRepository
 import models.UniversityRole
-import play.api.mvc.{ActionFilter, Result}
-
-import scala.concurrent.{ExecutionContext, Future}
+import play.api.mvc.ActionFilter
+import play.api.mvc.Result
 
 trait DirectorCheck { self: PermissionCheck =>
   protected def studyProgramPersonRepository: StudyProgramPersonRepository
 
   def hasRoleInStudyProgram(role: List[UniversityRole], studyProgram: String) =
     new ActionFilter[PersonRequest] {
-      override protected def filter[A](
+      protected override def filter[A](
           request: PersonRequest[A]
       ): Future[Option[Result]] =
         toResult(
@@ -21,6 +23,6 @@ trait DirectorCheck { self: PermissionCheck =>
           request.request
         )
 
-      override protected def executionContext: ExecutionContext = ctx
+      protected override def executionContext: ExecutionContext = ctx
     }
 }

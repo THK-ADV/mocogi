@@ -1,8 +1,8 @@
 package database.table
 
-import slick.jdbc.PostgresProfile.api.*
-
 import java.util.UUID
+
+import slick.jdbc.PostgresProfile.api.*
 
 case class ModuleAssessmentMethodPreconditionDbEntry(
     assessmentMethod: String,

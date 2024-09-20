@@ -2,10 +2,11 @@ package parsing.core
 
 import cats.data.NonEmptyList
 import helper._
-import org.scalatest.EitherValues
 import org.scalatest.wordspec.AnyWordSpec
+import org.scalatest.EitherValues
 import parsing.core.StudyProgramFileParser._
-import parsing.{ParserSpecHelper, withFile0}
+import parsing.withFile0
+import parsing.ParserSpecHelper
 
 final class StudyProgramFileParserSpec
     extends AnyWordSpec

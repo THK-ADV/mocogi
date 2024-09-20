@@ -2,15 +2,14 @@ package parsing.metadata
 
 import models.core.ModuleCompetence
 import parser.Parser
-import parsing.{multipleValueParser, multipleValueRawParser}
+import parsing.multipleValueParser
+import parsing.multipleValueRawParser
 
 object ModuleCompetencesParser {
-  def key = "competences"
+  def key    = "competences"
   def prefix = "competence."
 
-  def parser(implicit
-      competences: Seq[ModuleCompetence]
-  ): Parser[List[ModuleCompetence]] =
+  def parser(implicit competences: Seq[ModuleCompetence]): Parser[List[ModuleCompetence]] =
     multipleValueParser(
       key,
       (c: ModuleCompetence) => s"$prefix${c.id}"

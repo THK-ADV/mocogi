@@ -1,10 +1,11 @@
 package parsing.types
 
 import models.Metadata
+import monocle.macros.GenLens
 import monocle.syntax.all.focus
 import monocle.Traversal
-import monocle.macros.GenLens
-import play.api.libs.json.{Json, Writes}
+import play.api.libs.json.Json
+import play.api.libs.json.Writes
 
 case class Module(
     metadata: Metadata,
@@ -102,15 +103,16 @@ object Module {
       .modify(_.normalize())
 
     def normalize() =
-      (string andThen
-        prerequisites andThen
-        assessmentMethods andThen
-        poMandatory andThen
-        poOptional andThen
-        identities andThen
-        competences andThen
-        globalCriteria andThen
-        taughtWith andThen
-        content) apply self
+      string
+        .andThen(prerequisites)
+        .andThen(assessmentMethods)
+        .andThen(poMandatory)
+        .andThen(poOptional)
+        .andThen(identities)
+        .andThen(competences)
+        .andThen(globalCriteria)
+        .andThen(taughtWith)
+        .andThen(content)
+        .apply(self)
   }
 }

@@ -5,7 +5,7 @@ import models.core.Degree
 object DegreeFileParser extends LabelDescFileParser[Degree] {
   def parser() = super.fileParser()
 
-  override protected def makeType = {
+  protected override def makeType = {
     case (id, deLabel, enLabel, deDesc, enDesc) =>
       Degree(id, deLabel, deDesc, enLabel, enDesc)
   }

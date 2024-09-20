@@ -1,9 +1,11 @@
 package controllers
 
-import play.api.libs.json.Json
-import play.api.mvc.Results.{BadRequest, InternalServerError}
+import java.io.PrintWriter
+import java.io.StringWriter
 
-import java.io.{PrintWriter, StringWriter}
+import play.api.libs.json.Json
+import play.api.mvc.Results.BadRequest
+import play.api.mvc.Results.InternalServerError
 
 object ErrorHandler {
 
@@ -20,7 +22,7 @@ object ErrorHandler {
       throwable: Throwable
   ) = InternalServerError(
     Json.obj(
-      "type" -> "server error",
+      "type"    -> "server error",
       "request" -> request,
       "message" -> throwable.getMessage
     )

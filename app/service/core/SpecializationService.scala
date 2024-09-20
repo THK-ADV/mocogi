@@ -1,12 +1,15 @@
 package service.core
 
+import javax.inject.Inject
+import javax.inject.Singleton
+
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+
 import database.repo.core.SpecializationRepository
 import models.core.Specialization
 import parser.Parser
 import parsing.core.SpecializationFileParser
-
-import javax.inject.{Inject, Singleton}
-import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 final class SpecializationService @Inject() (

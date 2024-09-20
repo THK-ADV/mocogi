@@ -1,38 +1,33 @@
 package parsing
 
-import models.{
-  MetadataProtocol,
-  ModuleProtocol,
-  ModuleRelationProtocol,
-  ModuleWorkload
-}
+import models.MetadataProtocol
+import models.ModuleProtocol
+import models.ModuleRelationProtocol
+import models.ModuleWorkload
 import parser.Parser
-import parser.Parser.{prefix, zeroOrMoreSpaces}
-import parser.ParserOps.{
-  P0,
-  P10,
-  P11,
-  P12,
-  P13,
-  P14,
-  P15,
-  P16,
-  P2,
-  P3,
-  P4,
-  P5,
-  P6,
-  P7,
-  P8,
-  P9
-}
-import parsing.metadata.THKV1Parser.{
-  abbreviationParser,
-  durationParser,
-  idParser,
-  titleParser
-}
+import parser.Parser.prefix
+import parser.Parser.zeroOrMoreSpaces
+import parser.ParserOps.P0
+import parser.ParserOps.P10
+import parser.ParserOps.P11
+import parser.ParserOps.P12
+import parser.ParserOps.P13
+import parser.ParserOps.P14
+import parser.ParserOps.P15
+import parser.ParserOps.P16
+import parser.ParserOps.P2
+import parser.ParserOps.P3
+import parser.ParserOps.P4
+import parser.ParserOps.P5
+import parser.ParserOps.P6
+import parser.ParserOps.P7
+import parser.ParserOps.P8
+import parser.ParserOps.P9
 import parsing.metadata._
+import parsing.metadata.THKV1Parser.abbreviationParser
+import parsing.metadata.THKV1Parser.durationParser
+import parsing.metadata.THKV1Parser.idParser
+import parsing.metadata.THKV1Parser.titleParser
 import parsing.types.ParsedModuleRelation
 import service.ContentParsingService
 

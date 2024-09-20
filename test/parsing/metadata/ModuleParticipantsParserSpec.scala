@@ -1,15 +1,12 @@
 package parsing.metadata
 
-import org.scalatest.EitherValues
 import org.scalatest.wordspec.AnyWordSpec
-import parsing.ParserSpecHelper
+import org.scalatest.EitherValues
 import parsing.metadata.ModuleParticipantsParser._
 import parsing.types.ModuleParticipants
+import parsing.ParserSpecHelper
 
-final class ModuleParticipantsParserSpec
-    extends AnyWordSpec
-    with ParserSpecHelper
-    with EitherValues {
+final class ModuleParticipantsParserSpec extends AnyWordSpec with ParserSpecHelper with EitherValues {
 
   "A Participants Parser should" should {
     "parse participants" in {

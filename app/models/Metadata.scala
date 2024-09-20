@@ -1,12 +1,13 @@
 package models
 
+import java.util.UUID
+
 import cats.data.NonEmptyList
 import models.core.*
 import models.core.ExamPhases.ExamPhase
 import parsing.types.*
-import play.api.libs.json.{Json, Writes}
-
-import java.util.UUID
+import play.api.libs.json.Json
+import play.api.libs.json.Writes
 
 case class Metadata(
     id: UUID,

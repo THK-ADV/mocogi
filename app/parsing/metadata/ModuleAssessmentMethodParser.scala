@@ -1,26 +1,24 @@
 package parsing.metadata
 
 import models.core.AssessmentMethod
-import models.{
-  ModuleAssessmentMethodEntryProtocol,
-  ModuleAssessmentMethodsProtocol
-}
+import models.ModuleAssessmentMethodEntryProtocol
+import models.ModuleAssessmentMethodsProtocol
 import parser.Parser
 import parser.Parser._
-import parser.ParserOps.{P0, P2}
+import parser.ParserOps.P0
+import parser.ParserOps.P2
 import parsing.multipleValueParser
-import parsing.types.{ModuleAssessmentMethodEntry, ModuleAssessmentMethods}
+import parsing.types.ModuleAssessmentMethodEntry
+import parsing.types.ModuleAssessmentMethods
 
 object ModuleAssessmentMethodParser {
 
   def assessmentPrefix = "assessment."
-  def preconditionKey = "precondition"
-  def mandatoryKey = "assessment_methods_mandatory"
-  def electiveKey = "assessment_methods_optional"
+  def preconditionKey  = "precondition"
+  def mandatoryKey     = "assessment_methods_mandatory"
+  def electiveKey      = "assessment_methods_optional"
 
-  private def assessmentMethodParser(implicit
-      assessmentMethods: Seq[AssessmentMethod]
-  ): Parser[AssessmentMethod] =
+  private def assessmentMethodParser(implicit assessmentMethods: Seq[AssessmentMethod]): Parser[AssessmentMethod] =
     oneOf(
       assessmentMethods
         .map(a => prefix(s"$assessmentPrefix${a.id}").map(_ => a)): _*
@@ -31,9 +29,7 @@ object ModuleAssessmentMethodParser {
       .take(prefixTo("\n").or(rest))
       .map(_.trim)
 
-  private def methodParser(implicit
-      assessmentMethods: Seq[AssessmentMethod]
-  ): Parser[AssessmentMethod] =
+  private def methodParser(implicit assessmentMethods: Seq[AssessmentMethod]): Parser[AssessmentMethod] =
     prefix("- method:")
       .skip(zeroOrMoreSpaces)
       .take(assessmentMethodParser)
@@ -49,9 +45,7 @@ object ModuleAssessmentMethodParser {
       .take(double)
       .option
 
-  private def preconditionParser(implicit
-      assessmentMethods: Seq[AssessmentMethod]
-  ): Parser[List[AssessmentMethod]] =
+  private def preconditionParser(implicit assessmentMethods: Seq[AssessmentMethod]): Parser[List[AssessmentMethod]] =
     multipleValueParser(preconditionKey, assessmentMethodParser).option
       .map(_.getOrElse(Nil))
 
@@ -65,14 +59,14 @@ object ModuleAssessmentMethodParser {
     prefix(s"$preconditionKey:")
       .skip(zeroOrMoreSpaces)
       .skip(optional(newline))
-      .take(assessmentMethodParserRaw.map(a => List(a)) or dashes)
+      .take(assessmentMethodParserRaw.map(a => List(a)).or(dashes))
       .option
       .map(_.getOrElse(Nil))
   }
 
-  private def parser(key: String)(implicit
-      assessmentMethods: Seq[AssessmentMethod]
-  ): Parser[List[ModuleAssessmentMethodEntry]] =
+  private def parser(
+      key: String
+  )(implicit assessmentMethods: Seq[AssessmentMethod]): Parser[List[ModuleAssessmentMethodEntry]] =
     prefix(s"$key:")
       .skip(zeroOrMoreSpaces)
       .take(
@@ -100,19 +94,13 @@ object ModuleAssessmentMethodParser {
           .map(_.map((ModuleAssessmentMethodEntryProtocol.apply _).tupled))
       )
 
-  def mandatoryParser(implicit
-      xs: Seq[AssessmentMethod]
-  ): Parser[List[ModuleAssessmentMethodEntry]] =
+  def mandatoryParser(implicit xs: Seq[AssessmentMethod]): Parser[List[ModuleAssessmentMethodEntry]] =
     parser(mandatoryKey)(xs.sortBy(_.id).reverse).option.map(_.getOrElse(Nil))
 
-  def electiveParser(implicit
-      xs: Seq[AssessmentMethod]
-  ): Parser[List[ModuleAssessmentMethodEntry]] =
+  def electiveParser(implicit xs: Seq[AssessmentMethod]): Parser[List[ModuleAssessmentMethodEntry]] =
     parser(electiveKey)(xs.sortBy(_.id).reverse).option.map(_.getOrElse(Nil))
 
-  def parser(implicit
-      xs: Seq[AssessmentMethod]
-  ): Parser[ModuleAssessmentMethods] =
+  def parser(implicit xs: Seq[AssessmentMethod]): Parser[ModuleAssessmentMethods] =
     mandatoryParser
       .zip(electiveParser)
       .map((ModuleAssessmentMethods.apply _).tupled)

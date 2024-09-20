@@ -1,13 +1,19 @@
 package database.repo
 
-import catalog.{ModuleCatalogList, Semester}
-import database.table.{ModuleCatalog, ModuleCatalogEntry}
-import database.view.StudyProgramViewRepository
-import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfigProvider}
-import slick.jdbc.JdbcProfile
+import javax.inject.Inject
+import javax.inject.Singleton
 
-import javax.inject.{Inject, Singleton}
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+
+import catalog.ModuleCatalogList
+import catalog.Semester
+import database.table.ModuleCatalog
+import database.table.ModuleCatalogEntry
+import database.view.StudyProgramViewRepository
+import play.api.db.slick.DatabaseConfigProvider
+import play.api.db.slick.HasDatabaseConfigProvider
+import slick.jdbc.JdbcProfile
 
 @Singleton
 final class ModuleCatalogRepository @Inject() (
@@ -26,7 +32,7 @@ final class ModuleCatalogRepository @Inject() (
 
   private def studyProgramQuery = studyProgramViewRepo.tableQuery
 
-  override protected def retrieve(
+  protected override def retrieve(
       query: Query[ModuleCatalog, ModuleCatalogEntry, Seq]
   ): Future[Seq[ModuleCatalogList]] = {
     db.run(
@@ -34,14 +40,15 @@ final class ModuleCatalogRepository @Inject() (
         .join(studyProgramQuery)
         .on(_.fullPo === _.fullPo)
         .result
-        .map(_.map { case (mcl, sp) =>
-          catalog.ModuleCatalogList(
-            sp,
-            Semester(mcl.semester),
-            mcl.deUrl,
-            mcl.enUrl,
-            mcl.generated
-          )
+        .map(_.map {
+          case (mcl, sp) =>
+            catalog.ModuleCatalogList(
+              sp,
+              Semester(mcl.semester),
+              mcl.deUrl,
+              mcl.enUrl,
+              mcl.generated
+            )
         }.toSeq)
     )
   }

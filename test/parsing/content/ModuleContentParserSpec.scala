@@ -1,14 +1,12 @@
 package parsing.content
 
-import org.scalatest.EitherValues
 import org.scalatest.wordspec.AnyWordSpec
+import org.scalatest.EitherValues
 import parsing.content.ModuleContentParser.contentParser
-import parsing.{ParserSpecHelper, withFile0}
+import parsing.withFile0
+import parsing.ParserSpecHelper
 
-class ModuleContentParserSpec
-    extends AnyWordSpec
-    with ParserSpecHelper
-    with EitherValues {
+class ModuleContentParserSpec extends AnyWordSpec with ParserSpecHelper with EitherValues {
 
   "A Module Content Parser" should {
 

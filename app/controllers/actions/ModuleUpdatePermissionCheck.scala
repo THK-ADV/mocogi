@@ -1,18 +1,21 @@
 package controllers.actions
 
-import auth.UserTokenRequest
-import play.api.mvc.{ActionFilter, Result}
-import service.ModuleUpdatePermissionService
-
 import java.util.UUID
-import scala.concurrent.{ExecutionContext, Future}
+
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+
+import auth.UserTokenRequest
+import play.api.mvc.ActionFilter
+import play.api.mvc.Result
+import service.ModuleUpdatePermissionService
 
 trait ModuleUpdatePermissionCheck { self: PermissionCheck =>
   implicit def moduleUpdatePermissionService: ModuleUpdatePermissionService
 
   def hasInheritedPermission(moduleId: UUID) =
     new ActionFilter[UserTokenRequest] {
-      override protected def filter[A](
+      protected override def filter[A](
           request: UserTokenRequest[A]
       ): Future[Option[Result]] = {
         if (request.campusId.value == "adobryni")
@@ -25,6 +28,6 @@ trait ModuleUpdatePermissionCheck { self: PermissionCheck =>
           )
       }
 
-      override protected def executionContext: ExecutionContext = ctx
+      protected override def executionContext: ExecutionContext = ctx
     }
 }

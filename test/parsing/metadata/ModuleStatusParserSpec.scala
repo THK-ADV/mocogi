@@ -2,18 +2,14 @@ package parsing.metadata
 
 import helper.FakeStatus
 import models.core.ModuleStatus
-import org.scalatest.EitherValues
 import org.scalatest.wordspec.AnyWordSpec
+import org.scalatest.EitherValues
 import parsing.ParserSpecHelper
 
-class ModuleStatusParserSpec
-    extends AnyWordSpec
-    with ParserSpecHelper
-    with EitherValues
-    with FakeStatus {
+class ModuleStatusParserSpec extends AnyWordSpec with ParserSpecHelper with EitherValues with FakeStatus {
 
   val parser = ModuleStatusParser.parser
-  val raw = ModuleStatusParser.raw
+  val raw    = ModuleStatusParser.raw
 
   "A Status Parser" should {
     "parse a valid status" in {

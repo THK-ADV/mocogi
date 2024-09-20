@@ -1,17 +1,19 @@
 package database.table
 
+import java.time.LocalDateTime
+import java.util.UUID
+
 import database.table.core.IdentityTable
-import git.{Branch, CommitId, MergeRequestId, MergeRequestStatus}
+import git.Branch
+import git.CommitId
+import git.MergeRequestId
+import git.MergeRequestStatus
 import models._
 import play.api.libs.json.JsValue
 import service.Print
 import slick.jdbc.PostgresProfile.api._
 
-import java.time.LocalDateTime
-import java.util.UUID
-
-final class ModuleDraftTable(tag: Tag)
-    extends Table[ModuleDraft](tag, "module_draft") {
+final class ModuleDraftTable(tag: Tag) extends Table[ModuleDraft](tag, "module_draft") {
   def module = column[UUID]("module", O.PrimaryKey)
 
   def moduleTitle = column[String]("module_title")

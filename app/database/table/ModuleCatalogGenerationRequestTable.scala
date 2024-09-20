@@ -1,6 +1,7 @@
 package database.table
 
-import git.{MergeRequestId, MergeRequestStatus}
+import git.MergeRequestId
+import git.MergeRequestStatus
 import models.ModuleCatalogGenerationRequest
 import slick.jdbc.PostgresProfile.api._
 import slick.lifted.ProvenShape

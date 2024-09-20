@@ -1,12 +1,11 @@
 package database
 
-import slick.dbio.DBIO
-
 import scala.concurrent.ExecutionContext
 
+import slick.dbio.DBIO
+
 package object repo {
-  implicit class ActionSeqOps[A](private val self: DBIO[Seq[A]])
-      extends AnyVal {
+  implicit class ActionSeqOps[A](private val self: DBIO[Seq[A]]) extends AnyVal {
     def single(implicit ctx: ExecutionContext): DBIO[A] =
       self.flatMap(xs =>
         xs.size match {

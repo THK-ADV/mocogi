@@ -1,8 +1,10 @@
 package models
 
-import models.core.{PO, Specialization}
+import models.core.PO
+import models.core.Specialization
 import parsing.types.ModulePOMandatory
-import play.api.libs.json.{Json, Writes}
+import play.api.libs.json.Json
+import play.api.libs.json.Writes
 
 case class ModulePOs(
     mandatory: List[ModulePOMandatory],

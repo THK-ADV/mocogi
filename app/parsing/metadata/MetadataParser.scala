@@ -6,8 +6,8 @@ import parsing.types._
 
 trait MetadataParser {
   val versionScheme: VersionScheme
-  def parser(implicit
-      locations: Seq[ModuleLocation],
+  def parser(
+      implicit locations: Seq[ModuleLocation],
       languages: Seq[ModuleLanguage],
       status: Seq[ModuleStatus],
       assessmentMethods: Seq[AssessmentMethod],

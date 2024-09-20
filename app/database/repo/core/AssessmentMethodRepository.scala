@@ -1,13 +1,16 @@
 package database.repo.core
 
+import javax.inject.Inject
+import javax.inject.Singleton
+
+import scala.concurrent.ExecutionContext
+
 import database.repo.Repository
 import database.table.core.AssessmentMethodTable
 import models.core.AssessmentMethod
-import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfigProvider}
+import play.api.db.slick.DatabaseConfigProvider
+import play.api.db.slick.HasDatabaseConfigProvider
 import slick.jdbc.JdbcProfile
-
-import javax.inject.{Inject, Singleton}
-import scala.concurrent.ExecutionContext
 
 @Singleton
 class AssessmentMethodRepository @Inject() (
@@ -19,7 +22,7 @@ class AssessmentMethodRepository @Inject() (
 
   protected val tableQuery = TableQuery[AssessmentMethodTable]
 
-  override protected def retrieve(
+  protected override def retrieve(
       query: Query[AssessmentMethodTable, AssessmentMethod, Seq]
   ) =
     db.run(query.result)
@@ -28,5 +31,5 @@ class AssessmentMethodRepository @Inject() (
     db.run(tableQuery.map(_.id).result)
 
   def deleteMany(ids: Seq[String]) =
-    db.run(tableQuery.filter(_.id inSet ids).delete)
+    db.run(tableQuery.filter(_.id.inSet(ids)).delete)
 }

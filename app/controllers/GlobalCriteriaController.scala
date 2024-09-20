@@ -1,12 +1,15 @@
 package controllers
 
+import javax.inject.Inject
+import javax.inject.Singleton
+
+import scala.concurrent.ExecutionContext
+
 import models.core.ModuleGlobalCriteria
 import play.api.libs.json.Writes
-import play.api.mvc.{AbstractController, ControllerComponents}
+import play.api.mvc.AbstractController
+import play.api.mvc.ControllerComponents
 import service.core.GlobalCriteriaService
-
-import javax.inject.{Inject, Singleton}
-import scala.concurrent.ExecutionContext
 
 @Singleton
 final class GlobalCriteriaController @Inject() (
@@ -15,5 +18,5 @@ final class GlobalCriteriaController @Inject() (
     implicit val ctx: ExecutionContext
 ) extends AbstractController(cc)
     with YamlController[ModuleGlobalCriteria] {
-  override implicit val writes: Writes[ModuleGlobalCriteria] = ModuleGlobalCriteria.writes
+  implicit override val writes: Writes[ModuleGlobalCriteria] = ModuleGlobalCriteria.writes
 }

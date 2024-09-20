@@ -1,10 +1,16 @@
 package git.api
 
-import git.{Branch, GitConfig, GitFileContent, GitFilePath}
-import play.api.libs.ws.WSClient
+import javax.inject.Inject
+import javax.inject.Singleton
 
-import javax.inject.{Inject, Singleton}
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+
+import git.Branch
+import git.GitConfig
+import git.GitFileContent
+import git.GitFilePath
+import play.api.libs.ws.WSClient
 
 @Singleton
 final class GitFileApiService @Inject() (

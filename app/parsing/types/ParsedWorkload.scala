@@ -1,6 +1,7 @@
 package parsing.types
 
-import play.api.libs.json.{Format, Json}
+import play.api.libs.json.Format
+import play.api.libs.json.Json
 
 case class ParsedWorkload(
     lecture: Int,

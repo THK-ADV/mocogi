@@ -2,7 +2,8 @@ package models.core
 
 import cats.data.NonEmptyList
 import controllers.NelWrites
-import play.api.libs.json.{JsString, Writes}
+import play.api.libs.json.JsString
+import play.api.libs.json.Writes
 
 object ExamPhases:
   opaque type ExamPhase = String

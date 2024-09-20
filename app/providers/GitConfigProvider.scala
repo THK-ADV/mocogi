@@ -1,12 +1,14 @@
 package providers
 
-import git.{Branch, GitConfig}
+import javax.inject.Inject
+import javax.inject.Provider
+import javax.inject.Singleton
 
-import javax.inject.{Inject, Provider, Singleton}
+import git.Branch
+import git.GitConfig
 
 @Singleton
-final class GitConfigProvider @Inject() (config: ConfigReader)
-    extends Provider[GitConfig] {
+final class GitConfigProvider @Inject() (config: ConfigReader) extends Provider[GitConfig] {
   override def get(): GitConfig =
     GitConfig(
       config.gitToken,

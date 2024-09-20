@@ -1,14 +1,12 @@
 package parsing.core
 
 import models.core.ModuleType
-import org.scalatest.EitherValues
 import org.scalatest.wordspec.AnyWordSpec
-import parsing.{ParserSpecHelper, withFile0}
+import org.scalatest.EitherValues
+import parsing.withFile0
+import parsing.ParserSpecHelper
 
-class ModuleTypeFileParserSpec
-    extends AnyWordSpec
-    with ParserSpecHelper
-    with EitherValues {
+class ModuleTypeFileParserSpec extends AnyWordSpec with ParserSpecHelper with EitherValues {
 
   val parser = ModuleTypeFileParser.parser()
 

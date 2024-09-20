@@ -1,26 +1,25 @@
 package controllers
 
-import auth.AuthorizationAction
-import controllers.actions.{
-  ApprovalCheck,
-  ModuleDraftCheck,
-  PermissionCheck,
-  PersonAction
-}
-import database.repo.core.IdentityRepository
-import play.api.libs.json._
-import play.api.mvc.{AbstractController, ControllerComponents}
-import service.{
-  ModuleApprovalService,
-  ModuleDraftService,
-  ModuleReviewService,
-  ModuleUpdatePermissionService
-}
-
 import java.util.UUID
-import javax.inject.{Inject, Singleton}
+import javax.inject.Inject
+import javax.inject.Singleton
+
 import scala.annotation.unused
 import scala.concurrent.ExecutionContext
+
+import auth.AuthorizationAction
+import controllers.actions.ApprovalCheck
+import controllers.actions.ModuleDraftCheck
+import controllers.actions.PermissionCheck
+import controllers.actions.PersonAction
+import database.repo.core.IdentityRepository
+import play.api.libs.json._
+import play.api.mvc.AbstractController
+import play.api.mvc.ControllerComponents
+import service.ModuleApprovalService
+import service.ModuleDraftService
+import service.ModuleReviewService
+import service.ModuleUpdatePermissionService
 
 @Singleton
 final class ModuleDraftApprovalController @Inject() (
@@ -54,26 +53,22 @@ final class ModuleDraftApprovalController @Inject() (
       } yield (approved, comment)
 
   def getOwn =
-    auth andThen personAction async { r =>
+    auth.andThen(personAction).async { r =>
       approvalService
         .reviewerApprovals(r.person)
         .map(xs => Ok(Json.toJson(xs)))
     }
 
   def getByModule(moduleId: UUID) =
-    auth andThen
-      personAction andThen
-      hasPermissionToViewDraft(moduleId, approvalService) async {
-        _ => // TODO this should not be in ModuleDraftCheck
-          reviewService.allByModule(moduleId).map(xs => Ok(Json.toJson(xs)))
-      }
+    auth.andThen(personAction).andThen(hasPermissionToViewDraft(moduleId, approvalService)).async {
+      _ => // TODO this should not be in ModuleDraftCheck
+        reviewService.allByModule(moduleId).map(xs => Ok(Json.toJson(xs)))
+    }
 
   def update(@unused moduleId: UUID, reviewId: UUID) =
-    auth(parse.json(readsUpdate)) andThen
-      personAction andThen
-      hasPermissionToApproveReview(reviewId) async { r =>
-        reviewService
-          .update(reviewId, r.person, r.body._1, r.body._2)
-          .map(_ => NoContent)
-      }
+    auth(parse.json(readsUpdate)).andThen(personAction).andThen(hasPermissionToApproveReview(reviewId)).async { r =>
+      reviewService
+        .update(reviewId, r.person, r.body._1, r.body._2)
+        .map(_ => NoContent)
+    }
 }

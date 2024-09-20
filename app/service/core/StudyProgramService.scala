@@ -1,12 +1,15 @@
 package service.core
 
+import javax.inject.Inject
+import javax.inject.Singleton
+
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+
 import database.repo.core.StudyProgramRepository
 import models.core.StudyProgram
 import parser.Parser
 import parsing.core.StudyProgramFileParser
-
-import javax.inject.{Inject, Singleton}
-import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 final class StudyProgramService @Inject() (
@@ -19,7 +22,7 @@ final class StudyProgramService @Inject() (
   override def parser: Future[Parser[List[StudyProgram]]] =
     for {
       degrees <- degreeService.all()
-      people <- personService.all()
+      people  <- personService.all()
     } yield StudyProgramFileParser.fileParser(degrees, people)
 
   override def createOrUpdateMany(

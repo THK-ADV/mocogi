@@ -1,18 +1,24 @@
 package webhook
 
-import git._
-import git.api.GitFileDownloadService
-import git.publisher.{CoreDataPublisher, ModulePublisher}
-import ops.LoggerOps
-import org.apache.pekko.actor.{Actor, ActorRef, Props}
-import play.api.Logging
-import play.api.libs.json._
-
 import java.time.LocalDateTime
 import javax.inject.Singleton
+
 import scala.collection.mutable.ListBuffer
-import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Failure, Success}
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+import scala.util.Failure
+import scala.util.Success
+
+import git._
+import git.api.GitFileDownloadService
+import git.publisher.CoreDataPublisher
+import git.publisher.ModulePublisher
+import ops.LoggerOps
+import org.apache.pekko.actor.Actor
+import org.apache.pekko.actor.ActorRef
+import org.apache.pekko.actor.Props
+import play.api.libs.json._
+import play.api.Logging
 
 @Singleton
 case class GitPushEventHandler(private val value: ActorRef) {
@@ -54,9 +60,9 @@ object GitPushEventHandler {
       ) match {
         case Some(commit) =>
           for {
-            added <- commit.\("added").validate[List[String]]
-            modified <- commit.\("modified").validate[List[String]]
-            removed <- commit.\("removed").validate[List[String]]
+            added     <- commit.\("added").validate[List[String]]
+            modified  <- commit.\("modified").validate[List[String]]
+            removed   <- commit.\("removed").validate[List[String]]
             timestamp <- commit.\("timestamp").validate[LocalDateTime]
           } yield (
             added.map(GitFilePath.apply),
@@ -70,9 +76,9 @@ object GitPushEventHandler {
 
   def parse(json: JsValue)(implicit gitConfig: GitConfig) =
     for {
-      branch <- parseBranch(json)
+      branch      <- parseBranch(json)
       afterCommit <- parseCommit(json, "after")
-      _ <- parseCommit(json, "before")
+      _           <- parseCommit(json, "before")
       (added, modified, deleted, timestamp) <- parseFilesOfLastCommit(
         json,
         afterCommit
@@ -144,43 +150,44 @@ object GitPushEventHandler {
       with Logging
       with LoggerOps {
 
-    override def receive: Receive = { case HandleEvent(json) =>
-      logger.info("start handling git push event")
-      parse(json) match {
-        case JsSuccess((branch, gitChanges), _) =>
-          if (!branch.isMainBranch) {
-            logger.info(
-              s"can't handle action on branch ${branch.value}"
-            )
-          } else {
-            val (moduleFiles, coreFiles) = filesToDownload(gitChanges.entries)
-            if (moduleFiles.isEmpty && coreFiles.isEmpty) {
-              logger.info("can't handle empty changes")
+    override def receive: Receive = {
+      case HandleEvent(json) =>
+        logger.info("start handling git push event")
+        parse(json) match {
+          case JsSuccess((branch, gitChanges), _) =>
+            if (!branch.isMainBranch) {
+              logger.info(
+                s"can't handle action on branch ${branch.value}"
+              )
             } else {
-              downloadGitFiles(branch, moduleFiles, coreFiles) onComplete {
-                case Success((moduleFiles, coreFiles)) =>
-                  modulePublisher.notifySubscribers(
-                    moduleFiles,
-                    gitChanges.timestamp
-                  )
-                  coreDataPublisher.notifySubscribers(
-                    coreFiles
-                  )
-                  logger.info("finished!")
-                case Failure(e) =>
-                  logFailure(e)
+              val (moduleFiles, coreFiles) = filesToDownload(gitChanges.entries)
+              if (moduleFiles.isEmpty && coreFiles.isEmpty) {
+                logger.info("can't handle empty changes")
+              } else {
+                downloadGitFiles(branch, moduleFiles, coreFiles).onComplete {
+                  case Success((moduleFiles, coreFiles)) =>
+                    modulePublisher.notifySubscribers(
+                      moduleFiles,
+                      gitChanges.timestamp
+                    )
+                    coreDataPublisher.notifySubscribers(
+                      coreFiles
+                    )
+                    logger.info("finished!")
+                  case Failure(e) =>
+                    logFailure(e)
+                }
               }
             }
-          }
-        case JsError(errors) =>
-          logUnhandedEvent(logger, errors)
-      }
+          case JsError(errors) =>
+            logUnhandedEvent(logger, errors)
+        }
     }
 
     private def filesToDownload(files: List[GitFile]) = {
       val moduleFiles = ListBuffer.empty[GitFile.ModuleFile]
-      val coreFiles = ListBuffer.empty[GitFile.CoreFile]
-      files foreach {
+      val coreFiles   = ListBuffer.empty[GitFile.CoreFile]
+      files.foreach {
         case module: GitFile.ModuleFile if !module.status.isRemoved =>
           moduleFiles += module
         case core: GitFile.CoreFile if !core.status.isRemoved =>
@@ -212,7 +219,7 @@ object GitPushEventHandler {
       )
       for {
         downloadedModuleFiles <- downloadedModuleFiles
-        downloadedCoreFiles <- downloadedCoreFiles
+        downloadedCoreFiles   <- downloadedCoreFiles
       } yield (downloadedModuleFiles, downloadedCoreFiles)
     }
   }

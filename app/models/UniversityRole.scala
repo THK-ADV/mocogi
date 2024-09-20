@@ -9,12 +9,12 @@ sealed trait UniversityRole extends IDLabel {
 
 object UniversityRole {
   case object SGL extends UniversityRole {
-    override def id: String = "sgl"
+    override def id: String      = "sgl"
     override def deLabel: String = "Studiengangsleitung"
     override def enLabel: String = "Program Director"
   }
   case object PAV extends UniversityRole {
-    override def id: String = "pav"
+    override def id: String      = "pav"
     override def deLabel: String = "Prüfungsausschussvorsitz"
     override def enLabel: String = "Exam Director"
   }

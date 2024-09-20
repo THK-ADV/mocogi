@@ -1,7 +1,8 @@
 package parsing.metadata
 
 import parser.Parser
-import parser.Parser.{double, prefix}
+import parser.Parser.double
+import parser.Parser.prefix
 import parser.ParserOps.P0
 
 object VersionSchemeParser {

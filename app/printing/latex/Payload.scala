@@ -1,7 +1,8 @@
 package printing.latex
 
 import models.core._
-import models.{ModuleProtocol, StudyProgramView}
+import models.ModuleProtocol
+import models.StudyProgramView
 
 case class Payload(
     studyProgram: StudyProgramView,

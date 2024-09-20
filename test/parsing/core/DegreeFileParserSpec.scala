@@ -2,15 +2,12 @@ package parsing.core
 
 import helper.FakeDegrees
 import models.core.Degree
-import org.scalatest.EitherValues
 import org.scalatest.wordspec.AnyWordSpec
-import parsing.{ParserSpecHelper, withFile0}
+import org.scalatest.EitherValues
+import parsing.withFile0
+import parsing.ParserSpecHelper
 
-final class DegreeFileParserSpec
-    extends AnyWordSpec
-    with ParserSpecHelper
-    with EitherValues
-    with FakeDegrees {
+final class DegreeFileParserSpec extends AnyWordSpec with ParserSpecHelper with EitherValues with FakeDegrees {
 
   val parser = DegreeFileParser.parser()
 

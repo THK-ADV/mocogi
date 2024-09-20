@@ -1,15 +1,16 @@
 package controllers.actions
 
-import controllers.actions.PersonAction.PersonRequest
-import play.api.mvc.{ActionFilter, Result}
-import service.{
-  ModuleApprovalService,
-  ModuleDraftService,
-  ModuleUpdatePermissionService
-}
-
 import java.util.UUID
-import scala.concurrent.{ExecutionContext, Future}
+
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+
+import controllers.actions.PersonAction.PersonRequest
+import play.api.mvc.ActionFilter
+import play.api.mvc.Result
+import service.ModuleApprovalService
+import service.ModuleDraftService
+import service.ModuleUpdatePermissionService
 
 trait ModuleDraftCheck { self: PermissionCheck =>
   implicit def moduleDraftService: ModuleDraftService
@@ -20,7 +21,7 @@ trait ModuleDraftCheck { self: PermissionCheck =>
       request: PersonRequest[A]
   ): Future[Boolean] = {
     val campusId = request.request.campusId
-    val person = request.person
+    val person   = request.person
     for {
       b1 <- moduleUpdatePermissionService.hasPermission(campusId, moduleId)
       b2 <- moduleDraftService.isAuthorOf(moduleId, person.id)
@@ -29,12 +30,12 @@ trait ModuleDraftCheck { self: PermissionCheck =>
 
   def hasPermissionToEditDraft(moduleId: UUID) =
     new ActionFilter[PersonRequest] {
-      override protected def filter[A](
+      protected override def filter[A](
           request: PersonRequest[A]
       ): Future[Option[Result]] =
         toResult(hasPermissionToEditDraft0(moduleId, request), request.request)
 
-      override protected def executionContext: ExecutionContext = ctx
+      protected override def executionContext: ExecutionContext = ctx
     }
 
   def hasPermissionToViewDraft(
@@ -42,7 +43,7 @@ trait ModuleDraftCheck { self: PermissionCheck =>
       moduleApprovalService: ModuleApprovalService
   ) =
     new ActionFilter[PersonRequest] {
-      override protected def filter[A](
+      protected override def filter[A](
           request: PersonRequest[A]
       ): Future[Option[Result]] = {
         val person = request.person
@@ -53,6 +54,6 @@ trait ModuleDraftCheck { self: PermissionCheck =>
         toResult(hasPermission, request.request)
       }
 
-      override protected def executionContext: ExecutionContext = ctx
+      protected override def executionContext: ExecutionContext = ctx
     }
 }

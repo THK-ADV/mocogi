@@ -1,20 +1,21 @@
 package controllers
 
-import org.scalatest.OptionValues
+import java.util.UUID
+
 import org.scalatest.wordspec.AnyWordSpec
+import org.scalatest.OptionValues
 import parser.ParsingError
-import play.api.libs.json.{JsArray, JsString}
+import play.api.libs.json.JsArray
+import play.api.libs.json.JsString
 import printer.PrintingError
 import service.PipelineError
 import validator.ValidationError
-
-import java.util.UUID
 
 final class PipelineErrorFormatSpec extends AnyWordSpec with OptionValues {
 
   "A PipelineErrorFormat Spec" should {
     "serialize a parsing error" in {
-      val medata = UUID.randomUUID
+      val medata       = UUID.randomUUID
       val parsingError = ParsingError("exp", "fo")
       val res =
         PipelineError.writes.writes(
@@ -27,7 +28,7 @@ final class PipelineErrorFormatSpec extends AnyWordSpec with OptionValues {
     }
 
     "serialize a printing error" in {
-      val medata = UUID.randomUUID
+      val medata        = UUID.randomUUID
       val printingError = PrintingError("exp", "fo")
       val res =
         PipelineError.writes.writes(
@@ -40,7 +41,7 @@ final class PipelineErrorFormatSpec extends AnyWordSpec with OptionValues {
     }
 
     "serialize a validation error" in {
-      val metadata = UUID.randomUUID()
+      val metadata        = UUID.randomUUID()
       val validationError = ValidationError(List("abc", "def"))
       val res =
         PipelineError.writes.writes(

@@ -10,7 +10,5 @@ final class CombineValidators[A](
     validators.map(_.expected()).toList.mkString(" or ")
 
   override def validate(a: A): Either[String, A] =
-    validators.foldLeft[Either[String, A]](Right(a))((acc, validator) =>
-      acc.flatMap(validator.validate)
-    )
+    validators.foldLeft[Either[String, A]](Right(a))((acc, validator) => acc.flatMap(validator.validate))
 }

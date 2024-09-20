@@ -1,28 +1,26 @@
 package validator
 
+import java.time.LocalDate
+import java.util.UUID
+
 import cats.data.NonEmptyList
 import models.*
 import models.core.*
 import models.core.ExamPhases.ExamPhase
 import org.scalatest.wordspec.AnyWordSpec
-import org.scalatest.{EitherValues, OptionValues}
+import org.scalatest.EitherValues
+import org.scalatest.OptionValues
 import parsing.types.*
 import validator.MetadataValidator.*
 
-import java.time.LocalDate
-import java.util.UUID
-
-final class MetadataValidatorSpec
-    extends AnyWordSpec
-    with EitherValues
-    with OptionValues {
+final class MetadataValidatorSpec extends AnyWordSpec with EitherValues with OptionValues {
 
   private case class PosInt(value: Int)
 
-  private lazy val am = AssessmentMethod("", "", "")
-  private lazy val fa = FocusAreaID("")
-  private lazy val ld = LocalDate.of(1998, 5, 9)
-  private lazy val sp = PO("", 0, "", ld, None)
+  private lazy val am                = AssessmentMethod("", "", "")
+  private lazy val fa                = FocusAreaID("")
+  private lazy val ld                = LocalDate.of(1998, 5, 9)
+  private lazy val sp                = PO("", 0, "", ld, None)
   private lazy val creditPointFactor = 30
 
   private def method(percentage: Option[Double]) =
@@ -37,9 +35,9 @@ final class MetadataValidatorSpec
   private def poOpt(module: UUID) =
     ParsedPOOptional(sp, None, module, partOfCatalog = false, Nil)
 
-  val m1 = ModuleCore(UUID.randomUUID, "t1", "m1")
-  val m2 = ModuleCore(UUID.randomUUID, "t1", "m2")
-  val m3 = ModuleCore(UUID.randomUUID, "t1", "m3")
+  val m1      = ModuleCore(UUID.randomUUID, "t1", "m1")
+  val m2      = ModuleCore(UUID.randomUUID, "t1", "m2")
+  val m3      = ModuleCore(UUID.randomUUID, "t1", "m3")
   val modules = List(m1, m2, m3)
 
   def lookup(module: UUID): Option[ModuleCore] =
@@ -318,7 +316,7 @@ final class MetadataValidatorSpec
       }
 
       "pass validating prerequisites" in {
-        val random = UUID.randomUUID
+        val random  = UUID.randomUUID
         val random2 = UUID.randomUUID
         val random3 = UUID.randomUUID
         assert(

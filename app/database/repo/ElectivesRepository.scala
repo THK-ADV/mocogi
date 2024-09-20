@@ -1,19 +1,21 @@
 package database.repo
 
-import database.table.core.IdentityTable
-import database.table.{
-  ModuleTable,
-  ModulePOOptionalTable,
-  ModuleResponsibilityTable
-}
-import database.view.StudyProgramViewRepository
-import models.{FullPoId, ModuleCore}
-import models.core.Identity
-import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfigProvider}
-import slick.jdbc.JdbcProfile
+import javax.inject.Inject
+import javax.inject.Singleton
 
-import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
+
+import database.table.core.IdentityTable
+import database.table.ModulePOOptionalTable
+import database.table.ModuleResponsibilityTable
+import database.table.ModuleTable
+import database.view.StudyProgramViewRepository
+import models.core.Identity
+import models.FullPoId
+import models.ModuleCore
+import play.api.db.slick.DatabaseConfigProvider
+import play.api.db.slick.HasDatabaseConfigProvider
+import slick.jdbc.JdbcProfile
 
 @Singleton
 final class ElectivesRepository @Inject() (

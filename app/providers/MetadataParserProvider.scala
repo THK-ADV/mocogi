@@ -1,8 +1,10 @@
 package providers
 
-import parsing.metadata._
+import javax.inject.Inject
+import javax.inject.Provider
+import javax.inject.Singleton
 
-import javax.inject.{Inject, Provider, Singleton}
+import parsing.metadata._
 
 @Singleton()
 final class MetadataParserProvider @Inject() (

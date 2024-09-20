@@ -1,11 +1,14 @@
 package service
 
-import ops.FileOps.FileOps0
-
 import java.nio.file.Path
+
 import scala.annotation.unused
-import scala.sys.process.{Process, ProcessLogger, _}
+import scala.sys.process._
+import scala.sys.process.Process
+import scala.sys.process.ProcessLogger
 import scala.util.control.NonFatal
+
+import ops.FileOps.FileOps0
 
 object LatexCompiler {
   def markFileAsBroken(file: Path): Either[String, Path] =

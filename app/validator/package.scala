@@ -8,7 +8,7 @@ package object validator {
       Validator { a =>
         var maybeB = Option.empty[B]
         var maybeC = Option.empty[C]
-        val errs = ListBuffer[String]()
+        val errs   = ListBuffer[String]()
         this.validate(a) match {
           case Right(b)  => maybeB = Some(b)
           case Left(err) => errs ++= err

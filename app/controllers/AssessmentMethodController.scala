@@ -1,12 +1,15 @@
 package controllers
 
+import javax.inject.Inject
+import javax.inject.Singleton
+
+import scala.concurrent.ExecutionContext
+
 import models.core.AssessmentMethod
 import play.api.libs.json.Writes
-import play.api.mvc.{AbstractController, ControllerComponents}
+import play.api.mvc.AbstractController
+import play.api.mvc.ControllerComponents
 import service.core.AssessmentMethodService
-
-import javax.inject.{Inject, Singleton}
-import scala.concurrent.ExecutionContext
 
 @Singleton
 final class AssessmentMethodController @Inject() (
@@ -15,6 +18,6 @@ final class AssessmentMethodController @Inject() (
     implicit val ctx: ExecutionContext
 ) extends AbstractController(cc)
     with YamlController[AssessmentMethod] {
-  override implicit val writes: Writes[AssessmentMethod] =
+  implicit override val writes: Writes[AssessmentMethod] =
     AssessmentMethod.writes
 }

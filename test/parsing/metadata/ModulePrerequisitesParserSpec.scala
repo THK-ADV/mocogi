@@ -1,23 +1,17 @@
 package parsing.metadata
 
-import helper.FakePOs
-import models.ModulePrerequisiteEntryProtocol
-import org.scalatest.EitherValues
-import org.scalatest.wordspec.AnyWordSpec
-import parsing.ParserSpecHelper
-import parsing.metadata.ModulePrerequisitesParser.{
-  recommendedPrerequisitesParser,
-  recommendedPrerequisitesParserRaw
-}
-import parsing.types.ParsedPrerequisiteEntry
-
 import java.util.UUID
 
-class ModulePrerequisitesParserSpec
-    extends AnyWordSpec
-    with ParserSpecHelper
-    with EitherValues
-    with FakePOs {
+import helper.FakePOs
+import models.ModulePrerequisiteEntryProtocol
+import org.scalatest.wordspec.AnyWordSpec
+import org.scalatest.EitherValues
+import parsing.metadata.ModulePrerequisitesParser.recommendedPrerequisitesParser
+import parsing.metadata.ModulePrerequisitesParser.recommendedPrerequisitesParserRaw
+import parsing.types.ParsedPrerequisiteEntry
+import parsing.ParserSpecHelper
+
+class ModulePrerequisitesParserSpec extends AnyWordSpec with ParserSpecHelper with EitherValues with FakePOs {
 
   "A Module Prerequisites Parser" should {
     "parse prerequisites" in {
@@ -25,15 +19,15 @@ class ModulePrerequisitesParserSpec
       val m2 = UUID.randomUUID
       val input =
         s"""recommended_prerequisites:
-          |  text: >
-          |    benötigt werden kenntnisse in algebra und java
-          |
-          |    und ein pc.
-          |  modules:
-          |    - module.$m1
-          |    - module.$m2
-          |  study_programs:
-          |    - study_program.mi1""".stripMargin
+           |  text: >
+           |    benötigt werden kenntnisse in algebra und java
+           |
+           |    und ein pc.
+           |  modules:
+           |    - module.$m1
+           |    - module.$m2
+           |  study_programs:
+           |    - study_program.mi1""".stripMargin
       val (res, rest) = recommendedPrerequisitesParser.parse(input)
       assert(
         res.value == ParsedPrerequisiteEntry(
@@ -50,15 +44,15 @@ class ModulePrerequisitesParserSpec
       val m2 = UUID.randomUUID
       val input =
         s"""recommended_prerequisites:
-          |  text: >
-          |    benötigt werden kenntnisse in algebra und java
-          |
-          |    und ein pc.
-          |  modules:
-          |    - module.$m1
-          |    - module.$m2
-          |  study_programs:
-          |    - study_program.mi1""".stripMargin
+           |  text: >
+           |    benötigt werden kenntnisse in algebra und java
+           |
+           |    und ein pc.
+           |  modules:
+           |    - module.$m1
+           |    - module.$m2
+           |  study_programs:
+           |    - study_program.mi1""".stripMargin
       val (res, rest) = recommendedPrerequisitesParserRaw.parse(input)
       assert(
         res.value == ModulePrerequisiteEntryProtocol(
@@ -75,10 +69,10 @@ class ModulePrerequisitesParserSpec
       val m2 = UUID.randomUUID
       val input =
         s"""recommended_prerequisites:
-          |  modules:
-          |    - module.$m1
-          |    - module.$m2
-          |  """.stripMargin
+           |  modules:
+           |    - module.$m1
+           |    - module.$m2
+           |  """.stripMargin
       val (res, rest) = recommendedPrerequisitesParser.parse(input)
       assert(
         res.value == ParsedPrerequisiteEntry(
@@ -95,10 +89,10 @@ class ModulePrerequisitesParserSpec
       val m2 = UUID.randomUUID
       val input =
         s"""recommended_prerequisites:
-          |  modules:
-          |    - module.$m1
-          |    - module.$m2
-          |  """.stripMargin
+           |  modules:
+           |    - module.$m1
+           |    - module.$m2
+           |  """.stripMargin
       val (res, rest) = recommendedPrerequisitesParserRaw.parse(input)
       assert(
         res.value == ModulePrerequisiteEntryProtocol(

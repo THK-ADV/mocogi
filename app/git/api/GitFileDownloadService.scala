@@ -1,18 +1,24 @@
 package git.api
 
+import java.util.UUID
+import javax.inject.Singleton
+
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+
 import com.google.inject.Inject
-import git.{Branch, GitConfig, GitFileContent, GitFilePath}
+import git.Branch
+import git.GitConfig
+import git.GitFileContent
+import git.GitFilePath
 import models.ModuleProtocol
 import ops.EitherOps.EThrowableOps
 import parsing.RawModuleParser
-import printing.PrintingLanguage
 import printing.html.ModuleHTMLPrinter
-import printing.pandoc.{PrinterOutput, PrinterOutputType}
+import printing.pandoc.PrinterOutput
+import printing.pandoc.PrinterOutputType
+import printing.PrintingLanguage
 import service._
-
-import java.util.UUID
-import javax.inject.Singleton
-import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 final class GitFileDownloadService @Inject() (

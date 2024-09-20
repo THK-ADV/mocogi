@@ -1,9 +1,10 @@
 package models
 
-import controllers.JsonNullWritable
-import play.api.libs.json.{Format, Json}
-
 import java.util.UUID
+
+import controllers.JsonNullWritable
+import play.api.libs.json.Format
+import play.api.libs.json.Json
 
 case class ModulePOOptionalProtocol(
     po: String,

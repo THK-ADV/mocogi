@@ -1,12 +1,17 @@
 package git.api
 
-import git.{Branch, GitConfig}
-import play.api.libs.ws.{EmptyBody, WSClient}
-import play.mvc.Http.Status
-import play.api.libs.ws.writeableOf_WsBody
+import javax.inject.Inject
+import javax.inject.Singleton
 
-import javax.inject.{Inject, Singleton}
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+
+import git.Branch
+import git.GitConfig
+import play.api.libs.ws.writeableOf_WsBody
+import play.api.libs.ws.EmptyBody
+import play.api.libs.ws.WSClient
+import play.mvc.Http.Status
 
 /*
   One branch per module

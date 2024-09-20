@@ -1,6 +1,7 @@
 package parsing.core
 
-import io.circe.{Decoder, HCursor}
+import io.circe.Decoder
+import io.circe.HCursor
 import models.core.FocusArea
 import monocle.macros.GenLens
 import parser.Parser
@@ -24,8 +25,8 @@ object FocusAreaFileParser extends YamlFileParser[FocusArea] {
         program <- obj.get[String]("program")
         deLabel <- obj.get[String]("de_label")
         enLabel <- obj.getOrElse[String]("en_label")("")
-        deDesc <- obj.getOrElse[String]("de_desc")("")
-        enDesc <- obj.getOrElse[String]("en_desc")("")
+        deDesc  <- obj.getOrElse[String]("de_desc")("")
+        enDesc  <- obj.getOrElse[String]("en_desc")("")
       } yield FocusArea(key, program, deLabel, enLabel, deDesc, enDesc)
     }
 }

@@ -3,9 +3,11 @@ package parsing.core
 import helper.FakePOs
 import models.core.PO
 import org.scalatest.wordspec.AnyWordSpec
-import org.scalatest.{EitherValues, OptionValues}
+import org.scalatest.EitherValues
+import org.scalatest.OptionValues
 import parsing.core.SpecializationFileParser.fileParser
-import parsing.{ParserSpecHelper, withFile0}
+import parsing.withFile0
+import parsing.ParserSpecHelper
 
 final class SpecializationFileParserSpec
     extends AnyWordSpec

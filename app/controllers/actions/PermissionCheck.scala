@@ -1,10 +1,11 @@
 package controllers.actions
 
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+
 import auth.UserTokenRequest
 import play.api.libs.json.Json
 import play.api.mvc.Results.Forbidden
-
-import scala.concurrent.{ExecutionContext, Future}
 
 trait PermissionCheck {
   implicit def ctx: ExecutionContext

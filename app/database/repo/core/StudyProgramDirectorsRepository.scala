@@ -1,13 +1,18 @@
 package database.repo.core
 
-import database.repo.core.StudyProgramDirectorsRepository.StudyProgramDirector
-import database.table.core.{POTable, StudyProgramPersonTable}
-import models.UniversityRole
-import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfigProvider}
-import slick.jdbc.JdbcProfile
+import javax.inject.Inject
+import javax.inject.Singleton
 
-import javax.inject.{Inject, Singleton}
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+
+import database.repo.core.StudyProgramDirectorsRepository.StudyProgramDirector
+import database.table.core.POTable
+import database.table.core.StudyProgramPersonTable
+import models.UniversityRole
+import play.api.db.slick.DatabaseConfigProvider
+import play.api.db.slick.HasDatabaseConfigProvider
+import slick.jdbc.JdbcProfile
 
 object StudyProgramDirectorsRepository {
   case class StudyProgramDirector(

@@ -15,8 +15,7 @@ case class IdentityDbEntry(
     kind: String
 )
 
-final class IdentityTable(tag: Tag)
-    extends Table[IdentityDbEntry](tag, "identity") {
+final class IdentityTable(tag: Tag) extends Table[IdentityDbEntry](tag, "identity") {
 
   def id = column[String]("id", O.PrimaryKey)
 

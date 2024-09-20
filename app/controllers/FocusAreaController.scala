@@ -1,12 +1,15 @@
 package controllers
 
+import javax.inject.Inject
+import javax.inject.Singleton
+
+import scala.concurrent.ExecutionContext
+
 import models.core.FocusArea
 import play.api.libs.json.Writes
-import play.api.mvc.{AbstractController, ControllerComponents}
+import play.api.mvc.AbstractController
+import play.api.mvc.ControllerComponents
 import service.core.FocusAreaService
-
-import javax.inject.{Inject, Singleton}
-import scala.concurrent.ExecutionContext
 
 @Singleton
 final class FocusAreaController @Inject() (
@@ -15,5 +18,5 @@ final class FocusAreaController @Inject() (
     implicit val ctx: ExecutionContext
 ) extends AbstractController(cc)
     with YamlController[FocusArea] {
-  override implicit val writes: Writes[FocusArea] = FocusArea.writes
+  implicit override val writes: Writes[FocusArea] = FocusArea.writes
 }

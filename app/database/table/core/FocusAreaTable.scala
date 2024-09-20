@@ -4,9 +4,7 @@ import database.table.IDLabelDescColumn
 import models.core.FocusArea
 import slick.jdbc.PostgresProfile.api._
 
-final class FocusAreaTable(tag: Tag)
-    extends Table[FocusArea](tag, "focus_area")
-    with IDLabelDescColumn[FocusArea] {
+final class FocusAreaTable(tag: Tag) extends Table[FocusArea](tag, "focus_area") with IDLabelDescColumn[FocusArea] {
 
   def studyProgram = column[String]("study_program")
 

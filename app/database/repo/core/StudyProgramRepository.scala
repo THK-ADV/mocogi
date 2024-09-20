@@ -1,22 +1,25 @@
 package database.repo.core
 
-import cats.data.NonEmptyList
-import database.table.core.{
-  StudyProgramDbEntry,
-  StudyProgramPersonDbEntry,
-  StudyProgramPersonTable,
-  StudyProgramTable
-}
-import models.UniversityRole
-import models.core.{IDLabel, StudyProgram}
-import play.api.Logging
-import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfigProvider}
-import slick.jdbc.JdbcProfile
+import javax.inject.Inject
+import javax.inject.Singleton
 
-import javax.inject.{Inject, Singleton}
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+
+import cats.data.NonEmptyList
+import database.table.core.StudyProgramDbEntry
+import database.table.core.StudyProgramPersonDbEntry
+import database.table.core.StudyProgramPersonTable
+import database.table.core.StudyProgramTable
+import models.core.IDLabel
+import models.core.StudyProgram
+import models.UniversityRole
+import play.api.db.slick.DatabaseConfigProvider
+import play.api.db.slick.HasDatabaseConfigProvider
+import play.api.Logging
+import slick.jdbc.JdbcProfile
 
 @Singleton
 class StudyProgramRepository @Inject() (
@@ -42,12 +45,8 @@ class StudyProgramRepository @Inject() (
   ): Future[Seq[StudyProgram]] = {
     def directors(x: StudyProgram) = {
       val directors = ListBuffer.empty[StudyProgramPersonDbEntry]
-      x.programDirectors.map(p =>
-        directors += StudyProgramPersonDbEntry(p, x.id, UniversityRole.SGL)
-      )
-      x.examDirectors.map(p =>
-        directors += StudyProgramPersonDbEntry(p, x.id, UniversityRole.PAV)
-      )
+      x.programDirectors.map(p => directors += StudyProgramPersonDbEntry(p, x.id, UniversityRole.SGL))
+      x.examDirectors.map(p => directors += StudyProgramPersonDbEntry(p, x.id, UniversityRole.PAV))
       directors.toList
     }
 
@@ -70,7 +69,7 @@ class StudyProgramRepository @Inject() (
           xs.map { x =>
             for {
               exists <- tableQuery.filter(_.id === x.id).exists.result
-              res <- if (exists) update(x) else create(x)
+              res    <- if (exists) update(x) else create(x)
             } yield res
           }
         )
@@ -88,7 +87,7 @@ class StudyProgramRepository @Inject() (
   }
 
   def deleteMany(ids: Seq[String]) =
-    db.run(tableQuery.filter(_.id inSet ids).delete)
+    db.run(tableQuery.filter(_.id.inSet(ids)).delete)
 
   private def retrieve(
       query: Query[StudyProgramTable, StudyProgramDbEntry, Seq]
@@ -98,29 +97,34 @@ class StudyProgramRepository @Inject() (
         .joinLeft(personAssocQuery)
         .on(_.id === _.studyProgram)
         .result
-        .map(_.groupBy(_._1.id).map { case (_, xs) =>
-          val directors = mutable.HashSet[String]()
-          val examDirectors = mutable.HashSet[String]()
-          val sp = xs.head._1
-          xs.foreach {
-            case (_, Some(sgl)) if sgl.role == UniversityRole.SGL =>
-              directors += sgl.person
-            case (_, Some(pav)) if pav.role == UniversityRole.PAV =>
-              examDirectors += pav.person
-            case x =>
-              logger.error(
-                s"found a missing case while retrieving directors of a study program: $x"
-              )
-          }
-          StudyProgram(
-            sp.id,
-            sp.deLabel,
-            sp.enLabel,
-            sp.degree,
-            NonEmptyList.fromListUnsafe(directors.toList),
-            NonEmptyList.fromListUnsafe(examDirectors.toList)
-          )
-        }.toSeq)
+        .map(
+          _.groupBy(_._1.id)
+            .map {
+              case (_, xs) =>
+                val directors     = mutable.HashSet[String]()
+                val examDirectors = mutable.HashSet[String]()
+                val sp            = xs.head._1
+                xs.foreach {
+                  case (_, Some(sgl)) if sgl.role == UniversityRole.SGL =>
+                    directors += sgl.person
+                  case (_, Some(pav)) if pav.role == UniversityRole.PAV =>
+                    examDirectors += pav.person
+                  case x =>
+                    logger.error(
+                      s"found a missing case while retrieving directors of a study program: $x"
+                    )
+                }
+                StudyProgram(
+                  sp.id,
+                  sp.deLabel,
+                  sp.enLabel,
+                  sp.degree,
+                  NonEmptyList.fromListUnsafe(directors.toList),
+                  NonEmptyList.fromListUnsafe(examDirectors.toList)
+                )
+            }
+            .toSeq
+        )
     )
 
   private def toDbEntry(sp: StudyProgram): StudyProgramDbEntry =

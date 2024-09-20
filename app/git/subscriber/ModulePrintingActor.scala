@@ -1,20 +1,24 @@
 package git.subscriber
 
+import java.time.LocalDateTime
+import java.util.UUID
+
+import scala.collection.parallel.CollectionConverters.seqIsParallelizable
+import scala.concurrent.ExecutionContext
+import scala.util.Failure
+import scala.util.Success
+
 import database.view.StudyProgramViewRepository
 import git.subscriber.ModuleSubscribers.Handle
 import models.StudyProgramView
-import org.apache.pekko.actor.{Actor, Props}
+import org.apache.pekko.actor.Actor
+import org.apache.pekko.actor.Props
 import parsing.types.Module
 import play.api.Logging
-import printing.PrintingLanguage
 import printing.html.ModuleHTMLPrinter
-import printing.pandoc.{PrinterOutput, PrinterOutputType}
-
-import java.time.LocalDateTime
-import java.util.UUID
-import scala.collection.parallel.CollectionConverters.seqIsParallelizable
-import scala.concurrent.ExecutionContext
-import scala.util.{Failure, Success}
+import printing.pandoc.PrinterOutput
+import printing.pandoc.PrinterOutputType
+import printing.PrintingLanguage
 
 object ModulePrintingActor {
   def props(
@@ -42,14 +46,15 @@ object ModulePrintingActor {
 
     override def receive = {
       case Handle(modules, lastModified) if modules.nonEmpty =>
-        studyProgramViewRepo.all() onComplete {
+        studyProgramViewRepo.all().onComplete {
           case Success(sps) =>
-            modules.par.foreach { case (module, _) =>
-              print(
-                lastModified,
-                module,
-                sp => sps.find(_.id == sp)
-              )
+            modules.par.foreach {
+              case (module, _) =>
+                print(
+                  lastModified,
+                  module,
+                  sp => sps.find(_.id == sp)
+                )
             }
           case Failure(t) =>
             logger.error(
@@ -81,7 +86,7 @@ object ModulePrintingActor {
             logError(module, lang, err)
           case Right(output) =>
             logSuccess(module, lang)
-            val moduleId = module.metadata.id
+            val moduleId    = module.metadata.id
             val moduleTitle = module.metadata.title
             output match {
               case PrinterOutput.Text(content, _, consoleOutput) =>

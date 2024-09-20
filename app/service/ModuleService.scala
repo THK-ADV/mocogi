@@ -1,13 +1,15 @@
 package service
 
+import java.time.LocalDateTime
+import java.util.UUID
+import javax.inject.Inject
+import javax.inject.Singleton
+
+import scala.concurrent.ExecutionContext
+
 import database.repo.ModuleRepository
 import ops.FutureOps.SeqOps
 import parsing.types.Module
-
-import java.time.LocalDateTime
-import java.util.UUID
-import javax.inject.{Inject, Singleton}
-import scala.concurrent.ExecutionContext
 
 @Singleton
 final class ModuleService @Inject() (

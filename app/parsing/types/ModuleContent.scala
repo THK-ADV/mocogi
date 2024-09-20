@@ -1,8 +1,9 @@
 package parsing.types
 
-import monocle.Traversal
 import monocle.macros.GenLens
-import play.api.libs.json.{Format, Json}
+import monocle.Traversal
+import play.api.libs.json.Format
+import play.api.libs.json.Json
 
 case class ModuleContent(
     learningOutcome: String,

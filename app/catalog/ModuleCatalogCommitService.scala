@@ -1,10 +1,17 @@
 package catalog
 
-import git.api.{GitCommitApiService, GitFileApiService}
-import git.{Branch, GitCommitAction, GitCommitActionType, GitFilePath}
+import javax.inject.Inject
+import javax.inject.Singleton
 
-import javax.inject.{Inject, Singleton}
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+
+import git.api.GitCommitApiService
+import git.api.GitFileApiService
+import git.Branch
+import git.GitCommitAction
+import git.GitCommitActionType
+import git.GitFilePath
 
 @Singleton
 final class ModuleCatalogCommitService @Inject() (
@@ -26,10 +33,11 @@ final class ModuleCatalogCommitService @Inject() (
       .sequence(
         files.map(f => fileApiService.fileExists(f._1, branch).map(_ -> f))
       )
-      .map(_.map { case (exists, (path, content)) =>
-        val actionType =
-          if (exists) GitCommitActionType.Update else GitCommitActionType.Create
-        GitCommitAction(actionType, path, content)
+      .map(_.map {
+        case (exists, (path, content)) =>
+          val actionType =
+            if (exists) GitCommitActionType.Update else GitCommitActionType.Create
+          GitCommitAction(actionType, path, content)
       })
 
     for {

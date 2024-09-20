@@ -1,13 +1,16 @@
 package database.repo.core
 
+import javax.inject.Inject
+import javax.inject.Singleton
+
+import scala.concurrent.ExecutionContext
+
 import database.repo.Repository
 import database.table.core.DegreeTable
 import models.core.Degree
-import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfigProvider}
+import play.api.db.slick.DatabaseConfigProvider
+import play.api.db.slick.HasDatabaseConfigProvider
 import slick.jdbc.JdbcProfile
-
-import javax.inject.{Inject, Singleton}
-import scala.concurrent.ExecutionContext
 
 @Singleton
 class DegreeRepository @Inject() (
@@ -18,12 +21,12 @@ class DegreeRepository @Inject() (
   import profile.api._
   protected val tableQuery = TableQuery[DegreeTable]
 
-  override protected def retrieve(query: Query[DegreeTable, Degree, Seq]) =
+  protected override def retrieve(query: Query[DegreeTable, Degree, Seq]) =
     db.run(query.result)
 
   def allIds() =
     db.run(tableQuery.map(_.id).result)
 
   def deleteMany(ids: Seq[String]) =
-    db.run(tableQuery.filter(_.id inSet ids).delete)
+    db.run(tableQuery.filter(_.id.inSet(ids)).delete)
 }

@@ -1,24 +1,30 @@
-import auth.{Authorization, UserToken}
-import catalog.{ElectivesCatalogService, ModuleCatalogConfig, PreviewMergeActor}
+import scala.annotation.unused
+
+import auth.Authorization
+import auth.UserToken
+import catalog.ElectivesCatalogService
+import catalog.ModuleCatalogConfig
+import catalog.PreviewMergeActor
 import com.google.inject.name.Names
-import com.google.inject.{AbstractModule, TypeLiteral}
-import git.GitConfig
-import git.publisher.{CoreDataPublisher, ModulePublisher}
+import com.google.inject.AbstractModule
+import com.google.inject.TypeLiteral
+import git.publisher.CoreDataPublisher
+import git.publisher.ModulePublisher
 import git.subscriber.ModuleSubscribers
+import git.GitConfig
 import models.ModuleKeysToReview
 import ops.ConfigurationOps.Ops
 import parsing.metadata.MetadataParser
-import play.api.{Configuration, Environment}
+import play.api.Configuration
+import play.api.Environment
 import printing.markdown.ModuleMarkdownPrinter
 import printing.pandoc.PandocApi
 import printing.yaml.MetadataYamlPrinter
 import providers._
-import webhook.{GitMergeEventHandler, GitPushEventHandler}
+import webhook.GitMergeEventHandler
+import webhook.GitPushEventHandler
 
-import scala.annotation.unused
-
-class Module(@unused environment: Environment, configuration: Configuration)
-    extends AbstractModule {
+class Module(@unused environment: Environment, configuration: Configuration) extends AbstractModule {
 
   override def configure(): Unit = {
     super.configure()

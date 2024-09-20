@@ -1,11 +1,12 @@
 package validator
 
+import java.util.UUID
+
+import scala.collection.mutable.ListBuffer
+
 import cats.data.NonEmptyList
 import models._
 import parsing.types._
-
-import java.util.UUID
-import scala.collection.mutable.ListBuffer
 
 object MetadataValidator {
 
@@ -59,8 +60,9 @@ object MetadataValidator {
       case Right(contributions) =>
         Either.cond(
           contributions.nonEmpty, {
-            val ectsValue = contributions.foldLeft(0.0) { case (acc, a) =>
-              acc + a.ectsValue
+            val ectsValue = contributions.foldLeft(0.0) {
+              case (acc, a) =>
+                acc + a.ectsValue
             }
             ModuleECTS(ectsValue, contributions)
           },
@@ -81,24 +83,25 @@ object MetadataValidator {
         w.projectSupervision +
         w.projectWork
 
-    Validator { case (workload, ects) =>
-      val total = (ects.value * creditPointFactor).toInt
-      val selfStudy = total - sumWorkload(workload)
-      if (selfStudy < 0)
-        Left(List("workload's self study must be positive"))
-      else
-        Right(
-          ModuleWorkload(
-            workload.lecture,
-            workload.seminar,
-            workload.practical,
-            workload.exercise,
-            workload.projectSupervision,
-            workload.projectWork,
-            selfStudy,
-            total
+    Validator {
+      case (workload, ects) =>
+        val total     = (ects.value * creditPointFactor).toInt
+        val selfStudy = total - sumWorkload(workload)
+        if (selfStudy < 0)
+          Left(List("workload's self study must be positive"))
+        else
+          Right(
+            ModuleWorkload(
+              workload.lecture,
+              workload.seminar,
+              workload.practical,
+              workload.exercise,
+              workload.projectSupervision,
+              workload.projectWork,
+              selfStudy,
+              total
+            )
           )
-        )
     }
   }
 
@@ -108,9 +111,7 @@ object MetadataValidator {
   ): Validator[List[UUID], List[ModuleCore]] =
     Validator { modules =>
       val (errs, res) =
-        modules.partitionMap(m =>
-          lookup(m).toRight(s"module in '$label' not found: $m")
-        )
+        modules.partitionMap(m => lookup(m).toRight(s"module in '$label' not found: $m"))
       Either.cond(errs.isEmpty, res, errs)
     }
 
@@ -129,9 +130,7 @@ object MetadataValidator {
       .pullback[Option[ParsedPrerequisiteEntry]](
         _.map(_.modules).getOrElse(Nil)
       )
-      .map((p, ms) =>
-        p.map(e => ModulePrerequisiteEntry(e.text, ms, e.studyPrograms))
-      )
+      .map((p, ms) => p.map(e => ModulePrerequisiteEntry(e.text, ms, e.studyPrograms)))
 
   def prerequisitesValidator(
       lookup: Lookup
@@ -149,14 +148,15 @@ object MetadataValidator {
   ): Validator[List[ParsedPOOptional], List[ModulePOOptional]] =
     moduleValidator("po optional", lookup)
       .pullback[List[ParsedPOOptional]](_.map(_.instanceOf))
-      .map(_.zip(_).map { case (po, m) =>
-        ModulePOOptional(
-          po.po,
-          po.specialization,
-          m,
-          po.partOfCatalog,
-          po.recommendedSemester
-        )
+      .map(_.zip(_).map {
+        case (po, m) =>
+          ModulePOOptional(
+            po.po,
+            po.specialization,
+            m,
+            po.partOfCatalog,
+            po.recommendedSemester
+          )
       })
 
   def posValidator(lookup: Lookup): Validator[ParsedPOs, ModulePOs] =
@@ -183,9 +183,7 @@ object MetadataValidator {
       )
 
   def nonEmptyStringValidator(label: String): SimpleValidator[String] =
-    SimpleValidator(s =>
-      Either.cond(s.nonEmpty, s, List(s"$label must be set, but was empty"))
-    )
+    SimpleValidator(s => Either.cond(s.nonEmpty, s, List(s"$label must be set, but was empty")))
 
   def titleValidatorAdapter(): Validator[ParsedMetadata, String] =
     nonEmptyStringValidator("title").pullback[ParsedMetadata](_.title)
@@ -193,12 +191,10 @@ object MetadataValidator {
   def abbrevValidatorAdapter(): Validator[ParsedMetadata, String] =
     nonEmptyStringValidator("abbrev").pullback[ParsedMetadata](_.abbrev)
 
-  def assessmentMethodsValidatorAdapter
-      : Validator[ParsedMetadata, ModuleAssessmentMethods] =
+  def assessmentMethodsValidatorAdapter: Validator[ParsedMetadata, ModuleAssessmentMethods] =
     assessmentMethodsValidator.pullback(_.assessmentMethods)
 
-  def participantsValidatorAdapter
-      : Validator[ParsedMetadata, Option[ModuleParticipants]] =
+  def participantsValidatorAdapter: Validator[ParsedMetadata, Option[ModuleParticipants]] =
     participantsValidator.pullback(_.participants)
 
   def ectsValidatorAdapter: Validator[ParsedMetadata, ModuleECTS] =

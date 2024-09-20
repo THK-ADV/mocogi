@@ -1,16 +1,15 @@
 package database.table
 
-import slick.jdbc.PostgresProfile.api._
-
 import java.util.UUID
+
+import slick.jdbc.PostgresProfile.api._
 
 case class ModuleCompetenceDbEntry(
     module: UUID,
     competence: String
 )
 
-final class ModuleCompetenceTable(tag: Tag)
-    extends Table[ModuleCompetenceDbEntry](tag, "module_competence") {
+final class ModuleCompetenceTable(tag: Tag) extends Table[ModuleCompetenceDbEntry](tag, "module_competence") {
 
   def module = column[UUID]("module", O.PrimaryKey)
 

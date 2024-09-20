@@ -1,10 +1,11 @@
 package controllers
 
-import play.api.libs.json.{Json, Writes}
+import scala.concurrent.ExecutionContext
+
+import play.api.libs.json.Json
+import play.api.libs.json.Writes
 import play.api.mvc.AbstractController
 import service.core.YamlService
-
-import scala.concurrent.ExecutionContext
 
 trait YamlController[A] { self: AbstractController =>
 

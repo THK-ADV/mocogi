@@ -1,39 +1,43 @@
 package parsing.metadata
 
-import models.core.{PO, Specialization}
-import models.{
-  ModulePOMandatoryProtocol,
-  ModulePOOptionalProtocol,
-  ModulePOProtocol
-}
+import models.core.PO
+import models.core.Specialization
+import models.ModulePOMandatoryProtocol
+import models.ModulePOOptionalProtocol
+import models.ModulePOProtocol
 import parser.Parser
 import parser.Parser._
 import parser.ParserOps._
-import parsing.types.{ModulePOMandatory, ParsedPOOptional, ParsedPOs}
-import parsing.{multipleValueParser, uuidParser}
+import parsing.multipleValueParser
+import parsing.types.ModulePOMandatory
+import parsing.types.ParsedPOOptional
+import parsing.types.ParsedPOs
+import parsing.uuidParser
 
 object ModulePOParser {
 
-  def studyProgramKey = "study_program"
-  def studyProgramPrefix = "study_program."
-  def modulePOMandatoryKey = "po_mandatory:"
-  def modulePOElectiveKey = "po_optional:"
-  def instanceOfKey = "instance_of"
-  def modulePrefix = "module."
-  def partOfCatalogKey = "part_of_catalog"
+  def studyProgramKey        = "study_program"
+  def studyProgramPrefix     = "study_program."
+  def modulePOMandatoryKey   = "po_mandatory:"
+  def modulePOElectiveKey    = "po_optional:"
+  def instanceOfKey          = "instance_of"
+  def modulePrefix           = "module."
+  def partOfCatalogKey       = "part_of_catalog"
   def recommendedSemesterKey = "recommended_semester"
 
-  def studyProgramParser(implicit
-      pos: Seq[PO],
+  def studyProgramParser(
+      implicit pos: Seq[PO],
       specializations: Seq[Specialization]
   ): Parser[(PO, Option[Specialization])] = {
-    val pos0 = pos.sortBy(_.program).reverse
+    val pos0             = pos.sortBy(_.program).reverse
     val specializations0 = specializations.sortBy(_.id).reverse
     val poParser = oneOf(
       pos0.map(s => prefix(s"$studyProgramPrefix${s.id}").map(_ => s)): _*
     )
     val specializationsParser: Parser[Option[Specialization]] =
-      (char.map(_.toString) or Parser.rest)
+      char
+        .map(_.toString)
+        .or(Parser.rest)
         .flatMap { c =>
           if (c == ".")
             oneOf(specializations0.map(s => prefix(s.id).map(_ => s)): _*)
@@ -84,10 +88,7 @@ object ModulePOParser {
       .skip(zeroOrMoreSpaces)
       .take(boolean)
 
-  def mandatoryParser(implicit
-      pos: Seq[PO],
-      specializations: Seq[Specialization]
-  ): Parser[List[ModulePOMandatory]] =
+  def mandatoryParser(implicit pos: Seq[PO], specializations: Seq[Specialization]): Parser[List[ModulePOMandatory]] =
     prefix(modulePOMandatoryKey)
       .skip(zeroOrMoreSpaces)
       .take(
@@ -97,15 +98,13 @@ object ModulePOParser {
           .skip(zeroOrMoreSpaces)
           .skip(recommendedSemesterPartTimeParser)
           .many(zeroOrMoreSpaces)
-          .map(_.map { case ((po, spec), recSem) =>
-            ModulePOMandatory(po, spec, recSem)
+          .map(_.map {
+            case ((po, spec), recSem) =>
+              ModulePOMandatory(po, spec, recSem)
           })
       )
 
-  def electiveParser(implicit
-      pos: Seq[PO],
-      specializations: Seq[Specialization]
-  ): Parser[List[ParsedPOOptional]] =
+  def electiveParser(implicit pos: Seq[PO], specializations: Seq[Specialization]): Parser[List[ParsedPOOptional]] =
     prefix(modulePOElectiveKey)
       .skip(zeroOrMoreSpaces)
       .take(
@@ -117,8 +116,9 @@ object ModulePOParser {
           .skip(zeroOrMoreSpaces)
           .take(recommendedSemesterParser)
           .many(zeroOrMoreSpaces)
-          .map(_.map { case ((po, spec), io, cat, recSem) =>
-            ParsedPOOptional(po, spec, io, cat, recSem)
+          .map(_.map {
+            case ((po, spec), io, cat, recSem) =>
+              ParsedPOOptional(po, spec, io, cat, recSem)
           })
       )
 
@@ -138,8 +138,9 @@ object ModulePOParser {
           .skip(zeroOrMoreSpaces)
           .skip(recommendedSemesterPartTimeParser)
           .many(zeroOrMoreSpaces)
-          .map(_.map { case ((po, spec), recSem) =>
-            ModulePOMandatoryProtocol(po, spec, recSem)
+          .map(_.map {
+            case ((po, spec), recSem) =>
+              ModulePOMandatoryProtocol(po, spec, recSem)
           })
       )
 
@@ -155,8 +156,9 @@ object ModulePOParser {
           .skip(zeroOrMoreSpaces)
           .take(recommendedSemesterParser)
           .many(zeroOrMoreSpaces)
-          .map(_.map { case ((po, spec), io, cat, recSem) =>
-            ModulePOOptionalProtocol(po, spec, io, cat, recSem)
+          .map(_.map {
+            case ((po, spec), io, cat, recSem) =>
+              ModulePOOptionalProtocol(po, spec, io, cat, recSem)
           })
       )
 

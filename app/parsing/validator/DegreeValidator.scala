@@ -3,8 +3,8 @@ package parsing.validator
 import monocle.Lens
 
 final class DegreeValidator[A](
-  degrees: Seq[String],
-  degree: Lens[A, String]
+    degrees: Seq[String],
+    degree: Lens[A, String]
 ) extends YamlFileParserValidator[A] {
   override def expected(): String = degrees.mkString(", ")
 

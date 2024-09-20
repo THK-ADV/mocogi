@@ -1,7 +1,8 @@
 package models
 
 import models.core.PO
-import play.api.libs.json.{Json, Writes}
+import play.api.libs.json.Json
+import play.api.libs.json.Writes
 
 case class ModulePrerequisites(
     recommended: Option[ModulePrerequisiteEntry],

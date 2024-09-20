@@ -3,8 +3,8 @@ package parsing.validator
 import monocle.Lens
 
 final class POValidator[A](
-  pos: Seq[String],
-  po: Lens[A, String]
+    pos: Seq[String],
+    po: Lens[A, String]
 ) extends YamlFileParserValidator[A] {
   override def expected(): String = pos.mkString(", ")
 

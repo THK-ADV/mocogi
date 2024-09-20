@@ -1,10 +1,15 @@
 package git.api
 
-import git.{Branch, Diff, GitConfig}
-import play.api.libs.ws.WSClient
+import javax.inject.Inject
+import javax.inject.Singleton
 
-import javax.inject.{Inject, Singleton}
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+
+import git.Branch
+import git.Diff
+import git.GitConfig
+import play.api.libs.ws.WSClient
 
 @Singleton
 final class GitDiffApiService @Inject() (

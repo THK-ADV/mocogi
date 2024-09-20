@@ -1,31 +1,32 @@
 package printing.latex
 
+import java.util.UUID
+import javax.inject.Inject
+import javax.inject.Singleton
+
 import catalog.Semester
 import models.*
 import models.core.*
-import monocle.Lens
 import monocle.macros.GenLens
+import monocle.Lens
 import ops.StringBuilderOps.SBOps
 import parsing.types.ModuleContent
+import play.api.i18n.Lang
+import play.api.i18n.MessagesApi
 import play.api.Logging
-import play.api.i18n.{Lang, MessagesApi}
+import printing.fmtCommaSeparated
+import printing.fmtDouble
+import printing.fmtIdentity
 import printing.pandoc.PandocApi
-import printing.{
-  IDLabelDescOps,
-  LabelOps,
-  LabelOptOps,
-  LanguageOps,
-  PrintingLanguage,
-  fmtCommaSeparated,
-  fmtDouble,
-  fmtIdentity
-}
+import printing.IDLabelDescOps
+import printing.LabelOps
+import printing.LabelOptOps
+import printing.LanguageOps
+import printing.PrintingLanguage
 
-import java.util.UUID
-import javax.inject.{Inject, Singleton}
-
-/** Style from: https://www.overleaf.com/learn/latex/Page_size_and_margins
-  */
+/**
+ * Style from: https://www.overleaf.com/learn/latex/Page_size_and_margins
+ */
 @Singleton
 final class ModuleCatalogLatexPrinter @Inject() (
     pandocApi: PandocApi,
@@ -98,21 +99,22 @@ final class ModuleCatalogLatexPrinter @Inject() (
         )
         diffs
           .sortBy(_._1.title)
-          .foreach { case (module, changedKeys) =>
-            builder.append(s"\\subsection*{${escape(module.title)}}\n")
-            builder.append(s"ID: ${module.id}\n")
-            builder.append("\\begin{itemize}\n")
-            changedKeys.toList.sorted.foreach { key =>
-              val normalizedKey = {
-                // TODO: remove if language prefix is dropped
-                if (key.startsWith("deContent") || key.startsWith("enContent"))
-                  "content" + key.dropWhile(_ != '.')
-                else key
+          .foreach {
+            case (module, changedKeys) =>
+              builder.append(s"\\subsection*{${escape(module.title)}}\n")
+              builder.append(s"ID: ${module.id}\n")
+              builder.append("\\begin{itemize}\n")
+              changedKeys.toList.sorted.foreach { key =>
+                val normalizedKey = {
+                  // TODO: remove if language prefix is dropped
+                  if (key.startsWith("deContent") || key.startsWith("enContent"))
+                    "content" + key.dropWhile(_ != '.')
+                  else key
+                }
+                val label = messagesApi(normalizedKey + ".label")(lang)
+                builder.append(s"\\item $label\n")
               }
-              val label = messagesApi(normalizedKey + ".label")(lang)
-              builder.append(s"\\item $label\n")
-            }
-            builder.append("\\end{itemize}\n")
+              builder.append("\\end{itemize}\n")
           }
       }
     }
@@ -125,7 +127,7 @@ final class ModuleCatalogLatexPrinter @Inject() (
       lang: Lang
   ): StringBuilder = {
     implicit val impl_lang: PrintingLanguage = pLang
-    implicit val builder: StringBuilder = new StringBuilder()
+    implicit val builder: StringBuilder      = new StringBuilder()
     builder.append("\\documentclass[article, 11pt, oneside]{book}\n")
     packages(semester.isEmpty)
     commands
@@ -180,13 +182,14 @@ final class ModuleCatalogLatexPrinter @Inject() (
         entries: List[(String, Lens[ModuleContent, String])]
     ): Unit = {
       val markdownContent = new StringBuilder()
-      entries.foreach { case (headline, lens) =>
-        markdownContent.append(s"## $headline\n")
-        val content = lang.fold(lens.get(deContent), lens.get(enContent))
-        if (content.nonEmpty && !content.forall(_.isWhitespace))
-          markdownContent.append(content)
-        else markdownContent.append(lang.noneLabel)
-        markdownContent.append("\n\n")
+      entries.foreach {
+        case (headline, lens) =>
+          markdownContent.append(s"## $headline\n")
+          val content = lang.fold(lens.get(deContent), lens.get(enContent))
+          if (content.nonEmpty && !content.forall(_.isWhitespace))
+            markdownContent.append(content)
+          else markdownContent.append(lang.noneLabel)
+          markdownContent.append("\n\n")
       }
       pandocApi.toLatex(markdownContent.toString()) match {
         case Left((e, stdErr)) =>
@@ -209,9 +212,8 @@ final class ModuleCatalogLatexPrinter @Inject() (
           module.metadata.po.mandatory
             .sortBy(_.po)
             .collect {
-              case p
-                  if p.po != po && studyProgramViews.exists(_.po.id == p.po) =>
-                val builder = new StringBuilder()
+              case p if p.po != po && studyProgramViews.exists(_.po.id == p.po) =>
+                val builder      = new StringBuilder()
                 val studyProgram = studyProgramViews.find(_.po.id == p.po).get
                 val spLabel = escape(
                   studyProgram.localizedLabel(studyProgram.specialization)
@@ -350,9 +352,7 @@ final class ModuleCatalogLatexPrinter @Inject() (
       )
       .append(s"\\LARGE ${studyProgram.degree.localizedDesc} \\\\ [1ex]\n")
       .append(
-        semester.fold(lang.previewLabel)(s =>
-          s"\\LARGE ${s.localizedLabel} ${s.year}\n"
-        )
+        semester.fold(lang.previewLabel)(s => s"\\LARGE ${s.localizedLabel} ${s.year}\n")
       )
       .append("}\n")
       .append("\\author{TH Köln, Campus Gummersbach}\n")

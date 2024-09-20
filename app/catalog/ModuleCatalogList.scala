@@ -1,9 +1,10 @@
 package catalog
 
-import models.StudyProgramView
-import play.api.libs.json.{Json, Writes}
-
 import java.time.LocalDateTime
+
+import models.StudyProgramView
+import play.api.libs.json.Json
+import play.api.libs.json.Writes
 
 case class ModuleCatalogList(
     studyProgram: StudyProgramView,

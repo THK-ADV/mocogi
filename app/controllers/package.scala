@@ -1,6 +1,9 @@
 import play.api.i18n.Lang
-import play.api.libs.json.{Json, Reads, Writes}
-import play.api.mvc.{AnyContent, Request}
+import play.api.libs.json.Json
+import play.api.libs.json.Reads
+import play.api.libs.json.Writes
+import play.api.mvc.AnyContent
+import play.api.mvc.Request
 import printing.PrintingLanguage
 
 package object controllers {
@@ -10,7 +13,7 @@ package object controllers {
 
   implicit def throwableWrites: Writes[Throwable] = t =>
     Json.obj(
-      "type" -> "throwable",
+      "type"    -> "throwable",
       "message" -> t.getMessage
     )
 
@@ -20,8 +23,7 @@ package object controllers {
       else PrintingLanguage.English
   }
 
-  implicit class RequestOps(private val self: Request[AnyContent])
-      extends AnyVal {
+  implicit class RequestOps(private val self: Request[AnyContent]) extends AnyVal {
     def parseLang(): PrintingLanguage =
       self
         .getQueryString("lang")
@@ -37,6 +39,6 @@ package object controllers {
 
   object MimeTypes {
     val JSON = "application/json"
-    val PDF = "application/pdf"
+    val PDF  = "application/pdf"
   }
 }

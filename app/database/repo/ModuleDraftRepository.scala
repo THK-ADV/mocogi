@@ -1,19 +1,25 @@
 package database.repo
 
+import java.time.LocalDateTime
+import java.util.UUID
+import javax.inject.Inject
+import javax.inject.Singleton
+
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+
 import database.table
 import database.table.ModuleDraftTable
-import git.{CommitId, MergeRequestId, MergeRequestStatus}
+import git.CommitId
+import git.MergeRequestId
+import git.MergeRequestStatus
 import models._
-import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfigProvider}
+import play.api.db.slick.DatabaseConfigProvider
+import play.api.db.slick.HasDatabaseConfigProvider
 import play.api.libs.json.JsValue
 import service.Print
 import slick.dbio.DBIOAction
 import slick.jdbc.JdbcProfile
-
-import java.time.LocalDateTime
-import java.util.UUID
-import javax.inject.{Inject, Singleton}
-import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 final class ModuleDraftRepository @Inject() (
@@ -22,18 +28,16 @@ final class ModuleDraftRepository @Inject() (
 ) extends Repository[ModuleDraft, ModuleDraft, ModuleDraftTable]
     with HasDatabaseConfigProvider[JdbcProfile] {
   import profile.api._
-  import table.{
-    commitColumnType,
-    jsValueColumnType,
-    mergeRequestIdColumnType,
-    mergeRequestStatusColumnType,
-    printColumnType,
-    setStringColumnType
-  }
+  import table.commitColumnType
+  import table.jsValueColumnType
+  import table.mergeRequestIdColumnType
+  import table.mergeRequestStatusColumnType
+  import table.printColumnType
+  import table.setStringColumnType
 
   protected val tableQuery = TableQuery[ModuleDraftTable]
 
-  override protected def retrieve(
+  protected override def retrieve(
       query: Query[ModuleDraftTable, ModuleDraft, Seq]
   ) =
     db.run(query.result)
@@ -122,9 +126,13 @@ final class ModuleDraftRepository @Inject() (
         .take(1)
         .result
         .flatMap(
-          _.headOption.map(DBIO.successful) getOrElse DBIOAction.failed(
-            new Throwable(s"module draft for module $moduleId not found")
-          )
+          _.headOption
+            .map(DBIO.successful)
+            .getOrElse(
+              DBIOAction.failed(
+                new Throwable(s"module draft for module $moduleId not found")
+              )
+            )
         )
     )
 

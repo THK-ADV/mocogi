@@ -1,18 +1,23 @@
 package git.subscriber
 
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+import scala.util.Failure
+import scala.util.Success
+
 import git.subscriber.CoreDataPublishActor._
-import kafka.{KafkaPublisher, Topics}
+import kafka.KafkaPublisher
+import kafka.Topics
 import models.core._
-import monocle.Lens
 import monocle.macros.GenLens
+import monocle.Lens
 import ops.LoggerOps
 import org.apache.kafka.clients.producer.KafkaProducer
-import org.apache.pekko.actor.{Actor, ActorRef, Props}
-import play.api.Logging
+import org.apache.pekko.actor.Actor
+import org.apache.pekko.actor.ActorRef
+import org.apache.pekko.actor.Props
 import play.api.libs.json.Writes
-
-import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Failure, Success}
+import play.api.Logging
 
 object CoreDataPublishActor {
   def props(
@@ -293,9 +298,7 @@ object CoreDataPublishActor {
         )
     }
 
-    private def makeProducer[A](topics: Topics[A])(implicit
-        writes: Writes[A]
-    ): KafkaProducer[String, A] =
+    private def makeProducer[A](topics: Topics[A])(implicit writes: Writes[A]): KafkaProducer[String, A] =
       makeStringProducer[A](Seq(topics.created, topics.updated))
 
     private val locationProducer = makeProducer[ModuleLocation](locationTopic)
@@ -347,7 +350,7 @@ object CoreDataPublishActor {
         deleted <- deleteMany(topics.deleted, deleted)
       } yield (created, updated, deleted)
 
-      res onComplete {
+      res.onComplete {
         case Success((created, updated, deleted)) =>
           if (created > 0) {
             logger.info(

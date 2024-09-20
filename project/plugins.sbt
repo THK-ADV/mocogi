@@ -4,3 +4,4 @@ resolvers += "Typesafe repository" at "https://repo.typesafe.com/typesafe/releas
 
 addSbtPlugin("org.playframework" % "sbt-plugin" % "3.0.5")
 addSbtPlugin("ch.epfl.scala" % "sbt-scalafix" % "0.11.1")
+addSbtPlugin("org.scalameta" % "sbt-scalafmt" % "2.5.2")

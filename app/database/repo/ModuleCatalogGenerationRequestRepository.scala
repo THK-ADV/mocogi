@@ -1,14 +1,19 @@
 package database.repo
 
+import javax.inject.Inject
+import javax.inject.Singleton
+
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+
 import catalog.Semester
 import database.table.ModuleCatalogGenerationRequestTable
-import git.{MergeRequestId, MergeRequestStatus}
+import git.MergeRequestId
+import git.MergeRequestStatus
 import models.ModuleCatalogGenerationRequest
-import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfigProvider}
+import play.api.db.slick.DatabaseConfigProvider
+import play.api.db.slick.HasDatabaseConfigProvider
 import slick.jdbc.JdbcProfile
-
-import javax.inject.{Inject, Singleton}
-import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 final class ModuleCatalogGenerationRequestRepository @Inject() (
@@ -20,7 +25,8 @@ final class ModuleCatalogGenerationRequestRepository @Inject() (
       ModuleCatalogGenerationRequestTable
     ]
     with HasDatabaseConfigProvider[JdbcProfile] {
-  import database.table.{mergeRequestIdColumnType, mergeRequestStatusColumnType}
+  import database.table.mergeRequestIdColumnType
+  import database.table.mergeRequestStatusColumnType
   import profile.api._
 
   def exists(semester: Semester): Future[Boolean] =
@@ -46,9 +52,7 @@ final class ModuleCatalogGenerationRequestRepository @Inject() (
   ) =
     db.run(
       tableQuery
-        .filter(a =>
-          a.mergeRequestId === existing.mergeRequestId && a.semesterId === existing.semesterId
-        )
+        .filter(a => a.mergeRequestId === existing.mergeRequestId && a.semesterId === existing.semesterId)
         .map(_.mergeRequestStatus)
         .update(newStatus)
     )
@@ -60,9 +64,7 @@ final class ModuleCatalogGenerationRequestRepository @Inject() (
   ) =
     db.run(
       tableQuery
-        .filter(a =>
-          a.mergeRequestId === existing.mergeRequestId && a.semesterId === existing.semesterId
-        )
+        .filter(a => a.mergeRequestId === existing.mergeRequestId && a.semesterId === existing.semesterId)
         .map(a => (a.mergeRequestId, a.mergeRequestStatus))
         .update((newMrId, newStatus))
     )
@@ -77,11 +79,10 @@ final class ModuleCatalogGenerationRequestRepository @Inject() (
         .delete
     )
 
-  override protected val tableQuery
-      : TableQuery[ModuleCatalogGenerationRequestTable] =
+  protected override val tableQuery: TableQuery[ModuleCatalogGenerationRequestTable] =
     TableQuery[ModuleCatalogGenerationRequestTable]
 
-  override protected def retrieve(
+  protected override def retrieve(
       query: Query[
         ModuleCatalogGenerationRequestTable,
         ModuleCatalogGenerationRequest,

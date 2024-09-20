@@ -1,9 +1,13 @@
 package git.api
 
-import play.api.libs.ws.WSClient
+import javax.inject.Inject
+import javax.inject.Named
+import javax.inject.Singleton
 
-import javax.inject.{Inject, Named, Singleton}
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+
+import play.api.libs.ws.WSClient
 
 // TODO extend usage of this class
 @Singleton

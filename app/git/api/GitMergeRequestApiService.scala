@@ -1,12 +1,20 @@
 package git.api
 
-import git.{Branch, GitConfig, MergeRequestId, MergeRequestStatus}
+import javax.inject.Inject
+import javax.inject.Singleton
+
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+
+import git.Branch
+import git.GitConfig
+import git.MergeRequestId
+import git.MergeRequestStatus
 import play.api.libs.json.JsArray
-import play.api.libs.ws.{EmptyBody, WSClient}
-import play.mvc.Http.Status
 import play.api.libs.ws.writeableOf_WsBody
-import javax.inject.{Inject, Singleton}
-import scala.concurrent.{ExecutionContext, Future}
+import play.api.libs.ws.EmptyBody
+import play.api.libs.ws.WSClient
+import play.mvc.Http.Status
 
 @Singleton
 final class GitMergeRequestApiService @Inject() (
@@ -27,15 +35,15 @@ final class GitMergeRequestApiService @Inject() (
       .url(mergeRequestUrl)
       .withHttpHeaders(tokenHeader())
       .withQueryStringParameters(
-        "source_branch" -> sourceBranch.value,
-        "target_branch" -> targetBranch.value,
-        "title" -> title,
-        "description" -> description,
-        "remove_source_branch" -> true.toString,
-        "squash_on_merge" -> true.toString,
-        "squash" -> true.toString,
+        "source_branch"          -> sourceBranch.value,
+        "target_branch"          -> targetBranch.value,
+        "title"                  -> title,
+        "description"            -> description,
+        "remove_source_branch"   -> true.toString,
+        "squash_on_merge"        -> true.toString,
+        "squash"                 -> true.toString,
         "approvals_before_merge" -> (if (needsApproval) 1 else 0).toString,
-        "labels" -> label
+        "labels"                 -> label
       )
       .post(EmptyBody)
       .flatMap { res =>
@@ -87,7 +95,7 @@ final class GitMergeRequestApiService @Inject() (
     ws.url(s"$mergeRequestUrl/${id.value}/merge")
       .withHttpHeaders(tokenHeader())
       .withQueryStringParameters(
-        "squash" -> true.toString,
+        "squash"                      -> true.toString,
         "should_remove_source_branch" -> true.toString
       )
       .put(EmptyBody)
@@ -113,7 +121,7 @@ final class GitMergeRequestApiService @Inject() (
       .withHttpHeaders(tokenHeader())
       .withQueryStringParameters(
         "target_branch" -> targetBranch.value,
-        "state" -> "opened"
+        "state"         -> "opened"
       )
       .get()
       .flatMap { res =>

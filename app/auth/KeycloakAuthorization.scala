@@ -1,11 +1,13 @@
 package auth
-import auth.Authorization.{AuthorizationHeader, BearerPrefix}
-import org.keycloak.adapters.KeycloakDeployment
-import org.keycloak.adapters.rotation.AdapterTokenVerifier
-import org.keycloak.representations.AccessToken
-
-import scala.jdk.CollectionConverters.{MapHasAsScala, SetHasAsScala}
+import scala.jdk.CollectionConverters.MapHasAsScala
+import scala.jdk.CollectionConverters.SetHasAsScala
 import scala.util.Try
+
+import auth.Authorization.AuthorizationHeader
+import auth.Authorization.BearerPrefix
+import org.keycloak.adapters.rotation.AdapterTokenVerifier
+import org.keycloak.adapters.KeycloakDeployment
+import org.keycloak.representations.AccessToken
 
 final class KeycloakAuthorization[UserToken](
     keycloakDeployment: KeycloakDeployment,
@@ -38,8 +40,8 @@ final class KeycloakAuthorization[UserToken](
 
   private def extractAttributes(accessToken: AccessToken): UserToken = {
     val attributes = accessToken.getOtherClaims.asScala.toMap
-    val mail = accessToken.getEmail
-    val roles = accessToken.getRealmAccess.getRoles.asScala.toSet
+    val mail       = accessToken.getEmail
+    val roles      = accessToken.getRealmAccess.getRoles.asScala.toSet
     tokenFactory.create(attributes, mail, roles) match {
       case Right(token) => token
       case Left(err) =>

@@ -4,8 +4,7 @@ import slick.jdbc.PostgresProfile.api._
 
 case class PersonInFaculty(person: String, faculty: String)
 
-final class PersonInFacultyTable(tag: Tag)
-    extends Table[PersonInFaculty](tag, "person_in_faculty") {
+final class PersonInFacultyTable(tag: Tag) extends Table[PersonInFaculty](tag, "person_in_faculty") {
 
   def person = column[String]("person", O.PrimaryKey)
 

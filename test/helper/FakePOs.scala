@@ -1,7 +1,8 @@
 package helper
 
-import models.core.PO
 import java.time.LocalDate
+
+import models.core.PO
 
 trait FakePOs {
   private lazy val ld = LocalDate.of(1998, 5, 9)

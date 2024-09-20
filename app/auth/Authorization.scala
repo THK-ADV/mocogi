@@ -8,5 +8,5 @@ trait Authorization[UserToken] {
 
 object Authorization {
   val AuthorizationHeader = "Authorization"
-  val BearerPrefix = "Bearer"
+  val BearerPrefix        = "Bearer"
 }

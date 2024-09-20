@@ -1,13 +1,12 @@
 package git.api
 
-import git.api.GitRepositoryApiService.{linkParser, nextLinkParser}
+import git.api.GitRepositoryApiService.linkParser
+import git.api.GitRepositoryApiService.nextLinkParser
 import org.scalatest.wordspec.AnyWordSpec
-import org.scalatest.{EitherValues, OptionValues}
+import org.scalatest.EitherValues
+import org.scalatest.OptionValues
 
-final class GitRepositoryServiceSpec
-    extends AnyWordSpec
-    with EitherValues
-    with OptionValues {
+final class GitRepositoryServiceSpec extends AnyWordSpec with EitherValues with OptionValues {
 
   def input1 =
     "<https://foo.bar.baz/id=42&page=2&pagination=legacy&path=modules&per_page=20&recursive=false>; rel=\"next\", <https://foo.bar.baz/id=42&page=1&pagination=legacy&path=modules&per_page=20&recursive=false>; rel=\"first\", <https://foo.bar.baz/id=42&page=17&pagination=legacy&path=modules&per_page=20&recursive=false>; rel=\"last\""

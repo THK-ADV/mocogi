@@ -1,21 +1,23 @@
-import auth.{Authorization, UserToken}
-import controllers.ErrorHandler
-import play.api.Logging
-import play.api.http.HttpErrorHandler
-import play.api.libs.json.Json
-import play.api.mvc.Results._
-import play.api.mvc._
+import javax.inject.Inject
+import javax.inject.Singleton
 
-import javax.inject.{Inject, Singleton}
 import scala.annotation.unused
 import scala.concurrent._
-import scala.util.{Failure, Success}
+import scala.util.Failure
+import scala.util.Success
+
+import auth.Authorization
+import auth.UserToken
+import controllers.ErrorHandler
+import play.api.http.HttpErrorHandler
+import play.api.libs.json.Json
+import play.api.mvc._
+import play.api.mvc.Results._
+import play.api.Logging
 
 @unused
 @Singleton
-class ErrorHandler @Inject() (auth: Authorization[UserToken])
-    extends HttpErrorHandler
-    with Logging {
+class ErrorHandler @Inject() (auth: Authorization[UserToken]) extends HttpErrorHandler with Logging {
 
   def onClientError(
       request: RequestHeader,
@@ -25,7 +27,7 @@ class ErrorHandler @Inject() (auth: Authorization[UserToken])
     Future.successful(
       Status(statusCode)(
         Json.obj(
-          "type" -> "client error",
+          "type"    -> "client error",
           "request" -> request.toString(),
           "message" -> message
         )

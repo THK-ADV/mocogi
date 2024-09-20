@@ -10,7 +10,7 @@ final class CoreDataPublisherSpec extends AnyWordSpec {
   "A Core Data Publisher" should {
     "split between create, update and delete" in {
       var existingValues: List[String] = Nil
-      var newValues: List[String] = List("A", "B")
+      var newValues: List[String]      = List("A", "B")
 
       assert(toCreate(existingValues, newValues) == List("A", "B"))
       assert(toDelete(existingValues, newValues) == Nil)

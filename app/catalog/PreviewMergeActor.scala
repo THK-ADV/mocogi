@@ -1,17 +1,21 @@
 package catalog
 
+import javax.inject.Singleton
+
+import scala.concurrent.ExecutionContext
+import scala.util.Failure
+import scala.util.Success
+
 import catalog.PreviewMergeActor.CreateMergeRequest
 import database.repo.ModuleCatalogGenerationRequestRepository
 import git.api.GitMergeRequestApiService
 import models.ModuleCatalogGenerationRequest
 import ops.FutureOps.Ops
 import ops.LoggerOps
-import org.apache.pekko.actor.{Actor, ActorRef, Props}
+import org.apache.pekko.actor.Actor
+import org.apache.pekko.actor.ActorRef
+import org.apache.pekko.actor.Props
 import play.api.Logging
-
-import javax.inject.Singleton
-import scala.concurrent.ExecutionContext
-import scala.util.{Failure, Success}
 
 @Singleton
 final class PreviewMergeActor(actor: ActorRef) {
@@ -80,14 +84,15 @@ object PreviewMergeActor {
         s"successfully created generation request with id ${mrId.value} and semester ${semester.id}"
       )
 
-    override def receive: Receive = { case CreateMergeRequest(semester) =>
-      logger.info(
-        s"start merging ${config.draftBranch} into ${config.mainBranch} for semester ${semester.id}"
-      )
-      createMergeRequest(semester) onComplete {
-        case Success(_) => logger.info("finished!")
-        case Failure(e) => logFailure(e)
-      }
+    override def receive: Receive = {
+      case CreateMergeRequest(semester) =>
+        logger.info(
+          s"start merging ${config.draftBranch} into ${config.mainBranch} for semester ${semester.id}"
+        )
+        createMergeRequest(semester).onComplete {
+          case Success(_) => logger.info("finished!")
+          case Failure(e) => logFailure(e)
+        }
     }
   }
 }

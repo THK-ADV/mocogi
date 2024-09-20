@@ -1,8 +1,8 @@
 package catalog
 
-import catalog.ElectivesFile.fileExt
-
 import java.nio.file.Path
+
+import catalog.ElectivesFile.fileExt
 
 case class ElectivesFile(path: Path) extends AnyVal {
   def hasFileName(semester: Semester): Boolean = {

@@ -1,15 +1,23 @@
 package git.api
 
+import javax.inject.Inject
+import javax.inject.Singleton
+
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+
 import git.api.GitRepositoryApiService.nextLinkParser
-import git.{GitConfig, GitFilePath}
-import parser.Parser.{end, prefix, prefixTo, skipFirst}
+import git.GitConfig
+import git.GitFilePath
+import parser.Parser.end
+import parser.Parser.prefix
+import parser.Parser.prefixTo
+import parser.Parser.skipFirst
 import parser.ParserOps.P0
 import play.api.libs.json.JsValue
-import play.api.libs.ws.{WSClient, WSResponse}
+import play.api.libs.ws.WSClient
+import play.api.libs.ws.WSResponse
 import play.mvc.Http.Status
-
-import javax.inject.{Inject, Singleton}
-import scala.concurrent.{ExecutionContext, Future}
 
 object GitRepositoryApiService {
   def linkParser =

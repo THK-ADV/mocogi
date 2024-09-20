@@ -1,12 +1,13 @@
 package providers
 
+import javax.inject.Inject
+import javax.inject.Provider
+import javax.inject.Singleton
+
 import models.ModuleKeysToReview
 
-import javax.inject.{Inject, Provider, Singleton}
-
 @Singleton()
-final class ModuleKeysToReviewProvider @Inject() (config: ConfigReader)
-    extends Provider[ModuleKeysToReview] {
+final class ModuleKeysToReviewProvider @Inject() (config: ConfigReader) extends Provider[ModuleKeysToReview] {
   override def get(): ModuleKeysToReview =
     ModuleKeysToReview(
       config.moduleKeysToReviewFromPav.toSet

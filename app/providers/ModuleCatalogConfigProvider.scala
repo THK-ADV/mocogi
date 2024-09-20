@@ -1,13 +1,14 @@
 package providers
 
+import javax.inject.Inject
+import javax.inject.Provider
+import javax.inject.Singleton
+
 import catalog.ModuleCatalogConfig
 import git.Branch
 
-import javax.inject.{Inject, Provider, Singleton}
-
 @Singleton
-final class ModuleCatalogConfigProvider @Inject() (configReader: ConfigReader)
-    extends Provider[ModuleCatalogConfig] {
+final class ModuleCatalogConfigProvider @Inject() (configReader: ConfigReader) extends Provider[ModuleCatalogConfig] {
   override def get() = ModuleCatalogConfig(
     configReader.tmpFolderPath,
     configReader.moduleCatalogOutputFolderPath,

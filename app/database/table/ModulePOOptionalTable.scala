@@ -1,8 +1,8 @@
 package database.table
 
-import slick.jdbc.PostgresProfile.api._
-
 import java.util.UUID
+
+import slick.jdbc.PostgresProfile.api._
 
 case class ModulePOOptionalDbEntry(
     id: UUID,
@@ -14,8 +14,7 @@ case class ModulePOOptionalDbEntry(
     recommendedSemester: List[Int]
 )
 
-final class ModulePOOptionalTable(tag: Tag)
-    extends Table[ModulePOOptionalDbEntry](tag, "module_po_optional") {
+final class ModulePOOptionalTable(tag: Tag) extends Table[ModulePOOptionalDbEntry](tag, "module_po_optional") {
 
   def fullPo = specialization.fold(po)(identity)
 

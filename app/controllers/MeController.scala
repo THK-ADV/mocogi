@@ -1,13 +1,17 @@
 package controllers
 
+import javax.inject.Inject
+import javax.inject.Singleton
+
+import scala.concurrent.ExecutionContext
+
 import auth.AuthorizationAction
 import controllers.actions.PersonAction
-import database.repo.core.{IdentityRepository, StudyProgramPersonRepository}
+import database.repo.core.IdentityRepository
+import database.repo.core.StudyProgramPersonRepository
 import play.api.libs.json.Json
-import play.api.mvc.{AbstractController, ControllerComponents}
-
-import javax.inject.{Inject, Singleton}
-import scala.concurrent.ExecutionContext
+import play.api.mvc.AbstractController
+import play.api.mvc.ControllerComponents
 
 @Singleton
 final class MeController @Inject() (
@@ -20,13 +24,13 @@ final class MeController @Inject() (
     with PersonAction {
 
   def me() =
-    auth andThen personAction async { r =>
+    auth.andThen(personAction).async { r =>
       studyProgramPersonRepository
         .getStudyProgramPrivileges(r.person.id)
         .map(xs =>
           Ok(
             Json.obj(
-              "me" -> Json.toJson(r.person),
+              "me"         -> Json.toJson(r.person),
               "privileges" -> Json.toJson(xs)
             )
           )

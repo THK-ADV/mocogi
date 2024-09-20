@@ -1,5 +1,12 @@
 package catalog
 
+import java.nio.file.Paths
+import javax.inject.Inject
+import javax.inject.Singleton
+
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+
 import database.repo.ElectivesRepository
 import database.view.StudyProgramViewRepository
 import models._
@@ -7,10 +14,6 @@ import models.core.Identity
 import ops.EitherOps.EStringThrowOps
 import ops.FileOps.FileOps0
 import play.api.Logging
-
-import java.nio.file.Paths
-import javax.inject.{Inject, Singleton}
-import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 final class ElectivesCatalogService @Inject() (
@@ -50,16 +53,17 @@ final class ElectivesCatalogService @Inject() (
   ): Unit =
     electiveModules.toVector
       .sortBy(_._1.title)
-      .foreach { case (module, identities, pos) =>
-        val moduleManagement = identities.map(_.fullName).mkString(", ")
-        val matchedStudyPrograms = sps
-          .map(sp => if (pos.contains(sp.fullPoId)) "X" else "")
-          .mkString(",")
-        if (matchedStudyPrograms.contains("X")) {
-          csv.append(
-            s"${module.title},${module.abbrev},\"$moduleManagement\",$matchedStudyPrograms\n"
-          )
-        }
+      .foreach {
+        case (module, identities, pos) =>
+          val moduleManagement = identities.map(_.fullName).mkString(", ")
+          val matchedStudyPrograms = sps
+            .map(sp => if (pos.contains(sp.fullPoId)) "X" else "")
+            .mkString(",")
+          if (matchedStudyPrograms.contains("X")) {
+            csv.append(
+              s"${module.title},${module.abbrev},\"$moduleManagement\",$matchedStudyPrograms\n"
+            )
+          }
       }
 
   def create(semester: Semester): Future[List[(ElectivesFile, String)]] = {
@@ -70,25 +74,26 @@ final class ElectivesCatalogService @Inject() (
     val electiveModules = electivesRepository.all()
 
     for {
-      studyPrograms <- studyPrograms
+      studyPrograms   <- studyPrograms
       electiveModules <- electiveModules
       file <- Future.sequence(
         studyPrograms
           .groupBy(_.po.id.split("_").head)
-          .map { case (teachingUnit, studyPrograms) =>
-            val csv = new StringBuilder()
-            csv.append("Modulname,Modulabkürzung,Modulverantwortliche")
-            fillHeaderWithAllStudyPrograms(csv, studyPrograms)
-            fillContent(csv, studyPrograms, electiveModules)
-            val content = csv.toString()
-            tmpFolder
-              .createFile(
-                ElectivesFile.fileName(semester, teachingUnit),
-                content
-              )
-              .flatMap(_.move(electivesCatalogueFolder))
-              .map(ElectivesFile(_) -> content)
-              .toFuture
+          .map {
+            case (teachingUnit, studyPrograms) =>
+              val csv = new StringBuilder()
+              csv.append("Modulname,Modulabkürzung,Modulverantwortliche")
+              fillHeaderWithAllStudyPrograms(csv, studyPrograms)
+              fillContent(csv, studyPrograms, electiveModules)
+              val content = csv.toString()
+              tmpFolder
+                .createFile(
+                  ElectivesFile.fileName(semester, teachingUnit),
+                  content
+                )
+                .flatMap(_.move(electivesCatalogueFolder))
+                .map(ElectivesFile(_) -> content)
+                .toFuture
           }
           .toList
       )

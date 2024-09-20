@@ -1,18 +1,20 @@
 package ops
 
-import play.api.Logging
+import java.io.PrintWriter
+import java.io.StringWriter
 
-import java.io.{PrintWriter, StringWriter}
 import scala.annotation.unused
+
+import play.api.Logging
 
 trait LoggerOps { self: Logging =>
 
   @unused
   protected def measure[A](tag: String, f: => A): A = {
     val start = System.currentTimeMillis()
-    val a = f
-    val end = System.currentTimeMillis()
-    val time = end - start
+    val a     = f
+    val end   = System.currentTimeMillis()
+    val time  = end - start
     logger.info(s"Time Consumed by $tag is: $time")
     a
   }
@@ -34,8 +36,8 @@ trait LoggerOps { self: Logging =>
 
   protected def logFailure(error: Throwable): Unit =
     logger.error(s"""failed
-         |  - message: ${error.getMessage}
-         |  - trace: ${error.getStackTrace.mkString(
+                    |  - message: ${error.getMessage}
+                    |  - trace: ${error.getStackTrace.mkString(
                      "\n           "
                    )}""".stripMargin)
 }

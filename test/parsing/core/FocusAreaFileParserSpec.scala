@@ -2,9 +2,11 @@ package parsing.core
 
 import helper.FakeStudyPrograms
 import org.scalatest.wordspec.AnyWordSpec
-import org.scalatest.{EitherValues, OptionValues}
+import org.scalatest.EitherValues
+import org.scalatest.OptionValues
 import parsing.core.FocusAreaFileParser.fileParser
-import parsing.{ParserSpecHelper, withFile0}
+import parsing.withFile0
+import parsing.ParserSpecHelper
 
 final class FocusAreaFileParserSpec
     extends AnyWordSpec
@@ -29,7 +31,7 @@ final class FocusAreaFileParserSpec
           |
           |    ko""".stripMargin
       val (res, rest) = fileParser.parse(input)
-      val fa = res.value.head
+      val fa          = res.value.head
       assert(fa.id == "ar")
       assert(fa.program == itm)
       assert(fa.deLabel == "ok")
@@ -46,7 +48,7 @@ final class FocusAreaFileParserSpec
           |  program: program.inf_itm
           |  de_label: ok""".stripMargin
       val (res, rest) = fileParser.parse(input)
-      val fa = res.value.head
+      val fa          = res.value.head
       assert(fa.id == "ar")
       assert(fa.program == itm)
       assert(fa.deLabel == "ok")
@@ -90,7 +92,7 @@ final class FocusAreaFileParserSpec
           |  de_label: ok
           |  de_desc: test""".stripMargin
       val (res, rest) = fileParser.parse(input)
-      val fa1 = res.value.head
+      val fa1         = res.value.head
       assert(fa1.id == "ar")
       assert(fa1.program == itm)
       assert(fa1.deLabel == "ok")
@@ -159,9 +161,10 @@ final class FocusAreaFileParserSpec
         "ppb"
       )
 
-      fas.zip(ids).zipWithIndex.foreach { case ((fa, id), idx) =>
-        assert(fa.id == id, idx)
-        assert(fa.program == "inf_inf")
+      fas.zip(ids).zipWithIndex.foreach {
+        case ((fa, id), idx) =>
+          assert(fa.id == id, idx)
+          assert(fa.program == "inf_inf")
       }
 
       val ar = fas.find(_.id == "ar").value

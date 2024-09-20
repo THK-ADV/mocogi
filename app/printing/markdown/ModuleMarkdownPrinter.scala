@@ -1,23 +1,22 @@
 package printing.markdown
 
+import java.time.LocalDateTime
+import javax.inject.Singleton
+
 import cats.data.NonEmptyList
 import models.*
 import models.core.Identity
 import parsing.types.*
 import printer.Printer
-import printer.Printer.{newline, prefix}
-import printing.{
-  LabelOps,
-  LanguageOps,
-  PrintingLanguage,
-  fmtCommaSeparated,
-  fmtDouble,
-  fmtIdentity,
-  localDatePattern
-}
-
-import java.time.LocalDateTime
-import javax.inject.Singleton
+import printer.Printer.newline
+import printer.Printer.prefix
+import printing.fmtCommaSeparated
+import printing.fmtDouble
+import printing.fmtIdentity
+import printing.localDatePattern
+import printing.LabelOps
+import printing.LanguageOps
+import printing.PrintingLanguage
 
 @Singleton
 final class ModuleMarkdownPrinter(
@@ -30,8 +29,9 @@ final class ModuleMarkdownPrinter(
 
   private def rows(key: String, value: NonEmptyList[String]): Printer[Unit] =
     value.zipWithIndex
-      .map { case (s, i) =>
-        row(if (i == 0) key else "", s)
+      .map {
+        case (s, i) =>
+          row(if (i == 0) key else "", s)
       }
       .reduceLeft(_ skip _)
 
@@ -60,12 +60,8 @@ final class ModuleMarkdownPrinter(
       case Some(e) =>
         val text =
           nonEmptyRow(e.text)(s => s"${lang.prerequisitesTextLabel}: $s")
-        val modules = nonEmptyRow(fmtCommaSeparated(e.modules)(_.abbrev))(s =>
-          s"${lang.prerequisitesModuleLabel}: $s"
-        )
-        val pos = nonEmptyRow(fmtCommaSeparated(e.pos)(_.id))(s =>
-          s"${lang.prerequisitesStudyProgramLabel}: $s"
-        )
+        val modules = nonEmptyRow(fmtCommaSeparated(e.modules)(_.abbrev))(s => s"${lang.prerequisitesModuleLabel}: $s")
+        val pos     = nonEmptyRow(fmtCommaSeparated(e.pos)(_.id))(s => s"${lang.prerequisitesStudyProgramLabel}: $s")
         text
           .skip(modules)
           .skip(pos)
@@ -75,16 +71,14 @@ final class ModuleMarkdownPrinter(
       label: String,
       pos: ModulePOs,
       studyProgram: String => Option[StudyProgramView]
-  )(implicit
-      lang: PrintingLanguage
-  ): Printer[Unit] = {
+  )(implicit lang: PrintingLanguage): Printer[Unit] = {
     def fmt(p: ModulePOMandatory) = {
       val semester = Option.when(p.recommendedSemester.nonEmpty)(
         s"(${lang.semesterLabel} ${fmtCommaSeparated(p.recommendedSemester)(_.toString)})"
       )
       val studyProgramWithPO = studyProgram(p.po.program) match {
         case Some(sp) =>
-          val spLabel = sp.localizedLabel
+          val spLabel     = sp.localizedLabel
           val degreeLabel = sp.degree.localizedLabel
           s"$degreeLabel: $spLabel PO ${p.po.version}"
         case None =>
@@ -121,9 +115,7 @@ final class ModuleMarkdownPrinter(
           label,
           xs.map { am =>
             val methodValue = lang.value(am.method)
-            am.percentage.fold(methodValue)(d =>
-              s"$methodValue (${fmtDouble(d)} %)"
-            )
+            am.percentage.fold(methodValue)(d => s"$methodValue (${fmtDouble(d)} %)")
           }
         )
       }
@@ -131,8 +123,8 @@ final class ModuleMarkdownPrinter(
   private def header(title: String) =
     prefix(s"## $title").skip(newline)
 
-  def contentBlock(title: String, de: String, en: String)(implicit
-      lang: PrintingLanguage,
+  def contentBlock(title: String, de: String, en: String)(
+      implicit lang: PrintingLanguage,
       substituteLocalisedContent: Boolean
   ) = {
     val content = {
@@ -169,71 +161,47 @@ final class ModuleMarkdownPrinter(
   private def frequency(implicit m: Metadata, language: PrintingLanguage) =
     row(language.frequencyLabel, language.frequencyValue(m.season))
 
-  private def moduleCoordinator(implicit
-      m: Metadata,
-      language: PrintingLanguage
-  ) =
+  private def moduleCoordinator(implicit m: Metadata, language: PrintingLanguage) =
     fmtPeople(
       language.moduleCoordinatorLabel,
       m.responsibilities.moduleManagement
     )
 
-  private def moduleLecturer(implicit
-      m: Metadata,
-      language: PrintingLanguage
-  ) =
+  private def moduleLecturer(implicit m: Metadata, language: PrintingLanguage) =
     fmtPeople(
       language.lecturersLabel,
       m.responsibilities.lecturers
     )
 
-  private def assessmentMethods(implicit
-      m: Metadata,
-      language: PrintingLanguage
-  ) =
+  private def assessmentMethods(implicit m: Metadata, language: PrintingLanguage) =
     fmtAssessmentMethod(
       language.assessmentMethodLabel,
       m.assessmentMethods
     )
 
-  private def recommendedPrerequisites(implicit
-      m: Metadata,
-      language: PrintingLanguage
-  ) =
+  private def recommendedPrerequisites(implicit m: Metadata, language: PrintingLanguage) =
     fmtPrerequisites(
       language.recommendedPrerequisitesLabel,
       m.prerequisites.recommended
     )
 
-  private def requiredPrerequisites(implicit
-      m: Metadata,
-      language: PrintingLanguage
-  ) =
+  private def requiredPrerequisites(implicit m: Metadata, language: PrintingLanguage) =
     fmtPrerequisites(
       language.requiredPrerequisitesLabel,
       m.prerequisites.required
     )
 
-  private def workload(implicit
-      m: Metadata,
-      language: PrintingLanguage
-  ) = {
+  private def workload(implicit m: Metadata, language: PrintingLanguage) = {
     val (workload, contactHour, selfStudy) = language.workload(m.workload)
     row(workload._1, workload._2)
       .skip(row(contactHour._1, contactHour._2))
       .skip(row(selfStudy._1, selfStudy._2))
   }
 
-  private def pos(studyProgram: String => Option[StudyProgramView])(implicit
-      m: Metadata,
-      language: PrintingLanguage
-  ) =
+  private def pos(studyProgram: String => Option[StudyProgramView])(implicit m: Metadata, language: PrintingLanguage) =
     fmtPOs(language.poLabel, m.pos, studyProgram)
 
-  private def lastModified(implicit
-      lang: PrintingLanguage,
-      localDateTime: LocalDateTime
-  ) =
+  private def lastModified(implicit lang: PrintingLanguage, localDateTime: LocalDateTime) =
     prefix(
       s"${lang.lastModifiedLabel} ${localDateTime.format(localDatePattern)}"
     )
@@ -241,20 +209,20 @@ final class ModuleMarkdownPrinter(
   private def header(implicit m: Metadata) =
     prefix("# ").skip(prefix(m.title))
 
-  private def particularities(de: ModuleContent, en: ModuleContent)(implicit
-      lang: PrintingLanguage,
-      substituteLocalisedContent: Boolean
-  ) =
+  private def particularities(
+      de: ModuleContent,
+      en: ModuleContent
+  )(implicit lang: PrintingLanguage, substituteLocalisedContent: Boolean) =
     contentBlock(
       lang.particularitiesLabel,
       de.particularities,
       en.particularities
     )
 
-  private def recommendedReading(de: ModuleContent, en: ModuleContent)(implicit
-      lang: PrintingLanguage,
-      substituteLocalisedContent: Boolean
-  ) =
+  private def recommendedReading(
+      de: ModuleContent,
+      en: ModuleContent
+  )(implicit lang: PrintingLanguage, substituteLocalisedContent: Boolean) =
     contentBlock(
       lang.recommendedReadingLabel,
       de.recommendedReading,
@@ -262,8 +230,7 @@ final class ModuleMarkdownPrinter(
     )
 
   private def teachingAndLearningMethods(de: ModuleContent, en: ModuleContent)(
-      implicit
-      lang: PrintingLanguage,
+      implicit lang: PrintingLanguage,
       substituteLocalisedContent: Boolean
   ) =
     contentBlock(
@@ -272,60 +239,58 @@ final class ModuleMarkdownPrinter(
       en.teachingAndLearningMethods
     )
 
-  private def moduleContent(de: ModuleContent, en: ModuleContent)(implicit
-      lang: PrintingLanguage,
+  private def moduleContent(de: ModuleContent, en: ModuleContent)(
+      implicit lang: PrintingLanguage,
       substituteLocalisedContent: Boolean
   ) =
     contentBlock(lang.moduleContentLabel, de.content, en.content)
 
-  private def learningOutcome(de: ModuleContent, en: ModuleContent)(implicit
-      lang: PrintingLanguage,
-      substituteLocalisedContent: Boolean
-  ) =
+  private def learningOutcome(
+      de: ModuleContent,
+      en: ModuleContent
+  )(implicit lang: PrintingLanguage, substituteLocalisedContent: Boolean) =
     contentBlock(
       lang.learningOutcomeLabel,
       de.learningOutcome,
       en.learningOutcome
     )
 
-  def printer(studyProgram: String => Option[StudyProgramView])(implicit
-      lang: PrintingLanguage,
-      localDateTime: Option[LocalDateTime]
-  ): Printer[Module] =
-    Printer { case (module, input) =>
-      implicit val m: Metadata = module.metadata
-      implicit val slc: Boolean = substituteLocalisedContent
+  def printer(
+      studyProgram: String => Option[StudyProgramView]
+  )(implicit lang: PrintingLanguage, localDateTime: Option[LocalDateTime]): Printer[Module] =
+    Printer {
+      case (module, input) =>
+        implicit val m: Metadata  = module.metadata
+        implicit val slc: Boolean = substituteLocalisedContent
 
-      header
-        .skip(newline.repeat(2))
-        .skip(row("", ""))
-        .skip(row("---", "---"))
-        .skip(moduleNumber)
-        .skip(moduleTitle)
-        .skip(moduleType)
-        .skipOpt(m.relation.map(fmtModuleRelation))
-        .skip(ects)
-        .skip(language)
-        .skip(duration)
-        .skip(frequency)
-        .skip(moduleCoordinator)
-        .skip(moduleLecturer)
-        .skip(assessmentMethods)
-        .skip(workload)
-        .skip(recommendedPrerequisites)
-        .skip(requiredPrerequisites)
-        .skip(pos(studyProgram))
-        .skip(newline)
-        .skip(learningOutcome(module.deContent, module.enContent))
-        .skip(moduleContent(module.deContent, module.enContent))
-        .skip(teachingAndLearningMethods(module.deContent, module.enContent))
-        .skip(recommendedReading(module.deContent, module.enContent))
-        .skip(particularities(module.deContent, module.enContent))
-        .skipOpt(
-          localDateTime.map(d =>
-            prefix("---").skip(newline.repeat(2)).skip(lastModified(lang, d))
+        header
+          .skip(newline.repeat(2))
+          .skip(row("", ""))
+          .skip(row("---", "---"))
+          .skip(moduleNumber)
+          .skip(moduleTitle)
+          .skip(moduleType)
+          .skipOpt(m.relation.map(fmtModuleRelation))
+          .skip(ects)
+          .skip(language)
+          .skip(duration)
+          .skip(frequency)
+          .skip(moduleCoordinator)
+          .skip(moduleLecturer)
+          .skip(assessmentMethods)
+          .skip(workload)
+          .skip(recommendedPrerequisites)
+          .skip(requiredPrerequisites)
+          .skip(pos(studyProgram))
+          .skip(newline)
+          .skip(learningOutcome(module.deContent, module.enContent))
+          .skip(moduleContent(module.deContent, module.enContent))
+          .skip(teachingAndLearningMethods(module.deContent, module.enContent))
+          .skip(recommendedReading(module.deContent, module.enContent))
+          .skip(particularities(module.deContent, module.enContent))
+          .skipOpt(
+            localDateTime.map(d => prefix("---").skip(newline.repeat(2)).skip(lastModified(lang, d)))
           )
-        )
-        .print((), input)
+          .print((), input)
     }
 }

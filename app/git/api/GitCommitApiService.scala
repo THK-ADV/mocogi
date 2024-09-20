@@ -1,14 +1,24 @@
 package git.api
 
-import git.{Branch, CommitId, GitCommitAction, GitCommitActionType, GitConfig}
-import play.api.http.ContentTypes
-import play.api.libs.json.{JsValue, Json}
-import play.api.libs.ws.{WSClient, WSResponse}
-import play.mvc.Http.{HeaderNames, Status}
-import play.api.libs.ws.writeableOf_JsValue
+import javax.inject.Inject
+import javax.inject.Singleton
 
-import javax.inject.{Inject, Singleton}
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+
+import git.Branch
+import git.CommitId
+import git.GitCommitAction
+import git.GitCommitActionType
+import git.GitConfig
+import play.api.http.ContentTypes
+import play.api.libs.json.JsValue
+import play.api.libs.json.Json
+import play.api.libs.ws.writeableOf_JsValue
+import play.api.libs.ws.WSClient
+import play.api.libs.ws.WSResponse
+import play.mvc.Http.HeaderNames
+import play.mvc.Http.Status
 
 @Singleton
 final class GitCommitApiService @Inject() (
@@ -26,28 +36,28 @@ final class GitCommitApiService @Inject() (
   ): Future[CommitId] = {
     def body(): JsValue =
       Json.obj(
-        "branch" -> branch.value,
+        "branch"         -> branch.value,
         "commit_message" -> message,
-        "author_email" -> authorEmail,
-        "author_name" -> authorName,
+        "author_email"   -> authorEmail,
+        "author_name"    -> authorName,
         "actions" -> actions.map { a =>
           a.action match {
             case GitCommitActionType.Create =>
               Json.obj(
-                "action" -> a.action.toString,
+                "action"    -> a.action.toString,
                 "file_path" -> a.filePath.value,
-                "content" -> a.fileContent
+                "content"   -> a.fileContent
               )
             case GitCommitActionType.Delete =>
               Json.obj(
-                "action" -> a.action.toString,
+                "action"    -> a.action.toString,
                 "file_path" -> a.filePath.value
               )
             case GitCommitActionType.Update =>
               Json.obj(
-                "action" -> a.action.toString,
+                "action"    -> a.action.toString,
                 "file_path" -> a.filePath.value,
-                "content" -> a.fileContent
+                "content"   -> a.fileContent
               )
           }
         }

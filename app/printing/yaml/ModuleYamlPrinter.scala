@@ -1,12 +1,14 @@
 package printing.yaml
 
+import java.util.UUID
+import javax.inject.Inject
+import javax.inject.Singleton
+
 import models.ModuleProtocol
 import parsing.metadata.VersionScheme
+import printer.Printer
 import printer.Printer.newline
-import printer.{Printer, PrintingError}
-
-import java.util.UUID
-import javax.inject.{Inject, Singleton}
+import printer.PrintingError
 
 @Singleton
 final class ModuleYamlPrinter @Inject() (
@@ -30,7 +32,5 @@ final class ModuleYamlPrinter @Inject() (
       .printer(version)
       .skip(newline)
       .zip(contentPrinter.printer())
-      .contraMapSuccess(a =>
-        ((a._1, a._2.metadata), (a._2.deContent, a._2.enContent))
-      )
+      .contraMapSuccess(a => ((a._1, a._2.metadata), (a._2.deContent, a._2.enContent)))
 }

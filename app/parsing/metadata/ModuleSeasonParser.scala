@@ -6,7 +6,7 @@ import parsing.helper.SingleValueParser
 import parsing.singleValueRawParser
 
 object ModuleSeasonParser extends SingleValueParser[Season] {
-  def key = "frequency"
+  def key    = "frequency"
   def prefix = "season."
 
   def parser(implicit seasons: Seq[Season]): Parser[Season] = {

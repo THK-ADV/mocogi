@@ -1,6 +1,13 @@
 package providers
 
-import database.view.{ModuleViewRepository, StudyProgramViewRepository}
+import javax.inject.Inject
+import javax.inject.Provider
+import javax.inject.Singleton
+
+import scala.concurrent.ExecutionContext
+
+import database.view.ModuleViewRepository
+import database.view.StudyProgramViewRepository
 import git.publisher.CoreDataPublisher
 import git.subscriber.CoreDataPublishActor
 import kafka.Topics
@@ -9,9 +16,6 @@ import ops.ConfigurationOps.Ops
 import org.apache.pekko.actor.ActorSystem
 import play.api.Configuration
 import service.core._
-
-import javax.inject.{Inject, Provider, Singleton}
-import scala.concurrent.ExecutionContext
 
 @Singleton
 final class CoreDataPublisherProvider @Inject() (

@@ -1,9 +1,9 @@
 package catalog
 
+import java.nio.file.Path
+
 import models.StudyProgramView
 import printing.PrintingLanguage
-
-import java.nio.file.Path
 
 case class ModuleCatalogFile[PDF](
     filename: String,

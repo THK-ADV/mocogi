@@ -1,20 +1,21 @@
 package service
 
+import java.util.UUID
+import javax.inject.Inject
+import javax.inject.Singleton
+
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+
 import auth.CampusId
 import cats.data.NonEmptyList
 import database.repo.ModuleUpdatePermissionRepository
-import models.ModuleUpdatePermissionType.Inherited
 import models.core.Identity
-import models.{
-  ModuleCore,
-  ModuleDraft,
-  ModuleUpdatePermission,
-  ModuleUpdatePermissionType
-}
-
-import java.util.UUID
-import javax.inject.{Inject, Singleton}
-import scala.concurrent.{ExecutionContext, Future}
+import models.ModuleCore
+import models.ModuleDraft
+import models.ModuleUpdatePermission
+import models.ModuleUpdatePermissionType
+import models.ModuleUpdatePermissionType.Inherited
 
 @Singleton
 final class ModuleUpdatePermissionService @Inject() (
@@ -23,14 +24,15 @@ final class ModuleUpdatePermissionService @Inject() (
 ) {
   def overrideInherited(modules: Seq[(UUID, NonEmptyList[Identity])]) = {
     def entries() =
-      modules.flatMap { case (module, management) =>
-        management.collect {
-          case p: Identity.Person if p.username.isDefined =>
-            (module, CampusId(p.username.get), Inherited)
-        }
+      modules.flatMap {
+        case (module, management) =>
+          management.collect {
+            case p: Identity.Person if p.username.isDefined =>
+              (module, CampusId(p.username.get), Inherited)
+          }
       }
     for {
-      _ <- repo.deleteByModules(modules.map(_._1), Inherited)
+      _       <- repo.deleteByModules(modules.map(_._1), Inherited)
       created <- repo.createMany(entries().toList)
     } yield created
   }

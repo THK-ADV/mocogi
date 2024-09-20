@@ -1,12 +1,14 @@
 package providers
 
-import ops.ConfigurationOps.Ops
-import play.api.Configuration
-
 import java.util.UUID
-import javax.inject.{Inject, Singleton}
+import javax.inject.Inject
+import javax.inject.Singleton
+
 import scala.jdk.CollectionConverters.IteratorHasAsScala
 import scala.util.Try
+
+import ops.ConfigurationOps.Ops
+import play.api.Configuration
 
 @Singleton
 final class ConfigReader @Inject() (config: Configuration) {
@@ -16,7 +18,7 @@ final class ConfigReader @Inject() (config: Configuration) {
       .getConfigList("bigbang.trigger")
       .iterator()
       .asScala
-    date = trigger.getString("date")
+    date     = trigger.getString("date")
     semester = trigger.getString("semester")
   } yield (date, semester)
 

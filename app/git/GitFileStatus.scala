@@ -6,7 +6,7 @@ sealed trait GitFileStatus {
 }
 
 object GitFileStatus {
-  case object Added extends GitFileStatus
+  case object Added    extends GitFileStatus
   case object Modified extends GitFileStatus
-  case object Removed extends GitFileStatus
+  case object Removed  extends GitFileStatus
 }
