@@ -3,7 +3,7 @@ exam_phase.wise_1=Wintersemester Termin 1 (Jan./Feb.)
 exam_phase.wise_2=Wintersemester Termin 2 (März/Apr.)
 exam_phase.sose_1=Sommersemester Termin 1 (Juli)
 exam_phase.sose_2=Sommersemester Termin 2 (Sep./Okt.)
-exam_phase.none=Keine
+exam_phase.none=TBA
 
 # Module Keys
 metadata.title.label=Modulbezeichnung
