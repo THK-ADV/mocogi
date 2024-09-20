@@ -1,19 +1,17 @@
 package parsing.core
 
-import org.scalatest.EitherValues
 import org.scalatest.wordspec.AnyWordSpec
+import org.scalatest.EitherValues
 import parser.Parser
-import parsing.{ParserSpecHelper, withFile0}
+import parsing.withFile0
+import parsing.ParserSpecHelper
 
-final class LabelDescFileParserSpec
-    extends AnyWordSpec
-    with ParserSpecHelper
-    with EitherValues {
+final class LabelDescFileParserSpec extends AnyWordSpec with ParserSpecHelper with EitherValues {
 
   private class Impl extends LabelDescFileParser[IDLabelDescImpl] {
     def parser(): Parser[List[IDLabelDescImpl]] = super.fileParser()
 
-    override protected def makeType = {
+    protected override def makeType = {
       case (id, deLabel, enLabel, deDesc, enDesc) =>
         IDLabelDescImpl(id, deLabel, deDesc, enLabel, enDesc)
     }

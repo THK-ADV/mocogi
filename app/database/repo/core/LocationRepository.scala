@@ -1,13 +1,16 @@
 package database.repo.core
 
+import javax.inject.Inject
+import javax.inject.Singleton
+
+import scala.concurrent.ExecutionContext
+
 import database.repo.Repository
 import database.table.core.LocationTable
 import models.core.ModuleLocation
-import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfigProvider}
+import play.api.db.slick.DatabaseConfigProvider
+import play.api.db.slick.HasDatabaseConfigProvider
 import slick.jdbc.JdbcProfile
-
-import javax.inject.{Inject, Singleton}
-import scala.concurrent.ExecutionContext
 
 @Singleton
 class LocationRepository @Inject() (
@@ -19,7 +22,7 @@ class LocationRepository @Inject() (
 
   protected val tableQuery = TableQuery[LocationTable]
 
-  override protected def retrieve(
+  protected override def retrieve(
       query: Query[LocationTable, ModuleLocation, Seq]
   ) =
     db.run(query.result)
@@ -28,5 +31,5 @@ class LocationRepository @Inject() (
     db.run(tableQuery.map(_.id).result)
 
   def deleteMany(ids: Seq[String]) =
-    db.run(tableQuery.filter(_.id inSet ids).delete)
+    db.run(tableQuery.filter(_.id.inSet(ids)).delete)
 }

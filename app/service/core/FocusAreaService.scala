@@ -1,12 +1,15 @@
 package service.core
 
+import javax.inject.Inject
+import javax.inject.Singleton
+
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+
 import database.repo.core.FocusAreaRepository
 import models.core.FocusArea
 import parser.Parser
 import parsing.core.FocusAreaFileParser
-
-import javax.inject.{Inject, Singleton}
-import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 final class FocusAreaService @Inject() (

@@ -1,17 +1,21 @@
 package git.subscriber
 
-import git.subscriber.ModuleSubscribers.Handle
-import git.{GitFile, GitFileStatus}
-import kafka.{KafkaPublisher, Topics}
-import monocle.macros.GenLens
-import ops.LoggerOps
-import org.apache.pekko.actor.{Actor, Props}
-import parsing.types.Module
-import play.api.Logging
-
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.ExecutionContext
-import scala.util.{Failure, Success}
+import scala.util.Failure
+import scala.util.Success
+
+import git.subscriber.ModuleSubscribers.Handle
+import git.GitFile
+import git.GitFileStatus
+import kafka.KafkaPublisher
+import kafka.Topics
+import monocle.macros.GenLens
+import ops.LoggerOps
+import org.apache.pekko.actor.Actor
+import org.apache.pekko.actor.Props
+import parsing.types.Module
+import play.api.Logging
 
 object ModulePublishActor {
   def props(serverUrl: String, ctx: ExecutionContext, topics: Topics[Module]) =
@@ -21,7 +25,7 @@ object ModulePublishActor {
 
   private final class Impl(
       override val serverUrl: String,
-      override implicit val ctx: ExecutionContext,
+      implicit override val ctx: ExecutionContext,
       topics: Topics[Module]
   ) extends Actor
       with Logging
@@ -38,12 +42,13 @@ object ModulePublishActor {
       val updated = ListBuffer.empty[Module]
       val deleted = ListBuffer.empty[Module]
 
-      modules.foreach { case (module, file) =>
-        file.status match {
-          case GitFileStatus.Added    => created += module
-          case GitFileStatus.Modified => updated += module
-          case GitFileStatus.Removed  => deleted += module
-        }
+      modules.foreach {
+        case (module, file) =>
+          file.status match {
+            case GitFileStatus.Added    => created += module
+            case GitFileStatus.Modified => updated += module
+            case GitFileStatus.Removed  => deleted += module
+          }
       }
 
       (created.toList, updated.toList, deleted.toList)
@@ -68,7 +73,7 @@ object ModulePublishActor {
           )
         } yield (created, updated)
 
-        res onComplete {
+        res.onComplete {
           case Success((created, updated)) =>
             if (created > 0) {
               logger.info(

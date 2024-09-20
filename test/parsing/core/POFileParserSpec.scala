@@ -1,12 +1,14 @@
 package parsing.core
 
+import java.time.LocalDate
+
 import helper.FakeStudyPrograms
 import org.scalatest.wordspec.AnyWordSpec
-import org.scalatest.{EitherValues, OptionValues}
+import org.scalatest.EitherValues
+import org.scalatest.OptionValues
 import parsing.core.POFileParser.fileParser
-import parsing.{ParserSpecHelper, withFile0}
-
-import java.time.LocalDate
+import parsing.withFile0
+import parsing.ParserSpecHelper
 
 class POFileParserSpec
     extends AnyWordSpec
@@ -30,7 +32,7 @@ class POFileParserSpec
           |    - 07.06.2016
           |  program: program.inf_inf""".stripMargin
       val (res, rest) = fileParser.parse(input)
-      val po1 = res.value.head
+      val po1         = res.value.head
       assert(po1.id == "ing_inf1")
       assert(po1.version == 1)
       assert(po1.dateFrom == LocalDate.of(2007, 9, 1))
@@ -50,7 +52,7 @@ class POFileParserSpec
           |    - 16.06.2009
           |  program: program.inf_mim""".stripMargin
       val (res, rest) = fileParser.parse(input)
-      val po1 = res.value.head
+      val po1         = res.value.head
       assert(po1.id == "inf_mim2")
       assert(po1.version == 2)
       assert(po1.dateFrom == LocalDate.of(2001, 9, 1))
@@ -79,7 +81,7 @@ class POFileParserSpec
           |  date_from: 01.03.2021
           |  program: program.inf_inf""".stripMargin
       val (res, rest) = fileParser.parse(input)
-      val po1 = res.value.head
+      val po1         = res.value.head
       assert(po1.id == "ing_inf1")
       assert(po1.version == 1)
       assert(po1.dateFrom == LocalDate.of(2007, 9, 1))
@@ -144,9 +146,10 @@ class POFileParserSpec
         "ing_wiwm1",
         "ing_wiwm2"
       )
-      res.value.zip(ids).foreach { case (po, id) =>
-        assert(po.id == id)
-        assert(po.program == "inf_inf")
+      res.value.zip(ids).foreach {
+        case (po, id) =>
+          assert(po.id == id)
+          assert(po.program == "inf_inf")
       }
 
       val ait2 = res.value.find(_.id == "ing_ait2").value

@@ -1,9 +1,12 @@
 package models
 
-import models.core.{Degree, IDLabel, Identity}
-import play.api.libs.json.{Json, Writes}
-
 import java.util.UUID
+
+import models.core.Degree
+import models.core.IDLabel
+import models.core.Identity
+import play.api.libs.json.Json
+import play.api.libs.json.Writes
 
 case class ReviewerApproval(
     reviewId: UUID,

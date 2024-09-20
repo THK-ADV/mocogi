@@ -1,15 +1,15 @@
 package kafka
 
-import ops.LoggerOps
-import org.apache.kafka.common.serialization.Serializer
-import play.api.Logging
-import play.api.libs.json.{Json, Writes}
-
 import scala.util.control.NonFatal
 
-final class JsonSerializer[A](topics: Seq[String])(implicit
-    val writes: Writes[A]
-) extends Serializer[A]
+import ops.LoggerOps
+import org.apache.kafka.common.serialization.Serializer
+import play.api.libs.json.Json
+import play.api.libs.json.Writes
+import play.api.Logging
+
+final class JsonSerializer[A](topics: Seq[String])(implicit val writes: Writes[A])
+    extends Serializer[A]
     with Logging
     with LoggerOps {
   override def serialize(topic: String, data: A) =

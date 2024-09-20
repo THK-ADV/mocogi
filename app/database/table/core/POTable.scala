@@ -1,9 +1,9 @@
 package database.table.core
 
+import java.time.LocalDate
+
 import models.core.PO
 import slick.jdbc.PostgresProfile.api._
-
-import java.time.LocalDate
 
 final class POTable(tag: Tag) extends Table[PO](tag, "po") {
 

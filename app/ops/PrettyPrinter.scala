@@ -2,23 +2,25 @@ package ops
 
 import scala.annotation.unused
 
-/** https://gist.github.com/carymrobbins/7b8ed52cd6ea186dbdf8
-  */
+/**
+ * https://gist.github.com/carymrobbins/7b8ed52cd6ea186dbdf8
+ */
 @unused
 object PrettyPrinter {
 
-  /** Pretty prints a Scala value similar to its source representation.
-    * Particularly useful for case classes.
-    * @param a
-    *   \- The value to pretty print.
-    * @param indentSize
-    *   \- Number of spaces for each indent.
-    * @param maxElementWidth
-    *   \- Largest element size before wrapping.
-    * @param depth
-    *   \- Initial depth to pretty print indents.
-    * @return
-    */
+  /**
+   * Pretty prints a Scala value similar to its source representation.
+   * Particularly useful for case classes.
+   * @param a
+   *   \- The value to pretty print.
+   * @param indentSize
+   *   \- Number of spaces for each indent.
+   * @param maxElementWidth
+   *   \- Largest element size before wrapping.
+   * @param depth
+   *   \- Initial depth to pretty print indents.
+   * @return
+   */
   @unused
   def prettyPrint(
       a: Any,
@@ -26,10 +28,10 @@ object PrettyPrinter {
       maxElementWidth: Int = 30,
       depth: Int = 0
   ): String = {
-    val indent = " " * depth * indentSize
+    val indent      = " " * depth * indentSize
     val fieldIndent = indent + (" " * indentSize)
-    val thisDepth = prettyPrint(_: Any, indentSize, maxElementWidth, depth)
-    val nextDepth = prettyPrint(_: Any, indentSize, maxElementWidth, depth + 1)
+    val thisDepth   = prettyPrint(_: Any, indentSize, maxElementWidth, depth)
+    val nextDepth   = prettyPrint(_: Any, indentSize, maxElementWidth, depth + 1)
     a match {
       // Make Strings look similar to their literal form.
       case s: String =>
@@ -39,8 +41,9 @@ object PrettyPrinter {
           "\t" -> "\\t",
           "\"" -> "\\\""
         )
-        val replace = replaceMap.foldLeft(s) { case (acc, (c, r)) =>
-          acc.replace(c, r)
+        val replace = replaceMap.foldLeft(s) {
+          case (acc, (c, r)) =>
+            acc.replace(c, r)
         }
         s"\"$replace\""
       // For an empty Seq just use its normal String representation.
@@ -69,8 +72,9 @@ object PrettyPrinter {
           case (_, value) :: Nil => s"$prefix(${thisDepth(value)})"
           // If there is more than one field, build up the field names and values.
           case kvps =>
-            val prettyFields = kvps.map { case (k, v) =>
-              s"$fieldIndent$k = ${nextDepth(v)}"
+            val prettyFields = kvps.map {
+              case (k, v) =>
+                s"$fieldIndent$k = ${nextDepth(v)}"
             }
             // If the result is not too long, pretty print on one line.
             val resultOneLine = s"$prefix(${prettyFields.mkString(", ")})"

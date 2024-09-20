@@ -20,8 +20,9 @@ object ModuleParticipantsParser {
       .take(intForKey(minKey))
       .skip(zeroOrMoreSpaces)
       .zip(intForKey(maxKey))
-      .flatMap { case (min, max) =>
-        if (min <= max) always(ModuleParticipants(min, max))
-        else never(s"min $min should be lower than max $max")
+      .flatMap {
+        case (min, max) =>
+          if (min <= max) always(ModuleParticipants(min, max))
+          else never(s"min $min should be lower than max $max")
       }
 }

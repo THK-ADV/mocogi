@@ -1,6 +1,7 @@
 package models.core
 
-import play.api.libs.json.{Json, Writes}
+import play.api.libs.json.Json
+import play.api.libs.json.Writes
 
 case class Degree(
     id: String,

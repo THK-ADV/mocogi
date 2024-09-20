@@ -1,15 +1,21 @@
 package controllers
 
-import _root_.webhook.{GitMergeEventHandler, GitPushEventHandler}
+import java.util.UUID
+import javax.inject.Inject
+import javax.inject.Singleton
+
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+import scala.util.Failure
+import scala.util.Success
+import scala.util.Try
+
+import _root_.webhook.GitMergeEventHandler
+import _root_.webhook.GitPushEventHandler
 import controllers.GitWebhookController.GitlabTokenHeader
 import git._
 import play.api.libs.json._
 import play.api.mvc._
-
-import java.util.UUID
-import javax.inject.{Inject, Singleton}
-import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Failure, Success, Try}
 
 object GitWebhookController {
   val GitlabTokenHeader = "X-Gitlab-Token"

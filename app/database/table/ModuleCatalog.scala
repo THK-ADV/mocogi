@@ -1,7 +1,7 @@
 package database.table
-import slick.jdbc.PostgresProfile.api._
-
 import java.time.LocalDateTime
+
+import slick.jdbc.PostgresProfile.api._
 
 case class ModuleCatalogEntry(
     fullPo: String,

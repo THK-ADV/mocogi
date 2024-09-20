@@ -1,9 +1,10 @@
 package service.core
 
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+
 import ops.EitherOps.EThrowableOps
 import parser.Parser
-
-import scala.concurrent.{ExecutionContext, Future}
 
 trait YamlService[A] {
   def parser: Future[Parser[List[A]]]
@@ -18,7 +19,7 @@ trait YamlService[A] {
   ): Future[Seq[A]] =
     for {
       parser <- parser
-      res <- parser.parse(input)._1.toFuture
-      res <- createOrUpdateMany(res)
+      res    <- parser.parse(input)._1.toFuture
+      res    <- createOrUpdateMany(res)
     } yield res
 }

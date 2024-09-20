@@ -1,7 +1,10 @@
 package controllers
 
 import cats.data.NonEmptyList
-import play.api.libs.json.{JsError, JsSuccess, Reads, Writes}
+import play.api.libs.json.JsError
+import play.api.libs.json.JsSuccess
+import play.api.libs.json.Reads
+import play.api.libs.json.Writes
 
 trait NelWrites {
   implicit def nelWrites[A](implicit w: Writes[A]): Writes[NonEmptyList[A]] =

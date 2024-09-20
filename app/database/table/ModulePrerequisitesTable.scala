@@ -1,9 +1,9 @@
 package database.table
 
+import java.util.UUID
+
 import models.PrerequisiteType
 import slick.jdbc.PostgresProfile.api._
-
-import java.util.UUID
 
 case class ModulePrerequisitesDbEntry(
     id: UUID,
@@ -12,8 +12,7 @@ case class ModulePrerequisitesDbEntry(
     text: String
 )
 
-final class ModulePrerequisitesTable(tag: Tag)
-    extends Table[ModulePrerequisitesDbEntry](tag, "module_prerequisites") {
+final class ModulePrerequisitesTable(tag: Tag) extends Table[ModulePrerequisitesDbEntry](tag, "module_prerequisites") {
 
   def id = column[UUID]("id", O.PrimaryKey)
 

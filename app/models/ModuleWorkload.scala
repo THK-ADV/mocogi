@@ -1,7 +1,10 @@
 package models
 
 import parsing.types.ParsedWorkload
-import play.api.libs.json.{Format, Json, Reads, Writes}
+import play.api.libs.json.Format
+import play.api.libs.json.Json
+import play.api.libs.json.Reads
+import play.api.libs.json.Writes
 
 case class ModuleWorkload(
     lecture: Int,
@@ -19,12 +22,12 @@ object ModuleWorkload {
 
   implicit def reads: Reads[ModuleWorkload] = js =>
     for {
-      lecture <- js.\("lecture").validate[Int]
-      seminar <- js.\("seminar").validate[Int]
-      practical <- js.\("practical").validate[Int]
-      exercise <- js.\("exercise").validate[Int]
+      lecture            <- js.\("lecture").validate[Int]
+      seminar            <- js.\("seminar").validate[Int]
+      practical          <- js.\("practical").validate[Int]
+      exercise           <- js.\("exercise").validate[Int]
       projectSupervision <- js.\("projectSupervision").validate[Int]
-      projectWork <- js.\("projectWork").validate[Int]
+      projectWork        <- js.\("projectWork").validate[Int]
     } yield ModuleWorkload(
       lecture,
       seminar,

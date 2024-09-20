@@ -2,7 +2,11 @@ package parsing.metadata
 
 import parser.Parser
 import parser.Parser._
-import parser.ParserOps.{P0, P2, P3, P4, P5}
+import parser.ParserOps.P0
+import parser.ParserOps.P2
+import parser.ParserOps.P3
+import parser.ParserOps.P4
+import parser.ParserOps.P5
 import parsing.posIntForKey
 import parsing.types.ParsedWorkload
 

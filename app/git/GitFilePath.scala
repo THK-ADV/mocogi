@@ -1,9 +1,10 @@
 package git
 
-import models.ModuleDraft
-
 import java.util.UUID
+
 import scala.util.control.NonFatal
+
+import models.ModuleDraft
 
 sealed trait GitFilePath extends Any {
   def value: String
@@ -11,9 +12,7 @@ sealed trait GitFilePath extends Any {
 }
 
 object GitFilePath {
-  private case class GitFilePathImpl(value: String)
-      extends AnyVal
-      with GitFilePath
+  private case class GitFilePathImpl(value: String) extends AnyVal with GitFilePath
 
   private def modulePrefix(implicit gitConfig: GitConfig) =
     s"${gitConfig.modulesFolder}/"

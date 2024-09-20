@@ -1,19 +1,22 @@
 package controllers
 
-import catalog.{ElectivesFile, Semester}
-import models.core.IDLabel
-import play.api.libs.json.{JsArray, Json}
-import play.api.mvc.{
-  AbstractController,
-  AnyContent,
-  ControllerComponents,
-  Request
-}
-import providers.ConfigReader
+import java.nio.file.Files
+import java.nio.file.Paths
+import javax.inject.Inject
+import javax.inject.Singleton
 
-import java.nio.file.{Files, Paths}
-import javax.inject.{Inject, Singleton}
 import scala.jdk.CollectionConverters.IteratorHasAsScala
+
+import catalog.ElectivesFile
+import catalog.Semester
+import models.core.IDLabel
+import play.api.libs.json.JsArray
+import play.api.libs.json.Json
+import play.api.mvc.AbstractController
+import play.api.mvc.AnyContent
+import play.api.mvc.ControllerComponents
+import play.api.mvc.Request
+import providers.ConfigReader
 
 @Singleton
 final class ElectiveCatalogueController @Inject() (
@@ -24,7 +27,7 @@ final class ElectiveCatalogueController @Inject() (
   def allFromSemester(semesterId: String) =
     Action { (_: Request[AnyContent]) =>
       val semester = Semester(semesterId)
-      val folder = Paths.get(configReader.electivesCatalogOutputFolderPath)
+      val folder   = Paths.get(configReader.electivesCatalogOutputFolderPath)
       val json = Files
         .walk(folder)
         .iterator()
@@ -41,7 +44,7 @@ final class ElectiveCatalogueController @Inject() (
               case _ => IDLabel("-", "-", "-")
             }
             Json.obj(
-              "semester" -> semester,
+              "semester"     -> semester,
               "teachingUnit" -> teachingUnit,
               "url" -> FileController
                 .makeURI(folder.getFileName.toString, file.fileName)

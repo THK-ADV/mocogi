@@ -1,27 +1,33 @@
 package controllers
 
+import java.nio.file.Files
+import java.nio.file.Paths
+import java.util.UUID
+import javax.inject.Inject
+import javax.inject.Singleton
+
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+import scala.util.control.NonFatal
+
 import auth.AuthorizationAction
 import database.view.ModuleViewRepository
 import git.api.GitFileDownloadService
-import models.{ModuleManagement, StudyProgramModuleAssociation}
+import models.ModuleManagement
+import models.StudyProgramModuleAssociation
 import ops.FutureOps.OptionOps
+import play.api.libs.json.JsArray
+import play.api.libs.json.Json
+import play.api.libs.json.Writes
 import play.api.libs.Files.DefaultTemporaryFileCreator
-import play.api.libs.json.{JsArray, Json, Writes}
-import play.api.mvc.{
-  AbstractController,
-  AnyContent,
-  ControllerComponents,
-  Request
-}
+import play.api.mvc.AbstractController
+import play.api.mvc.AnyContent
+import play.api.mvc.ControllerComponents
+import play.api.mvc.Request
 import printing.PrintingLanguage
 import providers.ConfigReader
-import service.{ModuleDraftService, ModuleService}
-
-import java.nio.file.{Files, Paths}
-import java.util.UUID
-import javax.inject.{Inject, Singleton}
-import scala.concurrent.{ExecutionContext, Future}
-import scala.util.control.NonFatal
+import service.ModuleDraftService
+import service.ModuleService
 
 @Singleton
 final class ModuleController @Inject() (
@@ -38,8 +44,7 @@ final class ModuleController @Inject() (
 
   implicit def moduleManagementWrites: Writes[ModuleManagement] = Json.writes
 
-  implicit def studyProgramAssocWrites
-      : Writes[StudyProgramModuleAssociation[Iterable[Int]]] =
+  implicit def studyProgramAssocWrites: Writes[StudyProgramModuleAssociation[Iterable[Int]]] =
     Json.writes
 
   implicit def moduleViewWrites: Writes[ModuleViewRepository#Entry] =
@@ -51,8 +56,9 @@ final class ModuleController @Inject() (
         service
           .allMetadata()
           .map(xs =>
-            Ok(JsArray(xs.map { case (id, metadata) =>
-              Json.obj("id" -> id, "metadata" -> metadata)
+            Ok(JsArray(xs.map {
+              case (id, metadata) =>
+                Json.obj("id" -> id, "metadata" -> metadata)
             }))
           )
       else if (request.isExtended)
@@ -63,8 +69,9 @@ final class ModuleController @Inject() (
         service
           .allGenericModules()
           .map(xs =>
-            Ok(JsArray(xs.map { case (module, pos) =>
-              Json.toJsObject(module) + ("pos" -> Json.toJson(pos))
+            Ok(JsArray(xs.map {
+              case (module, pos) =>
+                Json.toJsObject(module) + ("pos" -> Json.toJson(pos))
             }))
           )
       else
@@ -110,7 +117,7 @@ final class ModuleController @Inject() (
 
   def getLatestFile(id: UUID) =
     auth.async { implicit r =>
-      draftService.hasModuleDraft(id) flatMap {
+      draftService.hasModuleDraft(id).flatMap {
         case true  => Future.successful(getFile0(id))
         case false => getPreviewFile0(id)
       }
@@ -140,7 +147,7 @@ final class ModuleController @Inject() (
 
   private def getFile0(moduleId: UUID)(implicit r: Request[AnyContent]) = {
     val filename = s"$moduleId.html"
-    val folder = outputFolderPath(r.parseLang())
+    val folder   = outputFolderPath(r.parseLang())
     try {
       val path = Paths.get(s"$folder/$filename")
       Ok.sendFile(content = path.toFile, fileName = f => Some(f.getName))

@@ -1,12 +1,12 @@
 package git.subscriber
 
-import git.GitFile
-import git.subscriber.ModuleSubscribers.Handle
-import org.apache.pekko.actor.ActorRef
-import parsing.types.Module
-
 import java.time.LocalDateTime
 import javax.inject.Singleton
+
+import git.subscriber.ModuleSubscribers.Handle
+import git.GitFile
+import org.apache.pekko.actor.ActorRef
+import parsing.types.Module
 
 object ModuleSubscribers {
   case class Handle(

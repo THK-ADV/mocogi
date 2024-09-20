@@ -1,8 +1,10 @@
 package service
 
-import parser.Parser.{skipFirst, zeroOrMoreSpaces}
+import parser.Parser
+import parser.Parser.skipFirst
+import parser.Parser.zeroOrMoreSpaces
 import parser.ParserOps.P0
-import parser.{Parser, ParsingError}
+import parser.ParsingError
 import parsing.content.ModuleContentParser.contentParser
 import parsing.types.ModuleContent
 

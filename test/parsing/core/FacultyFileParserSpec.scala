@@ -1,14 +1,12 @@
 package parsing.core
 
 import models.core.Faculty
-import org.scalatest.EitherValues
 import org.scalatest.wordspec.AnyWordSpec
-import parsing.{ParserSpecHelper, withFile0}
+import org.scalatest.EitherValues
+import parsing.withFile0
+import parsing.ParserSpecHelper
 
-final class FacultyFileParserSpec
-    extends AnyWordSpec
-    with ParserSpecHelper
-    with EitherValues {
+final class FacultyFileParserSpec extends AnyWordSpec with ParserSpecHelper with EitherValues {
 
   val parser = FacultyFileParser.parser()
 
@@ -55,10 +53,11 @@ final class FacultyFileParserSpec
         "f11",
         "f12"
       )
-      res.value.zip(ids).foreach { case (faculty, id) =>
-        assert(faculty.id == id)
-        assert(faculty.deLabel.nonEmpty)
-        assert(faculty.enLabel.nonEmpty)
+      res.value.zip(ids).foreach {
+        case (faculty, id) =>
+          assert(faculty.id == id)
+          assert(faculty.deLabel.nonEmpty)
+          assert(faculty.enLabel.nonEmpty)
       }
       assert(rest.isEmpty)
     }

@@ -5,7 +5,7 @@ import play.api.libs.json.Writes
 sealed trait PersonStatus {
   def deLabel: String
   def enLabel: String
-  def id: String = enLabel
+  def id: String        = enLabel
   override def toString = id
 }
 

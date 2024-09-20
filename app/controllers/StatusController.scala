@@ -1,12 +1,15 @@
 package controllers
 
-import models.core.{ModuleStatus => ModuleStatus}
-import play.api.libs.json.Writes
-import play.api.mvc.{AbstractController, ControllerComponents}
-import service.core.StatusService
+import javax.inject.Inject
+import javax.inject.Singleton
 
-import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
+
+import models.core.{ ModuleStatus => ModuleStatus }
+import play.api.libs.json.Writes
+import play.api.mvc.AbstractController
+import play.api.mvc.ControllerComponents
+import service.core.StatusService
 
 @Singleton
 final class StatusController @Inject() (
@@ -15,5 +18,5 @@ final class StatusController @Inject() (
     implicit val ctx: ExecutionContext
 ) extends AbstractController(cc)
     with YamlController[ModuleStatus] {
-  override implicit val writes: Writes[ModuleStatus] = ModuleStatus.writes
+  implicit override val writes: Writes[ModuleStatus] = ModuleStatus.writes
 }

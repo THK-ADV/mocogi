@@ -1,16 +1,16 @@
 package models
 
+import java.util.UUID
+
 import cats.data.NonEmptyList
 import controllers.NelWrites
 import play.api.libs.json._
-
-import java.util.UUID
 
 sealed trait ModuleRelationProtocol
 
 object ModuleRelationProtocol extends NelWrites {
   case class Parent(children: NonEmptyList[UUID]) extends ModuleRelationProtocol
-  case class Child(parent: UUID) extends ModuleRelationProtocol
+  case class Child(parent: UUID)                  extends ModuleRelationProtocol
 
   implicit def format: Format[ModuleRelationProtocol] =
     OFormat.apply(
@@ -26,9 +26,7 @@ object ModuleRelationProtocol extends NelWrites {
                     .fromList(xs)
                     .fold[JsResult[ModuleRelationProtocol]](
                       JsError("expected at least one child")
-                    )(children =>
-                      JsSuccess(ModuleRelationProtocol.Parent(children))
-                    )
+                    )(children => JsSuccess(ModuleRelationProtocol.Parent(children)))
                 )
             case "child" =>
               js.\("parent")
@@ -41,12 +39,12 @@ object ModuleRelationProtocol extends NelWrites {
         p match {
           case ModuleRelationProtocol.Parent(children) =>
             Json.obj(
-              "kind" -> "parent",
+              "kind"     -> "parent",
               "children" -> Json.toJson(children)
             )
           case ModuleRelationProtocol.Child(parent) =>
             Json.obj(
-              "kind" -> "child",
+              "kind"   -> "child",
               "parent" -> Json.toJson(parent)
             )
         }

@@ -17,8 +17,7 @@ object EitherOps {
       }
   }
 
-  implicit class EThrowableOps[A](private val self: Either[Throwable, A])
-      extends AnyVal {
+  implicit class EThrowableOps[A](private val self: Either[Throwable, A]) extends AnyVal {
     def toFuture: Future[A] =
       self match {
         case Left(value)  => Future.failed(value)
@@ -26,8 +25,7 @@ object EitherOps {
       }
   }
 
-  implicit class EStringThrowOps[A](private val self: Either[String, A])
-      extends AnyVal {
+  implicit class EStringThrowOps[A](private val self: Either[String, A]) extends AnyVal {
     def toFuture: Future[A] =
       self match {
         case Left(value)  => Future.failed(new Throwable(value))

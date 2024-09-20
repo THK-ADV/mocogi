@@ -5,7 +5,8 @@ import models.core.ModuleStatus
 object StatusFileParser extends LabelFileParser[ModuleStatus] {
   def parser() = super.fileParser()
 
-  override protected def makeType = { case (id, deLabel, enLabel) =>
-    ModuleStatus(id, deLabel, enLabel)
+  protected override def makeType = {
+    case (id, deLabel, enLabel) =>
+      ModuleStatus(id, deLabel, enLabel)
   }
 }

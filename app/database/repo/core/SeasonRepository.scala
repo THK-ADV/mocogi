@@ -1,13 +1,16 @@
 package database.repo.core
 
+import javax.inject.Inject
+import javax.inject.Singleton
+
+import scala.concurrent.ExecutionContext
+
 import database.repo.Repository
 import database.table.core.SeasonTable
 import models.core.Season
-import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfigProvider}
+import play.api.db.slick.DatabaseConfigProvider
+import play.api.db.slick.HasDatabaseConfigProvider
 import slick.jdbc.JdbcProfile
-
-import javax.inject.{Inject, Singleton}
-import scala.concurrent.ExecutionContext
 
 @Singleton
 class SeasonRepository @Inject() (
@@ -19,12 +22,12 @@ class SeasonRepository @Inject() (
 
   protected val tableQuery = TableQuery[SeasonTable]
 
-  override protected def retrieve(query: Query[SeasonTable, Season, Seq]) =
+  protected override def retrieve(query: Query[SeasonTable, Season, Seq]) =
     db.run(query.result)
 
   def allIds() =
     db.run(tableQuery.map(_.id).result)
 
   def deleteMany(ids: Seq[String]) =
-    db.run(tableQuery.filter(_.id inSet ids).delete)
+    db.run(tableQuery.filter(_.id.inSet(ids)).delete)
 }

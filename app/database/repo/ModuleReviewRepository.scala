@@ -1,16 +1,23 @@
 package database.repo
 
-import database.table.ModuleReviewTable
-import database.table.core.{IdentityTable, StudyProgramTable}
-import models.core.{IDLabel, Identity}
-import models.{ModuleReview, ModuleReviewStatus}
-import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfigProvider}
-import slick.jdbc.JdbcProfile
-
 import java.time.LocalDateTime
 import java.util.UUID
-import javax.inject.{Inject, Singleton}
-import scala.concurrent.{ExecutionContext, Future}
+import javax.inject.Inject
+import javax.inject.Singleton
+
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+
+import database.table.core.IdentityTable
+import database.table.core.StudyProgramTable
+import database.table.ModuleReviewTable
+import models.core.IDLabel
+import models.core.Identity
+import models.ModuleReview
+import models.ModuleReviewStatus
+import play.api.db.slick.DatabaseConfigProvider
+import play.api.db.slick.HasDatabaseConfigProvider
+import slick.jdbc.JdbcProfile
 
 @Singleton
 final class ModuleReviewRepository @Inject() (
@@ -59,27 +66,28 @@ final class ModuleReviewRepository @Inject() (
         .joinLeft(TableQuery[IdentityTable])
         .on(_._1.respondedBy === _.id)
         .result
-        .map(_.map { case ((r, sp), p) =>
-          r.copy(
-            studyProgram = IDLabel(sp.id, sp.deLabel, sp.enLabel),
-            respondedBy = p.collect {
-              case p if p.kind == Identity.PersonKind =>
-                Identity.Person(
-                  p.id,
-                  p.lastname,
-                  p.firstname,
-                  p.title,
-                  Nil,
-                  p.abbreviation,
-                  p.campusId.get,
-                  p.status
-                )
-            }
-          )
+        .map(_.map {
+          case ((r, sp), p) =>
+            r.copy(
+              studyProgram = IDLabel(sp.id, sp.deLabel, sp.enLabel),
+              respondedBy = p.collect {
+                case p if p.kind == Identity.PersonKind =>
+                  Identity.Person(
+                    p.id,
+                    p.lastname,
+                    p.firstname,
+                    p.title,
+                    Nil,
+                    p.abbreviation,
+                    p.campusId.get,
+                    p.status
+                  )
+              }
+            )
         })
     )
 
-  override protected def retrieve(
+  protected override def retrieve(
       query: Query[ModuleReviewTable, ModuleReview.DB, Seq]
   ): Future[Seq[ModuleReview.DB]] = db.run(query.result)
 }

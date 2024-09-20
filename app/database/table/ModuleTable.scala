@@ -1,12 +1,13 @@
 package database.table
 
-import cats.data.NonEmptyList
-import models.{Examiner, ModuleWorkload}
-import parsing.types.ModuleContent
-import slick.jdbc.PostgresProfile.api._
-
 import java.time.LocalDateTime
 import java.util.UUID
+
+import cats.data.NonEmptyList
+import models.Examiner
+import models.ModuleWorkload
+import parsing.types.ModuleContent
+import slick.jdbc.PostgresProfile.api._
 
 case class ModuleDbEntry(
     id: UUID,

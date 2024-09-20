@@ -1,13 +1,16 @@
 package database.repo.core
 
+import javax.inject.Inject
+import javax.inject.Singleton
+
+import scala.concurrent.ExecutionContext
+
 import database.repo.Repository
 import database.table.core.StatusTable
 import models.core.ModuleStatus
-import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfigProvider}
+import play.api.db.slick.DatabaseConfigProvider
+import play.api.db.slick.HasDatabaseConfigProvider
 import slick.jdbc.JdbcProfile
-
-import javax.inject.{Inject, Singleton}
-import scala.concurrent.ExecutionContext
 
 @Singleton
 class StatusRepository @Inject() (
@@ -19,7 +22,7 @@ class StatusRepository @Inject() (
 
   protected val tableQuery = TableQuery[StatusTable]
 
-  override protected def retrieve(
+  protected override def retrieve(
       query: Query[StatusTable, ModuleStatus, Seq]
   ) =
     db.run(query.result)
@@ -28,5 +31,5 @@ class StatusRepository @Inject() (
     db.run(tableQuery.map(_.id).result)
 
   def deleteMany(ids: Seq[String]) =
-    db.run(tableQuery.filter(_.id inSet ids).delete)
+    db.run(tableQuery.filter(_.id.inSet(ids)).delete)
 }

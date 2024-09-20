@@ -1,12 +1,16 @@
 package controllers
 
+import javax.inject.Inject
+import javax.inject.Singleton
+
+import scala.concurrent.ExecutionContext
+
 import database.repo.core.StudyProgramRepository
 import database.view.StudyProgramViewRepository
-import play.api.libs.json.{JsArray, Json}
-import play.api.mvc.{AbstractController, ControllerComponents}
-
-import javax.inject.{Inject, Singleton}
-import scala.concurrent.ExecutionContext
+import play.api.libs.json.JsArray
+import play.api.libs.json.Json
+import play.api.mvc.AbstractController
+import play.api.mvc.ControllerComponents
 
 @Singleton
 final class StudyProgramController @Inject() (
@@ -24,8 +28,9 @@ final class StudyProgramController @Inject() (
         studyProgramRepo
           .allWithDegrees()
           .map(res =>
-            Ok(JsArray(res.map { case (sp, d) =>
-              Json.toJsObject(sp).+("degree" -> Json.toJson(d))
+            Ok(JsArray(res.map {
+              case (sp, d) =>
+                Json.toJsObject(sp).+("degree" -> Json.toJson(d))
             }))
           )
     }

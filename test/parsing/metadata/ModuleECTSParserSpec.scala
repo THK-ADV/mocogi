@@ -3,17 +3,13 @@ package parsing.metadata
 import cats.data.NonEmptyList
 import helper.FakeFocusAreas
 import models.core.FocusAreaID
-import org.scalatest.EitherValues
 import org.scalatest.wordspec.AnyWordSpec
-import parsing.ParserSpecHelper
+import org.scalatest.EitherValues
 import parsing.metadata.ModuleECTSParser._
 import parsing.types.ModuleECTSFocusAreaContribution
+import parsing.ParserSpecHelper
 
-final class ModuleECTSParserSpec
-    extends AnyWordSpec
-    with ParserSpecHelper
-    with EitherValues
-    with FakeFocusAreas {
+final class ModuleECTSParserSpec extends AnyWordSpec with ParserSpecHelper with EitherValues with FakeFocusAreas {
 
   "A ECTS Parser" should {
     "parse a simple ects value" in {
@@ -115,7 +111,7 @@ final class ModuleECTSParserSpec
     }
 
     "parse a simple or a complex ects value" in {
-      val simpleInput = "ects: 5"
+      val simpleInput   = "ects: 5"
       val (res1, rest1) = parser.parse(simpleInput)
       assert(res1.value.left.value == 5)
       assert(rest1.isEmpty)
@@ -154,7 +150,7 @@ final class ModuleECTSParserSpec
     }
 
     "parse a simple or a complex ects value raw" in {
-      val simpleInput = "ects: 5"
+      val simpleInput   = "ects: 5"
       val (res1, rest1) = raw.parse(simpleInput)
       assert(res1.value == 5)
       assert(rest1.isEmpty)

@@ -1,15 +1,21 @@
 package providers
 
+import javax.inject.Inject
+import javax.inject.Provider
+import javax.inject.Singleton
+
+import scala.concurrent.duration.DurationInt
+import scala.concurrent.ExecutionContext
+
 import catalog.ModuleCatalogService
-import database.repo.{ModuleCatalogGenerationRequestRepository, ModuleDraftRepository, ModuleReviewRepository}
+import database.repo.ModuleCatalogGenerationRequestRepository
+import database.repo.ModuleDraftRepository
+import database.repo.ModuleReviewRepository
+import git.api.GitBranchService
+import git.api.GitMergeRequestApiService
 import git.GitConfig
-import git.api.{GitBranchService, GitMergeRequestApiService}
 import org.apache.pekko.actor.ActorSystem
 import webhook.GitMergeEventHandler
-
-import javax.inject.{Inject, Provider, Singleton}
-import scala.concurrent.ExecutionContext
-import scala.concurrent.duration.DurationInt
 
 @Singleton
 final class GitMergeEventHandlerProvider @Inject() (

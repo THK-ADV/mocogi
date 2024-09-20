@@ -1,10 +1,12 @@
 package database.table
 
-import models.{ModuleReview, ModuleReviewStatus, UniversityRole}
-import slick.jdbc.PostgresProfile.api._
-
 import java.time.LocalDateTime
 import java.util.UUID
+
+import models.ModuleReview
+import models.ModuleReviewStatus
+import models.UniversityRole
+import slick.jdbc.PostgresProfile.api._
 
 final class ModuleReviewTable(tag: Tag)
     extends Table[ModuleReview.DB](

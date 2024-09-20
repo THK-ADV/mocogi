@@ -8,10 +8,8 @@ sealed trait GitFile {
 }
 
 object GitFile {
-  case class ModuleFile(path: GitFilePath, id: UUID, status: GitFileStatus)
-      extends GitFile
-  case class CoreFile(path: GitFilePath, status: GitFileStatus) extends GitFile
-  case class ModuleCatalogFile(path: GitFilePath, status: GitFileStatus)
-      extends GitFile
-  case class Other(path: GitFilePath, status: GitFileStatus) extends GitFile
+  case class ModuleFile(path: GitFilePath, id: UUID, status: GitFileStatus) extends GitFile
+  case class CoreFile(path: GitFilePath, status: GitFileStatus)             extends GitFile
+  case class ModuleCatalogFile(path: GitFilePath, status: GitFileStatus)    extends GitFile
+  case class Other(path: GitFilePath, status: GitFileStatus)                extends GitFile
 }

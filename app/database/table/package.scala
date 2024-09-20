@@ -1,9 +1,13 @@
 package database
 
 import auth.CampusId
-import git.{Branch, CommitId, MergeRequestId, MergeRequestStatus}
+import git.Branch
+import git.CommitId
+import git.MergeRequestId
+import git.MergeRequestStatus
 import models._
-import play.api.libs.json.{JsValue, Json}
+import play.api.libs.json.JsValue
+import play.api.libs.json.Json
 import service.Print
 import slick.jdbc.PostgresProfile.api._
 
@@ -12,13 +16,11 @@ package object table {
     MappedColumnType
       .base[ModuleRelationType, String](_.id, ModuleRelationType.apply)
 
-  implicit val responsibilityTypeColumnType
-      : BaseColumnType[ResponsibilityType] =
+  implicit val responsibilityTypeColumnType: BaseColumnType[ResponsibilityType] =
     MappedColumnType
       .base[ResponsibilityType, String](_.id, ResponsibilityType.apply)
 
-  implicit val assessmentMethodTypeColumnType
-      : BaseColumnType[AssessmentMethodType] =
+  implicit val assessmentMethodTypeColumnType: BaseColumnType[AssessmentMethodType] =
     MappedColumnType
       .base[AssessmentMethodType, String](
         _.id,
@@ -38,8 +40,9 @@ package object table {
   def stringToInts(s: String): List[Int] =
     if (s.isEmpty) Nil
     else
-      s.split(",").foldLeft(List.empty[Int]) { case (acc, s) =>
-        s.toInt :: acc
+      s.split(",").foldLeft(List.empty[Int]) {
+        case (acc, s) =>
+          s.toInt :: acc
       }
 
   implicit val listIntColumnType: BaseColumnType[List[Int]] =
@@ -83,15 +86,17 @@ package object table {
   def stringToList(s: String): List[String] =
     if (s.isEmpty) Nil
     else
-      s.split(",").foldLeft(List.empty[String]) { case (acc, s) =>
-        s :: acc
+      s.split(",").foldLeft(List.empty[String]) {
+        case (acc, s) =>
+          s :: acc
       }
 
   def stringToSet(s: String): Set[String] =
     if (s.isEmpty) Set.empty
     else
-      s.split(",").foldLeft(Set.empty[String]) { case (acc, s) =>
-        acc.+(s)
+      s.split(",").foldLeft(Set.empty[String]) {
+        case (acc, s) =>
+          acc.+(s)
       }
 
   implicit val listStringColumnType: BaseColumnType[List[String]] =
@@ -112,21 +117,18 @@ package object table {
     MappedColumnType
       .base[UniversityRole, String](_.id, UniversityRole.apply)
 
-  implicit val moduleReviewStatusColumnType
-      : BaseColumnType[ModuleReviewStatus] =
+  implicit val moduleReviewStatusColumnType: BaseColumnType[ModuleReviewStatus] =
     MappedColumnType
       .base[ModuleReviewStatus, String](_.id, ModuleReviewStatus.apply)
 
-  implicit val moduleUpdatePermissionTypeColumnType
-      : BaseColumnType[ModuleUpdatePermissionType] =
+  implicit val moduleUpdatePermissionTypeColumnType: BaseColumnType[ModuleUpdatePermissionType] =
     MappedColumnType
       .base[ModuleUpdatePermissionType, String](
         _.id,
         ModuleUpdatePermissionType.apply
       )
 
-  implicit val mergeRequestStatusColumnType
-      : BaseColumnType[MergeRequestStatus] =
+  implicit val mergeRequestStatusColumnType: BaseColumnType[MergeRequestStatus] =
     MappedColumnType
       .base[MergeRequestStatus, String](
         _.id,

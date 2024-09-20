@@ -1,7 +1,8 @@
 package parsing.types
 
-import models.core.PO
 import java.util.UUID
+
+import models.core.PO
 
 case class ParsedPrerequisites(
     recommended: Option[ParsedPrerequisiteEntry],

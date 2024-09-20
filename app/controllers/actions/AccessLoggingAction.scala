@@ -1,11 +1,17 @@
 package controllers.actions
 
-import play.api.Logging
-import play.api.mvc.{ActionBuilderImpl, BodyParsers, Request, Result}
+import javax.inject.Inject
+import javax.inject.Singleton
 
-import javax.inject.{Inject, Singleton}
 import scala.annotation.unused
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+
+import play.api.mvc.ActionBuilderImpl
+import play.api.mvc.BodyParsers
+import play.api.mvc.Request
+import play.api.mvc.Result
+import play.api.Logging
 
 @Singleton
 @unused

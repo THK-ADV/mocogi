@@ -1,11 +1,12 @@
 package service
 
+import java.util.UUID
+
 import parser.ParsingError
-import play.api.libs.json.{Json, Writes}
+import play.api.libs.json.Json
+import play.api.libs.json.Writes
 import printer.PrintingError
 import validator.ValidationError
-
-import java.util.UUID
 
 sealed trait PipelineError extends Throwable {
   def metadata: Option[UUID]
@@ -21,12 +22,9 @@ sealed trait PipelineError extends Throwable {
 }
 
 object PipelineError {
-  case class Parser(error: ParsingError, metadata: Option[UUID])
-      extends PipelineError
-  case class Printer(error: PrintingError, metadata: Option[UUID])
-      extends PipelineError
-  case class Validator(error: ValidationError, metadata: Option[UUID])
-      extends PipelineError
+  case class Parser(error: ParsingError, metadata: Option[UUID])       extends PipelineError
+  case class Printer(error: PrintingError, metadata: Option[UUID])     extends PipelineError
+  case class Validator(error: ValidationError, metadata: Option[UUID]) extends PipelineError
 
   implicit def parsingErrorWrites: Writes[ParsingError] = Json.writes
 
@@ -43,21 +41,21 @@ object PipelineError {
   implicit def writes: Writes[PipelineError] = {
     case PipelineError.Parser(e, id) =>
       Json.obj(
-        "tag" -> ParsingErrorTag,
+        "tag"      -> ParsingErrorTag,
         "metadata" -> id,
-        "error" -> parsingErrorWrites.writes(e)
+        "error"    -> parsingErrorWrites.writes(e)
       )
     case PipelineError.Printer(e, id) =>
       Json.obj(
-        "tag" -> PrintingErrorTag,
+        "tag"      -> PrintingErrorTag,
         "metadata" -> id,
-        "error" -> printingErrorWrites.writes(e)
+        "error"    -> printingErrorWrites.writes(e)
       )
     case PipelineError.Validator(e, id) =>
       Json.obj(
-        "tag" -> ValidationErrorTag,
+        "tag"      -> ValidationErrorTag,
         "metadata" -> id,
-        "error" -> validationErrorWrites.writes(e)
+        "error"    -> validationErrorWrites.writes(e)
       )
   }
 }

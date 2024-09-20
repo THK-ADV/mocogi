@@ -1,7 +1,8 @@
 package models
 
 import models.core.IDLabel
-import play.api.libs.json.{Json, Writes}
+import play.api.libs.json.Json
+import play.api.libs.json.Writes
 
 sealed trait ModuleReviewSummaryStatus extends IDLabel
 
@@ -22,8 +23,7 @@ object ModuleReviewSummaryStatus {
     override def enLabel: String = "Waiting for changes"
   }
 
-  case class WaitingForReview(approved: Int, needed: Int)
-      extends ModuleReviewSummaryStatus {
+  case class WaitingForReview(approved: Int, needed: Int) extends ModuleReviewSummaryStatus {
     override def id: String = "waiting_for_review"
 
     override def deLabel: String = s"Warte auf Review ($approved/$needed)"

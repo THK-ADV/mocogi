@@ -5,7 +5,6 @@ sealed trait PrinterOutput {
 }
 
 object PrinterOutput {
-  case class Text(content: String, extension: String, consoleOutput: String)
-      extends PrinterOutput
-  case class File(path: String, consoleOutput: String) extends PrinterOutput
+  case class Text(content: String, extension: String, consoleOutput: String) extends PrinterOutput
+  case class File(path: String, consoleOutput: String)                       extends PrinterOutput
 }

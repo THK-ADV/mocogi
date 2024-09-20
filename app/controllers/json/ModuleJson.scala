@@ -1,18 +1,22 @@
 package controllers.json
 
-import cats.data.NonEmptyList
-import controllers.{JsonNullWritable, NelWrites}
-import models.*
-import models.core.ExamPhases.ExamPhase
-import parsing.types.{ModuleContent, ModuleParticipants}
-import play.api.libs.json.{Json, Reads}
-
 import java.util.UUID
 
-/** This class must be a subset of ModuleProtocol. This class is used instead of
-  * ModuleProtocol for JSON input to support optional fields which will be set
-  * to default values when converted to ModuleProtocol
-  */
+import cats.data.NonEmptyList
+import controllers.JsonNullWritable
+import controllers.NelWrites
+import models.*
+import models.core.ExamPhases.ExamPhase
+import parsing.types.ModuleContent
+import parsing.types.ModuleParticipants
+import play.api.libs.json.Json
+import play.api.libs.json.Reads
+
+/**
+ * This class must be a subset of ModuleProtocol. This class is used instead of
+ * ModuleProtocol for JSON input to support optional fields which will be set
+ * to default values when converted to ModuleProtocol
+ */
 case class ModuleJson(
     id: Option[UUID],
     metadata: MetadataJson,

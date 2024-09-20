@@ -1,14 +1,18 @@
 package database.repo.core
 
+import javax.inject.Inject
+import javax.inject.Singleton
+
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+
 import auth.CampusId
 import database.repo.Repository
 import database.table.core._
 import models.core.Identity
-import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfigProvider}
+import play.api.db.slick.DatabaseConfigProvider
+import play.api.db.slick.HasDatabaseConfigProvider
 import slick.jdbc.JdbcProfile
-
-import javax.inject.{Inject, Singleton}
-import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class IdentityRepository @Inject() (
@@ -28,9 +32,7 @@ class IdentityRepository @Inject() (
     val action = for {
       _ <- DBIO.sequence(ls.map(tableQuery.insertOrUpdate))
       _ <- personInFacultyTableQuery.delete
-      _ <- personInFacultyTableQuery ++= ls.flatMap(p =>
-        p.faculties.map(f => PersonInFaculty(p.id, f))
-      )
+      _ <- personInFacultyTableQuery ++= ls.flatMap(p => p.faculties.map(f => PersonInFaculty(p.id, f)))
     } yield ls
     db.run(action.transactionally)
   }
@@ -38,14 +40,12 @@ class IdentityRepository @Inject() (
   override def createMany(ls: Seq[IdentityDbEntry]) = {
     val action = for {
       _ <- tableQuery ++= ls
-      _ <- personInFacultyTableQuery ++= ls.flatMap(p =>
-        p.faculties.map(f => PersonInFaculty(p.id, f))
-      )
+      _ <- personInFacultyTableQuery ++= ls.flatMap(p => p.faculties.map(f => PersonInFaculty(p.id, f)))
     } yield ls
     db.run(action.transactionally)
   }
 
-  override protected def retrieve(
+  protected override def retrieve(
       query: Query[IdentityTable, IdentityDbEntry, Seq]
   ) =
     db.run(
@@ -55,10 +55,15 @@ class IdentityRepository @Inject() (
         .joinLeft(facultyTableQuery)
         .on((a, b) => a._2.map(_.faculty === b.id).getOrElse(false))
         .result
-        .map(_.groupBy(_._1._1).map { case (person, deps) =>
-          val faculties = deps.flatMap(_._2)
-          Identity.fromDbEntry(person, faculties.toList)
-        }.toSeq)
+        .map(
+          _.groupBy(_._1._1)
+            .map {
+              case (person, deps) =>
+                val faculties = deps.flatMap(_._2)
+                Identity.fromDbEntry(person, faculties.toList)
+            }
+            .toSeq
+        )
     )
 
   def getCampusIds(ids: List[String]): Future[Seq[CampusId]] =
@@ -77,9 +82,7 @@ class IdentityRepository @Inject() (
   def getByCampusId(campusId: CampusId): Future[Option[Identity.Person]] =
     db.run(
       tableQuery
-        .filter(a =>
-          a.campusId === campusId.value && a.kind === Identity.PersonKind
-        )
+        .filter(a => a.campusId === campusId.value && a.kind === Identity.PersonKind)
         .result
         .map(p =>
           Option.when(p.size == 1) {
@@ -102,5 +105,5 @@ class IdentityRepository @Inject() (
     db.run(tableQuery.map(_.id).result)
 
   def deleteMany(ids: Seq[String]) =
-    db.run(tableQuery.filter(_.id inSet ids).delete)
+    db.run(tableQuery.filter(_.id.inSet(ids)).delete)
 }

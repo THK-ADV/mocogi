@@ -1,12 +1,15 @@
 package printing.yaml
 
+import javax.inject.Singleton
+
 import parsing.types.ModuleContent
 import printer.Printer
-import printer.Printer.{newline, prefix}
-import printing.{LanguageOps, PrintingLanguage}
-import printing.PrintingLanguage.{English, German}
-
-import javax.inject.Singleton
+import printer.Printer.newline
+import printer.Printer.prefix
+import printing.LanguageOps
+import printing.PrintingLanguage
+import printing.PrintingLanguage.English
+import printing.PrintingLanguage.German
 
 @Singleton
 final class ContentMarkdownPrinter {
@@ -60,36 +63,37 @@ final class ContentMarkdownPrinter {
     content(particularitiesHeader(lang), text)
 
   def printer(): Printer[(ModuleContent, ModuleContent)] =
-    Printer { case ((de, en), input) =>
-      learningOutcome(German, de.learningOutcome)
-        .skip(newline)
-        .skip(learningOutcome(English, en.learningOutcome))
-        .skip(newline)
-        .skip(
-          moduleContent(German, de.content)
-            .skip(newline)
-            .skip(moduleContent(English, en.content))
-            .skip(newline)
-        )
-        .skip(
-          teachingAndLearningMethods(German, de.teachingAndLearningMethods)
-            .skip(newline)
-            .skip(
-              teachingAndLearningMethods(English, en.teachingAndLearningMethods)
-            )
-            .skip(newline)
-        )
-        .skip(
-          recommendedReading(German, de.recommendedReading)
-            .skip(newline)
-            .skip(recommendedReading(English, en.recommendedReading))
-            .skip(newline)
-        )
-        .skip(
-          particularities(German, de.particularities)
-            .skip(newline)
-            .skip(particularities(English, en.particularities))
-        )
-        .print((), input)
+    Printer {
+      case ((de, en), input) =>
+        learningOutcome(German, de.learningOutcome)
+          .skip(newline)
+          .skip(learningOutcome(English, en.learningOutcome))
+          .skip(newline)
+          .skip(
+            moduleContent(German, de.content)
+              .skip(newline)
+              .skip(moduleContent(English, en.content))
+              .skip(newline)
+          )
+          .skip(
+            teachingAndLearningMethods(German, de.teachingAndLearningMethods)
+              .skip(newline)
+              .skip(
+                teachingAndLearningMethods(English, en.teachingAndLearningMethods)
+              )
+              .skip(newline)
+          )
+          .skip(
+            recommendedReading(German, de.recommendedReading)
+              .skip(newline)
+              .skip(recommendedReading(English, en.recommendedReading))
+              .skip(newline)
+          )
+          .skip(
+            particularities(German, de.particularities)
+              .skip(newline)
+              .skip(particularities(English, en.particularities))
+          )
+          .print((), input)
     }
 }

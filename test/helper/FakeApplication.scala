@@ -3,10 +3,13 @@ package helper
 import database.table.ModuleDraftTable
 import org.apache.pekko.stream.Materializer
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
-import play.api.Configuration
 import play.api.db.slick.DatabaseConfigProvider
-import play.api.inject.guice.{GuiceApplicationBuilder, GuiceableModule}
-import slick.dbio.{DBIOAction, Effect, NoStream}
+import play.api.inject.guice.GuiceApplicationBuilder
+import play.api.inject.guice.GuiceableModule
+import play.api.Configuration
+import slick.dbio.DBIOAction
+import slick.dbio.Effect
+import slick.dbio.NoStream
 import slick.lifted.TableQuery
 
 trait FakeApplication {
@@ -17,17 +20,17 @@ trait FakeApplication {
   def fakeConfig = {
     val config = if (dbEnabled) {
       Seq(
-        "slick.dbs.default.db.url" -> "jdbc:postgresql://localhost:5432/postgres",
-        "slick.dbs.default.db.user" -> "postgres",
-        "slick.dbs.default.db.databaseName" -> "postgres",
-        "slick.dbs.default.db.password" -> "",
+        "slick.dbs.default.db.url"             -> "jdbc:postgresql://localhost:5432/postgres",
+        "slick.dbs.default.db.user"            -> "postgres",
+        "slick.dbs.default.db.databaseName"    -> "postgres",
+        "slick.dbs.default.db.password"        -> "",
         "play.evolutions.db.default.autoApply" -> "false",
-        "play.evolutions.db.default.enabled" -> "false"
+        "play.evolutions.db.default.enabled"   -> "false"
       )
     } else {
       Seq(
-        "slick.dbs.default.db.connectionPool" -> "disabled",
-        "play.evolutions.db.default.enabled" -> "false",
+        "slick.dbs.default.db.connectionPool"  -> "disabled",
+        "play.evolutions.db.default.enabled"   -> "false",
         "play.evolutions.db.default.autoApply" -> "false"
       )
     }

@@ -1,8 +1,9 @@
 package models
 
-import play.api.libs.json.{Json, OWrites}
-
 import java.util.UUID
+
+import play.api.libs.json.Json
+import play.api.libs.json.OWrites
 
 case class ModuleCore(id: UUID, title: String, abbrev: String)
 

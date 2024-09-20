@@ -1,9 +1,11 @@
 package parsing.types
 
-import models.core.{PO, Specialization}
-import play.api.libs.json.{Json, Writes}
-
 import java.util.UUID
+
+import models.core.PO
+import models.core.Specialization
+import play.api.libs.json.Json
+import play.api.libs.json.Writes
 
 case class ParsedPOs(
     mandatory: List[ModulePOMandatory],

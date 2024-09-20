@@ -1,7 +1,10 @@
 package ops
 
-import java.nio.file.{Files, Path, StandardCopyOption}
+import java.nio.file.Files
+import java.nio.file.Path
+import java.nio.file.StandardCopyOption
 import java.util.Comparator
+
 import scala.util.control.NonFatal
 
 object FileOps {

@@ -1,12 +1,15 @@
 package git.api
 
+import java.util.UUID
+import javax.inject.Inject
+import javax.inject.Singleton
+
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+
 import git._
 import models.core.Identity
 import service.Print
-
-import java.util.UUID
-import javax.inject.{Inject, Singleton}
-import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 final class GitCommitService @Inject() (
@@ -39,7 +42,7 @@ final class GitCommitService @Inject() (
       action <- action
       res <- apiService.commit(
         branch,
-        author.email getOrElse config.defaultEmail,
+        author.email.getOrElse(config.defaultEmail),
         author.fullName,
         message,
         Seq(action)

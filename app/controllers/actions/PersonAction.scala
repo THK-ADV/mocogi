@@ -1,14 +1,18 @@
 package controllers.actions
 
-import auth.{CampusId, UserTokenRequest}
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+
+import auth.CampusId
+import auth.UserTokenRequest
 import controllers.actions.PersonAction.PersonRequest
 import database.repo.core.IdentityRepository
 import models.core.Identity
 import play.api.libs.json.Json
+import play.api.mvc.ActionRefiner
+import play.api.mvc.Result
 import play.api.mvc.Results.BadRequest
-import play.api.mvc.{ActionRefiner, Result, WrappedRequest}
-
-import scala.concurrent.{ExecutionContext, Future}
+import play.api.mvc.WrappedRequest
 
 trait PersonAction {
   implicit def ctx: ExecutionContext
@@ -20,7 +24,7 @@ trait PersonAction {
   def personAction = new ActionRefiner[UserTokenRequest, PersonRequest] {
     def executionContext = ctx
 
-    override protected def refine[A](
+    protected override def refine[A](
         request: UserTokenRequest[A]
     ): Future[Either[Result, PersonRequest[A]]] = {
       // TODO DEBUG ONLY

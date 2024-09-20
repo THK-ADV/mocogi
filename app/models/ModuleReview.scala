@@ -1,11 +1,13 @@
 package models
 
-import controllers.JsonNullWritable
-import models.core.{IDLabel, Identity}
-import play.api.libs.json.{Json, Writes}
-
 import java.time.LocalDateTime
 import java.util.UUID
+
+import controllers.JsonNullWritable
+import models.core.IDLabel
+import models.core.Identity
+import play.api.libs.json.Json
+import play.api.libs.json.Writes
 
 case class ModuleReview[StudyProgram, Person](
     id: UUID,
@@ -19,7 +21,7 @@ case class ModuleReview[StudyProgram, Person](
 )
 
 object ModuleReview extends JsonNullWritable {
-  type DB = ModuleReview[String, String]
+  type DB     = ModuleReview[String, String]
   type Atomic = ModuleReview[IDLabel, Identity.Person]
 
   implicit def writesDb: Writes[DB] = Json.writes

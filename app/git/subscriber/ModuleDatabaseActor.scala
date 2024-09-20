@@ -1,15 +1,19 @@
 package git.subscriber
 
+import java.time.LocalDateTime
+
+import scala.concurrent.ExecutionContext
+import scala.util.Failure
+import scala.util.Success
+
 import database.view.ModuleViewRepository
 import git.subscriber.ModuleSubscribers.Handle
-import org.apache.pekko.actor.{Actor, Props}
+import org.apache.pekko.actor.Actor
+import org.apache.pekko.actor.Props
 import parsing.types.Module
 import play.api.Logging
-import service.{ModuleService, ModuleUpdatePermissionService}
-
-import java.time.LocalDateTime
-import scala.concurrent.ExecutionContext
-import scala.util.{Failure, Success}
+import service.ModuleService
+import service.ModuleUpdatePermissionService
 
 object ModuleDatabaseActor {
   def props(
@@ -37,7 +41,7 @@ object ModuleDatabaseActor {
 
     override def receive = {
       case Handle(modules, timestamp) if modules.nonEmpty =>
-        update(modules.map(_._1), timestamp) onComplete {
+        update(modules.map(_._1), timestamp).onComplete {
           case Success((modules, permissions)) =>
             logger.info(
               s"successfully created or updated $modules modules and ${permissions.size} permission entries"
@@ -59,7 +63,7 @@ object ModuleDatabaseActor {
     ) =
       for {
         created <- moduleService.createOrUpdateMany(modules, timestamp)
-        _ <- moduleViewRepository.refreshView()
+        _       <- moduleViewRepository.refreshView()
         permissions <- moduleUpdatePermissionService.overrideInherited(
           modules.map(a =>
             (

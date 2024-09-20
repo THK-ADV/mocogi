@@ -3,7 +3,7 @@ package ops
 import play.api.Configuration
 
 object ConfigurationOps {
-  implicit final class Ops(private val self: Configuration) extends AnyVal {
+  final implicit class Ops(private val self: Configuration) extends AnyVal {
     def list(key: String): Seq[String] =
       if (self.has(key)) self.get[Seq[String]](key)
       else throw new Throwable(s"key $key must be set in application.conf")

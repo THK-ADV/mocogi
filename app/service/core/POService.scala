@@ -1,11 +1,13 @@
 package service.core
 
+import javax.inject.Inject
+import javax.inject.Singleton
+
+import scala.concurrent.ExecutionContext
+
 import database.repo.core.PORepository
 import models.core.PO
 import parsing.core.POFileParser
-
-import javax.inject.{Inject, Singleton}
-import scala.concurrent.ExecutionContext
 
 @Singleton
 final class POService @Inject() (

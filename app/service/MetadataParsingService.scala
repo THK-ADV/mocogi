@@ -1,15 +1,19 @@
 package service
 
+import javax.inject.Inject
+import javax.inject.Singleton
+
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+
 import cats.syntax.either._
 import models.core._
 import parser.ParsingError
 import parsing.metadata.MetadataCompositeParser
-import parsing.types.{ModuleContent, ParsedMetadata}
+import parsing.types.ModuleContent
+import parsing.types.ParsedMetadata
 import play.api.Logging
 import service.core._
-
-import javax.inject.{Inject, Singleton}
-import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 final class MetadataParsingService @Inject() (
@@ -30,31 +34,31 @@ final class MetadataParsingService @Inject() (
 ) extends Logging {
 
   private def parser = {
-    val locations = locationService.all()
-    val languages = languageService.all()
-    val status = statusService.all()
+    val locations         = locationService.all()
+    val languages         = languageService.all()
+    val status            = statusService.all()
     val assessmentMethods = assessmentMethodService.all()
-    val moduleTypes = moduleTypeService.all()
-    val seasons = seasonService.all()
-    val persons = personService.all()
-    val focusAreas = focusAreaService.all().map(_.map(f => FocusAreaID(f.id)))
-    val globalCriteria = globalCriteriaService.all()
-    val pos = poService.all()
-    val competences = competenceService.all()
-    val specializations = specializationService.all()
+    val moduleTypes       = moduleTypeService.all()
+    val seasons           = seasonService.all()
+    val persons           = personService.all()
+    val focusAreas        = focusAreaService.all().map(_.map(f => FocusAreaID(f.id)))
+    val globalCriteria    = globalCriteriaService.all()
+    val pos               = poService.all()
+    val competences       = competenceService.all()
+    val specializations   = specializationService.all()
     for {
-      locations <- locations
-      languages <- languages
-      status <- status
+      locations         <- locations
+      languages         <- languages
+      status            <- status
       assessmentMethods <- assessmentMethods
-      moduleTypes <- moduleTypes
-      seasons <- seasons
-      persons <- persons
-      focusAreas <- focusAreas
-      globalCriteria <- globalCriteria
-      pos <- pos
-      competences <- competences
-      specializations <- specializations
+      moduleTypes       <- moduleTypes
+      seasons           <- seasons
+      persons           <- persons
+      focusAreas        <- focusAreas
+      globalCriteria    <- globalCriteria
+      pos               <- pos
+      competences       <- competences
+      specializations   <- specializations
     } yield metadataParser
       .parser(
         locations,
@@ -76,8 +80,8 @@ final class MetadataParsingService @Inject() (
     parser.map { p =>
       val (errs, parses) = prints.partitionMap { print =>
         val parseRes = p.parse(print.value)
-        val res = parseRes._1.bimap(identity, (print, _))
-        val rest = Rest(parseRes._2)
+        val res      = parseRes._1.bimap(identity, (print, _))
+        val rest     = Rest(parseRes._2)
         res match {
           case Left(err) =>
             Left(PipelineError.Parser(err, None))
@@ -101,8 +105,9 @@ final class MetadataParsingService @Inject() (
     parser.map { p =>
       val (res, rest) = p.parse(print.value)
       res.flatMap { parsedMetadata =>
-        ContentParsingService.parse(rest)._1.map { case (de, en) =>
-          (parsedMetadata, de, en)
+        ContentParsingService.parse(rest)._1.map {
+          case (de, en) =>
+            (parsedMetadata, de, en)
         }
       }
     }

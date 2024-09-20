@@ -1,22 +1,26 @@
 package models
 
-import controllers.json.ModuleJson
-import git.MergeRequestStatus.{Closed, Open}
-import git.{Branch, CommitId, MergeRequestId, MergeRequestStatus}
-import models.ModuleDraftState.{
-  Published,
-  Unknown,
-  ValidForPublication,
-  ValidForReview,
-  WaitingForChanges,
-  WaitingForPublication,
-  WaitingForReview
-}
-import play.api.libs.json.{JsError, JsSuccess, JsValue}
-import service.Print
-
 import java.time.LocalDateTime
 import java.util.UUID
+
+import controllers.json.ModuleJson
+import git.Branch
+import git.CommitId
+import git.MergeRequestId
+import git.MergeRequestStatus
+import git.MergeRequestStatus.Closed
+import git.MergeRequestStatus.Open
+import models.ModuleDraftState.Published
+import models.ModuleDraftState.Unknown
+import models.ModuleDraftState.ValidForPublication
+import models.ModuleDraftState.ValidForReview
+import models.ModuleDraftState.WaitingForChanges
+import models.ModuleDraftState.WaitingForPublication
+import models.ModuleDraftState.WaitingForReview
+import play.api.libs.json.JsError
+import play.api.libs.json.JsSuccess
+import play.api.libs.json.JsValue
+import service.Print
 
 case class ModuleDraft(
     module: UUID,
@@ -27,7 +31,7 @@ case class ModuleDraft(
     source: ModuleDraftSource,
     data: JsValue,
     validated: JsValue, // TODO unused
-    print: Print, // TODO unused
+    print: Print,       // TODO unused
     keysToBeReviewed: Set[String],
     modifiedKeys: Set[String],
     lastCommit: Option[CommitId],
@@ -82,8 +86,7 @@ object ModuleDraft {
       else Unknown
   }
 
-  final implicit class OptionOps(private val self: Option[ModuleDraft])
-      extends AnyVal {
+  final implicit class OptionOps(private val self: Option[ModuleDraft]) extends AnyVal {
     def state() =
       self.fold[ModuleDraftState](Published)(_.state())
   }

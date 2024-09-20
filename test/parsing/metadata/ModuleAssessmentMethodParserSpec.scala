@@ -1,13 +1,13 @@
 package parsing.metadata
 
 import helper.FakeAssessmentMethod
-import models.ModuleAssessmentMethodEntryProtocol
 import models.core.AssessmentMethod
-import org.scalatest.EitherValues
+import models.ModuleAssessmentMethodEntryProtocol
 import org.scalatest.wordspec.AnyWordSpec
-import parsing.ParserSpecHelper
+import org.scalatest.EitherValues
 import parsing.metadata.ModuleAssessmentMethodParser._
 import parsing.types.ModuleAssessmentMethodEntry
+import parsing.ParserSpecHelper
 
 class ModuleAssessmentMethodParserSpec
     extends AnyWordSpec
@@ -17,7 +17,7 @@ class ModuleAssessmentMethodParserSpec
 
   "A Assessment Method Parser" should {
     "dont parse assessment methods if there are none" in {
-      val input = "foo: bar";
+      val input         = "foo: bar";
       val (res1, rest1) = mandatoryParser.parse(input)
       assert(res1.value.isEmpty)
       assert(rest1 == "foo: bar")
@@ -47,7 +47,7 @@ class ModuleAssessmentMethodParserSpec
 
     "parse a single assessment method" in {
       val input = """assessment_methods_mandatory:
-          |  - method: assessment.written-exam""".stripMargin
+                    |  - method: assessment.written-exam""".stripMargin
       val (res, rest) = mandatoryParser.parse(input)
       assert(
         res.value == List(
@@ -63,7 +63,7 @@ class ModuleAssessmentMethodParserSpec
 
     "parse a single assessment method raw" in {
       val input = """assessment_methods_mandatory:
-          |  - method: assessment.written-exam""".stripMargin
+                    |  - method: assessment.written-exam""".stripMargin
       val (res, rest) = mandatoryParserRaw.parse(input)
       assert(
         res.value == List(

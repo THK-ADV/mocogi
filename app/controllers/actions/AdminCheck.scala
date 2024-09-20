@@ -1,14 +1,16 @@
 package controllers.actions
 
-import auth.UserTokenRequest
-import play.api.mvc.{ActionFilter, Result}
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 
-import scala.concurrent.{ExecutionContext, Future}
+import auth.UserTokenRequest
+import play.api.mvc.ActionFilter
+import play.api.mvc.Result
 
 trait AdminCheck { self: PermissionCheck =>
 
   def isAdmin = new ActionFilter[UserTokenRequest] {
-    override protected def filter[A](
+    protected override def filter[A](
         request: UserTokenRequest[A]
     ): Future[Option[Result]] =
       if (request.campusId.value == "adobryni")
@@ -19,6 +21,6 @@ trait AdminCheck { self: PermissionCheck =>
           request
         )
 
-    override protected def executionContext: ExecutionContext = ctx
+    protected override def executionContext: ExecutionContext = ctx
   }
 }

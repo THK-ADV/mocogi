@@ -1,12 +1,15 @@
 package controllers
 
+import javax.inject.Inject
+import javax.inject.Singleton
+
+import scala.concurrent.ExecutionContext
+
 import models.core.ModuleCompetence
 import play.api.libs.json.Writes
-import play.api.mvc.{AbstractController, ControllerComponents}
+import play.api.mvc.AbstractController
+import play.api.mvc.ControllerComponents
 import service.core.CompetenceService
-
-import javax.inject.{Inject, Singleton}
-import scala.concurrent.ExecutionContext
 
 @Singleton
 final class CompetenceController @Inject() (
@@ -15,5 +18,5 @@ final class CompetenceController @Inject() (
     implicit val ctx: ExecutionContext
 ) extends AbstractController(cc)
     with YamlController[ModuleCompetence] {
-  override implicit val writes: Writes[ModuleCompetence] = ModuleCompetence.writes
+  implicit override val writes: Writes[ModuleCompetence] = ModuleCompetence.writes
 }

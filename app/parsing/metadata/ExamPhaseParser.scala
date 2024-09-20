@@ -3,15 +3,15 @@ package parsing.metadata
 import cats.data.NonEmptyList
 import models.core.ExamPhases.ExamPhase
 import parser.Parser
-import parsing.{ParserListOps, multipleValueParser, multipleValueRawParser}
+import parsing.multipleValueParser
+import parsing.multipleValueRawParser
+import parsing.ParserListOps
 
 object ExamPhaseParser {
-  def key = "exam_phases"
+  def key    = "exam_phases"
   def prefix = "exam_phase."
 
-  def parser(implicit
-      phases: Seq[ExamPhase]
-  ): Parser[NonEmptyList[ExamPhase]] =
+  def parser(implicit phases: Seq[ExamPhase]): Parser[NonEmptyList[ExamPhase]] =
     multipleValueParser(
       key,
       (p: ExamPhase) => s"$prefix${p.id}"

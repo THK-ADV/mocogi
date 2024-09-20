@@ -1,13 +1,14 @@
 package parsing.metadata
 
+import javax.inject.Inject
+import javax.inject.Singleton
+
 import models.core._
 import parser.Parser
 import parser.Parser._
 import parser.ParserOps._
 import parsing.types._
 import printer.Printer
-
-import javax.inject.{Inject, Singleton}
 
 @Singleton
 final class MetadataCompositeParser @Inject() (
@@ -23,8 +24,8 @@ final class MetadataCompositeParser @Inject() (
       .contraMapSuccess(t => (t.number, t.label))
   }
 
-  def parser(implicit
-      locations: Seq[ModuleLocation],
+  def parser(
+      implicit locations: Seq[ModuleLocation],
       languages: Seq[ModuleLanguage],
       status: Seq[ModuleStatus],
       assessmentMethods: Seq[AssessmentMethod],

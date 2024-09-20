@@ -1,16 +1,22 @@
 package service
 
+import java.util.UUID
+import javax.inject.Inject
+import javax.inject.Singleton
+
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+
 import models._
-import ops.EitherOps.{EOps, EThrowableOps}
+import ops.EitherOps.EOps
+import ops.EitherOps.EThrowableOps
 import ops.FutureOps.EitherOps
 import parsing.metadata.VersionScheme
-import parsing.types.{Module, ModuleContent, ParsedMetadata}
+import parsing.types.Module
+import parsing.types.ModuleContent
+import parsing.types.ParsedMetadata
 import printing.yaml.ModuleYamlPrinter
 import validator.ValidationError
-
-import java.util.UUID
-import javax.inject.{Inject, Singleton}
-import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 final class MetadataPipeline @Inject() (
@@ -22,7 +28,7 @@ final class MetadataPipeline @Inject() (
   def parseValidate(print: Print): Future[Module] =
     for {
       (metadata, de, en) <- parser.parse(print).unwrap
-      existing <- moduleService.allModuleCore(Map.empty)
+      existing           <- moduleService.allModuleCore(Map.empty)
       metadata <- MetadataValidatingService
         .validate(existing, metadata)
         .mapErr(errs =>
@@ -36,7 +42,7 @@ final class MetadataPipeline @Inject() (
       prints: Seq[Print]
   ): Future[Either[Seq[PipelineError], Seq[(Print, Module)]]] =
     for {
-      parsed <- parser.parseMany(prints)
+      parsed   <- parser.parseMany(prints)
       existing <- moduleService.allModuleCore(Map.empty)
     } yield parsed match {
       case Left(value) => Left(value)
@@ -81,7 +87,7 @@ final class MetadataPipeline @Inject() (
       }
 
     for {
-      parsed <- continueWith(print())(parse)
+      parsed    <- continueWith(print())(parse)
       validated <- continueWith(parsed)(a => validate(a._2._1))
     } yield validated.map(t => (Module(t._2, t._1._2._2, t._1._2._3), t._1._1))
   }

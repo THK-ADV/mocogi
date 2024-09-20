@@ -1,11 +1,13 @@
 package models
 
-import cats.data.NonEmptyList
-import controllers.{JsonNullWritable, NelWrites}
-import parsing.types.ModuleParticipants
-import play.api.libs.json.{Format, Json}
-
 import java.util.UUID
+
+import cats.data.NonEmptyList
+import controllers.JsonNullWritable
+import controllers.NelWrites
+import parsing.types.ModuleParticipants
+import play.api.libs.json.Format
+import play.api.libs.json.Json
 
 case class MetadataProtocol(
     title: String,

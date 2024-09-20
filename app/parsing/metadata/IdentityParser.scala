@@ -10,9 +10,7 @@ import parsing.ParserListOps
 object IdentityParser {
   private def prefix = "person."
 
-  def parser(implicit
-      identities: Seq[Identity]
-  ): Parser[NonEmptyList[Identity]] = {
+  def parser(implicit identities: Seq[Identity]): Parser[NonEmptyList[Identity]] = {
     val single =
       oneOf(
         identities
@@ -32,7 +30,7 @@ object IdentityParser {
         .take(single)
         .many()
 
-    single.map(a => NonEmptyList.one(a)) or dashes.nel()
+    single.map(a => NonEmptyList.one(a)).or(dashes.nel())
   }
 
   def raw: Parser[NonEmptyList[String]] = {
@@ -48,6 +46,6 @@ object IdentityParser {
         .take(single)
         .many()
 
-    single.map(a => NonEmptyList.one(a)) or dashes.nel()
+    single.map(a => NonEmptyList.one(a)).or(dashes.nel())
   }
 }

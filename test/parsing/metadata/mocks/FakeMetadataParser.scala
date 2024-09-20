@@ -1,20 +1,21 @@
 package parsing.metadata.mocks
 
+import java.util.UUID
+
 import cats.data.NonEmptyList
-import models.Examiner
 import models.core.*
 import models.core.ExamPhases.ExamPhase
+import models.Examiner
 import parser.Parser.always
-import parsing.metadata.{MetadataParser, VersionScheme}
+import parsing.metadata.MetadataParser
+import parsing.metadata.VersionScheme
 import parsing.types.*
-
-import java.util.UUID
 
 class FakeMetadataParser extends MetadataParser {
   override val versionScheme = VersionScheme(1, "s")
 
-  override def parser(implicit
-      locations: Seq[ModuleLocation],
+  override def parser(
+      implicit locations: Seq[ModuleLocation],
       languages: Seq[ModuleLanguage],
       status: Seq[ModuleStatus],
       assessmentMethods: Seq[AssessmentMethod],

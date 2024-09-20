@@ -1,6 +1,8 @@
-import parsing.types.{ModuleContent, ParsedMetadata}
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 
-import scala.concurrent.{ExecutionContext, Future}
+import parsing.types.ModuleContent
+import parsing.types.ParsedMetadata
 
 package object service {
   type Result[A] = Future[Either[Seq[PipelineError], Seq[A]]]

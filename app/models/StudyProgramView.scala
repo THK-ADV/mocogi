@@ -1,8 +1,10 @@
 package models
 
 import controllers.JsonNullWritable
-import models.core.{Degree, IDLabel}
-import play.api.libs.json.{Json, Writes}
+import models.core.Degree
+import models.core.IDLabel
+import play.api.libs.json.Json
+import play.api.libs.json.Writes
 
 case class StudyProgramView(
     id: String,

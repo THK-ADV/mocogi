@@ -1,7 +1,8 @@
 package parsing.types
 
 import models.core.AssessmentMethod
-import play.api.libs.json.{Json, Writes}
+import play.api.libs.json.Json
+import play.api.libs.json.Writes
 
 case class ModuleAssessmentMethods(
     mandatory: List[ModuleAssessmentMethodEntry],

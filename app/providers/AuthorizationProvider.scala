@@ -1,14 +1,15 @@
 package providers
 
+import javax.inject.Inject
+import javax.inject.Provider
+import javax.inject.Singleton
+
 import auth._
 import org.keycloak.adapters.KeycloakDeploymentBuilder
 import play.api.Environment
 
-import javax.inject.{Inject, Provider, Singleton}
-
 @Singleton
-final class AuthorizationProvider @Inject() (env: Environment)
-    extends Provider[Authorization[UserToken]] {
+final class AuthorizationProvider @Inject() (env: Environment) extends Provider[Authorization[UserToken]] {
 
   private def tokenFactory(): TokenFactory[UserToken] =
     (attributes: Map[String, AnyRef], mail: String, roles: Set[String]) => {
@@ -17,8 +18,8 @@ final class AuthorizationProvider @Inject() (env: Environment)
         else Left(s"user attribute '$attr' not found")
       for {
         firstname <- get("firstname")
-        lastname <- get("lastname")
-        username <- get("username")
+        lastname  <- get("lastname")
+        username  <- get("username")
       } yield UserToken(firstname, lastname, username, mail, roles)
     }
 

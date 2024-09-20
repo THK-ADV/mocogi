@@ -1,11 +1,13 @@
 package providers
 
+import javax.inject.Inject
+import javax.inject.Provider
+
+import scala.concurrent.ExecutionContext
+
 import catalog.ElectivesCatalogService
 import database.repo.ElectivesRepository
 import database.view.StudyProgramViewRepository
-
-import javax.inject.{Inject, Provider}
-import scala.concurrent.ExecutionContext
 
 @Inject
 final class ElectivesCatalogServiceProvider @Inject() (

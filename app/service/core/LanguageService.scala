@@ -1,12 +1,14 @@
 package service.core
 
+import javax.inject.Inject
+import javax.inject.Singleton
+
+import scala.concurrent.ExecutionContext
+
 import database.repo.core.LanguageRepository
 import models.core.ModuleLanguage
 import parser.Parser
 import parsing.core.LanguageFileParser
-
-import javax.inject.{Inject, Singleton}
-import scala.concurrent.ExecutionContext
 
 @Singleton
 final class LanguageService @Inject() (

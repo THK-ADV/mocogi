@@ -9,8 +9,7 @@ case class StudyProgramPersonDbEntry(
     role: UniversityRole
 )
 
-final class StudyProgramPersonTable(tag: Tag)
-    extends Table[StudyProgramPersonDbEntry](tag, "study_program_person") {
+final class StudyProgramPersonTable(tag: Tag) extends Table[StudyProgramPersonDbEntry](tag, "study_program_person") {
 
   import database.table.universityRoleColumnType
 

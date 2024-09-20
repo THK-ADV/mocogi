@@ -1,13 +1,15 @@
 package parsing.metadata
 
+import java.util.UUID
+
 import cats.data.NonEmptyList
 import parser.Parser
 import parser.Parser._
 import parser.ParserOps.P0
+import parsing.multipleValueParser
 import parsing.types.ParsedModuleRelation
-import parsing.{ParserListOps, multipleValueParser, uuidParser}
-
-import java.util.UUID
+import parsing.uuidParser
+import parsing.ParserListOps
 
 object ModuleRelationParser {
 
@@ -16,7 +18,7 @@ object ModuleRelationParser {
       prefix("parent:")
         .skip(zeroOrMoreSpaces)
         .skip(prefix("module."))
-        .take(prefixTo("\n") or rest)
+        .take(prefixTo("\n").or(rest))
         .flatMap(uuidParser)
         .map(Left.apply),
       multipleValueParser(

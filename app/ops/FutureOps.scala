@@ -1,7 +1,8 @@
 package ops
 
 import scala.annotation.unused
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 
 object FutureOps {
 
@@ -9,14 +10,11 @@ object FutureOps {
     Future.failed(new Exception(msg))
 
   implicit class Ops[A](private val self: Future[A]) extends AnyVal {
-    def abortIf(pred: A => Boolean, msg: => String)(implicit
-        ctx: ExecutionContext
-    ): Future[A] =
+    def abortIf(pred: A => Boolean, msg: => String)(implicit ctx: ExecutionContext): Future[A] =
       self.flatMap(a => if (pred(a)) abort(msg) else Future.successful(a))
 
-    def continueIf(pred: A => Boolean, msg: => String)(implicit
-        ctx: ExecutionContext
-    ): Future[A] = self.abortIf(a => !pred(a), msg)
+    def continueIf(pred: A => Boolean, msg: => String)(implicit ctx: ExecutionContext): Future[A] =
+      self.abortIf(a => !pred(a), msg)
 
     @unused
     def measure(tag: String)(implicit ctx: ExecutionContext): Future[A] =
@@ -38,8 +36,7 @@ object FutureOps {
     }
   }
 
-  implicit class OptionOps[A](private val self: Future[Option[A]])
-      extends AnyVal {
+  implicit class OptionOps[A](private val self: Future[Option[A]]) extends AnyVal {
     def or(
         f: Future[Option[A]]
     )(implicit ctx: ExecutionContext): Future[Option[A]] =
@@ -52,8 +49,7 @@ object FutureOps {
       self.flatMap(_.fold(f)(a => Future.successful(a)))
   }
 
-  implicit class EitherOps[A](private val self: Future[Either[Throwable, A]])
-      extends AnyVal {
+  implicit class EitherOps[A](private val self: Future[Either[Throwable, A]]) extends AnyVal {
     def unwrap(implicit ctx: ExecutionContext): Future[A] =
       self.flatMap {
         case Left(value)  => Future.failed(value)

@@ -1,13 +1,16 @@
 package providers
 
-import git.GitConfig
+import javax.inject.Inject
+import javax.inject.Provider
+
+import scala.concurrent.ExecutionContext
+
 import git.api.GitFileDownloadService
-import git.publisher.{CoreDataPublisher, ModulePublisher}
+import git.publisher.CoreDataPublisher
+import git.publisher.ModulePublisher
+import git.GitConfig
 import org.apache.pekko.actor.ActorSystem
 import webhook.GitPushEventHandler
-
-import javax.inject.{Inject, Provider}
-import scala.concurrent.ExecutionContext
 
 final class GitMergeEventHandlingActorProvider @Inject() (
     system: ActorSystem,

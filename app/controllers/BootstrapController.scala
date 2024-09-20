@@ -1,15 +1,20 @@
 package controllers
 
-import auth.AuthorizationAction
-import controllers.actions.{AdminCheck, PermissionCheck}
-import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfigProvider}
-import play.api.mvc.{AbstractController, ControllerComponents}
-import slick.jdbc.JdbcProfile
-
 import java.io.File
-import javax.inject.{Inject, Singleton}
+import javax.inject.Inject
+import javax.inject.Singleton
+
 import scala.concurrent.ExecutionContext
 import scala.io.Source
+
+import auth.AuthorizationAction
+import controllers.actions.AdminCheck
+import controllers.actions.PermissionCheck
+import play.api.db.slick.DatabaseConfigProvider
+import play.api.db.slick.HasDatabaseConfigProvider
+import play.api.mvc.AbstractController
+import play.api.mvc.ControllerComponents
+import slick.jdbc.JdbcProfile
 
 @Singleton
 final class BootstrapController @Inject() (
@@ -25,8 +30,8 @@ final class BootstrapController @Inject() (
   import profile.api._
 
   def createViews() =
-    auth andThen isAdmin async { _ =>
-      val source = Source.fromFile(new File("conf/sql/views.sql"))
+    auth.andThen(isAdmin).async { _ =>
+      val source  = Source.fromFile(new File("conf/sql/views.sql"))
       val inserts = source.mkString
       source.close()
       db.run(sqlu"#$inserts").map(_ => NoContent)

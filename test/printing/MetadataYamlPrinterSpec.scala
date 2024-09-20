@@ -1,5 +1,7 @@
 package printing
 
+import java.util.UUID
+
 import cats.data.NonEmptyList
 import models._
 import org.scalatest.wordspec.AnyWordSpec
@@ -7,13 +9,11 @@ import parsing.metadata.VersionScheme
 import parsing.types.ModuleParticipants
 import printing.yaml.MetadataYamlPrinter
 
-import java.util.UUID
-
 final class MetadataYamlPrinterSpec extends AnyWordSpec with PrinterSpec {
 
   val printer = new MetadataYamlPrinter(2)
-  val m1 = UUID.fromString("0ef7d976-206e-4654-a987-8d0e184fdd3f")
-  val m2 = UUID.fromString("330bd356-e766-433b-ae2c-0a98d49ca49d")
+  val m1      = UUID.fromString("0ef7d976-206e-4654-a987-8d0e184fdd3f")
+  val m2      = UUID.fromString("330bd356-e766-433b-ae2c-0a98d49ca49d")
 
   "A MetadataProtocolPrinter" should {
     "print version scheme" in {
@@ -40,17 +40,17 @@ final class MetadataYamlPrinterSpec extends AnyWordSpec with PrinterSpec {
 
     "print module relation" in {
       val parent0 = ModuleRelationProtocol.Parent(NonEmptyList.one(m1))
-      val res0 = s"relation:\n  children: module.$m1\n"
+      val res0    = s"relation:\n  children: module.$m1\n"
       assert(run(printer.moduleRelation(parent0)) === res0)
       val parent1 = ModuleRelationProtocol.Parent(NonEmptyList.of(m1, m2))
       val res1 =
         s"""relation:
-         |  children:
-         |    - module.$m1
-         |    - module.$m2\n""".stripMargin
+           |  children:
+           |    - module.$m1
+           |    - module.$m2\n""".stripMargin
       assert(run(printer.moduleRelation(parent1)) === res1)
       val child = ModuleRelationProtocol.Child(m1)
-      val res2 = s"relation:\n  parent: module.$m1\n"
+      val res2  = s"relation:\n  parent: module.$m1\n"
       assert(run(printer.moduleRelation(child)) === res2)
     }
 
@@ -72,7 +72,7 @@ final class MetadataYamlPrinterSpec extends AnyWordSpec with PrinterSpec {
 
     "print responsibilities" in {
       val moduleManagement1 = NonEmptyList.one("ald")
-      val lecturers1 = NonEmptyList.of("ald", "abe")
+      val lecturers1        = NonEmptyList.of("ald", "abe")
       val res1 =
         s"""responsibilities:
            |  module_management: person.ald
@@ -139,24 +139,24 @@ final class MetadataYamlPrinterSpec extends AnyWordSpec with PrinterSpec {
       val workload = ModuleWorkload(1, 2, 3, 4, 5, 6, 0, 0)
       val res =
         s"""workload:
-          |  lecture: 1
-          |  seminar: 2
-          |  practical: 3
-          |  exercise: 4
-          |  project_supervision: 5
-          |  project_work: 6\n""".stripMargin
+           |  lecture: 1
+           |  seminar: 2
+           |  practical: 3
+           |  exercise: 4
+           |  project_supervision: 5
+           |  project_work: 6\n""".stripMargin
       assert(run(printer.workload(workload)) == res)
     }
 
     "print recommended prerequisites" in {
       val entry0 = ModulePrerequisiteEntryProtocol("", Nil, Nil)
-      val res0 = ""
+      val res0   = ""
       assert(run(printer.recommendedPrerequisites(entry0)) == res0)
 
       val entry1 = ModulePrerequisiteEntryProtocol("abc", Nil, Nil)
       val res1 =
         s"""recommended_prerequisites:
-          |  text: abc\n""".stripMargin
+           |  text: abc\n""".stripMargin
       assert(run(printer.recommendedPrerequisites(entry1)) == res1)
 
       val entry2 = ModulePrerequisiteEntryProtocol("abc", List(m2, m1), Nil)
@@ -212,8 +212,8 @@ final class MetadataYamlPrinterSpec extends AnyWordSpec with PrinterSpec {
       val participants = ModuleParticipants(0, 10)
       val res =
         s"""participants:
-          |  min: 0
-          |  max: 10\n""".stripMargin
+           |  min: 0
+           |  max: 10\n""".stripMargin
       assert(run(printer.participants(participants)) == res)
     }
 
@@ -221,8 +221,8 @@ final class MetadataYamlPrinterSpec extends AnyWordSpec with PrinterSpec {
       val competences = NonEmptyList.of("def", "abc")
       val res =
         s"""competences:
-          |  - competence.abc
-          |  - competence.def\n""".stripMargin
+           |  - competence.abc
+           |  - competence.def\n""".stripMargin
       assert(run(printer.competences(competences)) == res)
     }
 
@@ -230,8 +230,8 @@ final class MetadataYamlPrinterSpec extends AnyWordSpec with PrinterSpec {
       val globalCriteria = NonEmptyList.of("abc", "def")
       val res =
         s"""global_criteria:
-          |  - global_criteria.abc
-          |  - global_criteria.def\n""".stripMargin
+           |  - global_criteria.abc
+           |  - global_criteria.def\n""".stripMargin
       assert(run(printer.globalCriteria(globalCriteria)) == res)
     }
 
@@ -239,8 +239,8 @@ final class MetadataYamlPrinterSpec extends AnyWordSpec with PrinterSpec {
       val taughtWith = NonEmptyList.of(m1, m2)
       val res =
         s"""taught_with:
-          |  - module.$m1
-          |  - module.$m2\n""".stripMargin
+           |  - module.$m1
+           |  - module.$m2\n""".stripMargin
       assert(run(printer.taughtWith(taughtWith)) == res)
     }
 
@@ -252,16 +252,16 @@ final class MetadataYamlPrinterSpec extends AnyWordSpec with PrinterSpec {
       )
       val res1 =
         s"""po_mandatory:
-          |  - study_program: study_program.abc
-          |    recommended_semester: 1
-          |  - study_program: study_program.def
-          |    recommended_semester:
-          |      - 1
-          |      - 2
-          |  - study_program: study_program.ghi
-          |    recommended_semester:
-          |      - 1
-          |      - 2\n""".stripMargin
+           |  - study_program: study_program.abc
+           |    recommended_semester: 1
+           |  - study_program: study_program.def
+           |    recommended_semester:
+           |      - 1
+           |      - 2
+           |  - study_program: study_program.ghi
+           |    recommended_semester:
+           |      - 1
+           |      - 2\n""".stripMargin
       assert(run(printer.poMandatory(po1)) == res1)
     }
 
@@ -308,8 +308,8 @@ final class MetadataYamlPrinterSpec extends AnyWordSpec with PrinterSpec {
 
     "print exam phases" in {
       val examPhases = NonEmptyList.of("b", "a")
-      val input = printer.examPhases(examPhases)
-      val output = "exam_phases:\n  - exam_phase.a\n  - exam_phase.b\n"
+      val input      = printer.examPhases(examPhases)
+      val output     = "exam_phases:\n  - exam_phase.a\n  - exam_phase.b\n"
       assert(run(input) == output)
     }
 
@@ -380,7 +380,7 @@ final class MetadataYamlPrinterSpec extends AnyWordSpec with PrinterSpec {
         List("global_criteria1", "global_criteria2"),
         List(m1)
       )
-      val id = UUID.randomUUID
+      val id                     = UUID.randomUUID
       val version: VersionScheme = VersionScheme(1, "s")
       val print = printer
         .printer(version)
@@ -389,80 +389,80 @@ final class MetadataYamlPrinterSpec extends AnyWordSpec with PrinterSpec {
         .toString()
       val res =
         s"""---v1.0s
-          |id: $id
-          |title: Module A
-          |abbreviation: M
-          |type: type.module
-          |relation:
-          |  children:
-          |    - module.$m1
-          |    - module.$m2
-          |ects: 5.0
-          |language: lang.de
-          |duration: 1
-          |frequency: season.ws
-          |responsibilities:
-          |  module_management: person.ald
-          |  lecturers:
-          |    - person.abe
-          |    - person.ald
-          |assessment_methods_mandatory:
-          |  - method: assessment.written-exam
-          |    percentage: 100.0
-          |    precondition: assessment.practical
-          |assessment_methods_optional:
-          |  - method: assessment.written-exam
-          |first_examiner: person.ald
-          |second_examiner: person.abe
-          |exam_phases:
-          |  - exam_phase.a
-          |  - exam_phase.b
-          |workload:
-          |  lecture: 10
-          |  seminar: 10
-          |  practical: 10
-          |  exercise: 10
-          |  project_supervision: 10
-          |  project_work: 10
-          |recommended_prerequisites:
-          |  text: abc
-          |  modules: module.$m1
-          |required_prerequisites:
-          |  study_programs:
-          |    - study_program.po1
-          |    - study_program.po2
-          |status: status.active
-          |location: location.gm
-          |po_mandatory:
-          |  - study_program: study_program.po1
-          |    recommended_semester:
-          |      - 1
-          |      - 2
-          |  - study_program: study_program.po2
-          |    recommended_semester: 1
-          |  - study_program: study_program.po3
-          |    recommended_semester: 1
-          |po_optional:
-          |  - study_program: study_program.po4
-          |    instance_of: module.$m1
-          |    part_of_catalog: false
-          |    recommended_semester:
-          |      - 1
-          |      - 2
-          |  - study_program: study_program.po5
-          |    instance_of: module.$m2
-          |    part_of_catalog: true
-          |participants:
-          |  min: 0
-          |  max: 10
-          |competences:
-          |  - competence.competence1
-          |  - competence.competence2
-          |global_criteria:
-          |  - global_criteria.global_criteria1
-          |  - global_criteria.global_criteria2
-          |taught_with: module.$m1
-          |---""".stripMargin
+           |id: $id
+           |title: Module A
+           |abbreviation: M
+           |type: type.module
+           |relation:
+           |  children:
+           |    - module.$m1
+           |    - module.$m2
+           |ects: 5.0
+           |language: lang.de
+           |duration: 1
+           |frequency: season.ws
+           |responsibilities:
+           |  module_management: person.ald
+           |  lecturers:
+           |    - person.abe
+           |    - person.ald
+           |assessment_methods_mandatory:
+           |  - method: assessment.written-exam
+           |    percentage: 100.0
+           |    precondition: assessment.practical
+           |assessment_methods_optional:
+           |  - method: assessment.written-exam
+           |first_examiner: person.ald
+           |second_examiner: person.abe
+           |exam_phases:
+           |  - exam_phase.a
+           |  - exam_phase.b
+           |workload:
+           |  lecture: 10
+           |  seminar: 10
+           |  practical: 10
+           |  exercise: 10
+           |  project_supervision: 10
+           |  project_work: 10
+           |recommended_prerequisites:
+           |  text: abc
+           |  modules: module.$m1
+           |required_prerequisites:
+           |  study_programs:
+           |    - study_program.po1
+           |    - study_program.po2
+           |status: status.active
+           |location: location.gm
+           |po_mandatory:
+           |  - study_program: study_program.po1
+           |    recommended_semester:
+           |      - 1
+           |      - 2
+           |  - study_program: study_program.po2
+           |    recommended_semester: 1
+           |  - study_program: study_program.po3
+           |    recommended_semester: 1
+           |po_optional:
+           |  - study_program: study_program.po4
+           |    instance_of: module.$m1
+           |    part_of_catalog: false
+           |    recommended_semester:
+           |      - 1
+           |      - 2
+           |  - study_program: study_program.po5
+           |    instance_of: module.$m2
+           |    part_of_catalog: true
+           |participants:
+           |  min: 0
+           |  max: 10
+           |competences:
+           |  - competence.competence1
+           |  - competence.competence2
+           |global_criteria:
+           |  - global_criteria.global_criteria1
+           |  - global_criteria.global_criteria2
+           |taught_with: module.$m1
+           |---""".stripMargin
       assert(print == res)
     }
   }

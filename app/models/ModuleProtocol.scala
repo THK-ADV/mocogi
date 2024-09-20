@@ -1,11 +1,12 @@
 package models
 
-import monocle.Traversal
-import monocle.macros.GenLens
-import parsing.types.ModuleContent
-import play.api.libs.json.{Format, Json}
-
 import java.util.UUID
+
+import monocle.macros.GenLens
+import monocle.Traversal
+import parsing.types.ModuleContent
+import play.api.libs.json.Format
+import play.api.libs.json.Json
 
 case class ModuleProtocol(
     id: Option[UUID],

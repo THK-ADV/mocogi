@@ -1,14 +1,12 @@
 package parsing.core
 
 import models.core.ModuleGlobalCriteria
-import org.scalatest.EitherValues
 import org.scalatest.wordspec.AnyWordSpec
-import parsing.{ParserSpecHelper, withFile0}
+import org.scalatest.EitherValues
+import parsing.withFile0
+import parsing.ParserSpecHelper
 
-class ModuleGlobalCriteriaFileParserSpec
-    extends AnyWordSpec
-    with ParserSpecHelper
-    with EitherValues {
+class ModuleGlobalCriteriaFileParserSpec extends AnyWordSpec with ParserSpecHelper with EitherValues {
 
   val parser = GlobalCriteriaFileParser.parser()
 
@@ -50,8 +48,9 @@ class ModuleGlobalCriteriaFileParserSpec
         "interdisciplinarity",
         "transfer"
       )
-      res1.value.zip(ids).foreach { case (gc, id) =>
-        assert(gc.id == id)
+      res1.value.zip(ids).foreach {
+        case (gc, id) =>
+          assert(gc.id == id)
       }
       assert(rest1.isEmpty)
 

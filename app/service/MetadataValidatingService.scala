@@ -1,8 +1,11 @@
 package service
 
-import models.{Metadata, ModuleCore}
+import models.Metadata
+import models.ModuleCore
 import ops.EitherOps.EOps
-import parsing.types.{Module, ModuleContent, ParsedMetadata}
+import parsing.types.Module
+import parsing.types.ModuleContent
+import parsing.types.ParsedMetadata
 import validator._
 
 object MetadataValidatingService {
@@ -19,15 +22,16 @@ object MetadataValidatingService {
     val validator =
       MetadataValidator.validate(ectsFactor, id => modules.find(_.id == id)) _
     val (errs, validated) =
-      parsed.partitionMap { case (print, parsedMetadata, de, en) =>
-        validator(parsedMetadata).bimap(
-          errs =>
-            PipelineError.Validator(
-              ValidationError(errs),
-              Some(parsedMetadata.id)
-            ),
-          metadata => (print, Module(metadata, de, en))
-        )
+      parsed.partitionMap {
+        case (print, parsedMetadata, de, en) =>
+          validator(parsedMetadata).bimap(
+            errs =>
+              PipelineError.Validator(
+                ValidationError(errs),
+                Some(parsedMetadata.id)
+              ),
+            metadata => (print, Module(metadata, de, en))
+          )
       }
     Either.cond(errs.isEmpty, validated, errs)
   }

@@ -1,9 +1,9 @@
 package service.core
 
+import scala.concurrent.Future
+
 import database.repo.Repository
 import parser.Parser
-
-import scala.concurrent.Future
 
 trait SimpleYamlService[A] extends YamlService[A] {
   def fileParser: Parser[List[A]]

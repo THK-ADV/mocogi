@@ -1,19 +1,24 @@
 package database.repo
 
+import java.time.LocalDateTime
+import java.util.UUID
+import javax.inject.Inject
+import javax.inject.Singleton
+
+import scala.collection.mutable
+import scala.collection.mutable.ListBuffer
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+
 import cats.data.NonEmptyList
 import database._
 import database.table._
 import models._
-import parsing.types.{Module, _}
-import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfigProvider}
+import parsing.types._
+import parsing.types.Module
+import play.api.db.slick.DatabaseConfigProvider
+import play.api.db.slick.HasDatabaseConfigProvider
 import slick.jdbc.JdbcProfile
-
-import java.time.LocalDateTime
-import java.util.UUID
-import javax.inject.{Inject, Singleton}
-import scala.collection.mutable
-import scala.collection.mutable.ListBuffer
-import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 final class ModuleRepository @Inject() (
@@ -69,10 +74,9 @@ final class ModuleRepository @Inject() (
   private val metadataTaughtWithTable =
     TableQuery[ModuleTaughtWithTable]
 
-  protected val makeFilter
-      : PartialFunction[(String, String), ModuleTable => Rep[
-        Boolean
-      ]] = {
+  protected val makeFilter: PartialFunction[(String, String), ModuleTable => Rep[
+    Boolean
+  ]] = {
     case ("user", value) =>
       t =>
         responsibilityTable
@@ -130,9 +134,14 @@ final class ModuleRepository @Inject() (
         .on(_.id === _.module)
         .map { case (m, po) => ((m.id, m.title, m.abbrev), po.po) }
         .result
-        .map(_.groupBy(_._1).map { case (m, pos) =>
-          (ModuleCore(m._1, m._2, m._3), pos.map(_._2))
-        }.toSeq)
+        .map(
+          _.groupBy(_._1)
+            .map {
+              case (m, pos) =>
+                (ModuleCore(m._1, m._2, m._3), pos.map(_._2))
+            }
+            .toSeq
+        )
     )
 
   def allFromPos(pos: Seq[String]) = {
@@ -255,9 +264,7 @@ final class ModuleRepository @Inject() (
   private def metadataGlobalCriteria(
       metadata: Metadata
   ): List[ModuleGlobalCriteriaDbEntry] =
-    metadata.globalCriteria.map(gc =>
-      ModuleGlobalCriteriaDbEntry(metadata.id, gc.id)
-    )
+    metadata.globalCriteria.map(gc => ModuleGlobalCriteriaDbEntry(metadata.id, gc.id))
 
   private def metadataCompetences(
       metadata: Metadata
@@ -293,7 +300,7 @@ final class ModuleRepository @Inject() (
   private def prerequisites(metadata: Metadata): PrerequisitesDbResult = {
     val entries = ListBuffer[ModulePrerequisitesDbEntry]()
     val modules = ListBuffer[PrerequisitesModuleDbEntry]()
-    val pos = ListBuffer[PrerequisitesPODbEntry]()
+    val pos     = ListBuffer[PrerequisitesPODbEntry]()
 
     def go(
         entry: ModulePrerequisiteEntry,
@@ -306,12 +313,8 @@ final class ModuleRepository @Inject() (
         entry.text
       )
       entries += prerequisites
-      modules ++= entry.modules.map(m =>
-        PrerequisitesModuleDbEntry(prerequisites.id, m.id)
-      )
-      pos ++= entry.pos.map(po =>
-        PrerequisitesPODbEntry(prerequisites.id, po.id)
-      )
+      modules ++= entry.modules.map(m => PrerequisitesModuleDbEntry(prerequisites.id, m.id))
+      pos ++= entry.pos.map(po => PrerequisitesPODbEntry(prerequisites.id, po.id))
     }
 
     metadata.prerequisites.required.foreach(
@@ -462,198 +465,205 @@ final class ModuleRepository @Inject() (
       .joinLeft(metadataTaughtWithTable)
       .on(_._1._1._1._1._1._1._1._1.id === _.module)
       .result
-    db.run(action.map(_.groupBy(_._1._1._1._1._1._1._1._1._1).map {
-      case (m, deps) =>
-        val participants = for {
-          min <- m.participantsMin
-          max <- m.participantsMax
-        } yield ModuleParticipants(min, max)
-        val relations = mutable.HashSet[ModuleRelationDbEntry]()
-        val moduleManagement = mutable.HashSet[String]()
-        val lecturer = mutable.HashSet[String]()
-        val mandatoryAssessmentMethods =
-          mutable.HashSet[(UUID, ModuleAssessmentMethodEntryProtocol)]()
-        val optionalAssessmentMethods =
-          mutable.HashSet[(UUID, ModuleAssessmentMethodEntryProtocol)]()
-        val preconditions =
-          mutable.HashSet[ModuleAssessmentMethodPreconditionDbEntry]()
-        var recommendedPrerequisite =
-          Option.empty[(UUID, ModulePrerequisiteEntryProtocol)]
-        var requiredPrerequisite =
-          Option.empty[(UUID, ModulePrerequisiteEntryProtocol)]
-        val prerequisitesModules =
-          mutable.HashSet[PrerequisitesModuleDbEntry]()
-        val prerequisitesPOS = mutable.HashSet[PrerequisitesPODbEntry]()
-        val poMandatory = mutable.HashSet[ModulePOMandatoryProtocol]()
-        val poOptional = mutable.HashSet[ModulePOOptionalProtocol]()
-        val competences = mutable.HashSet[String]()
-        val globalCriteria = mutable.HashSet[String]()
-        val taughtWith = mutable.HashSet[UUID]()
+    db.run(
+      action.map(
+        _.groupBy(_._1._1._1._1._1._1._1._1._1)
+          .map {
+            case (m, deps) =>
+              val participants = for {
+                min <- m.participantsMin
+                max <- m.participantsMax
+              } yield ModuleParticipants(min, max)
+              val relations        = mutable.HashSet[ModuleRelationDbEntry]()
+              val moduleManagement = mutable.HashSet[String]()
+              val lecturer         = mutable.HashSet[String]()
+              val mandatoryAssessmentMethods =
+                mutable.HashSet[(UUID, ModuleAssessmentMethodEntryProtocol)]()
+              val optionalAssessmentMethods =
+                mutable.HashSet[(UUID, ModuleAssessmentMethodEntryProtocol)]()
+              val preconditions =
+                mutable.HashSet[ModuleAssessmentMethodPreconditionDbEntry]()
+              var recommendedPrerequisite =
+                Option.empty[(UUID, ModulePrerequisiteEntryProtocol)]
+              var requiredPrerequisite =
+                Option.empty[(UUID, ModulePrerequisiteEntryProtocol)]
+              val prerequisitesModules =
+                mutable.HashSet[PrerequisitesModuleDbEntry]()
+              val prerequisitesPOS = mutable.HashSet[PrerequisitesPODbEntry]()
+              val poMandatory      = mutable.HashSet[ModulePOMandatoryProtocol]()
+              val poOptional       = mutable.HashSet[ModulePOOptionalProtocol]()
+              val competences      = mutable.HashSet[String]()
+              val globalCriteria   = mutable.HashSet[String]()
+              val taughtWith       = mutable.HashSet[UUID]()
 
-        deps
-          .foreach {
-            case (((((((((_, mr), r), am), p), poM), poO), c), gc), tw) =>
-              tw.foreach(taughtWith += _.module)
-              gc.foreach(globalCriteria += _.globalCriteria)
-              c.foreach(competences += _.competence)
-              poM.foreach(po =>
-                poMandatory += ModulePOMandatoryProtocol(
-                  po.po,
-                  po.specialization,
-                  po.recommendedSemester
-                )
-              )
-              poO.foreach(po =>
-                poOptional += models.ModulePOOptionalProtocol(
-                  po.po,
-                  po.specialization,
-                  po.instanceOf,
-                  po.partOfCatalog,
-                  po.recommendedSemester
-                )
-              )
-              p.foreach { case ((e, m), po) =>
-                val prerequisite =
-                  Some(
-                    e.id -> ModulePrerequisiteEntryProtocol(e.text, Nil, Nil)
-                  )
-                e.prerequisitesType match {
-                  case PrerequisiteType.Required =>
-                    requiredPrerequisite = prerequisite
-                  case PrerequisiteType.Recommended =>
-                    recommendedPrerequisite = prerequisite
-                }
-                m.foreach(prerequisitesModules += _)
-                po.foreach(prerequisitesPOS += _)
-              }
-              mr.foreach(relations += _)
-              r.responsibilityType match {
-                case ResponsibilityType.ModuleManagement =>
-                  moduleManagement += r.identity
-                case ResponsibilityType.Lecturer => lecturer += r.identity
-              }
-              am.foreach {
-                case (am, amp) =>
-                  amp.foreach(p =>
-                    preconditions += ModuleAssessmentMethodPreconditionDbEntry(
-                      p.assessmentMethod,
-                      p.moduleAssessmentMethod
+              deps
+                .foreach {
+                  case (((((((((_, mr), r), am), p), poM), poO), c), gc), tw) =>
+                    tw.foreach(taughtWith += _.module)
+                    gc.foreach(globalCriteria += _.globalCriteria)
+                    c.foreach(competences += _.competence)
+                    poM.foreach(po =>
+                      poMandatory += ModulePOMandatoryProtocol(
+                        po.po,
+                        po.specialization,
+                        po.recommendedSemester
+                      )
                     )
-                  )
-                  am.assessmentMethodType match {
-                    case AssessmentMethodType.Mandatory =>
-                      mandatoryAssessmentMethods +=
-                        am.id ->
-                          ModuleAssessmentMethodEntryProtocol(
-                            am.assessmentMethod,
-                            am.percentage,
-                            Nil
+                    poO.foreach(po =>
+                      poOptional += models.ModulePOOptionalProtocol(
+                        po.po,
+                        po.specialization,
+                        po.instanceOf,
+                        po.partOfCatalog,
+                        po.recommendedSemester
+                      )
+                    )
+                    p.foreach {
+                      case ((e, m), po) =>
+                        val prerequisite =
+                          Some(
+                            e.id -> ModulePrerequisiteEntryProtocol(e.text, Nil, Nil)
                           )
+                        e.prerequisitesType match {
+                          case PrerequisiteType.Required =>
+                            requiredPrerequisite = prerequisite
+                          case PrerequisiteType.Recommended =>
+                            recommendedPrerequisite = prerequisite
+                        }
+                        m.foreach(prerequisitesModules += _)
+                        po.foreach(prerequisitesPOS += _)
+                    }
+                    mr.foreach(relations += _)
+                    r.responsibilityType match {
+                      case ResponsibilityType.ModuleManagement =>
+                        moduleManagement += r.identity
+                      case ResponsibilityType.Lecturer => lecturer += r.identity
+                    }
+                    am.foreach {
+                      case (am, amp) =>
+                        amp.foreach(p =>
+                          preconditions += ModuleAssessmentMethodPreconditionDbEntry(
+                            p.assessmentMethod,
+                            p.moduleAssessmentMethod
+                          )
+                        )
+                        am.assessmentMethodType match {
+                          case AssessmentMethodType.Mandatory =>
+                            mandatoryAssessmentMethods +=
+                              am.id ->
+                                ModuleAssessmentMethodEntryProtocol(
+                                  am.assessmentMethod,
+                                  am.percentage,
+                                  Nil
+                                )
 
-                    case AssessmentMethodType.Optional =>
-                      optionalAssessmentMethods +=
-                        am.id ->
-                          ModuleAssessmentMethodEntryProtocol(
-                            am.assessmentMethod,
-                            am.percentage,
-                            Nil
-                          )
-                  }
+                          case AssessmentMethodType.Optional =>
+                            optionalAssessmentMethods +=
+                              am.id ->
+                                ModuleAssessmentMethodEntryProtocol(
+                                  am.assessmentMethod,
+                                  am.percentage,
+                                  Nil
+                                )
+                        }
+                    }
+                }
+
+              val relation = relations.headOption.map { r =>
+                r.relationType match {
+                  case ModuleRelationType.Parent =>
+                    ModuleRelationProtocol
+                      .Parent(
+                        NonEmptyList.fromListUnsafe(
+                          relations.map(_.relationModule).toList
+                        )
+                      )
+                  case ModuleRelationType.Child =>
+                    ModuleRelationProtocol.Child(r.relationModule)
+                }
               }
-          }
 
-        val relation = relations.headOption.map { r =>
-          r.relationType match {
-            case ModuleRelationType.Parent =>
-              ModuleRelationProtocol
-                .Parent(
-                  NonEmptyList.fromListUnsafe(
-                    relations.map(_.relationModule).toList
-                  )
-                )
-            case ModuleRelationType.Child =>
-              ModuleRelationProtocol.Child(r.relationModule)
-          }
-        }
-
-        ModuleProtocol(
-          Some(m.id),
-          MetadataProtocol(
-            m.title,
-            m.abbrev,
-            m.moduleType,
-            m.ects,
-            m.language,
-            m.duration,
-            m.season,
-            m.workload,
-            m.status,
-            m.location,
-            participants,
-            relation,
-            NonEmptyList.fromListUnsafe(moduleManagement.toList),
-            NonEmptyList.fromListUnsafe(lecturer.toList),
-            ModuleAssessmentMethodsProtocol(
-              mandatoryAssessmentMethods
-                .map(a =>
-                  a._2.copy(precondition =
-                    preconditions
-                      .filter(_.moduleAssessmentMethod == a._1)
-                      .map(_.assessmentMethod)
+              ModuleProtocol(
+                Some(m.id),
+                MetadataProtocol(
+                  m.title,
+                  m.abbrev,
+                  m.moduleType,
+                  m.ects,
+                  m.language,
+                  m.duration,
+                  m.season,
+                  m.workload,
+                  m.status,
+                  m.location,
+                  participants,
+                  relation,
+                  NonEmptyList.fromListUnsafe(moduleManagement.toList),
+                  NonEmptyList.fromListUnsafe(lecturer.toList),
+                  ModuleAssessmentMethodsProtocol(
+                    mandatoryAssessmentMethods
+                      .map(a =>
+                        a._2.copy(precondition =
+                          preconditions
+                            .filter(_.moduleAssessmentMethod == a._1)
+                            .map(_.assessmentMethod)
+                            .toList
+                        )
+                      )
+                      .toList,
+                    optionalAssessmentMethods
+                      .map(a =>
+                        a._2.copy(precondition =
+                          preconditions
+                            .filter(_.moduleAssessmentMethod == a._1)
+                            .map(_.assessmentMethod)
+                            .toList
+                        )
+                      )
                       .toList
-                  )
-                )
-                .toList,
-              optionalAssessmentMethods
-                .map(a =>
-                  a._2.copy(precondition =
-                    preconditions
-                      .filter(_.moduleAssessmentMethod == a._1)
-                      .map(_.assessmentMethod)
-                      .toList
-                  )
-                )
-                .toList
-            ),
-            m.examiner,
-            m.examPhases,
-            ModulePrerequisitesProtocol(
-              recommendedPrerequisite.map(a =>
-                a._2.copy(
-                  modules = prerequisitesModules
-                    .filter(_.prerequisites == a._1)
-                    .map(_.module)
-                    .toList,
-                  pos = prerequisitesPOS
-                    .filter(_.prerequisites == a._1)
-                    .map(_.po)
-                    .toList
-                )
-              ),
-              requiredPrerequisite.map(a =>
-                a._2.copy(
-                  modules = prerequisitesModules
-                    .filter(_.prerequisites == a._1)
-                    .map(_.module)
-                    .toList,
-                  pos = prerequisitesPOS
-                    .filter(_.prerequisites == a._1)
-                    .map(_.po)
-                    .toList
-                )
+                  ),
+                  m.examiner,
+                  m.examPhases,
+                  ModulePrerequisitesProtocol(
+                    recommendedPrerequisite.map(a =>
+                      a._2.copy(
+                        modules = prerequisitesModules
+                          .filter(_.prerequisites == a._1)
+                          .map(_.module)
+                          .toList,
+                        pos = prerequisitesPOS
+                          .filter(_.prerequisites == a._1)
+                          .map(_.po)
+                          .toList
+                      )
+                    ),
+                    requiredPrerequisite.map(a =>
+                      a._2.copy(
+                        modules = prerequisitesModules
+                          .filter(_.prerequisites == a._1)
+                          .map(_.module)
+                          .toList,
+                        pos = prerequisitesPOS
+                          .filter(_.prerequisites == a._1)
+                          .map(_.po)
+                          .toList
+                      )
+                    )
+                  ),
+                  ModulePOProtocol(
+                    poMandatory.toList,
+                    poOptional.toList
+                  ),
+                  competences.toList,
+                  globalCriteria.toList,
+                  taughtWith.toList
+                ),
+                m.deContent,
+                m.enContent
               )
-            ),
-            ModulePOProtocol(
-              poMandatory.toList,
-              poOptional.toList
-            ),
-            competences.toList,
-            globalCriteria.toList,
-            taughtWith.toList
-          ),
-          m.deContent,
-          m.enContent
-        )
-    }.toSeq))
+          }
+          .toSeq
+      )
+    )
   }
 }

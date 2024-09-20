@@ -1,12 +1,10 @@
 package controllers
 
-import models.core.Faculty
 import models.core.Identity
 import models.core.PersonStatus
 import org.scalatest.wordspec.AnyWordSpec
 import play.api.libs.json.JsArray
 import play.api.libs.json.JsString
-import play.api.libs.json.Writes
 
 final class IdentityFormatSpec extends AnyWordSpec {
   "A Person Format Spec" should {

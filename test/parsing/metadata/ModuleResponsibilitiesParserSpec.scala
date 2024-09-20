@@ -2,18 +2,14 @@ package parsing.metadata
 
 import cats.data.NonEmptyList
 import helper.FakeIdentities
-import org.scalatest.EitherValues
 import org.scalatest.wordspec.AnyWordSpec
+import org.scalatest.EitherValues
 import parsing.ParserSpecHelper
 
-class ModuleResponsibilitiesParserSpec
-    extends AnyWordSpec
-    with ParserSpecHelper
-    with EitherValues
-    with FakeIdentities {
+class ModuleResponsibilitiesParserSpec extends AnyWordSpec with ParserSpecHelper with EitherValues with FakeIdentities {
 
   val parser = ModuleResponsibilitiesParser.parser
-  val raw = ModuleResponsibilitiesParser.raw
+  val raw    = ModuleResponsibilitiesParser.raw
 
   "A Responsibilities Parser" should {
     "return one coordinator and one lecturer" in {

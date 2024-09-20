@@ -1,7 +1,9 @@
-import play.api.Logger
-import play.api.libs.json.{JsPath, JsValue, JsonValidationError}
-
 import scala.collection.Seq
+
+import play.api.libs.json.JsPath
+import play.api.libs.json.JsValue
+import play.api.libs.json.JsonValidationError
+import play.api.Logger
 
 package object webhook {
   case class HandleEvent(json: JsValue) extends AnyVal

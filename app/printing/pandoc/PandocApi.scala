@@ -1,14 +1,18 @@
 package printing.pandoc
 
-import printing.PrintingLanguage
-
-import java.io.{ByteArrayInputStream, File}
+import java.io.ByteArrayInputStream
+import java.io.File
 import java.nio.charset.StandardCharsets
 import java.util.UUID
 import javax.inject.Singleton
+
 import scala.sys.process._
 import scala.util.control.NonFatal
-import scala.util.{Failure, Success, Try}
+import scala.util.Failure
+import scala.util.Success
+import scala.util.Try
+
+import printing.PrintingLanguage
 
 @Singleton
 final class PandocApi(
@@ -23,11 +27,11 @@ final class PandocApi(
 
   def toLatex(
       input: String
-  ): (Either[(Throwable, String), String]) = {
+  ): Either[(Throwable, String), String] = {
     val inputStream = toStream(input)
-    val process = texCmd #< inputStream
-    val sdtErr = new StringBuilder()
-    val logger = ProcessLogger(_ => {}, sdtErr.append(_))
+    val process     = texCmd #< inputStream
+    val sdtErr      = new StringBuilder()
+    val logger      = ProcessLogger(_ => {}, sdtErr.append(_))
     try {
       Right(process !! logger)
     } catch {
@@ -86,8 +90,8 @@ final class PandocApi(
       inputStream: ByteArrayInputStream
   ): Either[Throwable, PrinterOutput] = {
     val process = cmd #< inputStream
-    var output = ""
-    val logger = ProcessLogger(_ => (), err => output += s"$err\n")
+    var output  = ""
+    val logger  = ProcessLogger(_ => (), err => output += s"$err\n")
     Try(process !! logger) match {
       case Failure(e) =>
         Left(new Throwable(output, e))
@@ -104,9 +108,9 @@ final class PandocApi(
       outputFolderPath: String
   ): Either[Throwable, PrinterOutput] = {
     val filename = s"$outputFolderPath/$id.$extension"
-    val process = new File(filename) #< cmd #< inputStream
-    var output = ""
-    val logger = ProcessLogger(_ => (), err => output += s"$err\n")
+    val process  = new File(filename) #< cmd #< inputStream
+    var output   = ""
+    val logger   = ProcessLogger(_ => (), err => output += s"$err\n")
     Try(process ! logger) match {
       case Failure(e) =>
         Left(new Throwable(output, e))

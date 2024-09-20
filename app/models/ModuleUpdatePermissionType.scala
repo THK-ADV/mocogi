@@ -7,19 +7,19 @@ sealed trait ModuleUpdatePermissionType extends IDLabel {
   def id: String
   def deLabel: String
   def enLabel: String
-  def isInherited = this == ModuleUpdatePermissionType.Inherited
+  def isInherited       = this == ModuleUpdatePermissionType.Inherited
   override def toString = id
 }
 
 object ModuleUpdatePermissionType {
   case object Inherited extends ModuleUpdatePermissionType {
-    override def id: String = "inherited"
+    override def id: String      = "inherited"
     override def deLabel: String = "Automatisch gesetzt"
     override def enLabel: String = "Inherited"
   }
 
   case object Granted extends ModuleUpdatePermissionType {
-    override def id: String = "granted"
+    override def id: String      = "granted"
     override def deLabel: String = "Explizit vergeben"
     override def enLabel: String = "Granted"
   }

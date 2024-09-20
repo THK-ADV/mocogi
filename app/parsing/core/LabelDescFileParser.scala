@@ -1,6 +1,7 @@
 package parsing.core
 
-import io.circe.{Decoder, HCursor}
+import io.circe.Decoder
+import io.circe.HCursor
 import models.core.IDLabelDesc
 
 trait LabelDescFileParser[A <: IDLabelDesc] extends YamlFileParser[A] {
@@ -14,8 +15,8 @@ trait LabelDescFileParser[A <: IDLabelDesc] extends YamlFileParser[A] {
       for {
         deLabel <- obj.get[String]("de_label")
         enLabel <- obj.get[String]("en_label")
-        deDesc <- obj.getOrElse[String]("de_desc")("")
-        enDesc <- obj.getOrElse[String]("en_desc")("")
+        deDesc  <- obj.getOrElse[String]("de_desc")("")
+        enDesc  <- obj.getOrElse[String]("en_desc")("")
       } yield makeType(key, deLabel.trim, enLabel.trim, deDesc.trim, enDesc.trim)
     }
 }

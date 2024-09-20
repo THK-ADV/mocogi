@@ -1,12 +1,16 @@
 package auth
 
+import javax.inject.Inject
+import javax.inject.Singleton
+
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+import scala.util.Failure
+import scala.util.Success
+
 import play.api.libs.json.Json
 import play.api.mvc.*
 import play.api.mvc.Results.Unauthorized
-
-import javax.inject.{Inject, Singleton}
-import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Failure, Success}
 
 @Singleton
 case class AuthorizationAction @Inject() (

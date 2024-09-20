@@ -5,7 +5,8 @@ import models.core.ModuleType
 object ModuleTypeFileParser extends LabelFileParser[ModuleType] {
   def parser() = super.fileParser()
 
-  override protected def makeType = { case (id, deLabel, enLabel) =>
-    ModuleType(id, deLabel, enLabel)
+  protected override def makeType = {
+    case (id, deLabel, enLabel) =>
+      ModuleType(id, deLabel, enLabel)
   }
 }

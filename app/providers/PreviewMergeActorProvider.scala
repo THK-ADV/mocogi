@@ -1,12 +1,15 @@
 package providers
 
+import javax.inject.Inject
+import javax.inject.Provider
+import javax.inject.Singleton
+
+import scala.concurrent.ExecutionContext
+
 import catalog.PreviewMergeActor
 import database.repo.ModuleCatalogGenerationRequestRepository
 import git.api.GitMergeRequestApiService
 import org.apache.pekko.actor.ActorSystem
-
-import javax.inject.{Inject, Provider, Singleton}
-import scala.concurrent.ExecutionContext
 
 @Singleton
 final class PreviewMergeActorProvider @Inject() (

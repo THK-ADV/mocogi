@@ -1,14 +1,17 @@
 package printing.yaml
 
+import java.util.UUID
+import javax.inject.Singleton
+
 import cats.data.NonEmptyList
 import models.*
 import parsing.metadata.*
 import parsing.types.ModuleParticipants
 import printer.Printer
-import printer.Printer.{always, newline, prefix, whitespace}
-
-import java.util.UUID
-import javax.inject.Singleton
+import printer.Printer.always
+import printer.Printer.newline
+import printer.Printer.prefix
+import printer.Printer.whitespace
 
 // TODO replace all keys with those from Parser
 
@@ -32,54 +35,55 @@ final class MetadataYamlPrinter(identLevel: Int) {
     Ordering.by[ModulePOOptionalProtocol, String](_.po)
 
   def printer(versionScheme: VersionScheme): Printer[(UUID, MetadataProtocol)] =
-    Printer { case ((id, metadata), input) =>
-      opener(versionScheme)
-        .skip(this.id(id))
-        .skip(title(metadata.title))
-        .skip(abbreviation(metadata.abbrev))
-        .skip(moduleType(metadata.moduleType))
-        .skipOpt(metadata.moduleRelation.map(moduleRelation))
-        .skip(ects(metadata.ects))
-        .skip(language(metadata.language))
-        .skip(duration(metadata.duration))
-        .skip(frequency(metadata.season))
-        .skip(
-          responsibilities(
-            metadata.moduleManagement,
-            metadata.lecturers
+    Printer {
+      case ((id, metadata), input) =>
+        opener(versionScheme)
+          .skip(this.id(id))
+          .skip(title(metadata.title))
+          .skip(abbreviation(metadata.abbrev))
+          .skip(moduleType(metadata.moduleType))
+          .skipOpt(metadata.moduleRelation.map(moduleRelation))
+          .skip(ects(metadata.ects))
+          .skip(language(metadata.language))
+          .skip(duration(metadata.duration))
+          .skip(frequency(metadata.season))
+          .skip(
+            responsibilities(
+              metadata.moduleManagement,
+              metadata.lecturers
+            )
           )
-        )
-        .skipOpt(
-          NonEmptyList
-            .fromList(metadata.assessmentMethods.mandatory)
-            .map(assessmentMethodsMandatory)
-        )
-        .skipOpt(
-          NonEmptyList
-            .fromList(metadata.assessmentMethods.optional)
-            .map(assessmentMethodsOptional)
-        )
-        .skip(examiner(metadata.examiner))
-        .skip(examPhases(metadata.examPhases))
-        .skip(workload(metadata.workload))
-        .skipOpt(
-          metadata.prerequisites.recommended.map(recommendedPrerequisites)
-        )
-        .skipOpt(
-          metadata.prerequisites.required.map(requiredPrerequisites)
-        )
-        .skip(status(metadata.status))
-        .skip(location(metadata.location))
-        .skipOpt(NonEmptyList.fromList(metadata.po.mandatory).map(poMandatory))
-        .skipOpt(NonEmptyList.fromList(metadata.po.optional).map(poOptional))
-        .skipOpt(metadata.participants.map(participants))
-        .skipOpt(NonEmptyList.fromList(metadata.competences).map(competences))
-        .skipOpt(
-          NonEmptyList.fromList(metadata.globalCriteria).map(globalCriteria)
-        )
-        .skipOpt(NonEmptyList.fromList(metadata.taughtWith).map(taughtWith))
-        .skip(closer())
-        .print((), input)
+          .skipOpt(
+            NonEmptyList
+              .fromList(metadata.assessmentMethods.mandatory)
+              .map(assessmentMethodsMandatory)
+          )
+          .skipOpt(
+            NonEmptyList
+              .fromList(metadata.assessmentMethods.optional)
+              .map(assessmentMethodsOptional)
+          )
+          .skip(examiner(metadata.examiner))
+          .skip(examPhases(metadata.examPhases))
+          .skip(workload(metadata.workload))
+          .skipOpt(
+            metadata.prerequisites.recommended.map(recommendedPrerequisites)
+          )
+          .skipOpt(
+            metadata.prerequisites.required.map(requiredPrerequisites)
+          )
+          .skip(status(metadata.status))
+          .skip(location(metadata.location))
+          .skipOpt(NonEmptyList.fromList(metadata.po.mandatory).map(poMandatory))
+          .skipOpt(NonEmptyList.fromList(metadata.po.optional).map(poOptional))
+          .skipOpt(metadata.participants.map(participants))
+          .skipOpt(NonEmptyList.fromList(metadata.competences).map(competences))
+          .skipOpt(
+            NonEmptyList.fromList(metadata.globalCriteria).map(globalCriteria)
+          )
+          .skipOpt(NonEmptyList.fromList(metadata.taughtWith).map(taughtWith))
+          .skip(closer())
+          .print((), input)
     }
 
   private def entry(key: String, value: String) =
@@ -120,10 +124,7 @@ final class MetadataYamlPrinter(identLevel: Int) {
       list: NonEmptyList[A],
       prefixLabel: String,
       identLevel: Int
-  )(implicit
-      toString: A => String,
-      ord: Ordering[A]
-  ) = {
+  )(implicit toString: A => String, ord: Ordering[A]) = {
     def value(a: A) =
       if (prefixLabel.isEmpty) toString(a)
       else s"$prefixLabel.${toString(a)}"

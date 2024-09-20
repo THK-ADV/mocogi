@@ -1,12 +1,15 @@
 package providers
 
+import javax.inject.Inject
+import javax.inject.Provider
+import javax.inject.Singleton
+
+import scala.concurrent.ExecutionContext
+
 import git.publisher.ModulePublisher
 import git.subscriber.ModuleSubscribers
 import org.apache.pekko.actor.ActorSystem
 import service.MetadataPipeline
-
-import javax.inject.{Inject, Provider, Singleton}
-import scala.concurrent.ExecutionContext
 
 @Singleton
 final class ModulePublisherProvider @Inject() (

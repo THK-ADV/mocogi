@@ -1,9 +1,10 @@
 package models
 
-import auth.CampusId
-import play.api.libs.json.{Json, Writes}
-
 import java.util.UUID
+
+import auth.CampusId
+import play.api.libs.json.Json
+import play.api.libs.json.Writes
 
 case class ModuleUpdatePermission(
     moduleId: UUID,

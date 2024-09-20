@@ -1,10 +1,11 @@
 package database.repo
 
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+
 import play.api.db.slick.HasDatabaseConfigProvider
 import slick.jdbc.JdbcProfile
 import slick.jdbc.PostgresProfile.api.Table
-
-import scala.concurrent.{ExecutionContext, Future}
 
 trait Repository[Input, Output, T <: Table[Input]] {
   self: HasDatabaseConfigProvider[JdbcProfile] =>
@@ -22,13 +23,13 @@ trait Repository[Input, Output, T <: Table[Input]] {
     retrieve(tableQuery)
 
   def create(input: Input): Future[Input] =
-    db.run(tableQuery returning tableQuery += input)
+    db.run(tableQuery.returning(tableQuery) += input)
 
   def createOrUpdate(l: Input): Future[Input] =
     db.run(createOrUpdateQuery(l))
 
   private def createOrUpdateQuery(l: Input) =
-    (tableQuery returning tableQuery).insertOrUpdate(l).map(_ => l)
+    tableQuery.returning(tableQuery).insertOrUpdate(l).map(_ => l)
 
   def createOrUpdateMany(
       ls: Seq[Input]
@@ -36,5 +37,5 @@ trait Repository[Input, Output, T <: Table[Input]] {
     db.run(DBIO.sequence(ls.map(l => createOrUpdateQuery(l))))
 
   def createMany(ls: Seq[Input]): Future[Seq[Input]] =
-    db.run(DBIO.sequence(ls.map(l => tableQuery returning tableQuery += l)))
+    db.run(DBIO.sequence(ls.map(l => tableQuery.returning(tableQuery) += l)))
 }

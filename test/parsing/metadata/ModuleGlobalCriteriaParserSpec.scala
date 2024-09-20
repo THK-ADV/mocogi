@@ -2,11 +2,11 @@ package parsing.metadata
 
 import helper.FakeGlobalCriteria
 import models.core.ModuleGlobalCriteria
-import org.scalatest.EitherValues
 import org.scalatest.wordspec.AnyWordSpec
-import parsing.ParserSpecHelper
+import org.scalatest.EitherValues
 import parsing.metadata.ModuleGlobalCriteriaParser.parser
 import parsing.metadata.ModuleGlobalCriteriaParser.raw
+import parsing.ParserSpecHelper
 
 final class ModuleGlobalCriteriaParserSpec
     extends AnyWordSpec
@@ -57,7 +57,7 @@ final class ModuleGlobalCriteriaParserSpec
     }
 
     "parse global criteria raw" in {
-      val input = "global_criteria: global_criteria.internationalization"
+      val input       = "global_criteria: global_criteria.internationalization"
       val (res, rest) = raw.parse(input)
       assert(rest.isEmpty)
       assert(
@@ -68,7 +68,7 @@ final class ModuleGlobalCriteriaParserSpec
     }
 
     "parse no global criteria if empty" in {
-      val input = "global_criteria:"
+      val input       = "global_criteria:"
       val (res, rest) = parser.parse(input)
       assert(rest.isEmpty)
       assert(res.value.isEmpty)

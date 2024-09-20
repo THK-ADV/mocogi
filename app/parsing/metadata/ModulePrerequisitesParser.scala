@@ -1,29 +1,29 @@
 package parsing.metadata
 
+import java.util.UUID
+
 import models.core.PO
-import models.{ModulePrerequisiteEntryProtocol, ModulePrerequisitesProtocol}
+import models.ModulePrerequisiteEntryProtocol
+import models.ModulePrerequisitesProtocol
 import parser.Parser
 import parser.Parser.*
 import parser.ParserOps.*
-import parsing.types.{ParsedPrerequisiteEntry, ParsedPrerequisites}
-import parsing.{
-  multipleValueParser,
-  removeIndentation,
-  stringForKey,
-  uuidParser
-}
-
-import java.util.UUID
+import parsing.multipleValueParser
+import parsing.removeIndentation
+import parsing.stringForKey
+import parsing.types.ParsedPrerequisiteEntry
+import parsing.types.ParsedPrerequisites
+import parsing.uuidParser
 
 object ModulePrerequisitesParser {
 
-  def recommendedKey = "recommended_prerequisites"
-  def requiredKey = "required_prerequisites"
-  def studyProgramsKey = "study_programs"
-  def modulesKey = "modules"
+  def recommendedKey      = "recommended_prerequisites"
+  def requiredKey         = "required_prerequisites"
+  def studyProgramsKey    = "study_programs"
+  def modulesKey          = "modules"
   def studyProgramsPrefix = "study_program."
-  def modulesPrefix = "module."
-  def textKey = "text"
+  def modulesPrefix       = "module."
+  def textKey             = "text"
 
   private def textParser: Parser[String] =
     stringForKey(textKey).option
@@ -58,7 +58,7 @@ object ModulePrerequisitesParser {
         .many()
     prefix(s"$studyProgramsKey:")
       .skip(zeroOrMoreSpaces)
-      .take(singleParser.map(a => List(a)) or dashes)
+      .take(singleParser.map(a => List(a)).or(dashes))
       .option
       .map(_.getOrElse(Nil))
   }
@@ -83,14 +83,10 @@ object ModulePrerequisitesParser {
       .take(studyProgramsParserRaw)
       .map((ModulePrerequisiteEntryProtocol.apply _).tupled)
 
-  def recommendedPrerequisitesParser(implicit
-      xs: Seq[PO]
-  ): Parser[ParsedPrerequisiteEntry] =
+  def recommendedPrerequisitesParser(implicit xs: Seq[PO]): Parser[ParsedPrerequisiteEntry] =
     parser(recommendedKey)
 
-  def requiredPrerequisitesParser(implicit
-      xs: Seq[PO]
-  ): Parser[ParsedPrerequisiteEntry] =
+  def requiredPrerequisitesParser(implicit xs: Seq[PO]): Parser[ParsedPrerequisiteEntry] =
     parser(requiredKey)
 
   def parser(implicit xs: Seq[PO]) =
@@ -100,8 +96,7 @@ object ModulePrerequisitesParser {
       .skip(zeroOrMoreSpaces)
       .map(ParsedPrerequisites.apply)
 
-  def recommendedPrerequisitesParserRaw
-      : Parser[ModulePrerequisiteEntryProtocol] =
+  def recommendedPrerequisitesParserRaw: Parser[ModulePrerequisiteEntryProtocol] =
     raw(recommendedKey)
 
   def requiredPrerequisitesParserRaw: Parser[ModulePrerequisiteEntryProtocol] =

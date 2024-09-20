@@ -1,12 +1,18 @@
 package database.view
 
-import models.core.{Degree, IDLabel}
-import models.{POCore, StudyProgramView}
-import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfigProvider}
-import slick.jdbc.JdbcProfile
+import javax.inject.Inject
+import javax.inject.Singleton
 
-import javax.inject.{Inject, Singleton}
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+
+import models.core.Degree
+import models.core.IDLabel
+import models.POCore
+import models.StudyProgramView
+import play.api.db.slick.DatabaseConfigProvider
+import play.api.db.slick.HasDatabaseConfigProvider
+import slick.jdbc.JdbcProfile
 
 @Singleton
 final class StudyProgramViewRepository @Inject() (
@@ -23,8 +29,7 @@ final class StudyProgramViewRepository @Inject() (
   def all(): Future[Seq[StudyProgramView]] =
     db.run(tableQuery.result)
 
-  final class StudyProgramViewTable(tag: Tag)
-      extends Table[StudyProgramView](tag, name) {
+  final class StudyProgramViewTable(tag: Tag) extends Table[StudyProgramView](tag, name) {
 
     def fullPo = specializationId.fold(poId)(identity)
 

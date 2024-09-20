@@ -1,12 +1,15 @@
 package controllers
 
+import javax.inject.Inject
+import javax.inject.Singleton
+
+import scala.concurrent.ExecutionContext
+
 import models.core.Season
 import play.api.libs.json.Writes
-import play.api.mvc.{AbstractController, ControllerComponents}
+import play.api.mvc.AbstractController
+import play.api.mvc.ControllerComponents
 import service.core.SeasonService
-
-import javax.inject.{Inject, Singleton}
-import scala.concurrent.ExecutionContext
 
 @Singleton
 final class SeasonController @Inject() (
@@ -15,5 +18,5 @@ final class SeasonController @Inject() (
     implicit val ctx: ExecutionContext
 ) extends AbstractController(cc)
     with YamlController[Season] {
-  override implicit val writes: Writes[Season] = Season.writes
+  implicit override val writes: Writes[Season] = Season.writes
 }

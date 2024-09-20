@@ -1,14 +1,18 @@
 package database.repo.core
 
+import javax.inject.Singleton
+
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+
 import com.google.inject.Inject
 import database.table.core.StudyProgramPersonTable
 import database.view.StudyProgramViewRepository
-import models.{StudyProgramPrivileges, UniversityRole}
-import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfigProvider}
+import models.StudyProgramPrivileges
+import models.UniversityRole
+import play.api.db.slick.DatabaseConfigProvider
+import play.api.db.slick.HasDatabaseConfigProvider
 import slick.jdbc.JdbcProfile
-
-import javax.inject.Singleton
-import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 final class StudyProgramPersonRepository @Inject() (
@@ -25,9 +29,9 @@ final class StudyProgramPersonRepository @Inject() (
 
   def directorsQuery(person: String) =
     for {
-      q <- studyProgramPersonTable.filter(_.person === person)
+      q  <- studyProgramPersonTable.filter(_.person === person)
       sp <- q.studyProgramFk
-      g <- sp.degreeFk
+      g  <- sp.degreeFk
     } yield (q, sp, g)
 
   def hasRoles(
@@ -55,11 +59,12 @@ final class StudyProgramPersonRepository @Inject() (
         .join(studyProgramViewTable)
         .on(_.studyProgram === _.studyProgramId)
         .result
-        .map(_.groupBy(_._2.fullPoId.id).map { case (_, xs) =>
-          assert(xs.size <= UniversityRole.all().size)
-          val studyProgram = xs.head._2
-          val roles = xs.map(_._1.role)
-          StudyProgramPrivileges(studyProgram, roles.toSet)
+        .map(_.groupBy(_._2.fullPoId.id).map {
+          case (_, xs) =>
+            assert(xs.size <= UniversityRole.all().size)
+            val studyProgram = xs.head._2
+            val roles        = xs.map(_._1.role)
+            StudyProgramPrivileges(studyProgram, roles.toSet)
         })
     )
 }

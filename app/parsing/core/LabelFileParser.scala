@@ -1,6 +1,7 @@
 package parsing.core
 
-import io.circe.{Decoder, HCursor}
+import io.circe.Decoder
+import io.circe.HCursor
 import models.core.IDLabel
 
 trait LabelFileParser[A <: IDLabel] extends YamlFileParser[A] {

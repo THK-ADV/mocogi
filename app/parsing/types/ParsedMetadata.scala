@@ -1,11 +1,17 @@
 package parsing.types
 
-import cats.data.NonEmptyList
-import models.Examiner
-import models.core.ExamPhases.ExamPhase
-import models.core.{ModuleCompetence, ModuleGlobalCriteria, ModuleLanguage, ModuleLocation, ModuleStatus, ModuleType, Season}
-
 import java.util.UUID
+
+import cats.data.NonEmptyList
+import models.core.ExamPhases.ExamPhase
+import models.core.ModuleCompetence
+import models.core.ModuleGlobalCriteria
+import models.core.ModuleLanguage
+import models.core.ModuleLocation
+import models.core.ModuleStatus
+import models.core.ModuleType
+import models.core.Season
+import models.Examiner
 
 case class ParsedMetadata(
     id: UUID,

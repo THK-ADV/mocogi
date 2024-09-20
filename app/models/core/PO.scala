@@ -1,9 +1,10 @@
 package models.core
 
-import controllers.JsonNullWritable
-import play.api.libs.json.{Json, Writes}
-
 import java.time.LocalDate
+
+import controllers.JsonNullWritable
+import play.api.libs.json.Json
+import play.api.libs.json.Writes
 
 case class PO(
     id: String,

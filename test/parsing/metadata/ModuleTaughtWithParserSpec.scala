@@ -1,21 +1,18 @@
 package parsing.metadata
 
-import org.scalatest.EitherValues
-import org.scalatest.wordspec.AnyWordSpec
-import parsing.ParserSpecHelper
-import parsing.metadata.ModuleTaughtWithParser.parser
-
 import java.util.UUID
 
-final class ModuleTaughtWithParserSpec
-    extends AnyWordSpec
-    with ParserSpecHelper
-    with EitherValues {
+import org.scalatest.wordspec.AnyWordSpec
+import org.scalatest.EitherValues
+import parsing.metadata.ModuleTaughtWithParser.parser
+import parsing.ParserSpecHelper
+
+final class ModuleTaughtWithParserSpec extends AnyWordSpec with ParserSpecHelper with EitherValues {
 
   "A Taught with Parser" should {
     "parse a single module which is taught with" in {
-      val m1 = UUID.randomUUID
-      val input = s"taught_with: module.$m1"
+      val m1          = UUID.randomUUID
+      val input       = s"taught_with: module.$m1"
       val (res, rest) = parser.parse(input)
       assert(rest.isEmpty)
       assert(res.value == List(m1))
@@ -26,8 +23,8 @@ final class ModuleTaughtWithParserSpec
       val m2 = UUID.randomUUID
       val input =
         s"""taught_with:
-          |  - module.$m1
-          |  - module.$m2""".stripMargin
+           |  - module.$m1
+           |  - module.$m2""".stripMargin
       val (res, rest) = parser.parse(input)
       assert(rest.isEmpty)
       assert(res.value == List(m1, m2))

@@ -1,7 +1,8 @@
 package catalog
 
 import models.core.Label
-import play.api.libs.json.{Json, Writes}
+import play.api.libs.json.Json
+import play.api.libs.json.Writes
 
 trait Semester extends Label {
   def id: String = s"${abbrev}_$year"
@@ -41,9 +42,9 @@ object Semester {
   implicit def writes: Writes[Semester] =
     s =>
       Json.obj(
-        "id" -> s.id,
-        "abbrev" -> s.abbrev,
-        "year" -> s.year,
+        "id"      -> s.id,
+        "abbrev"  -> s.abbrev,
+        "year"    -> s.year,
         "deLabel" -> s.deLabel,
         "enLabel" -> s.enLabel
       )

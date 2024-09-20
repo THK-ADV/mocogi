@@ -1,8 +1,10 @@
 package providers
 
-import printing.pandoc.PandocApi
+import javax.inject.Inject
+import javax.inject.Provider
+import javax.inject.Singleton
 
-import javax.inject.{Inject, Provider, Singleton}
+import printing.pandoc.PandocApi
 
 @Singleton
 final class MarkdownConverterProvider @Inject() (

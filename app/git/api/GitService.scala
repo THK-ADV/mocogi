@@ -1,10 +1,12 @@
 package git.api
 
-import git.{Branch, GitConfig, GitFilePath}
-import play.api.libs.ws.WSResponse
-
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
+
+import git.Branch
+import git.GitConfig
+import git.GitFilePath
+import play.api.libs.ws.WSResponse
 
 trait GitService {
   def config: GitConfig

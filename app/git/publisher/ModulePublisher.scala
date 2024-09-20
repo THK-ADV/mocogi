@@ -1,16 +1,21 @@
 package git.publisher
 
-import git.publisher.ModulePublisher.NotifySubscribers
-import git.subscriber.ModuleSubscribers
-import git.{GitFile, GitFileContent}
-import org.apache.pekko.actor.{Actor, ActorRef, Props}
-import play.api.Logging
-import service._
-
 import java.time.LocalDateTime
 import javax.inject.Singleton
+
 import scala.concurrent.ExecutionContext
-import scala.util.{Failure, Success}
+import scala.util.Failure
+import scala.util.Success
+
+import git.publisher.ModulePublisher.NotifySubscribers
+import git.subscriber.ModuleSubscribers
+import git.GitFile
+import git.GitFileContent
+import org.apache.pekko.actor.Actor
+import org.apache.pekko.actor.ActorRef
+import org.apache.pekko.actor.Props
+import play.api.Logging
+import service._
 
 object ModulePublisher {
   def props(
@@ -32,24 +37,26 @@ object ModulePublisher {
   ) extends Actor
       with Logging {
 
-    override def receive = { case NotifySubscribers(changes, lastModified) =>
-      val prints = changes.map(a => Print(a._2.value))
-      pipeline.parseValidateMany(prints) onComplete {
-        case Success(validates) =>
-          val modules = validates.map(_.map { case (_, module) =>
-            val m = module.normalize()
-            val f = changes.find(_._1.id == m.metadata.id).get._1
-            (m, f)
-          })
-          modules match {
-            case Right(modules) =>
-              subscribers.handle(modules, lastModified)
-            case Left(errs) =>
-              logPipelineErrors(errs)
-          }
-        case Failure(t) =>
-          logFutureFailure(t)
-      }
+    override def receive = {
+      case NotifySubscribers(changes, lastModified) =>
+        val prints = changes.map(a => Print(a._2.value))
+        pipeline.parseValidateMany(prints).onComplete {
+          case Success(validates) =>
+            val modules = validates.map(_.map {
+              case (_, module) =>
+                val m = module.normalize()
+                val f = changes.find(_._1.id == m.metadata.id).get._1
+                (m, f)
+            })
+            modules match {
+              case Right(modules) =>
+                subscribers.handle(modules, lastModified)
+              case Left(errs) =>
+                logPipelineErrors(errs)
+            }
+          case Failure(t) =>
+            logFutureFailure(t)
+        }
     }
 
     private def logPipelineErrors(errs: Seq[PipelineError]): Unit =

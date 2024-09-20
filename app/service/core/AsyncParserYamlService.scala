@@ -1,8 +1,8 @@
 package service.core
 
-import database.repo.Repository
-
 import scala.concurrent.Future
+
+import database.repo.Repository
 
 trait AsyncParserYamlService[A] extends YamlService[A] {
   def repo: Repository[A, A, _]

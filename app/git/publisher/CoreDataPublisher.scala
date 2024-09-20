@@ -1,21 +1,28 @@
 package git.publisher
 
-import database.view.{ModuleViewRepository, StudyProgramViewRepository}
+import javax.inject.Singleton
+
+import scala.collection.mutable.ListBuffer
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+import scala.util.Failure
+import scala.util.Success
+
+import database.view.ModuleViewRepository
+import database.view.StudyProgramViewRepository
 import git.publisher.CoreDataPublisher.Handle
 import git.subscriber.CoreDataPublishActor
-import git.{GitFile, GitFileContent}
+import git.GitFile
+import git.GitFileContent
 import models.core._
-import monocle.Lens
 import monocle.macros.GenLens
+import monocle.Lens
 import ops.EitherOps.EThrowableOps
-import org.apache.pekko.actor.{Actor, ActorRef, Props}
+import org.apache.pekko.actor.Actor
+import org.apache.pekko.actor.ActorRef
+import org.apache.pekko.actor.Props
 import play.api.Logging
 import service.core._
-
-import javax.inject.Singleton
-import scala.collection.mutable.ListBuffer
-import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Failure, Success}
 
 object CoreDataPublisher {
   def props(
@@ -64,21 +71,21 @@ object CoreDataPublisher {
     )
 
   private object Filenames {
-    val location = "location"
-    val lang = "lang"
-    val status = "status"
-    val assessment = "assessment"
-    val module_type = "module_type"
-    val season = "season"
-    val person = "person"
-    val focus_area = "focus_area"
+    val location        = "location"
+    val lang            = "lang"
+    val status          = "status"
+    val assessment      = "assessment"
+    val module_type     = "module_type"
+    val season          = "season"
+    val person          = "person"
+    val focus_area      = "focus_area"
     val global_criteria = "global_criteria"
-    val po = "po"
-    val competence = "competence"
-    val faculty = "faculty"
-    val grade = "grade"
-    val program = "program"
-    val specialization = "specialization"
+    val po              = "po"
+    val competence      = "competence"
+    val faculty         = "faculty"
+    val grade           = "grade"
+    val program         = "program"
+    val specialization  = "specialization"
   }
 
   private class Graph[A](vertices: List[A], edges: List[(Int, Int)]) {
@@ -93,7 +100,7 @@ object CoreDataPublisher {
 
     def topoSort(): List[A] = {
       val result = ListBuffer.empty[A]
-      val todo = ListBuffer.tabulate(numVertices)(identity)
+      val todo   = ListBuffer.tabulate(numVertices)(identity)
       while (todo.nonEmpty) {
         val indexToRemove = todo.indexWhere(r => !hasDependency(r, todo))
         if (indexToRemove != -1) {
@@ -108,21 +115,21 @@ object CoreDataPublisher {
   }
 
   private def coreFileDependencies = Map(
-    Filenames.person -> List(Filenames.faculty),
-    Filenames.program -> List(Filenames.grade, Filenames.person),
-    Filenames.po -> List(Filenames.program),
+    Filenames.person         -> List(Filenames.faculty),
+    Filenames.program        -> List(Filenames.grade, Filenames.person),
+    Filenames.po             -> List(Filenames.program),
     Filenames.specialization -> List(Filenames.po),
-    Filenames.focus_area -> List(Filenames.program)
+    Filenames.focus_area     -> List(Filenames.program)
   )
 
   def toCreate(e: Seq[String], v: Seq[String]) =
-    v diff e
+    v.diff(e)
 
   def toDelete(e: Seq[String], v: List[String]) =
-    e diff v
+    e.diff(v)
 
   def toUpdate(e: Seq[String], v: List[String]) =
-    e intersect v
+    e.intersect(v)
 
   def split[A](
       allIds: Seq[String],
@@ -165,27 +172,28 @@ object CoreDataPublisher {
   ) extends Actor
       with Logging {
 
-    override def receive = { case Handle(coreFiles) =>
-      val order = topologicalSort(coreFiles)
-      val updates = order.foldLeft(Future.unit) {
-        case (acc, (filename, _, content)) =>
-          acc.flatMap(_ => createOrUpdate(filename, content))
-      }
-      val res = for {
-        _ <- updates
-        _ <- studyProgramViewRepository.refreshView()
-        _ <- moduleViewRepository.refreshView()
-      } yield ()
-      res onComplete {
-        case Success(_) => logger.info("finished!")
-        case Failure(t) => logFailure(t)
-      }
+    override def receive = {
+      case Handle(coreFiles) =>
+        val order = topologicalSort(coreFiles)
+        val updates = order.foldLeft(Future.unit) {
+          case (acc, (filename, _, content)) =>
+            acc.flatMap(_ => createOrUpdate(filename, content))
+        }
+        val res = for {
+          _ <- updates
+          _ <- studyProgramViewRepository.refreshView()
+          _ <- moduleViewRepository.refreshView()
+        } yield ()
+        res.onComplete {
+          case Success(_) => logger.info("finished!")
+          case Failure(t) => logFailure(t)
+        }
     }
 
     private def topologicalSort(
         coreFiles: List[(GitFile.CoreFile, GitFileContent)]
     ): Seq[(String, GitFile.CoreFile, GitFileContent)] = {
-      val deps = coreFileDependencies
+      val deps     = coreFileDependencies
       val vertices = coreFiles.map(_._1.path.fileName)
       val edges = vertices.flatMap { f =>
         deps.get(f) match {
@@ -217,9 +225,9 @@ object CoreDataPublisher {
           publish: (Seq[A], Seq[A], Seq[String]) => Unit
       ) =
         for {
-          parser <- yamlService.parser
+          parser       <- yamlService.parser
           parsedValues <- parser.parse(content.value)._1.toFuture
-          existing <- ids
+          existing     <- ids
           (toCreate, toUpdate, toDelete) = split[A](
             existing,
             parsedValues,
@@ -384,8 +392,8 @@ object CoreDataPublisher {
 
     private def logFailure(error: Throwable): Unit =
       logger.error(s"""failed to create or update core data file
-           |  - message: ${error.getMessage}
-           |  - trace: ${error.getStackTrace.mkString(
+                      |  - message: ${error.getMessage}
+                      |  - trace: ${error.getStackTrace.mkString(
                        "\n           "
                      )}""".stripMargin)
 

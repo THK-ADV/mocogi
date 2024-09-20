@@ -1,26 +1,27 @@
 package kafka
 
-import kafka.KafkaPublisher.{stringSerializer, uuidSerializer}
+import java.util.Properties
+import java.util.UUID
+
+import scala.annotation.unused
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+import scala.util.control.NonFatal
+
+import kafka.KafkaPublisher.stringSerializer
+import kafka.KafkaPublisher.uuidSerializer
 import monocle.Lens
 import ops.LoggerOps
-import org.apache.kafka.clients.admin.{AdminClient, DescribeClusterOptions}
-import org.apache.kafka.clients.producer.{
-  KafkaProducer,
-  ProducerConfig,
-  ProducerRecord
-}
-import org.apache.kafka.common.serialization.{
-  Serializer,
-  StringSerializer,
-  UUIDSerializer
-}
-import play.api.Logging
+import org.apache.kafka.clients.admin.AdminClient
+import org.apache.kafka.clients.admin.DescribeClusterOptions
+import org.apache.kafka.clients.producer.KafkaProducer
+import org.apache.kafka.clients.producer.ProducerConfig
+import org.apache.kafka.clients.producer.ProducerRecord
+import org.apache.kafka.common.serialization.Serializer
+import org.apache.kafka.common.serialization.StringSerializer
+import org.apache.kafka.common.serialization.UUIDSerializer
 import play.api.libs.json.Writes
-
-import java.util.{Properties, UUID}
-import scala.annotation.unused
-import scala.concurrent.{ExecutionContext, Future}
-import scala.util.control.NonFatal
+import play.api.Logging
 
 trait KafkaPublisher { self: Logging with LoggerOps =>
   private val props = buildProperties
@@ -48,7 +49,7 @@ trait KafkaPublisher { self: Logging with LoggerOps =>
       value: V
   ): Future[Unit] = {
     val record = new ProducerRecord(topic, key, value)
-    val f = producer.send(record)
+    val f      = producer.send(record)
     Future(f.get).map(_ => ())
   }
 
@@ -93,7 +94,7 @@ trait KafkaPublisher { self: Logging with LoggerOps =>
   @unused("for debug purposes only")
   protected def verifyConnection(): Boolean =
     try {
-      val client = AdminClient.create(props)
+      val client  = AdminClient.create(props)
       val options = new DescribeClusterOptions()
       options.timeoutMs(2000)
       val nodes = client.describeCluster(options).nodes().get()
@@ -114,6 +115,6 @@ trait KafkaPublisher { self: Logging with LoggerOps =>
 }
 
 object KafkaPublisher {
-  val uuidSerializer = new UUIDSerializer
+  val uuidSerializer   = new UUIDSerializer
   val stringSerializer = new StringSerializer
 }

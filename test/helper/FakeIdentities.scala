@@ -1,6 +1,7 @@
 package helper
 
-import models.core.{Identity, PersonStatus}
+import models.core.Identity
+import models.core.PersonStatus
 
 trait FakeIdentities extends FakeFaculties {
   implicit def fakeIdentities: Seq[Identity] = Seq(

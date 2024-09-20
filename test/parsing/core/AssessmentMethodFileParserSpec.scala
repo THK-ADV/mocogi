@@ -1,14 +1,12 @@
 package parsing.core
 
 import models.core.AssessmentMethod
-import org.scalatest.EitherValues
 import org.scalatest.wordspec.AnyWordSpec
-import parsing.{ParserSpecHelper, withFile0}
+import org.scalatest.EitherValues
+import parsing.withFile0
+import parsing.ParserSpecHelper
 
-class AssessmentMethodFileParserSpec
-    extends AnyWordSpec
-    with ParserSpecHelper
-    with EitherValues {
+class AssessmentMethodFileParserSpec extends AnyWordSpec with ParserSpecHelper with EitherValues {
 
   val parser = AssessmentMethodFileParser.parser()
 
@@ -92,10 +90,11 @@ class AssessmentMethodFileParserSpec
         "attendance",
         "verbal-cooperation"
       )
-      res.value.zip(ids).foreach { case (am, id) =>
-        assert(am.id == id)
-        assert(am.deLabel.nonEmpty)
-        assert(am.enLabel.isEmpty)
+      res.value.zip(ids).foreach {
+        case (am, id) =>
+          assert(am.id == id)
+          assert(am.deLabel.nonEmpty)
+          assert(am.enLabel.isEmpty)
       }
       assert(rest.isEmpty)
     }

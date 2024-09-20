@@ -1,12 +1,14 @@
 package service.core
 
+import javax.inject.Inject
+import javax.inject.Singleton
+
+import scala.concurrent.ExecutionContext
+
 import database.repo.core.GlobalCriteriaRepository
 import models.core.ModuleGlobalCriteria
 import parser.Parser
 import parsing.core.GlobalCriteriaFileParser
-
-import javax.inject.{Inject, Singleton}
-import scala.concurrent.ExecutionContext
 
 @Singleton
 final class GlobalCriteriaService @Inject() (

@@ -1,12 +1,14 @@
 package service.core
 
+import javax.inject.Inject
+import javax.inject.Singleton
+
+import scala.concurrent.ExecutionContext
+
 import database.repo.core.LocationRepository
 import models.core.ModuleLocation
 import parser.Parser
 import parsing.core.LocationFileParser
-
-import javax.inject.{Inject, Singleton}
-import scala.concurrent.ExecutionContext
 
 @Singleton
 final class LocationService @Inject() (

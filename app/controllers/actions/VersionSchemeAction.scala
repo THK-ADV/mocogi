@@ -1,16 +1,18 @@
 package controllers.actions
 
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+
 import controllers.actions.PersonAction.PersonRequest
 import parser.ParsingError
 import parsing.metadata.VersionSchemeParser
-import play.api.libs.json.{Json, Writes}
+import play.api.libs.json.Json
+import play.api.libs.json.Writes
 import play.api.mvc.ActionRefiner
 import play.api.mvc.Results.BadRequest
 
-import scala.concurrent.{ExecutionContext, Future}
-
-final class VersionSchemeAction(key: String)(implicit
-    val executionContext: ExecutionContext,
+final class VersionSchemeAction(key: String)(
+    implicit val executionContext: ExecutionContext,
     writes: Writes[ParsingError]
 ) extends ActionRefiner[PersonRequest, VersionSchemeRequest] {
 

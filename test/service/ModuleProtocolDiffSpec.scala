@@ -1,12 +1,13 @@
 package service
 
+import java.util.UUID
+
 import cats.data.NonEmptyList
 import models.*
 import models.core.ExamPhases.ExamPhase
 import org.scalatest.wordspec.AnyWordSpec
-import parsing.types.{ModuleContent, ModuleParticipants}
-
-import java.util.UUID
+import parsing.types.ModuleContent
+import parsing.types.ModuleParticipants
 
 final class ModuleProtocolDiffSpec extends AnyWordSpec {
   import service.modulediff.ModuleProtocolDiff.diff

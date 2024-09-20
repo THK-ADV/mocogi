@@ -2,18 +2,14 @@ package parsing.metadata
 
 import helper.FakeLanguages
 import models.core.ModuleLanguage
-import org.scalatest.EitherValues
 import org.scalatest.wordspec.AnyWordSpec
+import org.scalatest.EitherValues
 import parsing.ParserSpecHelper
 
-class ModuleLanguageParserSpec
-    extends AnyWordSpec
-    with ParserSpecHelper
-    with EitherValues
-    with FakeLanguages {
+class ModuleLanguageParserSpec extends AnyWordSpec with ParserSpecHelper with EitherValues with FakeLanguages {
 
   val parser = ModuleLanguageParser.parser
-  val raw = ModuleLanguageParser.raw
+  val raw    = ModuleLanguageParser.raw
 
   "A Language Parser" should {
     "parse a valid language" in {

@@ -1,17 +1,18 @@
 package printing
 
+import java.time.LocalDate
+import java.time.LocalDateTime
+import java.util.UUID
+
 import cats.data.NonEmptyList
 import models.*
 import models.core.*
 import models.core.ExamPhases.ExamPhase
-import org.scalatest.EitherValues
 import org.scalatest.wordspec.AnyWordSpec
+import org.scalatest.EitherValues
 import parsing.types.*
 import parsing.withFile0
 import printing.markdown.ModuleMarkdownPrinter
-
-import java.time.{LocalDate, LocalDateTime}
-import java.util.UUID
 
 final class ModuleMarkdownPrinterSpec extends AnyWordSpec with EitherValues {
 
@@ -152,8 +153,8 @@ final class ModuleMarkdownPrinterSpec extends AnyWordSpec with EitherValues {
 
     "print content block" in {
       implicit val substituteLocalisedContent: Boolean = true
-      implicit var lang: PrintingLanguage = PrintingLanguage.German
-      var p = printer.contentBlock("Title", "de text", "en text")
+      implicit var lang: PrintingLanguage              = PrintingLanguage.German
+      var p                                            = printer.contentBlock("Title", "de text", "en text")
       assert(
         p.print((), new StringBuilder())
           .value

@@ -1,18 +1,18 @@
 package controllers
 
-import controllers.Assets.Asset
-import play.api.mvc.{
-  AbstractController,
-  AnyContent,
-  ControllerComponents,
-  Request
-}
-import providers.ConfigReader
-
 import java.nio.file.Paths
-import javax.inject.{Inject, Singleton}
+import javax.inject.Inject
+import javax.inject.Singleton
+
 import scala.concurrent.ExecutionContext
 import scala.util.control.NonFatal
+
+import controllers.Assets.Asset
+import play.api.mvc.AbstractController
+import play.api.mvc.AnyContent
+import play.api.mvc.ControllerComponents
+import play.api.mvc.Request
+import providers.ConfigReader
 
 object FileController {
   private def assetsPath = "files"

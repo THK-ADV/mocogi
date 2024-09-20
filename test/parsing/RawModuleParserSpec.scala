@@ -1,19 +1,17 @@
 package parsing
 
+import java.util.UUID
+
 import cats.data.NonEmptyList
 import models.*
 import models.core.ExamPhases.ExamPhase
 import models.core.Identity
 import org.scalatest.wordspec.AnyWordSpec
-import org.scalatest.{EitherValues, OptionValues}
+import org.scalatest.EitherValues
+import org.scalatest.OptionValues
 import parsing.types.ModuleParticipants
 
-import java.util.UUID
-
-final class RawModuleParserSpec
-    extends AnyWordSpec
-    with EitherValues
-    with OptionValues {
+final class RawModuleParserSpec extends AnyWordSpec with EitherValues with OptionValues {
   private val parser = RawModuleParser.parser
 
   "A Raw Module parser" should {

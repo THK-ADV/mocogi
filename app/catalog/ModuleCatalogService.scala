@@ -1,31 +1,40 @@
 package catalog
 
-import controllers.FileController
-import database.repo.core._
-import database.repo.{ModuleCatalogRepository, ModuleRepository}
-import database.table.ModuleCatalogEntry
-import database.view.StudyProgramViewRepository
-import git.api.{
-  GitAvailabilityChecker,
-  GitBranchApiService,
-  GitMergeRequestApiService
-}
-import git.{Branch, GitFilePath, MergeRequestId, MergeRequestStatus}
-import models._
-import ops.FileOps.FileOps0
-import play.api.Logging
-import play.api.i18n.Lang
-import printing.PrintingLanguage
-import printing.latex.{ModuleCatalogLatexPrinter, Payload}
-import service.LatexCompiler
-
-import java.nio.file.{Files, Path, Paths, StandardCopyOption}
+import java.nio.file.Files
+import java.nio.file.Path
+import java.nio.file.Paths
+import java.nio.file.StandardCopyOption
 import java.time.LocalDateTime
-import javax.inject.{Inject, Singleton}
+import javax.inject.Inject
+import javax.inject.Singleton
+
 import scala.collection.mutable.ListBuffer
 import scala.collection.parallel.CollectionConverters.ImmutableIterableIsParallelizable
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 import scala.util.control.NonFatal
+
+import controllers.FileController
+import database.repo.core._
+import database.repo.ModuleCatalogRepository
+import database.repo.ModuleRepository
+import database.table.ModuleCatalogEntry
+import database.view.StudyProgramViewRepository
+import git.api.GitAvailabilityChecker
+import git.api.GitBranchApiService
+import git.api.GitMergeRequestApiService
+import git.Branch
+import git.GitFilePath
+import git.MergeRequestId
+import git.MergeRequestStatus
+import models._
+import ops.FileOps.FileOps0
+import play.api.i18n.Lang
+import play.api.Logging
+import printing.latex.ModuleCatalogLatexPrinter
+import printing.latex.Payload
+import printing.PrintingLanguage
+import service.LatexCompiler
 
 @Singleton
 final class ModuleCatalogService @Inject() (
@@ -51,44 +60,48 @@ final class ModuleCatalogService @Inject() (
 
   def createAndOpenMergeRequest(semesterId: String): Future[Unit] = {
     implicit val semester: Semester = Semester(semesterId)
-    implicit val branch: Branch = Branch(semester.id)
+    implicit val branch: Branch     = Branch(semester.id)
 
     for {
       _ <- apiAvailableService.checkAvailability()
       _ <- branchApiService.createBranch(branch, config.mainBranch)
       (catalogFiles, brokenFiles, electivesFiles) <- createCatalogs
-        .recoverWith { case NonFatal(e) =>
-          logger.error("failed creating catalogs! recovering...")
-          deleteBranch(branch).flatMap(_ => Future.failed(e))
+        .recoverWith {
+          case NonFatal(e) =>
+            logger.error("failed creating catalogs! recovering...")
+            deleteBranch(branch).flatMap(_ => Future.failed(e))
         }
       _ <- commit(catalogFiles, brokenFiles, electivesFiles)
-        .recoverWith { case NonFatal(e) =>
-          logger.error("commit failed! recovering...")
-          deleteAllFiles(
-            electivesFiles.map(_._1.path) ::: brokenFiles,
-            catalogFiles
-          )
-          deleteBranch(branch).flatMap(_ => Future.failed(e))
+        .recoverWith {
+          case NonFatal(e) =>
+            logger.error("commit failed! recovering...")
+            deleteAllFiles(
+              electivesFiles.map(_._1.path) ::: brokenFiles,
+              catalogFiles
+            )
+            deleteBranch(branch).flatMap(_ => Future.failed(e))
         }
       (mrId, _) <- createMergeRequest
-        .recoverWith { case NonFatal(e) =>
-          logger.error("failed to create merge request! recovering...")
-          deleteAllFiles(
-            electivesFiles.map(_._1.path) ::: brokenFiles,
-            catalogFiles
-          )
-          deleteBranch(branch).flatMap(_ => Future.failed(e))
+        .recoverWith {
+          case NonFatal(e) =>
+            logger.error("failed to create merge request! recovering...")
+            deleteAllFiles(
+              electivesFiles.map(_._1.path) ::: brokenFiles,
+              catalogFiles
+            )
+            deleteBranch(branch).flatMap(_ => Future.failed(e))
         }
       _ <- createCatalogFiles(catalogFiles)
-        .recoverWith { case NonFatal(e) =>
-          logger.error("failed to create catalog files! recovering...")
-          deleteAllFiles(
-            electivesFiles.map(_._1.path) ::: brokenFiles,
-            catalogFiles
-          )
-          deleteMergeRequest(mrId)
-            .flatMap(_ => deleteBranch(branch))
-            .flatMap(_ => Future.failed(e))
+        .recoverWith {
+          case NonFatal(e) =>
+            logger.error("failed to create catalog files! recovering...")
+            deleteAllFiles(
+              electivesFiles.map(_._1.path) ::: brokenFiles,
+              catalogFiles
+            )
+            deleteMergeRequest(mrId)
+              .flatMap(_ => deleteBranch(branch))
+              .flatMap(_ => Future.failed(e))
         }
     } yield tmpFolder.deleteContentsOfDirectory()
   }
@@ -99,17 +112,19 @@ final class ModuleCatalogService @Inject() (
     for {
       (catalogFiles, brokenFiles) <- printAndCompile(semester)
       catalogPdfFiles <- movePDFsToOutputFolder(catalogFiles)
-        .recoverWith { case NonFatal(e) =>
-          logger.error("failed moving pdf files! recovering...")
-          deleteAllFiles(brokenFiles, Nil)
-          Future.failed(e)
+        .recoverWith {
+          case NonFatal(e) =>
+            logger.error("failed moving pdf files! recovering...")
+            deleteAllFiles(brokenFiles, Nil)
+            Future.failed(e)
         }
       electivesFile <- electivesCatalogService
         .create(semester)
-        .recoverWith { case NonFatal(e) =>
-          logger.error("failed creating electives! recovering...")
-          deleteAllFiles(brokenFiles, catalogPdfFiles)
-          Future.failed(e)
+        .recoverWith {
+          case NonFatal(e) =>
+            logger.error("failed creating electives! recovering...")
+            deleteAllFiles(brokenFiles, catalogPdfFiles)
+            Future.failed(e)
         }
     } yield (catalogPdfFiles, brokenFiles, electivesFile)
 
@@ -159,12 +174,12 @@ final class ModuleCatalogService @Inject() (
     for {
       sps <- studyProgramViewRepo.all()
       poIds = sps.map(_.po.id)
-      ms <- moduleRepository.allFromPos(poIds)
-      mts <- moduleTypeRepository.all()
-      lang <- languageRepository.all()
+      ms      <- moduleRepository.allFromPos(poIds)
+      mts     <- moduleTypeRepository.all()
+      lang    <- languageRepository.all()
       seasons <- seasonRepository.all()
-      people <- identityRepository.all()
-      ams <- assessmentMethodRepository.all()
+      people  <- identityRepository.all()
+      ams     <- assessmentMethodRepository.all()
     } yield {
       def print(sp: StudyProgramView, pLang: PrintingLanguage) = {
         logger.info(s"printing ${sp.fullPoId}...")
@@ -230,14 +245,15 @@ final class ModuleCatalogService @Inject() (
         }
 
       val moduleCatalogFiles = ListBuffer.empty[ModuleCatalogFile[Unit]]
-      val brokenFiles = ListBuffer.empty[Path]
+      val brokenFiles        = ListBuffer.empty[Path]
 
       sps.par
         .flatMap(po => PrintingLanguage.all().map(po -> _))
-        .map { case (sp, pLang) =>
-          val content = print(sp, pLang)
-          val filename = s"${pLang.id}_${semester.id}_${sp.fullPoId}"
-          compileAndRecover(sp, pLang, content.toString(), filename)
+        .map {
+          case (sp, pLang) =>
+            val content  = print(sp, pLang)
+            val filename = s"${pLang.id}_${semester.id}_${sp.fullPoId}"
+            compileAndRecover(sp, pLang, content.toString(), filename)
         }
         .seq
         .foreach {
@@ -251,8 +267,8 @@ final class ModuleCatalogService @Inject() (
     }
   }
 
-  private def createMergeRequest(implicit
-      semester: Semester,
+  private def createMergeRequest(
+      implicit semester: Semester,
       branch: Branch
   ): Future[(MergeRequestId, MergeRequestStatus)] =
     gitMergeRequestApiService
@@ -325,20 +341,21 @@ final class ModuleCatalogService @Inject() (
 
     val normalized = xs
       .groupBy(_.studyProgram.fullPoId)
-      .map { case (_, xs) =>
-        val file = xs.head
-        val dePdf = getPdfFileName(xs, PrintingLanguage.German)
-        val enPdf = getPdfFileName(xs, PrintingLanguage.English)
-        ModuleCatalogEntry(
-          file.studyProgram.fullPoId.id,
-          file.studyProgram.po.id,
-          file.studyProgram.specialization.map(_.id),
-          file.studyProgram.id,
-          file.semester.id,
-          FileController.makeURI(moduleCatalogFolder.toString, dePdf),
-          FileController.makeURI(moduleCatalogFolder.toString, enPdf),
-          LocalDateTime.now()
-        )
+      .map {
+        case (_, xs) =>
+          val file  = xs.head
+          val dePdf = getPdfFileName(xs, PrintingLanguage.German)
+          val enPdf = getPdfFileName(xs, PrintingLanguage.English)
+          ModuleCatalogEntry(
+            file.studyProgram.fullPoId.id,
+            file.studyProgram.po.id,
+            file.studyProgram.specialization.map(_.id),
+            file.studyProgram.id,
+            file.semester.id,
+            FileController.makeURI(moduleCatalogFolder.toString, dePdf),
+            FileController.makeURI(moduleCatalogFolder.toString, enPdf),
+            LocalDateTime.now()
+          )
       }
       .toSeq
     catalogRepository

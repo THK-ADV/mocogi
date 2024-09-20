@@ -1,13 +1,17 @@
 package controllers
 
+import javax.inject.Inject
+import javax.inject.Singleton
+
+import scala.concurrent.ExecutionContext
+
 import controllers.POController.validAttribute
 import models.core.PO
-import play.api.libs.json.{Json, Writes}
-import play.api.mvc.{AbstractController, ControllerComponents}
+import play.api.libs.json.Json
+import play.api.libs.json.Writes
+import play.api.mvc.AbstractController
+import play.api.mvc.ControllerComponents
 import service.core.POService
-
-import javax.inject.{Inject, Singleton}
-import scala.concurrent.ExecutionContext
 
 object POController {
   val validAttribute = "valid"
@@ -20,7 +24,7 @@ final class POController @Inject() (
     implicit val ctx: ExecutionContext
 ) extends AbstractController(cc)
     with YamlController[PO] {
-  override implicit val writes: Writes[PO] = PO.writes
+  implicit override val writes: Writes[PO] = PO.writes
 
   override def all() =
     Action.async { request =>
