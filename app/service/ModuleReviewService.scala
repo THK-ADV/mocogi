@@ -1,24 +1,31 @@
 package service
 
+import java.util.UUID
+import javax.inject.Inject
+import javax.inject.Singleton
+
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+
 import database.repo.core.StudyProgramDirectorsRepository
 import database.repo.core.StudyProgramDirectorsRepository.StudyProgramDirector
-import database.repo.{ModuleDraftRepository, ModuleReviewRepository}
-import git.{MergeRequestId, MergeRequestStatus}
+import database.repo.ModuleDraftRepository
+import database.repo.ModuleReviewRepository
 import git.api.GitMergeRequestApiService
-import models.ModuleReviewStatus.{Approved, Pending, Rejected}
+import git.MergeRequestId
+import git.MergeRequestStatus
 import models._
 import models.core.Identity
+import models.ModuleReviewStatus.Approved
+import models.ModuleReviewStatus.Pending
+import models.ModuleReviewStatus.Rejected
 import ops.FutureOps.Ops
 import play.api.Logging
 
-import java.util.UUID
-import javax.inject.{Inject, Singleton}
-import scala.concurrent.{ExecutionContext, Future}
-
 @Singleton
 final class ModuleReviewService @Inject() (
-    private val draftRepo: ModuleDraftRepository, // READ UPDATE ONLY
-    private val reviewRepo: ModuleReviewRepository, // CREATE READ UPDATE DELETE
+    private val draftRepo: ModuleDraftRepository,       // READ UPDATE ONLY
+    private val reviewRepo: ModuleReviewRepository,     // CREATE READ UPDATE DELETE
     private val approvalService: ModuleApprovalService, // READ ONLY
     private val directorsRepository: StudyProgramDirectorsRepository,
     private val api: GitMergeRequestApiService,
@@ -28,15 +35,16 @@ final class ModuleReviewService @Inject() (
 
   private type MergeRequest = (MergeRequestId, MergeRequestStatus)
 
-  /** Either creates a merge request with fresh reviewers based on modified keys
-    * which need to be reviewed or a merge request which is accepted and merged
-    * instantly. The module draft is updated by the merge request id afterward.
-    * @param moduleId
-    *   ID of the module draft
-    * @param author
-    *   Author of the merge request
-    * @return
-    */
+  /**
+   * Either creates a merge request with fresh reviewers based on modified keys
+   * which need to be reviewed or a merge request which is accepted and merged
+   * instantly. The module draft is updated by the merge request id afterward.
+   * @param moduleId
+   *   ID of the module draft
+   * @param author
+   *   Author of the merge request
+   * @return
+   */
   def create(moduleId: UUID, author: Identity.Person): Future[Unit] =
     for {
       draft <- draftRepo
@@ -46,52 +54,52 @@ final class ModuleReviewService @Inject() (
           "can't request a review"
         )
       mergeRequest <-
-        if (draft.keysToBeReviewed.nonEmpty)
-          createApproveReview(draft, author)
+        if draft.keysToBeReviewed.nonEmpty then createApproveReview(draft, author)
         else createAutoAcceptedReview(draft, author)
       _ <- draftRepo.updateMergeRequest(draft.module, Some(mergeRequest))
-    } yield ()
+    } yield logger.info(s"Successfully created merge request with id ${mergeRequest._1.value}")
 
-  /** Deletes the merge request and all reviews associated with the module id.
-    * Removes the merge request id and status from the module draft afterwards.
-    * @param moduleId
-    *   ID of the module draft which needs to be deleted
-    * @return
-    */
+  /**
+   * Deletes the merge request and all reviews associated with the module id.
+   * Removes the merge request id and status from the module draft afterwards.
+   * @param moduleId
+   *   ID of the module draft which needs to be deleted
+   * @return
+   */
   def delete(moduleId: UUID): Future[Unit] = {
     def go(id: MergeRequestId) =
       for {
         _ <- api.delete(id)
         _ <- reviewRepo.delete(moduleId)
         _ <- draftRepo.updateMergeRequest(moduleId, None)
-      } yield ()
+      } yield logger.info(s"Successfully deleted merge request with id ${id.value}")
     draftRepo.getByModuleOpt(moduleId).flatMap {
-      case Some(draft) if draft.mergeRequestId.isDefined =>
-        go(draft.mergeRequestId.get)
-      case _ => Future.unit
+      case Some(draft) if draft.mergeRequestId.isDefined => go(draft.mergeRequestId.get)
+      case _                                             => Future.unit
     }
   }
 
-  /** Updates the review by changing the status to approved or rejected and
-    * setting the comment if defined. Updates the merge request associated by
-    * the underlying module with status updates. Performs the following actions
-    * based on the value of approve:
-    *   - If true, checks if all approvals are set. If so, the merge request
-    *     will be approved and merged right after. The module draft's status is
-    *     updated to merged respectively.
-    *   - If false, the merge request will be closed and the module draft's
-    *     status is updated respectively.
-    *
-    * @param id
-    *   ID of the review which will be updated
-    * @param reviewer
-    *   The reviewer
-    * @param approve
-    *   Whether the review was approved or not
-    * @param comment
-    *   Optional comment from the reviewer
-    * @return
-    */
+  /**
+   * Updates the review by changing the status to approved or rejected and
+   * setting the comment if defined. Updates the merge request associated by
+   * the underlying module with status updates. Performs the following actions
+   * based on the value of approve:
+   *   - If true, checks if all approvals are set. If so, the merge request
+   *     will be approved and merged right after. The module draft's status is
+   *     updated to merged respectively.
+   *   - If false, the merge request will be closed and the module draft's
+   *     status is updated respectively.
+   *
+   * @param id
+   *   ID of the review which will be updated
+   * @param reviewer
+   *   The reviewer
+   * @param approve
+   *   Whether the review was approved or not
+   * @param comment
+   *   Optional comment from the reviewer
+   * @return
+   */
   def update(
       id: UUID,
       reviewer: Identity.Person,
@@ -126,9 +134,9 @@ final class ModuleReviewService @Inject() (
         )
         .map(_.get)
       mergeRequestId = draft.mergeRequestId.get
-      _ <- reviewRepo.update(id, newStatus, comment, reviewer.id)
+      _      <- reviewRepo.update(id, newStatus, comment, reviewer.id)
       status <- approvalService.summaryStatus(draft.module)
-      _ <- api.comment(mergeRequestId, commentBody(status.get))
+      _      <- api.comment(mergeRequestId, commentBody(status.get))
       _ <-
         if (approve) {
           for {
@@ -136,9 +144,9 @@ final class ModuleReviewService @Inject() (
             _ <-
               if (reviews.forall(_ == Approved)) {
                 for {
-                  _ <- api.approve(mergeRequestId)
+                  _      <- api.approve(mergeRequestId)
                   status <- api.merge(mergeRequestId)
-                  _ <- draftRepo.updateMergeRequestStatus(draft.module, status)
+                  _      <- draftRepo.updateMergeRequestStatus(draft.module, status)
                 } yield ()
               } else {
                 Future.unit
@@ -147,7 +155,7 @@ final class ModuleReviewService @Inject() (
         } else {
           for {
             status <- api.close(mergeRequestId)
-            _ <- draftRepo.updateMergeRequestStatus(draft.module, status)
+            _      <- draftRepo.updateMergeRequestStatus(draft.module, status)
           } yield ()
         }
     } yield ()
@@ -161,7 +169,7 @@ final class ModuleReviewService @Inject() (
       author: Identity.Person
   ): Future[MergeRequest] = {
     val protocol = draft.protocol()
-    val roles = requiredRoles(draft.keysToBeReviewed)
+    val roles    = requiredRoles(draft.keysToBeReviewed)
 
     def reviews(directors: Seq[StudyProgramDirector]): Seq[ModuleReview.DB] =
       roles.toSeq
@@ -184,25 +192,26 @@ final class ModuleReviewService @Inject() (
         )
 
     def reviewer(directors: Seq[StudyProgramDirector]): Iterable[String] =
-      directors.groupBy(_.role).flatMap { case (role, dirs) =>
-        dirs
-          .filter(_.role == role)
-          .distinctBy(_.studyProgramId)
-          .map { dir =>
-            val possibleDirs = dirs
-              .filter(d =>
-                d.role == role && d.studyProgramId == dir.studyProgramId
-              )
-              .map(d => s"${d.directorFirstname} ${d.directorLastname}")
-              .mkString(", ")
-            s"${role.id.toUpperCase} ${dir.studyProgramLabel} ${dir.studyProgramDegreeLabel} ($possibleDirs)"
-          }
+      directors.groupBy(_.role).flatMap {
+        case (role, dirs) =>
+          dirs
+            .filter(_.role == role)
+            .distinctBy(_.studyProgramId)
+            .sortBy(a => (a.role.id, a.studyProgramLabel, a.studyProgramDegreeLabel))
+            .map { dir =>
+              val possibleDirs = dirs
+                .filter(d => d.role == role && d.studyProgramId == dir.studyProgramId)
+                .sortBy(_.directorLastname)
+                .map(d => s"${d.directorLastname} ${d.directorFirstname.headOption.fold("")(c => s"$c.")}".trim)
+                .mkString(", ")
+              s"${role.id.toUpperCase} ${dir.studyProgramLabel} ${dir.studyProgramDegreeLabel} ($possibleDirs)"
+            }
       }
 
     for {
       directors <- studyProgramDirectors(protocol.metadata.po, roles)
-      _ <- reviewRepo.delete(draft.module)
-      _ <- reviewRepo.createMany(reviews(directors))
+      _         <- reviewRepo.delete(draft.module)
+      _         <- reviewRepo.createMany(reviews(directors))
       mergeRequest <- createMergeRequest(
         draft,
         mrTitle(author, protocol.metadata),
@@ -220,7 +229,7 @@ final class ModuleReviewService @Inject() (
       (mergeRequestId, status) <- createMergeRequest(
         draft,
         mrTitle(author, draft.protocol().metadata),
-        mrDesc(draft.modifiedKeys, Nil, Nil),
+        mrDescAutoAccepted(draft.modifiedKeys),
         needsApproval = false
       )
     } yield (mergeRequestId, status)
@@ -230,7 +239,8 @@ final class ModuleReviewService @Inject() (
       title: String,
       description: String,
       needsApproval: Boolean
-  ): Future[MergeRequest] =
+  ): Future[MergeRequest] = {
+    logger.info(s"Creating merge request with title $title and approval $needsApproval...")
     api.create(
       draft.branch,
       api.config.draftBranch,
@@ -240,36 +250,38 @@ final class ModuleReviewService @Inject() (
       if (needsApproval) api.config.reviewRequiredLabel
       else api.config.autoApprovedLabel
     )
+  }
 
   private def mrTitle(author: Identity.Person, metadata: MetadataProtocol) =
     s"${author.fullName}: ${metadata.title} (${metadata.abbrev})"
 
+  private def mrDescAutoAccepted(modifiedKeys: Set[String]) =
+    mrDesc(modifiedKeys, Set.empty, Nil)
+
   private def mrDesc(
-      modifiedKeys: Iterable[String],
-      keysToBeReviewed: Iterable[String],
+      modifiedKeys: Set[String],
+      keysToBeReviewed: Set[String],
       reviewer: Iterable[String]
   ) = {
-    def go[A](as: Iterable[A]): String =
-      as.foldLeft("") { case (acc, a) => s"$acc\n- $a" }
+    def go(as: List[String]): String =
+      as.sorted.foldLeft("") { case (acc, a) => s"$acc\n- $a" }
 
     if (keysToBeReviewed.isEmpty && reviewer.isEmpty)
       s"""modified keys:
-         |${go(modifiedKeys)}""".stripMargin
+         |${go(modifiedKeys.toList)}""".stripMargin
     else s"""modified keys:
-            |${go(modifiedKeys)}
+            |${go(modifiedKeys.toList)}
             |
             |keys to be reviewed:
-            |${go(keysToBeReviewed)}
+            |${go(keysToBeReviewed.toList)}
             |
             |reviewer:
-            |${go(reviewer)}""".stripMargin
+            |${go(reviewer.toList)}""".stripMargin
   }
 
-  private def requiredRoles(
-      keysToBeReviewed: Set[String]
-  ): Set[UniversityRole] =
-    keysToBeReviewed.foldLeft(Set.empty[UniversityRole]) { case (acc, key) =>
-      if (keysToReview.isPAVReview(key)) acc + UniversityRole.PAV else acc
+  private def requiredRoles(keysToBeReviewed: Set[String]): Set[UniversityRole] =
+    keysToBeReviewed.foldLeft(Set.empty[UniversityRole]) {
+      case (acc, key) => if (keysToReview.isPAVReview(key)) acc + UniversityRole.PAV else acc
     }
 
   private def studyProgramDirectors(
