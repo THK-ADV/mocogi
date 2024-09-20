@@ -1,4 +1,4 @@
-package validator
+package validation
 
 import java.time.LocalDate
 import java.util.UUID
@@ -11,7 +11,7 @@ import org.scalatest.wordspec.AnyWordSpec
 import org.scalatest.EitherValues
 import org.scalatest.OptionValues
 import parsing.types.*
-import validator.MetadataValidator.*
+import validation.MetadataValidator.*
 
 final class MetadataValidatorSpec extends AnyWordSpec with EitherValues with OptionValues {
 

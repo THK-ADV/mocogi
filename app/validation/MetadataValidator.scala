@@ -1,4 +1,4 @@
-package validator
+package validation
 
 import java.util.UUID
 

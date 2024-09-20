@@ -1,6 +1,5 @@
 package models
 
-import parsing.types.ParsedWorkload
 import play.api.libs.json.Format
 import play.api.libs.json.Json
 import play.api.libs.json.Reads
@@ -40,32 +39,4 @@ object ModuleWorkload {
     )
 
   implicit def format: Format[ModuleWorkload] = Format(reads, writes)
-
-  def fromParsed(wl: ParsedWorkload) =
-    apply(
-      wl.lecture,
-      wl.seminar,
-      wl.practical,
-      wl.exercise,
-      wl.projectSupervision,
-      wl.projectWork
-    )
-
-  def apply(
-      lecture: Int,
-      seminar: Int,
-      practical: Int,
-      exercise: Int,
-      projectSupervision: Int,
-      projectWork: Int
-  ): ModuleWorkload = ModuleWorkload(
-    lecture,
-    seminar,
-    practical,
-    exercise,
-    projectSupervision,
-    projectWork,
-    Int.MinValue,
-    Int.MinValue
-  )
 }

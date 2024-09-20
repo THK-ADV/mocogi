@@ -6,7 +6,7 @@ import parser.ParsingError
 import play.api.libs.json.Json
 import play.api.libs.json.Writes
 import printer.PrintingError
-import validator.ValidationError
+import validation.ValidationError
 
 sealed trait PipelineError extends Throwable {
   def metadata: Option[UUID]

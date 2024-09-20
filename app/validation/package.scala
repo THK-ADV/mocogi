@@ -1,6 +1,6 @@
 import scala.collection.mutable.ListBuffer
 
-package object validator {
+package object validation {
   type Validation[A] = Either[List[String], A]
 
   case class Validator[A, B](validate: A => Validation[B]) {

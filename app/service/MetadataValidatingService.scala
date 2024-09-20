@@ -2,15 +2,21 @@ package service
 
 import models.Metadata
 import models.ModuleCore
+import models.ModuleWorkload
 import ops.EitherOps.EOps
 import parsing.types.Module
 import parsing.types.ModuleContent
+import parsing.types.ModuleECTS
 import parsing.types.ParsedMetadata
-import validator._
+import parsing.types.ParsedWorkload
+import validation.*
 
 object MetadataValidatingService {
 
   private val ectsFactor = 30
+
+  def validateWorkload(workload: ParsedWorkload, moduleECTS: Double): Validation[ModuleWorkload] =
+    MetadataValidator.workloadValidator(ectsFactor).validate((workload, ModuleECTS(moduleECTS, Nil)))
 
   def validateMany(
       existing: Seq[ModuleCore],

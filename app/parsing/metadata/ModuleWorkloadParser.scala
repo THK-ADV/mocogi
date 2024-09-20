@@ -1,7 +1,7 @@
 package parsing.metadata
 
 import parser.Parser
-import parser.Parser._
+import parser.Parser.*
 import parser.ParserOps.P0
 import parser.ParserOps.P2
 import parser.ParserOps.P3
