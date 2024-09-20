@@ -1,12 +1,15 @@
 package service.core
 
+import javax.inject.Inject
+import javax.inject.Singleton
+
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+
 import database.repo.core.IdentityRepository
 import models.core.Identity
 import models.core.Identity.toDbEntry
 import parsing.core.IdentityFileParser
-
-import javax.inject.{Inject, Singleton}
-import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 final class IdentityService @Inject() (
@@ -16,7 +19,7 @@ final class IdentityService @Inject() (
 ) extends YamlService[Identity] {
 
   override def parser =
-    facultyService.all().map(IdentityFileParser.parser(_))
+    facultyService.allIds().map(IdentityFileParser.fileParser(_))
 
   override def createOrUpdateMany(
       xs: Seq[Identity]

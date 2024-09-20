@@ -19,10 +19,8 @@ all-ing-prof:
 abc:
   lastname: foo
   firstname: bar
-  title: ''
   faculty: faculty.f10
   abbreviation: abc
-  campusid: abc
   status: active
 def:
   lastname: foo
@@ -36,7 +34,7 @@ ghi:
   lastname: foo
   firstname: bar
   title: bar. baz.
-  faculty: faculty.f10
+  faculty: faculty.f03
   abbreviation: abc
   campusid: ghi
   status: active

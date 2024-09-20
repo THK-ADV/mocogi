@@ -2,24 +2,21 @@ package parsing.metadata
 
 import cats.data.NonEmptyList
 import helper.FakeIdentities
-import models.core.{Identity, PersonStatus}
-import org.scalatest.EitherValues
+import models.core.Identity
+import models.core.PersonStatus
 import org.scalatest.wordspec.AnyWordSpec
+import org.scalatest.EitherValues
 import parsing.ParserSpecHelper
 
-class IdentityParserSpec
-    extends AnyWordSpec
-    with ParserSpecHelper
-    with EitherValues
-    with FakeIdentities {
+class IdentityParserSpec extends AnyWordSpec with ParserSpecHelper with EitherValues with FakeIdentities {
 
   val parser = IdentityParser.parser
-  val raw = IdentityParser.raw
+  val raw    = IdentityParser.raw
 
   "A People Parser" when {
     "parse single people" should {
       "return a person if the input is simple" in {
-        val input = "person.ald\n"
+        val input         = "person.ald\n"
         val (res1, rest1) = parser.parse(input)
         assert(
           res1.value == NonEmptyList.one(
@@ -28,7 +25,7 @@ class IdentityParserSpec
               "Dobrynin",
               "Alexander",
               "M.Sc.",
-              List(f10),
+              List(f10.id),
               "ad",
               "ald",
               PersonStatus.Active
@@ -39,14 +36,14 @@ class IdentityParserSpec
       }
 
       "return a person if the input is simple raw" in {
-        val input = "person.ald\n"
+        val input         = "person.ald\n"
         val (res1, rest1) = raw.parse(input)
         assert(res1.value == NonEmptyList.one("ald"))
         assert(rest1.isEmpty)
       }
 
       "return a person and the remaining input if it's not a valid person" in {
-        val input = "person.ald\n abc"
+        val input         = "person.ald\n abc"
         val (res3, rest3) = parser.parse(input)
         assert(
           res3.value == NonEmptyList.one(
@@ -55,7 +52,7 @@ class IdentityParserSpec
               "Dobrynin",
               "Alexander",
               "M.Sc.",
-              List(f10),
+              List(f10.id),
               "ad",
               "ald",
               PersonStatus.Active
@@ -66,7 +63,7 @@ class IdentityParserSpec
       }
 
       "not return a person if they are unknown" in {
-        val input = "person.abc\n"
+        val input         = "person.abc\n"
         val (res4, rest4) = parser.parse(input)
         assert(
           res4.left.value.expected == "person.nn or person.ddu or person.ald or person.abe or one entry"
@@ -91,7 +88,7 @@ class IdentityParserSpec
               "Dobrynin",
               "Alexander",
               "M.Sc.",
-              List(f10),
+              List(f10.id),
               "ad",
               "ald",
               PersonStatus.Active
@@ -101,7 +98,7 @@ class IdentityParserSpec
               "Bertels",
               "Anja",
               "B.Sc.",
-              List(f10),
+              List(f10.id),
               "ab",
               "abe",
               PersonStatus.Active
@@ -135,7 +132,7 @@ class IdentityParserSpec
               "Dobrynin",
               "Alexander",
               "M.Sc.",
-              List(f10),
+              List(f10.id),
               "ad",
               "ald",
               PersonStatus.Active
@@ -145,7 +142,7 @@ class IdentityParserSpec
               "Bertels",
               "Anja",
               "B.Sc.",
-              List(f10),
+              List(f10.id),
               "ab",
               "abe",
               PersonStatus.Active
@@ -169,7 +166,7 @@ class IdentityParserSpec
               "Dobrynin",
               "Alexander",
               "M.Sc.",
-              List(f10),
+              List(f10.id),
               "ad",
               "ald",
               PersonStatus.Active
@@ -179,7 +176,7 @@ class IdentityParserSpec
               "Bertels",
               "Anja",
               "B.Sc.",
-              List(f10),
+              List(f10.id),
               "ab",
               "abe",
               PersonStatus.Active
@@ -205,7 +202,7 @@ class IdentityParserSpec
               "Dobrynin",
               "Alexander",
               "M.Sc.",
-              List(f10),
+              List(f10.id),
               "ad",
               "ald",
               PersonStatus.Active
@@ -215,7 +212,7 @@ class IdentityParserSpec
               "Bertels",
               "Anja",
               "B.Sc.",
-              List(f10),
+              List(f10.id),
               "ab",
               "abe",
               PersonStatus.Active

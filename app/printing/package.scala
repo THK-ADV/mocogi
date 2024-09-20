@@ -1,8 +1,9 @@
-import models.ModuleWorkload
-import models.core.*
-
 import java.time.format.DateTimeFormatter
+
 import scala.annotation.unused
+
+import models.core.*
+import models.ModuleWorkload
 
 package object printing {
   def localDatePattern = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm")
@@ -14,7 +15,7 @@ package object printing {
   def fmtIdentity(p: Identity): String =
     p match {
       case s: Identity.Person =>
-        s"${s.title} ${s.fullName} (${fmtCommaSeparated(s.faculties)(_.id.toUpperCase)})"
+        s"${s.title} ${s.fullName} (${fmtCommaSeparated(s.faculties)(_.toUpperCase)})"
       case g: Identity.Group =>
         g.label
       case u: Identity.Unknown =>
@@ -25,16 +26,16 @@ package object printing {
       f: A => String
   ): String = {
     val builder = new StringBuilder()
-    xs.zipWithIndex.foreach { case (a, i) =>
-      builder.append(f(a))
-      if (i < xs.size - 1)
-        builder.append(sep)
+    xs.zipWithIndex.foreach {
+      case (a, i) =>
+        builder.append(f(a))
+        if (i < xs.size - 1)
+          builder.append(sep)
     }
     builder.toString()
   }
 
-  final implicit class LanguageOps(private val self: PrintingLanguage)
-      extends AnyVal {
+  final implicit class LanguageOps(private val self: PrintingLanguage) extends AnyVal {
 
     def moduleCatalogHeadline = self.fold("Modulhandbuch", "Module Catalog")
 
@@ -149,7 +150,7 @@ package object printing {
         self.projectWorkValue(wl)
       ).filter(_.nonEmpty)
       val contactHoursParts0 = fmtCommaSeparated(contactHoursParts)(identity)
-      val totalWlLabel = s"${wl.total} h"
+      val totalWlLabel       = s"${wl.total} h"
       val contactHoursValueLabel =
         if (contactHoursParts0.isEmpty) s"$contactHoursValue h"
         else s"$contactHoursValue h ($contactHoursParts0)"
@@ -168,7 +169,7 @@ package object printing {
       if (wl.lecture == 0) ""
       else {
         val value = s"${wl.lecture} h"
-        val res = self.fold("Vorlesung", "Lecture")
+        val res   = self.fold("Vorlesung", "Lecture")
         s"$value $res"
       }
 
@@ -176,7 +177,7 @@ package object printing {
       if (wl.exercise == 0) ""
       else {
         val value = s"${wl.exercise} h"
-        val res = self.fold("Übung", "Exercise")
+        val res   = self.fold("Übung", "Exercise")
         s"$value $res"
       }
 
@@ -184,7 +185,7 @@ package object printing {
       if (wl.practical == 0) ""
       else {
         val value = s"${wl.practical} h"
-        val res = self.fold("Praktikum", "Practical")
+        val res   = self.fold("Praktikum", "Practical")
         s"$value $res"
       }
 
@@ -192,7 +193,7 @@ package object printing {
       if (wl.seminar == 0) ""
       else {
         val value = s"${wl.seminar} h"
-        val res = "Seminar"
+        val res   = "Seminar"
         s"$value $res"
       }
 
@@ -200,7 +201,7 @@ package object printing {
       if (wl.projectSupervision == 0) ""
       else {
         val value = s"${wl.projectSupervision} h"
-        val res = self.fold("Projektbetreuung", "Project Supervision")
+        val res   = self.fold("Projektbetreuung", "Project Supervision")
         s"$value $res"
       }
 
@@ -208,13 +209,12 @@ package object printing {
       if (wl.projectWork == 0) ""
       else {
         val value = s"${wl.projectWork} h"
-        val res = self.fold("Projektarbeit", "Project Work")
+        val res   = self.fold("Projektarbeit", "Project Work")
         s"$value $res"
       }
   }
 
-  final implicit class LabelOptOps(private val self: Option[Label])
-      extends AnyVal {
+  final implicit class LabelOptOps(private val self: Option[Label]) extends AnyVal {
     def localizedLabel(implicit lang: PrintingLanguage): String =
       self.fold("???")(_.localizedLabel)
   }
@@ -226,9 +226,7 @@ package object printing {
     def localizedLabel(
         specialization: Option[Label]
     )(implicit lang: PrintingLanguage): String =
-      specialization.fold(self.localizedLabel)(s =>
-        s"${self.localizedLabel} (${s.localizedLabel})"
-      )
+      specialization.fold(self.localizedLabel)(s => s"${self.localizedLabel} (${s.localizedLabel})")
   }
 
   final implicit class IDLabelDescOps(
