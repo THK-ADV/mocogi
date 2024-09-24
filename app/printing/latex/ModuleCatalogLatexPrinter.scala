@@ -105,12 +105,7 @@ final class ModuleCatalogLatexPrinter @Inject() (
               builder.append(s"ID: ${module.id}\n")
               builder.append("\\begin{itemize}\n")
               changedKeys.toList.sorted.foreach { key =>
-                val normalizedKey = {
-                  // TODO: remove if language prefix is dropped
-                  if (key.startsWith("deContent") || key.startsWith("enContent"))
-                    "content" + key.dropWhile(_ != '.')
-                  else key
-                }
+                val normalizedKey = ModuleKey.normalizeKeyValue(key)
                 val label = messagesApi(normalizedKey + ".label")(lang)
                 builder.append(s"\\item $label\n")
               }
