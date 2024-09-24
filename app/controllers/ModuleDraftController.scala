@@ -144,10 +144,11 @@ final class ModuleDraftController @Inject() (
     }
 
   private def moduleKeyToJson(key: String, messages: Messages): JsValue =
+    val normalizedKey = ModuleKey.normalizeKeyValue(key)
     Json.obj(
-      "id"    -> key,
-      "label" -> messages(s"$key.label"),
-      "desc"  -> messages(s"$key.desc")
+      "id"    -> normalizedKey,
+      "label" -> messages(s"$normalizedKey.label"),
+      "desc"  -> messages(s"$normalizedKey.desc")
     )
 
   private def moduleDraftWrites(messages: Messages): Writes[ModuleDraft] =
