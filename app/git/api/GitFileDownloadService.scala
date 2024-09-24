@@ -18,7 +18,7 @@ import printing.html.ModuleHTMLPrinter
 import printing.pandoc.PrinterOutput
 import printing.pandoc.PrinterOutputType
 import printing.PrintingLanguage
-import service._
+import service.*
 
 @Singleton
 final class GitFileDownloadService @Inject() (

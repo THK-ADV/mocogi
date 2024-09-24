@@ -16,7 +16,7 @@ import parsing.types.Module
 import parsing.types.ModuleContent
 import parsing.types.ParsedMetadata
 import printing.yaml.ModuleYamlPrinter
-import validator.ValidationError
+import validation.ValidationError
 
 @Singleton
 final class MetadataPipeline @Inject() (
