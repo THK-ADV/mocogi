@@ -13,5 +13,5 @@ final class GlobalCriteriaTable(tag: Tag)
     deDesc,
     enLabel,
     enDesc
-  ) <> ((ModuleGlobalCriteria.apply _).tupled, ModuleGlobalCriteria.unapply)
+  ) <> (ModuleGlobalCriteria.apply.tupled, ModuleGlobalCriteria.unapply)
 }

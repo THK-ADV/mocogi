@@ -23,7 +23,7 @@ import org.apache.kafka.common.serialization.UUIDSerializer
 import play.api.libs.json.Writes
 import play.api.Logging
 
-trait KafkaPublisher { self: Logging with LoggerOps =>
+trait KafkaPublisher { self: Logging & LoggerOps =>
   private val props = buildProperties
 
   private val voidUUIDProducer = new KafkaProducer(

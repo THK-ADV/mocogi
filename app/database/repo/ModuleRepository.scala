@@ -123,7 +123,7 @@ final class ModuleRepository @Inject() (
       allWithFilter(filter)
         .map(m => (m.id, m.title, m.abbrev))
         .result
-        .map(_.map((ModuleCore.apply _).tupled))
+        .map(_.map(ModuleCore.apply.tupled))
     )
 
   def allGenericModules() =

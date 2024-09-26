@@ -220,7 +220,7 @@ package object parsing {
       options.map(o =>
         prefix(optionPrefix(o))
           .map(_ => o)
-      ): _*
+      )*
     )
   )
 

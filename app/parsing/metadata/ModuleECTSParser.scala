@@ -37,7 +37,7 @@ object ModuleECTSParser {
               case (value, deDesc, enDesc) =>
                 ModuleECTSFocusAreaContribution(f, value, deDesc, enDesc)
             }
-        }: _*
+        }*
       )
 
     skipFirst(prefix("ects:"))

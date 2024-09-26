@@ -31,5 +31,5 @@ final class POTable(tag: Tag) extends Table[PO](tag, "po") {
     studyProgram,
     dateFrom,
     dateTo
-  ) <> ((PO.apply _).tupled, PO.unapply)
+  ) <> (PO.apply.tupled, PO.unapply)
 }

@@ -106,7 +106,7 @@ final class ModuleCatalogLatexPrinter @Inject() (
               builder.append("\\begin{itemize}\n")
               changedKeys.toList.sorted.foreach { key =>
                 val normalizedKey = ModuleKey.normalizeKeyValue(key)
-                val label = messagesApi(normalizedKey + ".label")(lang)
+                val label         = messagesApi(normalizedKey + ".label")(lang)
                 builder.append(s"\\item $label\n")
               }
               builder.append("\\end{itemize}\n")

@@ -47,7 +47,7 @@ class GitWebhookController @Inject() (
     )
 
   private def isAuthenticated[A](action: Action[A]) = {
-    def parseGitToken(implicit r: Request[_]): Try[UUID] =
+    def parseGitToken(implicit r: Request[?]): Try[UUID] =
       r.headers.get(GitlabTokenHeader) match {
         case Some(s) => Try(UUID.fromString(s))
         case None =>

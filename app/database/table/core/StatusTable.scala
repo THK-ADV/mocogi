@@ -9,5 +9,5 @@ final class StatusTable(tag: Tag) extends Table[ModuleStatus](tag, "status") wit
     id,
     deLabel,
     enLabel
-  ) <> ((ModuleStatus.apply _).tupled, ModuleStatus.unapply)
+  ) <> (ModuleStatus.apply.tupled, ModuleStatus.unapply)
 }

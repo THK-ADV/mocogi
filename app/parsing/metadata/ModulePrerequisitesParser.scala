@@ -42,7 +42,7 @@ object ModulePrerequisitesParser {
         pos.map(s =>
           literal(s"$studyProgramsPrefix${s.id}")
             .map(_ => s)
-        ): _*
+        )*
       )
     ).option.map(_.getOrElse(Nil))
 
@@ -81,7 +81,7 @@ object ModulePrerequisitesParser {
       .take(textParser)
       .zip(modulesParser)
       .take(studyProgramsParserRaw)
-      .map((ModulePrerequisiteEntryProtocol.apply _).tupled)
+      .map(ModulePrerequisiteEntryProtocol.apply.tupled)
 
   def recommendedPrerequisitesParser(implicit xs: Seq[PO]): Parser[ParsedPrerequisiteEntry] =
     parser(recommendedKey)
@@ -106,5 +106,5 @@ object ModulePrerequisitesParser {
     recommendedPrerequisitesParserRaw.option
       .zip(requiredPrerequisitesParserRaw.option)
       .skip(optional(newline))
-      .map((ModulePrerequisitesProtocol.apply _).tupled)
+      .map(ModulePrerequisitesProtocol.apply.tupled)
 }

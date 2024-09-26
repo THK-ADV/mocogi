@@ -32,7 +32,7 @@ object ModulePOParser {
     val pos0             = pos.sortBy(_.program).reverse
     val specializations0 = specializations.sortBy(_.id).reverse
     val poParser = oneOf(
-      pos0.map(s => prefix(s"$studyProgramPrefix${s.id}").map(_ => s)): _*
+      pos0.map(s => prefix(s"$studyProgramPrefix${s.id}").map(_ => s))*
     )
     val specializationsParser: Parser[Option[Specialization]] =
       char
@@ -40,7 +40,7 @@ object ModulePOParser {
         .or(Parser.rest)
         .flatMap { c =>
           if (c == ".")
-            oneOf(specializations0.map(s => prefix(s.id).map(_ => s)): _*)
+            oneOf(specializations0.map(s => prefix(s.id).map(_ => s))*)
               .map(Some.apply)
           else always(None)
         }
@@ -166,5 +166,5 @@ object ModulePOParser {
     mandatoryParserRaw.option
       .map(_.getOrElse(Nil))
       .zip(electiveParserRaw.option.map(_.getOrElse(Nil)))
-      .map((ModulePOProtocol.apply _).tupled)
+      .map(ModulePOProtocol.apply.tupled)
 }

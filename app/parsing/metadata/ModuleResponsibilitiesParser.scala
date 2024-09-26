@@ -37,7 +37,7 @@ object ModuleResponsibilitiesParser {
 
   def parser(implicit identities: Seq[Identity]): Parser[ModuleResponsibilities] =
     inner(IdentityParser.parser(identities))
-      .map((ModuleResponsibilities.apply _).tupled)
+      .map(ModuleResponsibilities.apply.tupled)
 
   def raw: Parser[(NonEmptyList[String], NonEmptyList[String])] =
     inner(IdentityParser.raw)

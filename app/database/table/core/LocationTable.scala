@@ -9,5 +9,5 @@ final class LocationTable(tag: Tag) extends Table[ModuleLocation](tag, "location
     id,
     deLabel,
     enLabel
-  ) <> ((ModuleLocation.apply _).tupled, ModuleLocation.unapply)
+  ) <> (ModuleLocation.apply.tupled, ModuleLocation.unapply)
 }

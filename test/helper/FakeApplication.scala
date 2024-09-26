@@ -34,7 +34,7 @@ trait FakeApplication {
         "play.evolutions.db.default.autoApply" -> "false"
       )
     }
-    Configuration(config: _*)
+    Configuration(config*)
   }
 
   implicit lazy val materializer: Materializer = app.materializer
@@ -44,10 +44,10 @@ trait FakeApplication {
 
   override def fakeApplication() = new GuiceApplicationBuilder()
     .configure(fakeConfig)
-    .overrides(bindings: _*)
+    .overrides(bindings*)
     .build()
 
-  def withFreshDb(actions: DBIOAction[_, NoStream, Effect.All]*) = {
+  def withFreshDb(actions: DBIOAction[?, NoStream, Effect.All]*) = {
     import slick.jdbc.PostgresProfile.api._
     val db = app.injector.instanceOf(classOf[DatabaseConfigProvider]).get.db
 
@@ -56,7 +56,7 @@ trait FakeApplication {
         sqlu"drop schema public cascade",
         sqlu"create schema public",
         moduleDraftTable.schema.create,
-        DBIO.seq(actions: _*)
+        DBIO.seq(actions*)
       )
     )
   }

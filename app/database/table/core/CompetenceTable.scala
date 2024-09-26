@@ -13,5 +13,5 @@ final class CompetenceTable(tag: Tag)
     deDesc,
     enLabel,
     enDesc
-  ) <> ((ModuleCompetence.apply _).tupled, ModuleCompetence.unapply)
+  ) <> (ModuleCompetence.apply.tupled, ModuleCompetence.unapply)
 }

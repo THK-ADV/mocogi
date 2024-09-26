@@ -18,7 +18,7 @@ trait SingleValueParser[A] {
             literal(lit(m))
               .skip(newline)
               .map(_ => m)
-          ): _*
+          )*
         )
       )
 }

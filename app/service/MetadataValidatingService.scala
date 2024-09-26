@@ -26,7 +26,7 @@ object MetadataValidatingService {
       parsed.map(a => ModuleCore(a._2.id, a._2.title, a._2.abbrev))
     val modules = existing ++ parsedModules
     val validator =
-      MetadataValidator.validate(ectsFactor, id => modules.find(_.id == id)) _
+      MetadataValidator.validate(ectsFactor, id => modules.find(_.id == id))
     val (errs, validated) =
       parsed.partitionMap {
         case (print, parsedMetadata, de, en) =>
@@ -50,7 +50,7 @@ object MetadataValidatingService {
       ModuleCore(metadata.id, metadata.title, metadata.abbrev)
     val modules = existing.+:(parsedModule)
     val validator =
-      MetadataValidator.validate(ectsFactor, id => modules.find(_.id == id)) _
+      MetadataValidator.validate(ectsFactor, id => modules.find(_.id == id))
     validator(metadata)
   }
 }

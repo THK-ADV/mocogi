@@ -9,7 +9,7 @@ import slick.jdbc.PostgresProfile.api.Table
 
 trait Repository[Input, Output, T <: Table[Input]] {
   self: HasDatabaseConfigProvider[JdbcProfile] =>
-  import profile.api._
+  import profile.api.*
 
   protected implicit val ctx: ExecutionContext
 

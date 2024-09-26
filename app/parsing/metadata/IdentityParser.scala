@@ -20,7 +20,7 @@ object IdentityParser {
             literal(s"$prefix${p.id}")
               .skip(newline)
               .map(_ => p)
-          ): _*
+          )*
       )
 
     val dashes =

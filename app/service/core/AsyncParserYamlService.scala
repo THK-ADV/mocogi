@@ -5,7 +5,7 @@ import scala.concurrent.Future
 import database.repo.Repository
 
 trait AsyncParserYamlService[A] extends YamlService[A] {
-  def repo: Repository[A, A, _]
+  def repo: Repository[A, A, ?]
 
   override def createOrUpdateMany(xs: Seq[A]): Future[Seq[A]] =
     repo.createOrUpdateMany(xs)
