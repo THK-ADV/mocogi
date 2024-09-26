@@ -5,9 +5,8 @@ import scala.concurrent.Future
 
 import play.api.db.slick.HasDatabaseConfigProvider
 import slick.jdbc.JdbcProfile
-import slick.jdbc.PostgresProfile.api.Table
 
-trait Repository[Input, Output, T <: Table[Input]] {
+trait Repository[Input, Output, T <: slick.jdbc.PostgresProfile.api.Table[Input]] {
   self: HasDatabaseConfigProvider[JdbcProfile] =>
   import profile.api.*
 
