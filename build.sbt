@@ -1,20 +1,19 @@
 val playSlickVersion = "6.1.1"
-val guiceVersion = "5.1.0"
+val guiceVersion     = "5.1.0"
 val scalaTestVersion = "3.2.19"
-val keycloakVersion = "24.0.3"
-val monocle = "3.3.0"
+val keycloakVersion  = "24.0.3"
+val monocle          = "3.3.0"
 
 lazy val `mocogi` = (project in file("."))
   .enablePlugins(PlayScala)
   .settings(
-    name := "mocogi",
-    maintainer := "Alexander Dobrynin <alexander.dobrynin@th-koeln.de>",
-    version := "1.0",
-    scalaVersion := "3.3.3",
-    // semanticdbEnabled := true,
-    // semanticdbVersion := scalafixSemanticdb.revision,
+    name              := "mocogi",
+    maintainer        := "Alexander Dobrynin <alexander.dobrynin@th-koeln.de>",
+    version           := "1.0",
+    scalaVersion      := "3.4.2",
+    semanticdbEnabled := true,
     scalacOptions += "-Wunused:imports",
-    resolvers += "Akka Snapshot Repository" at "https://repo.akka.io/snapshots/",
+    resolvers += "Akka Snapshot Repository".at("https://repo.akka.io/snapshots/"),
     resolvers ++= Resolver.sonatypeOssRepos("snapshots"),
     libraryDependencies ++= play,
     libraryDependencies ++= guiceDeps,
@@ -27,7 +26,7 @@ lazy val `mocogi` = (project in file("."))
     libraryDependencies += parallelCollections,
     libraryDependencies += circle,
     externalResolvers ++= Seq(
-      "GitHub <THK-ADV> Apache Maven Packages" at "https://maven.pkg.github.com/THK-ADV/nebulak"
+      "GitHub <THK-ADV> Apache Maven Packages".at("https://maven.pkg.github.com/THK-ADV/nebulak")
     ),
     credentials += Credentials(
       "GitHub Package Registry",
@@ -48,17 +47,17 @@ lazy val play = Seq(
 )
 
 lazy val test = Seq(
-  "org.scalactic" %% "scalactic" % scalaTestVersion,
-  "org.scalatest" %% "scalatest" % scalaTestVersion % "test",
-  "org.scalatestplus.play" %% "scalatestplus-play" % "7.0.1" % "test"
+  "org.scalactic"          %% "scalactic"          % scalaTestVersion,
+  "org.scalatest"          %% "scalatest"          % scalaTestVersion % "test",
+  "org.scalatestplus.play" %% "scalatestplus-play" % "7.0.1"          % "test"
 )
 
 lazy val parser = "de.th-koeln.inf.adv" %% "nebulak" % "0.13"
 
 lazy val database = Seq(
-  "org.playframework" %% "play-slick" % playSlickVersion,
+  "org.playframework" %% "play-slick"            % playSlickVersion,
   "org.playframework" %% "play-slick-evolutions" % playSlickVersion,
-  "org.postgresql" % "postgresql" % "42.7.3"
+  "org.postgresql"     % "postgresql"            % "42.7.3"
 )
 
 lazy val kafka = "org.apache.kafka" % "kafka-clients" % "3.8.0"
@@ -70,17 +69,17 @@ lazy val parallelCollections =
 
 lazy val guiceDeps = Seq(
   guice,
-  "com.google.inject" % "guice" % guiceVersion,
+  "com.google.inject"            % "guice"                % guiceVersion,
   "com.google.inject.extensions" % "guice-assistedinject" % guiceVersion
 )
 
 val keycloak = Seq(
-  "org.keycloak" % "keycloak-core" % keycloakVersion,
-  "org.keycloak" % "keycloak-adapter-core" % keycloakVersion,
-  "org.jboss.logging" % "jboss-logging" % "3.5.3.Final"
+  "org.keycloak"      % "keycloak-core"         % keycloakVersion,
+  "org.keycloak"      % "keycloak-adapter-core" % keycloakVersion,
+  "org.jboss.logging" % "jboss-logging"         % "3.5.3.Final"
 )
 
 val optics = Seq(
-  "dev.optics" %% "monocle-core" % monocle,
+  "dev.optics" %% "monocle-core"  % monocle,
   "dev.optics" %% "monocle-macro" % monocle
 )
