@@ -7,7 +7,7 @@ import parser.Parser
 
 trait SimpleYamlService[A] extends YamlService[A] {
   def fileParser: Parser[List[A]]
-  def repo: Repository[A, A, _]
+  def repo: Repository[A, A, ?]
 
   def createOrUpdateMany(xs: Seq[A]): Future[Seq[A]] =
     repo.createOrUpdateMany(xs)

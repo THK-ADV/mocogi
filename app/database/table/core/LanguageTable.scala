@@ -9,5 +9,5 @@ final class LanguageTable(tag: Tag) extends Table[ModuleLanguage](tag, "language
     id,
     deLabel,
     enLabel
-  ) <> ((ModuleLanguage.apply _).tupled, ModuleLanguage.unapply)
+  ) <> (ModuleLanguage.apply.tupled, ModuleLanguage.unapply)
 }

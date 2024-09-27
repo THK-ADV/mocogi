@@ -27,7 +27,7 @@ class StudyProgramRepository @Inject() (
     implicit val ctx: ExecutionContext
 ) extends HasDatabaseConfigProvider[JdbcProfile]
     with Logging {
-  import profile.api._
+  import profile.api.*
 
   protected val tableQuery = TableQuery[StudyProgramTable]
 

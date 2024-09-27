@@ -21,7 +21,7 @@ object ModuleAssessmentMethodParser {
   private def assessmentMethodParser(implicit assessmentMethods: Seq[AssessmentMethod]): Parser[AssessmentMethod] =
     oneOf(
       assessmentMethods
-        .map(a => prefix(s"$assessmentPrefix${a.id}").map(_ => a)): _*
+        .map(a => prefix(s"$assessmentPrefix${a.id}").map(_ => a))*
     )
 
   private def assessmentMethodParserRaw: Parser[String] =
@@ -76,7 +76,7 @@ object ModuleAssessmentMethodParser {
           .skip(zeroOrMoreSpaces)
           .take(preconditionParser)
           .many(zeroOrMoreSpaces)
-          .map(_.map((ModuleAssessmentMethodEntry.apply _).tupled))
+          .map(_.map(ModuleAssessmentMethodEntry.apply.tupled))
       )
 
   private def raw(
@@ -91,7 +91,7 @@ object ModuleAssessmentMethodParser {
           .skip(zeroOrMoreSpaces)
           .take(preconditionParserRaw)
           .many(zeroOrMoreSpaces)
-          .map(_.map((ModuleAssessmentMethodEntryProtocol.apply _).tupled))
+          .map(_.map(ModuleAssessmentMethodEntryProtocol.apply.tupled))
       )
 
   def mandatoryParser(implicit xs: Seq[AssessmentMethod]): Parser[List[ModuleAssessmentMethodEntry]] =
@@ -103,7 +103,7 @@ object ModuleAssessmentMethodParser {
   def parser(implicit xs: Seq[AssessmentMethod]): Parser[ModuleAssessmentMethods] =
     mandatoryParser
       .zip(electiveParser)
-      .map((ModuleAssessmentMethods.apply _).tupled)
+      .map(ModuleAssessmentMethods.apply.tupled)
 
   def mandatoryParserRaw: Parser[List[ModuleAssessmentMethodEntryProtocol]] =
     raw(mandatoryKey).option.map(_.getOrElse(Nil))
@@ -114,5 +114,5 @@ object ModuleAssessmentMethodParser {
   def raw: Parser[ModuleAssessmentMethodsProtocol] =
     mandatoryParserRaw
       .zip(electiveParserRaw)
-      .map((ModuleAssessmentMethodsProtocol.apply _).tupled)
+      .map(ModuleAssessmentMethodsProtocol.apply.tupled)
 }

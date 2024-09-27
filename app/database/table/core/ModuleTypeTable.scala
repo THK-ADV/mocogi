@@ -9,5 +9,5 @@ final class ModuleTypeTable(tag: Tag) extends Table[ModuleType](tag, "module_typ
     id,
     deLabel,
     enLabel
-  ) <> ((ModuleType.apply _).tupled, ModuleType.unapply)
+  ) <> (ModuleType.apply.tupled, ModuleType.unapply)
 }

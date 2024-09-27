@@ -15,5 +15,5 @@ final class SpecializationTable(tag: Tag) extends Table[Specialization](tag, "sp
     id,
     label,
     po
-  ) <> ((Specialization.apply _).tupled, Specialization.unapply)
+  ) <> (Specialization.apply.tupled, Specialization.unapply)
 }

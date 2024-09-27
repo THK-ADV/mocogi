@@ -11,10 +11,7 @@ import auth.CampusId
 import database.table.ModuleDraftTable
 import database.table.ModuleTable
 import database.table.ModuleUpdatePermissionTable
-import models.ModuleCore
-import models.ModuleDraft
-import models.ModuleUpdatePermission
-import models.ModuleUpdatePermissionType
+import models.*
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.db.slick.HasDatabaseConfigProvider
 import slick.jdbc.JdbcProfile
@@ -32,7 +29,7 @@ final class ModuleUpdatePermissionRepository @Inject() (
 
   import database.table.campusIdColumnType
   import database.table.moduleUpdatePermissionTypeColumnType
-  import profile.api._
+  import profile.api.*
 
   protected val tableQuery = TableQuery[ModuleUpdatePermissionTable]
 
@@ -128,7 +125,7 @@ final class ModuleUpdatePermissionRepository @Inject() (
         .map(_.map {
           case (((_, _, kind), core), draft) =>
             val moduleCore = core
-              .map((ModuleCore.apply _).tupled)
+              .map(ModuleCore.apply.tupled)
               .orElse(
                 draft
                   .map(d => ModuleCore(d.module, d.moduleTitle, d.moduleAbbrev))

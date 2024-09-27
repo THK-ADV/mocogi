@@ -15,5 +15,5 @@ final class FocusAreaTable(tag: Tag) extends Table[FocusArea](tag, "focus_area")
     enLabel,
     deDesc,
     enDesc
-  ) <> ((FocusArea.apply _).tupled, FocusArea.unapply)
+  ) <> (FocusArea.apply.tupled, FocusArea.unapply)
 }

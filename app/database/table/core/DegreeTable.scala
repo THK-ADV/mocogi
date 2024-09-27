@@ -11,5 +11,5 @@ final class DegreeTable(tag: Tag) extends Table[Degree](tag, "degree") with IDLa
     deDesc,
     enLabel,
     enDesc
-  ) <> ((Degree.apply _).tupled, Degree.unapply)
+  ) <> (Degree.apply.tupled, Degree.unapply)
 }

@@ -95,7 +95,7 @@ final class ModuleCatalogLatexPrinter @Inject() (
       if (diffs.nonEmpty) {
         builder.append(s"\\section*{${escape("Module Diffs")}}\n")
         builder.append(
-          s"Liste aller Moduländerungen in der aktuellen Bearbeitungsphase:\n"
+          "Liste aller Moduländerungen in der aktuellen Bearbeitungsphase:\n"
         )
         diffs
           .sortBy(_._1.title)
@@ -106,7 +106,7 @@ final class ModuleCatalogLatexPrinter @Inject() (
               builder.append("\\begin{itemize}\n")
               changedKeys.toList.sorted.foreach { key =>
                 val normalizedKey = ModuleKey.normalizeKeyValue(key)
-                val label = messagesApi(normalizedKey + ".label")(lang)
+                val label         = messagesApi(normalizedKey + ".label")(lang)
                 builder.append(s"\\item $label\n")
               }
               builder.append("\\end{itemize}\n")

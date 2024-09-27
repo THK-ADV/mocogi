@@ -9,5 +9,5 @@ final class SeasonTable(tag: Tag) extends Table[Season](tag, "season") with IDLa
     id,
     deLabel,
     enLabel
-  ) <> ((Season.apply _).tupled, Season.unapply)
+  ) <> (Season.apply.tupled, Season.unapply)
 }
