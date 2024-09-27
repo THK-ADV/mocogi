@@ -95,7 +95,7 @@ final class ModuleCatalogLatexPrinter @Inject() (
       if (diffs.nonEmpty) {
         builder.append(s"\\section*{${escape("Module Diffs")}}\n")
         builder.append(
-          s"Liste aller Moduländerungen in der aktuellen Bearbeitungsphase:\n"
+          "Liste aller Moduländerungen in der aktuellen Bearbeitungsphase:\n"
         )
         diffs
           .sortBy(_._1.title)
