@@ -3,7 +3,9 @@ package models
 import models.core.IDLabel
 import play.api.libs.json.Writes
 
-sealed trait ModuleReviewStatus extends IDLabel
+sealed trait ModuleReviewStatus extends IDLabel {
+  def isRejected = this == ModuleReviewStatus.Rejected
+}
 
 object ModuleReviewStatus {
 

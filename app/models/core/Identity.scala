@@ -1,5 +1,6 @@
 package models.core
 
+import auth.CampusId
 import database.table.core.IdentityDbEntry
 import monocle.Lens
 import play.api.libs.json.JsObject
@@ -37,7 +38,7 @@ object Identity {
 
     def fullName: String = s"$firstname $lastname"
 
-    def email: Option[String] = username.map(_ + "@th-koeln.de")
+    def email: Option[String] = username.map(CampusId.apply(_).toMailAddress)
   }
 
   case class Group(id: String, label: String) extends Identity {
