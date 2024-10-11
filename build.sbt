@@ -3,6 +3,7 @@ val guiceVersion     = "5.1.0"
 val scalaTestVersion = "3.2.19"
 val keycloakVersion  = "24.0.3"
 val monocle          = "3.3.0"
+val playMailVersion  = "10.0.0"
 
 lazy val `mocogi` = (project in file("."))
   .enablePlugins(PlayScala)
@@ -25,6 +26,7 @@ lazy val `mocogi` = (project in file("."))
     libraryDependencies ++= optics,
     libraryDependencies += parallelCollections,
     libraryDependencies += circle,
+    libraryDependencies ++= mail,
     externalResolvers ++= Seq(
       "GitHub <THK-ADV> Apache Maven Packages".at("https://maven.pkg.github.com/THK-ADV/nebulak")
     ),
@@ -82,4 +84,9 @@ val keycloak = Seq(
 val optics = Seq(
   "dev.optics" %% "monocle-core"  % monocle,
   "dev.optics" %% "monocle-macro" % monocle
+)
+
+val mail = Seq(
+  "org.playframework" %% "play-mailer"       % playMailVersion,
+  "org.playframework" %% "play-mailer-guice" % playMailVersion
 )

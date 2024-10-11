@@ -6,7 +6,7 @@ import java.util.UUID
 import models.ModuleReview
 import models.ModuleReviewStatus
 import models.UniversityRole
-import slick.jdbc.PostgresProfile.api._
+import slick.jdbc.PostgresProfile.api.*
 
 final class ModuleReviewTable(tag: Tag)
     extends Table[ModuleReview.DB](
@@ -29,6 +29,9 @@ final class ModuleReviewTable(tag: Tag)
   def respondedBy = column[Option[String]]("responded_by")
 
   def respondedAt = column[Option[LocalDateTime]]("responded_at")
+
+  def isApproved: Rep[Boolean] =
+    this.status === ModuleReviewStatus.Approved
 
   override def * =
     (

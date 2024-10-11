@@ -20,7 +20,8 @@ import play.api.Environment
 import printing.markdown.ModuleMarkdownPrinter
 import printing.pandoc.PandocApi
 import printing.yaml.MetadataYamlPrinter
-import providers._
+import providers.*
+import service.mail.MailerService
 import webhook.GitMergeEventHandler
 import webhook.GitPushEventHandler
 
@@ -61,6 +62,9 @@ class Module(@unused environment: Environment, configuration: Configuration) ext
       .asEagerSingleton()
     bind(classOf[ElectivesCatalogService])
       .toProvider(classOf[ElectivesCatalogServiceProvider])
+      .asEagerSingleton()
+    bind(classOf[MailerService])
+      .toProvider(classOf[MailerServiceProvider])
       .asEagerSingleton()
 
     bind(new TypeLiteral[Set[MetadataParser]] {})

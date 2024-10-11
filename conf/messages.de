@@ -77,3 +77,9 @@ content.recommendedReading.label=Empfohlene Literatur
 content.recommendedReading.desc=
 content.particularities.label=Besonderheiten
 content.particularities.desc=
+
+# Module Review
+module_review_notification_subject=Änderungsfreigabe für Module
+module_review_notification_opening=Für die folgenden Module wurden Änderungsfreigaben angefordert:
+module_review_notification_body={0}, erstellt von {1}, für den Studiengang {2}.\nÄnderungen als {3} freigeben: {4}
+module_review_notification_closing=Automatisch gesendet von Modulverwaltung THK-GM

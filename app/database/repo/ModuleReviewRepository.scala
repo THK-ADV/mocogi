@@ -8,13 +8,20 @@ import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
+import database.repo.ModuleReviewRepository.PendingModuleReview
+import database.repo.ModuleReviewRepository.PersonCore
+import database.table.core.DegreeTable
 import database.table.core.IdentityTable
+import database.table.core.StudyProgramPersonTable
 import database.table.core.StudyProgramTable
+import database.table.ModuleDraftTable
 import database.table.ModuleReviewTable
 import models.core.IDLabel
 import models.core.Identity
+import models.ModuleCore
 import models.ModuleReview
 import models.ModuleReviewStatus
+import models.UniversityRole
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.db.slick.HasDatabaseConfigProvider
 import slick.jdbc.JdbcProfile
@@ -31,7 +38,7 @@ final class ModuleReviewRepository @Inject() (
     with HasDatabaseConfigProvider[JdbcProfile] {
 
   import database.table.moduleReviewStatusColumnType
-  import profile.api._
+  import profile.api.*
 
   protected val tableQuery = TableQuery[ModuleReviewTable]
 
@@ -87,7 +94,73 @@ final class ModuleReviewRepository @Inject() (
         })
     )
 
+  def getAllPending(): Future[Seq[PendingModuleReview]] = {
+    import database.table.{ moduleReviewStatusColumnType, universityRoleColumnType }
+
+    val base = tableQuery
+      .filterNot(_.isApproved)
+      .join(TableQuery[StudyProgramTable])
+      .on(_.studyProgram === _.id)
+      .join(TableQuery[DegreeTable])
+      .on(_._2.degree === _.id)
+      .map { case ((r, sp), d) => (r, sp.deLabel, d.deLabel) }
+
+    val moduleDraftQuery =
+      for
+        d <- TableQuery[ModuleDraftTable]
+        a <- d.authorFk
+      yield (d.module, d.moduleTitle, d.moduleAbbrev, a.id, a.firstname, a.lastname, a.campusId)
+
+    val studyProgramDirQuery =
+      for
+        q <- TableQuery[StudyProgramPersonTable]
+        d <- q.personFk
+      yield (q.studyProgram, q.role, d.id, d.firstname, d.lastname, d.campusId)
+
+    val query = base
+      .join(moduleDraftQuery)
+      .on(_._1.moduleDraft === _._1)
+      .join(studyProgramDirQuery)
+      .on((a, b) => a._1._1.studyProgram === b._1 && a._1._1.role === b._2)
+      .map { case (((r, sp, d), md), dir) => ((r.id, r.role, sp, d, r.status), md, dir) }
+      .result
+      .map(
+        _.groupBy(_._2._1)
+          .filterNot(_._2.exists(_._1._5.isRejected))
+          .values
+          .flatMap(_.map {
+            case (r, md, dir) =>
+              PendingModuleReview(
+                r._1,
+                r._2,
+                r._3,
+                r._4,
+                ModuleCore(md._1, md._2, md._3),
+                PersonCore(md._4, md._5, md._6, md._7),
+                PersonCore(dir._3, dir._4, dir._5, dir._6)
+              )
+          })
+          .toSeq
+      )
+
+    db.run(query)
+  }
+
   protected override def retrieve(
       query: Query[ModuleReviewTable, ModuleReview.DB, Seq]
   ): Future[Seq[ModuleReview.DB]] = db.run(query.result)
+}
+
+object ModuleReviewRepository {
+  case class PersonCore(id: String, firstname: String, lastname: String, campusId: Option[String])
+
+  case class PendingModuleReview(
+      reviewId: UUID,
+      reviewRole: UniversityRole,
+      reviewStudyProgramLabel: String,
+      reviewDegreeLabel: String,
+      module: ModuleCore,
+      moduleAuthor: PersonCore,
+      director: PersonCore
+  )
 }
