@@ -1,7 +1,7 @@
 package database.table.core
 
 import models.core.PersonStatus
-import slick.jdbc.PostgresProfile.api._
+import slick.jdbc.PostgresProfile.api.*
 
 case class IdentityDbEntry(
     id: String,

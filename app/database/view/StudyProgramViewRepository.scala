@@ -8,6 +8,7 @@ import scala.concurrent.Future
 
 import models.core.Degree
 import models.core.IDLabel
+import models.FullPoId
 import models.POCore
 import models.StudyProgramView
 import play.api.db.slick.DatabaseConfigProvider
@@ -20,7 +21,7 @@ final class StudyProgramViewRepository @Inject() (
     implicit val ctx: ExecutionContext
 ) extends HasDatabaseConfigProvider[JdbcProfile]
     with MaterializedView {
-  import profile.api._
+  import profile.api.*
 
   override def name: String = "study_program_view"
 
@@ -28,6 +29,20 @@ final class StudyProgramViewRepository @Inject() (
 
   def all(): Future[Seq[StudyProgramView]] =
     db.run(tableQuery.result)
+
+  def getByPo(fullPoId: FullPoId): Future[StudyProgramView] =
+    db.run(
+      tableQuery
+        .filter(_.fullPo === fullPoId.id)
+        .result
+        .flatMap(xs =>
+          xs.size match
+            case 1 => DBIO.successful(xs.head)
+            case 0 => DBIO.failed(new Exception(s"expected one study program for poId ${fullPoId.id} but found 0"))
+            case n =>
+              DBIO.failed(new Exception(s"expected one study program for poId ${fullPoId.id} but found $n"))
+        )
+    )
 
   final class StudyProgramViewTable(tag: Tag) extends Table[StudyProgramView](tag, name) {
 

@@ -9,19 +9,15 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 import database.repo.ModuleReviewRepository.PendingModuleReview
-import database.repo.ModuleReviewRepository.PersonCore
 import database.table.core.DegreeTable
 import database.table.core.IdentityTable
 import database.table.core.StudyProgramPersonTable
 import database.table.core.StudyProgramTable
 import database.table.ModuleDraftTable
 import database.table.ModuleReviewTable
+import models.*
 import models.core.IDLabel
 import models.core.Identity
-import models.ModuleCore
-import models.ModuleReview
-import models.ModuleReviewStatus
-import models.UniversityRole
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.db.slick.HasDatabaseConfigProvider
 import slick.jdbc.JdbcProfile
@@ -152,8 +148,6 @@ final class ModuleReviewRepository @Inject() (
 }
 
 object ModuleReviewRepository {
-  case class PersonCore(id: String, firstname: String, lastname: String, campusId: Option[String])
-
   case class PendingModuleReview(
       reviewId: UUID,
       reviewRole: UniversityRole,

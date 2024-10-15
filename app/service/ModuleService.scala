@@ -26,6 +26,9 @@ final class ModuleService @Inject() (
   def allFromPoMandatory(poId: String) =
     repo.all(Map("po_mandatory" -> Seq(poId)))
 
+  def allFromPo(poId: String) =
+    repo.all(Map("po" -> Seq(poId)))
+
   def get(id: UUID) =
     repo.all(Map("id" -> Seq(id.toString))).single
 

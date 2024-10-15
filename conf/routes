@@ -57,6 +57,10 @@ GET           /modules/:id/latest/file                         controllers.Modul
 GET           /moduleCatalogs/:semester                        controllers.ModuleCatalogController.allFromSemester(semester: java.lang.String)
 GET           /moduleCatalogs/preview/:studyProgram/:po        controllers.ModuleCatalogController.getPreview(studyProgram: java.lang.String, po: java.lang.String)
 
+# Exam Lists
+
+GET           /examLists/preview/:studyProgram/:po             controllers.ExamListsController.getPreview(studyProgram: java.lang.String, po: java.lang.String)
+
 # Module
 
 # Module Draft

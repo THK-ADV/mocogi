@@ -3,6 +3,10 @@ exam_phase.wise_1=Wintersemester Termin 1 (Jan.-Apr.)
 exam_phase.sose_1=Sommersemester Termin 1 (Juli)
 exam_phase.sose_2=Sommersemester Termin 2 (Sep./Okt.)
 exam_phase.none=TBA
+exam_phase.short.wise_1=WiSe
+exam_phase.short.sose_1=SoSe 1
+exam_phase.short.sose_2=SoSe 2
+exam_phase.short.none=TBA
 
 # Module Keys
 metadata.title.label=Modulbezeichnung
@@ -79,7 +83,23 @@ content.particularities.label=Besonderheiten
 content.particularities.desc=
 
 # Module Review
-module_review_notification_subject=Änderungsfreigabe für Module
-module_review_notification_opening=Für die folgenden Module wurden Änderungsfreigaben angefordert:
-module_review_notification_body={0}, erstellt von {1}, für den Studiengang {2}.\nÄnderungen als {3} freigeben: {4}
-module_review_notification_closing=Automatisch gesendet von Modulverwaltung THK-GM
+module_review.notification.subject=Änderungsfreigabe für Module
+module_review.notification.opening=Für die folgenden Module wurden Änderungsfreigaben angefordert:
+module_review.notification.body={0}, erstellt von {1}, für den Studiengang {2}.\nÄnderungen als {3} freigeben: {4}
+module_review.notification.closing=Automatisch gesendet von Modulverwaltung THK-GM
+
+# Latex
+latex.lang.package_name=ngerman
+latex.preview_label=Vorschau
+
+# Latex Exam Lists
+latex.exam_lists.title=Prüfungsliste
+latex.exam_lists.mandatory_modules.chapter=Pflichtmodule
+latex.exam_lists.elective_modules.chapter=Wahlmodule
+latex.exam_lists.table.header.moduleName=Modulname
+latex.exam_lists.table.header.assessmentMethod=Prüfungsleistung
+latex.exam_lists.table.header.firstExaminer=Erstprüfer
+latex.exam_lists.table.header.secondExaminer=ZweitPrüfer
+latex.exam_lists.table.header.examPhases=Prüfungsphasen
+latex.exam_lists.table.footer.nextPageHint=Fortsetzung auf der nächsten Seite
+latex.exam_lists.logical.conjunction=und

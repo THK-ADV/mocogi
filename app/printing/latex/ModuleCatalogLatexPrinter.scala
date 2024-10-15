@@ -4,6 +4,8 @@ import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
 
+import scala.annotation.unused
+
 import catalog.Semester
 import models.*
 import models.core.*
@@ -76,22 +78,23 @@ final class ModuleCatalogLatexPrinter @Inject() (
     )
 
   private def prologContent: IntroContent =
-    (pLang, lang, builder) => {
+    (pLang, _, builder) => {
       chapter(pLang.prologHeadline)(builder)
     }
 
   private def studyPlanContent: IntroContent =
-    (pLang, lang, builder) => {
+    (pLang, _, builder) => {
       chapter(pLang.studyPlanHeadline)(builder)
     }
 
+  @unused
   private def layoutContent: IntroContent =
-    (pLang, lang, builder) => {
+    (_, _, builder) => {
       builder.append("\\layout*\n")
     }
 
   private def diffContent(diffs: Seq[(ModuleCore, Set[String])]): IntroContent =
-    (pLang, lang, builder) => {
+    (_, lang, builder) => {
       if (diffs.nonEmpty) {
         builder.append(s"\\section*{${escape("Module Diffs")}}\n")
         builder.append(
@@ -323,16 +326,6 @@ final class ModuleCatalogLatexPrinter @Inject() (
             go(m)
             newPage
         }
-  }
-
-  private def escape(str: String) = {
-    val buf = new StringBuilder(str.length)
-    str.foreach {
-      case '_' => buf.append("\\_")
-      case '&' => buf.append("\\&")
-      case s   => buf.append(s)
-    }
-    buf.result()
   }
 
   private def title(
