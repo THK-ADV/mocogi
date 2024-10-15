@@ -78,7 +78,6 @@ final class ModuleReviewNotifier @Inject() (
 
     private def sendMail(reviews: Seq[ModuleReviewRepository.PendingModuleReview])(using Lang): Unit = {
       reviews
-        .filter(_.director.id == "ado") // TODO debug
         .groupBy(_.director)
         .foreach {
           case (dir, xs) if dir.campusId.nonEmpty && xs.nonEmpty =>
