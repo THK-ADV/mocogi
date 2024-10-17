@@ -11,10 +11,10 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 import cats.data.NonEmptyList
-import database._
-import database.table._
-import models._
-import parsing.types._
+import database.*
+import database.table.*
+import models.*
+import parsing.types.*
 import parsing.types.Module
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.db.slick.HasDatabaseConfigProvider
@@ -26,7 +26,7 @@ final class ModuleRepository @Inject() (
     private implicit val ctx: ExecutionContext
 ) extends HasDatabaseConfigProvider[JdbcProfile]
     with Filterable[ModuleDbEntry, ModuleTable] {
-  import profile.api._
+  import profile.api.*
 
   private type PrerequisitesDbResult = (
       List[ModulePrerequisitesDbEntry],
@@ -88,6 +88,14 @@ final class ModuleRepository @Inject() (
         poMandatoryTable
           .filter(a => a.module === t.id && a.po === value)
           .exists
+    case ("po", value) =>
+      t =>
+        poMandatoryTable
+          .filter(a => a.module === t.id && a.fullPo === value)
+          .exists ||
+          poOptionalTable
+            .filter(a => a.module === t.id && a.fullPo === value)
+            .exists
   }
 
   def createOrUpdateMany(modules: Seq[Module], timestamp: LocalDateTime) = {

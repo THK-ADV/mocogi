@@ -3,3 +3,23 @@ exam_phase.wise_1=Winter Semester Period 1 (Jan.-Apr.)
 exam_phase.sose_1=Summer Semester Period 1 (Jul.)
 exam_phase.sose_2=Summer Semester Period 2 (Sep./Oct.)
 exam_phase.none=TBA
+exam_phase.short.wise_1=WiSe
+exam_phase.short.sose_1=SoSe 1
+exam_phase.short.sose_2=SoSe 2
+exam_phase.short.none=TBA
+
+# Latex
+latex.lang.package_name=english
+latex.preview_label=Preview
+
+# Latex Exam Lists
+latex.exam_lists.title=Exam List
+latex.exam_lists.mandatory_modules.chapter=Mandatory Modules
+latex.exam_lists.elective_modules.chapter=Elective Modules
+latex.exam_lists.table.header.moduleName=Module name
+latex.exam_lists.table.header.assessmentMethod=Assessment method
+latex.exam_lists.table.header.firstExaminer=First examiner
+latex.exam_lists.table.header.secondExaminer=Second examiner
+latex.exam_lists.table.header.examPhases=Exam phases
+latex.exam_lists.table.footer.nextPageHint=Continued on next page
+latex.exam_lists.logical.conjunction=and

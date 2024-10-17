@@ -82,9 +82,9 @@ final class ModuleReviewNotifier @Inject() (
         .foreach {
           case (dir, xs) if dir.campusId.nonEmpty && xs.nonEmpty =>
             val receiver = CampusId(dir.campusId.get).toMailAddress
-            val subject  = messages("module_review_notification_subject")
+            val subject  = messages("module_review.notification.subject")
             val body     = StringBuilder()
-            body.append(messages("module_review_notification_opening"))
+            body.append(messages("module_review.notification.opening"))
             body.append('\n')
             xs.groupBy(_.module).foreach {
               case (module, xs) =>
@@ -95,7 +95,7 @@ final class ModuleReviewNotifier @Inject() (
                 body.append("\n- ")
                 body.append(
                   messages(
-                    "module_review_notification_body",
+                    "module_review.notification.body",
                     s"${module.title} (${module.abbrev})",
                     author,
                     s"${entry.reviewStudyProgramLabel} (${entry.reviewDegreeLabel})",
@@ -106,7 +106,7 @@ final class ModuleReviewNotifier @Inject() (
                 body.append('\n')
             }
             body.append("\n")
-            body.append(messages("module_review_notification_closing"))
+            body.append(messages("module_review.notification.closing"))
             mailerService.sendMail(subject, body.toString(), NonEmptyList.one(receiver))
           case (dir, _) =>
             logger.info(s"no mail address found for user ${dir.id}")

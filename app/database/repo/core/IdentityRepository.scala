@@ -8,7 +8,7 @@ import scala.concurrent.Future
 
 import auth.CampusId
 import database.repo.Repository
-import database.table.core._
+import database.table.core.*
 import models.core.Identity
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.db.slick.HasDatabaseConfigProvider
@@ -20,7 +20,7 @@ class IdentityRepository @Inject() (
     implicit val ctx: ExecutionContext
 ) extends Repository[IdentityDbEntry, Identity, IdentityTable]
     with HasDatabaseConfigProvider[JdbcProfile] {
-  import profile.api._
+  import profile.api.*
 
   protected val tableQuery = TableQuery[IdentityTable]
 

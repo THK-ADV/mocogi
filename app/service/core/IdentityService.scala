@@ -19,7 +19,7 @@ final class IdentityService @Inject() (
 ) extends YamlService[Identity] {
 
   override def parser =
-    facultyService.allIds().map(IdentityFileParser.fileParser(_))
+    facultyService.allIds().map(IdentityFileParser.fileParser)
 
   override def createOrUpdateMany(
       xs: Seq[Identity]

@@ -14,6 +14,8 @@ case class ModulePOMandatoryDbEntry(
 
 final class ModulePOMandatoryTable(tag: Tag) extends Table[ModulePOMandatoryDbEntry](tag, "module_po_mandatory") {
 
+  def fullPo = specialization.fold(po)(identity)
+
   def id = column[UUID]("id", O.PrimaryKey)
 
   def module = column[UUID]("module")
