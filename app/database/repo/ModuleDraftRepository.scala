@@ -13,7 +13,7 @@ import database.table.ModuleDraftTable
 import git.CommitId
 import git.MergeRequestId
 import git.MergeRequestStatus
-import models._
+import models.*
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.db.slick.HasDatabaseConfigProvider
 import play.api.libs.json.JsValue
@@ -27,7 +27,7 @@ final class ModuleDraftRepository @Inject() (
     implicit val ctx: ExecutionContext
 ) extends Repository[ModuleDraft, ModuleDraft, ModuleDraftTable]
     with HasDatabaseConfigProvider[JdbcProfile] {
-  import profile.api._
+  import profile.api.*
   import table.commitColumnType
   import table.jsValueColumnType
   import table.mergeRequestIdColumnType
@@ -41,6 +41,9 @@ final class ModuleDraftRepository @Inject() (
       query: Query[ModuleDraftTable, ModuleDraft, Seq]
   ) =
     db.run(query.result)
+
+  def getMergeRequestId(module: UUID): Future[Option[MergeRequestId]] =
+    db.run(tableQuery.filter(_.module === module).map(_.mergeRequestId).result.single)
 
   def delete(moduleId: UUID): Future[Int] =
     db.run(tableQuery.filter(_.module === moduleId).delete)

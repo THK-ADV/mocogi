@@ -13,6 +13,7 @@ import database.repo.ModuleDraftRepository
 import git.api.GitBranchService
 import git.api.GitCommitService
 import git.api.GitFileDownloadService
+import git.MergeRequestId
 import models.*
 import models.core.Identity
 import ops.FutureOps.Ops
@@ -33,6 +34,9 @@ final class ModuleDraftService @Inject() (
     private val pipeline: MetadataPipeline,
     private implicit val ctx: ExecutionContext
 ) extends Logging {
+
+  def getMergeRequestId(module: UUID): Future[Option[MergeRequestId]] =
+    moduleDraftRepository.getMergeRequestId(module)
 
   def getByModule(moduleId: UUID): Future[ModuleDraft] =
     moduleDraftRepository.getByModule(moduleId)

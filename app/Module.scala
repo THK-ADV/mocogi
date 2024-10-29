@@ -84,5 +84,9 @@ class Module(@unused environment: Environment, configuration: Configuration) ext
     bind(classOf[String])
       .annotatedWith(Names.named("gitHost"))
       .toInstance(configuration.nonEmptyString("git.host"))
+
+    bind(classOf[String])
+      .annotatedWith(Names.named("git.repoUrl"))
+      .toInstance(configuration.nonEmptyString("git.repoUrl"))
   }
 }

@@ -2,6 +2,7 @@ package controllers
 
 import java.util.UUID
 import javax.inject.Inject
+import javax.inject.Named
 import javax.inject.Singleton
 
 import scala.concurrent.ExecutionContext
@@ -15,15 +16,13 @@ import controllers.actions.VersionSchemeAction
 import controllers.json.ModuleJson
 import controllers.ModuleDraftController.VersionSchemeHeader
 import database.repo.core.IdentityRepository
-import models._
+import models.*
 import play.api.i18n.I18nSupport
 import play.api.i18n.Messages
-import play.api.libs.json.JsValue
-import play.api.libs.json.Json
-import play.api.libs.json.Writes
+import play.api.libs.json.*
 import play.api.mvc.AbstractController
 import play.api.mvc.ControllerComponents
-import service._
+import service.*
 import service.core.StudyProgramService
 import service.PipelineError.parsingErrorWrites
 
@@ -38,6 +37,7 @@ final class ModuleDraftController @Inject() (
     val identityRepository: IdentityRepository,
     val moduleService: ModuleService,
     val moduleApprovalService: ModuleApprovalService,
+    @Named("git.repoUrl") val repoUrl: String,
     implicit val ctx: ExecutionContext
 ) extends AbstractController(cc)
     with ModuleDraftCheck
@@ -83,6 +83,16 @@ final class ModuleDraftController @Inject() (
               "modifiedKeys"     -> modified
             )
           )
+        }
+    }
+
+  def mergeRequestUrl(moduleId: UUID) =
+    auth.andThen(personAction).andThen(hasPermissionToViewDraft(moduleId, moduleApprovalService)).async { _ =>
+      moduleDraftService
+        .getMergeRequestId(moduleId)
+        .map {
+          case Some(id) => Ok(JsString(repoUrl + s"/-/merge_requests/${id.value}/diffs?view=parallel"))
+          case None     => NotFound
         }
     }
 
