@@ -88,5 +88,17 @@ class Module(@unused environment: Environment, configuration: Configuration) ext
     bind(classOf[String])
       .annotatedWith(Names.named("git.repoUrl"))
       .toInstance(configuration.nonEmptyString("git.repoUrl"))
+
+    bind(classOf[String])
+      .annotatedWith(Names.named("tmp.dir"))
+      .toInstance(configuration.nonEmptyString("play.temporaryFile.dir"))
+
+    bind(classOf[String])
+      .annotatedWith(Names.named("cmd.word"))
+      .toInstance(configuration.nonEmptyString("pandoc.wordCmd"))
+
+    bind(classOf[String])
+      .annotatedWith(Names.named("path.mcIntro"))
+      .toInstance(configuration.nonEmptyString("pandoc.mcIntroPath"))
   }
 }

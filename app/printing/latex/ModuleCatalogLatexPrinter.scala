@@ -59,9 +59,12 @@ final class ModuleCatalogLatexPrinter @Inject() (
       diffs: Seq[(ModuleCore, Set[String])],
       payload: Payload,
       pLang: PrintingLanguage,
-      lang: Lang
-  ) =
-    print(None, payload, List(diffContent(diffs)), pLang, lang)
+      lang: Lang,
+      introContent: Option[IntroContent]
+  ) = {
+    val intro = introContent.fold(List(diffContent(diffs)))(List(diffContent(diffs), _))
+    print(None, payload, intro, pLang, lang)
+  }
 
   def default(
       semester: Semester,
