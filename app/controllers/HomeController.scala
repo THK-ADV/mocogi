@@ -1,15 +1,15 @@
 package controllers
 
-import javax.inject._
+import javax.inject.*
 
 import play.api.libs.json.Json
-import play.api.mvc._
+import play.api.mvc.*
 import play.api.routing.Router
 
 @Singleton
 class HomeController @Inject() (
     cc: ControllerComponents,
-    router: Provider[Router]
+    router: Provider[Router],
 ) extends AbstractController(cc) {
 
   def index = Action { (_: Request[AnyContent]) =>

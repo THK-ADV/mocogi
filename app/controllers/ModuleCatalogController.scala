@@ -1,11 +1,16 @@
 package controllers
 
+import java.nio.file.Paths
+import java.util.Locale
 import javax.inject.Inject
+import javax.inject.Named
 import javax.inject.Singleton
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.util.control.NonFatal
+import scala.util.Failure
+import scala.util.Success
 
 import auth.AuthorizationAction
 import controllers.actions.DirectorCheck
@@ -17,12 +22,18 @@ import database.repo.ModuleCatalogRepository
 import models.FullPoId
 import models.UniversityRole
 import ops.FileOps.FileOps0
-import play.api.i18n.I18nSupport
+import play.api.i18n.Lang
+import play.api.libs.json.JsError
+import play.api.libs.json.JsSuccess
+import play.api.libs.json.JsValue
 import play.api.libs.json.Json
 import play.api.libs.Files.DefaultTemporaryFileCreator
 import play.api.mvc.AbstractController
 import play.api.mvc.ControllerComponents
 import play.mvc.Http.HeaderNames
+import printing.latex.TextIntroRewriter
+import printing.latex.WordTexPrinter
+import printing.PrintingLanguage
 import service.ModulePreviewService
 
 @Singleton
@@ -32,14 +43,16 @@ final class ModuleCatalogController @Inject() (
     fileCreator: DefaultTemporaryFileCreator,
     previewService: ModulePreviewService,
     auth: AuthorizationAction,
+    @Named("tmp.dir") tmpDir: String,
+    @Named("cmd.word") wordCmd: String,
+    @Named("path.mcIntro") mcIntroPath: String,
     val identityRepository: IdentityRepository,
     val studyProgramPersonRepository: StudyProgramPersonRepository,
     implicit val ctx: ExecutionContext
 ) extends AbstractController(cc)
     with DirectorCheck
     with PermissionCheck
-    with PersonAction
-    with I18nSupport {
+    with PersonAction {
 
   def allFromSemester(semester: String) =
     Action.async(_ => repo.allFromSemester(semester).map(xs => Ok(Json.toJson(xs))))
@@ -56,14 +69,16 @@ final class ModuleCatalogController @Inject() (
       .async { r =>
         r.headers.get(HeaderNames.ACCEPT) match {
           case Some(MimeTypes.PDF) =>
-            val lang     = r.lang.toPrintingLang()
-            val filename = s"${lang.id}_module_catalog_draft_$po"
+            // german locale
+            val pLang    = PrintingLanguage.German
+            val lang     = Lang(Locale.GERMANY)
+            val filename = s"${pLang.id}_module_catalog_draft_$po"
             val file     = fileCreator.create(filename, ".tex")
             previewService
               .previewCatalog(
                 FullPoId(po),
+                pLang,
                 lang,
-                r.lang,
                 file
               )
               .map(path =>
@@ -84,5 +99,31 @@ final class ModuleCatalogController @Inject() (
               )
             )
         }
+      }
+
+  def uploadIntroFile(studyProgram: String) =
+    auth
+      .andThen(personAction)
+      .andThen(
+        hasRoleInStudyProgram(
+          List(UniversityRole.SGL, UniversityRole.PAV),
+          studyProgram
+        )
+      )
+      .apply(parse.json) { (r: PersonAction.PersonRequest[JsValue]) =>
+        (r.body \ "po").validate[String] match
+          case JsSuccess(po, _) =>
+            val fullPoId = FullPoId(po)
+            // assumes intro is a .docx file
+            val wordPath = Paths.get(tmpDir, s"$po.docx")
+            val printer  = WordTexPrinter(wordCmd, mcIntroPath)
+            val rewriter = TextIntroRewriter()
+            printer.toTex(wordPath, fullPoId).flatMap(rewriter.rewrite) match
+              case Failure(e) =>
+                ErrorHandler.badRequest(r.toString, e)
+              case Success(_) =>
+                NoContent
+          case JsError(_) =>
+            ErrorHandler.badRequest(r.toString, "expected po id in json")
       }
 }

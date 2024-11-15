@@ -34,6 +34,7 @@ services:
     volumes:
       - backend_logs_vol:/mocogi/logs
       - app_vol:/mocogi/output
+      - mc_vol:/mocogi/mc
     depends_on:
       - psql
     build:
@@ -70,6 +71,7 @@ volumes:
   backend_logs_vol:
   psql_vol:
   app_vol:
+  mc_vol:
 
 configs:
   nginx_conf:

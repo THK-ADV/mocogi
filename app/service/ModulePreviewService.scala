@@ -4,6 +4,7 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.util.UUID
 import javax.inject.Inject
+import javax.inject.Named
 import javax.inject.Singleton
 
 import scala.concurrent.ExecutionContext
@@ -23,6 +24,8 @@ import parsing.metadata.ModulePOParser
 import play.api.i18n.Lang
 import play.api.libs.Files.TemporaryFile
 import play.api.Logging
+import printing.latex.IntroContent
+import printing.latex.IntroContentProvider
 import printing.latex.ModuleCatalogLatexPrinter
 import printing.latex.Payload
 import printing.PrintingLanguage
@@ -42,6 +45,7 @@ final class ModulePreviewService @Inject() (
     seasonRepository: SeasonRepository,
     identityRepository: IdentityRepository,
     assessmentMethodRepository: AssessmentMethodRepository,
+    @Named("path.mcIntro") mcIntroPath: String,
     implicit val ctx: ExecutionContext
 ) extends Logging {
 
@@ -74,7 +78,8 @@ final class ModulePreviewService @Inject() (
         .filterNot(m => changedModule.exists(_.id == m.id))
         .appendedAll(changedModule)
       diffs = diff(liveModules, changedModule)
-      content <- print(studyProgram, modules, studyPrograms, pLang, lang, diffs)
+      intro = getIntroContent(latexFile.path.getParent, fullPoId)
+      content <- print(studyProgram, modules, studyPrograms, pLang, lang, diffs, intro)
       path = Files.writeString(latexFile, content.toString)
       pdf <- compile(path).flatMap(_ => getPdf(path)).toFuture
     } yield pdf
@@ -124,7 +129,8 @@ final class ModulePreviewService @Inject() (
       studyPrograms: Seq[StudyProgramView],
       pLang: PrintingLanguage,
       lang: Lang,
-      diffs: Seq[(ModuleCore, Set[String])]
+      diffs: Seq[(ModuleCore, Set[String])],
+      intro: Option[IntroContent]
   ): Future[StringBuilder] =
     for {
       mts     <- moduleTypeRepository.all()
@@ -145,6 +151,12 @@ final class ModulePreviewService @Inject() (
         studyPrograms
       ),
       pLang,
-      lang
+      lang,
+      intro
     )
+
+  private def getIntroContent(dir: Path, fullPoId: FullPoId) = {
+    val provider = IntroContentProvider(dir, fullPoId, mcIntroPath)
+    provider.createIntroContent()
+  }
 }

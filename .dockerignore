@@ -14,3 +14,4 @@ README.md
 .scalafmt.conf
 .DS_Store
 tmp
+mc
