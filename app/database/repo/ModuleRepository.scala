@@ -86,7 +86,7 @@ final class ModuleRepository @Inject() (
     case ("po_mandatory", value) =>
       t =>
         poMandatoryTable
-          .filter(a => a.module === t.id && a.po === value)
+          .filter(a => a.module === t.id && a.fullPo === value)
           .exists
     case ("po", value) =>
       t =>

@@ -120,7 +120,7 @@ final class ModulePreviewService @Inject() (
         Future.sequence(downloads)
       }
       .map(_.collect {
-        case Some(m) if m.metadata.po.mandatory.exists(_.po == poId) => m
+        case Some(m) if m.metadata.po.mandatory.exists(_.fullPo == poId) => m
       })
 
   private def print(

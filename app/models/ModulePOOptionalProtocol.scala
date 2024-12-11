@@ -12,7 +12,9 @@ case class ModulePOOptionalProtocol(
     instanceOf: UUID,
     partOfCatalog: Boolean,
     recommendedSemester: List[Int]
-)
+) {
+  def fullPo = specialization.fold(po)(identity)
+}
 
 object ModulePOOptionalProtocol extends JsonNullWritable {
   implicit def format: Format[ModulePOOptionalProtocol] = Json.format

@@ -8,7 +8,9 @@ case class ModulePOMandatoryProtocol(
     po: String,
     specialization: Option[String],
     recommendedSemester: List[Int]
-)
+) {
+  def fullPo = specialization.fold(po)(identity)
+}
 
 object ModulePOMandatoryProtocol extends JsonNullWritable {
   implicit def format: Format[ModulePOMandatoryProtocol] = Json.format

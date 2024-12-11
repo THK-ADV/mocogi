@@ -78,8 +78,8 @@ final class ExamListsPreviewService @Inject() (
       }
       .map(_.collect {
         case Some(m)
-            if m.metadata.po.mandatory.exists(_.po == poId) ||
-              m.metadata.po.optional.exists(_.po == poId) =>
+            if m.metadata.po.mandatory.exists(_.fullPo == poId) ||
+              m.metadata.po.optional.exists(_.fullPo == poId) =>
           m
       })
 }
