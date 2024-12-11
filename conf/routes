@@ -5,6 +5,8 @@
 
 GET           /                                                   controllers.HomeController.index
 
+GET           /admin/invalidModuleExams                           controllers.AdminController.invalidModuleExams()
+
 GET           /me                                                 controllers.MeController.me()
 
 GET           /createViews                                        controllers.BootstrapController.createViews()

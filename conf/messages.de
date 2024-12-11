@@ -103,3 +103,17 @@ latex.exam_lists.table.header.secondExaminer=ZweitPrüfer
 latex.exam_lists.table.header.examPhases=Prüfungsphasen
 latex.exam_lists.table.footer.nextPageHint=Fortsetzung auf der nächsten Seite
 latex.exam_lists.logical.conjunction=und
+
+# Module Examination
+module.exam.written-exam.label=Klausurarbeit
+module.exam.written-exam-answer-choice-method.label=Schriftliche Prüfung im Antwortwahlverfahren
+module.exam.oral-exam.label=Mündliche Prüfung
+module.exam.home-assignment.label=Hausarbeit
+module.exam.open-book-exam.label=Open-Book-Ausarbeitung
+module.exam.project.label=Projektarbeit
+module.exam.portfolio.label=Lernportfolio
+module.exam.practical-report.label=Praktikumsbericht
+module.exam.oral-contribution.label=Mündlicher Beitrag
+module.exam.certificate-achievement.label=Testat/Zwischentestat
+module.exam.performance-assessment.label=Performanzprüfung
+module.exam.role-play.label=Rollenspiel

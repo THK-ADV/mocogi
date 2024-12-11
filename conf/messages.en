@@ -97,3 +97,17 @@ latex.exam_lists.table.header.secondExaminer=Second examiner
 latex.exam_lists.table.header.examPhases=Exam phases
 latex.exam_lists.table.footer.nextPageHint=Continued on next page
 latex.exam_lists.logical.conjunction=and
+
+# Module Examination
+module.exam.written-exam.label=written examination
+module.exam.written-exam-answer-choice-method.label=written multiple-choice examination
+module.exam.oral-exam.label=oral examination
+module.exam.home-assignment.label=term paper
+module.exam.open-book-exam.label=open book examination
+module.exam.project.label=project
+module.exam.portfolio.label=learning portfolio
+module.exam.practical-report.label=lab report
+module.exam.oral-contribution.label=oral report
+module.exam.certificate-achievement.label=certificate of achievement/interim certificate of achievement
+module.exam.performance-assessment.label=performance assessment
+module.exam.role-play.label=role play
