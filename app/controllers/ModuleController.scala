@@ -16,6 +16,7 @@ import git.api.GitFileDownloadService
 import models.ModuleManagement
 import models.StudyProgramModuleAssociation
 import ops.FutureOps.OptionOps
+import play.api.i18n.I18nSupport
 import play.api.libs.json.JsArray
 import play.api.libs.json.Json
 import play.api.libs.json.Writes
@@ -24,10 +25,15 @@ import play.api.mvc.AbstractController
 import play.api.mvc.AnyContent
 import play.api.mvc.ControllerComponents
 import play.api.mvc.Request
+import printing.html.ModuleHTMLPrinter
+import printing.pandoc.PrinterOutput
+import printing.pandoc.PrinterOutputType
 import printing.PrintingLanguage
 import providers.ConfigReader
+import service.MetadataPipeline
 import service.ModuleDraftService
 import service.ModuleService
+import service.Print
 
 @Singleton
 final class ModuleController @Inject() (
@@ -38,9 +44,12 @@ final class ModuleController @Inject() (
     draftService: ModuleDraftService,
     fileCreator: DefaultTemporaryFileCreator,
     configReader: ConfigReader,
+    pipeline: MetadataPipeline,
+    printer: ModuleHTMLPrinter,
     val auth: AuthorizationAction,
     implicit val ctx: ExecutionContext
-) extends AbstractController(cc) {
+) extends AbstractController(cc)
+    with I18nSupport {
 
   implicit def moduleManagementWrites: Writes[ModuleManagement] = Json.writes
 
@@ -110,33 +119,46 @@ final class ModuleController @Inject() (
   // Download File
 
   def getFile(id: UUID) =
-    Action((r: Request[AnyContent]) => getFile0(id)(r))
+    Action((r: Request[AnyContent]) => getStaticFile(id)(r))
 
   def getPreviewFile(id: UUID) =
     auth.async { implicit r => getPreviewFile0(id) }
 
   def getLatestFile(id: UUID) =
     auth.async { implicit r =>
-      draftService.hasModuleDraft(id).flatMap {
-        case true  => Future.successful(getFile0(id))
-        case false => getPreviewFile0(id)
+      draftService.getByModuleOpt(id).flatMap {
+        case Some(draft) => printHtml(draft.print, r.lang.toPrintingLang()).map(respondWithFile)
+        case None        => getPreviewFile0(id)
       }
+    }
+
+  private def printHtml(print: Print, lang: PrintingLanguage): Future[String] =
+    for
+      module <- pipeline.parseValidate(print)
+      output <- printer.print(module, lang, None, PrinterOutputType.HTMLStandalone)
+      res <- output match {
+        case Left(err)                          => Future.failed(err)
+        case Right(PrinterOutput.Text(c, _, _)) => Future.successful(c)
+        case Right(PrinterOutput.File(_, _))    => Future.failed(new Throwable("expected standalone HTML, but was a file"))
+      }
+    yield res
+
+  private def respondWithFile(content: String)(implicit r: Request[AnyContent]) =
+    try {
+      val file = fileCreator.create()
+      val path = Files.writeString(file, content)
+      Ok.sendPath(path, onClose = () => fileCreator.delete(file))
+    } catch {
+      case NonFatal(e) =>
+        ErrorHandler.badRequest(r.toString(), e)
     }
 
   private def getPreviewFile0(module: UUID)(implicit r: Request[AnyContent]) =
     gitFileDownloadService
       .downloadModuleFromPreviewBranchAsHTML(module)(r.parseLang())
       .map {
-        case Some(content) =>
-          try {
-            val file = fileCreator.create()
-            val path = Files.writeString(file, content)
-            Ok.sendPath(path, onClose = () => fileCreator.delete(file))
-          } catch {
-            case NonFatal(e) =>
-              ErrorHandler.badRequest(r.toString(), e)
-          }
-        case None => NotFound
+        case Some(content) => respondWithFile(content)
+        case None          => NotFound
       }
 
   private def outputFolderPath(lang: PrintingLanguage) =
@@ -145,7 +167,7 @@ final class ModuleController @Inject() (
   private def getFromPreview(moduleId: UUID) =
     gitFileDownloadService.downloadModuleFromPreviewBranch(moduleId)
 
-  private def getFile0(moduleId: UUID)(implicit r: Request[AnyContent]) = {
+  private def getStaticFile(moduleId: UUID)(implicit r: Request[AnyContent]) = {
     val filename = s"$moduleId.html"
     val folder   = outputFolderPath(r.parseLang())
     try {

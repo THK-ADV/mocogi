@@ -30,8 +30,8 @@ case class ModuleDraft(
     branch: Branch,
     source: ModuleDraftSource,
     data: JsValue,
-    validated: JsValue, // TODO unused
-    print: Print,       // TODO unused
+    validated: JsValue,
+    print: Print,
     keysToBeReviewed: Set[String],
     modifiedKeys: Set[String],
     lastCommit: Option[CommitId],
