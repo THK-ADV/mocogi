@@ -4,7 +4,9 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 
+import database.repo.singleOpt
 import database.repo.Repository
 import database.table.core.SpecializationTable
 import models.core.Specialization
@@ -32,4 +34,7 @@ final class SpecializationRepository @Inject() (
 
   def deleteMany(ids: Seq[String]) =
     db.run(tableQuery.filter(_.id.inSet(ids)).delete)
+
+  def get(id: String): Future[Option[Specialization]] =
+    db.run(tableQuery.filter(_.id === id).result.singleOpt)
 }

@@ -148,11 +148,20 @@ final class ModuleCatalogLatexPrinter @Inject() (
     newPage
     modules(
       payload.studyProgram.po.id,
-      payload.entries.filter(_.metadata.po.mandatory.exists { a =>
-        a.po == payload.studyProgram.po.id && a.specialization
-          .zip(payload.studyProgram.specialization)
-          .fold(true)(a => a._1 == a._2.id)
-      }),
+      /* TODO This filter should should become obsolete soon. The assertion function below ensures the invariance
+          of valid module-po relationships */
+      payload.entries.filter { m =>
+        val isValid = m.metadata.po.mandatory.exists { a =>
+          a.po == payload.studyProgram.po.id && a.specialization
+            .zip(payload.studyProgram.specialization)
+            .fold(true)(a => a._1 == a._2.id)
+        }
+        assert(
+          isValid,
+          s"module ${m.id.getOrElse(m.metadata.title)} should not be in the selection for module catalog of ${payload.studyProgram.fullPoId.id}, because ${m.metadata.po.mandatory.map(_.fullPo)}"
+        )
+        isValid
+      },
       payload.moduleTypes,
       payload.languages,
       payload.seasons,

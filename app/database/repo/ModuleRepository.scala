@@ -14,6 +14,7 @@ import cats.data.NonEmptyList
 import database.*
 import database.table.*
 import models.*
+import models.core.Specialization
 import parsing.types.*
 import parsing.types.Module
 import play.api.db.slick.DatabaseConfigProvider
@@ -83,11 +84,6 @@ final class ModuleRepository @Inject() (
           .filter(r => r.module === t.id && r.isIdentity(value))
           .exists
     case ("id", value) => _.id === UUID.fromString(value)
-    case ("po_mandatory", value) =>
-      t =>
-        poMandatoryTable
-          .filter(a => a.module === t.id && a.fullPo === value)
-          .exists
     case ("po", value) =>
       t =>
         poMandatoryTable
@@ -156,6 +152,36 @@ final class ModuleRepository @Inject() (
     // TODO expand to optional if "partOfCatalog" is set
     val isMandatoryPO = isMandatoryPOQuery(pos)
     retrieve(tableQuery.filter(_.id.in(isMandatoryPO)))
+  }
+
+  // TODO this should be used to fetch modules for po
+  def allFromMandatoryPO(po: String | Specialization): Future[Seq[ModuleProtocol]] = {
+    val poFilter: ModuleTable => Rep[Boolean] = po match
+      case po: String => t => poMandatoryTable.filter(a => t.id === a.module && a.po === po).exists
+      case Specialization(id, _, po) =>
+        t =>
+          poMandatoryTable
+            .filter(a => t.id === a.module && a.po === po && a.specialization.map(_ === id).getOrElse(true))
+            .exists
+    retrieve(tableQuery.filter(poFilter))
+  }
+
+  // TODO this should be used to fetch modules for po
+  def allFromPO(po: String | Specialization): Future[Seq[ModuleProtocol]] = {
+    val poFilter: ModuleTable => Rep[Boolean] = po match
+      case po: String =>
+        t =>
+          poMandatoryTable.filter(a => t.id === a.module && a.po === po).exists ||
+            poOptionalTable.filter(a => t.id === a.module && a.po === po).exists
+      case Specialization(id, _, po) =>
+        t =>
+          poMandatoryTable
+            .filter(a => t.id === a.module && a.po === po && a.specialization.map(_ === id).getOrElse(true))
+            .exists ||
+            poOptionalTable
+              .filter(a => t.id === a.module && a.po === po && a.specialization.map(_ === id).getOrElse(true))
+              .exists
+    retrieve(tableQuery.filter(poFilter))
   }
 
   private def isMandatoryPOQuery(pos: Seq[String]) =

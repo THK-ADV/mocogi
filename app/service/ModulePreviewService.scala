@@ -7,14 +7,17 @@ import javax.inject.Inject
 import javax.inject.Named
 import javax.inject.Singleton
 
+import scala.collection.parallel.CollectionConverters.seqIsParallelizable
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 import database.repo.core.*
+import database.repo.ModuleRepository
 import database.view.StudyProgramViewRepository
 import git.api.GitDiffApiService
 import git.api.GitFileDownloadService
 import git.GitConfig
+import models.core.Specialization
 import models.FullPoId
 import models.ModuleCore
 import models.ModuleProtocol
@@ -38,13 +41,14 @@ final class ModulePreviewService @Inject() (
     diffApiService: GitDiffApiService,
     downloadService: GitFileDownloadService,
     printer: ModuleCatalogLatexPrinter,
-    moduleService: ModuleService,
+    moduleRepository: ModuleRepository,
     studyProgramViewRepo: StudyProgramViewRepository,
     moduleTypeRepository: ModuleTypeRepository,
     languageRepository: LanguageRepository,
     seasonRepository: SeasonRepository,
     identityRepository: IdentityRepository,
     assessmentMethodRepository: AssessmentMethodRepository,
+    specializationRepository: SpecializationRepository,
     @Named("path.mcIntro") mcIntroPath: String,
     implicit val ctx: ExecutionContext
 ) extends Logging {
@@ -57,10 +61,14 @@ final class ModulePreviewService @Inject() (
       lang: Lang,
       latexFile: TemporaryFile
   ): Future[Path] = {
-    val studyPrograms = studyProgramViewRepo.all()
+    logger.info(s"generating module catalog preview for po ${fullPoId.id}")
+
+    val studyPrograms  = studyProgramViewRepo.all()
+    val specialization = specializationRepository.get(fullPoId.id)
 
     for {
-      studyPrograms <- studyPrograms
+      studyPrograms  <- studyPrograms
+      specialization <- specialization
       studyProgram <- studyPrograms.find(_.fullPoId == fullPoId) match {
         case Some(value) =>
           Future.successful(value)
@@ -69,15 +77,15 @@ final class ModulePreviewService @Inject() (
             new Exception(s"study program's po $fullPoId needs to be valid")
           )
       }
-      liveModules <- moduleService.allFromPoMandatory(fullPoId.id)
+      liveModules <- moduleRepository.allFromMandatoryPO(specialization.fold(fullPoId.id)(identity))
       changedModule <- changedModuleFromPreview(
-        fullPoId.id,
+        specialization.fold(fullPoId.id)(identity),
         liveModules.map(_.id.get)
       )
       modules = liveModules
         .filterNot(m => changedModule.exists(_.id == m.id))
         .appendedAll(changedModule)
-      diffs = diff(liveModules, changedModule)
+      diffs = diff(liveModules, changedModule.toSeq)
       intro = getIntroContent(latexFile.path.getParent, fullPoId)
       content <- print(studyProgram, modules, studyPrograms, pLang, lang, diffs, intro)
       path = Files.writeString(latexFile, content.toString)
@@ -105,23 +113,32 @@ final class ModulePreviewService @Inject() (
       (ModuleCore(p.id.get, p.metadata.title, p.metadata.abbrev), diffs)
     }
 
-  private def changedModuleFromPreview(poId: String, liveModules: Seq[UUID]) =
+  private def changedModuleFromPreview(po: String | Specialization, liveModules: Seq[UUID]) = {
+    val poId = po match
+      case po: String               => po
+      case Specialization(id, _, _) => id
+
     diffApiService
       .compare(gitConfig.mainBranch, gitConfig.draftBranch)
       .flatMap { diffs =>
-        val downloads = diffs
-          .collect {
-            case d
-                if d.path.moduleId.exists(liveModules.contains) ||
-                  d.diff.contains(ModulePOParser.modulePOMandatoryKey) =>
-              downloadService
-                .downloadModuleFromPreviewBranch(d.path.moduleId.get)
-          }
-        Future.sequence(downloads)
+        val downloads = diffs.par.collect {
+          case d
+              if d.path.moduleId.exists(liveModules.contains) ||
+                (d.diff.contains(ModulePOParser.modulePOMandatoryKey) && d.diff.contains(poId)) =>
+            downloadService
+              .downloadModuleFromPreviewBranch(d.path.moduleId.get)
+        }
+        Future.sequence(downloads.seq)
       }
       .map(_.collect {
-        case Some(m) if m.metadata.po.mandatory.exists(_.fullPo == poId) => m
+        case Some(m) if m.metadata.po.mandatory.exists { a =>
+              po match
+                case po: String                => a.po == po
+                case Specialization(id, _, po) => a.po == po && a.specialization.fold(true)(_ == id)
+            } =>
+          m
       })
+  }
 
   private def print(
       studyProgram: StudyProgramView,

@@ -11,10 +11,13 @@ import scala.collection.parallel.CollectionConverters.seqIsParallelizable
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
+import database.repo.core.SpecializationRepository
+import database.repo.ModuleRepository
 import database.view.StudyProgramViewRepository
 import git.api.GitDiffApiService
 import git.api.GitFileDownloadService
 import git.GitConfig
+import models.core.Specialization
 import models.FullPoId
 import ops.EitherOps.EStringThrowOps
 import parsing.metadata.ModulePOParser
@@ -31,7 +34,8 @@ import service.LatexCompiler.getPdf
 final class ExamListsPreviewService @Inject() (
     diffApiService: GitDiffApiService,
     downloadService: GitFileDownloadService,
-    moduleService: ModuleService,
+    moduleRepository: ModuleRepository,
+    specializationRepository: SpecializationRepository,
     printer: ExamListsLatexPrinter,
     studyProgramViewRepo: StudyProgramViewRepository,
     assessmentMethodService: AssessmentMethodService,
@@ -43,19 +47,20 @@ final class ExamListsPreviewService @Inject() (
   given Lang(Locale.GERMANY)
 
   def previewExamLists(fullPoId: FullPoId, latexFile: TemporaryFile): Future[Path] = {
-    logger.info(s"generating preview for po ${fullPoId.id}")
+    logger.info(s"generating exam list preview for po ${fullPoId.id}")
 
     val studyProgram      = studyProgramViewRepo.getByPo(fullPoId)
-    val liveModules       = moduleService.allFromPo(fullPoId.id)
+    val specialization    = specializationRepository.get(fullPoId.id)
     val assessmentMethods = assessmentMethodService.all()
     val people            = identityService.all()
 
     for
       studyProgram      <- studyProgram
-      liveModules       <- liveModules
       assessmentMethods <- assessmentMethods
       people            <- people
-      changedModule     <- changedModuleFromPreview(fullPoId.id, liveModules.map(_.id.get))
+      specialization    <- specialization
+      liveModules       <- moduleRepository.allFromPO(specialization.fold(fullPoId.id)(identity))
+      changedModule     <- changedModuleFromPreview(specialization.fold(fullPoId.id)(identity), liveModules.map(_.id.get))
       modules = liveModules.filterNot(m => changedModule.exists(_.id == m.id)).appendedAll(changedModule)
       content = printer.preview(modules, studyProgram, assessmentMethods, people)
       path    = Files.writeString(latexFile, content.toString)
@@ -63,23 +68,33 @@ final class ExamListsPreviewService @Inject() (
     yield pdf
   }
 
-  private def changedModuleFromPreview(poId: String, liveModules: Seq[UUID]) =
+  private def changedModuleFromPreview(po: String | Specialization, liveModules: Seq[UUID]) = {
+    def matchesPO(poId: String, specializationId: Option[String]) =
+      po match
+        case po: String                => poId == po
+        case Specialization(id, _, po) => poId == po && specializationId.fold(true)(_ == id)
+
+    val poId = po match
+      case po: String               => po
+      case Specialization(id, _, _) => id
+
     diffApiService
       .compare(gitConfig.mainBranch, gitConfig.draftBranch)
       .flatMap { diffs =>
         val downloads = diffs.par.collect {
           case d
               if d.path.moduleId.exists(liveModules.contains) ||
-                d.diff.contains(ModulePOParser.modulePOMandatoryKey) ||
-                d.diff.contains(ModulePOParser.modulePOElectiveKey) =>
+                (d.diff.contains(ModulePOParser.modulePOMandatoryKey) ||
+                  d.diff.contains(ModulePOParser.modulePOElectiveKey) && d.diff.contains(poId)) =>
             downloadService.downloadModuleFromPreviewBranch(d.path.moduleId.get)
         }.seq
         Future.sequence(downloads)
       }
       .map(_.collect {
         case Some(m)
-            if m.metadata.po.mandatory.exists(_.fullPo == poId) ||
-              m.metadata.po.optional.exists(_.fullPo == poId) =>
+            if m.metadata.po.mandatory.exists(a => matchesPO(a.po, a.specialization)) ||
+              m.metadata.po.optional.exists(a => matchesPO(a.po, a.specialization)) =>
           m
       })
+  }
 }
