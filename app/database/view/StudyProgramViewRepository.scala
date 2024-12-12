@@ -6,6 +6,7 @@ import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
+import database.repo.single
 import models.core.Degree
 import models.core.IDLabel
 import models.FullPoId
@@ -31,18 +32,7 @@ final class StudyProgramViewRepository @Inject() (
     db.run(tableQuery.result)
 
   def getByPo(fullPoId: FullPoId): Future[StudyProgramView] =
-    db.run(
-      tableQuery
-        .filter(_.fullPo === fullPoId.id)
-        .result
-        .flatMap(xs =>
-          xs.size match
-            case 1 => DBIO.successful(xs.head)
-            case 0 => DBIO.failed(new Exception(s"expected one study program for poId ${fullPoId.id} but found 0"))
-            case n =>
-              DBIO.failed(new Exception(s"expected one study program for poId ${fullPoId.id} but found $n"))
-        )
-    )
+    db.run(tableQuery.filter(_.fullPo === fullPoId.id).result.single)
 
   final class StudyProgramViewTable(tag: Tag) extends Table[StudyProgramView](tag, name) {
 
