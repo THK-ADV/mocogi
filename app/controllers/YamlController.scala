@@ -1,7 +1,9 @@
 package controllers
 
+import scala.concurrent.duration.*
 import scala.concurrent.ExecutionContext
 
+import play.api.cache.Cached
 import play.api.libs.json.Json
 import play.api.libs.json.Writes
 import play.api.mvc.AbstractController
@@ -13,12 +15,14 @@ trait YamlController[A] { self: AbstractController =>
 
   implicit val ctx: ExecutionContext
 
-  val service: YamlService[A]
+  def service: YamlService[A]
+
+  def cached: Cached
 
   def all() =
-    Action.async { _ =>
-      service.all().map { xs =>
-        Ok(Json.toJson(xs))
+    cached.status(r => r.method + r.uri, 200, 1.hour) {
+      Action.async { _ =>
+        service.all().map(xs => Ok(Json.toJson(xs)))
       }
     }
 }

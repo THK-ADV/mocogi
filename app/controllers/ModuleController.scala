@@ -7,6 +7,7 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 import scala.collection.parallel.CollectionConverters.seqIsParallelizable
+import scala.concurrent.duration.*
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.util.control.NonFatal
@@ -21,6 +22,7 @@ import git.api.GitRepositoryApiService
 import models.ModuleManagement
 import models.StudyProgramModuleAssociation
 import ops.FutureOps.OptionOps
+import play.api.cache.Cached
 import play.api.i18n.I18nSupport
 import play.api.libs.json.JsArray
 import play.api.libs.json.Json
@@ -52,6 +54,7 @@ final class ModuleController @Inject() (
     configReader: ConfigReader,
     pipeline: MetadataPipeline,
     printer: ModuleHTMLPrinter,
+    cached: Cached,
     val auth: AuthorizationAction,
     implicit val ctx: ExecutionContext
 ) extends AbstractController(cc)
@@ -67,34 +70,38 @@ final class ModuleController @Inject() (
   implicit def moduleViewWrites: Writes[ModuleViewRepository#Entry] =
     Json.writes[ModuleViewRepository#Entry]
 
+  private def caching = cached.status(r => r.method + r.uri, 200, 1.hour)
+
   def all() =
-    Action.async { request =>
-      if (request.getQueryString("select").contains("metadata"))
-        service
-          .allMetadata()
-          .map(xs =>
-            Ok(JsArray(xs.map {
-              case (id, metadata) =>
-                Json.obj("id" -> id, "metadata" -> metadata)
-            }))
-          )
-      else if (request.isExtended)
-        moduleViewRepository
-          .all()
-          .map(xs => Ok(Json.toJson(xs)))
-      else if (request.getQueryString("type").contains("generic"))
-        service
-          .allGenericModules()
-          .map(xs =>
-            Ok(JsArray(xs.map {
-              case (module, pos) =>
-                Json.toJsObject(module) + ("pos" -> Json.toJson(pos))
-            }))
-          )
-      else
-        service
-          .allModuleCore()
-          .map(xs => Ok(Json.toJson(xs)))
+    caching {
+      Action.async { request =>
+        if (request.getQueryString("select").contains("metadata"))
+          service
+            .allMetadata()
+            .map(xs =>
+              Ok(JsArray(xs.map {
+                case (id, metadata) =>
+                  Json.obj("id" -> id, "metadata" -> metadata)
+              }))
+            )
+        else if (request.isExtended)
+          moduleViewRepository
+            .all()
+            .map(xs => Ok(Json.toJson(xs)))
+        else if (request.getQueryString("type").contains("generic"))
+          service
+            .allGenericModules()
+            .map(xs =>
+              Ok(JsArray(xs.map {
+                case (module, pos) =>
+                  Json.toJsObject(module) + ("pos" -> Json.toJson(pos))
+              }))
+            )
+        else
+          service
+            .allModuleCore()
+            .map(xs => Ok(Json.toJson(xs)))
+      }
     }
 
   def allFromPreview() =
@@ -118,8 +125,10 @@ final class ModuleController @Inject() (
   // GET by ID
 
   def get(id: UUID) =
-    Action.async { _ =>
-      service.get(id).map(x => Ok(Json.toJson(x)))
+    caching {
+      Action.async { _ =>
+        service.get(id).map(x => Ok(Json.toJson(x)))
+      }
     }
 
   def getPreview(id: UUID) =
