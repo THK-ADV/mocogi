@@ -35,7 +35,7 @@ final class GitFileApiService @Inject() (
             Future.successful(None)
           case _ =>
             Future.failed(
-              new Throwable(
+              new Exception(
                 r.json
                   .\("message")
                   .validate[String]

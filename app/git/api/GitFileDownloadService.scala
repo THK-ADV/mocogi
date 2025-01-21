@@ -85,9 +85,7 @@ final class GitFileDownloadService @Inject() (
               case Left(err)                          => Future.failed(err)
               case Right(PrinterOutput.Text(c, _, _)) => Future.successful(c)
               case Right(PrinterOutput.File(_, _)) =>
-                Future.failed(
-                  new Throwable("expected standalone HTML, but was a file")
-                )
+                Future.failed(new Exception("expected standalone HTML, but was a file"))
             }
           } yield Some(res)
         case None =>

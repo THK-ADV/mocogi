@@ -320,7 +320,7 @@ final class ModuleCatalogService @Inject() (
     } else {
       success.foreach(p => Files.deleteIfExists(p.pdfFile))
       val errFiles = failure.map(_.texFile.toAbsolutePath).mkString(", ")
-      Future.failed(new Throwable(s"failed moving files: $errFiles"))
+      Future.failed(new Exception(s"failed moving files: $errFiles"))
     }
   }
 

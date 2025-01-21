@@ -32,11 +32,7 @@ final class KeycloakAuthorization[Token](
       .filter(_.head.equalsIgnoreCase(BearerPrefix))
       .map(_.last)
       .filter(_.nonEmpty)
-      .getOrElse(
-        throw new Throwable(
-          s"could not find $BearerPrefix Token in $AuthorizationHeader header"
-        )
-      )
+      .getOrElse(throw new Exception(s"could not find $BearerPrefix Token in $AuthorizationHeader header"))
 
   private def extractAttributes(accessToken: AccessToken): Token = {
     val attributes = accessToken.getOtherClaims.asScala.toMap

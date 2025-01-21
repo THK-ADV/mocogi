@@ -165,7 +165,7 @@ final class ModuleController @Inject() (
       res <- output match {
         case Left(err)                          => Future.failed(err)
         case Right(PrinterOutput.Text(c, _, _)) => Future.successful(c)
-        case Right(PrinterOutput.File(_, _))    => Future.failed(new Throwable("expected standalone HTML, but was a file"))
+        case Right(PrinterOutput.File(_, _))    => Future.failed(new Exception("expected standalone HTML, but was a file"))
       }
     yield res
 

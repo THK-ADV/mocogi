@@ -98,7 +98,7 @@ final class ModuleDraftService @Inject() (
       })
 
   private def abortNoChanges =
-    Future.failed(new Throwable("no changes to the module could be found"))
+    Future.failed(new Exception("no changes to the module could be found"))
 
   private def getFromStaging(uuid: UUID) =
     gitFileDownloadService.downloadModuleFromPreviewBranch(uuid)

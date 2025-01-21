@@ -21,9 +21,6 @@ final class GitAvailabilityChecker @Inject() (
       .head()
       .flatMap { res =>
         if (res.status == 200) Future.unit
-        else
-          Future.failed(
-            new Throwable(s"Git Service status is: ${res.statusText}")
-          )
+        else Future.failed(new Exception(s"Git Service status is: ${res.statusText}"))
       }
 }
