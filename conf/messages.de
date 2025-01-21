@@ -117,3 +117,5 @@ module.exam.oral-contribution.label=Mündlicher Beitrag
 module.exam.certificate-achievement.label=Testat/Zwischentestat
 module.exam.performance-assessment.label=Performanzprüfung
 module.exam.role-play.label=Rollenspiel
+module.exam.admission-colloquium.label=Zugangskolloquium
+module.exam.specimen.label=Präparat

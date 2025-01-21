@@ -82,6 +82,12 @@ content.recommendedReading.desc=
 content.particularities.label=Besonderheiten
 content.particularities.desc=
 
+# Module Review
+module_review.notification.subject=???
+module_review.notification.opening=???
+module_review.notification.body=???
+module_review.notification.closing=???
+
 # Latex
 latex.lang.package_name=english
 latex.preview_label=Preview
@@ -111,3 +117,5 @@ module.exam.oral-contribution.label=oral report
 module.exam.certificate-achievement.label=certificate of achievement/interim certificate of achievement
 module.exam.performance-assessment.label=performance assessment
 module.exam.role-play.label=role play
+module.exam.admission-colloquium.label=admission colloquium
+module.exam.specimen.label=specimen

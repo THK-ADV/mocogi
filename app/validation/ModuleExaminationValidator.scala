@@ -38,10 +38,6 @@ final class ModuleExaminationValidator @Inject() (
   // TODO descriptions according to RPO
   // TODO precondition?
 
-  // Zugangskolloquium | admission colloquium ?
-  // Präparat | specimen ?
-  // siehe Modulbeschreibung des gewählten Moduls?
-
   private def validExaminations = Vector(
     "written-exam",                      // Klausurarbeit | written examination
     "written-exam-answer-choice-method", // Schriftliche Prüfung im Antwortwahlverfahren | written multiple-choice examination
@@ -55,6 +51,8 @@ final class ModuleExaminationValidator @Inject() (
     "certificate-achievement",           // Testat/Zwischentestat | certificate of achievement/interim certificate of achievement
     "performance-assessment",            // Performanzprüfung | performance assessment
     "role-play",                         // Rollenspiel | role play
+    "admission-colloquium",              // Zugangskolloquium | admission colloquium
+    "specimen",                          // Präparat | specimen
   )
 
   private def recommendation = Map(
