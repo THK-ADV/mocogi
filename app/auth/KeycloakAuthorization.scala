@@ -9,14 +9,14 @@ import org.keycloak.adapters.rotation.AdapterTokenVerifier
 import org.keycloak.adapters.KeycloakDeployment
 import org.keycloak.representations.AccessToken
 
-final class KeycloakAuthorization[UserToken](
+final class KeycloakAuthorization[Token](
     keycloakDeployment: KeycloakDeployment,
-    tokenFactory: TokenFactory[UserToken]
-) extends Authorization[UserToken] {
+    tokenFactory: TokenFactory[Token]
+) extends Authorization[Token] {
 
   override def authorize(
       authorizationHeaderValue: Option[String]
-  ): Try[UserToken] =
+  ): Try[Token] =
     Try {
       val bearerToken = extractBearerToken(authorizationHeaderValue)
       val accessToken = verifyToken(bearerToken)
@@ -38,15 +38,13 @@ final class KeycloakAuthorization[UserToken](
         )
       )
 
-  private def extractAttributes(accessToken: AccessToken): UserToken = {
+  private def extractAttributes(accessToken: AccessToken): Token = {
     val attributes = accessToken.getOtherClaims.asScala.toMap
-    val mail       = accessToken.getEmail
+    val mail       = Option(accessToken.getEmail)
     val roles      = accessToken.getRealmAccess.getRoles.asScala.toSet
-    tokenFactory.create(attributes, mail, roles) match {
+    tokenFactory.create(attributes, mail, roles) match
       case Right(token) => token
-      case Left(err) =>
-        throw new Throwable(s"Failed to extract attributes from token: $err")
-    }
+      case Left(err)    => throw new Exception(s"Failed to create Token: $err")
   }
 
   private def verifyToken(token: String): AccessToken =

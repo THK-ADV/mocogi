@@ -8,8 +8,9 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 import auth.AuthorizationAction
-import controllers.actions.AdminCheck
+import auth.Role.Admin
 import controllers.actions.PermissionCheck
+import controllers.actions.RoleCheck
 import git.api.GitFileDownloadService
 import git.api.GitRepositoryApiService
 import git.publisher.CoreDataPublisher
@@ -31,13 +32,13 @@ final class GitController @Inject() (
     gitConfig: GitConfig,
     implicit val ctx: ExecutionContext
 ) extends AbstractController(cc)
-    with AdminCheck
-    with PermissionCheck {
+    with PermissionCheck
+    with RoleCheck {
 
   def updateCoreFiles() =
-    auth.andThen(isAdmin).async { _ =>
+    auth.andThen(hasRole(Admin)).async { _ =>
       for {
-        paths <- gitRepositoryApiService.listCoreFiles()
+        paths <- gitRepositoryApiService.listCoreFiles(gitConfig.mainBranch)
         contents <- Future.sequence(
           paths.map(path =>
             downloadService
@@ -55,9 +56,9 @@ final class GitController @Inject() (
     }
 
   def updateModuleFiles() =
-    auth.andThen(isAdmin).async { _ =>
+    auth.andThen(hasRole(Admin)).async { _ =>
       for {
-        paths <- gitRepositoryApiService.listModuleFiles()
+        paths <- gitRepositoryApiService.listModuleFiles(gitConfig.mainBranch)
         modules <- Future.sequence(
           paths.collect {
             case path if path.isModule(gitConfig) =>

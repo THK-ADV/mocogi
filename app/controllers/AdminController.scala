@@ -5,8 +5,9 @@ import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 
 import auth.AuthorizationAction
-import controllers.actions.AdminCheck
+import auth.Role.Admin
 import controllers.actions.PermissionCheck
+import controllers.actions.RoleCheck
 import play.api.mvc.AbstractController
 import play.api.mvc.ControllerComponents
 import validation.ModuleExaminationValidator
@@ -17,13 +18,15 @@ final class AdminController @Inject() (
     moduleExaminationValidator: ModuleExaminationValidator,
     implicit val ctx: ExecutionContext
 ) extends AbstractController(cc)
-    with AdminCheck
+    with RoleCheck
     with PermissionCheck {
-  def invalidModuleExams = auth.andThen(isAdmin).async { _ =>
-    moduleExaminationValidator.getAllInvalidModuleExams.map { xs =>
-      xs.sortBy(_._1.id)
-        .foreach(a => println(s"${a._1};${a._2.mkString("[", ",", s"];${a._3.mkString("{", ",", "}")}")}"))
-      NoContent
+
+  def invalidModuleExams =
+    auth.andThen(hasRole(Admin)).async { _ =>
+      moduleExaminationValidator.getAllInvalidModuleExams.map { xs =>
+        xs.sortBy(_._1.id)
+          .foreach(a => println(s"${a._1};${a._2.mkString("[", ",", s"];${a._3.mkString("{", ",", "}")}")}"))
+        NoContent
+      }
     }
-  }
 }

@@ -1,7 +1,7 @@
 import scala.annotation.unused
 
 import auth.Authorization
-import auth.UserToken
+import auth.Token
 import catalog.ElectivesCatalogService
 import catalog.ModuleCatalogConfig
 import catalog.PreviewMergeActor
@@ -70,7 +70,7 @@ class Module(@unused environment: Environment, configuration: Configuration) ext
     bind(new TypeLiteral[Set[MetadataParser]] {})
       .toProvider(classOf[MetadataParserProvider])
       .asEagerSingleton()
-    bind(new TypeLiteral[Authorization[UserToken]] {})
+    bind(new TypeLiteral[Authorization[Token]] {})
       .toProvider(classOf[AuthorizationProvider])
       .asEagerSingleton()
 

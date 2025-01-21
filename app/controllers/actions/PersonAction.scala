@@ -3,8 +3,7 @@ package controllers.actions
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-import auth.CampusId
-import auth.UserTokenRequest
+import auth.TokenRequest
 import controllers.actions.PersonAction.PersonRequest
 import database.repo.core.IdentityRepository
 import models.core.Identity
@@ -18,40 +17,23 @@ trait PersonAction {
   implicit def ctx: ExecutionContext
   implicit def identityRepository: IdentityRepository
 
-  private def campusIdProxy[A](r: UserTokenRequest[A]): CampusId =
-    r.getQueryString("campusId").fold(r.campusId)(CampusId.apply)
-
-  def personAction = new ActionRefiner[UserTokenRequest, PersonRequest] {
+  def personAction = new ActionRefiner[TokenRequest, PersonRequest] {
     def executionContext = ctx
 
-    protected override def refine[A](
-        request: UserTokenRequest[A]
-    ): Future[Either[Result, PersonRequest[A]]] = {
-      // TODO DEBUG ONLY
-      val campusId = campusIdProxy(request)
-      // TODO DEBUG ONLY
-      val newRequest =
-        request.copy(token = request.token.copy(username = campusId.value))
+    protected override def refine[A](request: TokenRequest[A]): Future[Either[Result, PersonRequest[A]]] =
       identityRepository
-        .getByCampusId(campusId)
+        .getByCampusId(request.campusId)
         .map {
-          case Some(p) => Right(PersonRequest(p, newRequest))
+          case Some(p) => Right(PersonRequest(p, request))
           case None =>
-            Left(
-              BadRequest(
-                Json.obj(
-                  "message" -> s"no user found for campusId ${campusId.value}"
-                )
-              )
-            )
+            Left(BadRequest(Json.obj("message" -> s"no user found for campusId ${request.campusId.value}")))
         }
-    }
   }
 }
 
 object PersonAction {
   case class PersonRequest[A](
       person: Identity.Person,
-      request: UserTokenRequest[A]
+      request: TokenRequest[A]
   ) extends WrappedRequest[A](request)
 }
