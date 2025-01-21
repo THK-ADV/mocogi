@@ -16,6 +16,7 @@ object ExamPhases:
         "wise_1",
         "sose_1",
         "sose_2",
+        "off_schedule",
         none
       )
 

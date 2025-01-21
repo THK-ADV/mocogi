@@ -25,7 +25,7 @@ final class ExamPhaseController @Inject() (
         val messages = r.messages
         Ok(
           Json.toJson(
-            ExamPhase.all.map(e => Json.obj("id" -> e.id, "label" -> messages(s"exam_phase.${e.id}")))
+            ExamPhase.all.map(e => Json.obj("id" -> e.id, "label" -> messages(s"exam_phase.label.${e.id}")))
           )
         )
       }
