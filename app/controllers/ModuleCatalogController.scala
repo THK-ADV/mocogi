@@ -6,7 +6,6 @@ import javax.inject.Inject
 import javax.inject.Named
 import javax.inject.Singleton
 
-import scala.concurrent.duration.*
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.util.control.NonFatal
@@ -23,7 +22,6 @@ import database.repo.ModuleCatalogRepository
 import models.FullPoId
 import models.UniversityRole
 import ops.FileOps.FileOps0
-import play.api.cache.Cached
 import play.api.i18n.Lang
 import play.api.libs.json.JsError
 import play.api.libs.json.JsSuccess
@@ -50,7 +48,6 @@ final class ModuleCatalogController @Inject() (
     @Named("path.mcIntro") mcIntroPath: String,
     val identityRepository: IdentityRepository,
     val studyProgramPersonRepository: StudyProgramPersonRepository,
-    cached: Cached,
     implicit val ctx: ExecutionContext
 ) extends AbstractController(cc)
     with DirectorCheck
@@ -58,9 +55,7 @@ final class ModuleCatalogController @Inject() (
     with PersonAction {
 
   def allFromSemester(semester: String) =
-    cached.status(r => r.method + r.uri, 200, 1.hour) {
-      Action.async(_ => repo.allFromSemester(semester).map(xs => Ok(Json.toJson(xs))))
-    }
+    Action.async(_ => repo.allFromSemester(semester).map(xs => Ok(Json.toJson(xs))))
 
   def getPreview(studyProgram: String, po: String) =
     auth

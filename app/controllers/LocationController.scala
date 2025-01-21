@@ -6,7 +6,6 @@ import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
 
 import models.core.ModuleLocation
-import play.api.cache.Cached
 import play.api.libs.json.Writes
 import play.api.mvc.AbstractController
 import play.api.mvc.ControllerComponents
@@ -16,7 +15,6 @@ import service.core.LocationService
 final class LocationController @Inject() (
     cc: ControllerComponents,
     val service: LocationService,
-    val cached: Cached,
     implicit val ctx: ExecutionContext
 ) extends AbstractController(cc)
     with YamlController[ModuleLocation] {
