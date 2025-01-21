@@ -2,22 +2,22 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 import scala.annotation.unused
-import scala.concurrent._
+import scala.concurrent.*
 import scala.util.Failure
 import scala.util.Success
 
 import auth.Authorization
-import auth.UserToken
+import auth.Token
 import controllers.ErrorHandler
 import play.api.http.HttpErrorHandler
 import play.api.libs.json.Json
-import play.api.mvc._
-import play.api.mvc.Results._
+import play.api.mvc.*
+import play.api.mvc.Results.*
 import play.api.Logging
 
 @unused
 @Singleton
-class ErrorHandler @Inject() (auth: Authorization[UserToken]) extends HttpErrorHandler with Logging {
+class ErrorHandler @Inject() (auth: Authorization[Token]) extends HttpErrorHandler with Logging {
 
   def onClientError(
       request: RequestHeader,
@@ -41,9 +41,9 @@ class ErrorHandler @Inject() (auth: Authorization[UserToken]) extends HttpErrorH
     auth.authorize(
       request.headers.get(Authorization.AuthorizationHeader)
     ) match {
-      case Success(userToken) =>
+      case Success(token) =>
         logger.error(
-          s"server error occurred from ${userToken.username} on ${request.method} ${request.uri}",
+          s"server error occurred from ${token.username} on ${request.method} ${request.uri}",
           exception
         )
       case Failure(_) =>

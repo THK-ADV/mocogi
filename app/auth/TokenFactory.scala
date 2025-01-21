@@ -1,9 +1,9 @@
 package auth
 
-trait TokenFactory[UserToken] {
+trait TokenFactory[T] {
   def create(
       attributes: Map[String, AnyRef],
-      mail: String,
+      mail: Option[String],
       roles: Set[String]
-  ): Either[String, UserToken]
+  ): Either[String, T]
 }

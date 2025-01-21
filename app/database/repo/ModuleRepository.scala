@@ -122,9 +122,9 @@ final class ModuleRepository @Inject() (
   def all(filter: Map[String, Seq[String]]) =
     retrieve(allWithFilter(filter))
 
-  def allModuleCore(filter: Map[String, Seq[String]]) =
+  def allModuleCore() =
     db.run(
-      allWithFilter(filter)
+      tableQuery
         .map(m => (m.id, m.title, m.abbrev))
         .result
         .map(_.map(ModuleCore.apply.tupled))

@@ -14,13 +14,10 @@ trait DirectorCheck { self: PermissionCheck =>
 
   def hasRoleInStudyProgram(role: List[UniversityRole], studyProgram: String) =
     new ActionFilter[PersonRequest] {
-      protected override def filter[A](
-          request: PersonRequest[A]
-      ): Future[Option[Result]] =
-        toResult(
-          studyProgramPersonRepository
-            .hasRoles(request.person.id, studyProgram, role),
-          request.request
+      protected override def filter[A](request: PersonRequest[A]): Future[Option[Result]] =
+        continueAsAdmin(
+          request.request,
+          otherwise = studyProgramPersonRepository.hasRoles(request.person.id, studyProgram, role)
         )
 
       protected override def executionContext: ExecutionContext = ctx

@@ -28,7 +28,7 @@ object EitherOps {
   implicit class EStringThrowOps[A](private val self: Either[String, A]) extends AnyVal {
     def toFuture: Future[A] =
       self match {
-        case Left(value)  => Future.failed(new Throwable(value))
+        case Left(value)  => Future.failed(new Exception(value))
         case Right(value) => Future.successful(value)
       }
   }

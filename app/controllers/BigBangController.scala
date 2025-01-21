@@ -6,11 +6,12 @@ import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
 
 import auth.AuthorizationAction
+import auth.Role.Admin
 import catalog.ModuleCatalogService
 import catalog.PreviewMergeActor
 import catalog.Semester
-import controllers.actions.AdminCheck
 import controllers.actions.PermissionCheck
+import controllers.actions.RoleCheck
 import play.api.mvc.AbstractController
 import play.api.mvc.AnyContent
 import play.api.mvc.ControllerComponents
@@ -24,19 +25,19 @@ final class BigBangController @Inject() (
     moduleCatalogService: ModuleCatalogService,
     implicit val ctx: ExecutionContext
 ) extends AbstractController(cc)
-    with AdminCheck
+    with RoleCheck
     with PermissionCheck {
 
   private def semester = "wise_2024"
 
   def go() =
-    auth.andThen(isAdmin).apply { (_: Request[AnyContent]) =>
+    auth.andThen(hasRole(Admin)).apply { (_: Request[AnyContent]) =>
       actor.createMergeRequest(Semester(semester))
       NoContent
     }
 
   def goCatalogs() =
-    auth.andThen(isAdmin).async { _ =>
+    auth.andThen(hasRole(Admin)).async { _ =>
       moduleCatalogService
         .createAndOpenMergeRequest(semester)
         .map(_ => NoContent)

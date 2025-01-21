@@ -6,13 +6,18 @@ import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
 
+import scala.collection.parallel.CollectionConverters.seqIsParallelizable
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.util.control.NonFatal
 
 import auth.AuthorizationAction
+import auth.Role.AccessDraftBranch
+import controllers.actions.PermissionCheck
+import controllers.actions.RoleCheck
 import database.view.ModuleViewRepository
 import git.api.GitFileDownloadService
+import git.api.GitRepositoryApiService
 import models.ModuleManagement
 import models.StudyProgramModuleAssociation
 import ops.FutureOps.OptionOps
@@ -41,6 +46,7 @@ final class ModuleController @Inject() (
     service: ModuleService,
     moduleViewRepository: ModuleViewRepository,
     gitFileDownloadService: GitFileDownloadService,
+    gitRepositoryApiService: GitRepositoryApiService,
     draftService: ModuleDraftService,
     fileCreator: DefaultTemporaryFileCreator,
     configReader: ConfigReader,
@@ -49,7 +55,9 @@ final class ModuleController @Inject() (
     val auth: AuthorizationAction,
     implicit val ctx: ExecutionContext
 ) extends AbstractController(cc)
-    with I18nSupport {
+    with I18nSupport
+    with PermissionCheck
+    with RoleCheck {
 
   implicit def moduleManagementWrites: Writes[ModuleManagement] = Json.writes
 
@@ -85,8 +93,26 @@ final class ModuleController @Inject() (
           )
       else
         service
-          .allModuleCore(request.queryString)
+          .allModuleCore()
           .map(xs => Ok(Json.toJson(xs)))
+    }
+
+  def allFromPreview() =
+    auth.andThen(hasRole(AccessDraftBranch)).async { _ =>
+      val config = gitRepositoryApiService.config
+      val branch = config.draftBranch
+      /* TODO: this can be optimized by only downloading files from preview which
+          has changed (diff). The other files can be obtained from the db */
+      for
+        paths <- gitRepositoryApiService.listModuleFiles(branch)
+        modules <- Future
+          .sequence(paths.par.collect {
+            case path if path.isModule(config) =>
+              gitFileDownloadService
+                .downloadModuleMetadataFromPreviewBranch(path)
+                .collect { case Some((id, module)) => Json.toJsObject(module) + ("id" -> Json.toJson(id)) }
+          }.seq)
+      yield Ok(JsArray(modules))
     }
 
   // GET by ID
@@ -139,7 +165,7 @@ final class ModuleController @Inject() (
       res <- output match {
         case Left(err)                          => Future.failed(err)
         case Right(PrinterOutput.Text(c, _, _)) => Future.successful(c)
-        case Right(PrinterOutput.File(_, _))    => Future.failed(new Throwable("expected standalone HTML, but was a file"))
+        case Right(PrinterOutput.File(_, _))    => Future.failed(new Exception("expected standalone HTML, but was a file"))
       }
     yield res
 

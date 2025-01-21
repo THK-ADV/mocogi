@@ -1,5 +1,7 @@
 package parsing
 
+import java.util.UUID
+
 import models.MetadataProtocol
 import models.ModuleProtocol
 import models.ModuleRelationProtocol
@@ -14,7 +16,6 @@ import parser.ParserOps.P12
 import parser.ParserOps.P13
 import parser.ParserOps.P14
 import parser.ParserOps.P15
-import parser.ParserOps.P16
 import parser.ParserOps.P2
 import parser.ParserOps.P3
 import parser.ParserOps.P4
@@ -34,7 +35,7 @@ import service.ContentParsingService
 import service.MetadataValidatingService
 
 object RawModuleParser {
-  def parser: Parser[ModuleProtocol] =
+  def metadataParser: Parser[(UUID, MetadataProtocol)] =
     prefix("---")
       .skip(VersionSchemeParser.parser)
       .skip(zeroOrMoreSpaces)
@@ -74,7 +75,6 @@ object RawModuleParser {
           .skip(zeroOrMoreSpaces)
       )
       .skip(prefix("---"))
-      .take(ContentParsingService.parser)
       .map {
         case (
               (id, title, abbrev),
@@ -93,10 +93,9 @@ object RawModuleParser {
               location,
               pos,
               (parts, competences, criteria, taughtWiths),
-              (deContent, enContent)
             ) =>
-          ModuleProtocol(
-            Some(id),
+          (
+            id,
             MetadataProtocol(
               title,
               abbrev,
@@ -120,7 +119,18 @@ object RawModuleParser {
               competences,
               criteria,
               taughtWiths
-            ),
+            )
+          )
+      }
+
+  def parser: Parser[ModuleProtocol] =
+    metadataParser
+      .zip(ContentParsingService.parser)
+      .map {
+        case ((id, metadata), (deContent, enContent)) =>
+          ModuleProtocol(
+            Some(id),
+            metadata,
             deContent,
             enContent
           )

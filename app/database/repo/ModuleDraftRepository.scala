@@ -133,7 +133,7 @@ final class ModuleDraftRepository @Inject() (
             .map(DBIO.successful)
             .getOrElse(
               DBIOAction.failed(
-                new Throwable(s"module draft for module $moduleId not found")
+                new Exception(s"module draft for module $moduleId not found")
               )
             )
         )

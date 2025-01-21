@@ -8,8 +8,9 @@ import scala.concurrent.ExecutionContext
 import scala.io.Source
 
 import auth.AuthorizationAction
-import controllers.actions.AdminCheck
+import auth.Role.Admin
 import controllers.actions.PermissionCheck
+import controllers.actions.RoleCheck
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.db.slick.HasDatabaseConfigProvider
 import play.api.mvc.AbstractController
@@ -24,13 +25,13 @@ final class BootstrapController @Inject() (
     implicit val ctx: ExecutionContext
 ) extends AbstractController(cc)
     with HasDatabaseConfigProvider[JdbcProfile]
-    with AdminCheck
+    with RoleCheck
     with PermissionCheck {
 
-  import profile.api._
+  import profile.api.*
 
   def createViews() =
-    auth.andThen(isAdmin).async { _ =>
+    auth.andThen(hasRole(Admin)).async { _ =>
       val source  = Source.fromFile(new File("conf/sql/views.sql"))
       val inserts = source.mkString
       source.close()

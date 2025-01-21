@@ -14,19 +14,19 @@ import play.api.mvc.Results.Unauthorized
 
 @Singleton
 case class AuthorizationAction @Inject() (
-    auth: Authorization[UserToken],
+    auth: Authorization[Token],
     parser: BodyParsers.Default
 )(implicit val executionContext: ExecutionContext)
-    extends ActionBuilder[UserTokenRequest, AnyContent] {
+    extends ActionBuilder[TokenRequest, AnyContent] {
 
   override def invokeBlock[A](
       request: Request[A],
-      block: UserTokenRequest[A] => Future[Result]
+      block: TokenRequest[A] => Future[Result]
   ): Future[Result] = {
     auth.authorize(
       request.headers.get(Authorization.AuthorizationHeader)
     ) match {
-      case Success(token) => block(UserTokenRequest(request, token))
+      case Success(token) => block(TokenRequest(request, token))
       case Failure(e) =>
         Future.successful(
           Unauthorized(

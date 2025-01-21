@@ -6,7 +6,7 @@ import java.nio.charset.StandardCharsets
 import java.util.UUID
 import javax.inject.Singleton
 
-import scala.sys.process._
+import scala.sys.process.*
 import scala.util.control.NonFatal
 import scala.util.Failure
 import scala.util.Success
@@ -93,10 +93,8 @@ final class PandocApi(
     var output  = ""
     val logger  = ProcessLogger(_ => (), err => output += s"$err\n")
     Try(process !! logger) match {
-      case Failure(e) =>
-        Left(new Throwable(output, e))
-      case Success(c) =>
-        Right(PrinterOutput.Text(c, extension, output))
+      case Failure(e) => Left(new Exception(output, e))
+      case Success(c) => Right(PrinterOutput.Text(c, extension, output))
     }
   }
 
@@ -112,10 +110,8 @@ final class PandocApi(
     var output   = ""
     val logger   = ProcessLogger(_ => (), err => output += s"$err\n")
     Try(process ! logger) match {
-      case Failure(e) =>
-        Left(new Throwable(output, e))
-      case Success(_) =>
-        Right(PrinterOutput.File(filename, output))
+      case Failure(e) => Left(new Exception(output, e))
+      case Success(_) => Right(PrinterOutput.File(filename, output))
     }
   }
 }

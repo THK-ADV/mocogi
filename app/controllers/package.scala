@@ -11,10 +11,16 @@ package object controllers {
   implicit def listReads[A](implicit reads: Reads[A]): Reads[List[A]] =
     Reads.list(reads)
 
-  implicit def throwableWrites: Writes[Throwable] = t =>
+  given Writes[Throwable] = t =>
     Json.obj(
-      "type"    -> "throwable",
+      "type"    -> "exception",
       "message" -> t.getMessage
+    )
+
+  given Writes[Exception] = e =>
+    Json.obj(
+      "type"    -> "exception",
+      "message" -> e.getMessage
     )
 
   implicit class LangOps(private val self: Lang) extends AnyVal {

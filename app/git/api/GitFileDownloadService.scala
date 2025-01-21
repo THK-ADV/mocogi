@@ -11,6 +11,7 @@ import git.Branch
 import git.GitConfig
 import git.GitFileContent
 import git.GitFilePath
+import models.MetadataProtocol
 import models.ModuleProtocol
 import ops.EitherOps.EThrowableOps
 import parsing.RawModuleParser
@@ -28,6 +29,18 @@ final class GitFileDownloadService @Inject() (
     private implicit val config: GitConfig,
     implicit val ctx: ExecutionContext
 ) {
+
+  def downloadModuleMetadataFromPreviewBranch(path: GitFilePath): Future[Option[(UUID, MetadataProtocol)]] =
+    downloadFileContent(path, config.draftBranch).map {
+      case Some(content) =>
+        val res = RawModuleParser.metadataParser.parse(content.value)._1.toOption
+        assert(
+          res.isDefined,
+          s"module ${path.moduleId} must be successfully parsed from ${config.draftBranch.value} branch"
+        )
+        res
+      case None => None
+    }
 
   def downloadModuleFromPreviewBranch(
       id: UUID
@@ -72,9 +85,7 @@ final class GitFileDownloadService @Inject() (
               case Left(err)                          => Future.failed(err)
               case Right(PrinterOutput.Text(c, _, _)) => Future.successful(c)
               case Right(PrinterOutput.File(_, _)) =>
-                Future.failed(
-                  new Throwable("expected standalone HTML, but was a file")
-                )
+                Future.failed(new Exception("expected standalone HTML, but was a file"))
             }
           } yield Some(res)
         case None =>

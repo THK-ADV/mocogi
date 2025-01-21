@@ -15,13 +15,8 @@ trait ApprovalCheck { self: PermissionCheck =>
 
   def hasPermissionToApproveReview(id: UUID) =
     new ActionFilter[PersonRequest] {
-      protected override def filter[A](
-          request: PersonRequest[A]
-      ): Future[Option[Result]] =
-        toResult(
-          approvalService.hasPendingApproval(id, request.person),
-          request.request
-        )
+      protected override def filter[A](request: PersonRequest[A]): Future[Option[Result]] =
+        continueAsAdmin(request.request, otherwise = approvalService.hasPendingApproval(id, request.person))
 
       protected override def executionContext: ExecutionContext = ctx
     }

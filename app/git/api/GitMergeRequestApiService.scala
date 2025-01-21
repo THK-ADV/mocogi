@@ -128,12 +128,7 @@ final class GitMergeRequestApiService @Inject() (
         if (res.status == Status.OK)
           res.json match {
             case JsArray(xs) => Future.successful(xs.nonEmpty)
-            case other =>
-              Future.failed(
-                new Throwable(
-                  s"expected result to be an json array, but was $other"
-                )
-              )
+            case other       => Future.failed(new Exception(s"expected result to be an json array, but was $other"))
           }
         else Future.failed(parseErrorMessage(res))
       }

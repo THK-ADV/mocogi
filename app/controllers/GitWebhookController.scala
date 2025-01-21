@@ -13,9 +13,9 @@ import scala.util.Try
 import _root_.webhook.GitMergeEventHandler
 import _root_.webhook.GitPushEventHandler
 import controllers.GitWebhookController.GitlabTokenHeader
-import git._
-import play.api.libs.json._
-import play.api.mvc._
+import git.*
+import play.api.libs.json.*
+import play.api.mvc.*
 
 object GitWebhookController {
   val GitlabTokenHeader = "X-Gitlab-Token"
@@ -50,22 +50,15 @@ class GitWebhookController @Inject() (
     def parseGitToken(implicit r: Request[?]): Try[UUID] =
       r.headers.get(GitlabTokenHeader) match {
         case Some(s) => Try(UUID.fromString(s))
-        case None =>
-          Failure(new Throwable(s"expected $GitlabTokenHeader header"))
+        case None    => Failure(new Exception(s"expected $GitlabTokenHeader header"))
       }
 
     Action.async(action.parser) { r =>
       parseGitToken(r) match {
         case Success(t) =>
           if (gitConfig.gitToken.fold(true)(_ == t)) action(r)
-          else
-            Future.successful(
-              Unauthorized(
-                Json.toJson(new Throwable(s"invalid $GitlabTokenHeader"))
-              )
-            )
-        case Failure(e) =>
-          Future.successful(BadRequest(Json.toJson(e)))
+          else Future.successful(Unauthorized(Json.toJson(new Exception(s"invalid $GitlabTokenHeader"))))
+        case Failure(e) => Future.successful(BadRequest(Json.toJson(e)))
       }
     }
   }

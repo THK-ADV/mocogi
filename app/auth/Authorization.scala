@@ -2,8 +2,8 @@ package auth
 
 import scala.util.Try
 
-trait Authorization[UserToken] {
-  def authorize(authorizationHeaderValue: Option[String]): Try[UserToken]
+trait Authorization[Token] {
+  def authorize(authorizationHeaderValue: Option[String]): Try[Token]
 }
 
 object Authorization {
