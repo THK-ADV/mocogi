@@ -6,6 +6,7 @@ import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
 
 import models.core.ModuleType
+import play.api.cache.Cached
 import play.api.libs.json.Writes
 import play.api.mvc.AbstractController
 import play.api.mvc.ControllerComponents
@@ -15,6 +16,7 @@ import service.core.ModuleTypeService
 final class ModuleTypeController @Inject() (
     cc: ControllerComponents,
     val service: ModuleTypeService,
+    val cached: Cached,
     implicit val ctx: ExecutionContext
 ) extends AbstractController(cc)
     with YamlController[ModuleType] {
