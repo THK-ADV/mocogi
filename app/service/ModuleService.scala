@@ -26,8 +26,8 @@ final class ModuleService @Inject() (
   def get(id: UUID) =
     repo.all(Map("id" -> Seq(id.toString))).single
 
-  def allModuleCore(filter: Map[String, Seq[String]]) =
-    repo.allModuleCore(filter)
+  def allModuleCore() =
+    repo.allModuleCore()
 
   def allMetadata() =
     repo.all(Map.empty).map(_.map(a => (a.id, a.metadata)))

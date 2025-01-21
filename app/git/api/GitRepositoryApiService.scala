@@ -7,6 +7,7 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 import git.api.GitRepositoryApiService.nextLinkParser
+import git.Branch
 import git.GitConfig
 import git.GitFilePath
 import parser.Parser.end
@@ -38,11 +39,11 @@ final class GitRepositoryApiService @Inject() (
     private implicit val ctx: ExecutionContext
 ) extends GitService {
 
-  def listCoreFiles(): Future[List[GitFilePath]] =
-    listFileNames(treeUrl(config.coreFolder))
+  def listCoreFiles(branch: Branch): Future[List[GitFilePath]] =
+    listFileNames(treeUrl(config.coreFolder, branch))
 
-  def listModuleFiles(): Future[List[GitFilePath]] =
-    listFileNames(treeUrl(config.modulesFolder))
+  def listModuleFiles(branch: Branch): Future[List[GitFilePath]] =
+    listFileNames(treeUrl(config.modulesFolder, branch))
 
   private def listFileNames(url: String): Future[List[GitFilePath]] =
     ws
@@ -50,24 +51,22 @@ final class GitRepositoryApiService @Inject() (
       .withHttpHeaders(tokenHeader())
       .get()
       .flatMap { r =>
-        if (r.status == Status.OK) {
+        if r.status != Status.OK then Future.failed(new Exception(r.toString))
+        else
           val files = parseFiles(r.json)
-          parseNextPaginationUrl(r) match {
+          parseNextPaginationUrl(r) match
             case Some(nextUrl) => listFileNames(nextUrl).map(files ::: _)
             case None          => Future.successful(files)
-          }
-        } else Future.failed(new Throwable(r.toString))
       }
 
   private def parseNextPaginationUrl(r: WSResponse): Option[String] =
-    r.header("Link")
-      .flatMap(nextLinkParser.parse(_)._1.fold(_ => None, identity))
+    r.header("Link").flatMap(nextLinkParser.parse(_)._1.fold(_ => None, identity))
 
   private def parseFiles(js: JsValue): List[GitFilePath] =
     js.\\("path")
       .map(s => GitFilePath(s.validate[String].getOrElse(s.toString())))
       .toList
 
-  private def treeUrl(path: String) =
-    s"${repositoryUrl()}/tree?path=$path&per_page=100"
+  private def treeUrl(path: String, branch: Branch) =
+    s"${repositoryUrl()}/tree?path=$path&per_page=100&ref=${branch.value}"
 }

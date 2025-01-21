@@ -12,6 +12,7 @@ GET           /me                                                 controllers.Me
 GET           /createViews                                        controllers.BootstrapController.createViews()
 
 # Big Bang
+
 GET           /bigbang                                            controllers.BigBangController.go()
 GET           /bigbangCatalogs                                    controllers.BigBangController.goCatalogs()
 
@@ -47,6 +48,7 @@ GET           /examPhases                                         controllers.Ex
 # Module
 
 GET           /modules                                            controllers.ModuleController.all()
+GET           /modules/preview                                    controllers.ModuleController.allFromPreview()
 GET           /modules/:id                                        controllers.ModuleController.get(id: java.util.UUID)
 GET           /modules/:id/preview                                controllers.ModuleController.getPreview(id: java.util.UUID)
 GET           /modules/:id/latest                                 controllers.ModuleController.getLatest(id: java.util.UUID)
@@ -63,8 +65,6 @@ POST          /moduleCatalogs/preview/:studyProgram/upload        controllers.Mo
 # Exam Lists
 
 GET           /examLists/preview/:studyProgram/:po                controllers.ExamListsController.getPreview(studyProgram: java.lang.String, po: java.lang.String)
-
-# Module
 
 # Module Draft
 

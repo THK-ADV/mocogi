@@ -28,7 +28,7 @@ final class MetadataPipeline @Inject() (
   def parseValidate(print: Print): Future[Module] =
     for {
       (metadata, de, en) <- parser.parse(print).unwrap
-      existing           <- moduleService.allModuleCore(Map.empty)
+      existing           <- moduleService.allModuleCore()
       metadata <- MetadataValidatingService
         .validate(existing, metadata)
         .mapErr(errs =>
@@ -43,7 +43,7 @@ final class MetadataPipeline @Inject() (
   ): Future[Either[Seq[PipelineError], Seq[(Print, Module)]]] =
     for {
       parsed   <- parser.parseMany(prints)
-      existing <- moduleService.allModuleCore(Map.empty)
+      existing <- moduleService.allModuleCore()
     } yield parsed match {
       case Left(value) => Left(value)
       case Right(parsed) =>
@@ -75,7 +75,7 @@ final class MetadataPipeline @Inject() (
     def validate(
         metadata: ParsedMetadata
     ): Future[Either[PipelineError, Metadata]] =
-      moduleService.allModuleCore(Map.empty).map { existing =>
+      moduleService.allModuleCore().map { existing =>
         MetadataValidatingService
           .validate(existing, metadata)
           .bimap(
