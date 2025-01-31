@@ -1,6 +1,8 @@
 package controllers
 
 import play.api.libs.json.Json
+import play.api.mvc.AnyContent
+import play.api.mvc.Request
 import play.api.mvc.Results.BadRequest
 import play.api.mvc.Results.InternalServerError
 
@@ -28,12 +30,18 @@ object ErrorHandler {
   )
 
   def badRequest(
-      request: String,
+      request: String | Request[AnyContent],
       message: String
-  ) = BadRequest(
-    Json.obj(
-      "request" -> request,
-      "message" -> message
+  ) = {
+    val requestStr = request match
+      case r: String              => r
+      case r: Request[AnyContent] => r.toString
+
+    BadRequest(
+      Json.obj(
+        "request" -> requestStr,
+        "message" -> message
+      )
     )
-  )
+  }
 }

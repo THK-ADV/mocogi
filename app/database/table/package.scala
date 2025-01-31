@@ -5,11 +5,11 @@ import git.Branch
 import git.CommitId
 import git.MergeRequestId
 import git.MergeRequestStatus
-import models._
+import models.*
 import play.api.libs.json.JsValue
 import play.api.libs.json.Json
 import service.Print
-import slick.jdbc.PostgresProfile.api._
+import slick.jdbc.PostgresProfile.api.*
 
 package object table {
   implicit val moduleRelationColumnType: BaseColumnType[ModuleRelationType] =
@@ -45,6 +45,7 @@ package object table {
           s.toInt :: acc
       }
 
+  // Care: This type could potentially break slick-pg mappings
   implicit val listIntColumnType: BaseColumnType[List[Int]] =
     MappedColumnType
       .base[List[Int], String](
@@ -60,6 +61,7 @@ package object table {
     MappedColumnType
       .base[Print, String](_.value, Print.apply)
 
+  // Care: This type could potentially break slick-pg mappings
   implicit val jsValueColumnType: BaseColumnType[JsValue] =
     MappedColumnType
       .base[JsValue, String](Json.stringify, Json.parse)
@@ -99,6 +101,7 @@ package object table {
           acc.+(s)
       }
 
+  // Care: This type could potentially break slick-pg mappings
   implicit val listStringColumnType: BaseColumnType[List[String]] =
     MappedColumnType
       .base[List[String], String](
@@ -106,6 +109,7 @@ package object table {
         stringToList
       )
 
+  // Care: This type could potentially break slick-pg mappings
   implicit val setStringColumnType: BaseColumnType[Set[String]] =
     MappedColumnType
       .base[Set[String], String](
@@ -134,4 +138,14 @@ package object table {
         _.id,
         MergeRequestStatus.apply
       )
+
+  given BaseColumnType[AssessmentMethodSource] =
+    MappedColumnType.base[AssessmentMethodSource, String](
+      _.id,
+      {
+        case "unknown" => AssessmentMethodSource.Unknown
+        case "rpo"     => AssessmentMethodSource.RPO
+        case other     => AssessmentMethodSource.PO(FullPoId(other))
+      }
+    )
 }

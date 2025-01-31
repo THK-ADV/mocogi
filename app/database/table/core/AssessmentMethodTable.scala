@@ -1,16 +1,23 @@
 package database.table.core
 
 import database.table.IDLabelColumn
-import models.core.AssessmentMethod
-import slick.jdbc.PostgresProfile.api._
+import models.AssessmentMethodSource
+import slick.jdbc.PostgresProfile.api.*
+
+case class AssessmentMethodDbEntry(id: String, deLabel: String, enLabel: String, source: AssessmentMethodSource)
 
 final class AssessmentMethodTable(tag: Tag)
-    extends Table[AssessmentMethod](tag, "assessment_method")
-    with IDLabelColumn[AssessmentMethod] {
+    extends Table[AssessmentMethodDbEntry](tag, "assessment_method")
+    with IDLabelColumn[AssessmentMethodDbEntry] {
+
+  import database.table.given_BaseColumnType_AssessmentMethodSource
+
+  def source = column[AssessmentMethodSource]("source")
 
   override def * = (
     id,
     deLabel,
-    enLabel
-  ) <> (AssessmentMethod.apply.apply, AssessmentMethod.unapply)
+    enLabel,
+    source
+  ) <> (AssessmentMethodDbEntry.apply, AssessmentMethodDbEntry.unapply)
 }

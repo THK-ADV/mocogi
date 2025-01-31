@@ -44,9 +44,6 @@ final class ModuleDraftService @Inject() (
   def getByModuleOpt(moduleId: UUID): Future[Option[ModuleDraft]] =
     moduleDraftRepository.getByModuleOpt(moduleId)
 
-  def hasModuleDraft(moduleId: UUID): Future[Boolean] =
-    moduleDraftRepository.hasModuleDraft(moduleId)
-
   def isAuthorOf(moduleId: UUID, personId: String) =
     moduleDraftRepository.isAuthorOf(moduleId, personId)
 
