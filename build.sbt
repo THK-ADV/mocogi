@@ -57,9 +57,11 @@ lazy val test = Seq(
 lazy val parser = "de.th-koeln.inf.adv" %% "nebulak" % "0.13"
 
 lazy val database = Seq(
-  "org.playframework" %% "play-slick"            % playSlickVersion,
-  "org.playframework" %% "play-slick-evolutions" % playSlickVersion,
-  "org.postgresql"     % "postgresql"            % "42.7.3"
+  "org.playframework"   %% "play-slick"            % playSlickVersion,
+  "org.playframework"   %% "play-slick-evolutions" % playSlickVersion,
+  "org.postgresql"       % "postgresql"            % "42.7.3",
+  "com.github.tminglei" %% "slick-pg"              % "0.22.2",
+  "com.github.tminglei" %% "slick-pg_play-json"    % "0.22.2",
 )
 
 lazy val kafka = "org.apache.kafka" % "kafka-clients" % "3.8.0"

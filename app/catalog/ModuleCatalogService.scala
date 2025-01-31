@@ -15,7 +15,7 @@ import scala.concurrent.Future
 import scala.util.control.NonFatal
 
 import controllers.FileController
-import database.repo.core._
+import database.repo.core.*
 import database.repo.ModuleCatalogRepository
 import database.repo.ModuleRepository
 import database.table.ModuleCatalogEntry
@@ -27,13 +27,14 @@ import git.Branch
 import git.GitFilePath
 import git.MergeRequestId
 import git.MergeRequestStatus
-import models._
+import models.*
 import ops.FileOps.FileOps0
 import play.api.i18n.Lang
 import play.api.Logging
 import printing.latex.ModuleCatalogLatexPrinter
 import printing.latex.Payload
 import printing.PrintingLanguage
+import service.AssessmentMethodService
 import service.LatexCompiler
 
 @Singleton
@@ -47,7 +48,7 @@ final class ModuleCatalogService @Inject() (
     private val languageRepository: LanguageRepository,
     private val seasonRepository: SeasonRepository,
     private val identityRepository: IdentityRepository,
-    private val assessmentMethodRepository: AssessmentMethodRepository,
+    private val assessmentMethodService: AssessmentMethodService,
     private val gitMergeRequestApiService: GitMergeRequestApiService,
     private val electivesCatalogService: ElectivesCatalogService,
     private val config: ModuleCatalogConfig,
@@ -56,7 +57,7 @@ final class ModuleCatalogService @Inject() (
     implicit val ctx: ExecutionContext
 ) extends Logging {
 
-  import LatexCompiler._
+  import LatexCompiler.*
 
   def createAndOpenMergeRequest(semesterId: String): Future[Unit] = {
     implicit val semester: Semester = Semester(semesterId)
@@ -179,7 +180,7 @@ final class ModuleCatalogService @Inject() (
       lang    <- languageRepository.all()
       seasons <- seasonRepository.all()
       people  <- identityRepository.all()
-      ams     <- assessmentMethodRepository.all()
+      ams     <- assessmentMethodService.all()
     } yield {
       def print(sp: StudyProgramView, pLang: PrintingLanguage) = {
         logger.info(s"printing ${sp.fullPoId}...")

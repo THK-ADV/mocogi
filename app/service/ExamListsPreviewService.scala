@@ -25,7 +25,6 @@ import play.api.i18n.Lang
 import play.api.libs.Files.TemporaryFile
 import play.api.Logging
 import printing.latex.ExamListsLatexPrinter
-import service.core.AssessmentMethodService
 import service.core.IdentityService
 import service.LatexCompiler.compile
 import service.LatexCompiler.getPdf

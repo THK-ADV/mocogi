@@ -14,7 +14,7 @@ import git.publisher.CoreDataPublisher.Handle
 import git.subscriber.CoreDataPublishActor
 import git.GitFile
 import git.GitFileContent
-import models.core._
+import models.core.*
 import monocle.macros.GenLens
 import monocle.Lens
 import ops.EitherOps.EThrowableOps
@@ -22,14 +22,13 @@ import org.apache.pekko.actor.Actor
 import org.apache.pekko.actor.ActorRef
 import org.apache.pekko.actor.Props
 import play.api.Logging
-import service.core._
+import service.core.*
 
 object CoreDataPublisher {
   def props(
       locationService: LocationService,
       languageService: LanguageService,
       statusService: StatusService,
-      assessmentMethodService: AssessmentMethodService,
       moduleTypeService: ModuleTypeService,
       seasonService: SeasonService,
       identityService: IdentityService,
@@ -51,7 +50,6 @@ object CoreDataPublisher {
         locationService,
         languageService,
         statusService,
-        assessmentMethodService,
         moduleTypeService,
         seasonService,
         identityService,
@@ -74,7 +72,6 @@ object CoreDataPublisher {
     val location        = "location"
     val lang            = "lang"
     val status          = "status"
-    val assessment      = "assessment"
     val module_type     = "module_type"
     val season          = "season"
     val person          = "person"
@@ -153,7 +150,6 @@ object CoreDataPublisher {
       private val locationService: LocationService,
       private val languageService: LanguageService,
       private val statusService: StatusService,
-      private val assessmentMethodService: AssessmentMethodService,
       private val moduleTypeService: ModuleTypeService,
       private val seasonService: SeasonService,
       private val identityService: IdentityService,
@@ -264,14 +260,6 @@ object CoreDataPublisher {
             GenLens[ModuleStatus](_.id),
             statusService.repo.deleteMany,
             publishActor.publishModuleStatus
-          )
-        case Filenames.assessment =>
-          go(
-            assessmentMethodService.repo.allIds(),
-            assessmentMethodService,
-            GenLens[AssessmentMethod](_.id),
-            assessmentMethodService.repo.deleteMany,
-            publishActor.publishAssessmentMethods
           )
         case Filenames.module_type =>
           go(

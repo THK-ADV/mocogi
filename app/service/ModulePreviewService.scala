@@ -47,7 +47,7 @@ final class ModulePreviewService @Inject() (
     languageRepository: LanguageRepository,
     seasonRepository: SeasonRepository,
     identityRepository: IdentityRepository,
-    assessmentMethodRepository: AssessmentMethodRepository,
+    assessmentMethodService: AssessmentMethodService,
     specializationRepository: SpecializationRepository,
     @Named("path.mcIntro") mcIntroPath: String,
     implicit val ctx: ExecutionContext
@@ -154,7 +154,7 @@ final class ModulePreviewService @Inject() (
       langs   <- languageRepository.all()
       seasons <- seasonRepository.all()
       people  <- identityRepository.all()
-      ams     <- assessmentMethodRepository.all()
+      ams     <- assessmentMethodService.all()
     } yield printer.preview(
       diffs,
       Payload(

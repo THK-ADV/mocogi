@@ -393,12 +393,6 @@ final class CoreDataPublishActor(actorRef: ActorRef) {
       deleted: Seq[String]
   ): Unit = actorRef ! PublishModuleStatus(created, updated, deleted)
 
-  def publishAssessmentMethods(
-      created: Seq[AssessmentMethod],
-      updated: Seq[AssessmentMethod],
-      deleted: Seq[String]
-  ): Unit = actorRef ! PublishAssessmentMethods(created, updated, deleted)
-
   def publishModuleTypes(
       created: Seq[ModuleType],
       updated: Seq[ModuleType],

@@ -32,6 +32,7 @@ GET           /locations                                          controllers.Lo
 GET           /languages                                          controllers.LanguageController.all()
 GET           /status                                             controllers.StatusController.all()
 GET           /assessmentMethods                                  controllers.AssessmentMethodController.all()
+POST          /assessmentMethods                                  controllers.AssessmentMethodController.createPermittedEntries()
 GET           /moduleTypes                                        controllers.ModuleTypeController.all()
 GET           /seasons                                            controllers.SeasonController.all()
 GET           /identities                                         controllers.IdentityController.all()

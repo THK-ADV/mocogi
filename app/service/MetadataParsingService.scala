@@ -6,14 +6,14 @@ import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-import cats.syntax.either._
-import models.core._
+import cats.syntax.either.*
+import models.core.*
 import parser.ParsingError
 import parsing.metadata.MetadataCompositeParser
 import parsing.types.ModuleContent
 import parsing.types.ParsedMetadata
 import play.api.Logging
-import service.core._
+import service.core.*
 
 @Singleton
 final class MetadataParsingService @Inject() (

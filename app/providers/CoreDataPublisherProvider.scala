@@ -11,11 +11,11 @@ import database.view.StudyProgramViewRepository
 import git.publisher.CoreDataPublisher
 import git.subscriber.CoreDataPublishActor
 import kafka.Topics
-import models.core._
+import models.core.*
 import ops.ConfigurationOps.Ops
 import org.apache.pekko.actor.ActorSystem
 import play.api.Configuration
-import service.core._
+import service.core.*
 
 @Singleton
 final class CoreDataPublisherProvider @Inject() (
@@ -23,7 +23,6 @@ final class CoreDataPublisherProvider @Inject() (
     locationService: LocationService,
     languageService: LanguageService,
     statusService: StatusService,
-    assessmentMethodService: AssessmentMethodService,
     moduleTypeService: ModuleTypeService,
     seasonService: SeasonService,
     identityService: IdentityService,
@@ -46,7 +45,6 @@ final class CoreDataPublisherProvider @Inject() (
         locationService,
         languageService,
         statusService,
-        assessmentMethodService,
         moduleTypeService,
         seasonService,
         identityService,
