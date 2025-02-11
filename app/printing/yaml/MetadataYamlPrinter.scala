@@ -433,6 +433,13 @@ final class MetadataYamlPrinter(identLevel: Int) {
       0
     )
 
+  private def printPo(po: String, spec: Option[String]) = {
+    val podId = spec match
+      case Some(spec) => s"$po.$spec"
+      case None       => po
+    s"- ${ModulePOParser.studyProgramKey}: ${ModulePOParser.studyProgramPrefix}$podId"
+  }
+
   def poMandatory(value: NonEmptyList[ModulePOMandatoryProtocol]) = {
     val deepness = identLevel + 2
     prefix(ModulePOParser.modulePOMandatoryKey)
@@ -443,9 +450,7 @@ final class MetadataYamlPrinter(identLevel: Int) {
             whitespace
               .repeat(identLevel)
               .skip(
-                prefix(
-                  s"- ${ModulePOParser.studyProgramKey}: ${ModulePOParser.studyProgramPrefix}${e.po}"
-                )
+                prefix(printPo(e.po, e.specialization))
               )
               .skip(newline)
               .skipOpt(
@@ -480,9 +485,7 @@ final class MetadataYamlPrinter(identLevel: Int) {
             whitespace
               .repeat(identLevel)
               .skip(
-                prefix(
-                  s"- ${ModulePOParser.studyProgramKey}: ${ModulePOParser.studyProgramPrefix}${e.po}"
-                )
+                prefix(printPo(e.po, e.specialization))
               )
               .skip(newline)
               .skip(
