@@ -247,7 +247,7 @@ final class MetadataYamlPrinterSpec extends AnyWordSpec with PrinterSpec {
     "print po mandatory" in {
       val po1 = NonEmptyList.of(
         ModulePOMandatoryProtocol("abc", None, List(1)),
-        ModulePOMandatoryProtocol("ghi", None, List(1, 2)),
+        ModulePOMandatoryProtocol("ghi", Some("foo"), List(1, 2)),
         ModulePOMandatoryProtocol("def", None, List(2, 1))
       )
       val res1 =
@@ -258,7 +258,7 @@ final class MetadataYamlPrinterSpec extends AnyWordSpec with PrinterSpec {
            |    recommended_semester:
            |      - 1
            |      - 2
-           |  - study_program: study_program.ghi
+           |  - study_program: study_program.ghi.foo
            |    recommended_semester:
            |      - 1
            |      - 2\n""".stripMargin
@@ -276,7 +276,7 @@ final class MetadataYamlPrinterSpec extends AnyWordSpec with PrinterSpec {
         ),
         models.ModulePOOptionalProtocol(
           "def",
-          None,
+          Some("foo"),
           m1,
           partOfCatalog = false,
           List(2, 1)
@@ -288,7 +288,7 @@ final class MetadataYamlPrinterSpec extends AnyWordSpec with PrinterSpec {
            |    instance_of: module.$m1
            |    part_of_catalog: true
            |    recommended_semester: 1
-           |  - study_program: study_program.def
+           |  - study_program: study_program.def.foo
            |    instance_of: module.$m1
            |    part_of_catalog: false
            |    recommended_semester:
