@@ -10,7 +10,8 @@ import com.google.inject.Inject
 import database.repo.core.AssessmentMethodRepository
 import database.repo.PermittedAssessmentMethodForModuleRepository
 import models.core.AssessmentMethod
-import models.{AssessmentMethodSource, PermittedAssessmentMethodForModule}
+import models.AssessmentMethodSource
+import models.PermittedAssessmentMethodForModule
 
 @Singleton
 final class AssessmentMethodService @Inject() (

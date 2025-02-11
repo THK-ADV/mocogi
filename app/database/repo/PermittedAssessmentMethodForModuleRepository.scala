@@ -10,8 +10,8 @@ import scala.concurrent.Future
 import database.table.core.AssessmentMethodTable
 import database.table.PermittedAssessmentMethodForModuleTable
 import database.MyPostgresProfile.api.*
-import models.PermittedAssessmentMethodForModule
 import models.core.AssessmentMethod
+import models.PermittedAssessmentMethodForModule
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.db.slick.HasDatabaseConfigProvider
 import slick.jdbc.JdbcProfile
