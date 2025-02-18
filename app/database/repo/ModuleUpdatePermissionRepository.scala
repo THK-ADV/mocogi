@@ -63,6 +63,16 @@ final class ModuleUpdatePermissionRepository @Inject() (
         .delete
     )
 
+  def delete(
+      module: UUID,
+      campusIds: Seq[CampusId]
+  ): Future[Int] =
+    db.run(
+      tableQuery
+        .filter(a => a.module === module && a.campusId.inSet(campusIds))
+        .delete
+    )
+
   def deleteGranted(module: UUID) =
     db.run(tableQuery.filter(a => a.module === module && a.isGranted).delete)
 

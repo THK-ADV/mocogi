@@ -7,7 +7,7 @@ import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-import git._
+import git.*
 import models.core.Identity
 import service.Print
 
@@ -18,7 +18,7 @@ final class GitCommitService @Inject() (
     implicit val ctx: ExecutionContext
 ) {
 
-  private def config = apiService.config
+  private implicit def config: GitConfig = apiService.config
 
   def commit(
       branch: Branch,
@@ -49,4 +49,30 @@ final class GitCommitService @Inject() (
       )
     } yield res
   }
+
+  /**
+   * Returns the content for a module that has been modified in the given commit. This method assumes that there are
+   * only module changes and a single diff.
+   */
+  def getLatestModuleFromCommit(
+      sha: String,
+      branch: Branch,
+      module: UUID
+  ): Future[Option[(GitFileContent, CommitDiff)]] =
+    apiService.getCommitDiff(sha).map(_.collectFirst { case d if d.newPath.moduleId.contains(module) => d }).flatMap {
+      case Some(c) => fileApiService.download(c.newPath, branch).map(_.map(_ -> c))
+      case None    => Future.successful(None)
+    }
+
+  /**
+   * Returns the content for all modules that has been modified in the given commit.
+   */
+  def getAllModulesFromCommit(sha: String, branch: Branch): Future[List[(GitFileContent, CommitDiff)]] =
+    for
+      commits <- apiService.getCommitDiff(sha)
+      downloads <- Future.sequence(commits.collect {
+        case cd if cd.newPath.isModule =>
+          fileApiService.download(cd.newPath, branch).collect { case Some(c) => (c, cd) }
+      })
+    yield downloads
 }

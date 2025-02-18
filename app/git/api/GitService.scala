@@ -6,9 +6,12 @@ import java.nio.charset.StandardCharsets
 import git.Branch
 import git.GitConfig
 import git.GitFilePath
+import parser.ParserOps.P0
 import play.api.libs.ws.WSResponse
 
 trait GitService {
+  import GitService.nextLinkParser
+
   def config: GitConfig
 
   def projectsUrl() =
@@ -34,4 +37,24 @@ trait GitService {
 
   def fileUrl(path: GitFilePath, branch: Branch) =
     s"${config.baseUrl}/projects/${config.projectId}/repository/files/${urlEncoded(path)}/raw?ref=${branch.value}"
+
+  def parseNextPaginationUrl(r: WSResponse): Option[String] =
+    r.header("Link").flatMap(nextLinkParser.parse(_)._1.fold(_ => None, identity))
+}
+
+object GitService {
+  import parser.Parser.end
+  import parser.Parser.prefix
+  import parser.Parser.prefixTo
+  import parser.Parser.skipFirst
+
+  def linkParser =
+    skipFirst(prefixTo("<"))
+      .take(prefixTo(">"))
+      .skip(prefixTo("\""))
+      .zip(prefixTo("\""))
+      .many(prefix(",").or(end))
+
+  def nextLinkParser =
+    linkParser.map(_.find(_._2 == "next").map(_._1))
 }

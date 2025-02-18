@@ -6,14 +6,9 @@ import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-import git.Branch
-import git.CommitId
-import git.GitCommitAction
-import git.GitCommitActionType
-import git.GitConfig
+import git.*
 import play.api.http.ContentTypes
-import play.api.libs.json.JsValue
-import play.api.libs.json.Json
+import play.api.libs.json.*
 import play.api.libs.ws.writeableOf_JsValue
 import play.api.libs.ws.WSClient
 import play.api.libs.ws.WSResponse
@@ -67,6 +62,27 @@ final class GitCommitApiService @Inject() (
       .withHttpHeaders(tokenHeader(), contentTypeJson())
       .post(body())
       .flatMap(parseCommitResult)
+  }
+
+  def getCommitDiff(sha: String): Future[List[CommitDiff]] = {
+    def parseJson(js: JsValue): List[CommitDiff] =
+      js.validate[List[CommitDiff]].fold(_ => List.empty, identity)
+
+    def go(url: String): Future[List[CommitDiff]] =
+      ws.url(url)
+        .withHttpHeaders(tokenHeader(), contentTypeJson())
+        .get()
+        .flatMap { resp =>
+          if resp.status != Status.OK then Future.failed(parseErrorMessage(resp))
+          else {
+            val commits = parseJson(resp.json)
+            parseNextPaginationUrl(resp) match
+              case Some(nextUrl) => go(nextUrl).map(_ ::: commits)
+              case None          => Future.successful(commits)
+          }
+        }
+
+    go(s"${this.commitUrl()}/$sha/diff")
   }
 
   private def parseCommitResult(res: WSResponse) =

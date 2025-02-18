@@ -9,7 +9,6 @@ import scala.concurrent.Future
 
 import database.table.core.AssessmentMethodTable
 import database.table.PermittedAssessmentMethodForModuleTable
-import database.MyPostgresProfile.api.*
 import models.core.AssessmentMethod
 import models.PermittedAssessmentMethodForModule
 import play.api.db.slick.DatabaseConfigProvider
@@ -21,6 +20,8 @@ final class PermittedAssessmentMethodForModuleRepository @Inject() (
     val dbConfigProvider: DatabaseConfigProvider,
     implicit val ctx: ExecutionContext
 ) extends HasDatabaseConfigProvider[JdbcProfile] {
+
+  import profile.api.*
 
   protected val tableQuery = TableQuery[PermittedAssessmentMethodForModuleTable]
 

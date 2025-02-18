@@ -8,7 +8,7 @@ import parser.ParserOps._
 import parsing.ParserListOps
 
 object IdentityParser {
-  private def prefix = "person."
+  def prefix = "person."
 
   def parser(implicit identities: Seq[Identity]): Parser[NonEmptyList[Identity]] = {
     val single =
