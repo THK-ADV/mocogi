@@ -43,7 +43,9 @@ final class ModuleUpdatePermissionService @Inject() (
       kind: ModuleUpdatePermissionType
   ) =
     for {
-      _ <- repo.delete(module, campusIds)
+      _ <- kind match
+        case ModuleUpdatePermissionType.Inherited => repo.deleteInherited(module)
+        case ModuleUpdatePermissionType.Granted   => repo.deleteGranted(module)
       _ <- repo.createMany(campusIds.distinct.map(c => (module, c, kind)))
     } yield ()
 
