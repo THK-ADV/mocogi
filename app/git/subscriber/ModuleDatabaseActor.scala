@@ -6,6 +6,7 @@ import scala.concurrent.ExecutionContext
 import scala.util.Failure
 import scala.util.Success
 
+import database.repo.CreatedModuleRepository
 import database.view.ModuleViewRepository
 import git.subscriber.ModuleSubscribers.Handle
 import org.apache.pekko.actor.Actor
@@ -20,6 +21,7 @@ object ModuleDatabaseActor {
       moduleService: ModuleService,
       moduleViewRepository: ModuleViewRepository,
       moduleUpdatePermissionService: ModuleUpdatePermissionService,
+      createdModuleRepository: CreatedModuleRepository,
       ctx: ExecutionContext
   ) =
     Props(
@@ -27,6 +29,7 @@ object ModuleDatabaseActor {
         moduleService,
         moduleViewRepository,
         moduleUpdatePermissionService,
+        createdModuleRepository,
         ctx
       )
     )
@@ -35,6 +38,7 @@ object ModuleDatabaseActor {
       moduleService: ModuleService,
       moduleViewRepository: ModuleViewRepository,
       moduleUpdatePermissionService: ModuleUpdatePermissionService,
+      createdModuleRepository: CreatedModuleRepository,
       implicit val ctx: ExecutionContext
   ) extends Actor
       with Logging {
@@ -72,6 +76,7 @@ object ModuleDatabaseActor {
             )
           )
         )
+        _ <- createdModuleRepository.delete(modules.map(_.metadata.id))
       } yield (created, permissions)
   }
 }

@@ -6,9 +6,10 @@ import javax.inject.Singleton
 
 import scala.concurrent.ExecutionContext
 
+import database.repo.CreatedModuleRepository
 import database.view.ModuleViewRepository
 import database.view.StudyProgramViewRepository
-import git.subscriber._
+import git.subscriber.*
 import kafka.Topics
 import ops.ConfigurationOps.Ops
 import org.apache.pekko.actor.ActorSystem
@@ -28,7 +29,8 @@ final class ModuleSubscribersProvider @Inject() (
     moduleUpdatePermissionService: ModuleUpdatePermissionService,
     config: Configuration,
     configReader: ConfigReader,
-    ctx: ExecutionContext
+    ctx: ExecutionContext,
+    createdModuleRepository: CreatedModuleRepository
 ) extends Provider[ModuleSubscribers] {
   override def get(): ModuleSubscribers =
     ModuleSubscribers(
@@ -50,6 +52,7 @@ final class ModuleSubscribersProvider @Inject() (
               metadataService,
               moduleViewRepository,
               moduleUpdatePermissionService,
+              createdModuleRepository,
               ctx
             )
         ),

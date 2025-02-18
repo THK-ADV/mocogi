@@ -17,21 +17,25 @@ import scala.util.Success
 
 import catalog.ModuleCatalogService
 import catalog.Semester
+import database.repo.CreatedModuleRepository
 import database.repo.ModuleCatalogGenerationRequestRepository
 import database.repo.ModuleDraftRepository
 import database.repo.ModuleReviewRepository
+import git.*
 import git.api.GitBranchService
+import git.api.GitCommitService
 import git.api.GitMergeRequestApiService
-import git.Branch
-import git.GitConfig
-import git.MergeRequestId
-import models._
+import models.*
+import models.ModuleUpdatePermissionType.Inherited
 import ops.LoggerOps
 import org.apache.pekko.actor.Actor
 import org.apache.pekko.actor.ActorRef
 import org.apache.pekko.actor.Props
-import play.api.libs.json._
+import parsing.RawModuleParser
+import play.api.libs.json.*
 import play.api.Logging
+import service.core.IdentityService
+import service.ModuleUpdatePermissionService
 
 @Singleton
 case class GitMergeEventHandler(private val value: ActorRef) {
@@ -48,9 +52,13 @@ object GitMergeEventHandler {
       gitConfig: GitConfig,
       moduleReviewRepository: ModuleReviewRepository,
       moduleDraftRepository: ModuleDraftRepository,
+      moduleUpdatePermissionService: ModuleUpdatePermissionService,
+      createdModuleRepository: CreatedModuleRepository,
+      identityService: IdentityService,
       moduleCatalogGenerationRepo: ModuleCatalogGenerationRequestRepository,
       mergeRequestApiService: GitMergeRequestApiService,
       branchService: GitBranchService,
+      gitCommitService: GitCommitService,
       moduleCatalogService: ModuleCatalogService,
       bigBangLabel: String,
       moduleCatalogLabel: String,
@@ -64,9 +72,13 @@ object GitMergeEventHandler {
       gitConfig,
       moduleReviewRepository,
       moduleDraftRepository,
+      moduleUpdatePermissionService,
+      createdModuleRepository,
+      identityService,
       moduleCatalogGenerationRepo,
       mergeRequestApiService,
       branchService,
+      gitCommitService,
       moduleCatalogService,
       bigBangLabel,
       moduleCatalogLabel,
@@ -82,9 +94,13 @@ object GitMergeEventHandler {
       gitConfig: GitConfig,
       moduleReviewRepository: ModuleReviewRepository,
       moduleDraftRepository: ModuleDraftRepository,
+      moduleUpdatePermissionService: ModuleUpdatePermissionService,
+      createdModuleRepository: CreatedModuleRepository,
+      identityService: IdentityService,
       moduleCatalogGenerationRepo: ModuleCatalogGenerationRequestRepository,
       mergeRequestApiService: GitMergeRequestApiService,
       branchService: GitBranchService,
+      gitCommitService: GitCommitService,
       moduleCatalogService: ModuleCatalogService,
       bigBangLabel: String,
       moduleCatalogLabel: String,
@@ -127,7 +143,11 @@ object GitMergeEventHandler {
               case (moduleBranch, gitConfig.draftBranch, "merge")
                   if labels.contains(autoApprovedLabel) ||
                     labels.contains(reviewRequiredLabel) =>
-                withUUID(moduleBranch)(id => removeModuleDrafts(id, id))
+                val sha = json.\("object_attributes").\("merge_commit_sha").validate[String].get
+                withUUID(moduleBranch)(moduleId => handleModuleCreated(id, moduleId, sha))
+              case (_, gitConfig.draftBranch, "merge") =>
+                val sha = json.\("object_attributes").\("merge_commit_sha").validate[Action].get
+                handleModuleBulkUpdate(id, sha)
               case _ =>
                 abort(id, result)
             }
@@ -419,21 +439,68 @@ object GitMergeEventHandler {
       )
     }
 
-    private def removeModuleDrafts(id: UUID, moduleId: UUID): Unit = {
-      logger.info(
-        s"[$id][${Thread.currentThread().getName.last}] deleting module draft with id $moduleId"
-      )
-      val f = for {
+    private def deleteModuleDraft(id: UUID, moduleId: UUID) =
+      for
         res1 <- moduleReviewRepository.delete(moduleId)
         res2 <- moduleDraftRepository.delete(moduleId)
-      } yield logger.info(
-        s"[$id][${Thread.currentThread().getName.last}] successfully deleted $res1 module reviews and $res2 module drafts"
+      yield logger.info(
+        s"[$id][${Thread.currentThread().getName.last}] deleted $res1 module reviews and $res2 module drafts"
       )
+
+    private def handleModuleCreated(id: UUID, moduleId: UUID, sha: String): Unit = {
+      val f = for {
+        (module, diff) <- gitCommitService.getLatestModuleFromCommit(sha, gitConfig.draftBranch, moduleId).collect {
+          case Some((content, diff)) => (RawModuleParser.parseCreatedModuleInformation(content.value), diff)
+        }
+        _ <- updateModuleManagement(id, moduleId, module.moduleManagement)
+        _ <- createNewModuleIfNeeded(id, module, diff)
+        _ <- deleteModuleDraft(id, moduleId)
+      } yield ()
       f.onComplete {
         case Success(_) =>
           self ! Finished(id)
         case Failure(e) =>
-          logFailure(e)
+          logger.error(s"[$id][${Thread.currentThread().getName.last}]", e)
+          self ! Finished(id)
+      }
+    }
+
+    private def updateModuleManagement(id: UUID, module: UUID, moduleManagement: List[String]) =
+      for
+        campusIds <- identityService.repo.getCampusIds(moduleManagement)
+        _         <- moduleUpdatePermissionService.replace(module, campusIds, Inherited)
+      yield logger.info(
+        s"[$id][${Thread.currentThread().getName.last}] created ${campusIds.size} module update permissions for $module"
+      )
+
+    private def createNewModuleIfNeeded(id: UUID, module: CreatedModule, diff: CommitDiff) =
+      if diff.isNewFile then
+        createdModuleRepository
+          .create(module)
+          .map(_ =>
+            logger.info(
+              s"[$id][${Thread.currentThread().getName.last}] created new module ${module.module}"
+            )
+          )
+      else Future.unit
+
+    private def handleModuleBulkUpdate(id: UUID, sha: String): Unit = {
+      val f = for
+        downloads <- gitCommitService.getAllModulesFromCommit(sha, gitConfig.draftBranch)
+        _ <- Future.sequence(downloads.map { (content, diff) =>
+          val module = RawModuleParser.parseCreatedModuleInformation(content.value)
+          for
+            _ <- updateModuleManagement(id, module.module, module.moduleManagement)
+            _ <- createNewModuleIfNeeded(id, module, diff)
+          yield ()
+        })
+      yield ()
+
+      f.onComplete {
+        case Success(_) =>
+          self ! Finished(id)
+        case Failure(e) =>
+          logger.error(s"[$id][${Thread.currentThread().getName.last}]", e)
           self ! Finished(id)
       }
     }

@@ -2,12 +2,12 @@ package parsing
 
 import java.util.UUID
 
-import models.MetadataProtocol
-import models.ModuleProtocol
-import models.ModuleRelationProtocol
-import models.ModuleWorkload
+import io.circe.yaml.parser.parse
+import io.circe.JsonObject
+import models.*
 import parser.Parser
 import parser.Parser.prefix
+import parser.Parser.prefixUntil
 import parser.Parser.zeroOrMoreSpaces
 import parser.ParserOps.P0
 import parser.ParserOps.P10
@@ -24,6 +24,7 @@ import parser.ParserOps.P6
 import parser.ParserOps.P7
 import parser.ParserOps.P8
 import parser.ParserOps.P9
+import parser.ParsingError
 import parsing.metadata.*
 import parsing.metadata.THKV1Parser.abbreviationParser
 import parsing.metadata.THKV1Parser.durationParser
@@ -35,6 +36,67 @@ import service.ContentParsingService
 import service.MetadataValidatingService
 
 object RawModuleParser {
+
+  // TODO this function uses the new way of parsing yaml
+  def parseCreatedModuleInformation(input: String): CreatedModule = {
+    def parseModuleManagement(obj: JsonObject) = {
+      def parseIdentity(str: String) =
+        str.stripPrefix(IdentityParser.prefix)
+      val js = obj.apply(ModuleResponsibilitiesParser.key).get
+      assume(js.isObject)
+      val managementJs = js.asObject.get.apply(ModuleResponsibilitiesParser.moduleManagementKey).get
+      assume(managementJs.isString || managementJs.isArray)
+      if managementJs.isString then {
+        val id = parseIdentity(managementJs.asString.get)
+        List(id)
+      } else {
+        val ids = managementJs.asArray.get.map(a => parseIdentity(a.asString.get))
+        ids.toList
+      }
+    }
+
+    def parseId(obj: JsonObject) = {
+      val js = obj.apply(THKV1Parser.idKey).get
+      assume(js.isString)
+      UUID.fromString(js.asString.get)
+    }
+
+    def parseTitle(obj: JsonObject) = {
+      val js = obj.apply(THKV1Parser.titleKey).get
+      assume(js.isString)
+      js.asString.get
+    }
+
+    def parseAbbrev(obj: JsonObject) = {
+      val js = obj.apply(THKV1Parser.abbreviationKey).get
+      assume(js.isString)
+      js.asString.get
+    }
+
+    def parseECTS(obj: JsonObject) = {
+      val js = obj.apply(ModuleECTSParser.key).get
+      assume(js.isNumber)
+      js.asNumber.get.toDouble
+    }
+
+    val res = prefix("---")
+      .skip(VersionSchemeParser.parser)
+      .skip(zeroOrMoreSpaces)
+      .take(prefixUntil("---"))
+      .parse(input)
+      ._1
+
+    res match
+      case Left(value) => throw value
+      case Right(yaml) =>
+        parse(yaml) match
+          case Left(value) => throw value
+          case Right(js) =>
+            assume(js.isObject)
+            val obj = js.asObject.get
+            CreatedModule(parseId(obj), parseTitle(obj), parseAbbrev(obj), parseModuleManagement(obj), parseECTS(obj))
+  }
+
   def metadataParser: Parser[(UUID, MetadataProtocol)] =
     prefix("---")
       .skip(VersionSchemeParser.parser)

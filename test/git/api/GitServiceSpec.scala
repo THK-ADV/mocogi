@@ -1,12 +1,11 @@
 package git.api
 
-import git.api.GitRepositoryApiService.linkParser
-import git.api.GitRepositoryApiService.nextLinkParser
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatest.EitherValues
 import org.scalatest.OptionValues
 
-final class GitRepositoryServiceSpec extends AnyWordSpec with EitherValues with OptionValues {
+final class GitServiceSpec extends AnyWordSpec with EitherValues with OptionValues {
+  import GitService.*
 
   def input1 =
     "<https://foo.bar.baz/id=42&page=2&pagination=legacy&path=modules&per_page=20&recursive=false>; rel=\"next\", <https://foo.bar.baz/id=42&page=1&pagination=legacy&path=modules&per_page=20&recursive=false>; rel=\"first\", <https://foo.bar.baz/id=42&page=17&pagination=legacy&path=modules&per_page=20&recursive=false>; rel=\"last\""
@@ -14,7 +13,7 @@ final class GitRepositoryServiceSpec extends AnyWordSpec with EitherValues with 
   def input2 =
     "<https://foo.bar.baz/id=42&page=3&pagination=legacy&path=modules&per_page=100&recursive=false>; rel=\"prev\", <https://foo.bar.baz/id=42&page=1&pagination=legacy&path=modules&per_page=100&recursive=false>; rel=\"first\", <https://foo.bar.baz/id=42&page=4&pagination=legacy&path=modules&per_page=100&recursive=false>; rel=\"last\""
 
-  "A GitRepositoryService" should {
+  "A GitService" should {
     "parse links for pagination" in {
       val (res1, rest1) = linkParser.parse(input1)
       assert(
