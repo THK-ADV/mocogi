@@ -6,14 +6,17 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 
 import database.repo.ModuleRepository
+import models.ModuleCore
 import ops.FutureOps.SeqOps
 import parsing.types.Module
 
 @Singleton
 final class ModuleService @Inject() (
     private val repo: ModuleRepository,
+    private val createNewModuleService: CreateNewModuleService,
     private implicit val ctx: ExecutionContext
 ) {
 
@@ -26,8 +29,11 @@ final class ModuleService @Inject() (
   def get(id: UUID) =
     repo.all(Map("id" -> Seq(id.toString))).single
 
-  def allModuleCore() =
+  def allModuleCore(): Future[Seq[ModuleCore]] =
     repo.allModuleCore()
+
+  def allNewlyCreated(): Future[Seq[ModuleCore]] =
+    createNewModuleService.allAsModuleCore()
 
   def allMetadata() =
     repo.all(Map.empty).map(_.map(a => (a.id, a.metadata)))

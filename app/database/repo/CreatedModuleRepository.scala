@@ -9,6 +9,7 @@ import scala.concurrent.Future
 
 import database.table.CreatedModuleTable
 import models.CreatedModule
+import models.ModuleCore
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.db.slick.HasDatabaseConfigProvider
 import slick.jdbc.JdbcProfile
@@ -28,4 +29,7 @@ final class CreatedModuleRepository @Inject() (
 
   def delete(modules: Seq[UUID]): Future[Int] =
     db.run(tableQuery.filter(_.module.inSet(modules)).delete)
+
+  def allAsModuleCore(): Future[Seq[ModuleCore]] =
+    db.run(tableQuery.map(a => (a.module, a.moduleTitle, a.moduleAbbrev)).result.map(_.map(ModuleCore.apply.tupled)))
 }

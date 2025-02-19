@@ -17,7 +17,6 @@ import scala.util.Success
 
 import catalog.ModuleCatalogService
 import catalog.Semester
-import database.repo.CreatedModuleRepository
 import database.repo.ModuleCatalogGenerationRequestRepository
 import database.repo.ModuleDraftRepository
 import database.repo.ModuleReviewRepository
@@ -27,7 +26,6 @@ import git.api.GitCommitService
 import git.api.GitMergeRequestApiService
 import io.circe.ParsingFailure
 import models.*
-import models.ModuleUpdatePermissionType.Inherited
 import ops.LoggerOps
 import org.apache.pekko.actor.Actor
 import org.apache.pekko.actor.ActorRef
@@ -37,8 +35,7 @@ import parsing.RawModuleParser
 import parsing.YamlParsingError
 import play.api.libs.json.*
 import play.api.Logging
-import service.core.IdentityService
-import service.ModuleUpdatePermissionService
+import service.CreateNewModuleService
 
 @Singleton
 case class GitMergeEventHandler(private val value: ActorRef) {
@@ -55,9 +52,7 @@ object GitMergeEventHandler {
       gitConfig: GitConfig,
       moduleReviewRepository: ModuleReviewRepository,
       moduleDraftRepository: ModuleDraftRepository,
-      moduleUpdatePermissionService: ModuleUpdatePermissionService,
-      createdModuleRepository: CreatedModuleRepository,
-      identityService: IdentityService,
+      createNewModuleService: CreateNewModuleService,
       moduleCatalogGenerationRepo: ModuleCatalogGenerationRequestRepository,
       mergeRequestApiService: GitMergeRequestApiService,
       branchService: GitBranchService,
@@ -75,9 +70,7 @@ object GitMergeEventHandler {
       gitConfig,
       moduleReviewRepository,
       moduleDraftRepository,
-      moduleUpdatePermissionService,
-      createdModuleRepository,
-      identityService,
+      createNewModuleService,
       moduleCatalogGenerationRepo,
       mergeRequestApiService,
       branchService,
@@ -97,9 +90,7 @@ object GitMergeEventHandler {
       gitConfig: GitConfig,
       moduleReviewRepository: ModuleReviewRepository,
       moduleDraftRepository: ModuleDraftRepository,
-      moduleUpdatePermissionService: ModuleUpdatePermissionService,
-      createdModuleRepository: CreatedModuleRepository,
-      identityService: IdentityService,
+      createNewModuleService: CreateNewModuleService,
       moduleCatalogGenerationRepo: ModuleCatalogGenerationRequestRepository,
       mergeRequestApiService: GitMergeRequestApiService,
       branchService: GitBranchService,
@@ -455,8 +446,7 @@ object GitMergeEventHandler {
         (module, diff) <- gitCommitService.getLatestModuleFromCommit(sha, gitConfig.draftBranch, moduleId).collect {
           case Some((content, diff)) => (parseCreatedModuleInformation(content, moduleId), diff)
         }
-        _ <- updateModuleManagement(id, moduleId, module.moduleManagement)
-        _ <- createNewModuleIfNeeded(id, module, diff)
+        _ <- createNewModuleWithPermissions(id, module, diff)
         _ <- deleteModuleDraft(id, moduleId)
       } yield ()
       f.onComplete {
@@ -468,6 +458,24 @@ object GitMergeEventHandler {
       }
     }
 
+    private def createNewModuleWithPermissions(id: UUID, module: CreatedModule, diff: CommitDiff) =
+      if diff.isNewFile then
+        createNewModuleService
+          .createWithPermissions(module)
+          .map(_ =>
+            logger.info(
+              s"[$id][${Thread.currentThread().getName.last}] created new module ${module.module} with ${module.moduleManagement.size} permissions"
+            )
+          )
+      else
+        createNewModuleService
+          .updateModuleManagement(module.module, module.moduleManagement)
+          .map(_ =>
+            logger.info(
+              s"[$id][${Thread.currentThread().getName.last}] created ${module.moduleManagement.size} permissions for module $module"
+            )
+          )
+
     private def parseCreatedModuleInformation(content: GitFileContent, module: => UUID) =
       try RawModuleParser.parseCreatedModuleInformation(content.value)
       catch
@@ -475,34 +483,12 @@ object GitMergeEventHandler {
         case pe: ParsingError   => throw YamlParsingError(module, pe)
         case NonFatal(e)        => throw e
 
-    private def updateModuleManagement(id: UUID, module: UUID, moduleManagement: List[String]) =
-      for
-        campusIds <- identityService.repo.getCampusIds(moduleManagement)
-        _         <- moduleUpdatePermissionService.replace(module, campusIds, Inherited)
-      yield logger.info(
-        s"[$id][${Thread.currentThread().getName.last}] created ${campusIds.size} module update permissions for $module"
-      )
-
-    private def createNewModuleIfNeeded(id: UUID, module: CreatedModule, diff: CommitDiff) =
-      if diff.isNewFile then
-        createdModuleRepository
-          .create(module)
-          .map(_ =>
-            logger.info(
-              s"[$id][${Thread.currentThread().getName.last}] created new module ${module.module}"
-            )
-          )
-      else Future.unit
-
     private def handleModuleBulkUpdate(id: UUID, sha: String): Unit = {
       val f = for
         downloads <- gitCommitService.getAllModulesFromCommit(sha, gitConfig.draftBranch)
         _ <- Future.sequence(downloads.map { (content, diff) =>
           val module = parseCreatedModuleInformation(content, diff.newPath.moduleId(gitConfig).get)
-          for
-            _ <- updateModuleManagement(id, module.module, module.moduleManagement)
-            _ <- createNewModuleIfNeeded(id, module, diff)
-          yield ()
+          createNewModuleWithPermissions(id, module, diff)
         })
       yield ()
 

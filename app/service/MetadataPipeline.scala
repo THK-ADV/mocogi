@@ -25,10 +25,13 @@ final class MetadataPipeline @Inject() (
     private val moduleYamlPrinter: ModuleYamlPrinter,
     implicit val ctx: ExecutionContext
 ) {
-  def parseValidate(print: Print): Future[Module] =
+  def parseValidate(print: Print): Future[Module] = {
+    val parse    = parser.parse(print).unwrap
+    val existing = allModules()
+
     for {
-      (metadata, de, en) <- parser.parse(print).unwrap
-      existing           <- moduleService.allModuleCore()
+      (metadata, de, en) <- parse
+      existing           <- existing
       metadata <- MetadataValidatingService
         .validate(existing, metadata)
         .mapErr(errs =>
@@ -37,18 +40,23 @@ final class MetadataPipeline @Inject() (
         )
         .toFuture
     } yield Module(metadata, de, en)
+  }
 
   def parseValidateMany(
       prints: Seq[Print]
-  ): Future[Either[Seq[PipelineError], Seq[(Print, Module)]]] =
+  ): Future[Either[Seq[PipelineError], Seq[(Print, Module)]]] = {
+    val parse    = parser.parseMany(prints)
+    val existing = allModules()
+
     for {
-      parsed   <- parser.parseMany(prints)
-      existing <- moduleService.allModuleCore()
+      parsed   <- parse
+      existing <- existing
     } yield parsed match {
       case Left(value) => Left(value)
       case Right(parsed) =>
         MetadataValidatingService.validateMany(existing, parsed)
     }
+  }
 
   def printParseValidate(
       protocol: ModuleProtocol,
@@ -75,7 +83,7 @@ final class MetadataPipeline @Inject() (
     def validate(
         metadata: ParsedMetadata
     ): Future[Either[PipelineError, Metadata]] =
-      moduleService.allModuleCore().map { existing =>
+      allModules().map { existing =>
         MetadataValidatingService
           .validate(existing, metadata)
           .bimap(
@@ -91,4 +99,10 @@ final class MetadataPipeline @Inject() (
       validated <- continueWith(parsed)(a => validate(a._2._1))
     } yield validated.map(t => (Module(t._2, t._1._2._2, t._1._2._3), t._1._1))
   }
+
+  private def allModules(): Future[Seq[ModuleCore]] =
+    for
+      allFromLive  <- moduleService.allModuleCore()
+      allFromDraft <- moduleService.allNewlyCreated()
+    yield allFromLive ++ allFromDraft
 }

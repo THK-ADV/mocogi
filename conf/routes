@@ -9,7 +9,8 @@ GET           /admin/invalidModuleExams                           controllers.Ad
 
 GET           /me                                                 controllers.MeController.me()
 
-GET           /createViews                                        controllers.BootstrapController.createViews()
+GET           /bootstrap/createViews                              controllers.BootstrapController.createViews()
+POST          /bootstrap/module                                   controllers.BootstrapController.createNewModule()
 
 # Big Bang
 

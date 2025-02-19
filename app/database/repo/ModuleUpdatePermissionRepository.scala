@@ -125,16 +125,18 @@ final class ModuleUpdatePermissionRepository @Inject() (
       campusId: CampusId
   ): Future[
     Seq[(ModuleCore, ModuleUpdatePermissionType, Option[ModuleDraft])]
-  ] =
+  ] = {
+    val permissions = tableQuery.filter(_.campusId === campusId)
+    val q1 = permissions
+      .joinLeft(TableQuery[ModuleTable].map(a => (a.id, a.title, a.abbrev)))
+      .on(_.module === _._1)
+      .joinLeft(TableQuery[ModuleDraftTable])
+      .on(_._1.module === _.module)
+      .filter(a => a._1._2.isDefined || a._2.isDefined)
+    val q2 = ???
+
     db.run(
-      tableQuery
-        .filter(_.campusId === campusId)
-        .joinLeft(TableQuery[ModuleTable].map(a => (a.id, a.title, a.abbrev)))
-        .on(_.module === _._1)
-        .joinLeft(TableQuery[ModuleDraftTable])
-        .on(_._1.module === _.module)
-        .filter(a => a._1._2.isDefined || a._2.isDefined)
-        .result
+      q1.result
         .map(_.map {
           case (((_, _, kind), core), draft) =>
             val moduleCore = core
@@ -147,4 +149,5 @@ final class ModuleUpdatePermissionRepository @Inject() (
             (moduleCore, kind, draft)
         })
     )
+  }
 }

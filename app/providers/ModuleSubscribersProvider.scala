@@ -6,7 +6,6 @@ import javax.inject.Singleton
 
 import scala.concurrent.ExecutionContext
 
-import database.repo.CreatedModuleRepository
 import database.view.ModuleViewRepository
 import database.view.StudyProgramViewRepository
 import git.subscriber.*
@@ -16,6 +15,7 @@ import org.apache.pekko.actor.ActorSystem
 import play.api.Configuration
 import printing.html.ModuleHTMLPrinter
 import printing.pandoc.PrinterOutputType
+import service.CreateNewModuleService
 import service.ModuleService
 import service.ModuleUpdatePermissionService
 
@@ -30,7 +30,7 @@ final class ModuleSubscribersProvider @Inject() (
     config: Configuration,
     configReader: ConfigReader,
     ctx: ExecutionContext,
-    createdModuleRepository: CreatedModuleRepository
+    createNewModuleService: CreateNewModuleService,
 ) extends Provider[ModuleSubscribers] {
   override def get(): ModuleSubscribers =
     ModuleSubscribers(
@@ -52,7 +52,7 @@ final class ModuleSubscribersProvider @Inject() (
               metadataService,
               moduleViewRepository,
               moduleUpdatePermissionService,
-              createdModuleRepository,
+              createNewModuleService,
               ctx
             )
         ),
