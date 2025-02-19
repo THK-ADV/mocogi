@@ -8,6 +8,7 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 import auth.CampusId
+import database.table.CreatedModuleTable
 import database.table.ModuleDraftTable
 import database.table.ModuleTable
 import database.table.ModuleUpdatePermissionTable
@@ -127,27 +128,38 @@ final class ModuleUpdatePermissionRepository @Inject() (
     Seq[(ModuleCore, ModuleUpdatePermissionType, Option[ModuleDraft])]
   ] = {
     val permissions = tableQuery.filter(_.campusId === campusId)
+    val liveTable   = TableQuery[ModuleTable].map(a => (a.id, a.title, a.abbrev))
+    val draftTable  = TableQuery[CreatedModuleTable].map(a => (a.module, a.moduleTitle, a.moduleAbbrev))
+
     val q1 = permissions
-      .joinLeft(TableQuery[ModuleTable].map(a => (a.id, a.title, a.abbrev)))
+      .joinLeft(liveTable)
       .on(_.module === _._1)
       .joinLeft(TableQuery[ModuleDraftTable])
       .on(_._1.module === _.module)
       .filter(a => a._1._2.isDefined || a._2.isDefined)
-    val q2 = ???
+    val q2 = permissions
+      .joinLeft(draftTable)
+      .on(_.module === _._1)
+      .joinLeft(TableQuery[ModuleDraftTable])
+      .on(_._1.module === _.module)
+      // I am failing to project a constant null column for module draft. One module should only exist in either live or draft table
+      .filter(a => a._1._2.isDefined && a._2.isEmpty)
 
     db.run(
-      q1.result
-        .map(_.map {
-          case (((_, _, kind), core), draft) =>
-            val moduleCore = core
-              .map(ModuleCore.apply.tupled)
-              .orElse(
-                draft
-                  .map(d => ModuleCore(d.module, d.moduleTitle, d.moduleAbbrev))
-              )
-              .get
-            (moduleCore, kind, draft)
-        })
+      q1.unionAll(q2)
+        .result
+        .map { xs =>
+          val res = xs.map {
+            case (((_, _, kind), core), draft) =>
+              val moduleCore = core
+                .map(ModuleCore.apply.tupled)
+                .orElse(draft.map(d => ModuleCore(d.module, d.moduleTitle, d.moduleAbbrev)))
+                .get
+              (moduleCore, kind, draft)
+          }
+          assume(xs.size == res.distinctBy(_._1.id).size, s"expected unique modules, but found: $res")
+          res
+        }
     )
   }
 }
