@@ -25,13 +25,16 @@ import git.*
 import git.api.GitBranchService
 import git.api.GitCommitService
 import git.api.GitMergeRequestApiService
+import io.circe.ParsingFailure
 import models.*
 import models.ModuleUpdatePermissionType.Inherited
 import ops.LoggerOps
 import org.apache.pekko.actor.Actor
 import org.apache.pekko.actor.ActorRef
 import org.apache.pekko.actor.Props
+import parser.ParsingError
 import parsing.RawModuleParser
+import parsing.YamlParsingError
 import play.api.libs.json.*
 import play.api.Logging
 import service.core.IdentityService
@@ -450,7 +453,7 @@ object GitMergeEventHandler {
     private def handleModuleCreated(id: UUID, moduleId: UUID, sha: String): Unit = {
       val f = for {
         (module, diff) <- gitCommitService.getLatestModuleFromCommit(sha, gitConfig.draftBranch, moduleId).collect {
-          case Some((content, diff)) => (RawModuleParser.parseCreatedModuleInformation(content.value), diff)
+          case Some((content, diff)) => (parseCreatedModuleInformation(content, moduleId), diff)
         }
         _ <- updateModuleManagement(id, moduleId, module.moduleManagement)
         _ <- createNewModuleIfNeeded(id, module, diff)
@@ -464,6 +467,13 @@ object GitMergeEventHandler {
           self ! Finished(id)
       }
     }
+
+    private def parseCreatedModuleInformation(content: GitFileContent, module: => UUID) =
+      try RawModuleParser.parseCreatedModuleInformation(content.value)
+      catch
+        case pf: ParsingFailure => throw YamlParsingError(module, pf)
+        case pe: ParsingError   => throw YamlParsingError(module, pe)
+        case NonFatal(e)        => throw e
 
     private def updateModuleManagement(id: UUID, module: UUID, moduleManagement: List[String]) =
       for
@@ -488,7 +498,7 @@ object GitMergeEventHandler {
       val f = for
         downloads <- gitCommitService.getAllModulesFromCommit(sha, gitConfig.draftBranch)
         _ <- Future.sequence(downloads.map { (content, diff) =>
-          val module = RawModuleParser.parseCreatedModuleInformation(content.value)
+          val module = parseCreatedModuleInformation(content, diff.newPath.moduleId(gitConfig).get)
           for
             _ <- updateModuleManagement(id, module.module, module.moduleManagement)
             _ <- createNewModuleIfNeeded(id, module, diff)
