@@ -72,7 +72,7 @@ final class GitCommitService @Inject() (
     for
       commits <- apiService.getCommitDiff(sha)
       downloads <- Future.sequence(commits.collect {
-        case cd if cd.newPath.isModule =>
+        case cd if cd.newPath.isModule && !cd.isDeleted =>
           fileApiService.download(cd.newPath, branch).collect { case Some(c) => (c, cd) }
       })
     yield downloads
