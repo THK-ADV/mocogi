@@ -6,7 +6,7 @@
 GET           /                                                   controllers.HomeController.index
 
 GET           /admin/invalidModuleExams                           controllers.AdminController.invalidModuleExams()
-GET           /admin/deleteModules                                controllers.AdminController.deleteModules()
+DELETE        /admin/module/:id                                   controllers.AdminController.deleteModule(id: java.util.UUID)
 
 GET           /me                                                 controllers.MeController.me()
 
