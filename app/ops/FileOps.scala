@@ -56,6 +56,13 @@ object FileOps {
           .forEach(p => Files.deleteIfExists(p))
       else ()
 
+    def walkDirectory(f: Path => Unit) = {
+      import scala.jdk.CollectionConverters.*
+      Files.walk(self).toList.asScala.toVector.collect {
+        case file if !Files.isDirectory(file) => f(file)
+      }
+    }
+
     def createFile(
         name: String,
         content: String

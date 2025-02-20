@@ -66,6 +66,7 @@ final class GitCommitService @Inject() (
 
   /**
    * Returns the content for all modules that has been modified in the given commit.
+   * Deleted Files are not handled
    */
   def getAllModulesFromCommit(sha: String, branch: Branch): Future[List[(GitFileContent, CommitDiff)]] =
     for

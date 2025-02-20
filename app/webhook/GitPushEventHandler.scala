@@ -164,6 +164,7 @@ object GitPushEventHandler {
               if (moduleFiles.isEmpty && coreFiles.isEmpty) {
                 logger.info("can't handle empty changes")
               } else {
+                // Proceed with created or modified files. Deleted files are ignored
                 downloadGitFiles(branch, moduleFiles, coreFiles).onComplete {
                   case Success((moduleFiles, coreFiles)) =>
                     modulePublisher.notifySubscribers(

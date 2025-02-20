@@ -189,7 +189,7 @@ final class ModuleRepository @Inject() (
 
   private def updateAction(module: Module, timestamp: LocalDateTime) =
     for {
-      _ <- deleteDependencies(module.metadata)
+      _ <- deleteDependencies(module.metadata.id)
       _ <- tableQuery
         .filter(_.id === module.metadata.id)
         .update(toDbEntry(module, timestamp))
@@ -202,14 +202,14 @@ final class ModuleRepository @Inject() (
       _ <- createDependencies(module.metadata)
     } yield ()
 
-  private def deleteDependencies(metadata: Metadata) =
+  def deleteDependencies(moduleId: UUID) =
     for {
-      _ <- metadataTaughtWithTable.filter(_.module === metadata.id).delete
-      _ <- metadataGlobalCriteriaTable.filter(_.module === metadata.id).delete
-      _ <- metadataCompetenceTable.filter(_.module === metadata.id).delete
-      _ <- poOptionalTable.filter(_.module === metadata.id).delete
-      _ <- poMandatoryTable.filter(_.module === metadata.id).delete
-      prerequisitesQuery = prerequisitesTable.filter(_.module === metadata.id)
+      _ <- metadataTaughtWithTable.filter(_.module === moduleId).delete
+      _ <- metadataGlobalCriteriaTable.filter(_.module === moduleId).delete
+      _ <- metadataCompetenceTable.filter(_.module === moduleId).delete
+      _ <- poOptionalTable.filter(_.module === moduleId).delete
+      _ <- poMandatoryTable.filter(_.module === moduleId).delete
+      prerequisitesQuery = prerequisitesTable.filter(_.module === moduleId)
       _ <- prerequisitesPOTable
         .filter(
           _.prerequisites in prerequisitesQuery
@@ -224,7 +224,7 @@ final class ModuleRepository @Inject() (
         .delete
       _ <- prerequisitesQuery.delete
       metadataAssessmentMethodQuery = metadataAssessmentMethodTable.filter(
-        _.module === metadata.id
+        _.module === moduleId
       )
       _ <- metadataAssessmentMethodPreconditionTable
         .filter(
@@ -232,12 +232,12 @@ final class ModuleRepository @Inject() (
         )
         .delete
       _ <- metadataAssessmentMethodQuery.delete
-      _ <- responsibilityTable.filter(_.module === metadata.id).delete
-      _ <- moduleRelationTable.filter(_.module === metadata.id).delete
+      _ <- responsibilityTable.filter(_.module === moduleId).delete
+      _ <- moduleRelationTable.filter(_.module === moduleId).delete
       _ <- ectsFocusAreaContributionTable
-        .filter(_.module === metadata.id)
+        .filter(_.module === moduleId)
         .delete
-    } yield metadata
+    } yield ()
 
   private def createDependencies(metadata: Metadata) = {
     val (methods, preconditions) = metadataAssessmentMethods(metadata)
