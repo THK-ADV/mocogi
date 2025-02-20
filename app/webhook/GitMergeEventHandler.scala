@@ -472,7 +472,7 @@ object GitMergeEventHandler {
           .updateModuleManagement(module.module, module.moduleManagement)
           .map(_ =>
             logger.info(
-              s"[$id][${Thread.currentThread().getName.last}] created ${module.moduleManagement.size} permissions for module $module"
+              s"[$id][${Thread.currentThread().getName.last}] created ${module.moduleManagement.size} permissions for module ${module.module}"
             )
           )
 
@@ -481,7 +481,7 @@ object GitMergeEventHandler {
       catch
         case pf: ParsingFailure => throw YamlParsingError(module, pf)
         case pe: ParsingError   => throw YamlParsingError(module, pe)
-        case NonFatal(e)        => throw e
+        case NonFatal(e)        => throw YamlParsingError(module, e)
 
     private def handleModuleBulkUpdate(id: UUID, sha: String): Unit = {
       val f = for

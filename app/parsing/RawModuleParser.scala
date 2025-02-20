@@ -57,26 +57,27 @@ object RawModuleParser {
 
     def parseId(obj: JsonObject) = {
       val js = obj.apply(THKV1Parser.idKey).get
-      assume(js.isString)
+      assume(js.isString, s"expected id to be a string, but was: ${js.toString}")
       UUID.fromString(js.asString.get)
     }
 
     def parseTitle(obj: JsonObject) = {
       val js = obj.apply(THKV1Parser.titleKey).get
-      assume(js.isString)
+      assume(js.isString, s"expected title to be a string, but was: ${js.toString}")
       js.asString.get
     }
 
     def parseAbbrev(obj: JsonObject) = {
       val js = obj.apply(THKV1Parser.abbreviationKey).get
-      assume(js.isString)
+      assume(js.isString, s"expected abbreviation to be a string, but was: ${js.toString}")
       js.asString.get
     }
 
     def parseECTS(obj: JsonObject) = {
       val js = obj.apply(ModuleECTSParser.key).get
-      assume(js.isNumber)
-      js.asNumber.get.toDouble
+      // TODO Remove this check when ECTS will become numbers only
+      assume(js.isNumber || js.isObject, s"expected ects to be a number, but was: ${js.toString}")
+      if js.isNumber then js.asNumber.get.toDouble else 1.0
     }
 
     val res = prefix("---")
