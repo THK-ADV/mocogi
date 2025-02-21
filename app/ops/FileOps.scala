@@ -5,6 +5,7 @@ import java.nio.file.Path
 import java.nio.file.StandardCopyOption
 import java.util.Comparator
 
+import scala.jdk.CollectionConverters.*
 import scala.util.control.NonFatal
 
 object FileOps {
@@ -56,12 +57,16 @@ object FileOps {
           .forEach(p => Files.deleteIfExists(p))
       else ()
 
-    def walkDirectory(f: Path => Unit) = {
-      import scala.jdk.CollectionConverters.*
+    def foreachFileOfDirectory(f: Path => Unit) = {
       Files.walk(self).toList.asScala.toVector.collect {
         case file if !Files.isDirectory(file) => f(file)
       }
     }
+
+    def getFilesOfDirectory(): Vector[Path] =
+      Files.walk(self).toList.asScala.toVector.collect {
+        case file if !Files.isDirectory(file) => file
+      }
 
     def createFile(
         name: String,

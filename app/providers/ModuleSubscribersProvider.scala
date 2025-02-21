@@ -15,7 +15,7 @@ import org.apache.pekko.actor.ActorSystem
 import play.api.Configuration
 import printing.html.ModuleHTMLPrinter
 import printing.pandoc.PrinterOutputType
-import service.CreateNewModuleService
+import service.ModuleCreationService
 import service.ModuleService
 import service.ModuleUpdatePermissionService
 
@@ -30,7 +30,7 @@ final class ModuleSubscribersProvider @Inject() (
     config: Configuration,
     configReader: ConfigReader,
     ctx: ExecutionContext,
-    createNewModuleService: CreateNewModuleService,
+    moduleCreationService: ModuleCreationService,
 ) extends Provider[ModuleSubscribers] {
   override def get(): ModuleSubscribers =
     ModuleSubscribers(
@@ -52,7 +52,7 @@ final class ModuleSubscribersProvider @Inject() (
               metadataService,
               moduleViewRepository,
               moduleUpdatePermissionService,
-              createNewModuleService,
+              moduleCreationService,
               ctx
             )
         ),

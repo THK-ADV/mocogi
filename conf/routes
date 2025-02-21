@@ -6,12 +6,12 @@
 GET           /                                                   controllers.HomeController.index
 
 GET           /admin/invalidModuleExams                           controllers.AdminController.invalidModuleExams()
-DELETE        /admin/module/:id                                   controllers.AdminController.deleteModule(id: java.util.UUID)
+DELETE        /admin/modules/:id                                  controllers.AdminController.deleteModule(id: java.util.UUID)
+POST          /admin/modules                                      controllers.AdminController.createNewModulesFromDraftBranch()
 
 GET           /me                                                 controllers.MeController.me()
 
 GET           /bootstrap/createViews                              controllers.BootstrapController.createViews()
-POST          /bootstrap/module                                   controllers.BootstrapController.createNewModule()
 
 # Big Bang
 

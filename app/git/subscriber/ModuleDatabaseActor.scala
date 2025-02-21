@@ -12,7 +12,7 @@ import org.apache.pekko.actor.Actor
 import org.apache.pekko.actor.Props
 import parsing.types.Module
 import play.api.Logging
-import service.CreateNewModuleService
+import service.ModuleCreationService
 import service.ModuleService
 import service.ModuleUpdatePermissionService
 
@@ -21,7 +21,7 @@ object ModuleDatabaseActor {
       moduleService: ModuleService,
       moduleViewRepository: ModuleViewRepository,
       moduleUpdatePermissionService: ModuleUpdatePermissionService,
-      createNewModuleService: CreateNewModuleService,
+      moduleCreationService: ModuleCreationService,
       ctx: ExecutionContext
   ) =
     Props(
@@ -29,7 +29,7 @@ object ModuleDatabaseActor {
         moduleService,
         moduleViewRepository,
         moduleUpdatePermissionService,
-        createNewModuleService,
+        moduleCreationService,
         ctx
       )
     )
@@ -38,7 +38,7 @@ object ModuleDatabaseActor {
       moduleService: ModuleService,
       moduleViewRepository: ModuleViewRepository,
       moduleUpdatePermissionService: ModuleUpdatePermissionService,
-      createNewModuleService: CreateNewModuleService,
+      moduleCreationService: ModuleCreationService,
       implicit val ctx: ExecutionContext
   ) extends Actor
       with Logging {
@@ -76,7 +76,7 @@ object ModuleDatabaseActor {
             )
           )
         )
-        _ <- createNewModuleService.deleteMany(modules.map(_.metadata.id))
+        _ <- moduleCreationService.deleteMany(modules.map(_.metadata.id))
       } yield (created, permissions)
   }
 }

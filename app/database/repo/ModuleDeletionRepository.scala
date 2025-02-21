@@ -41,7 +41,7 @@ final class ModuleDeletionRepository @Inject() (
    */
   def delete(module: UUID): Future[Unit] = {
     def deleteFileInDir(path: Path, module: UUID) =
-      path.walkDirectory { p =>
+      path.foreachFileOfDirectory { p =>
         if p.getFileName.toString.startsWith(module.toString) then {
           Files.delete(p)
         }

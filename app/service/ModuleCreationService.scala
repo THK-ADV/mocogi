@@ -14,7 +14,7 @@ import models.ModuleCore
 import models.ModuleUpdatePermissionType
 
 @Singleton
-final class CreateNewModuleService @Inject() (
+final class ModuleCreationService @Inject() (
     private val repo: CreatedModuleRepository,
     private val permissionService: ModuleUpdatePermissionService,
     private val identityRepo: IdentityRepository,

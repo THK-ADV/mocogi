@@ -35,7 +35,7 @@ import parsing.RawModuleParser
 import parsing.YamlParsingError
 import play.api.libs.json.*
 import play.api.Logging
-import service.CreateNewModuleService
+import service.ModuleCreationService
 
 @Singleton
 case class GitMergeEventHandler(private val value: ActorRef) {
@@ -52,7 +52,7 @@ object GitMergeEventHandler {
       gitConfig: GitConfig,
       moduleReviewRepository: ModuleReviewRepository,
       moduleDraftRepository: ModuleDraftRepository,
-      createNewModuleService: CreateNewModuleService,
+      moduleCreationService: ModuleCreationService,
       moduleCatalogGenerationRepo: ModuleCatalogGenerationRequestRepository,
       mergeRequestApiService: GitMergeRequestApiService,
       branchService: GitBranchService,
@@ -70,7 +70,7 @@ object GitMergeEventHandler {
       gitConfig,
       moduleReviewRepository,
       moduleDraftRepository,
-      createNewModuleService,
+      moduleCreationService,
       moduleCatalogGenerationRepo,
       mergeRequestApiService,
       branchService,
@@ -90,7 +90,7 @@ object GitMergeEventHandler {
       gitConfig: GitConfig,
       moduleReviewRepository: ModuleReviewRepository,
       moduleDraftRepository: ModuleDraftRepository,
-      createNewModuleService: CreateNewModuleService,
+      moduleCreationService: ModuleCreationService,
       moduleCatalogGenerationRepo: ModuleCatalogGenerationRequestRepository,
       mergeRequestApiService: GitMergeRequestApiService,
       branchService: GitBranchService,
@@ -460,7 +460,7 @@ object GitMergeEventHandler {
 
     private def createNewModuleWithPermissions(id: UUID, module: CreatedModule, diff: CommitDiff) =
       if diff.isNewFile then
-        createNewModuleService
+        moduleCreationService
           .createWithPermissions(module)
           .map(_ =>
             logger.info(
@@ -468,7 +468,7 @@ object GitMergeEventHandler {
             )
           )
       else
-        createNewModuleService
+        moduleCreationService
           .updateModuleManagement(module.module, module.moduleManagement)
           .map(_ =>
             logger.info(

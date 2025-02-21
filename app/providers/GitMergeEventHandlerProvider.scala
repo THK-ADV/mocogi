@@ -16,7 +16,7 @@ import git.api.GitCommitService
 import git.api.GitMergeRequestApiService
 import git.GitConfig
 import org.apache.pekko.actor.ActorSystem
-import service.CreateNewModuleService
+import service.ModuleCreationService
 import webhook.GitMergeEventHandler
 
 @Singleton
@@ -31,7 +31,7 @@ final class GitMergeEventHandlerProvider @Inject() (
     moduleCatalogService: ModuleCatalogService,
     configReader: ConfigReader,
     gitCommitService: GitCommitService,
-    createNewModuleService: CreateNewModuleService,
+    moduleCreationService: ModuleCreationService,
     ctx: ExecutionContext
 ) extends Provider[GitMergeEventHandler] {
   override def get() = GitMergeEventHandler(
@@ -40,7 +40,7 @@ final class GitMergeEventHandlerProvider @Inject() (
         gitConfig,
         moduleReviewRepository,
         moduleDraftRepository,
-        createNewModuleService,
+        moduleCreationService,
         moduleCatalogGenerationRepo,
         mergeRequestApiService,
         branchService,

@@ -16,7 +16,7 @@ import parsing.types.Module
 @Singleton
 final class ModuleService @Inject() (
     private val repo: ModuleRepository,
-    private val createNewModuleService: CreateNewModuleService,
+    private val moduleCreationService: ModuleCreationService,
     private implicit val ctx: ExecutionContext
 ) {
 
@@ -33,7 +33,7 @@ final class ModuleService @Inject() (
     repo.allModuleCore()
 
   def allNewlyCreated(): Future[Seq[ModuleCore]] =
-    createNewModuleService.allAsModuleCore()
+    moduleCreationService.allAsModuleCore()
 
   def allMetadata() =
     repo.all(Map.empty).map(_.map(a => (a.id, a.metadata)))
