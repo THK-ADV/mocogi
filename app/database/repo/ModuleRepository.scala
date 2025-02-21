@@ -130,7 +130,8 @@ final class ModuleRepository @Inject() (
         .map(_.map(ModuleCore.apply.tupled))
     )
 
-  def allGenericModules() =
+  // TODO the po join does not consider full po id
+  def allGenericModulesWithPOs(): Future[Seq[(ModuleCore, Seq[String])]] =
     db.run(
       tableQuery
         .filter(_.moduleType === "generic_module")

@@ -32,4 +32,15 @@ final class CreatedModuleRepository @Inject() (
 
   def allAsModuleCore(): Future[Seq[ModuleCore]] =
     db.run(tableQuery.map(a => (a.module, a.moduleTitle, a.moduleAbbrev)).result.map(_.map(ModuleCore.apply.tupled)))
+
+  def allGenericWithPOsAsModuleCore(): Future[Seq[(ModuleCore, Seq[String])]] = {
+    import database.MyPostgresProfile.MyAPI.simpleStrListTypeMapper
+    db.run(
+      tableQuery
+        .filter(_.moduleType === "generic_module")
+        .map(m => ((m.module, m.moduleTitle, m.moduleAbbrev), m.moduleMandatoryPOs))
+        .result
+        .map(_.map(m => (ModuleCore(m._1._1, m._1._2, m._1._3), m._2.toSeq)))
+    )
+  }
 }

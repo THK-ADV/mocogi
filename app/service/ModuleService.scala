@@ -38,6 +38,9 @@ final class ModuleService @Inject() (
   def allMetadata() =
     repo.all(Map.empty).map(_.map(a => (a.id, a.metadata)))
 
-  def allGenericModules() =
-    repo.allGenericModules()
+  def allGenericModulesWithPOs(): Future[Seq[(ModuleCore, Seq[String])]] =
+    repo.allGenericModulesWithPOs()
+
+  def allNewlyCreatedGenericModulesWithPOs(): Future[Seq[(ModuleCore, Seq[String])]] =
+    moduleCreationService.allGenericWithPOsAsModuleCore()
 }

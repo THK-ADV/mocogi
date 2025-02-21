@@ -80,6 +80,54 @@ object RawModuleParser {
       if js.isNumber then js.asNumber.get.toDouble else 1.0
     }
 
+    def parseModuleType(obj: JsonObject) = {
+      val js = obj.apply(ModuleTypeParser.key).get
+      assume(js.isString, s"expected module type to be a string, but was: ${js.toString}")
+      js.asString.get.stripPrefix(ModuleTypeParser.prefix)
+    }
+
+    def parseMandatoryPOs(obj: JsonObject) = {
+      var key = ModulePOParser.modulePOMandatoryKey
+      if key.last == ':' then {
+        key = key.dropRight(1)
+      }
+      obj.apply(key) match
+        case Some(js) =>
+          assume(js.isArray, s"expected po mandatory to be an array, but was: ${js.toString}")
+          js.asArray.get
+            .map(
+              _.asObject.get
+                .apply(ModulePOParser.studyProgramKey)
+                .get
+                .asString
+                .get
+                .stripPrefix(ModulePOParser.studyProgramPrefix)
+            )
+            .toList
+        case None => Nil
+    }
+
+    def parseOptionalPOs(obj: JsonObject) = {
+      var key = ModulePOParser.modulePOElectiveKey
+      if key.last == ':' then {
+        key = key.dropRight(1)
+      }
+      obj.apply(key) match
+        case Some(js) =>
+          assume(js.isArray, s"expected po optional to be an array, but was: ${js.toString}")
+          js.asArray.get
+            .map(
+              _.asObject.get
+                .apply(ModulePOParser.studyProgramKey)
+                .get
+                .asString
+                .get
+                .stripPrefix(ModulePOParser.studyProgramPrefix)
+            )
+            .toList
+        case None => Nil
+    }
+
     val res = prefix("---")
       .skip(VersionSchemeParser.parser)
       .skip(zeroOrMoreSpaces)
@@ -95,7 +143,16 @@ object RawModuleParser {
           case Right(js) =>
             assume(js.isObject)
             val obj = js.asObject.get
-            CreatedModule(parseId(obj), parseTitle(obj), parseAbbrev(obj), parseModuleManagement(obj), parseECTS(obj))
+            CreatedModule(
+              parseId(obj),
+              parseTitle(obj),
+              parseAbbrev(obj),
+              parseModuleManagement(obj),
+              parseECTS(obj),
+              parseModuleType(obj),
+              parseMandatoryPOs(obj),
+              parseOptionalPOs(obj),
+            )
   }
 
   def metadataParser: Parser[(UUID, MetadataProtocol)] =

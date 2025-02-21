@@ -7,5 +7,8 @@ case class CreatedModule(
     moduleTitle: String,
     moduleAbbrev: String,
     moduleManagement: List[String],
-    moduleECTS: Double
+    moduleECTS: Double,
+    moduleType: String,
+    moduleMandatoryPOs: List[String],
+    moduleOptionalPOs: List[String]
 )

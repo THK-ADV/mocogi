@@ -62,6 +62,10 @@ final class ModuleController @Inject() (
     with PermissionCheck
     with RoleCheck {
 
+  enum DataSource:
+    case Live
+    case All
+
   implicit def moduleManagementWrites: Writes[ModuleManagement] = Json.writes
 
   implicit def studyProgramAssocWrites: Writes[StudyProgramModuleAssociation[Iterable[Int]]] =
@@ -75,7 +79,16 @@ final class ModuleController @Inject() (
   def all() =
     caching {
       Action.async { request =>
-        if (request.getQueryString("select").contains("metadata"))
+        def showMetadata(): Boolean        = request.getQueryString("select").contains("metadata")
+        def showExtendedModules(): Boolean = request.isExtended
+        def showGenericModules(): Boolean  = request.getQueryString("type").contains("generic")
+        def dataSource(): DataSource = request.getQueryString("source").fold(DataSource.Live) {
+          case "all"  => DataSource.All
+          case "live" => DataSource.Live
+          case _      => DataSource.Live
+        }
+
+        if (showMetadata())
           service
             .allMetadata()
             .map(xs =>
@@ -84,23 +97,35 @@ final class ModuleController @Inject() (
                   Json.obj("id" -> id, "metadata" -> metadata)
               }))
             )
-        else if (request.isExtended)
+        else if (showExtendedModules())
           moduleViewRepository
             .all()
             .map(xs => Ok(Json.toJson(xs)))
-        else if (request.getQueryString("type").contains("generic"))
-          service
-            .allGenericModules()
-            .map(xs =>
-              Ok(JsArray(xs.map {
-                case (module, pos) =>
-                  Json.toJsObject(module) + ("pos" -> Json.toJson(pos))
-              }))
-            )
-        else
-          service
-            .allModuleCore()
-            .map(xs => Ok(Json.toJson(xs)))
+        else if (showGenericModules()) {
+          val modules = dataSource().match
+            case DataSource.Live => service.allGenericModulesWithPOs()
+            case DataSource.All =>
+              for
+                live    <- service.allGenericModulesWithPOs()
+                created <- service.allNewlyCreatedGenericModulesWithPOs()
+              yield live ++ created
+          modules.map(xs =>
+            Ok(JsArray(xs.map {
+              case (module, pos) =>
+                Json.toJsObject(module) + ("pos" -> Json.toJson(pos))
+            }))
+          )
+        } else {
+          val modules = dataSource() match
+            case DataSource.Live => service.allModuleCore()
+            case DataSource.All =>
+              for
+                live    <- service.allModuleCore()
+                created <- service.allNewlyCreated()
+              yield live ++ created
+
+          modules.map(xs => Ok(Json.toJson(xs)))
+        }
       }
     }
 
