@@ -12,7 +12,6 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 import database.repo.core.SpecializationRepository
-import database.repo.ModuleRepository
 import database.view.StudyProgramViewRepository
 import git.api.GitDiffApiService
 import git.api.GitFileDownloadService
@@ -33,7 +32,7 @@ import service.LatexCompiler.getPdf
 final class ExamListsPreviewService @Inject() (
     diffApiService: GitDiffApiService,
     downloadService: GitFileDownloadService,
-    moduleRepository: ModuleRepository,
+    moduleService: ModuleService,
     specializationRepository: SpecializationRepository,
     printer: ExamListsLatexPrinter,
     studyProgramViewRepo: StudyProgramViewRepository,
@@ -58,7 +57,7 @@ final class ExamListsPreviewService @Inject() (
       assessmentMethods <- assessmentMethods
       people            <- people
       specialization    <- specialization
-      liveModules       <- moduleRepository.allFromPO(specialization.fold(fullPoId.id)(identity))
+      liveModules       <- moduleService.allFromPO(specialization.fold(fullPoId.id)(identity), activeOnly = true)
       changedModule     <- changedModuleFromPreview(specialization.fold(fullPoId.id)(identity), liveModules.map(_.id.get))
       modules = liveModules.filterNot(m => changedModule.exists(_.id == m.id)).appendedAll(changedModule)
       content = printer.preview(modules, studyProgram, assessmentMethods, people)

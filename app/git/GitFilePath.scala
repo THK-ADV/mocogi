@@ -32,6 +32,9 @@ object GitFilePath {
   def apply(moduleId: UUID)(implicit gitConfig: GitConfig): GitFilePath =
     apply(s"$modulePrefix${moduleId.toString}$moduleFileExt")
 
+  def moduleCompanionPath(moduleId: UUID, po: String)(implicit gitConfig: GitConfig): GitFilePath =
+    apply(s"${gitConfig.moduleCompanionFolder}/${moduleId.toString}_$po$moduleFileExt")
+
   implicit class Ops(private val self: GitFilePath) extends AnyVal {
     def fileName =
       self.value.slice(

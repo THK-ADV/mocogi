@@ -12,6 +12,7 @@ case class GitConfig(
     modulesFolder: String,
     coreFolder: String,
     moduleCatalogsFolder: String,
+    moduleCompanionFolder: String,
     autoApprovedLabel: String,
     reviewRequiredLabel: String,
     defaultEmail: String,

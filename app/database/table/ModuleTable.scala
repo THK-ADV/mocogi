@@ -100,6 +100,9 @@ final class ModuleTable(tag: Tag) extends Table[ModuleDbEntry](tag, "module") {
 
   def examPhases = column[List[String]]("exam_phases")
 
+  def isActive(): Rep[Boolean] =
+    this.status === "active"
+
   override def * = (
     id,
     lastModified,

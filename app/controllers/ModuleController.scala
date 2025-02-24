@@ -25,6 +25,8 @@ import ops.FutureOps.OptionOps
 import play.api.cache.Cached
 import play.api.i18n.I18nSupport
 import play.api.libs.json.JsArray
+import play.api.libs.json.JsObject
+import play.api.libs.json.JsValue
 import play.api.libs.json.Json
 import play.api.libs.json.Writes
 import play.api.libs.Files.DefaultTemporaryFileCreator
@@ -79,53 +81,58 @@ final class ModuleController @Inject() (
   def all() =
     caching {
       Action.async { request =>
-        def showMetadata(): Boolean        = request.getQueryString("select").contains("metadata")
-        def showExtendedModules(): Boolean = request.isExtended
-        def showGenericModules(): Boolean  = request.getQueryString("type").contains("generic")
-        def dataSource(): DataSource = request.getQueryString("source").fold(DataSource.Live) {
+        val showMetadata: Boolean        = request.getQueryString("select").contains("metadata")
+        val showExtendedModules: Boolean = request.isExtended
+        val showGenericModules: Boolean  = request.getQueryString("type").contains("generic")
+        val showActive: Boolean          = request.getQueryString("active").fold(false)(_ == "true")
+        val filteredPO: Option[String]   = request.getQueryString("po")
+        val dataSource: DataSource = request.getQueryString("source").fold(DataSource.Live) {
           case "all"  => DataSource.All
           case "live" => DataSource.Live
           case _      => DataSource.Live
         }
 
-        if (showMetadata())
-          service
-            .allMetadata()
-            .map(xs =>
+        (showMetadata, showExtendedModules, showGenericModules, showActive, filteredPO, dataSource) match
+          case (true, false, false, false, None, DataSource.Live) =>
+            service
+              .allMetadata()
+              .map(xs => Ok(JsArray(xs.map { case (id, metadata) => Json.obj("id" -> id, "metadata" -> metadata) })))
+          case (false, true, false, false, None, DataSource.Live) =>
+            moduleViewRepository.all().map(xs => Ok(Json.toJson(xs)))
+          case (false, false, true, false, None, ds) =>
+            val modules = ds.match
+              case DataSource.Live => service.allGenericModulesWithPOs()
+              case DataSource.All =>
+                for
+                  live    <- service.allGenericModulesWithPOs()
+                  created <- service.allNewlyCreatedGenericModulesWithPOs()
+                yield live ++ created
+            modules.map(xs =>
               Ok(JsArray(xs.map {
-                case (id, metadata) =>
-                  Json.obj("id" -> id, "metadata" -> metadata)
+                case (module, pos) =>
+                  Json.toJsObject(module) + ("pos" -> Json.toJson(pos))
               }))
             )
-        else if (showExtendedModules())
-          moduleViewRepository
-            .all()
-            .map(xs => Ok(Json.toJson(xs)))
-        else if (showGenericModules()) {
-          val modules = dataSource().match
-            case DataSource.Live => service.allGenericModulesWithPOs()
-            case DataSource.All =>
-              for
-                live    <- service.allGenericModulesWithPOs()
-                created <- service.allNewlyCreatedGenericModulesWithPOs()
-              yield live ++ created
-          modules.map(xs =>
-            Ok(JsArray(xs.map {
-              case (module, pos) =>
-                Json.toJsObject(module) + ("pos" -> Json.toJson(pos))
-            }))
-          )
-        } else {
-          val modules = dataSource() match
-            case DataSource.Live => service.allModuleCore()
-            case DataSource.All =>
-              for
-                live    <- service.allModuleCore()
-                created <- service.allNewlyCreated()
-              yield live ++ created
-
-          modules.map(xs => Ok(Json.toJson(xs)))
-        }
+          case (false, false, false, false, None, ds) =>
+            val modules = ds match
+              case DataSource.Live => service.allModuleCore()
+              case DataSource.All =>
+                for
+                  live    <- service.allModuleCore()
+                  created <- service.allNewlyCreated()
+                yield live ++ created
+            modules.map(xs => Ok(Json.toJson(xs)))
+          case (true, false, false, true, Some(po), DataSource.Live) =>
+            service
+              .allFromPOWithCompanion(po, activeOnly = true)
+              .map(xs =>
+                Ok(JsArray(xs.map {
+                  case (module, companions) =>
+                    val js = Json.obj("module" -> module)
+                    companions.foldLeft(js) { case (acc, (k, v)) => acc + (k -> v) }
+                }))
+              )
+          case _ => Future.successful(NotFound)
       }
     }
 

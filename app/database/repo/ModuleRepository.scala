@@ -168,7 +168,7 @@ final class ModuleRepository @Inject() (
   }
 
   // TODO this should be used to fetch modules for po
-  def allFromPO(po: String | Specialization): Future[Seq[ModuleProtocol]] = {
+  def allFromPO(po: String | Specialization, activeOnly: Boolean): Future[Seq[ModuleProtocol]] = {
     val poFilter: ModuleTable => Rep[Boolean] = po match
       case po: String =>
         t =>
@@ -182,7 +182,7 @@ final class ModuleRepository @Inject() (
             poOptionalTable
               .filter(a => t.id === a.module && a.po === po && a.specialization.map(_ === id).getOrElse(true))
               .exists
-    retrieve(tableQuery.filter(poFilter))
+    retrieve(tableQuery.filter(a => if activeOnly then a.isActive() && poFilter(a) else poFilter(a)))
   }
 
   private def isMandatoryPOQuery(pos: Seq[String]) =

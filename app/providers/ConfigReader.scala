@@ -68,6 +68,9 @@ final class ConfigReader @Inject() (config: Configuration) {
   def gitModuleCatalogsFolder: String =
     config.nonEmptyString("git.moduleCatalogsFolder")
 
+  def gitModuleCompanionFolder: String =
+    config.nonEmptyString("git.moduleCompanionFolder")
+
   def projectId: Int = config.int("git.projectId")
 
   def moduleKeysToReviewFromPav: Seq[String] =
