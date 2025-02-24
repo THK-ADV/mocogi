@@ -12,7 +12,6 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 import database.repo.core.*
-import database.repo.ModuleRepository
 import database.view.StudyProgramViewRepository
 import git.api.GitDiffApiService
 import git.api.GitFileDownloadService
@@ -41,7 +40,7 @@ final class ModulePreviewService @Inject() (
     diffApiService: GitDiffApiService,
     downloadService: GitFileDownloadService,
     printer: ModuleCatalogLatexPrinter,
-    moduleRepository: ModuleRepository,
+    moduleService: ModuleService,
     studyProgramViewRepo: StudyProgramViewRepository,
     moduleTypeRepository: ModuleTypeRepository,
     languageRepository: LanguageRepository,
@@ -77,7 +76,7 @@ final class ModulePreviewService @Inject() (
             new Exception(s"study program's po $fullPoId needs to be valid")
           )
       }
-      liveModules <- moduleRepository.allFromMandatoryPO(specialization.fold(fullPoId.id)(identity))
+      liveModules <- moduleService.allFromMandatoryPO(specialization.fold(fullPoId.id)(identity))
       changedModule <- changedModuleFromPreview(
         specialization.fold(fullPoId.id)(identity),
         liveModules.map(_.id.get)
