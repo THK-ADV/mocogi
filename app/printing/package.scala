@@ -15,7 +15,8 @@ package object printing {
   def fmtIdentity(p: Identity): String =
     p match {
       case s: Identity.Person =>
-        s"${s.title} ${s.fullName} (${fmtCommaSeparated(s.faculties)(_.toUpperCase)})"
+        val base = s"${s.fullName} (${fmtCommaSeparated(s.faculties)(_.toUpperCase)})"
+        if s.title.nonEmpty then s"${s.title} $base" else base
       case g: Identity.Group =>
         g.label
       case u: Identity.Unknown =>

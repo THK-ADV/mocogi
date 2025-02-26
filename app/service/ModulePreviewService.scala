@@ -24,12 +24,14 @@ import models.StudyProgramView
 import ops.EitherOps.EStringThrowOps
 import parsing.metadata.ModulePOParser
 import play.api.i18n.Lang
+import play.api.i18n.MessagesApi
 import play.api.libs.Files.TemporaryFile
 import play.api.Logging
 import printing.latex.IntroContent
 import printing.latex.IntroContentProvider
 import printing.latex.ModuleCatalogLatexPrinter
 import printing.latex.Payload
+import printing.pandoc.PandocApi
 import printing.PrintingLanguage
 import service.modulediff.ModuleProtocolDiff
 import service.LatexCompiler.compile
@@ -39,7 +41,6 @@ import service.LatexCompiler.getPdf
 final class ModulePreviewService @Inject() (
     diffApiService: GitDiffApiService,
     downloadService: GitFileDownloadService,
-    printer: ModuleCatalogLatexPrinter,
     moduleService: ModuleService,
     studyProgramViewRepo: StudyProgramViewRepository,
     moduleTypeRepository: ModuleTypeRepository,
@@ -48,6 +49,8 @@ final class ModulePreviewService @Inject() (
     identityRepository: IdentityRepository,
     assessmentMethodService: AssessmentMethodService,
     specializationRepository: SpecializationRepository,
+    pandocApi: PandocApi,
+    messagesApi: MessagesApi,
     @Named("path.mcIntro") mcIntroPath: String,
     implicit val ctx: ExecutionContext
 ) extends Logging {
@@ -147,29 +150,47 @@ final class ModulePreviewService @Inject() (
       lang: Lang,
       diffs: Seq[(ModuleCore, Set[String])],
       intro: Option[IntroContent]
-  ): Future[StringBuilder] =
+  ): Future[StringBuilder] = {
+    val liveModules       = moduleService.allModuleCore()
+    val createdModules    = moduleService.allNewlyCreated()
+    val moduleTypes       = moduleTypeRepository.all()
+    val languages         = languageRepository.all()
+    val seasons           = seasonRepository.all()
+    val people            = identityRepository.all()
+    val assessmentMethods = assessmentMethodService.all()
+
     for {
-      mts     <- moduleTypeRepository.all()
-      langs   <- languageRepository.all()
-      seasons <- seasonRepository.all()
-      people  <- identityRepository.all()
-      ams     <- assessmentMethodService.all()
-    } yield printer.preview(
-      diffs,
-      Payload(
+      liveModules       <- liveModules
+      createdModules    <- createdModules
+      moduleTypes       <- moduleTypes
+      languages         <- languages
+      seasons           <- seasons
+      people            <- people
+      assessmentMethods <- assessmentMethods
+    } yield {
+      val payload = Payload(
         studyProgram,
-        modules,
-        mts,
-        langs,
+        moduleTypes,
+        languages,
         seasons,
         people,
-        ams,
-        studyPrograms
-      ),
-      pLang,
-      lang,
-      intro
-    )
+        assessmentMethods,
+        studyPrograms,
+        liveModules ++ createdModules
+      )
+      val printer = ModuleCatalogLatexPrinter.preview(
+        pandocApi,
+        messagesApi,
+        diffs,
+        intro,
+        modules,
+        payload,
+        pLang,
+        lang,
+      )
+      printer.print()
+    }
+  }
 
   private def getIntroContent(dir: Path, fullPoId: FullPoId) = {
     val provider = IntroContentProvider(dir, fullPoId, mcIntroPath)

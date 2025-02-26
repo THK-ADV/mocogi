@@ -17,7 +17,6 @@ import scala.util.control.NonFatal
 import controllers.FileController
 import database.repo.core.*
 import database.repo.ModuleCatalogRepository
-import database.repo.ModuleRepository
 import database.table.ModuleCatalogEntry
 import database.view.StudyProgramViewRepository
 import git.api.GitAvailabilityChecker
@@ -30,18 +29,20 @@ import git.MergeRequestStatus
 import models.*
 import ops.FileOps.FileOps0
 import play.api.i18n.Lang
+import play.api.i18n.MessagesApi
 import play.api.Logging
 import printing.latex.ModuleCatalogLatexPrinter
 import printing.latex.Payload
+import printing.pandoc.PandocApi
 import printing.PrintingLanguage
 import service.AssessmentMethodService
 import service.LatexCompiler
+import service.ModuleService
 
 @Singleton
 final class ModuleCatalogService @Inject() (
     private val apiAvailableService: GitAvailabilityChecker,
-    private val printer: ModuleCatalogLatexPrinter,
-    private val moduleRepository: ModuleRepository,
+    private val moduleService: ModuleService,
     private val catalogRepository: ModuleCatalogRepository,
     private val studyProgramViewRepo: StudyProgramViewRepository,
     private val moduleTypeRepository: ModuleTypeRepository,
@@ -54,6 +55,8 @@ final class ModuleCatalogService @Inject() (
     private val config: ModuleCatalogConfig,
     private val commitService: ModuleCatalogCommitService,
     private val branchApiService: GitBranchApiService,
+    private val pandocApi: PandocApi,
+    private val messagesApi: MessagesApi,
     implicit val ctx: ExecutionContext
 ) extends Logging {
 
@@ -172,33 +175,43 @@ final class ModuleCatalogService @Inject() (
   }
 
   private def printAndCompile(semester: Semester) = {
+    val liveModules    = moduleService.allModuleCore()
+    val createdModules = moduleService.allNewlyCreated()
+
     for {
       sps <- studyProgramViewRepo.all()
       poIds = sps.map(_.po.id)
-      ms      <- moduleRepository.allFromPos(poIds)
-      mts     <- moduleTypeRepository.all()
-      lang    <- languageRepository.all()
-      seasons <- seasonRepository.all()
-      people  <- identityRepository.all()
-      ams     <- assessmentMethodService.all()
+      ms             <- Future.sequence(poIds.map(po => moduleService.allFromMandatoryPO(po))).map(_.flatten.distinctBy(_.id.get))
+      mts            <- moduleTypeRepository.all()
+      lang           <- languageRepository.all()
+      seasons        <- seasonRepository.all()
+      people         <- identityRepository.all()
+      ams            <- assessmentMethodService.all()
+      liveModules    <- liveModules
+      createdModules <- createdModules
     } yield {
       def print(sp: StudyProgramView, pLang: PrintingLanguage) = {
         logger.info(s"printing ${sp.fullPoId}...")
-        printer.default(
+        val payload = Payload(
+          sp,
+          mts,
+          lang,
+          seasons,
+          people,
+          ams,
+          sps,
+          liveModules ++ createdModules
+        )
+        val printer = ModuleCatalogLatexPrinter.default(
+          pandocApi,
+          messagesApi,
           semester,
-          Payload(
-            sp,
-            ms,
-            mts,
-            lang,
-            seasons,
-            people,
-            ams,
-            sps
-          ),
+          ms, // TODO all modules of all pos are passed. this is unnecessary and inefficient. investigate and fix
+          payload,
           pLang,
           Lang.defaultLang // TODO replace with real lang
         )
+        printer.print()
       }
 
       def compileAndRecover(

@@ -149,12 +149,6 @@ final class ModuleRepository @Inject() (
         )
     )
 
-  def allFromPos(pos: Seq[String]) = {
-    // TODO expand to optional if "partOfCatalog" is set
-    val isMandatoryPO = isMandatoryPOQuery(pos)
-    retrieve(tableQuery.filter(_.id.in(isMandatoryPO)))
-  }
-
   // TODO this should be used to fetch modules for po
   def allFromMandatoryPO(po: String | Specialization): Future[Seq[ModuleProtocol]] = {
     val poFilter: ModuleTable => Rep[Boolean] = po match

@@ -1,8 +1,6 @@
 package printing.latex
 
 import java.util.UUID
-import javax.inject.Inject
-import javax.inject.Singleton
 
 import scala.annotation.unused
 
@@ -25,15 +23,143 @@ import printing.LabelOps
 import printing.LabelOptOps
 import printing.LanguageOps
 import printing.PrintingLanguage
+import service.modulediff.ModuleProtocolDiff
+
+object ModuleCatalogLatexPrinter {
+  private def chapter(name: String)(implicit builder: StringBuilder) =
+    builder.append(s"\\chapter{$name}\n")
+
+  private def newPage(implicit builder: StringBuilder) =
+    builder.append("\\newpage\n")
+
+  private def nameRef(module: UUID) =
+    s"\\nameref{sec:${module.toString}}"
+
+  private def prologContent: IntroContent =
+    (pLang, _, builder) => {
+      chapter(pLang.prologHeadline)(builder)
+    }
+
+  private def studyPlanContent: IntroContent =
+    (pLang, _, builder) => {
+      chapter(pLang.studyPlanHeadline)(builder)
+    }
+
+  @unused
+  private def layoutContent: IntroContent =
+    (_, _, builder) => {
+      builder.append("\\layout*\n")
+    }
+
+  private def diffContent(diffs: Seq[(ModuleCore, Set[String])], messagesApi: MessagesApi): IntroContent =
+    (_, lang, builder) => {
+      if (diffs.nonEmpty) {
+        val sectionTitle = messagesApi("latex.module_diff.section.title")(lang)
+        val sectionIntro = messagesApi("latex.module_diff.section.intro")(lang)
+        chapter(sectionTitle)(builder)
+        newPage(builder)
+        builder.append(s"$sectionIntro\n")
+        diffs
+          .filter(_._2.nonEmpty)
+          .sortBy(_._1.title)
+          .foreach {
+            case (module, changedKeys) =>
+              val ref = nameRef(module.id)
+              builder.append(s"\\subsection*{$ref}\n")
+              builder.append("\\begin{itemize}\n")
+              changedKeys.toList.sorted.foreach { key =>
+                val normalizedKey = ModuleKey.normalizeKeyValue(key)
+                val label         = messagesApi(normalizedKey + ".label")(lang)
+                builder.append(s"\\item $label\n")
+              }
+              builder.append("\\end{itemize}\n")
+          }
+      }
+    }
+
+  // TODO This filter should should become obsolete soon. The assertion function below ensures the invariance of valid module-po relationships
+  private def validModulesForStudyProgram(modules: Seq[ModuleProtocol], sp: StudyProgramView) =
+    modules.filter { m =>
+      val isValid = m.metadata.po.mandatory.exists { a =>
+        a.po == sp.po.id && a.specialization
+          .zip(sp.specialization)
+          .fold(true)(a => a._1 == a._2.id)
+      }
+      assert(
+        isValid,
+        s"module ${m.id.getOrElse(m.metadata.title)} should not be in the selection for module catalog of ${sp.fullPoId.id}, because ${m.metadata.po.mandatory.map(_.fullPo)}"
+      )
+      ModuleStatus.isActive(m.metadata.status) && isValid
+    }
+
+  def preview(
+      pandocApi: PandocApi,
+      messagesApi: MessagesApi,
+      diffs: Seq[(ModuleCore, Set[String])],
+      introContent: Option[IntroContent],
+      modules: Seq[ModuleProtocol],
+      payload: Payload,
+      pLang: PrintingLanguage,
+      lang: Lang,
+  ) = {
+    val diffContent = this.diffContent(diffs, messagesApi)
+    val intro       = introContent.fold(List(diffContent))(List(diffContent, _))
+    new ModuleCatalogLatexPrinter(
+      pandocApi,
+      messagesApi,
+      None,
+      validModulesForStudyProgram(modules, payload.studyProgram),
+      payload,
+      intro,
+      diffs
+    )(
+      using pLang,
+      lang
+    )
+  }
+
+  def default(
+      pandocApi: PandocApi,
+      messagesApi: MessagesApi,
+      semester: Semester,
+      modules: Seq[ModuleProtocol],
+      payload: Payload,
+      pLang: PrintingLanguage,
+      lang: Lang
+  ) =
+    new ModuleCatalogLatexPrinter(
+      pandocApi,
+      messagesApi,
+      Some(semester),
+      validModulesForStudyProgram(modules, payload.studyProgram),
+      payload,
+      List(prologContent, studyPlanContent),
+      Nil
+    )(using pLang, lang)
+}
 
 /**
  * Style from: https://www.overleaf.com/learn/latex/Page_size_and_margins
  */
-@Singleton
-final class ModuleCatalogLatexPrinter @Inject() (
+final class ModuleCatalogLatexPrinter(
     pandocApi: PandocApi,
-    val messagesApi: MessagesApi
+    messagesApi: MessagesApi,
+    semester: Option[Semester],
+    modulesInPO: Seq[ModuleProtocol],
+    payload: Payload,
+    introContent: List[IntroContent],
+    diffs: Seq[(ModuleCore, Set[String])]
+)(
+    using pLang: PrintingLanguage,
+    lang: Lang
 ) extends Logging {
+
+  // TODO: replace PrintingLanguage with Lang
+  import ModuleCatalogLatexPrinter.chapter
+  import ModuleCatalogLatexPrinter.nameRef
+  import ModuleCatalogLatexPrinter.newPage
+
+  private given builder: StringBuilder = new StringBuilder()
 
   private implicit def identityOrd: Ordering[Identity] =
     Ordering
@@ -53,88 +179,13 @@ final class ModuleCatalogLatexPrinter @Inject() (
         case u: Identity.Unknown => u.id
       })
 
-  // TODO: replace PrintingLanguage with Lang
-
-  def preview(
-      diffs: Seq[(ModuleCore, Set[String])],
-      payload: Payload,
-      pLang: PrintingLanguage,
-      lang: Lang,
-      introContent: Option[IntroContent]
-  ) = {
-    val intro = introContent.fold(List(diffContent(diffs)))(List(diffContent(diffs), _))
-    print(None, payload, intro, pLang, lang)
-  }
-
-  def default(
-      semester: Semester,
-      payload: Payload,
-      pLang: PrintingLanguage,
-      lang: Lang
-  ) =
-    print(
-      Some(semester),
-      payload,
-      List(prologContent, studyPlanContent),
-      pLang,
-      lang
-    )
-
-  private def prologContent: IntroContent =
-    (pLang, _, builder) => {
-      chapter(pLang.prologHeadline)(builder)
-    }
-
-  private def studyPlanContent: IntroContent =
-    (pLang, _, builder) => {
-      chapter(pLang.studyPlanHeadline)(builder)
-    }
-
-  @unused
-  private def layoutContent: IntroContent =
-    (_, _, builder) => {
-      builder.append("\\layout*\n")
-    }
-
-  private def diffContent(diffs: Seq[(ModuleCore, Set[String])]): IntroContent =
-    (_, lang, builder) => {
-      if (diffs.nonEmpty) {
-        builder.append(s"\\section*{${escape("Module Diffs")}}\n")
-        builder.append(
-          "Liste aller Moduländerungen in der aktuellen Bearbeitungsphase:\n"
-        )
-        diffs
-          .sortBy(_._1.title)
-          .foreach {
-            case (module, changedKeys) =>
-              builder.append(s"\\subsection*{${escape(module.title)}}\n")
-              builder.append(s"ID: ${module.id}\n")
-              builder.append("\\begin{itemize}\n")
-              changedKeys.toList.sorted.foreach { key =>
-                val normalizedKey = ModuleKey.normalizeKeyValue(key)
-                val label         = messagesApi(normalizedKey + ".label")(lang)
-                builder.append(s"\\item $label\n")
-              }
-              builder.append("\\end{itemize}\n")
-          }
-      }
-    }
-
-  private def print(
-      semester: Option[Semester],
-      payload: Payload,
-      introContent: List[IntroContent],
-      pLang: PrintingLanguage,
-      lang: Lang
-  ): StringBuilder = {
-    implicit val impl_lang: PrintingLanguage = pLang
-    implicit val builder: StringBuilder      = new StringBuilder()
+  def print(): StringBuilder = {
     builder.append("\\documentclass[article, 11pt, oneside]{book}\n")
     packages(semester.isEmpty)
-    commands
+    commands()
     builder.append("\\begin{document}\n")
     builder.append(s"\\selectlanguage{${pLang.fold("ngerman", "english")}}\n")
-    title(payload.studyProgram, semester)
+    title()
     builder.append("\\maketitle\n")
     newPage
     builder.append("\\tableofcontents\n")
@@ -146,221 +197,35 @@ final class ModuleCatalogLatexPrinter @Inject() (
     }
     chapter(pLang.moduleHeadline)
     newPage
-    modules(
-      payload.studyProgram.po.id,
-      /* TODO This filter should should become obsolete soon. The assertion function below ensures the invariance
-          of valid module-po relationships */
-      payload.entries.filter { m =>
-        val isValid = m.metadata.po.mandatory.exists { a =>
-          a.po == payload.studyProgram.po.id && a.specialization
-            .zip(payload.studyProgram.specialization)
-            .fold(true)(a => a._1 == a._2.id)
-        }
-        assert(
-          isValid,
-          s"module ${m.id.getOrElse(m.metadata.title)} should not be in the selection for module catalog of ${payload.studyProgram.fullPoId.id}, because ${m.metadata.po.mandatory.map(_.fullPo)}"
-        )
-        isValid
-      },
-      payload.moduleTypes,
-      payload.languages,
-      payload.seasons,
-      payload.people,
-      payload.assessmentMethods,
-      payload.studyProgramViews
-    )
+    modules()
     builder.append("\\end{document}")
   }
 
-  private def modules(
-      po: String,
-      entries: Seq[ModuleProtocol],
-      moduleTypes: Seq[ModuleType],
-      languages: Seq[ModuleLanguage],
-      seasons: Seq[Season],
-      people: Seq[Identity],
-      assessmentMethods: Seq[AssessmentMethod],
-      studyProgramViews: Seq[StudyProgramView]
-  )(implicit lang: PrintingLanguage, builder: StringBuilder) = {
-    def row(key: String, value: String) =
-      builder.append(s"$key & $value \\\\\n")
-
-    def content(
-        id: Option[UUID],
-        deContent: ModuleContent,
-        enContent: ModuleContent,
-        entries: List[(String, Lens[ModuleContent, String])]
-    ): Unit = {
-      val markdownContent = new StringBuilder()
-      entries.foreach {
-        case (headline, lens) =>
-          markdownContent.append(s"## $headline\n")
-          val content = lang.fold(lens.get(deContent), lens.get(enContent))
-          if (content.nonEmpty && !content.forall(_.isWhitespace))
-            markdownContent.append(content)
-          else markdownContent.append(lang.noneLabel)
-          markdownContent.append("\n\n")
-      }
-      pandocApi.toLatex(markdownContent.toString()) match {
-        case Left((e, stdErr)) =>
-          logger.error(
-            s"""content conversation from markdown to latex failed on $id:
-               |  - throwable: ${e.getMessage}
-               |  - sdtErr: $stdErr""".stripMargin
-          )
-          builder.append("ERROR\n\n")
-        case Right(text) => builder.append(text)
-      }
-    }
-
-    def go(module: ModuleProtocol): Unit = {
-      val (workload, contactHour, selfStudy) =
-        lang.workload(module.metadata.workload)
-      val poMandatory =
-        if (module.metadata.po.mandatory.size == 1) lang.noneLabel
-        else
-          module.metadata.po.mandatory
-            .sortBy(_.po)
-            .collect {
-              case p if p.po != po && studyProgramViews.exists(_.po.id == p.po) =>
-                val builder      = new StringBuilder()
-                val studyProgram = studyProgramViews.find(_.po.id == p.po).get
-                val spLabel = escape(
-                  studyProgram.localizedLabel(studyProgram.specialization)
-                )
-                builder
-                  .append(
-                    s"${studyProgram.degree.localizedLabel}: "
-                  )
-                  .append(spLabel)
-                  .append(s" PO ${studyProgram.po.version}")
-                if (p.recommendedSemester.nonEmpty) {
-                  builder.append(
-                    s" (Semester ${fmtCommaSeparated(p.recommendedSemester)(_.toString())})"
-                  )
-                }
-                builder.toString()
-            }
-            .mkString("\\newline ")
-
-      section(module.metadata.title)
-      builder.append(
-        "\\begin{tabularx}{\\linewidth}{@{}>{\\bfseries}l@{\\hspace{.5em}}X@{}}\n"
-      )
-      row("ID", module.id.fold("Unknown ID")(_.toString))
-      row(lang.moduleCodeLabel, escape(module.metadata.abbrev))
-      row(lang.moduleTitleLabel, escape(module.metadata.title))
-      row(
-        lang.moduleTypeLabel,
-        moduleTypes
-          .find(_.id == module.metadata.moduleType)
-          .localizedLabel
-      )
-      row(lang.ectsLabel, fmtDouble(module.metadata.ects))
-      row(
-        lang.languageLabel,
-        languages
-          .find(_.id == module.metadata.language)
-          .localizedLabel
-      )
-      row(lang.durationLabel, lang.durationValue(module.metadata.duration))
-      row(
-        lang.frequencyLabel,
-        seasons.find(_.id == module.metadata.season).localizedLabel
-      )
-      row(
-        lang.moduleCoordinatorLabel,
-        fmtCommaSeparated(
-          people
-            .filter(p => module.metadata.moduleManagement.exists(_ == p.id))
-            .sorted,
-          "\\newline "
-        )(fmtIdentity)
-      )
-      row(
-        lang.lecturersLabel,
-        fmtCommaSeparated(
-          people
-            .filter(p => module.metadata.lecturers.exists(_ == p.id))
-            .sorted,
-          "\\newline "
-        )(fmtIdentity)
-      )
-      row(
-        lang.assessmentMethodLabel,
-        fmtCommaSeparated(
-          module.metadata.assessmentMethods.mandatory.sortBy(_.method),
-          "\\newline "
-        ) { a =>
-          val method = assessmentMethods
-            .find(_.id == a.method)
-            .localizedLabel
-          a.percentage.fold(method)(d => s"$method (${fmtDouble(d)} \\%)")
-        }
-      )
-      row(workload._1, workload._2)
-      row(contactHour._1, contactHour._2)
-      row(selfStudy._1, selfStudy._2)
-      row(
-        lang.poLabelShort,
-        poMandatory
-      )
-      builder.append("\\end{tabularx}\n")
-      content(
-        module.id,
-        module.deContent,
-        module.enContent,
-        List(
-          (
-            lang.learningOutcomeLabel,
-            GenLens[ModuleContent](_.learningOutcome)
-          ),
-          (lang.moduleContentLabel, GenLens[ModuleContent](_.content)),
-          (
-            lang.teachingAndLearningMethodsLabel,
-            GenLens[ModuleContent](_.teachingAndLearningMethods)
-          ),
-          (
-            lang.recommendedReadingLabel,
-            GenLens[ModuleContent](_.recommendedReading)
-          ),
-          (lang.particularitiesLabel, GenLens[ModuleContent](_.particularities))
-        )
-      )
-    }
-
-    if (entries.isEmpty) newPage
+  private def modules() = {
+    if (modulesInPO.isEmpty) newPage
     else
-      entries
+      modulesInPO
         .sortBy(_.metadata.title)
-        .collect {
-          case m if ModuleStatus.isActive(m.metadata.status) =>
-            go(m)
-            newPage
+        .foreach { m =>
+          module(m)
+          newPage
         }
   }
 
-  private def title(
-      studyProgram: StudyProgramView,
-      semester: Option[Semester]
-  )(implicit lang: PrintingLanguage, builder: StringBuilder) =
+  private def title() =
     builder
       .append("\\title{\n")
-      .append(s"\\Huge ${lang.moduleCatalogHeadline} \\\\ [1.5ex]\n")
+      .append(s"\\Huge ${pLang.moduleCatalogHeadline} \\\\ [1.5ex]\n")
       .append(
-        s"\\LARGE ${escape(studyProgram.localizedLabel(studyProgram.specialization))} PO ${studyProgram.po.version} \\\\ [1ex]\n"
+        s"\\LARGE ${escape(payload.studyProgram.localizedLabel(payload.studyProgram.specialization))} PO ${payload.studyProgram.po.version} \\\\ [1ex]\n"
       )
-      .append(s"\\LARGE ${studyProgram.degree.localizedDesc} \\\\ [1ex]\n")
-      .append(
-        semester.fold(lang.previewLabel)(s => s"\\LARGE ${s.localizedLabel} ${s.year}\n")
-      )
+      .append(s"\\LARGE ${payload.studyProgram.degree.localizedDesc} \\\\ [1ex]\n")
+      .append(semester.fold(pLang.previewLabel)(s => s"\\LARGE ${s.localizedLabel} ${s.year}\n"))
       .append("}\n")
       .append("\\author{TH Köln, Campus Gummersbach}\n")
       .append("\\date{\\today}\n")
 
-  private def packages(
-      draft: Boolean
-  )(implicit lang: PrintingLanguage, builder: StringBuilder) =
+  private def packages(isDraft: Boolean) =
     builder
       .append("% packages\n")
       .append("\\usepackage[english, ngerman]{babel}\n")
@@ -369,13 +234,15 @@ final class ModuleCatalogLatexPrinter @Inject() (
       )
       .append("\\usepackage{layout}\n")
       .append("\\usepackage{tabularx}\n")
-      .append("\\usepackage{hyperref}\n")
+      .append("\\usepackage{hyperref} % support for hyperlinks\n")
+      .append("\\usepackage{xurl} % line breaking in urls\n")
       .append("\\usepackage{titlesec}\n")
       .append("\\usepackage{fancyhdr} % customize the page header\n")
       .append("\\usepackage{parskip} % customize paragraph style\n")
       .appendOpt(
-        Option.when(draft)(
-          s"\\usepackage[colorspec=0.9,text=${lang.previewLabel}]{draftwatermark}\n"
+        Option.when(isDraft)(
+          s"""\\usepackage[colorspec=0.9,text=${pLang.previewLabel}]{draftwatermark} % watermark
+             |\\usepackage[defaultcolor=orange]{changes} % highlights changes (https://ctan.org/pkg/changes?lang=en)\n""".stripMargin
         )
       )
 
@@ -401,7 +268,7 @@ final class ModuleCatalogLatexPrinter @Inject() (
       .append("{0pt} % no space between subsection and left margin\n")
       .append("{} % nothing after subsection\n")
 
-  private def commands(implicit builder: StringBuilder) =
+  private def commands() =
     builder
       .append("% commands and settings\n")
       .append(
@@ -428,12 +295,234 @@ final class ModuleCatalogLatexPrinter @Inject() (
       .append("\\setlength{\\marginparwidth}{0pt} % no margin notes\n")
       .append("\\setlength{\\marginparsep}{0pt} % no margin notes\n")
 
-  private def chapter(name: String)(implicit builder: StringBuilder) =
-    builder.append(s"\\chapter{$name}\n")
+  private def replaceSubsection(origin: String, p: String => Boolean, replacement: String => String) = {
+    val pattern = """\\subsection\{([^}]*)\}""".r
+    val result  = new StringBuilder()
+    var lastEnd = 0
 
-  private def section(text: String)(implicit builder: StringBuilder) =
-    builder.append(s"\\section{${escape(text)}}\n")
+    for (m <- pattern.findAllMatchIn(origin)) {
+      val subsectionName = m.group(1)
+      result.append(origin.substring(lastEnd, m.start))
 
-  private def newPage(implicit builder: StringBuilder) =
-    builder.append("\\newpage\n")
+      if p(subsectionName) then result.append(s"\\subsection{${replacement(subsectionName)}}")
+      else result.append(m.matched)
+
+      lastEnd = m.end
+    }
+
+    result.append(origin.substring(lastEnd))
+    result
+  }
+
+  private def module(module: ModuleProtocol): Unit = {
+    def row(key: String, value: String) =
+      builder.append(s"$key & $value \\\\\n")
+
+    val po                = payload.studyProgram.po.id
+    val moduleTypes       = payload.moduleTypes
+    val languages         = payload.languages
+    val seasons           = payload.seasons
+    val people            = payload.people
+    val assessmentMethods = payload.assessmentMethods
+    val studyProgramViews = payload.studyProgramViews
+
+    val diffs = this.diffs.find(_._1.id == module.id.get).map(_._2)
+
+    def highlightIf(str: String, p: String => Boolean) =
+      if diffs.exists(_.exists(p)) then highlight(str) else str
+
+    val (workload, contactHour, selfStudy) =
+      pLang.workload(module.metadata.workload)
+
+    def poMandatoryRow =
+      if (module.metadata.po.mandatory.size == 1) pLang.noneLabel
+      else
+        module.metadata.po.mandatory
+          .sortBy(_.po)
+          .collect {
+            case p if p.po != po && studyProgramViews.exists(_.po.id == p.po) =>
+              val builder      = new StringBuilder()
+              val studyProgram = studyProgramViews.find(_.po.id == p.po).get
+              val spLabel      = escape(studyProgram.localizedLabel(studyProgram.specialization))
+              builder
+                .append(s"${studyProgram.degree.localizedLabel}: ")
+                .append(spLabel)
+                .append(s" PO ${studyProgram.po.version}")
+              if (p.recommendedSemester.nonEmpty) {
+                builder.append(
+                  s" (Semester ${fmtCommaSeparated(p.recommendedSemester)(_.toString())})"
+                )
+              }
+              builder.toString()
+          }
+          .mkString("\\newline ")
+
+    def prerequisitesLabelRow(p: Option[ModulePrerequisiteEntryProtocol]) =
+      p match
+        case Some(p) =>
+          val builder = new StringBuilder()
+          if p.text.nonEmpty then {
+            builder.append(p.text)
+          }
+          if p.modules.nonEmpty then {
+            val subBuilder  = new StringBuilder()
+            val moduleLabel = messagesApi("latex.module.label")
+            subBuilder.append(s"$moduleLabel: ")
+            p.modules.zipWithIndex.foreach {
+              case (m, i) =>
+                val module = payload.modules.find(_.id == m).get
+                if modulesInPO.exists(_.id.get == m) then subBuilder.append(nameRef(m))
+                else subBuilder.append(s"${module.title} (${module.abbrev})")
+                if i < p.modules.size - 1 then subBuilder.append(", ")
+            }
+            if builder.nonEmpty then {
+              builder.append("\\newline ")
+            }
+            builder.append(subBuilder.toString())
+          }
+          builder.toString()
+        case None =>
+          pLang.noneLabel
+
+    def assessmentMethodsRow() =
+      if module.metadata.assessmentMethods.mandatory.isEmpty then pLang.noneLabel
+      else
+        fmtCommaSeparated(module.metadata.assessmentMethods.mandatory.sortBy(_.method), "\\newline ") { a =>
+          val method = assessmentMethods.find(_.id == a.method).localizedLabel
+          a.percentage.fold(method)(d => s"$method (${fmtDouble(d)} \\%)")
+        }
+
+    sectionWithRef(module.metadata.title, module.id)
+    builder.append("\\begin{tabularx}{\\linewidth}{@{}>{\\bfseries}l@{\\hspace{.5em}}X@{}}\n")
+    row("ID", module.id.fold("Unknown ID")(_.toString))
+    row(highlightIf(pLang.moduleCodeLabel, ModuleProtocolDiff.isModuleAbbrev), escape(module.metadata.abbrev))
+    row(highlightIf(pLang.moduleTitleLabel, ModuleProtocolDiff.isModuleTitle), escape(module.metadata.title))
+    row(
+      highlightIf(pLang.moduleTypeLabel, ModuleProtocolDiff.isModuleModuleType),
+      moduleTypes.find(_.id == module.metadata.moduleType).localizedLabel,
+    )
+    row(highlightIf(pLang.ectsLabel, ModuleProtocolDiff.isModuleEcts), fmtDouble(module.metadata.ects))
+    row(
+      highlightIf(pLang.languageLabel, ModuleProtocolDiff.isModuleLanguage),
+      languages.find(_.id == module.metadata.language).localizedLabel
+    )
+    row(
+      highlightIf(pLang.durationLabel, ModuleProtocolDiff.isModuleDuration),
+      pLang.durationValue(module.metadata.duration)
+    )
+    row(
+      highlightIf(pLang.frequencyLabel, ModuleProtocolDiff.isModuleSeason),
+      seasons.find(_.id == module.metadata.season).localizedLabel
+    )
+    row(
+      highlightIf(pLang.moduleCoordinatorLabel, ModuleProtocolDiff.isModuleModuleManagement),
+      fmtCommaSeparated(
+        people.filter(p => module.metadata.moduleManagement.exists(_ == p.id)).sorted,
+        "\\newline "
+      )(fmtIdentity)
+    )
+    row(
+      highlightIf(pLang.lecturersLabel, ModuleProtocolDiff.isModuleLecturers),
+      fmtCommaSeparated(people.filter(p => module.metadata.lecturers.exists(_ == p.id)).sorted, "\\newline ")(
+        fmtIdentity
+      )
+    )
+    row(
+      highlightIf(pLang.assessmentMethodLabel, ModuleProtocolDiff.isModuleAssessmentMethodsMandatory),
+      assessmentMethodsRow()
+    )
+    row(highlightIf(workload._1, ModuleProtocolDiff.isModuleWorkload), workload._2)
+    row(highlightIf(contactHour._1, ModuleProtocolDiff.isModuleWorkload), contactHour._2)
+    row(highlightIf(selfStudy._1, ModuleProtocolDiff.isModuleWorkload), selfStudy._2)
+    row(
+      highlightIf(pLang.recommendedPrerequisitesLabel, ModuleProtocolDiff.isModuleRecommendedPrerequisites),
+      prerequisitesLabelRow(module.metadata.prerequisites.recommended)
+    )
+    row(
+      highlightIf(pLang.requiredPrerequisitesLabel, ModuleProtocolDiff.isModuleRequiredPrerequisites),
+      prerequisitesLabelRow(module.metadata.prerequisites.required)
+    )
+    row(highlightIf(pLang.poLabelShort, ModuleProtocolDiff.isPOMandatory), poMandatoryRow)
+    builder.append("\\end{tabularx}\n")
+    moduleContent(
+      module.id,
+      module.deContent,
+      module.enContent,
+      List(
+        (pLang.learningOutcomeLabel, GenLens[ModuleContent](_.learningOutcome)),
+        (pLang.moduleContentLabel, GenLens[ModuleContent](_.content)),
+        (pLang.teachingAndLearningMethodsLabel, GenLens[ModuleContent](_.teachingAndLearningMethods)),
+        (pLang.recommendedReadingLabel, GenLens[ModuleContent](_.recommendedReading)),
+        (pLang.particularitiesLabel, GenLens[ModuleContent](_.particularities))
+      ),
+      diffs
+    )
+  }
+
+  private def moduleContent(
+      id: Option[UUID],
+      deContent: ModuleContent,
+      enContent: ModuleContent,
+      entries: List[(String, Lens[ModuleContent, String])],
+      diffs: Option[Set[String]]
+  ): Unit = {
+    val markdownContent = new StringBuilder()
+    entries.foreach {
+      case (headline, lens) =>
+        markdownContent.append(s"## $headline\n")
+        val content = pLang.fold(lens.get(deContent), lens.get(enContent))
+        if (content.nonEmpty && !content.forall(_.isWhitespace))
+          markdownContent.append(content)
+        else markdownContent.append(pLang.noneLabel)
+        markdownContent.append("\n\n")
+    }
+    pandocApi.toLatex(markdownContent.toString()) match {
+      case Left((e, stdErr)) =>
+        logger.error(
+          s"""content conversation from markdown to latex failed on $id:
+             |  - throwable: ${e.getMessage}
+             |  - sdtErr: $stdErr""".stripMargin
+        )
+        builder.append("ERROR\n\n")
+      case Right(text) =>
+        diffs match
+          case Some(diffs) =>
+            val contentDiffs = diffs.collect { case d if ModuleProtocolDiff.isModuleContent(d) => d.split('.').last }
+            if contentDiffs.isEmpty then {
+              builder.append(text)
+            } else {
+              val replacedWithDiffs = replaceSubsection(
+                text,
+                subsection => {
+                  val key =
+                    if subsection == pLang.learningOutcomeLabel then ModuleProtocolDiff.learningOutcomeKey
+                    else if subsection == pLang.moduleContentLabel then ModuleProtocolDiff.moduleContentKey
+                    else if subsection == pLang.teachingAndLearningMethodsLabel then
+                      ModuleProtocolDiff.teachingAndLearningMethodsKey
+                    else if subsection == pLang.recommendedReadingLabel then ModuleProtocolDiff.recommendedReadingKey
+                    else if subsection == pLang.particularitiesLabel then ModuleProtocolDiff.particularitiesKey
+                    else ""
+                  contentDiffs.contains(key)
+                },
+                old => highlight(old)
+              )
+              builder.append(replacedWithDiffs)
+            }
+          case None =>
+            builder.append(text)
+    }
+  }
+
+  private def sectionWithRef(text: String, id: Option[UUID])(implicit builder: StringBuilder) = {
+    val sectionTitle = escape(text)
+    id match
+      case Some(id) =>
+        val ref = s"\\label{sec:${id.toString}}"
+        builder.append(s"\\section{$sectionTitle}$ref\n")
+      case None =>
+        builder.append(s"\\section{$sectionTitle}\n")
+  }
+
+  private def highlight(str: String) =
+    s"\\highlight{$str}"
 }

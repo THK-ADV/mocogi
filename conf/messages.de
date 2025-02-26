@@ -93,6 +93,9 @@ module_review.notification.closing=Automatisch gesendet von Modulverwaltung THK-
 # Latex
 latex.lang.package_name=ngerman
 latex.preview_label=Vorschau
+latex.module_diff.section.title=Moduländerungen
+latex.module_diff.section.intro=Liste aller Moduländerungen in der aktuellen Bearbeitungsphase. Auf ein Modulnamen klicken, um zum Modul zu gelangen. Änderungen werden hervorgehoben.
+latex.module.label=Module
 
 # Latex Exam Lists
 latex.exam_lists.title=Prüfungsliste
