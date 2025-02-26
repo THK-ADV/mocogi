@@ -7,6 +7,12 @@ import play.api.Logging
 
 object ModuleProtocolDiff extends Logging {
 
+  def learningOutcomeKey            = "learningOutcome"
+  def moduleContentKey              = "content"
+  def teachingAndLearningMethodsKey = "teachingAndLearningMethods"
+  def recommendedReadingKey         = "recommendedReading"
+  def particularitiesKey            = "particularities"
+
   val fields = List(
     "deContent.learningOutcome",
     "deContent.content",
@@ -281,6 +287,26 @@ object ModuleProtocolDiff extends Logging {
             (existing, existingUpdatedKeys)
         }
     }
+
+  def isModuleContent(key: String): Boolean           = key.startsWith("deContent") || key.startsWith("enContent")
+  def isPOMandatory(key: String): Boolean             = key == "metadata.po.mandatory"
+  def isModuleTitle(key: String)                      = key == "metadata.title"
+  def isModuleAbbrev(key: String)                     = key == "metadata.abbrev"
+  def isModuleModuleType(key: String)                 = key == "metadata.moduleType"
+  def isModuleEcts(key: String)                       = key == "metadata.ects"
+  def isModuleLanguage(key: String)                   = key == "metadata.language"
+  def isModuleDuration(key: String)                   = key == "metadata.duration"
+  def isModuleSeason(key: String)                     = key == "metadata.season"
+  def isModuleWorkload(key: String)                   = key.startsWith("metadata.workload")
+  def isModuleStatus(key: String)                     = key == "metadata.status"
+  def isModuleLocation(key: String)                   = key == "metadata.location"
+  def isModuleParticipants(key: String)               = key == "metadata.participants"
+  def isModuleModuleRelation(key: String)             = key == "metadata.moduleRelation"
+  def isModuleModuleManagement(key: String)           = key == "metadata.moduleManagement"
+  def isModuleLecturers(key: String)                  = key == "metadata.lecturers"
+  def isModuleAssessmentMethodsMandatory(key: String) = key == "metadata.assessmentMethods.mandatory"
+  def isModuleRecommendedPrerequisites(key: String)   = key == "metadata.prerequisites.recommended"
+  def isModuleRequiredPrerequisites(key: String)      = key == "metadata.prerequisites.required"
 
   private def log[A](
       field: String,

@@ -93,6 +93,9 @@ module_review.notification.closing=???
 # Latex
 latex.lang.package_name=english
 latex.preview_label=Preview
+latex.module_diff.section.title=Module Changes
+latex.module_diff.section.intro=List of all module changes in the current editing phase. Click on a module name to navigate to the module. Changes are highlighted.
+latex.module.label=Modules
 
 # Latex Exam Lists
 latex.exam_lists.title=Exam List

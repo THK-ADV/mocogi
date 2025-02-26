@@ -45,13 +45,13 @@ object ModulePrintingActor {
       with Logging {
 
     override def receive = {
-      case Handle(modules, lastModified) if modules.nonEmpty =>
+      case Handle(modules) if modules.nonEmpty =>
         studyProgramViewRepo.all().onComplete {
           case Success(sps) =>
             modules.par.foreach {
-              case (module, _) =>
+              case (module, moduleFile) =>
                 print(
-                  lastModified,
+                  moduleFile.lastModified,
                   module,
                   sp => sps.find(_.id == sp)
                 )
@@ -69,7 +69,7 @@ object ModulePrintingActor {
     }
 
     private def print(
-        lastModified: LocalDateTime,
+        lastModified: Option[LocalDateTime],
         module: Module,
         studyProgram: String => Option[StudyProgramView]
     ): Unit = {
@@ -78,7 +78,7 @@ object ModulePrintingActor {
           .print(
             module,
             lang,
-            Some(lastModified),
+            lastModified,
             outputType,
             studyProgram
           ) match {

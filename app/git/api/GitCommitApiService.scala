@@ -1,5 +1,6 @@
 package git.api
 
+import java.time.LocalDateTime
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -7,6 +8,7 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 import git.*
+import models.JsonParseException
 import play.api.http.ContentTypes
 import play.api.libs.json.*
 import play.api.libs.ws.writeableOf_JsValue
@@ -63,6 +65,16 @@ final class GitCommitApiService @Inject() (
       .post(body())
       .flatMap(parseCommitResult)
   }
+
+  def getCommitDate(sha: String): Future[LocalDateTime] =
+    ws.url(s"${this.commitUrl()}/$sha").withHttpHeaders(tokenHeader(), contentTypeJson()).get().flatMap { resp =>
+      if resp.status == Status.OK then
+        resp.json
+          .\("committed_date")
+          .validate[LocalDateTime]
+          .fold(a => Future.failed(JsonParseException(a)), Future.successful)
+      else Future.failed(parseErrorMessage(resp))
+    }
 
   def getCommitDiff(sha: String): Future[List[CommitDiff]] = {
     def parseJson(js: JsValue): List[CommitDiff] =

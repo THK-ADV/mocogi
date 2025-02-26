@@ -11,6 +11,7 @@ import auth.AuthorizationAction
 import auth.Role.Admin
 import controllers.actions.PermissionCheck
 import controllers.actions.RoleCheck
+import git.api.GitCommitApiService
 import git.api.GitFileDownloadService
 import git.api.GitRepositoryApiService
 import git.publisher.CoreDataPublisher
@@ -26,6 +27,7 @@ final class GitController @Inject() (
     cc: ControllerComponents,
     downloadService: GitFileDownloadService,
     gitRepositoryApiService: GitRepositoryApiService,
+    gitCommitApiService: GitCommitApiService,
     modulePublisher: ModulePublisher,
     coreDataPublisher: CoreDataPublisher,
     auth: AuthorizationAction,
@@ -44,7 +46,7 @@ final class GitController @Inject() (
             downloadService
               .downloadFileContent(path, gitConfig.mainBranch)
               .collect {
-                case Some(content) =>
+                case Some((content, _)) =>
                   (GitFile.CoreFile(path, GitFileStatus.Modified), content)
               }
           )
@@ -64,13 +66,24 @@ final class GitController @Inject() (
             case path if path.isModule(gitConfig) =>
               downloadService
                 .downloadFileContent(path, gitConfig.mainBranch)
+                .flatMap {
+                  case Some((content, Some(lastCommit))) =>
+                    gitCommitApiService.getCommitDate(lastCommit.value).map(d => Some(content, Some(d)))
+                  case Some((content, None)) =>
+                    Future.successful(Some(content, None))
+                  case None =>
+                    Future.successful(None)
+                }
                 .collect {
-                  case Some(content) =>
+                  case Some((content, lastModified)) =>
+                    val moduleId = path.moduleId(gitConfig)
+                    assume(moduleId.isDefined, s"expected module id for ${path.value}")
                     (
                       GitFile.ModuleFile(
                         path,
                         path.moduleId(gitConfig).get,
-                        GitFileStatus.Modified
+                        GitFileStatus.Modified,
+                        lastModified
                       ),
                       content
                     )
@@ -78,8 +91,7 @@ final class GitController @Inject() (
           }
         )
       } yield {
-        // unable to retrieve the real last modified date
-        modulePublisher.notifySubscribers(modules, LocalDateTime.now())
+        modulePublisher.notifySubscribers(modules)
         NoContent
       }
     }

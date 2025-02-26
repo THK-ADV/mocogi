@@ -58,8 +58,11 @@ final class ExamListsPreviewService @Inject() (
       people            <- people
       specialization    <- specialization
       liveModules       <- moduleService.allFromPO(specialization.fold(fullPoId.id)(identity), activeOnly = true)
-      changedModule     <- changedModuleFromPreview(specialization.fold(fullPoId.id)(identity), liveModules.map(_.id.get))
-      modules = liveModules.filterNot(m => changedModule.exists(_.id == m.id)).appendedAll(changedModule)
+      changedModule <- changedModuleFromPreview(
+        specialization.fold(fullPoId.id)(identity),
+        liveModules.map(_._1.id.get)
+      )
+      modules = liveModules.map(_._1).filterNot(m => changedModule.exists(_.id == m.id)).appendedAll(changedModule)
       content = printer.preview(modules, studyProgram, assessmentMethods, people)
       path    = Files.writeString(latexFile, content.toString)
       pdf <- compile(path).flatMap(_ => getPdf(path)).toFuture
@@ -89,7 +92,7 @@ final class ExamListsPreviewService @Inject() (
         Future.sequence(downloads)
       }
       .map(_.collect {
-        case Some(m)
+        case Some((m, _))
             if m.metadata.po.mandatory.exists(a => matchesPO(a.po, a.specialization)) ||
               m.metadata.po.optional.exists(a => matchesPO(a.po, a.specialization)) =>
           m

@@ -59,7 +59,7 @@ final class AdminController @Inject() (
         modulesToCreate <- Future.sequence(
           moduleIds.map(id =>
             downloadService.downloadFileContent(GitFilePath(UUID.fromString(id)), gitConfig.draftBranch).collect {
-              case Some(c) => RawModuleParser.parseCreatedModuleInformation(c.value)
+              case Some((c, _)) => RawModuleParser.parseCreatedModuleInformation(c.value)
             }
           )
         )

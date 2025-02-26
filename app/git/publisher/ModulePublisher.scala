@@ -1,6 +1,5 @@
 package git.publisher
 
-import java.time.LocalDateTime
 import javax.inject.Singleton
 
 import scala.concurrent.ExecutionContext
@@ -38,7 +37,7 @@ object ModulePublisher {
       with Logging {
 
     override def receive = {
-      case NotifySubscribers(changes, lastModified) =>
+      case NotifySubscribers(changes) =>
         val prints = changes.map(a => Print(a._2.value))
         pipeline.parseValidateMany(prints).onComplete {
           case Success(validates) =>
@@ -50,7 +49,7 @@ object ModulePublisher {
             })
             modules match {
               case Right(modules) =>
-                subscribers.handle(modules, lastModified)
+                subscribers.handle(modules)
               case Left(errs) =>
                 logPipelineErrors(errs)
             }
@@ -76,17 +75,11 @@ object ModulePublisher {
           )}""".stripMargin
       )
   }
-  private case class NotifySubscribers(
-      moduleFiles: List[(GitFile.ModuleFile, GitFileContent)],
-      lastModified: LocalDateTime
-  )
+  private case class NotifySubscribers(moduleFiles: List[(GitFile.ModuleFile, GitFileContent)])
 }
 
 @Singleton
 case class ModulePublisher(private val value: ActorRef) {
-  def notifySubscribers(
-      moduleFiles: List[(GitFile.ModuleFile, GitFileContent)],
-      lastModified: LocalDateTime
-  ): Unit =
-    value ! NotifySubscribers(moduleFiles, lastModified)
+  def notifySubscribers(moduleFiles: List[(GitFile.ModuleFile, GitFileContent)]): Unit =
+    value ! NotifySubscribers(moduleFiles)
 }

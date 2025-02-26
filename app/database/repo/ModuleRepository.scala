@@ -94,29 +94,31 @@ final class ModuleRepository @Inject() (
             .exists
   }
 
-  def createOrUpdateMany(modules: Seq[Module], timestamp: LocalDateTime) = {
-    def flat(module: Module) =
-      module.copy(
-        metadata = module.metadata.copy(
-          relation = None,
-          prerequisites = ModulePrerequisites(None, None),
-          pos = ModulePOs(Nil, Nil),
-          taughtWith = Nil
-        )
+  def createOrUpdateMany(modules: Seq[(Module, LocalDateTime)]) = {
+    def createOrUpdateInstant = modules.map {
+      case (module, lastModified) =>
+        val db = toDbEntry(module, lastModified)
+        for {
+          exists <- existsAction(module)
+          _ <-
+            if exists then tableQuery.filter(_.id === module.metadata.id).update(db) else tableQuery += db
+        } yield ()
+    }
+    def dependencies = modules.map {
+      case (module, _) =>
+        for
+          _ <- deleteDependencies(module.metadata.id)
+          _ <- createDependencies(module.metadata)
+        yield ()
+    }
+
+    val actions = DBIO
+      .seq(
+        DBIO.sequence(createOrUpdateInstant),
+        DBIO.sequence(dependencies)
       )
-    val createOrUpdateInstant = modules.map { module =>
-      for {
-        exists <- existsAction(module)
-        res <-
-          if (exists) updateAction(module, timestamp)
-          else createAction(flat(module), timestamp)
-      } yield res
-    }
-    val updateAfterCreation = modules.map { module =>
-      updateAction(module, timestamp)
-    }
-    val actions = createOrUpdateInstant.appendedAll(updateAfterCreation)
-    db.run(DBIO.sequence(actions).transactionally.map(_.size / 2))
+      .transactionally
+    db.run(actions)
   }
 
   def all(filter: Map[String, Seq[String]]) =
@@ -149,14 +151,8 @@ final class ModuleRepository @Inject() (
         )
     )
 
-  def allFromPos(pos: Seq[String]) = {
-    // TODO expand to optional if "partOfCatalog" is set
-    val isMandatoryPO = isMandatoryPOQuery(pos)
-    retrieve(tableQuery.filter(_.id.in(isMandatoryPO)))
-  }
-
   // TODO this should be used to fetch modules for po
-  def allFromMandatoryPO(po: String | Specialization): Future[Seq[ModuleProtocol]] = {
+  def allFromMandatoryPO(po: String | Specialization): Future[Seq[(ModuleProtocol, LocalDateTime)]] = {
     val poFilter: ModuleTable => Rep[Boolean] = po match
       case po: String => t => poMandatoryTable.filter(a => t.id === a.module && a.po === po).exists
       case Specialization(id, _, po) =>
@@ -168,7 +164,7 @@ final class ModuleRepository @Inject() (
   }
 
   // TODO this should be used to fetch modules for po
-  def allFromPO(po: String | Specialization, activeOnly: Boolean): Future[Seq[ModuleProtocol]] = {
+  def allFromPO(po: String | Specialization, activeOnly: Boolean): Future[Seq[(ModuleProtocol, LocalDateTime)]] = {
     val poFilter: ModuleTable => Rep[Boolean] = po match
       case po: String =>
         t =>
@@ -184,24 +180,6 @@ final class ModuleRepository @Inject() (
               .exists
     retrieve(tableQuery.filter(a => if activeOnly then a.isActive() && poFilter(a) else poFilter(a)))
   }
-
-  private def isMandatoryPOQuery(pos: Seq[String]) =
-    poMandatoryTable.filter(_.po.inSet(pos)).map(_.module)
-
-  private def updateAction(module: Module, timestamp: LocalDateTime) =
-    for {
-      _ <- deleteDependencies(module.metadata.id)
-      _ <- tableQuery
-        .filter(_.id === module.metadata.id)
-        .update(toDbEntry(module, timestamp))
-      _ <- createDependencies(module.metadata)
-    } yield ()
-
-  private def createAction(module: Module, timestamp: LocalDateTime) =
-    for {
-      _ <- tableQuery += toDbEntry(module, timestamp)
-      _ <- createDependencies(module.metadata)
-    } yield ()
 
   def deleteDependencies(moduleId: UUID) =
     for {
@@ -467,9 +445,7 @@ final class ModuleRepository @Inject() (
   private def existsAction(module: Module) =
     tableQuery.filter(_.id === module.metadata.id).exists.result
 
-  private def retrieve(
-      query: Query[ModuleTable, ModuleDbEntry, Seq]
-  ): Future[Seq[ModuleProtocol]] = {
+  private def retrieve(query: Query[ModuleTable, ModuleDbEntry, Seq]): Future[Seq[(ModuleProtocol, LocalDateTime)]] = {
     val methods = metadataAssessmentMethodTable
       .joinLeft(metadataAssessmentMethodPreconditionTable)
       .on(_.id === _.moduleAssessmentMethod)
@@ -618,7 +594,7 @@ final class ModuleRepository @Inject() (
                 }
               }
 
-              ModuleProtocol(
+              val module = ModuleProtocol(
                 Some(m.id),
                 MetadataProtocol(
                   m.title,
@@ -696,6 +672,7 @@ final class ModuleRepository @Inject() (
                 m.deContent,
                 m.enContent
               )
+              (module, m.lastModified)
           }
           .toSeq
       )

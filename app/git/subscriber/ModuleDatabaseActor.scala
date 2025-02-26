@@ -44,8 +44,8 @@ object ModuleDatabaseActor {
       with Logging {
 
     override def receive = {
-      case Handle(modules, timestamp) if modules.nonEmpty =>
-        update(modules.map(_._1), timestamp).onComplete {
+      case Handle(modules) if modules.nonEmpty =>
+        update(modules.map(m => (m._1, m._2.lastModified.getOrElse(LocalDateTime.now)))).onComplete {
           case Success((modules, permissions)) =>
             logger.info(
               s"successfully created or updated $modules modules and ${permissions.size} permission entries"
@@ -61,22 +61,20 @@ object ModuleDatabaseActor {
         }
     }
 
-    private def update(
-        modules: Seq[Module],
-        timestamp: LocalDateTime
-    ) =
+    private def update(modules: Seq[(Module, LocalDateTime)]) =
       for {
-        created <- moduleService.createOrUpdateMany(modules, timestamp)
+        created <- moduleService.createOrUpdateMany(modules)
         _       <- moduleViewRepository.refreshView()
         permissions <- moduleUpdatePermissionService.overrideInherited(
-          modules.map(a =>
-            (
-              a.metadata.id,
-              a.metadata.responsibilities.moduleManagement
-            )
-          )
+          modules.map {
+            case (module, _) =>
+              (
+                module.metadata.id,
+                module.metadata.responsibilities.moduleManagement
+              )
+          }
         )
-        _ <- moduleCreationService.deleteMany(modules.map(_.metadata.id))
+        _ <- moduleCreationService.deleteMany(modules.map(_._1.metadata.id))
       } yield (created, permissions)
   }
 }
