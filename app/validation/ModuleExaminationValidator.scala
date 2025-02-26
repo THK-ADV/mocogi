@@ -103,7 +103,7 @@ final class ModuleExaminationValidator @Inject() (
 
     for
       identities <- identities
-      downloads  <- downloads
+      downloads  <- downloads.map(_.collect { case Some(p) => p })
       db         <- getFromDb(downloads.map(_._1.id))
       all = downloads.appendedAll(db)
     yield {
@@ -161,7 +161,7 @@ final class ModuleExaminationValidator @Inject() (
         )
     )
 
-  private def getFromPreview: Future[Vector[(ModuleCore, ModuleAssessmentMethodsProtocol, List[String])]] =
+  private def getFromPreview: Future[Vector[Option[(ModuleCore, ModuleAssessmentMethodsProtocol, List[String])]]] =
     diffApiService
       .compare(gitConfig.mainBranch, gitConfig.draftBranch)
       .flatMap { diffs =>
@@ -173,14 +173,14 @@ final class ModuleExaminationValidator @Inject() (
                   d.diff.contains(ModuleAssessmentMethodParser.electiveKey) =>
               downloadService
                 .downloadModuleFromPreviewBranch(d.path.moduleId.get)
-                .collect {
-                  case Some(p) =>
+                .map(_.map {
+                  case (p, _) =>
                     (
                       ModuleCore(p.id.get, p.metadata.title, p.metadata.abbrev),
                       p.metadata.assessmentMethods,
                       p.metadata.moduleManagement.toList
                     )
-                }
+                })
           }
         Future.sequence(downloads).map(_.toVector)
       }

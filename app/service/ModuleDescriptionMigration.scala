@@ -121,6 +121,26 @@ final class ModuleDescriptionMigration extends Logging {
       case "modules.semester.options.ws"                                           => "ws"
       case "modules.semester.options.ss_ws" | "modules.semester.options.ss_ws_opt" => "ws_ss"
 
+  // TODO there is not always a 1 to 1 lookup of the module exams...
+  private def lookupDSI1Exam(str: String): List[String] =
+    str match
+      case "experttalk-or-writtenexam"        => List("oral-exam")                            // forced to one
+      case "project-or-experttalk"            => List("project")                              // forced to one
+      case "writtenexam-project-presentation" => List("written-exam", "project", "oral-contribution")
+      case "writtenexam-assignments"          => List("written-exam", "home-assignment")
+      case "writtenexam-postersession"        => List("written-exam", "oral-contribution")
+      case "project-presentation"             => List("project", "oral-contribution")
+      case "project-presentation-experttalk"  => List("project", "oral-contribution", "oral-exam")
+      case "project-portfolio-experttalk"     => List("project", "portfolio", "oral-exam")
+      case "project-experttalk"               => List("project", "oral-exam")
+      case "project-paper-presentation"       => List("project", "home-assignment", "oral-contribution")
+      case "paper-casestudy"                  => List("home-assignment")                      // no distinct matching
+      case "paper-presentation"               => List("home-assignment", "oral-contribution") // no distinct matching
+      case "experttalk"                       => List("oral-exam")
+      case "presentation-reflectivesummary"   => List("oral-contribution", "home-assignment") // no distinct matching
+      case "paper"                            => List("home-assignment")                      // no distinct matching
+      case "portfolio-reflection-test"        => List("portfolio", "home-assignment")
+
 //  def path = "/Users/alex/Developer/reakkreditierung-main/src/medieninformatik-bachelor/modulbeschreibungen-bpo5"
 //  def path = "/Users/alex/Developer/reakkreditierung-main/src/medieninformatik-master/modulbeschreibungen-mpo5"
 //  def path = "/Users/alex/Developer/master-digital-sciences-dev/_modules"
