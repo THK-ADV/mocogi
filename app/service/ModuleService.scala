@@ -28,7 +28,7 @@ final class ModuleService @Inject() (
     repo.createOrUpdateMany(modules)
 
   def get(id: UUID) =
-    repo.all(Map("id" -> Seq(id.toString))).single
+    repo.all(Map("id" -> Seq(id.toString))).single.map(_._1)
 
   def allModuleCore(): Future[Seq[ModuleCore]] =
     repo.allModuleCore()
@@ -37,7 +37,7 @@ final class ModuleService @Inject() (
     moduleCreationService.allAsModuleCore()
 
   def allMetadata() =
-    repo.all(Map.empty).map(_.map(a => (a.id, a.metadata)))
+    repo.all(Map.empty).map(_.map(a => (a._1.id, a._1.metadata)))
 
   def allGenericModulesWithPOs(): Future[Seq[(ModuleCore, Seq[String])]] =
     repo.allGenericModulesWithPOs()
@@ -45,20 +45,21 @@ final class ModuleService @Inject() (
   def allNewlyCreatedGenericModulesWithPOs(): Future[Seq[(ModuleCore, Seq[String])]] =
     moduleCreationService.allGenericWithPOsAsModuleCore()
 
-  def allFromMandatoryPO(po: String | Specialization): Future[Seq[ModuleProtocol]] =
+  def allFromMandatoryPO(po: String | Specialization): Future[Seq[(ModuleProtocol, LocalDateTime)]] =
     repo.allFromMandatoryPO(po)
 
-  def allFromPO(po: String | Specialization, activeOnly: Boolean): Future[Seq[ModuleProtocol]] =
+  def allFromPO(po: String | Specialization, activeOnly: Boolean): Future[Seq[(ModuleProtocol, LocalDateTime)]] =
     repo.allFromPO(po, activeOnly)
 
   def allFromPOWithCompanion(po: String, activeOnly: Boolean): Future[Seq[(ModuleProtocol, Seq[(String, JsValue)])]] =
     for
       modules          <- allFromPO(po, activeOnly)
-      companionContent <- moduleCompanionService.allFromModules(modules.map(_.id.get))
-    yield modules.map { module =>
-      val companion = companionContent.collect {
-        case (companion, Some(c)) if companion.module == module.id.get => (companion.po, c)
-      }
-      (module, companion)
+      companionContent <- moduleCompanionService.allFromModules(modules.map(_._1.id.get))
+    yield modules.map {
+      case (module, _) =>
+        val companion = companionContent.collect {
+          case (companion, Some(c)) if companion.module == module.id.get => (companion.po, c)
+        }
+        (module, companion)
     }
 }

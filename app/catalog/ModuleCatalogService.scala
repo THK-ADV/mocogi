@@ -183,7 +183,7 @@ final class ModuleCatalogService @Inject() (
       poIds = sps.map(_.po.id)
       ms <- Future
         .sequence(poIds.map(po => moduleService.allFromMandatoryPO(po)))
-        .map(_.flatten.distinctBy(_.id.get).map(_ -> None))
+        .map(_.flatten.distinctBy(_._1.id.get))
       mts            <- moduleTypeRepository.all()
       lang           <- languageRepository.all()
       seasons        <- seasonRepository.all()

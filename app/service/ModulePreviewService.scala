@@ -86,7 +86,7 @@ final class ModulePreviewService @Inject() (
       liveModules <- moduleService.allFromMandatoryPO(specialization.fold(fullPoId.id)(identity))
       changedModules <- changedModuleFromPreview(
         specialization.fold(fullPoId.id)(identity),
-        liveModules.map(_.id.get)
+        liveModules.map(_._1.id.get)
       )
       modules = mergeModules(liveModules, changedModules)
       diffs   = diff(liveModules, changedModules)
@@ -98,27 +98,28 @@ final class ModulePreviewService @Inject() (
   }
 
   private def mergeModules(
-      liveModules: Seq[ModuleProtocol],
+      liveModules: Seq[(ModuleProtocol, LocalDateTime)],
       changedModules: Seq[(ModuleProtocol, Option[LocalDateTime])]
   ) = {
     val builder = ListBuffer[(ModuleProtocol, Option[LocalDateTime])]()
-    liveModules.foreach { m =>
-      if !changedModules.exists(_._1.id == m.id) then {
-        builder.append((m, None))
-      }
+    liveModules.foreach {
+      case (module, lastModified) =>
+        if !changedModules.exists(_._1.id == module.id) then {
+          builder.append((module, Some(lastModified)))
+        }
     }
     changedModules.foreach(builder.append)
     builder.toList
   }
 
   private def diff(
-      liveModules: Seq[ModuleProtocol],
+      liveModules: Seq[(ModuleProtocol, LocalDateTime)],
       changedModules: Seq[(ModuleProtocol, Option[LocalDateTime])]
   ): Seq[(ModuleCore, Set[String])] =
     changedModules.map {
       case (p, _) =>
-        val diffs = liveModules.find(_.id == p.id) match {
-          case Some(existing) =>
+        val diffs = liveModules.find(_._1.id == p.id) match {
+          case Some((existing, _)) =>
             val (_, diffs) = ModuleProtocolDiff.diff(
               existing.normalize(),
               p.normalize(),

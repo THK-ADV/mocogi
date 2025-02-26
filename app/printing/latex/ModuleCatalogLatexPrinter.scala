@@ -80,7 +80,10 @@ object ModuleCatalogLatexPrinter {
     }
 
   // TODO This filter should should become obsolete soon. The assertion function below ensures the invariance of valid module-po relationships
-  private def validModulesForStudyProgram(modules: Seq[(ModuleProtocol, Option[LocalDateTime])], sp: StudyProgramView) =
+  private def validModulesForStudyProgram(
+      modules: Seq[(ModuleProtocol, LocalDateTime | Option[LocalDateTime])],
+      sp: StudyProgramView
+  ) =
     modules.filter {
       case (m, _) =>
         val isValid = m.metadata.po.mandatory.exists { a =>
@@ -125,7 +128,7 @@ object ModuleCatalogLatexPrinter {
       pandocApi: PandocApi,
       messagesApi: MessagesApi,
       semester: Semester,
-      modules: Seq[(ModuleProtocol, Option[LocalDateTime])],
+      modules: Seq[(ModuleProtocol, LocalDateTime | Option[LocalDateTime])],
       payload: Payload,
       pLang: PrintingLanguage,
       lang: Lang
@@ -148,7 +151,7 @@ final class ModuleCatalogLatexPrinter(
     pandocApi: PandocApi,
     messagesApi: MessagesApi,
     semester: Option[Semester],
-    modulesInPO: Seq[(ModuleProtocol, Option[LocalDateTime])],
+    modulesInPO: Seq[(ModuleProtocol, LocalDateTime | Option[LocalDateTime])],
     payload: Payload,
     introContent: List[IntroContent],
     diffs: Seq[(ModuleCore, Set[String])]
@@ -320,7 +323,7 @@ final class ModuleCatalogLatexPrinter(
     result
   }
 
-  private def module(module: ModuleProtocol, lastModified: Option[LocalDateTime]): Unit = {
+  private def module(module: ModuleProtocol, lastModified: LocalDateTime | Option[LocalDateTime]): Unit = {
     def row(key: String, value: String) =
       builder.append(s"$key & $value \\\\\n")
 
@@ -390,7 +393,7 @@ final class ModuleCatalogLatexPrinter(
         case None =>
           pLang.noneLabel
 
-    def assessmentMethodsRow() =
+    def assessmentMethodsRow =
       if module.metadata.assessmentMethods.mandatory.isEmpty then pLang.noneLabel
       else
         fmtCommaSeparated(module.metadata.assessmentMethods.mandatory.sortBy(_.method), "\\newline ") { a =>
@@ -398,10 +401,16 @@ final class ModuleCatalogLatexPrinter(
           a.percentage.fold(method)(d => s"$method (${fmtDouble(d)} \\%)")
         }
 
+    def lastModifiedRow =
+      lastModified match
+        case lm: LocalDateTime => lm.format(localDatePattern)
+        case Some(lm)          => lm.format(localDatePattern)
+        case None              => pLang.unknownLabel
+
     sectionWithRef(module.metadata.title, module.id)
     builder.append("\\begin{tabularx}{\\linewidth}{@{}>{\\bfseries}l@{\\hspace{.5em}}X@{}}\n")
     row("ID", module.id.fold("Unknown ID")(_.toString))
-    row(pLang.lastModifiedLabel, lastModified.fold(pLang.unknownLabel)(_.format(localDatePattern)))
+    row(pLang.lastModifiedLabel, lastModifiedRow)
     row(highlightIf(pLang.moduleCodeLabel, ModuleProtocolDiff.isModuleAbbrev), escape(module.metadata.abbrev))
     row(highlightIf(pLang.moduleTitleLabel, ModuleProtocolDiff.isModuleTitle), escape(module.metadata.title))
     row(
@@ -436,7 +445,7 @@ final class ModuleCatalogLatexPrinter(
     )
     row(
       highlightIf(pLang.assessmentMethodLabel, ModuleProtocolDiff.isModuleAssessmentMethodsMandatory),
-      assessmentMethodsRow()
+      assessmentMethodsRow
     )
     row(highlightIf(workload._1, ModuleProtocolDiff.isModuleWorkload), workload._2)
     row(highlightIf(contactHour._1, ModuleProtocolDiff.isModuleWorkload), contactHour._2)

@@ -152,7 +152,7 @@ final class ModuleRepository @Inject() (
     )
 
   // TODO this should be used to fetch modules for po
-  def allFromMandatoryPO(po: String | Specialization): Future[Seq[ModuleProtocol]] = {
+  def allFromMandatoryPO(po: String | Specialization): Future[Seq[(ModuleProtocol, LocalDateTime)]] = {
     val poFilter: ModuleTable => Rep[Boolean] = po match
       case po: String => t => poMandatoryTable.filter(a => t.id === a.module && a.po === po).exists
       case Specialization(id, _, po) =>
@@ -164,7 +164,7 @@ final class ModuleRepository @Inject() (
   }
 
   // TODO this should be used to fetch modules for po
-  def allFromPO(po: String | Specialization, activeOnly: Boolean): Future[Seq[ModuleProtocol]] = {
+  def allFromPO(po: String | Specialization, activeOnly: Boolean): Future[Seq[(ModuleProtocol, LocalDateTime)]] = {
     val poFilter: ModuleTable => Rep[Boolean] = po match
       case po: String =>
         t =>
@@ -445,9 +445,7 @@ final class ModuleRepository @Inject() (
   private def existsAction(module: Module) =
     tableQuery.filter(_.id === module.metadata.id).exists.result
 
-  private def retrieve(
-      query: Query[ModuleTable, ModuleDbEntry, Seq]
-  ): Future[Seq[ModuleProtocol]] = {
+  private def retrieve(query: Query[ModuleTable, ModuleDbEntry, Seq]): Future[Seq[(ModuleProtocol, LocalDateTime)]] = {
     val methods = metadataAssessmentMethodTable
       .joinLeft(metadataAssessmentMethodPreconditionTable)
       .on(_.id === _.moduleAssessmentMethod)
@@ -596,7 +594,7 @@ final class ModuleRepository @Inject() (
                 }
               }
 
-              ModuleProtocol(
+              val module = ModuleProtocol(
                 Some(m.id),
                 MetadataProtocol(
                   m.title,
@@ -674,6 +672,7 @@ final class ModuleRepository @Inject() (
                 m.deContent,
                 m.enContent
               )
+              (module, m.lastModified)
           }
           .toSeq
       )
