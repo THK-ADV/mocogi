@@ -8,6 +8,7 @@ import scala.concurrent.Future
 
 import com.google.inject.Inject
 import git.Branch
+import git.CommitId
 import git.GitConfig
 import git.GitFileContent
 import git.GitFilePath
@@ -32,7 +33,7 @@ final class GitFileDownloadService @Inject() (
 
   def downloadModuleMetadataFromPreviewBranch(path: GitFilePath): Future[Option[(UUID, MetadataProtocol)]] =
     downloadFileContent(path, config.draftBranch).map {
-      case Some(content) =>
+      case Some((content, _)) =>
         val res = RawModuleParser.metadataParser.parse(content.value)._1.toOption
         assert(
           res.isDefined,
@@ -42,27 +43,22 @@ final class GitFileDownloadService @Inject() (
       case None => None
     }
 
-  def downloadModuleFromPreviewBranch(
-      id: UUID
-  ): Future[Option[ModuleProtocol]] =
+  def downloadModuleFromPreviewBranch(id: UUID): Future[Option[(ModuleProtocol, Option[CommitId])]] =
     for {
       content <- downloadFileContent(GitFilePath(id), config.draftBranch)
       res <- content match {
-        case Some(content) =>
+        case Some((content, commitId)) =>
           RawModuleParser.parser
             .parse(content.value)
             ._1
-            .map(Some.apply)
+            .map(a => Some(a, commitId))
             .toFuture
         case None =>
           Future.successful(None)
       }
     } yield res
 
-  def downloadFileContent(
-      path: GitFilePath,
-      branch: Branch
-  ): Future[Option[GitFileContent]] =
+  def downloadFileContent(path: GitFilePath, branch: Branch): Future[Option[(GitFileContent, Option[CommitId])]] =
     api.download(path, branch)
 
   def downloadModuleFromPreviewBranchAsHTML(
@@ -71,7 +67,7 @@ final class GitFileDownloadService @Inject() (
     for {
       content <- downloadFileContent(GitFilePath(module), config.draftBranch)
       res <- content match {
-        case Some(content) =>
+        case Some((content, _)) =>
           for {
             module <- pipeline.parseValidate(Print(content.value))
             output <- printer

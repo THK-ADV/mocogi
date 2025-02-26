@@ -1,5 +1,7 @@
 package printing.latex
 
+import java.time.format.DateTimeFormatter
+import java.time.LocalDateTime
 import java.util.UUID
 
 import scala.annotation.unused
@@ -78,18 +80,19 @@ object ModuleCatalogLatexPrinter {
     }
 
   // TODO This filter should should become obsolete soon. The assertion function below ensures the invariance of valid module-po relationships
-  private def validModulesForStudyProgram(modules: Seq[ModuleProtocol], sp: StudyProgramView) =
-    modules.filter { m =>
-      val isValid = m.metadata.po.mandatory.exists { a =>
-        a.po == sp.po.id && a.specialization
-          .zip(sp.specialization)
-          .fold(true)(a => a._1 == a._2.id)
-      }
-      assert(
-        isValid,
-        s"module ${m.id.getOrElse(m.metadata.title)} should not be in the selection for module catalog of ${sp.fullPoId.id}, because ${m.metadata.po.mandatory.map(_.fullPo)}"
-      )
-      ModuleStatus.isActive(m.metadata.status) && isValid
+  private def validModulesForStudyProgram(modules: Seq[(ModuleProtocol, Option[LocalDateTime])], sp: StudyProgramView) =
+    modules.filter {
+      case (m, _) =>
+        val isValid = m.metadata.po.mandatory.exists { a =>
+          a.po == sp.po.id && a.specialization
+            .zip(sp.specialization)
+            .fold(true)(a => a._1 == a._2.id)
+        }
+        assert(
+          isValid,
+          s"module ${m.id.getOrElse(m.metadata.title)} should not be in the selection for module catalog of ${sp.fullPoId.id}, because ${m.metadata.po.mandatory.map(_.fullPo)}"
+        )
+        ModuleStatus.isActive(m.metadata.status) && isValid
     }
 
   def preview(
@@ -97,7 +100,7 @@ object ModuleCatalogLatexPrinter {
       messagesApi: MessagesApi,
       diffs: Seq[(ModuleCore, Set[String])],
       introContent: Option[IntroContent],
-      modules: Seq[ModuleProtocol],
+      modules: Seq[(ModuleProtocol, Option[LocalDateTime])],
       payload: Payload,
       pLang: PrintingLanguage,
       lang: Lang,
@@ -122,7 +125,7 @@ object ModuleCatalogLatexPrinter {
       pandocApi: PandocApi,
       messagesApi: MessagesApi,
       semester: Semester,
-      modules: Seq[ModuleProtocol],
+      modules: Seq[(ModuleProtocol, Option[LocalDateTime])],
       payload: Payload,
       pLang: PrintingLanguage,
       lang: Lang
@@ -145,7 +148,7 @@ final class ModuleCatalogLatexPrinter(
     pandocApi: PandocApi,
     messagesApi: MessagesApi,
     semester: Option[Semester],
-    modulesInPO: Seq[ModuleProtocol],
+    modulesInPO: Seq[(ModuleProtocol, Option[LocalDateTime])],
     payload: Payload,
     introContent: List[IntroContent],
     diffs: Seq[(ModuleCore, Set[String])]
@@ -160,6 +163,8 @@ final class ModuleCatalogLatexPrinter(
   import ModuleCatalogLatexPrinter.newPage
 
   private given builder: StringBuilder = new StringBuilder()
+
+  private val localDatePattern = DateTimeFormatter.ofPattern("dd.MM.yyyy", lang.locale)
 
   private implicit def identityOrd: Ordering[Identity] =
     Ordering
@@ -205,10 +210,11 @@ final class ModuleCatalogLatexPrinter(
     if (modulesInPO.isEmpty) newPage
     else
       modulesInPO
-        .sortBy(_.metadata.title)
-        .foreach { m =>
-          module(m)
-          newPage
+        .sortBy(_._1.metadata.title)
+        .foreach {
+          case (m, lm) =>
+            module(m, lm)
+            newPage
         }
   }
 
@@ -314,7 +320,7 @@ final class ModuleCatalogLatexPrinter(
     result
   }
 
-  private def module(module: ModuleProtocol): Unit = {
+  private def module(module: ModuleProtocol, lastModified: Option[LocalDateTime]): Unit = {
     def row(key: String, value: String) =
       builder.append(s"$key & $value \\\\\n")
 
@@ -371,7 +377,7 @@ final class ModuleCatalogLatexPrinter(
             p.modules.zipWithIndex.foreach {
               case (m, i) =>
                 val module = payload.modules.find(_.id == m).get
-                if modulesInPO.exists(_.id.get == m) then subBuilder.append(nameRef(m))
+                if modulesInPO.exists(_._1.id.get == m) then subBuilder.append(nameRef(m))
                 else subBuilder.append(s"${module.title} (${module.abbrev})")
                 if i < p.modules.size - 1 then subBuilder.append(", ")
             }
@@ -395,6 +401,7 @@ final class ModuleCatalogLatexPrinter(
     sectionWithRef(module.metadata.title, module.id)
     builder.append("\\begin{tabularx}{\\linewidth}{@{}>{\\bfseries}l@{\\hspace{.5em}}X@{}}\n")
     row("ID", module.id.fold("Unknown ID")(_.toString))
+    row(pLang.lastModifiedLabel, lastModified.fold(pLang.unknownLabel)(_.format(localDatePattern)))
     row(highlightIf(pLang.moduleCodeLabel, ModuleProtocolDiff.isModuleAbbrev), escape(module.metadata.abbrev))
     row(highlightIf(pLang.moduleTitleLabel, ModuleProtocolDiff.isModuleTitle), escape(module.metadata.title))
     row(

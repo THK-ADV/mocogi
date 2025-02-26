@@ -165,7 +165,10 @@ final class ModuleController @Inject() (
 
   def getPreview(id: UUID) =
     auth.async { _ =>
-      getFromPreview(id).map(x => Ok(Json.toJson(x)))
+      getFromPreview(id).map {
+        case Some(p) => Ok(Json.toJson(p))
+        case None    => NotFound
+      }
     }
 
   def getLatest(id: UUID) =
@@ -232,7 +235,7 @@ final class ModuleController @Inject() (
     lang.fold(configReader.deOutputFolderPath, configReader.enOutputFolderPath)
 
   private def getFromPreview(moduleId: UUID) =
-    gitFileDownloadService.downloadModuleFromPreviewBranch(moduleId)
+    gitFileDownloadService.downloadModuleFromPreviewBranch(moduleId).map(_.map(_._1))
 
   private def getStaticFile(moduleId: UUID)(implicit r: Request[AnyContent]) = {
     val filename = s"$moduleId.html"

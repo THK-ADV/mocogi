@@ -105,6 +105,8 @@ package object printing {
 
     def noneLabel = self.fold("Keine", "None")
 
+    def unknownLabel = self.fold("Keine Angabe", "Unknown")
+
     def prerequisitesTextLabel = self.fold("Beschreibung", "Description")
 
     def prerequisitesModuleLabel = self.fold("Module", "Modules")

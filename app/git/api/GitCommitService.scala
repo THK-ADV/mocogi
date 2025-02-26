@@ -60,7 +60,7 @@ final class GitCommitService @Inject() (
       module: UUID
   ): Future[Option[(GitFileContent, CommitDiff)]] =
     apiService.getCommitDiff(sha).map(_.collectFirst { case d if d.newPath.moduleId.contains(module) => d }).flatMap {
-      case Some(c) => fileApiService.download(c.newPath, branch).map(_.map(_ -> c))
+      case Some(c) => fileApiService.download(c.newPath, branch).map(_.map(_._1 -> c))
       case None    => Future.successful(None)
     }
 
@@ -73,7 +73,7 @@ final class GitCommitService @Inject() (
       commits <- apiService.getCommitDiff(sha)
       downloads <- Future.sequence(commits.collect {
         case cd if cd.newPath.isModule && !cd.isDeleted =>
-          fileApiService.download(cd.newPath, branch).collect { case Some(c) => (c, cd) }
+          fileApiService.download(cd.newPath, branch).collect { case Some((c, _)) => (c, cd) }
       })
     yield downloads
 }

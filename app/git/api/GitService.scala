@@ -1,11 +1,6 @@
 package git.api
 
-import java.net.URLEncoder
-import java.nio.charset.StandardCharsets
-
-import git.Branch
 import git.GitConfig
-import git.GitFilePath
 import parser.ParserOps.P0
 import play.api.libs.ws.WSResponse
 
@@ -31,12 +26,6 @@ trait GitService {
         errs => new Exception(errs.mkString("\n")),
         msg => new Exception(msg)
       )
-
-  private def urlEncoded(path: GitFilePath) =
-    URLEncoder.encode(path.value, StandardCharsets.UTF_8)
-
-  def fileUrl(path: GitFilePath, branch: Branch) =
-    s"${config.baseUrl}/projects/${config.projectId}/repository/files/${urlEncoded(path)}/raw?ref=${branch.value}"
 
   def parseNextPaginationUrl(r: WSResponse): Option[String] =
     r.header("Link").flatMap(nextLinkParser.parse(_)._1.fold(_ => None, identity))

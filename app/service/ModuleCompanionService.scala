@@ -47,7 +47,7 @@ final class ModuleCompanionService @Inject() (
         companions.map(companion =>
           gitFileApiService
             .download(GitFilePath.moduleCompanionPath(companion.module, companion.po)(config), config.draftBranch)
-            .map(content => companion -> content.flatMap { c => parseFrontMatter(c.value, companion) })
+            .map(content => companion -> content.flatMap { (c, _) => parseFrontMatter(c.value, companion) })
         )
       )
     yield companionFiles

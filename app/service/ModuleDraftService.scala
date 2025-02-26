@@ -98,7 +98,7 @@ final class ModuleDraftService @Inject() (
     Future.failed(new Exception("no changes to the module could be found"))
 
   private def getFromStaging(uuid: UUID) =
-    gitFileDownloadService.downloadModuleFromPreviewBranch(uuid)
+    gitFileDownloadService.downloadModuleFromPreviewBranch(uuid).map(_.map(_._1))
 
   private def createFromExistingModule(
       moduleId: UUID,

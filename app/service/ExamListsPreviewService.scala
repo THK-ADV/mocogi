@@ -89,7 +89,7 @@ final class ExamListsPreviewService @Inject() (
         Future.sequence(downloads)
       }
       .map(_.collect {
-        case Some(m)
+        case Some((m, _))
             if m.metadata.po.mandatory.exists(a => matchesPO(a.po, a.specialization)) ||
               m.metadata.po.optional.exists(a => matchesPO(a.po, a.specialization)) =>
           m

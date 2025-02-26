@@ -181,7 +181,9 @@ final class ModuleCatalogService @Inject() (
     for {
       sps <- studyProgramViewRepo.all()
       poIds = sps.map(_.po.id)
-      ms             <- Future.sequence(poIds.map(po => moduleService.allFromMandatoryPO(po))).map(_.flatten.distinctBy(_.id.get))
+      ms <- Future
+        .sequence(poIds.map(po => moduleService.allFromMandatoryPO(po)))
+        .map(_.flatten.distinctBy(_.id.get).map(_ -> None))
       mts            <- moduleTypeRepository.all()
       lang           <- languageRepository.all()
       seasons        <- seasonRepository.all()

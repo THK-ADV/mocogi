@@ -44,7 +44,7 @@ final class GitController @Inject() (
             downloadService
               .downloadFileContent(path, gitConfig.mainBranch)
               .collect {
-                case Some(content) =>
+                case Some((content, _)) =>
                   (GitFile.CoreFile(path, GitFileStatus.Modified), content)
               }
           )
@@ -65,7 +65,7 @@ final class GitController @Inject() (
               downloadService
                 .downloadFileContent(path, gitConfig.mainBranch)
                 .collect {
-                  case Some(content) =>
+                  case Some((content, _)) =>
                     (
                       GitFile.ModuleFile(
                         path,

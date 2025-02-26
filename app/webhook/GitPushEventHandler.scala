@@ -208,14 +208,14 @@ object GitPushEventHandler {
         moduleFiles.map(file =>
           downloadService
             .downloadFileContent(file.path, branch)
-            .collect { case Some(content) => (file, content) }
+            .collect { case Some((content, _)) => (file, content) }
         )
       )
       val downloadedCoreFiles = Future.sequence(
         coreFiles.map(file =>
           downloadService
             .downloadFileContent(file.path, branch)
-            .collect { case Some(content) => (file, content) }
+            .collect { case Some((content, _)) => (file, content) }
         )
       )
       for {
