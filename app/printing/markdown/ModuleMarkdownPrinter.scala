@@ -3,6 +3,8 @@ package printing.markdown
 import java.time.LocalDateTime
 import javax.inject.Singleton
 
+import scala.collection.mutable.ListBuffer
+
 import cats.data.NonEmptyList
 import models.*
 import models.core.Identity
@@ -42,29 +44,26 @@ final class ModuleMarkdownPrinter(
     rows(label, xs.map(fmtIdentity))
   }
 
-  private def nonEmptyRow(
-      value: String
-  )(modify: String => String): Printer[Unit] =
-    if (value.nonEmpty) row("", modify(value))
-    else Printer.always()
-
   private def fmtPrerequisites(
       label: String,
       entry: Option[ModulePrerequisiteEntry]
   )(implicit lang: PrintingLanguage): Printer[Unit] =
     entry match {
-      case None =>
+      case Some(p) if p.text.nonEmpty || p.modules.nonEmpty =>
+        val builder = new ListBuffer[String]()
+        if p.text.nonEmpty then {
+          builder.append(p.text)
+        }
+        if p.modules.nonEmpty then {
+          val subBuilder  = new StringBuilder()
+          val moduleLabel = lang.prerequisitesModuleLabel
+          subBuilder.append(s"$moduleLabel: ")
+          subBuilder.append(p.modules.map(a => s"${a.title} (${a.abbrev})").mkString(", "))
+          builder.append(subBuilder.toString())
+        }
+        rows(label, NonEmptyList.fromList(builder.toList).get)
+      case _ =>
         row(label, lang.noneLabel)
-      case Some(e) if e.modules.isEmpty || e.text.isEmpty || e.pos.isEmpty =>
-        row(label, lang.noneLabel)
-      case Some(e) =>
-        val text =
-          nonEmptyRow(e.text)(s => s"${lang.prerequisitesTextLabel}: $s")
-        val modules = nonEmptyRow(fmtCommaSeparated(e.modules)(_.abbrev))(s => s"${lang.prerequisitesModuleLabel}: $s")
-        val pos     = nonEmptyRow(fmtCommaSeparated(e.pos)(_.id))(s => s"${lang.prerequisitesStudyProgramLabel}: $s")
-        text
-          .skip(modules)
-          .skip(pos)
     }
 
   private def fmtPOs(
