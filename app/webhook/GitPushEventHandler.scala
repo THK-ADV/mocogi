@@ -1,6 +1,5 @@
 package webhook
 
-import java.time.LocalDateTime
 import javax.inject.Singleton
 
 import scala.collection.mutable.ListBuffer
@@ -9,7 +8,7 @@ import scala.concurrent.Future
 import scala.util.Failure
 import scala.util.Success
 
-import git._
+import git.*
 import git.api.GitFileDownloadService
 import git.publisher.CoreDataPublisher
 import git.publisher.ModulePublisher
@@ -17,7 +16,7 @@ import ops.LoggerOps
 import org.apache.pekko.actor.Actor
 import org.apache.pekko.actor.ActorRef
 import org.apache.pekko.actor.Props
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.Logging
 
 @Singleton
@@ -60,15 +59,13 @@ object GitPushEventHandler {
       ) match {
         case Some(commit) =>
           for {
-            added     <- commit.\("added").validate[List[String]]
-            modified  <- commit.\("modified").validate[List[String]]
-            removed   <- commit.\("removed").validate[List[String]]
-            timestamp <- commit.\("timestamp").validate[LocalDateTime]
+            added    <- commit.\("added").validate[List[String]]
+            modified <- commit.\("modified").validate[List[String]]
+            removed  <- commit.\("removed").validate[List[String]]
           } yield (
             added.map(GitFilePath.apply),
             modified.map(GitFilePath.apply),
             removed.map(GitFilePath.apply),
-            timestamp
           )
         case None => JsError(s"expected commit with id ${lastCommit.value}")
       }
@@ -76,16 +73,13 @@ object GitPushEventHandler {
 
   def parse(json: JsValue)(implicit gitConfig: GitConfig) =
     for {
-      branch      <- parseBranch(json)
-      afterCommit <- parseCommit(json, "after")
-      _           <- parseCommit(json, "before")
-      (added, modified, deleted, timestamp) <- parseFilesOfLastCommit(
-        json,
-        afterCommit
-      )
+      branch                     <- parseBranch(json)
+      afterCommit                <- parseCommit(json, "after")
+      _                          <- parseCommit(json, "before")
+      (added, modified, deleted) <- parseFilesOfLastCommit(json, afterCommit)
     } yield (
       branch,
-      GitChanges(toGitFiles(added, modified, deleted), afterCommit, timestamp)
+      GitChanges(toGitFiles(added, modified, deleted), afterCommit)
     )
 
   def toGitFiles(
@@ -97,7 +91,12 @@ object GitPushEventHandler {
     added.foreach { path =>
       val status = GitFileStatus.Added
       builder += path.fold(
-        GitFile.ModuleFile(path, _, status),
+        GitFile.ModuleFile(
+          path,
+          _,
+          status,
+          None
+        ), // TODO retrieve real last modified date for the file. it will be overridden otherwise
         GitFile.CoreFile(path, status),
         GitFile.ModuleCatalogFile(path, status),
         GitFile.Other(path, status)
@@ -106,7 +105,12 @@ object GitPushEventHandler {
     modified.foreach { path =>
       val status = GitFileStatus.Modified
       builder += path.fold(
-        GitFile.ModuleFile(path, _, status),
+        GitFile.ModuleFile(
+          path,
+          _,
+          status,
+          None
+        ), // TODO retrieve real last modified date for the file. it will be overridden otherwise
         GitFile.CoreFile(path, status),
         GitFile.ModuleCatalogFile(path, status),
         GitFile.Other(path, status)
@@ -115,7 +119,12 @@ object GitPushEventHandler {
     deleted.foreach { path =>
       val status = GitFileStatus.Removed
       builder += path.fold(
-        GitFile.ModuleFile(path, _, status),
+        GitFile.ModuleFile(
+          path,
+          _,
+          status,
+          None
+        ), // TODO retrieve real last modified date for the file. it will be overridden otherwise
         GitFile.CoreFile(path, status),
         GitFile.ModuleCatalogFile(path, status),
         GitFile.Other(path, status)
@@ -167,13 +176,8 @@ object GitPushEventHandler {
                 // Proceed with created or modified files. Deleted files are ignored
                 downloadGitFiles(branch, moduleFiles, coreFiles).onComplete {
                   case Success((moduleFiles, coreFiles)) =>
-                    modulePublisher.notifySubscribers(
-                      moduleFiles,
-                      gitChanges.timestamp
-                    )
-                    coreDataPublisher.notifySubscribers(
-                      coreFiles
-                    )
+                    modulePublisher.notifySubscribers(moduleFiles)
+                    coreDataPublisher.notifySubscribers(coreFiles)
                     logger.info("finished!")
                   case Failure(e) =>
                     logFailure(e)

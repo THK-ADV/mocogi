@@ -24,11 +24,8 @@ final class ModuleService @Inject() (
     private implicit val ctx: ExecutionContext
 ) {
 
-  def createOrUpdateMany(
-      modules: Seq[Module],
-      timestamp: LocalDateTime
-  ) =
-    repo.createOrUpdateMany(modules, timestamp)
+  def createOrUpdateMany(modules: Seq[(Module, LocalDateTime)]) =
+    repo.createOrUpdateMany(modules)
 
   def get(id: UUID) =
     repo.all(Map("id" -> Seq(id.toString))).single

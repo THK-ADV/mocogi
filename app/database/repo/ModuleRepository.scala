@@ -94,29 +94,31 @@ final class ModuleRepository @Inject() (
             .exists
   }
 
-  def createOrUpdateMany(modules: Seq[Module], timestamp: LocalDateTime) = {
-    def flat(module: Module) =
-      module.copy(
-        metadata = module.metadata.copy(
-          relation = None,
-          prerequisites = ModulePrerequisites(None, None),
-          pos = ModulePOs(Nil, Nil),
-          taughtWith = Nil
-        )
+  def createOrUpdateMany(modules: Seq[(Module, LocalDateTime)]) = {
+    def createOrUpdateInstant = modules.map {
+      case (module, lastModified) =>
+        val db = toDbEntry(module, lastModified)
+        for {
+          exists <- existsAction(module)
+          _ <-
+            if exists then tableQuery.filter(_.id === module.metadata.id).update(db) else tableQuery += db
+        } yield ()
+    }
+    def dependencies = modules.map {
+      case (module, _) =>
+        for
+          _ <- deleteDependencies(module.metadata.id)
+          _ <- createDependencies(module.metadata)
+        yield ()
+    }
+
+    val actions = DBIO
+      .seq(
+        DBIO.sequence(createOrUpdateInstant),
+        DBIO.sequence(dependencies)
       )
-    val createOrUpdateInstant = modules.map { module =>
-      for {
-        exists <- existsAction(module)
-        res <-
-          if (exists) updateAction(module, timestamp)
-          else createAction(flat(module), timestamp)
-      } yield res
-    }
-    val updateAfterCreation = modules.map { module =>
-      updateAction(module, timestamp)
-    }
-    val actions = createOrUpdateInstant.appendedAll(updateAfterCreation)
-    db.run(DBIO.sequence(actions).transactionally.map(_.size / 2))
+      .transactionally
+    db.run(actions)
   }
 
   def all(filter: Map[String, Seq[String]]) =
@@ -178,24 +180,6 @@ final class ModuleRepository @Inject() (
               .exists
     retrieve(tableQuery.filter(a => if activeOnly then a.isActive() && poFilter(a) else poFilter(a)))
   }
-
-  private def isMandatoryPOQuery(pos: Seq[String]) =
-    poMandatoryTable.filter(_.po.inSet(pos)).map(_.module)
-
-  private def updateAction(module: Module, timestamp: LocalDateTime) =
-    for {
-      _ <- deleteDependencies(module.metadata.id)
-      _ <- tableQuery
-        .filter(_.id === module.metadata.id)
-        .update(toDbEntry(module, timestamp))
-      _ <- createDependencies(module.metadata)
-    } yield ()
-
-  private def createAction(module: Module, timestamp: LocalDateTime) =
-    for {
-      _ <- tableQuery += toDbEntry(module, timestamp)
-      _ <- createDependencies(module.metadata)
-    } yield ()
 
   def deleteDependencies(moduleId: UUID) =
     for {

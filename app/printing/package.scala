@@ -107,12 +107,7 @@ package object printing {
 
     def unknownLabel = self.fold("Keine Angabe", "Unknown")
 
-    def prerequisitesTextLabel = self.fold("Beschreibung", "Description")
-
     def prerequisitesModuleLabel = self.fold("Module", "Modules")
-
-    def prerequisitesStudyProgramLabel =
-      self.fold("Studiengänge", "Degree Programs")
 
     def semesterLabel = "Semester"
 

@@ -55,7 +55,7 @@ object ModulePublishActor {
     }
 
     override def receive = {
-      case Handle(modules, _) if modules.nonEmpty =>
+      case Handle(modules) if modules.nonEmpty =>
         val (created, updated, _) = partitionByFileStatus(modules)
 
         val res = for {
