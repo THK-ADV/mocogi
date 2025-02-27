@@ -165,10 +165,7 @@ final class ModuleController @Inject() (
 
   def getPreview(id: UUID) =
     auth.async { _ =>
-      getFromPreview(id).map {
-        case Some(p) => Ok(Json.toJson(p))
-        case None    => NotFound
-      }
+      getFromPreview(id).map(x => Ok(Json.toJson(x)))
     }
 
   def getLatest(id: UUID) =
