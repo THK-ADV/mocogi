@@ -10,6 +10,7 @@ import scala.util.Failure
 import scala.util.Success
 
 import git.*
+import git.api.GitCommitApiService
 import git.api.GitFileDownloadService
 import git.publisher.CoreDataPublisher
 import git.publisher.ModulePublisher
@@ -119,6 +120,7 @@ object GitPushEventHandler {
 
   def props(
       downloadService: GitFileDownloadService,
+      commitApiService: GitCommitApiService,
       modulePublisher: ModulePublisher,
       coreDataPublisher: CoreDataPublisher,
       gitConfig: GitConfig,
@@ -126,6 +128,7 @@ object GitPushEventHandler {
   ) = Props(
     new Impl(
       downloadService,
+      commitApiService,
       modulePublisher,
       coreDataPublisher,
       gitConfig,
@@ -135,6 +138,7 @@ object GitPushEventHandler {
 
   private final class Impl(
       downloadService: GitFileDownloadService,
+      commitApiService: GitCommitApiService,
       modulePublisher: ModulePublisher,
       coreDataPublisher: CoreDataPublisher,
       implicit val gitConfig: GitConfig,
@@ -191,14 +195,16 @@ object GitPushEventHandler {
     ) = {
       logger.info(s"downloading ${moduleFiles.size + coreFiles.size} files...")
       val downloadedModuleFiles = Future.sequence(
-        moduleFiles.map(file =>
-          downloadService
-            .downloadFileContentWithLastModified(file.path, branch)
-            .collect {
-              case Some((content, Some(lastModified))) => (file.copy(lastModified = lastModified), content)
-              case Some((content, None))               => (file, content)
-            }
-        )
+        moduleFiles.map { file =>
+          val f = for
+            content      <- downloadService.downloadFileContent(file.path, branch)
+            lastModified <- commitApiService.getCommitDate(file.path, gitConfig.draftBranch)
+          yield (content, lastModified)
+          f.collect {
+            case (Some(content), Some(lastModified)) => (file.copy(lastModified = lastModified), content)
+            case (Some(content), None)               => (file, content)
+          }
+        }
       )
       val downloadedCoreFiles = Future.sequence(
         coreFiles.map(file =>

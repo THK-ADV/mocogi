@@ -1,7 +1,5 @@
 package git.api
 
-import java.net.URLEncoder
-import java.nio.charset.StandardCharsets
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -58,9 +56,6 @@ final class GitFileApiService @Inject() (
           case _   => Future.failed(parseErrorMessage(r))
         }
       }
-
-  private def urlEncoded(path: GitFilePath) =
-    URLEncoder.encode(path.value, StandardCharsets.UTF_8)
 
   private def fileUrlRaw(path: GitFilePath, branch: Branch) =
     s"${config.baseUrl}/projects/${config.projectId}/repository/files/${urlEncoded(path)}/raw?ref=${branch.value}"

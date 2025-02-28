@@ -5,6 +5,7 @@ import javax.inject.Provider
 
 import scala.concurrent.ExecutionContext
 
+import git.api.GitCommitApiService
 import git.api.GitFileDownloadService
 import git.publisher.CoreDataPublisher
 import git.publisher.ModulePublisher
@@ -17,6 +18,7 @@ final class GitMergeEventHandlingActorProvider @Inject() (
     downloadService: GitFileDownloadService,
     modulePublisher: ModulePublisher,
     coreDataPublisher: CoreDataPublisher,
+    commitApiService: GitCommitApiService,
     gitConfig: GitConfig,
     ctx: ExecutionContext
 ) extends Provider[GitPushEventHandler] {
@@ -24,6 +26,7 @@ final class GitMergeEventHandlingActorProvider @Inject() (
     system.actorOf(
       GitPushEventHandler.props(
         downloadService,
+        commitApiService,
         modulePublisher,
         coreDataPublisher,
         gitConfig,

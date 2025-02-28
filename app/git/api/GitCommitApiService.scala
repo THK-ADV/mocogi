@@ -76,6 +76,22 @@ final class GitCommitApiService @Inject() (
       else Future.failed(parseErrorMessage(resp))
     }
 
+  def getCommitDate(path: GitFilePath, branch: Branch): Future[Option[LocalDateTime]] =
+    ws.url(this.commitUrl())
+      .withQueryStringParameters("path" -> path.value, "ref_name" -> branch.value)
+      .withHttpHeaders(tokenHeader(), contentTypeJson())
+      .get()
+      .flatMap { resp =>
+        if resp.status == Status.OK then
+          Future.successful(
+            resp.json
+              .validate[JsArray]
+              .flatMap(_.head.\("committed_date").validate[LocalDateTime])
+              .asOpt
+          )
+        else Future.failed(parseErrorMessage(resp))
+      }
+
   def getCommitDiff(sha: String): Future[List[CommitDiff]] = {
     def parseJson(js: JsValue): List[CommitDiff] =
       js.validate[List[CommitDiff]].fold(_ => List.empty, identity)

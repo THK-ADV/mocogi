@@ -1,6 +1,10 @@
 package git.api
 
+import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
+
 import git.GitConfig
+import git.GitFilePath
 import parser.ParserOps.P0
 import play.api.libs.ws.WSResponse
 
@@ -29,6 +33,9 @@ trait GitService {
 
   def parseNextPaginationUrl(r: WSResponse): Option[String] =
     r.header("Link").flatMap(nextLinkParser.parse(_)._1.fold(_ => None, identity))
+
+  def urlEncoded(path: GitFilePath) =
+    URLEncoder.encode(path.value, StandardCharsets.UTF_8)
 }
 
 object GitService {
