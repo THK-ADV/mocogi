@@ -69,7 +69,7 @@ object ModulePrintingActor {
     }
 
     private def print(
-        lastModified: Option[LocalDateTime],
+        lastModified: LocalDateTime,
         module: Module,
         studyProgram: String => Option[StudyProgramView]
     ): Unit = {

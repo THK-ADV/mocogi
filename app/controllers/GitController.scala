@@ -11,7 +11,6 @@ import auth.AuthorizationAction
 import auth.Role.Admin
 import controllers.actions.PermissionCheck
 import controllers.actions.RoleCheck
-import git.api.GitCommitApiService
 import git.api.GitFileDownloadService
 import git.api.GitRepositoryApiService
 import git.publisher.CoreDataPublisher
@@ -27,7 +26,6 @@ final class GitController @Inject() (
     cc: ControllerComponents,
     downloadService: GitFileDownloadService,
     gitRepositoryApiService: GitRepositoryApiService,
-    gitCommitApiService: GitCommitApiService,
     modulePublisher: ModulePublisher,
     coreDataPublisher: CoreDataPublisher,
     auth: AuthorizationAction,
@@ -45,10 +43,7 @@ final class GitController @Inject() (
           paths.map(path =>
             downloadService
               .downloadFileContent(path, gitConfig.mainBranch)
-              .collect {
-                case Some((content, _)) =>
-                  (GitFile.CoreFile(path, GitFileStatus.Modified), content)
-              }
+              .collect { case Some(content) => (GitFile.CoreFile(path, GitFileStatus.Modified), content) }
           )
         )
       } yield {
@@ -65,17 +60,9 @@ final class GitController @Inject() (
           paths.collect {
             case path if path.isModule(gitConfig) =>
               downloadService
-                .downloadFileContent(path, gitConfig.mainBranch)
-                .flatMap {
-                  case Some((content, Some(lastCommit))) =>
-                    gitCommitApiService.getCommitDate(lastCommit.value).map(d => Some(content, Some(d)))
-                  case Some((content, None)) =>
-                    Future.successful(Some(content, None))
-                  case None =>
-                    Future.successful(None)
-                }
+                .downloadFileContentWithLastModified(path, gitConfig.mainBranch)
                 .collect {
-                  case Some((content, lastModified)) =>
+                  case Some((content, Some(lastModified))) =>
                     val moduleId = path.moduleId(gitConfig)
                     assume(moduleId.isDefined, s"expected module id for ${path.value}")
                     (

@@ -173,13 +173,12 @@ final class ModuleExaminationValidator @Inject() (
                   d.diff.contains(ModuleAssessmentMethodParser.electiveKey) =>
               downloadService
                 .downloadModuleFromPreviewBranch(d.path.moduleId.get)
-                .map(_.map {
-                  case (p, _) =>
-                    (
-                      ModuleCore(p.id.get, p.metadata.title, p.metadata.abbrev),
-                      p.metadata.assessmentMethods,
-                      p.metadata.moduleManagement.toList
-                    )
+                .map(_.map { p =>
+                  (
+                    ModuleCore(p.id.get, p.metadata.title, p.metadata.abbrev),
+                    p.metadata.assessmentMethods,
+                    p.metadata.moduleManagement.toList
+                  )
                 })
           }
         Future.sequence(downloads).map(_.toVector)

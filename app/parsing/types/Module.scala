@@ -102,7 +102,7 @@ object Module {
       )
       .modify(_.normalize())
 
-    def normalize() =
+    def normalize(): Module =
       string
         .andThen(prerequisites)
         .andThen(assessmentMethods)

@@ -15,7 +15,6 @@ import scala.concurrent.Future
 
 import database.repo.core.*
 import database.view.StudyProgramViewRepository
-import git.api.GitCommitApiService
 import git.api.GitDiffApiService
 import git.api.GitFileDownloadService
 import git.GitConfig
@@ -44,7 +43,6 @@ import service.LatexCompiler.getPdf
 final class ModulePreviewService @Inject() (
     diffApiService: GitDiffApiService,
     downloadService: GitFileDownloadService,
-    commitApiService: GitCommitApiService,
     moduleService: ModuleService,
     studyProgramViewRepo: StudyProgramViewRepository,
     moduleTypeRepository: ModuleTypeRepository,
@@ -145,26 +143,17 @@ final class ModulePreviewService @Inject() (
           case d
               if d.path.moduleId.exists(liveModules.contains) ||
                 (d.diff.contains(ModulePOParser.modulePOMandatoryKey) && d.diff.contains(poId)) =>
-            for
-              download <- downloadService.downloadModuleFromPreviewBranch(d.path.moduleId.get)
-              res <- download match
-                case Some((module, commitId)) =>
-                  commitId match
-                    case Some(commitId) =>
-                      commitApiService.getCommitDate(commitId.value).map(d => Some(module, Some(d)))
-                    case None => Future.successful(Some(module, None))
-                case None => Future.successful(None)
-            yield res
+            downloadService.downloadModuleFromPreviewBranchWithLastModified(d.path.moduleId.get)
         }
         Future.sequence(downloads.seq)
       }
       .map(_.collect {
-        case Some((m, lastCommitDate)) if m.metadata.po.mandatory.exists { a =>
+        case Some((m, lastModified)) if m.metadata.po.mandatory.exists { a =>
               po match
                 case po: String                => a.po == po
                 case Specialization(id, _, po) => a.po == po && a.specialization.fold(true)(_ == id)
             } =>
-          (m, lastCommitDate)
+          (m, lastModified)
       }.toSeq)
   }
 

@@ -45,7 +45,8 @@ object ModuleDatabaseActor {
 
     override def receive = {
       case Handle(modules) if modules.nonEmpty =>
-        update(modules.map(m => (m._1, m._2.lastModified.getOrElse(LocalDateTime.now)))).onComplete {
+        val entries = modules.map(m => (m._1, m._2.lastModified))
+        update(entries).onComplete {
           case Success((modules, permissions)) =>
             logger.info(
               s"successfully created or updated $modules modules and ${permissions.size} permission entries"

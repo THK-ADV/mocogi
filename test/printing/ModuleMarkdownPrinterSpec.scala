@@ -86,7 +86,7 @@ final class ModuleMarkdownPrinterSpec extends AnyWordSpec with EitherValues {
       val dePrinter =
         printer.printer(_ => None)(
           PrintingLanguage.German,
-          Some(LocalDateTime.now())
+          LocalDateTime.now()
         )
       val deFile = withFile0("test/printing/res/de-print.md")(identity)
       assert(
@@ -102,7 +102,7 @@ final class ModuleMarkdownPrinterSpec extends AnyWordSpec with EitherValues {
         printer
           .printer(_ => None)(
             PrintingLanguage.English,
-            Some(LocalDateTime.now())
+            LocalDateTime.now()
           )
       val enFile = withFile0("test/printing/res/en-print.md")(identity)
       assert(

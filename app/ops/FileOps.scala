@@ -5,6 +5,7 @@ import java.nio.file.Path
 import java.nio.file.StandardCopyOption
 import java.util.Comparator
 
+import scala.annotation.unused
 import scala.jdk.CollectionConverters.*
 import scala.util.control.NonFatal
 
@@ -63,6 +64,7 @@ object FileOps {
       }
     }
 
+    @unused
     def getFilesOfDirectory(): Vector[Path] =
       Files.walk(self).toList.asScala.toVector.collect {
         case file if !Files.isDirectory(file) => file

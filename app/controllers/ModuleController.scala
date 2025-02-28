@@ -2,6 +2,7 @@ package controllers
 
 import java.nio.file.Files
 import java.nio.file.Paths
+import java.time.LocalDateTime
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -24,11 +25,7 @@ import models.StudyProgramModuleAssociation
 import ops.FutureOps.OptionOps
 import play.api.cache.Cached
 import play.api.i18n.I18nSupport
-import play.api.libs.json.JsArray
-import play.api.libs.json.JsObject
-import play.api.libs.json.JsValue
-import play.api.libs.json.Json
-import play.api.libs.json.Writes
+import play.api.libs.json.*
 import play.api.libs.Files.DefaultTemporaryFileCreator
 import play.api.mvc.AbstractController
 import play.api.mvc.AnyContent
@@ -194,15 +191,15 @@ final class ModuleController @Inject() (
   def getLatestFile(id: UUID) =
     auth.async { implicit r =>
       draftService.getByModuleOpt(id).flatMap {
-        case Some(draft) => printHtml(draft.print, r.lang.toPrintingLang()).map(respondWithFile)
+        case Some(draft) => printHtml(draft.print, draft.lastModified, r.lang.toPrintingLang()).map(respondWithFile)
         case None        => getPreviewFile0(id)
       }
     }
 
-  private def printHtml(print: Print, lang: PrintingLanguage): Future[String] =
+  private def printHtml(print: Print, lastModified: LocalDateTime, lang: PrintingLanguage): Future[String] =
     for
       module <- pipeline.parseValidate(print)
-      output <- printer.print(module, lang, None, PrinterOutputType.HTMLStandalone)
+      output <- printer.print(module, lang, lastModified, PrinterOutputType.HTMLStandalone)
       res <- output match {
         case Left(err)                          => Future.failed(err)
         case Right(PrinterOutput.Text(c, _, _)) => Future.successful(c)
@@ -232,7 +229,7 @@ final class ModuleController @Inject() (
     lang.fold(configReader.deOutputFolderPath, configReader.enOutputFolderPath)
 
   private def getFromPreview(moduleId: UUID) =
-    gitFileDownloadService.downloadModuleFromPreviewBranch(moduleId).map(_.map(_._1))
+    gitFileDownloadService.downloadModuleFromPreviewBranch(moduleId)
 
   private def getStaticFile(moduleId: UUID)(implicit r: Request[AnyContent]) = {
     val filename = s"$moduleId.html"

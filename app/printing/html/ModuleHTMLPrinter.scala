@@ -26,25 +26,25 @@ final class ModuleHTMLPrinter @Inject() (
   def print(
       module: Module,
       lang: PrintingLanguage,
-      localDateTime: Option[LocalDateTime],
+      lastModified: LocalDateTime,
       outputType: PrinterOutputType,
       studyProgram: String => Option[StudyProgramView]
   ): Either[Throwable, PrinterOutput] = printer
-    .printer(studyProgram)(lang, localDateTime)
+    .printer(studyProgram)(lang, lastModified)
     .print(module, new StringBuilder())
     .flatMap(s => pandoc.run(module.metadata.id, outputType, s.toString(), lang))
 
   def print(
       module: Module,
       lang: PrintingLanguage,
-      localDateTime: Option[LocalDateTime],
+      lastModified: LocalDateTime,
       outputType: PrinterOutputType
   ): Future[Either[Throwable, PrinterOutput]] =
     studyProgramViewRepo.all().map { sps =>
       print(
         module,
         lang,
-        localDateTime,
+        lastModified,
         outputType,
         sp => sps.find(_.id == sp)
       )

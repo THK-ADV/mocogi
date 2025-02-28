@@ -1,5 +1,6 @@
 package git.api
 
+import java.time.LocalDateTime
 import java.util.UUID
 import javax.inject.Singleton
 
@@ -7,11 +8,7 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 import com.google.inject.Inject
-import git.Branch
-import git.CommitId
-import git.GitConfig
-import git.GitFileContent
-import git.GitFilePath
+import git.*
 import models.MetadataProtocol
 import models.ModuleProtocol
 import ops.EitherOps.EThrowableOps
@@ -25,6 +22,7 @@ import service.*
 @Singleton
 final class GitFileDownloadService @Inject() (
     private val api: GitFileApiService,
+    private val commitApiService: GitCommitApiService,
     private val pipeline: MetadataPipeline,
     private val printer: ModuleHTMLPrinter,
     private implicit val config: GitConfig,
@@ -33,7 +31,7 @@ final class GitFileDownloadService @Inject() (
 
   def downloadModuleMetadataFromPreviewBranch(path: GitFilePath): Future[Option[(UUID, MetadataProtocol)]] =
     downloadFileContent(path, config.draftBranch).map {
-      case Some((content, _)) =>
+      case Some(content) =>
         val res = RawModuleParser.metadataParser.parse(content.value)._1.toOption
         assert(
           res.isDefined,
@@ -43,38 +41,66 @@ final class GitFileDownloadService @Inject() (
       case None => None
     }
 
-  def downloadModuleFromPreviewBranch(id: UUID): Future[Option[(ModuleProtocol, Option[CommitId])]] =
+  def downloadModuleFromPreviewBranch(id: UUID): Future[Option[ModuleProtocol]] =
     for {
       content <- downloadFileContent(GitFilePath(id), config.draftBranch)
       res <- content match {
-        case Some((content, commitId)) =>
+        case Some(content) =>
           RawModuleParser.parser
             .parse(content.value)
             ._1
-            .map(a => Some(a, commitId))
+            .map(Some.apply)
             .toFuture
         case None =>
           Future.successful(None)
       }
     } yield res
 
-  def downloadFileContent(path: GitFilePath, branch: Branch): Future[Option[(GitFileContent, Option[CommitId])]] =
-    api.download(path, branch)
-
-  def downloadModuleFromPreviewBranchAsHTML(
-      module: UUID
-  )(implicit lang: PrintingLanguage): Future[Option[String]] =
+  def downloadModuleFromPreviewBranchWithLastModified(
+      id: UUID
+  ): Future[Option[(ModuleProtocol, Option[LocalDateTime])]] =
     for {
-      content <- downloadFileContent(GitFilePath(module), config.draftBranch)
+      content <- downloadFileContentWithLastModified(GitFilePath(id), config.draftBranch)
       res <- content match {
-        case Some((content, _)) =>
+        case Some((content, lastModified)) =>
+          RawModuleParser.parser
+            .parse(content.value)
+            ._1
+            .map(a => Some(a, lastModified))
+            .toFuture
+        case None =>
+          Future.successful(None)
+      }
+    } yield res
+
+  def downloadFileContent(path: GitFilePath, branch: Branch): Future[Option[GitFileContent]] =
+    api.download(path, branch).map(_.map(_._1))
+
+  def downloadFileContentWithLastModified(
+      path: GitFilePath,
+      branch: Branch
+  ): Future[Option[(GitFileContent, Option[LocalDateTime])]] =
+    api.download(path, branch).flatMap {
+      case Some((content, Some(lastCommit))) =>
+        commitApiService.getCommitDate(lastCommit.value).map(d => Some(content, Some(d)))
+      case Some((content, None)) =>
+        Future.successful(Some(content, None))
+      case None =>
+        Future.successful(None)
+    }
+
+  def downloadModuleFromPreviewBranchAsHTML(module: UUID)(implicit lang: PrintingLanguage): Future[Option[String]] =
+    for {
+      content <- downloadFileContentWithLastModified(GitFilePath(module), config.draftBranch)
+      res <- content match {
+        case Some((content, lastModified)) =>
           for {
             module <- pipeline.parseValidate(Print(content.value))
             output <- printer
               .print(
                 module,
                 lang,
-                None,
+                lastModified.getOrElse(LocalDateTime.now),
                 PrinterOutputType.HTMLStandalone
               )
             res <- output match {

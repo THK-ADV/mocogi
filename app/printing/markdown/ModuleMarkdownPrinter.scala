@@ -201,9 +201,7 @@ final class ModuleMarkdownPrinter(
     fmtPOs(language.poLabel, m.pos, studyProgram)
 
   private def lastModified(implicit lang: PrintingLanguage, localDateTime: LocalDateTime) =
-    prefix(
-      s"${lang.lastModifiedLabel} ${localDateTime.format(localDatePattern)}"
-    )
+    prefix(s"${lang.lastModifiedLabel} ${localDateTime.format(localDatePattern)}")
 
   private def header(implicit m: Metadata) =
     prefix("# ").skip(prefix(m.title))
@@ -256,7 +254,7 @@ final class ModuleMarkdownPrinter(
 
   def printer(
       studyProgram: String => Option[StudyProgramView]
-  )(implicit lang: PrintingLanguage, localDateTime: Option[LocalDateTime]): Printer[Module] =
+  )(implicit lang: PrintingLanguage, lastModified: LocalDateTime): Printer[Module] =
     Printer {
       case (module, input) =>
         implicit val m: Metadata  = module.metadata
@@ -287,9 +285,7 @@ final class ModuleMarkdownPrinter(
           .skip(teachingAndLearningMethods(module.deContent, module.enContent))
           .skip(recommendedReading(module.deContent, module.enContent))
           .skip(particularities(module.deContent, module.enContent))
-          .skipOpt(
-            localDateTime.map(d => prefix("---").skip(newline.repeat(2)).skip(lastModified(lang, d)))
-          )
+          .skip(prefix("---").skip(newline.repeat(2)).skip(this.lastModified(lang, lastModified)))
           .print((), input)
     }
 }

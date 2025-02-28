@@ -1,5 +1,6 @@
 package webhook
 
+import java.time.LocalDateTime
 import javax.inject.Singleton
 
 import scala.collection.mutable.ListBuffer
@@ -48,24 +49,21 @@ object GitPushEventHandler {
       .map(_.split("/").last)
       .map(Branch.apply)
 
-  def parseFilesOfLastCommit(
-      json: JsValue,
-      lastCommit: CommitId
-  ) =
+  def parseFilesOfLastCommit(json: JsValue, lastCommit: CommitId) =
     for {
       commits <- json.\("commits").validate[JsArray]
-      mergeCommit <- commits.value.find(
-        _.\("id").validate[String].map(_ == lastCommit.value).getOrElse(false)
-      ) match {
+      mergeCommit <- commits.value.find(_.\("id").validate[String].map(_ == lastCommit.value).getOrElse(false)) match {
         case Some(commit) =>
           for {
-            added    <- commit.\("added").validate[List[String]]
-            modified <- commit.\("modified").validate[List[String]]
-            removed  <- commit.\("removed").validate[List[String]]
+            added     <- commit.\("added").validate[List[String]]
+            modified  <- commit.\("modified").validate[List[String]]
+            removed   <- commit.\("removed").validate[List[String]]
+            timestamp <- commit.\("timestamp").validate[LocalDateTime]
           } yield (
             added.map(GitFilePath.apply),
             modified.map(GitFilePath.apply),
             removed.map(GitFilePath.apply),
+            timestamp
           )
         case None => JsError(s"expected commit with id ${lastCommit.value}")
       }
@@ -73,30 +71,26 @@ object GitPushEventHandler {
 
   def parse(json: JsValue)(implicit gitConfig: GitConfig) =
     for {
-      branch                     <- parseBranch(json)
-      afterCommit                <- parseCommit(json, "after")
-      _                          <- parseCommit(json, "before")
-      (added, modified, deleted) <- parseFilesOfLastCommit(json, afterCommit)
+      branch                                <- parseBranch(json)
+      afterCommit                           <- parseCommit(json, "after")
+      _                                     <- parseCommit(json, "before")
+      (added, modified, deleted, timestamp) <- parseFilesOfLastCommit(json, afterCommit)
     } yield (
       branch,
-      GitChanges(toGitFiles(added, modified, deleted), afterCommit)
+      GitChanges(toGitFiles(added, modified, deleted, timestamp), afterCommit)
     )
 
   def toGitFiles(
       added: List[GitFilePath],
       modified: List[GitFilePath],
-      deleted: List[GitFilePath]
+      deleted: List[GitFilePath],
+      timestamp: LocalDateTime
   )(implicit gitConfig: GitConfig): List[GitFile] = {
     val builder = ListBuffer.empty[GitFile]
     added.foreach { path =>
       val status = GitFileStatus.Added
       builder += path.fold(
-        GitFile.ModuleFile(
-          path,
-          _,
-          status,
-          None
-        ), // TODO retrieve real last modified date for the file. it will be overridden otherwise
+        GitFile.ModuleFile(path, _, status, timestamp),
         GitFile.CoreFile(path, status),
         GitFile.ModuleCatalogFile(path, status),
         GitFile.Other(path, status)
@@ -105,12 +99,7 @@ object GitPushEventHandler {
     modified.foreach { path =>
       val status = GitFileStatus.Modified
       builder += path.fold(
-        GitFile.ModuleFile(
-          path,
-          _,
-          status,
-          None
-        ), // TODO retrieve real last modified date for the file. it will be overridden otherwise
+        GitFile.ModuleFile(path, _, status, timestamp),
         GitFile.CoreFile(path, status),
         GitFile.ModuleCatalogFile(path, status),
         GitFile.Other(path, status)
@@ -119,12 +108,7 @@ object GitPushEventHandler {
     deleted.foreach { path =>
       val status = GitFileStatus.Removed
       builder += path.fold(
-        GitFile.ModuleFile(
-          path,
-          _,
-          status,
-          None
-        ), // TODO retrieve real last modified date for the file. it will be overridden otherwise
+        GitFile.ModuleFile(path, _, status, timestamp),
         GitFile.CoreFile(path, status),
         GitFile.ModuleCatalogFile(path, status),
         GitFile.Other(path, status)
@@ -165,15 +149,12 @@ object GitPushEventHandler {
         parse(json) match {
           case JsSuccess((branch, gitChanges), _) =>
             if (!branch.isMainBranch) {
-              logger.info(
-                s"can't handle action on branch ${branch.value}"
-              )
+              logger.info(s"can't handle action on branch ${branch.value}")
             } else {
               val (moduleFiles, coreFiles) = filesToDownload(gitChanges.entries)
               if (moduleFiles.isEmpty && coreFiles.isEmpty) {
                 logger.info("can't handle empty changes")
               } else {
-                // Proceed with created or modified files. Deleted files are ignored
                 downloadGitFiles(branch, moduleFiles, coreFiles).onComplete {
                   case Success((moduleFiles, coreFiles)) =>
                     modulePublisher.notifySubscribers(moduleFiles)
@@ -189,6 +170,7 @@ object GitPushEventHandler {
         }
     }
 
+    // Proceed with created or modified files. Deleted files are ignored
     private def filesToDownload(files: List[GitFile]) = {
       val moduleFiles = ListBuffer.empty[GitFile.ModuleFile]
       val coreFiles   = ListBuffer.empty[GitFile.CoreFile]
@@ -211,15 +193,18 @@ object GitPushEventHandler {
       val downloadedModuleFiles = Future.sequence(
         moduleFiles.map(file =>
           downloadService
-            .downloadFileContent(file.path, branch)
-            .collect { case Some((content, _)) => (file, content) }
+            .downloadFileContentWithLastModified(file.path, branch)
+            .collect {
+              case Some((content, Some(lastModified))) => (file.copy(lastModified = lastModified), content)
+              case Some((content, None))               => (file, content)
+            }
         )
       )
       val downloadedCoreFiles = Future.sequence(
         coreFiles.map(file =>
           downloadService
             .downloadFileContent(file.path, branch)
-            .collect { case Some((content, _)) => (file, content) }
+            .collect { case Some(content) => (file, content) }
         )
       )
       for {
