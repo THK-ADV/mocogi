@@ -4,6 +4,7 @@ import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
 
+import scala.collection.mutable.ListBuffer
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
@@ -23,18 +24,13 @@ final class ModuleUpdatePermissionService @Inject() (
     implicit val ctx: ExecutionContext
 ) {
   def overrideInherited(modules: Seq[(UUID, NonEmptyList[Identity])]) = {
-    def entries() =
-      modules.flatMap {
-        case (module, management) =>
-          management.collect {
-            case p: Identity.Person if p.username.isDefined =>
-              (module, CampusId(p.username.get), Inherited)
-          }
-      }
-    for {
-      _       <- repo.deleteByModules(modules.map(_._1), Inherited)
-      created <- repo.createMany(entries().toList)
-    } yield created
+    val entries = ListBuffer[(UUID, Seq[CampusId])]()
+    modules.foreach {
+      case (m, id) =>
+        val campusIds = id.collect { case i if i.username.isDefined => CampusId(i.username.get) }
+        entries.append((m, campusIds))
+    }
+    Future.sequence(entries.toList.map { case (m, ids) => replace(m, ids, Inherited) }).map(_ => ())
   }
 
   def replace(

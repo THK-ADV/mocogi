@@ -47,10 +47,8 @@ object ModuleDatabaseActor {
       case Handle(modules) if modules.nonEmpty =>
         val entries = modules.map(m => (m._1, m._2.lastModified))
         update(entries).onComplete {
-          case Success((modules, permissions)) =>
-            logger.info(
-              s"successfully created or updated $modules modules and ${permissions.size} permission entries"
-            )
+          case Success(_) =>
+            logger.info(s"successfully created or updated ${entries.size} modules")
           case Failure(e) =>
             logger.error(
               s"""failed to create or update metadata
@@ -64,9 +62,9 @@ object ModuleDatabaseActor {
 
     private def update(modules: Seq[(Module, LocalDateTime)]) =
       for {
-        created <- moduleService.createOrUpdateMany(modules)
-        _       <- moduleViewRepository.refreshView()
-        permissions <- moduleUpdatePermissionService.overrideInherited(
+        _ <- moduleService.createOrUpdateMany(modules)
+        _ <- moduleViewRepository.refreshView()
+        _ <- moduleUpdatePermissionService.overrideInherited(
           modules.map {
             case (module, _) =>
               (
@@ -76,6 +74,6 @@ object ModuleDatabaseActor {
           }
         )
         _ <- moduleCreationService.deleteMany(modules.map(_._1.metadata.id))
-      } yield (created, permissions)
+      } yield ()
   }
 }
