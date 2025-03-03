@@ -10,7 +10,6 @@ import com.google.inject.Inject
 import database.repo.core.StudyProgramPersonRepository
 import database.table.ModuleDraftTable
 import database.table.ModuleReviewTable
-import models.core.Identity
 import models.ModuleReviewStatus
 import models.ModuleReviewStatus.Pending
 import play.api.db.slick.DatabaseConfigProvider
@@ -26,7 +25,7 @@ final class ModuleApprovalRepository @Inject() (
 
   import database.table.moduleReviewStatusColumnType
   import database.table.universityRoleColumnType
-  import profile.api._
+  import profile.api.*
 
   private def tableQuery = TableQuery[ModuleReviewTable]
 
@@ -71,7 +70,7 @@ final class ModuleApprovalRepository @Inject() (
       .on(_._1.moduleDraft === _._1.moduleDraft)
       .join(moduleDraftTable)
       .on(_._1._1.moduleDraft === _.module)
-      .flatMap(a => a._2.authorFk.filter(_.kind === Identity.PersonKind).map(a -> _))
+      .flatMap(a => a._2.authorFk.filter(_.isPerson).map(a -> _))
       .map {
         case ((((r, spp), _), d), p) =>
           (

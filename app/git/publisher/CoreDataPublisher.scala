@@ -32,11 +32,7 @@ object CoreDataPublisher {
       moduleTypeService: ModuleTypeService,
       seasonService: SeasonService,
       identityService: IdentityService,
-      focusAreaService: FocusAreaService,
-      globalCriteriaService: GlobalCriteriaService,
       poService: POService,
-      competenceService: CompetenceService,
-      facultyService: FacultyService,
       degreeService: DegreeService,
       studyProgramService: StudyProgramService,
       specializationService: SpecializationService,
@@ -53,11 +49,7 @@ object CoreDataPublisher {
         moduleTypeService,
         seasonService,
         identityService,
-        focusAreaService,
-        globalCriteriaService,
         poService,
-        competenceService,
-        facultyService,
         degreeService,
         studyProgramService,
         specializationService,
@@ -69,20 +61,16 @@ object CoreDataPublisher {
     )
 
   private object Filenames {
-    val location        = "location"
-    val lang            = "lang"
-    val status          = "status"
-    val module_type     = "module_type"
-    val season          = "season"
-    val person          = "person"
-    val focus_area      = "focus_area"
-    val global_criteria = "global_criteria"
-    val po              = "po"
-    val competence      = "competence"
-    val faculty         = "faculty"
-    val grade           = "grade"
-    val program         = "program"
-    val specialization  = "specialization"
+    val location       = "location"
+    val lang           = "lang"
+    val status         = "status"
+    val module_type    = "module_type"
+    val season         = "season"
+    val person         = "person"
+    val po             = "po"
+    val grade          = "grade"
+    val program        = "program"
+    val specialization = "specialization"
   }
 
   private class Graph[A](vertices: List[A], edges: List[(Int, Int)]) {
@@ -112,11 +100,9 @@ object CoreDataPublisher {
   }
 
   private def coreFileDependencies = Map(
-    Filenames.person         -> List(Filenames.faculty),
     Filenames.program        -> List(Filenames.grade, Filenames.person),
     Filenames.po             -> List(Filenames.program),
     Filenames.specialization -> List(Filenames.po),
-    Filenames.focus_area     -> List(Filenames.program)
   )
 
   def toCreate(e: Seq[String], v: Seq[String]) =
@@ -153,11 +139,7 @@ object CoreDataPublisher {
       private val moduleTypeService: ModuleTypeService,
       private val seasonService: SeasonService,
       private val identityService: IdentityService,
-      private val focusAreaService: FocusAreaService,
-      private val globalCriteriaService: GlobalCriteriaService,
       private val poService: POService,
-      private val competenceService: CompetenceService,
-      private val facultyService: FacultyService,
       private val degreeService: DegreeService,
       private val studyProgramService: StudyProgramService,
       private val specializationService: SpecializationService,
@@ -285,22 +267,6 @@ object CoreDataPublisher {
             identityService.repo.deleteMany,
             publishActor.publishIdentities
           )
-        case Filenames.focus_area =>
-          go(
-            focusAreaService.repo.allIds(),
-            focusAreaService,
-            GenLens[FocusArea](_.id),
-            focusAreaService.repo.deleteMany,
-            publishActor.publishFocusAreas
-          )
-        case Filenames.global_criteria =>
-          go(
-            globalCriteriaService.repo.allIds(),
-            globalCriteriaService,
-            GenLens[ModuleGlobalCriteria](_.id),
-            globalCriteriaService.repo.deleteMany,
-            publishActor.publishModuleGlobalCriteria
-          )
         case Filenames.po =>
           go(
             poService.repo.allIds(),
@@ -308,22 +274,6 @@ object CoreDataPublisher {
             GenLens[PO](_.id),
             poService.repo.deleteMany,
             publishActor.publishPOs
-          )
-        case Filenames.competence =>
-          go(
-            competenceService.repo.allIds(),
-            competenceService,
-            GenLens[ModuleCompetence](_.id),
-            competenceService.repo.deleteMany,
-            publishActor.publishModuleCompetences
-          )
-        case Filenames.faculty =>
-          go(
-            facultyService.repo.allIds(),
-            facultyService,
-            GenLens[Faculty](_.id),
-            facultyService.repo.deleteMany,
-            publishActor.publishFaculties
           )
         case Filenames.grade =>
           go(

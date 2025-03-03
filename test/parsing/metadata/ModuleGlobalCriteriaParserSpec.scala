@@ -1,6 +1,5 @@
 package parsing.metadata
 
-import helper.FakeGlobalCriteria
 import models.core.ModuleGlobalCriteria
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatest.EitherValues
@@ -8,11 +7,7 @@ import parsing.metadata.ModuleGlobalCriteriaParser.parser
 import parsing.metadata.ModuleGlobalCriteriaParser.raw
 import parsing.ParserSpecHelper
 
-final class ModuleGlobalCriteriaParserSpec
-    extends AnyWordSpec
-    with ParserSpecHelper
-    with EitherValues
-    with FakeGlobalCriteria {
+final class ModuleGlobalCriteriaParserSpec extends AnyWordSpec with ParserSpecHelper with EitherValues {
   "A Global Criteria Parser" should {
     "parse multiple global criteria" in {
       val input =
@@ -25,17 +20,17 @@ final class ModuleGlobalCriteriaParserSpec
         res.value == List(
           ModuleGlobalCriteria(
             "internationalization",
-            "Internationalisierung",
-            "...",
-            "Internationalization",
-            "..."
+            "",
+            "",
+            "",
+            ""
           ),
           ModuleGlobalCriteria(
             "digitization",
-            "Digitalisierung",
-            "...",
-            "Digitization",
-            "..."
+            "",
+            "",
+            "",
+            ""
           )
         )
       )

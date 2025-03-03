@@ -30,9 +30,7 @@ trait Repository[Input, Output, T <: slick.jdbc.PostgresProfile.api.Table[Input]
   private def createOrUpdateQuery(l: Input) =
     tableQuery.returning(tableQuery).insertOrUpdate(l).map(_ => l)
 
-  def createOrUpdateMany(
-      ls: Seq[Input]
-  ): Future[Seq[Input]] =
+  def createOrUpdateMany(ls: Seq[Input]): Future[Seq[Input]] =
     db.run(DBIO.sequence(ls.map(l => createOrUpdateQuery(l))))
 
   def createMany(ls: Seq[Input]): Future[Seq[Input]] =

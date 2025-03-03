@@ -3,11 +3,11 @@ package parsing.metadata
 import javax.inject.Inject
 import javax.inject.Singleton
 
-import models.core._
+import models.core.*
 import parser.Parser
-import parser.Parser._
-import parser.ParserOps._
-import parsing.types._
+import parser.Parser.*
+import parser.ParserOps.*
+import parsing.types.*
 import printer.Printer
 
 @Singleton
@@ -32,9 +32,6 @@ final class MetadataCompositeParser @Inject() (
       moduleTypes: Seq[ModuleType],
       seasons: Seq[Season],
       identities: Seq[Identity],
-      focusAreas: Seq[FocusAreaID],
-      competences: Seq[ModuleCompetence],
-      globalCriteria: Seq[ModuleGlobalCriteria],
       pos: Seq[PO],
       specializations: Seq[Specialization]
   ): Parser[ParsedMetadata] =

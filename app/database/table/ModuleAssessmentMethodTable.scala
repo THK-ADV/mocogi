@@ -2,22 +2,20 @@ package database.table
 
 import java.util.UUID
 
-import models.AssessmentMethodType
 import slick.jdbc.PostgresProfile.api.*
 
 case class ModuleAssessmentMethodDbEntry(
     id: UUID,
     module: UUID,
     assessmentMethod: String,
-    assessmentMethodType: AssessmentMethodType,
-    percentage: Option[Double]
+    percentage: Option[Double],
+    precondition: Option[List[String]]
 )
 
 final class ModuleAssessmentMethodTable(tag: Tag)
-    extends Table[ModuleAssessmentMethodDbEntry](
-      tag,
-      "module_assessment_method"
-    ) {
+    extends Table[ModuleAssessmentMethodDbEntry](tag, "module_assessment_method") {
+
+  import database.MyPostgresProfile.MyAPI.simpleStrListTypeMapper
 
   def id = column[UUID]("id", O.PrimaryKey)
 
@@ -25,16 +23,15 @@ final class ModuleAssessmentMethodTable(tag: Tag)
 
   def assessmentMethod = column[String]("assessment_method")
 
-  def assessmentMethodType =
-    column[AssessmentMethodType]("assessment_method_type")
-
   def percentage = column[Option[Double]]("percentage")
+
+  def precondition = column[Option[List[String]]]("precondition")
 
   override def * = (
     id,
     module,
     assessmentMethod,
-    assessmentMethodType,
-    percentage
+    percentage,
+    precondition
   ) <> (ModuleAssessmentMethodDbEntry.apply, ModuleAssessmentMethodDbEntry.unapply)
 }

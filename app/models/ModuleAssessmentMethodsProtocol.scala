@@ -5,7 +5,7 @@ import play.api.libs.json.Json
 
 case class ModuleAssessmentMethodsProtocol(
     mandatory: List[ModuleAssessmentMethodEntryProtocol],
-    optional: List[ModuleAssessmentMethodEntryProtocol]
+    @Deprecated(forRemoval = true) optional: List[ModuleAssessmentMethodEntryProtocol]
 )
 
 object ModuleAssessmentMethodsProtocol {

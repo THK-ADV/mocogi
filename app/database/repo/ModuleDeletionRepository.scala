@@ -47,9 +47,7 @@ final class ModuleDeletionRepository @Inject() (
         }
       }
     val action = for
-      _ <- moduleRepository.deleteDependencies(
-        module
-      ) // there might be a chance that the module is referenced in "prerequisites_module" table. this is not considered
+      _ <- moduleRepository.deleteDependencies(module)
       _ <- moduleRepository.tableQuery.filter(_.id === module).delete
       moduleDraftQuery = TableQuery[ModuleDraftTable].filter(_.module === module)
       _ <- TableQuery[ModuleReviewTable].filter(_.moduleDraft.in(moduleDraftQuery.map(_.module))).delete

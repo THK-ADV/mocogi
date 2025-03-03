@@ -29,8 +29,8 @@ case class ModuleDraft(
     author: String,
     branch: Branch,
     source: ModuleDraftSource,
-    data: JsValue,
-    validated: JsValue,
+    moduleJson: JsValue,
+    moduleJsonValidated: JsValue,
     print: Print,
     keysToBeReviewed: Set[String],
     modifiedKeys: Set[String],
@@ -42,7 +42,7 @@ case class ModuleDraft(
 object ModuleDraft {
   final implicit class Ops(private val self: ModuleDraft) extends AnyVal {
     def protocol(): ModuleProtocol =
-      ModuleJson.reads.reads(self.data) match {
+      ModuleJson.reads.reads(self.moduleJson) match {
         case JsSuccess(value, _) => value.toProtocol
         case JsError(_) =>
           throw new Exception(

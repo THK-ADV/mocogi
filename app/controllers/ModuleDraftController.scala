@@ -167,7 +167,7 @@ final class ModuleDraftController @Inject() (
         "module" -> d.module,
         "author" -> d.author,
         "status" -> d.source,
-        "data"   -> d.data,
+        "data"   -> d.moduleJson,
         "keysToBeReviewed" -> d.keysToBeReviewed
           .map(moduleKeyToJson(_, messages)),
         "mergeRequestId" -> d.mergeRequest.map(_._1.value),

@@ -2,7 +2,7 @@ package database.table
 
 import java.util.UUID
 
-import slick.jdbc.PostgresProfile.api._
+import slick.jdbc.PostgresProfile.api.*
 
 case class ModulePOMandatoryDbEntry(
     id: UUID,
@@ -13,6 +13,8 @@ case class ModulePOMandatoryDbEntry(
 )
 
 final class ModulePOMandatoryTable(tag: Tag) extends Table[ModulePOMandatoryDbEntry](tag, "module_po_mandatory") {
+
+  import database.MyPostgresProfile.MyAPI.simpleIntListTypeMapper
 
   def fullPo = specialization.fold(po)(identity)
 

@@ -8,12 +8,32 @@ import git.Branch
 import git.CommitId
 import git.MergeRequestId
 import git.MergeRequestStatus
-import models._
+import models.*
 import play.api.libs.json.JsValue
 import service.Print
-import slick.jdbc.PostgresProfile.api._
+import slick.jdbc.PostgresProfile.api.*
+
+object ModuleDraftTable {
+  given BaseColumnType[Set[String]] =
+    MappedColumnType
+      .base[Set[String], String](
+        xs => if (xs.isEmpty) "" else xs.mkString(","),
+        s => {
+          if (s.isEmpty) Set.empty
+          else
+            s.split(",").foldLeft(Set.empty[String]) {
+              case (acc, s) =>
+                acc.+(s)
+            }
+        }
+      )
+}
 
 final class ModuleDraftTable(tag: Tag) extends Table[ModuleDraft](tag, "module_draft") {
+
+  import database.MyPostgresProfile.MyAPI.playJsonTypeMapper
+  import ModuleDraftTable.given_BaseColumnType_Set
+
   def module = column[UUID]("module", O.PrimaryKey)
 
   def moduleTitle = column[String]("module_title")
@@ -26,11 +46,11 @@ final class ModuleDraftTable(tag: Tag) extends Table[ModuleDraft](tag, "module_d
 
   def source = column[ModuleDraftSource]("source")
 
-  def data = column[JsValue]("module_json")
+  def moduleJson = column[JsValue]("module_json")
 
-  def moduleValidated = column[JsValue]("module_validated_json")
+  def moduleJsonValidated = column[JsValue]("module_json_validated")
 
-  def modulePrint = column[Print]("module_validated_print")
+  def modulePrint = column[Print]("module_print")
 
   def keysToBeReviewed = column[Set[String]]("keys_to_be_reviewed")
 
@@ -58,8 +78,8 @@ final class ModuleDraftTable(tag: Tag) extends Table[ModuleDraft](tag, "module_d
       author,
       branch,
       source,
-      data,
-      moduleValidated,
+      moduleJson,
+      moduleJsonValidated,
       modulePrint,
       keysToBeReviewed,
       modifiedKeys,
@@ -95,8 +115,8 @@ final class ModuleDraftTable(tag: Tag) extends Table[ModuleDraft](tag, "module_d
           author,
           branch,
           source,
-          data,
-          moduleValidated,
+          moduleJson,
+          moduleJsonValidated,
           modulePrint,
           keysToBeReviewed,
           modifiedKeys,
@@ -112,8 +132,8 @@ final class ModuleDraftTable(tag: Tag) extends Table[ModuleDraft](tag, "module_d
         author,
         branch,
         source,
-        data,
-        moduleValidated,
+        moduleJson,
+        moduleJsonValidated,
         modulePrint,
         keysToBeReviewed,
         modifiedKeys,
@@ -150,8 +170,8 @@ final class ModuleDraftTable(tag: Tag) extends Table[ModuleDraft](tag, "module_d
         d.author,
         d.branch,
         d.source,
-        d.data,
-        d.validated,
+        d.moduleJson,
+        d.moduleJsonValidated,
         d.print,
         d.keysToBeReviewed,
         d.modifiedKeys,

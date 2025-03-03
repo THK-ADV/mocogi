@@ -1,89 +1,73 @@
 package database.table.core
 
-import models.core.PersonStatus
+import models.core.Identity
+import models.EmploymentType
 import slick.jdbc.PostgresProfile.api.*
 
+// TODO reorder
 case class IdentityDbEntry(
     id: String,
-    lastname: String,
-    firstname: String,
+    lastname: Option[String],
+    firstname: Option[String],
     title: String,
-    faculties: List[String],
-    abbreviation: String,
+    faculties: Option[List[String]],
+    abbreviation: Option[String],
     campusId: Option[String],
-    status: PersonStatus,
-    kind: String
-)
+    isActive: Boolean,
+    kind: String,
+    employmentType: Option[EmploymentType],
+    imageUrl: Option[String],
+    websiteUrl: Option[String],
+) {
+  def isPerson = this.kind == Identity.PersonKind
+}
 
 final class IdentityTable(tag: Tag) extends Table[IdentityDbEntry](tag, "identity") {
 
+  import database.MyPostgresProfile.MyAPI.simpleStrListTypeMapper
+
+  given BaseColumnType[EmploymentType] =
+    MappedColumnType.base[EmploymentType, String](_.id, EmploymentType.apply)
+
   def id = column[String]("id", O.PrimaryKey)
 
-  def lastname = column[String]("lastname")
+  def lastname = column[Option[String]]("lastname")
 
-  def firstname = column[String]("firstname")
+  def firstname = column[Option[String]]("firstname")
 
   def title = column[String]("title")
 
-  def abbreviation = column[String]("abbreviation")
+  def faculties = column[Option[List[String]]]("faculties")
 
-  def status = column[String]("status")
+  def abbreviation = column[Option[String]]("abbreviation")
+
+  def campusId = column[Option[String]]("campus_id")
+
+  def isActive = column[Boolean]("is_active")
 
   def kind = column[String]("kind")
 
-  def campusId = column[Option[String]]("campus_id")
+  def employmentType = column[Option[EmploymentType]]("employment_type")
+
+  def imageUrl = column[Option[String]]("image_url")
+
+  def websiteUrl = column[Option[String]]("website_url")
+
+  def isPerson: Rep[Boolean] =
+    this.kind === Identity.PersonKind
 
   override def * = (
     id,
     lastname,
     firstname,
     title,
+    faculties,
     abbreviation,
-    status,
+    campusId,
+    isActive,
     kind,
-    campusId
-  ) <> (mapRow, unmapRow)
-
-  def mapRow: (
-      (String, String, String, String, String, String, String, Option[String])
-  ) => IdentityDbEntry = {
-    case (
-          id,
-          lastname,
-          firstname,
-          title,
-          abbreviation,
-          status,
-          kind,
-          campusId
-        ) =>
-      IdentityDbEntry(
-        id,
-        lastname,
-        firstname,
-        title,
-        Nil,
-        abbreviation,
-        campusId,
-        PersonStatus(status),
-        kind
-      )
-  }
-
-  def unmapRow: IdentityDbEntry => Option[
-    (String, String, String, String, String, String, String, Option[String])
-  ] = { a =>
-    Option(
-      (
-        a.id,
-        a.lastname,
-        a.firstname,
-        a.title,
-        a.abbreviation,
-        a.status.toString,
-        a.kind,
-        a.campusId
-      )
-    )
-  }
+    employmentType,
+    imageUrl,
+    websiteUrl
+  ) <> (IdentityDbEntry.apply, IdentityDbEntry.unapply)
 }

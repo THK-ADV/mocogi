@@ -5,9 +5,14 @@ import java.util.UUID
 
 import cats.data.NonEmptyList
 import models.Examiner
+import models.ModulePrerequisiteEntryProtocol
 import models.ModuleWorkload
 import parsing.types.ModuleContent
-import slick.jdbc.PostgresProfile.api._
+import parsing.types.ModuleParticipants
+import play.api.libs.json.Format
+import play.api.libs.json.JsValue
+import play.api.libs.json.Json
+import slick.jdbc.PostgresProfile.api.*
 
 case class ModuleDbEntry(
     id: UUID,
@@ -22,15 +27,21 @@ case class ModuleDbEntry(
     workload: ModuleWorkload,
     status: String,
     location: String,
-    participantsMin: Option[Int],
-    participantsMax: Option[Int],
     examiner: Examiner.ID,
     examPhases: NonEmptyList[String],
+    participants: Option[ModuleParticipants],
+    recommendedPrerequisites: Option[ModulePrerequisiteEntryProtocol],
+    requiredPrerequisites: Option[ModulePrerequisiteEntryProtocol],
     deContent: ModuleContent,
     enContent: ModuleContent
 )
 
 final class ModuleTable(tag: Tag) extends Table[ModuleDbEntry](tag, "module") {
+
+  import database.MyPostgresProfile.MyAPI.playJsonTypeMapper
+  import database.MyPostgresProfile.MyAPI.simpleStrListTypeMapper
+
+  given Format[ModuleWorkload] = Json.format[ModuleWorkload]
 
   def id = column[UUID]("id", O.PrimaryKey)
 
@@ -50,29 +61,23 @@ final class ModuleTable(tag: Tag) extends Table[ModuleDbEntry](tag, "module") {
 
   def season = column[String]("season")
 
-  def workloadLecture = column[Int]("workload_lecture")
-
-  def workloadSeminar = column[Int]("workload_seminar")
-
-  def workloadPractical = column[Int]("workload_practical")
-
-  def workloadExercise = column[Int]("workload_exercise")
-
-  def workloadProjectSupervision = column[Int]("workload_project_supervision")
-
-  def workloadProjectWork = column[Int]("workload_project_work")
-
-  def workloadSelfStudy = column[Int]("workload_self_study")
-
-  def workloadTotal = column[Int]("workload_total")
+  def workload = column[JsValue]("workload")
 
   def status = column[String]("status")
 
   def location = column[String]("location")
 
-  def participantsMin = column[Option[Int]]("participants_min")
+  def firstExaminer = column[String]("first_examiner")
 
-  def participantsMax = column[Option[Int]]("participants_max")
+  def secondExaminer = column[String]("second_examiner")
+
+  def examPhases = column[List[String]]("exam_phases")
+
+  def participants = column[Option[JsValue]]("participants")
+
+  def recommendedPrerequisites = column[Option[JsValue]]("recommended_prerequisites")
+
+  def requiredPrerequisites = column[Option[JsValue]]("required_prerequisites")
 
   def learningOutcomeDe = column[String]("learning_outcome_de")
 
@@ -94,12 +99,6 @@ final class ModuleTable(tag: Tag) extends Table[ModuleDbEntry](tag, "module") {
 
   def particularitiesEn = column[String]("particularities_en")
 
-  def firstExaminer = column[String]("first_examiner")
-
-  def secondExaminer = column[String]("second_examiner")
-
-  def examPhases = column[List[String]]("exam_phases")
-
   def isActive(): Rep[Boolean] =
     this.status === "active"
 
@@ -113,40 +112,19 @@ final class ModuleTable(tag: Tag) extends Table[ModuleDbEntry](tag, "module") {
     language,
     duration,
     season,
-    (
-      workloadLecture,
-      workloadSeminar,
-      workloadPractical,
-      workloadExercise,
-      workloadProjectSupervision,
-      workloadProjectWork,
-      workloadSelfStudy,
-      workloadTotal
-    ),
+    workload,
     status,
     location,
-    (participantsMin, participantsMax),
-    (firstExaminer, secondExaminer, examPhases),
-    (
-      learningOutcomeDe,
-      learningOutcomeEn
-    ),
-    (
-      moduleContentDe,
-      moduleContentEn
-    ),
-    (
-      learningMethodsDe,
-      learningMethodsEn
-    ),
-    (
-      literatureDe,
-      literatureEn
-    ),
-    (
-      particularitiesDe,
-      particularitiesEn
-    )
+    (firstExaminer, secondExaminer),
+    examPhases,
+    participants,
+    recommendedPrerequisites,
+    requiredPrerequisites,
+    (learningOutcomeDe, learningOutcomeEn),
+    (moduleContentDe, moduleContentEn),
+    (learningMethodsDe, learningMethodsEn),
+    (literatureDe, literatureEn),
+    (particularitiesDe, particularitiesEn),
   ) <> (mapRow, unmapRow)
 
   def mapRow: (
@@ -160,11 +138,14 @@ final class ModuleTable(tag: Tag) extends Table[ModuleDbEntry](tag, "module") {
           String,
           Int,
           String,
-          (Int, Int, Int, Int, Int, Int, Int, Int),
+          JsValue,
           String,
           String,
-          (Option[Int], Option[Int]),
-          (String, String, List[String]),
+          (String, String),
+          List[String],
+          Option[JsValue],
+          Option[JsValue],
+          Option[JsValue],
           (String, String),
           (String, String),
           (String, String),
@@ -182,40 +163,19 @@ final class ModuleTable(tag: Tag) extends Table[ModuleDbEntry](tag, "module") {
           language,
           duration,
           season,
-          (
-            workloadLecture,
-            workloadSeminar,
-            workloadPractical,
-            workloadExercise,
-            workloadProjectSupervision,
-            workloadProjectWork,
-            workloadSelfStudy,
-            workloadTotal
-          ),
+          workload,
           status,
           location,
-          (participantsMin, participantsMax),
-          (firstExaminer, secondExaminer, examPhases),
-          (
-            learningOutcomeDe,
-            learningOutcomeEn
-          ),
-          (
-            moduleContentDe,
-            moduleContentEn
-          ),
-          (
-            learningMethodsDe,
-            learningMethodsEn
-          ),
-          (
-            literatureDe,
-            literatureEn
-          ),
-          (
-            particularitiesDe,
-            particularitiesEn
-          )
+          (firstExaminer, secondExaminer),
+          examPhases,
+          participants,
+          recommendedPrerequisites,
+          requiredPrerequisites,
+          (learningOutcomeDe, learningOutcomeEn),
+          (moduleContentDe, moduleContentEn),
+          (learningMethodsDe, learningMethodsEn),
+          (literatureDe, literatureEn),
+          (particularitiesDe, particularitiesEn),
         ) =>
       ModuleDbEntry(
         id,
@@ -227,22 +187,14 @@ final class ModuleTable(tag: Tag) extends Table[ModuleDbEntry](tag, "module") {
         language,
         duration,
         season,
-        ModuleWorkload(
-          workloadLecture,
-          workloadSeminar,
-          workloadPractical,
-          workloadExercise,
-          workloadProjectSupervision,
-          workloadProjectWork,
-          workloadSelfStudy,
-          workloadTotal
-        ),
+        Json.fromJson(workload)(given_Format_ModuleWorkload).get,
         status,
         location,
-        participantsMin,
-        participantsMax,
         Examiner(firstExaminer, secondExaminer),
         NonEmptyList.fromListUnsafe(examPhases),
+        participants.map(j => Json.fromJson[ModuleParticipants](j).get),
+        recommendedPrerequisites.map(j => Json.fromJson[ModulePrerequisiteEntryProtocol](j).get),
+        requiredPrerequisites.map(j => Json.fromJson[ModulePrerequisiteEntryProtocol](j).get),
         ModuleContent(
           learningOutcomeDe,
           moduleContentDe,
@@ -271,11 +223,14 @@ final class ModuleTable(tag: Tag) extends Table[ModuleDbEntry](tag, "module") {
         String,
         Int,
         String,
-        (Int, Int, Int, Int, Int, Int, Int, Int),
+        JsValue,
         String,
         String,
-        (Option[Int], Option[Int]),
-        (String, String, List[String]),
+        (String, String),
+        List[String],
+        Option[JsValue],
+        Option[JsValue],
+        Option[JsValue],
         (String, String),
         (String, String),
         (String, String),
@@ -285,50 +240,27 @@ final class ModuleTable(tag: Tag) extends Table[ModuleDbEntry](tag, "module") {
   ] =
     a =>
       Option(
-        (
-          a.id,
-          a.lastModified,
-          a.title,
-          a.abbrev,
-          a.moduleType,
-          a.ects,
-          a.language,
-          a.duration,
-          a.season,
-          (
-            a.workload.lecture,
-            a.workload.seminar,
-            a.workload.practical,
-            a.workload.exercise,
-            a.workload.projectSupervision,
-            a.workload.projectWork,
-            a.workload.selfStudy,
-            a.workload.total
-          ),
-          a.status,
-          a.location,
-          (a.participantsMin, a.participantsMax),
-          (a.examiner.first, a.examiner.second, a.examPhases.toList),
-          (
-            a.deContent.learningOutcome,
-            a.enContent.learningOutcome
-          ),
-          (
-            a.deContent.content,
-            a.enContent.content
-          ),
-          (
-            a.deContent.teachingAndLearningMethods,
-            a.enContent.teachingAndLearningMethods
-          ),
-          (
-            a.deContent.recommendedReading,
-            a.enContent.recommendedReading
-          ),
-          (
-            a.deContent.particularities,
-            a.enContent.particularities
-          )
-        )
+        a.id,
+        a.lastModified,
+        a.title,
+        a.abbrev,
+        a.moduleType,
+        a.ects,
+        a.language,
+        a.duration,
+        a.season,
+        Json.toJson(a.workload)(given_Format_ModuleWorkload),
+        a.status,
+        a.location,
+        (a.examiner.first, a.examiner.second),
+        a.examPhases.toList,
+        a.participants.map(Json.toJson),
+        a.recommendedPrerequisites.map(Json.toJson),
+        a.requiredPrerequisites.map(Json.toJson),
+        (a.deContent.learningOutcome, a.enContent.learningOutcome),
+        (a.deContent.content, a.enContent.content),
+        (a.deContent.teachingAndLearningMethods, a.enContent.teachingAndLearningMethods),
+        (a.deContent.recommendedReading, a.enContent.recommendedReading),
+        (a.deContent.particularities, a.enContent.particularities)
       )
 }

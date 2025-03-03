@@ -1,16 +1,3 @@
--- adds support for RPOs
-
--- !Ups
-
-alter table assessment_method
-    add column "source" text not null default 'unknown';
-
-create table permitted_assessment_method_for_module
-(
-    "module"             uuid primary key not null,
-    "assessment_methods" text[]           not null
-);
-
 update assessment_method
 set source = 'rpo'
 where id in (

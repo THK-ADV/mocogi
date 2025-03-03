@@ -35,6 +35,7 @@ import printing.latex.ModuleCatalogLatexPrinter
 import printing.latex.Payload
 import printing.pandoc.PandocApi
 import printing.PrintingLanguage
+import service.core.IdentityService
 import service.AssessmentMethodService
 import service.LatexCompiler
 import service.ModuleService
@@ -48,7 +49,7 @@ final class ModuleCatalogService @Inject() (
     private val moduleTypeRepository: ModuleTypeRepository,
     private val languageRepository: LanguageRepository,
     private val seasonRepository: SeasonRepository,
-    private val identityRepository: IdentityRepository,
+    private val identityService: IdentityService,
     private val assessmentMethodService: AssessmentMethodService,
     private val gitMergeRequestApiService: GitMergeRequestApiService,
     private val electivesCatalogService: ElectivesCatalogService,
@@ -187,7 +188,7 @@ final class ModuleCatalogService @Inject() (
       mts            <- moduleTypeRepository.all()
       lang           <- languageRepository.all()
       seasons        <- seasonRepository.all()
-      people         <- identityRepository.all()
+      people         <- identityService.all()
       ams            <- assessmentMethodService.all()
       liveModules    <- liveModules
       createdModules <- createdModules

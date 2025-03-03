@@ -2,16 +2,7 @@ id: 00895144-30e4-4bd2-b800-bb706686d950
 title: IOS Stuff
 abbreviation: IOS
 type: type.module
-ects:
-  contributions_to_focus_areas:
-    gak:
-      num: 3.5
-      de_desc:
-    acs:
-      num: 6
-      de_desc: |
-        Text1
-        Text2
+ects: 9.5
 language: lang.en
 duration: 1
 frequency: season.ss

@@ -40,11 +40,7 @@ GET           /seasons                                            controllers.Se
 GET           /identities                                         controllers.IdentityController.all()
 GET           /pos                                                controllers.POController.all()
 GET           /degrees                                            controllers.DegreeController.all()
-GET           /focusAreas                                         controllers.FocusAreaController.all()
-GET           /faculties                                          controllers.FacultyController.all()
-GET           /globalCriteria                                     controllers.GlobalCriteriaController.all()
 GET           /studyPrograms                                      controllers.StudyProgramController.all()
-GET           /competences                                        controllers.CompetenceController.all()
 GET           /specializations                                    controllers.SpecializationController.all()
 GET           /examPhases                                         controllers.ExamPhaseController.all()
 

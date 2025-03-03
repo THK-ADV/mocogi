@@ -15,7 +15,6 @@ import database.table.ModuleTable
 import git.api.GitDiffApiService
 import git.api.GitFileDownloadService
 import git.GitConfig
-import models.AssessmentMethodType
 import models.ModuleAssessmentMethodEntryProtocol
 import models.ModuleAssessmentMethodsProtocol
 import models.ModuleCore
@@ -110,7 +109,7 @@ final class ModuleExaminationValidator @Inject() (
       assert(all.distinctBy(_._1.id).map(_._1.id).size == all.map(_._1.id).size)
       all.foldLeft(List.empty[(ModuleCore, List[String], Seq[Either[String, String]])]) {
         case (acc, a) =>
-          val all     = a._2.mandatory ::: a._2.optional
+          val all     = a._2.mandatory
           val invalid = all.collect { case a if invalidExaminations.contains(a.method) => a.method }
           if invalid.isEmpty then acc
           else
@@ -143,17 +142,13 @@ final class ModuleExaminationValidator @Inject() (
           _.groupBy(_._1._2)
             .map {
               case (module, xs) =>
-                val (mandatory, elective) = xs.partitionMap { x =>
+                val mandatory = xs.map { x =>
                   val e: ModuleAssessmentMethodDbEntry = x._1._1
-                  e.assessmentMethodType match
-                    case AssessmentMethodType.Mandatory =>
-                      Left(ModuleAssessmentMethodEntryProtocol(e.assessmentMethod, e.percentage, Nil))
-                    case AssessmentMethodType.Optional =>
-                      Right(ModuleAssessmentMethodEntryProtocol(e.assessmentMethod, e.percentage, Nil))
+                  ModuleAssessmentMethodEntryProtocol(e.assessmentMethod, e.percentage, Nil)
                 }
                 (
                   ModuleCore(module._1, module._2, module._3),
-                  ModuleAssessmentMethodsProtocol(mandatory.toList, elective.toList),
+                  ModuleAssessmentMethodsProtocol(mandatory.toList, Nil),
                   xs.map(_._2.identity).toList
                 )
             }

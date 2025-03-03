@@ -7,7 +7,6 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 import cats.syntax.either.*
-import models.core.*
 import parser.ParsingError
 import parsing.metadata.MetadataCompositeParser
 import parsing.types.ModuleContent
@@ -25,10 +24,7 @@ final class MetadataParsingService @Inject() (
     private val moduleTypeService: ModuleTypeService,
     private val seasonService: SeasonService,
     private val personService: IdentityService,
-    private val focusAreaService: FocusAreaService,
-    private val globalCriteriaService: GlobalCriteriaService,
     private val poService: POService,
-    private val competenceService: CompetenceService,
     private val specializationService: SpecializationService,
     private implicit val ctx: ExecutionContext
 ) extends Logging {
@@ -41,10 +37,7 @@ final class MetadataParsingService @Inject() (
     val moduleTypes       = moduleTypeService.all()
     val seasons           = seasonService.all()
     val persons           = personService.all()
-    val focusAreas        = focusAreaService.all().map(_.map(f => FocusAreaID(f.id)))
-    val globalCriteria    = globalCriteriaService.all()
     val pos               = poService.all()
-    val competences       = competenceService.all()
     val specializations   = specializationService.all()
     for {
       locations         <- locations
@@ -54,10 +47,7 @@ final class MetadataParsingService @Inject() (
       moduleTypes       <- moduleTypes
       seasons           <- seasons
       persons           <- persons
-      focusAreas        <- focusAreas
-      globalCriteria    <- globalCriteria
       pos               <- pos
-      competences       <- competences
       specializations   <- specializations
     } yield metadataParser
       .parser(
@@ -68,9 +58,6 @@ final class MetadataParsingService @Inject() (
         moduleTypes,
         seasons,
         persons,
-        focusAreas,
-        competences,
-        globalCriteria,
         pos,
         specializations
       )

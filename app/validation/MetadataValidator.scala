@@ -5,8 +5,8 @@ import java.util.UUID
 import scala.collection.mutable.ListBuffer
 
 import cats.data.NonEmptyList
-import models._
-import parsing.types._
+import models.*
+import parsing.types.*
 
 object MetadataValidator {
 
@@ -45,31 +45,13 @@ object MetadataValidator {
       case None => Right(None)
     }
 
-  def ectsValidator: Validator[Either[Double, List[
-    ModuleECTSFocusAreaContribution
-  ]], ModuleECTS] =
-    Validator {
-      case Left(ectsValue) =>
-        Either.cond(
-          ectsValue != 0,
-          ModuleECTS(ectsValue, Nil),
-          List(
-            "ects value must be set if contributions to focus areas are empty"
-          )
-        )
-      case Right(contributions) =>
-        Either.cond(
-          contributions.nonEmpty, {
-            val ectsValue = contributions.foldLeft(0.0) {
-              case (acc, a) =>
-                acc + a.ectsValue
-            }
-            ModuleECTS(ectsValue, contributions)
-          },
-          List(
-            "ects contributions to focus areas must be set if ects value is 0"
-          )
-        )
+  def ectsValidator: Validator[Double, ModuleECTS] =
+    Validator { ectsValue =>
+      Either.cond(
+        ectsValue != 0,
+        ModuleECTS(ectsValue, Nil),
+        List("ects value must be set if contributions to focus areas are empty")
+      )
     }
 
   def workloadValidator(
@@ -198,7 +180,7 @@ object MetadataValidator {
     participantsValidator.pullback(_.participants)
 
   def ectsValidatorAdapter: Validator[ParsedMetadata, ModuleECTS] =
-    ectsValidator.pullback(_.credits.map(_.toList))
+    ectsValidator.pullback(_.credits)
 
   def prerequisitesValidatorAdapter(
       lookup: Lookup

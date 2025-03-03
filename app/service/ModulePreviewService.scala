@@ -27,6 +27,7 @@ import ops.EitherOps.EStringThrowOps
 import parsing.metadata.ModulePOParser
 import play.api.i18n.Lang
 import play.api.i18n.MessagesApi
+import play.api.libs
 import play.api.libs.Files.TemporaryFile
 import play.api.Logging
 import printing.latex.IntroContent
@@ -35,6 +36,7 @@ import printing.latex.ModuleCatalogLatexPrinter
 import printing.latex.Payload
 import printing.pandoc.PandocApi
 import printing.PrintingLanguage
+import service.core.IdentityService
 import service.modulediff.ModuleProtocolDiff
 import service.LatexCompiler.compile
 import service.LatexCompiler.getPdf
@@ -48,7 +50,7 @@ final class ModulePreviewService @Inject() (
     moduleTypeRepository: ModuleTypeRepository,
     languageRepository: LanguageRepository,
     seasonRepository: SeasonRepository,
-    identityRepository: IdentityRepository,
+    identityService: IdentityService,
     assessmentMethodService: AssessmentMethodService,
     specializationRepository: SpecializationRepository,
     pandocApi: PandocApi,
@@ -171,7 +173,7 @@ final class ModulePreviewService @Inject() (
     val moduleTypes       = moduleTypeRepository.all()
     val languages         = languageRepository.all()
     val seasons           = seasonRepository.all()
-    val people            = identityRepository.all()
+    val people            = identityService.all()
     val assessmentMethods = assessmentMethodService.all()
 
     for {

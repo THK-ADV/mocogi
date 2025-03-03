@@ -29,8 +29,8 @@ case class MetadataProtocol(
     examPhases: NonEmptyList[String],
     prerequisites: ModulePrerequisitesProtocol,
     po: ModulePOProtocol,
-    competences: List[String],
-    globalCriteria: List[String],
+    @Deprecated(forRemoval = true) competences: List[String],
+    @Deprecated(forRemoval = true) globalCriteria: List[String],
     taughtWith: List[UUID]
 )
 

@@ -43,13 +43,13 @@ final class StudyProgramDirectorsRepository @Inject() (
     val query = for {
       a <- TableQuery[StudyProgramPersonTable]
       if a.studyProgram.in(sps) && a.role.inSet(roles)
-      p <- a.personFk
+      p <- a.personFk if p.isPerson
       s <- a.studyProgramFk
       d <- s.degreeFk
     } yield (
       p.id,
-      p.firstname,
-      p.lastname,
+      p.firstname.get,
+      p.lastname.get,
       d.deLabel,
       s.deLabel,
       s.id,

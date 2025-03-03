@@ -16,7 +16,7 @@ case class ModuleReview[StudyProgram, Person](
     status: ModuleReviewStatus,
     studyProgram: StudyProgram,
     comment: Option[String],
-    respondedBy: Option[Person],
+    respondedBy: Option[Person], // TODO is PersonCore sufficient?
     respondedAt: Option[LocalDateTime]
 )
 
