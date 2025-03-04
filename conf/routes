@@ -27,7 +27,7 @@ POST          /webhook/onMergeEvent                               controllers.Gi
 
 POST          /git/coreFiles                                      controllers.GitController.updateCoreFiles()
 POST          /git/moduleFiles                                    controllers.GitController.updateModuleFiles()
-
+GET           /git/lastMergeDate                                  controllers.GitController.lastMergeDate()
 # Core
 
 GET           /locations                                          controllers.LocationController.all()

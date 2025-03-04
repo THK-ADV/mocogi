@@ -1,5 +1,7 @@
 package git.api
 
+import java.time.LocalDate
+import java.time.LocalDateTime
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -11,6 +13,7 @@ import git.GitConfig
 import git.MergeRequestId
 import git.MergeRequestStatus
 import play.api.libs.json.JsArray
+import play.api.libs.json.JsValue
 import play.api.libs.ws.writeableOf_WsBody
 import play.api.libs.ws.EmptyBody
 import play.api.libs.ws.WSClient
@@ -139,6 +142,30 @@ final class GitMergeRequestApiService @Inject() (
       .withHttpHeaders(tokenHeader())
       .get()
       .map(a => (a.status, a.json))
+
+  def getLatestMergeDate(source: Branch, target: Branch): Future[Option[LocalDate]] = {
+    def parse(js: JsValue) =
+      for
+        array <- js.validate[JsArray]
+        date  <- array.head.\("merged_at").validate[LocalDateTime].map(_.toLocalDate)
+      yield date
+
+    ws
+      .url(this.mergeRequestUrl)
+      .withHttpHeaders(tokenHeader())
+      .withQueryStringParameters(
+        "source_branch" -> source.value,
+        "target_branch" -> target.value,
+        "state"         -> "merged",
+        "order_by"      -> "updated_at",
+        "sort"          -> "desc"
+      )
+      .get()
+      .flatMap { resp =>
+        if resp.status == Status.OK then Future.successful(parse(resp.json).asOpt)
+        else Future.failed(parseErrorMessage(resp))
+      }
+  }
 
   private def mergeRequestUrl =
     s"${projectsUrl()}/merge_requests"

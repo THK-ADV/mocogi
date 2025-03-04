@@ -7,18 +7,22 @@ import javax.inject.Singleton
 import scala.collection.parallel.CollectionConverters.seqIsParallelizable
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
+import scala.util.control.NonFatal
 
 import auth.AuthorizationAction
 import auth.Role.Admin
 import controllers.actions.PermissionCheck
 import controllers.actions.RoleCheck
 import git.api.GitFileDownloadService
+import git.api.GitMergeRequestApiService
 import git.api.GitRepositoryApiService
 import git.publisher.CoreDataPublisher
 import git.publisher.ModulePublisher
 import git.GitConfig
 import git.GitFile
 import git.GitFileStatus
+import play.api.libs.json.JsNull
+import play.api.libs.json.Json
 import play.api.mvc.AbstractController
 import play.api.mvc.ControllerComponents
 
@@ -27,6 +31,7 @@ final class GitController @Inject() (
     cc: ControllerComponents,
     downloadService: GitFileDownloadService,
     gitRepositoryApiService: GitRepositoryApiService,
+    gitMergeRequestApiService: GitMergeRequestApiService,
     modulePublisher: ModulePublisher,
     coreDataPublisher: CoreDataPublisher,
     auth: AuthorizationAction,
@@ -35,6 +40,14 @@ final class GitController @Inject() (
 ) extends AbstractController(cc)
     with PermissionCheck
     with RoleCheck {
+
+  def lastMergeDate() =
+    Action.async(_ =>
+      gitMergeRequestApiService
+        .getLatestMergeDate(gitConfig.draftBranch, gitConfig.mainBranch)
+        .map(d => Ok(d.fold(JsNull)(Json.toJson)))
+        .recover { case NonFatal(_) => Ok(JsNull) }
+    )
 
   def updateCoreFiles() =
     auth.andThen(hasRole(Admin)).async { _ =>
