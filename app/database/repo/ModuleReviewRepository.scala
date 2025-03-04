@@ -73,19 +73,7 @@ final class ModuleReviewRepository @Inject() (
           case ((r, sp), p) =>
             r.copy(
               studyProgram = IDLabel(sp.id, sp.deLabel, sp.enLabel),
-              respondedBy = p.collect {
-                case p if p.kind == Identity.PersonKind =>
-                  Identity.Person(
-                    p.id,
-                    p.lastname,
-                    p.firstname,
-                    p.title,
-                    Nil,
-                    p.abbreviation,
-                    p.campusId.get,
-                    p.status
-                  )
-              }
+              respondedBy = p.collect { case p if p.isPerson => Identity.toPersonUnsafe(p) }
             )
         })
     )
@@ -104,14 +92,14 @@ final class ModuleReviewRepository @Inject() (
     val moduleDraftQuery =
       for
         d <- TableQuery[ModuleDraftTable]
-        a <- d.authorFk
-      yield (d.module, d.moduleTitle, d.moduleAbbrev, a.id, a.firstname, a.lastname, a.campusId)
+        a <- d.authorFk if a.isPerson
+      yield (d.module, d.moduleTitle, d.moduleAbbrev, a.id, a.firstname.get, a.lastname.get, a.campusId)
 
     val studyProgramDirQuery =
       for
         q <- TableQuery[StudyProgramPersonTable]
-        d <- q.personFk
-      yield (q.studyProgram, q.role, d.id, d.firstname, d.lastname, d.campusId)
+        d <- q.personFk if d.isPerson
+      yield (q.studyProgram, q.role, d.id, d.firstname.get, d.lastname.get, d.campusId)
 
     val query = base
       .join(moduleDraftQuery)
@@ -142,9 +130,8 @@ final class ModuleReviewRepository @Inject() (
     db.run(query)
   }
 
-  protected override def retrieve(
-      query: Query[ModuleReviewTable, ModuleReview.DB, Seq]
-  ): Future[Seq[ModuleReview.DB]] = db.run(query.result)
+  protected override def retrieve(query: Query[ModuleReviewTable, ModuleReview.DB, Seq]): Future[Seq[ModuleReview.DB]] =
+    db.run(query.result)
 }
 
 object ModuleReviewRepository {

@@ -1,24 +1,20 @@
 package parsing.core
 
-import helper.FakeFaculties
 import models.core.Identity
 import models.core.Identity.Group
 import models.core.Identity.Person
 import models.core.Identity.Unknown
-import models.core.PersonStatus
+import models.EmploymentType
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatest.EitherValues
 import parsing.withFile0
 import parsing.ParserSpecHelper
 
-final class IdentityFileParserSpec extends AnyWordSpec with ParserSpecHelper with EitherValues with FakeFaculties {
+final class IdentityFileParserSpec extends AnyWordSpec with ParserSpecHelper with EitherValues {
 
   "A Person File Parser" should {
     "parse all people in person.yaml" in {
-      val (res, rest) =
-        withFile0("test/parsing/res/person.yaml")(
-          IdentityFileParser.fileParser(fakeFaculties.map(_.id)).parse
-        )
+      val (res, rest) = withFile0("test/parsing/res/person.yaml")(IdentityFileParser.parser().parse)
       assert(res.value.size == 12)
       assert(rest.isEmpty)
       assert(res.value.head == Unknown("nn", "N.N."))
@@ -29,11 +25,65 @@ final class IdentityFileParserSpec extends AnyWordSpec with ParserSpecHelper wit
       assert(res.value(5) == Group("all-inf-prof", "alle Professor:innen der Lehreinheit Informatik"))
       assert(res.value(6) == Group("all-ing", "alle Lehrenden der Lehreinheit Ingenieurswesen"))
       assert(res.value(7) == Group("all-ing-prof", "alle Professor:innen der Lehreinheit Ingenieurswesen"))
-      assert(res.value(8) == Person("abc", "foo", "bar", "", List("f10"), "abc", "", PersonStatus.Active))
-      assert(res.value(9) == Person("def", "foo", "bar", "bar. baz.", List("f10"), "abc", "def", PersonStatus.Active))
-      assert(res.value(10) == Person("ghi", "foo", "bar", "bar. baz.", List("f03"), "abc", "ghi", PersonStatus.Active))
       assert(
-        res.value(11) == Person("jkl", "foo", "bar", "bar. baz.", List("f10", "f03"), "abc", "jkl", PersonStatus.Active)
+        res.value(8) == Person(
+          "abc",
+          "foo",
+          "bar",
+          "",
+          List("f10"),
+          "abc",
+          None,
+          isActive = true,
+          EmploymentType.Unknown,
+          None,
+          None
+        )
+      )
+      assert(
+        res.value(9) == Person(
+          "def",
+          "foo",
+          "bar",
+          "bar. baz.",
+          List("f10"),
+          "abc",
+          Some("def"),
+          isActive = true,
+          EmploymentType.Unknown,
+          None,
+          None
+        )
+      )
+      assert(
+        res.value(10) == Person(
+          "ghi",
+          "foo",
+          "bar",
+          "bar. baz.",
+          List("f03"),
+          "abc",
+          Some("ghi"),
+          isActive = true,
+          EmploymentType.Unknown,
+          None,
+          None
+        )
+      )
+      assert(
+        res.value(11) == Person(
+          "jkl",
+          "foo",
+          "bar",
+          "bar. baz.",
+          List("f10", "f03"),
+          "abc",
+          Some("jkl"),
+          isActive = true,
+          EmploymentType.Unknown,
+          None,
+          None
+        )
       )
     }
   }

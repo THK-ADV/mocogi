@@ -95,7 +95,9 @@ final class ModuleController @Inject() (
               .allMetadata()
               .map(xs => Ok(JsArray(xs.map { case (id, metadata) => Json.obj("id" -> id, "metadata" -> metadata) })))
           case (false, true, false, false, None, DataSource.Live) =>
-            moduleViewRepository.all().map(xs => Ok(Json.toJson(xs)))
+            moduleViewRepository
+              .all()
+              .map(xs => Ok(Json.toJson(xs)))
           case (false, false, true, false, None, ds) =>
             val modules = ds.match
               case DataSource.Live => service.allGenericModulesWithPOs()

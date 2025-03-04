@@ -13,6 +13,7 @@ object ModuleECTS {
   implicit def writes: Writes[ModuleECTS] = Json.writes
 }
 
+@Deprecated(forRemoval = true)
 case class ModuleECTSFocusAreaContribution(
     focusArea: FocusAreaID,
     ectsValue: Double,
@@ -20,6 +21,7 @@ case class ModuleECTSFocusAreaContribution(
     enDesc: String
 )
 
+@Deprecated(forRemoval = true)
 object ModuleECTSFocusAreaContribution {
   implicit def writes: Writes[ModuleECTSFocusAreaContribution] = Json.writes
 }

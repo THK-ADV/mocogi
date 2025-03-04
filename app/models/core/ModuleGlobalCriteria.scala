@@ -3,6 +3,7 @@ package models.core
 import play.api.libs.json.Json
 import play.api.libs.json.Writes
 
+@Deprecated()
 case class ModuleGlobalCriteria(
     id: String,
     deLabel: String,

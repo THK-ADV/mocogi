@@ -14,17 +14,15 @@ import parsing.core.IdentityFileParser
 @Singleton
 final class IdentityService @Inject() (
     val repo: IdentityRepository,
-    val facultyService: FacultyService,
     implicit val ctx: ExecutionContext
 ) extends YamlService[Identity] {
 
   override def parser =
-    facultyService.allIds().map(IdentityFileParser.fileParser)
+    Future.successful(IdentityFileParser.parser())
 
-  override def createOrUpdateMany(
-      xs: Seq[Identity]
-  ): Future[Seq[Identity]] =
+  override def createOrUpdateMany(xs: Seq[Identity]): Future[Seq[Identity]] =
     repo.createOrUpdateMany(xs.map(toDbEntry)).map(_ => xs)
 
-  override def all(): Future[Seq[Identity]] = repo.all()
+  override def all(): Future[Seq[Identity]] =
+    repo.all().map(_.map(Identity.fromDbEntry))
 }

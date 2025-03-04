@@ -46,7 +46,7 @@ final class ElectivesRepository @Inject() (
               xs.head._1._1._1._3
             )
             val moduleManagement =
-              xs.map(a => Identity.fromDbEntry(a._1._2, Nil)).distinctBy(_.id)
+              xs.map(a => Identity.fromDbEntry(a._1._2)).distinctBy(_.id)
             val fullPodIds = xs.map(a => FullPoId(a._2._2))
             (module, moduleManagement, fullPodIds)
         })

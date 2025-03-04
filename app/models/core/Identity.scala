@@ -2,6 +2,7 @@ package models.core
 
 import auth.CampusId
 import database.table.core.IdentityDbEntry
+import models.EmploymentType
 import monocle.Lens
 import play.api.libs.json.JsObject
 import play.api.libs.json.JsString
@@ -29,12 +30,14 @@ object Identity {
       title: String,
       faculties: List[String],
       abbreviation: String,
-      campusId: String,
-      status: PersonStatus
+      campusId: Option[String],
+      isActive: Boolean,
+      employmentType: EmploymentType,
+      imageUrl: Option[String],
+      websiteUrl: Option[String],
   ) extends Identity {
-    override val kind = PersonKind
-    override def username: Option[String] =
-      Option.when(campusId.nonEmpty)(campusId)
+    override val kind                     = PersonKind
+    override def username: Option[String] = campusId
 
     def fullName: String = s"$firstname $lastname"
 
@@ -53,38 +56,29 @@ object Identity {
     override def fullName: String         = label
   }
 
-  def toPerson(p: IdentityDbEntry): Person =
+  def toPersonUnsafe(p: IdentityDbEntry): Person =
     Person(
       p.id,
-      p.lastname,
-      p.firstname,
+      p.lastname.getOrElse(""),
+      p.firstname.getOrElse(""),
       p.title,
-      Nil,
-      p.abbreviation,
-      p.campusId.get,
-      p.status
+      p.faculties.getOrElse(Nil),
+      p.abbreviation.getOrElse(""),
+      p.campusId,
+      p.isActive,
+      p.employmentType.getOrElse(EmploymentType.Unknown),
+      p.imageUrl,
+      p.websiteUrl
     )
 
-  def fromDbEntry(
-      identity: IdentityDbEntry,
-      faculties: List[Faculty]
-  ): Identity =
-    identity.kind match {
+  def fromDbEntry(db: IdentityDbEntry): Identity =
+    db.kind match {
       case PersonKind =>
-        Person(
-          identity.id,
-          identity.lastname,
-          identity.firstname,
-          identity.title,
-          faculties.map(_.id),
-          identity.abbreviation,
-          identity.campusId.get,
-          identity.status
-        )
+        toPersonUnsafe(db)
       case GroupKind =>
-        Group(identity.id, identity.title)
+        Group(db.id, db.title)
       case UnknownKind =>
-        Unknown(identity.id, identity.title)
+        Unknown(db.id, db.title)
     }
 
   def toDbEntry(identity: Identity): IdentityDbEntry =
@@ -97,42 +91,54 @@ object Identity {
             faculties,
             abbreviation,
             campusId,
-            status
+            isActive,
+            employmentType,
+            imageUrl,
+            websiteUrl
           ) =>
         IdentityDbEntry(
           id,
-          lastname,
-          firstname,
+          Some(lastname),
+          Some(firstname),
           title,
-          faculties,
-          abbreviation,
-          Some(campusId),
-          status,
-          PersonKind
+          Option.when(faculties.nonEmpty)(faculties),
+          Some(abbreviation),
+          campusId,
+          isActive,
+          PersonKind,
+          Some(employmentType),
+          imageUrl,
+          websiteUrl
         )
       case Group(id, title) =>
         IdentityDbEntry(
           id,
-          "",
-          "",
-          title,
-          Nil,
-          "",
           None,
-          PersonStatus.Active,
-          GroupKind
+          None,
+          title,
+          None,
+          None,
+          None,
+          isActive = true,
+          GroupKind,
+          None,
+          None,
+          None
         )
       case Unknown(id, title) =>
         IdentityDbEntry(
           id,
-          "",
-          "",
-          title,
-          Nil,
-          "",
           None,
-          PersonStatus.Active,
-          UnknownKind
+          None,
+          title,
+          None,
+          None,
+          None,
+          isActive = true,
+          UnknownKind,
+          None,
+          None,
+          None
         )
     }
 

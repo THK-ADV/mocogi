@@ -2,6 +2,7 @@ package models.core
 
 import play.api.libs.json.Writes
 
+@Deprecated
 case class FocusAreaID(id: String) extends AnyVal
 
 object FocusAreaID {

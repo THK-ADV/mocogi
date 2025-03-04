@@ -13,7 +13,7 @@ case class ReviewerApproval(
     moduleId: UUID,
     moduleTitle: String,
     moduleAbbrev: String,
-    author: Identity.Person,
+    author: Identity.Person, // TODO can this be a person short?
     role: UniversityRole,
     status: ModuleReviewSummaryStatus,
     studyProgram: IDLabel,

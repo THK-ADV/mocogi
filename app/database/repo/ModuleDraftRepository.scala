@@ -27,13 +27,13 @@ final class ModuleDraftRepository @Inject() (
     implicit val ctx: ExecutionContext
 ) extends Repository[ModuleDraft, ModuleDraft, ModuleDraftTable]
     with HasDatabaseConfigProvider[JdbcProfile] {
+  import database.MyPostgresProfile.MyAPI.playJsonTypeMapper
   import profile.api.*
   import table.commitColumnType
-  import table.jsValueColumnType
   import table.mergeRequestIdColumnType
   import table.mergeRequestStatusColumnType
   import table.printColumnType
-  import table.setStringColumnType
+  import ModuleDraftTable.given_BaseColumnType_Set
 
   protected val tableQuery = TableQuery[ModuleDraftTable]
 
@@ -79,8 +79,8 @@ final class ModuleDraftRepository @Inject() (
       moduleId: UUID,
       moduleTitle: String,
       moduleAbbrev: String,
-      data: JsValue,
-      module: JsValue,
+      moduleJson: JsValue,
+      moduleJsonValidated: JsValue,
       print: Print,
       keysToBeReviewed: Set[String],
       modifiedKeys: Set[String],
@@ -94,8 +94,8 @@ final class ModuleDraftRepository @Inject() (
           (
             a.moduleTitle,
             a.moduleAbbrev,
-            a.data,
-            a.moduleValidated,
+            a.moduleJson,
+            a.moduleJsonValidated,
             a.modulePrint,
             a.keysToBeReviewed,
             a.modifiedKeys,
@@ -109,8 +109,8 @@ final class ModuleDraftRepository @Inject() (
           (
             moduleTitle,
             moduleAbbrev,
-            data,
-            module,
+            moduleJson,
+            moduleJsonValidated,
             print,
             keysToBeReviewed,
             modifiedKeys,

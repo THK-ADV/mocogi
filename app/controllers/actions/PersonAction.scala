@@ -25,7 +25,7 @@ trait PersonAction {
         .getByCampusId(request.campusId)
         .map {
           case Some(p) =>
-            if p.status.isActive then Right(PersonRequest(p, request))
+            if p.isActive then Right(PersonRequest(p, request))
             else Left(BadRequest(Json.obj("message" -> s"user with campusId ${request.campusId.value} is inactive")))
           case None => Left(BadRequest(Json.obj("message" -> s"no user found for campusId ${request.campusId.value}")))
         }

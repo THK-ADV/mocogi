@@ -88,7 +88,7 @@ final class ModuleApprovalService @Inject() (
                 moduleId,
                 moduleTitle,
                 moduleAbbrev,
-                Identity.toPerson(author),
+                Identity.toPersonUnsafe(author),
                 role,
                 summaryStatus,
                 IDLabel(studyProgram),

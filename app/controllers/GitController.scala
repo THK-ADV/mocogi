@@ -4,6 +4,7 @@ import java.time.LocalDateTime
 import javax.inject.Inject
 import javax.inject.Singleton
 
+import scala.collection.parallel.CollectionConverters.seqIsParallelizable
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
@@ -57,7 +58,7 @@ final class GitController @Inject() (
       for {
         paths <- gitRepositoryApiService.listModuleFiles(gitConfig.mainBranch)
         modules <- Future.sequence(
-          paths.collect {
+          paths.par.collect {
             case path if path.isModule(gitConfig) =>
               downloadService
                 .downloadFileContentWithLastModified(path, gitConfig.mainBranch)
@@ -75,7 +76,7 @@ final class GitController @Inject() (
                       content
                     )
                 }
-          }
+          }.toList
         )
       } yield {
         modulePublisher.notifySubscribers(modules)

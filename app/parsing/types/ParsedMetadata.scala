@@ -3,14 +3,8 @@ package parsing.types
 import java.util.UUID
 
 import cats.data.NonEmptyList
+import models.core.*
 import models.core.ExamPhases.ExamPhase
-import models.core.ModuleCompetence
-import models.core.ModuleGlobalCriteria
-import models.core.ModuleLanguage
-import models.core.ModuleLocation
-import models.core.ModuleStatus
-import models.core.ModuleType
-import models.core.Season
 import models.Examiner
 
 case class ParsedMetadata(
@@ -19,7 +13,7 @@ case class ParsedMetadata(
     abbrev: String,
     kind: ModuleType,
     relation: Option[ParsedModuleRelation],
-    credits: Either[Double, NonEmptyList[ModuleECTSFocusAreaContribution]],
+    credits: Double,
     language: ModuleLanguage,
     duration: Int,
     season: Season,

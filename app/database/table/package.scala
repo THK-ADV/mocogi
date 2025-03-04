@@ -6,8 +6,6 @@ import git.CommitId
 import git.MergeRequestId
 import git.MergeRequestStatus
 import models.*
-import play.api.libs.json.JsValue
-import play.api.libs.json.Json
 import service.Print
 import slick.jdbc.PostgresProfile.api.*
 
@@ -34,25 +32,6 @@ package object table {
         PrerequisiteType.apply
       )
 
-  def intsToString(xs: List[Int]): String =
-    if (xs.isEmpty) "" else xs.mkString(",")
-
-  def stringToInts(s: String): List[Int] =
-    if (s.isEmpty) Nil
-    else
-      s.split(",").foldLeft(List.empty[Int]) {
-        case (acc, s) =>
-          s.toInt :: acc
-      }
-
-  // Care: This type could potentially break slick-pg mappings
-  implicit val listIntColumnType: BaseColumnType[List[Int]] =
-    MappedColumnType
-      .base[List[Int], String](
-        intsToString,
-        stringToInts
-      )
-
   implicit val moduleDraftStatusColumnType: BaseColumnType[ModuleDraftSource] =
     MappedColumnType
       .base[ModuleDraftSource, String](_.id, ModuleDraftSource.apply)
@@ -60,11 +39,6 @@ package object table {
   implicit val printColumnType: BaseColumnType[Print] =
     MappedColumnType
       .base[Print, String](_.value, Print.apply)
-
-  // Care: This type could potentially break slick-pg mappings
-  implicit val jsValueColumnType: BaseColumnType[JsValue] =
-    MappedColumnType
-      .base[JsValue, String](Json.stringify, Json.parse)
 
   implicit val campusIdColumnType: BaseColumnType[CampusId] =
     MappedColumnType
@@ -81,41 +55,6 @@ package object table {
   implicit val mergeRequestIdColumnType: BaseColumnType[MergeRequestId] =
     MappedColumnType
       .base[MergeRequestId, Int](_.value, MergeRequestId.apply)
-
-  def iterableToString(xs: Iterable[String]): String =
-    if (xs.isEmpty) "" else xs.mkString(",")
-
-  def stringToList(s: String): List[String] =
-    if (s.isEmpty) Nil
-    else
-      s.split(",").foldLeft(List.empty[String]) {
-        case (acc, s) =>
-          s :: acc
-      }
-
-  def stringToSet(s: String): Set[String] =
-    if (s.isEmpty) Set.empty
-    else
-      s.split(",").foldLeft(Set.empty[String]) {
-        case (acc, s) =>
-          acc.+(s)
-      }
-
-  // Care: This type could potentially break slick-pg mappings
-  implicit val listStringColumnType: BaseColumnType[List[String]] =
-    MappedColumnType
-      .base[List[String], String](
-        iterableToString,
-        stringToList
-      )
-
-  // Care: This type could potentially break slick-pg mappings
-  implicit val setStringColumnType: BaseColumnType[Set[String]] =
-    MappedColumnType
-      .base[Set[String], String](
-        iterableToString,
-        stringToSet
-      )
 
   implicit val universityRoleColumnType: BaseColumnType[UniversityRole] =
     MappedColumnType

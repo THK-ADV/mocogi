@@ -14,9 +14,6 @@ trait MetadataParser {
       moduleTypes: Seq[ModuleType],
       seasons: Seq[Season],
       identities: Seq[Identity],
-      focusAreas: Seq[FocusAreaID],
-      competences: Seq[ModuleCompetence],
-      globalCriteria: Seq[ModuleGlobalCriteria],
       pos: Seq[PO],
       specializations: Seq[Specialization]
   ): Parser[ParsedMetadata]

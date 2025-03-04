@@ -1,10 +1,9 @@
 package controllers
 
+import models.EmploymentType.Unknown
 import models.core.Identity
-import models.core.PersonStatus
 import org.scalatest.wordspec.AnyWordSpec
-import play.api.libs.json.JsArray
-import play.api.libs.json.JsString
+import play.api.libs.json.{JsArray, JsBoolean, JsString}
 
 final class IdentityFormatSpec extends AnyWordSpec {
   "A Person Format Spec" should {
@@ -16,8 +15,11 @@ final class IdentityFormatSpec extends AnyWordSpec {
         "title",
         List("f1"),
         "p1",
-        "id",
-        PersonStatus.Active
+        Some("id"),
+        isActive = true,
+        Unknown,
+        None,
+        None
       )
       val studentJson = Identity.writes.writes(student)
       assert((studentJson \ "id").get == JsString("1"))
@@ -29,7 +31,10 @@ final class IdentityFormatSpec extends AnyWordSpec {
       )
       assert((studentJson \ "abbreviation").get == JsString("p1"))
       assert((studentJson \ "campusId").get == JsString("id"))
-      assert((studentJson \ "status").get == JsString("active"))
+      assert((studentJson \ "isActive").get == JsBoolean(true))
+      assert((studentJson \ "employmentType").get == JsString("unknown"))
+      assert((studentJson \ "imageUrl").isEmpty)
+      assert((studentJson \ "websiteUrl").isEmpty)
       assert((studentJson \ "kind").get == JsString(Identity.PersonKind))
     }
 

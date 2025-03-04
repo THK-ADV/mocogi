@@ -1,39 +1,48 @@
 package helper
 
 import models.core.Identity
-import models.core.PersonStatus
+import models.EmploymentType.WMA
 
-trait FakeIdentities extends FakeFaculties {
+trait FakeIdentities {
   implicit def fakeIdentities: Seq[Identity] = Seq(
     Identity.Person(
       "ald",
       "Dobrynin",
       "Alexander",
       "M.Sc.",
-      List(f10.id),
+      List("f10"),
       "ad",
-      "ald",
-      PersonStatus.Active
+      Some("ald"),
+      isActive = true,
+      WMA,
+      None,
+      None
     ),
     Identity.Person(
       "abe",
       "Bertels",
       "Anja",
       "B.Sc.",
-      List(f10.id),
+      List("f10"),
       "ab",
-      "abe",
-      PersonStatus.Active
+      Some("abe"),
+      isActive = true,
+      WMA,
+      None,
+      None
     ),
     Identity.Person(
       "ddu",
       "Dubbert",
       "Dennis",
       "M.Sc.",
-      List(f10.id),
+      List("f10"),
       "dd",
-      "ddu",
-      PersonStatus.Active
+      None,
+      isActive = true,
+      WMA,
+      None,
+      None
     ),
     unknown
   )

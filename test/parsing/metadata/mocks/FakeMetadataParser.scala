@@ -22,9 +22,6 @@ class FakeMetadataParser extends MetadataParser {
       moduleTypes: Seq[ModuleType],
       seasons: Seq[Season],
       identities: Seq[Identity],
-      focusAreas: Seq[FocusAreaID],
-      competences: Seq[ModuleCompetence],
-      globalCriteria: Seq[ModuleGlobalCriteria],
       pos: Seq[PO],
       specializations: Seq[Specialization]
   ) = always(
@@ -34,7 +31,7 @@ class FakeMetadataParser extends MetadataParser {
       "",
       ModuleType("", "", ""),
       None,
-      Left(0),
+      0,
       ModuleLanguage("", "", ""),
       0,
       Season("", "", ""),

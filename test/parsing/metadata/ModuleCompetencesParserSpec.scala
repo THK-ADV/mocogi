@@ -1,6 +1,5 @@
 package parsing.metadata
 
-import helper.FakeCompetences
 import models.core.ModuleCompetence
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatest.EitherValues
@@ -8,11 +7,7 @@ import parsing.metadata.ModuleCompetencesParser.parser
 import parsing.metadata.ModuleCompetencesParser.raw
 import parsing.ParserSpecHelper
 
-final class ModuleCompetencesParserSpec
-    extends AnyWordSpec
-    with ParserSpecHelper
-    with EitherValues
-    with FakeCompetences {
+final class ModuleCompetencesParserSpec extends AnyWordSpec with ParserSpecHelper with EitherValues {
   "A Competences Parser" should {
     "parse multiple competences" in {
       val input =
@@ -25,17 +20,17 @@ final class ModuleCompetencesParserSpec
         res.value == List(
           ModuleCompetence(
             "analyze-domains",
-            "Analyze Domains",
-            "...",
-            "Analyze Domains",
-            "..."
+            "",
+            "",
+            "",
+            ""
           ),
           ModuleCompetence(
             "model-systems",
-            "Model Systems",
-            "...",
-            "Model Systems",
-            "..."
+            "",
+            "",
+            "",
+            ""
           )
         )
       )

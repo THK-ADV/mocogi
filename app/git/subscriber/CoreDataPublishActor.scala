@@ -29,11 +29,7 @@ object CoreDataPublishActor {
       moduleTypeTopic: Topics[ModuleType],
       seasonTopic: Topics[Season],
       identityTopic: Topics[Identity],
-      focusAreaTopic: Topics[FocusArea],
-      globalCriteriaTopic: Topics[ModuleGlobalCriteria],
       poTopic: Topics[PO],
-      competenceTopic: Topics[ModuleCompetence],
-      facultyTopic: Topics[Faculty],
       degreeTopic: Topics[Degree],
       studyProgramTopic: Topics[StudyProgram],
       specializationTopic: Topics[Specialization],
@@ -49,11 +45,7 @@ object CoreDataPublishActor {
         moduleTypeTopic,
         seasonTopic,
         identityTopic,
-        focusAreaTopic,
-        globalCriteriaTopic,
         poTopic,
-        competenceTopic,
-        facultyTopic,
         degreeTopic,
         studyProgramTopic,
         specializationTopic,
@@ -96,29 +88,9 @@ object CoreDataPublishActor {
       updated: Seq[Identity],
       deleted: Seq[String]
   )
-  private case class PublishFocusAreas(
-      created: Seq[FocusArea],
-      updated: Seq[FocusArea],
-      deleted: Seq[String]
-  )
-  private case class PublishModuleGlobalCriteria(
-      created: Seq[ModuleGlobalCriteria],
-      updated: Seq[ModuleGlobalCriteria],
-      deleted: Seq[String]
-  )
   private case class PublishPOs(
       created: Seq[PO],
       updated: Seq[PO],
-      deleted: Seq[String]
-  )
-  private case class PublishModuleCompetences(
-      created: Seq[ModuleCompetence],
-      updated: Seq[ModuleCompetence],
-      deleted: Seq[String]
-  )
-  private case class PublishFaculties(
-      created: Seq[Faculty],
-      updated: Seq[Faculty],
       deleted: Seq[String]
   )
   private case class PublishDegrees(
@@ -146,11 +118,7 @@ object CoreDataPublishActor {
       moduleTypeTopic: Topics[ModuleType],
       seasonTopic: Topics[Season],
       identityTopic: Topics[Identity],
-      focusAreaTopic: Topics[FocusArea],
-      globalCriteriaTopic: Topics[ModuleGlobalCriteria],
       poTopic: Topics[PO],
-      competenceTopic: Topics[ModuleCompetence],
-      facultyTopic: Topics[Faculty],
       degreeTopic: Topics[Degree],
       studyProgramTopic: Topics[StudyProgram],
       specializationTopic: Topics[Specialization],
@@ -224,24 +192,6 @@ object CoreDataPublishActor {
           identityProducer,
           Identity.idLens
         )
-      case PublishFocusAreas(created, updated, deleted) =>
-        publish(
-          created,
-          updated,
-          deleted,
-          focusAreaTopic,
-          focusAreaProducer,
-          GenLens[FocusArea](_.id)
-        )
-      case PublishModuleGlobalCriteria(created, updated, deleted) =>
-        publish(
-          created,
-          updated,
-          deleted,
-          globalCriteriaTopic,
-          globalCriteriaProducer,
-          GenLens[ModuleGlobalCriteria](_.id)
-        )
       case PublishPOs(created, updated, deleted) =>
         publish(
           created,
@@ -250,24 +200,6 @@ object CoreDataPublishActor {
           poTopic,
           poProducer,
           GenLens[PO](_.id)
-        )
-      case PublishModuleCompetences(created, updated, deleted) =>
-        publish(
-          created,
-          updated,
-          deleted,
-          competenceTopic,
-          competenceProducer,
-          GenLens[ModuleCompetence](_.id)
-        )
-      case PublishFaculties(created, updated, deleted) =>
-        publish(
-          created,
-          updated,
-          deleted,
-          facultyTopic,
-          facultyProducer,
-          GenLens[Faculty](_.id)
         )
       case PublishDegrees(created, updated, deleted) =>
         publish(
@@ -316,17 +248,7 @@ object CoreDataPublishActor {
 
     private val identityProducer = makeProducer[Identity](identityTopic)
 
-    private val focusAreaProducer = makeProducer[FocusArea](focusAreaTopic)
-
-    private val globalCriteriaProducer =
-      makeProducer[ModuleGlobalCriteria](globalCriteriaTopic)
-
     private val poProducer = makeProducer[PO](poTopic)
-
-    private val competenceProducer =
-      makeProducer[ModuleCompetence](competenceTopic)
-
-    private val facultyProducer = makeProducer[Faculty](facultyTopic)
 
     private val degreeProducer = makeProducer[Degree](degreeTopic)
 
@@ -411,35 +333,11 @@ final class CoreDataPublishActor(actorRef: ActorRef) {
       deleted: Seq[String]
   ): Unit = actorRef ! PublishIdentities(created, updated, deleted)
 
-  def publishFocusAreas(
-      created: Seq[FocusArea],
-      updated: Seq[FocusArea],
-      deleted: Seq[String]
-  ): Unit = actorRef ! PublishFocusAreas(created, updated, deleted)
-
-  def publishModuleGlobalCriteria(
-      created: Seq[ModuleGlobalCriteria],
-      updated: Seq[ModuleGlobalCriteria],
-      deleted: Seq[String]
-  ): Unit = actorRef ! PublishModuleGlobalCriteria(created, updated, deleted)
-
   def publishPOs(
       created: Seq[PO],
       updated: Seq[PO],
       deleted: Seq[String]
   ): Unit = actorRef ! PublishPOs(created, updated, deleted)
-
-  def publishModuleCompetences(
-      created: Seq[ModuleCompetence],
-      updated: Seq[ModuleCompetence],
-      deleted: Seq[String]
-  ): Unit = actorRef ! PublishModuleCompetences(created, updated, deleted)
-
-  def publishFaculties(
-      created: Seq[Faculty],
-      updated: Seq[Faculty],
-      deleted: Seq[String]
-  ): Unit = actorRef ! PublishFaculties(created, updated, deleted)
 
   def publishDegrees(
       created: Seq[Degree],

@@ -3,7 +3,7 @@ package parsing.core
 import io.circe.Decoder
 import io.circe.HCursor
 import models.core.Identity
-import models.core.PersonStatus
+import models.EmploymentType
 import parser.Parser
 import parser.Parser.*
 import parsing.validator.FacultyValidator
@@ -11,8 +11,8 @@ import parsing.CursorOps
 
 object IdentityFileParser extends YamlFileParser[Identity] {
 
-  def fileParser(faculties: Seq[String]): Parser[List[Identity]] =
-    super.fileParser(new FacultyValidator(faculties))
+  def parser(): Parser[List[Identity]] =
+    super.fileParser(new FacultyValidator())
 
   protected override def decoder: Decoder[Identity] =
     (c: HCursor) => {
@@ -24,15 +24,30 @@ object IdentityFileParser extends YamlFileParser[Identity] {
         .map(l => if key == "nn" then Identity.Unknown(key, l) else Identity.Group(key, l))
         .orElse(
           for {
-            lastname     <- obj.get[String]("lastname")
-            firstname    <- obj.get[String]("firstname")
-            title        <- obj.getOrElse[String]("title")("")
-            faculties    <- obj.getList("faculty")
-            abbreviation <- obj.get[String]("abbreviation")
-            campusId     <- obj.getOrElse[String]("campusid")("")
-            status       <- obj.get[String]("status").map(PersonStatus.apply)
+            lastname       <- obj.get[String]("lastname")
+            firstname      <- obj.get[String]("firstname")
+            title          <- obj.getOrElse[String]("title")("")
+            faculties      <- obj.getList("faculty")
+            abbreviation   <- obj.get[String]("abbreviation")
+            campusId       <- obj.get[Option[String]]("campusid")
+            isActive       <- obj.get[String]("status").map(_ == "active")
+            employmentType <- obj.get[Option[String]]("employment_type")
+            imageUrl       <- obj.get[Option[String]]("image_url")
+            websiteUrl     <- obj.get[Option[String]]("website_url")
           } yield Identity
-            .Person(key, lastname.trim, firstname.trim, title.trim, faculties, abbreviation.trim, campusId.trim, status)
+            .Person(
+              key,
+              lastname.trim,
+              firstname.trim,
+              title.trim,
+              faculties,
+              abbreviation.trim,
+              campusId.map(_.trim),
+              isActive,
+              employmentType.fold(EmploymentType.Unknown)(EmploymentType.apply),
+              imageUrl,
+              websiteUrl
+            )
         )
     }
 }

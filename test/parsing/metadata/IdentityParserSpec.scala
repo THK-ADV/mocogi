@@ -3,10 +3,10 @@ package parsing.metadata
 import cats.data.NonEmptyList
 import helper.FakeIdentities
 import models.core.Identity
-import models.core.PersonStatus
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatest.EitherValues
 import parsing.ParserSpecHelper
+import models.EmploymentType.WMA
 
 class IdentityParserSpec extends AnyWordSpec with ParserSpecHelper with EitherValues with FakeIdentities {
 
@@ -25,10 +25,13 @@ class IdentityParserSpec extends AnyWordSpec with ParserSpecHelper with EitherVa
               "Dobrynin",
               "Alexander",
               "M.Sc.",
-              List(f10.id),
+              List("f10"),
               "ad",
-              "ald",
-              PersonStatus.Active
+              Some("ald"),
+              isActive = true,
+              WMA,
+              None,
+              None,
             )
           )
         )
@@ -52,10 +55,13 @@ class IdentityParserSpec extends AnyWordSpec with ParserSpecHelper with EitherVa
               "Dobrynin",
               "Alexander",
               "M.Sc.",
-              List(f10.id),
+              List("f10"),
               "ad",
-              "ald",
-              PersonStatus.Active
+              Some("ald"),
+              isActive = true,
+              WMA,
+              None,
+              None
             )
           )
         )
@@ -88,20 +94,26 @@ class IdentityParserSpec extends AnyWordSpec with ParserSpecHelper with EitherVa
               "Dobrynin",
               "Alexander",
               "M.Sc.",
-              List(f10.id),
+              List("f10"),
               "ad",
-              "ald",
-              PersonStatus.Active
+              Some("ald"),
+              isActive = true,
+              WMA,
+              None,
+              None
             ),
             Identity.Person(
               "abe",
               "Bertels",
               "Anja",
               "B.Sc.",
-              List(f10.id),
+              List("f10"),
               "ab",
-              "abe",
-              PersonStatus.Active
+              Some("abe"),
+              isActive = true,
+              WMA,
+              None,
+              None
             )
           )
         )
@@ -132,20 +144,26 @@ class IdentityParserSpec extends AnyWordSpec with ParserSpecHelper with EitherVa
               "Dobrynin",
               "Alexander",
               "M.Sc.",
-              List(f10.id),
+              List("f10"),
               "ad",
-              "ald",
-              PersonStatus.Active
+              Some("ald"),
+              isActive = true,
+              WMA,
+              None,
+              None
             ),
             Identity.Person(
               "abe",
               "Bertels",
               "Anja",
               "B.Sc.",
-              List(f10.id),
+              List("f10"),
               "ab",
-              "abe",
-              PersonStatus.Active
+              Some("abe"),
+              isActive = true,
+              WMA,
+              None,
+              None
             )
           )
         )
@@ -166,20 +184,26 @@ class IdentityParserSpec extends AnyWordSpec with ParserSpecHelper with EitherVa
               "Dobrynin",
               "Alexander",
               "M.Sc.",
-              List(f10.id),
+              List("f10"),
               "ad",
-              "ald",
-              PersonStatus.Active
+              Some("ald"),
+              isActive = true,
+              WMA,
+              None,
+              None
             ),
             Identity.Person(
               "abe",
               "Bertels",
               "Anja",
               "B.Sc.",
-              List(f10.id),
+              List("f10"),
               "ab",
-              "abe",
-              PersonStatus.Active
+              Some("abe"),
+              isActive = true,
+              WMA,
+              None,
+              None
             )
           )
         )
@@ -202,20 +226,26 @@ class IdentityParserSpec extends AnyWordSpec with ParserSpecHelper with EitherVa
               "Dobrynin",
               "Alexander",
               "M.Sc.",
-              List(f10.id),
+              List("f10"),
               "ad",
-              "ald",
-              PersonStatus.Active
+              Some("ald"),
+              isActive = true,
+              WMA,
+              None,
+              None
             ),
             Identity.Person(
               "abe",
               "Bertels",
               "Anja",
               "B.Sc.",
-              List(f10.id),
+              List("f10"),
               "ab",
-              "abe",
-              PersonStatus.Active
+              Some("abe"),
+              isActive = true,
+              WMA,
+              None,
+              None
             )
           )
         )

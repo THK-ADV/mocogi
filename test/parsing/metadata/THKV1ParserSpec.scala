@@ -6,6 +6,7 @@ import cats.data.NonEmptyList
 import helper.*
 import models.core.*
 import models.core.ExamPhases.ExamPhase
+import models.EmploymentType.WMA
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatest.EitherValues
 import org.scalatest.OptionValues
@@ -28,9 +29,6 @@ class THKV1ParserSpec
     with FakeModuleTypes
     with FakeSeasons
     with FakeIdentities
-    with FakeFocusAreas
-    with FakeGlobalCriteria
-    with FakeCompetences
     with FakePOs
     with FakeSpecializations {
 
@@ -113,7 +111,7 @@ class THKV1ParserSpec
             )
           )
         )
-        assert(metadata.credits == Left(5))
+        assert(metadata.credits == 5)
         assert(metadata.language == ModuleLanguage("de", "Deutsch", "--"))
         assert(metadata.duration == 1)
         assert(metadata.season == Season("ws", "Wintersemester", "--"))
@@ -125,10 +123,13 @@ class THKV1ParserSpec
                 "Dobrynin",
                 "Alexander",
                 "M.Sc.",
-                List(f10.id),
+                List("f10"),
                 "ad",
-                "ald",
-                PersonStatus.Active
+                Some("ald"),
+                isActive = true,
+                WMA,
+                None,
+                None
               )
             ),
             NonEmptyList.of(
@@ -137,20 +138,26 @@ class THKV1ParserSpec
                 "Dobrynin",
                 "Alexander",
                 "M.Sc.",
-                List(f10.id),
+                List("f10"),
                 "ad",
-                "ald",
-                PersonStatus.Active
+                Some("ald"),
+                isActive = true,
+                WMA,
+                None,
+                None
               ),
               Identity.Person(
                 "abe",
                 "Bertels",
                 "Anja",
                 "B.Sc.",
-                List(f10.id),
+                List("f10"),
                 "ab",
-                "abe",
-                PersonStatus.Active
+                Some("abe"),
+                isActive = true,
+                WMA,
+                None,
+                None
               )
             )
           )
@@ -207,17 +214,17 @@ class THKV1ParserSpec
           metadata.competences == List(
             ModuleCompetence(
               "analyze-domains",
-              "Analyze Domains",
-              "...",
-              "Analyze Domains",
-              "..."
+              "",
+              "",
+              "",
+              ""
             ),
             ModuleCompetence(
               "model-systems",
-              "Model Systems",
-              "...",
-              "Model Systems",
-              "..."
+              "",
+              "",
+              "",
+              ""
             )
           )
         )
@@ -225,17 +232,17 @@ class THKV1ParserSpec
           metadata.globalCriteria == List(
             ModuleGlobalCriteria(
               "internationalization",
-              "Internationalisierung",
-              "...",
-              "Internationalization",
-              "..."
+              "",
+              "",
+              "",
+              ""
             ),
             ModuleGlobalCriteria(
               "digitization",
-              "Digitalisierung",
-              "...",
-              "Digitization",
-              "..."
+              "",
+              "",
+              "",
+              ""
             )
           )
         )
@@ -258,19 +265,7 @@ class THKV1ParserSpec
         assert(metadata.abbrev == "IOS")
         assert(metadata.kind == ModuleType("module", "Modul", "--"))
         assert(metadata.relation.isEmpty)
-        assert(
-          metadata.credits == Right(
-            NonEmptyList.of(
-              ModuleECTSFocusAreaContribution(FocusAreaID("gak"), 3.5, "", ""),
-              ModuleECTSFocusAreaContribution(
-                FocusAreaID("acs"),
-                6,
-                "Text1\nText2\n",
-                ""
-              )
-            )
-          )
-        )
+        assert(metadata.credits == 9.5)
         assert(metadata.language == ModuleLanguage("en", "Englisch", "--"))
         assert(metadata.duration == 1)
         assert(metadata.season == Season("ss", "Sommersemester", "--"))
@@ -282,10 +277,13 @@ class THKV1ParserSpec
                 "Dobrynin",
                 "Alexander",
                 "M.Sc.",
-                List(f10.id),
+                List("f10"),
                 "ad",
-                "ald",
-                PersonStatus.Active
+                Some("ald"),
+                isActive = true,
+                WMA,
+                None,
+                None
               )
             ),
             NonEmptyList.one(
@@ -294,10 +292,13 @@ class THKV1ParserSpec
                 "Dobrynin",
                 "Alexander",
                 "M.Sc.",
-                List(f10.id),
+                List("f10"),
                 "ad",
-                "ald",
-                PersonStatus.Active
+                Some("ald"),
+                isActive = true,
+                WMA,
+                None,
+                None
               )
             )
           )

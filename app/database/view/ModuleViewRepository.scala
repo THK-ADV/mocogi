@@ -8,7 +8,6 @@ import scala.collection.mutable
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-import database.table.stringToInts
 import models.*
 import models.core.Degree
 import models.core.IDLabel
@@ -38,6 +37,17 @@ final class ModuleViewRepository @Inject() (
 
   private val tableQuery = TableQuery[ModuleViewTable]
 
+  def intsToString(xs: List[Int]): String =
+    if (xs.isEmpty) "" else xs.mkString(",")
+
+  def stringToInts(s: String): List[Int] =
+    if (s.isEmpty) Nil
+    else
+      s.split(",").foldLeft(List.empty[Int]) {
+        case (acc, s) =>
+          s.toInt :: acc
+      }
+
   def all(): Future[Iterable[Entry]] =
     db.run(
       tableQuery.result.map(_.groupBy(_.id).map {
@@ -59,34 +69,33 @@ final class ModuleViewRepository @Inject() (
     )
 
   private final class ModuleViewTable(tag: Tag) extends Table[DbEntry](tag, name) {
-    private def id                   = column[UUID]("id")
-    private def title                = column[String]("title")
-    private def abbrev               = column[String]("abbrev")
-    private def ects                 = column[Double]("ects")
-    private def moduleManagementId   = column[String]("module_management_id")
-    private def moduleManagementKind = column[String]("module_management_kind")
-    private def moduleManagementAbbrev =
-      column[String]("module_management_abbreviation")
-    private def moduleManagementTitle =
-      column[String]("module_management_title")
-    private def moduleManagementFirstname =
-      column[String]("module_management_firstname")
-    private def moduleManagementLastname =
-      column[String]("module_management_lastname")
-    private def recommendedSemester = column[String]("recommended_semester")
-    private def mandatory           = column[Boolean]("mandatory")
-    private def studyProgramDeLabel = column[String]("sp_de_label")
-    private def studyProgramEnLabel = column[String]("sp_en_label")
-    private def studyProgramId      = column[String]("sp_id")
-    private def degreeId            = column[String]("degree_id")
-    private def degreeDeLabel       = column[String]("degree_de_label")
-    private def degreeEnLabel       = column[String]("degree_en_label")
-    private def degreeDeDesc        = column[String]("degree_de_desc")
-    private def degreeEnDesc        = column[String]("degree_en_desc")
-    private def poId                = column[String]("po_id")
-    private def poVersion           = column[Int]("po_version")
-    private def specializationId    = column[Option[String]]("spec_id")
-    private def specializationLabel = column[Option[String]]("spec_label")
+
+    import database.MyPostgresProfile.MyAPI.simpleIntListTypeMapper
+
+    private def id                        = column[UUID]("id")
+    private def title                     = column[String]("title")
+    private def abbrev                    = column[String]("abbrev")
+    private def ects                      = column[Double]("ects")
+    private def moduleManagementId        = column[String]("module_management_id")
+    private def moduleManagementKind      = column[String]("module_management_kind")
+    private def moduleManagementAbbrev    = column[Option[String]]("module_management_abbreviation")
+    private def moduleManagementTitle     = column[String]("module_management_title")
+    private def moduleManagementFirstname = column[Option[String]]("module_management_firstname")
+    private def moduleManagementLastname  = column[Option[String]]("module_management_lastname")
+    private def recommendedSemester       = column[List[Int]]("recommended_semester")
+    private def mandatory                 = column[Boolean]("mandatory")
+    private def studyProgramDeLabel       = column[String]("sp_de_label")
+    private def studyProgramEnLabel       = column[String]("sp_en_label")
+    private def studyProgramId            = column[String]("sp_id")
+    private def degreeId                  = column[String]("degree_id")
+    private def degreeDeLabel             = column[String]("degree_de_label")
+    private def degreeEnLabel             = column[String]("degree_en_label")
+    private def degreeDeDesc              = column[String]("degree_de_desc")
+    private def degreeEnDesc              = column[String]("degree_en_desc")
+    private def poId                      = column[String]("po_id")
+    private def poVersion                 = column[Int]("po_version")
+    private def specializationId          = column[Option[String]]("spec_id")
+    private def specializationLabel       = column[Option[String]]("spec_label")
 
     override def * = (
       id,
@@ -123,8 +132,8 @@ final class ModuleViewRepository @Inject() (
             String,
             String,
             Double,
-            (String, String, String, String, String, String),
-            String,
+            (String, String, Option[String], String, Option[String], Option[String]),
+            List[Int],
             Boolean,
             String,
             Int,
@@ -175,11 +184,11 @@ final class ModuleViewRepository @Inject() (
           ects,
           ModuleManagement(
             moduleManagementId,
-            moduleManagementAbbrev,
+            moduleManagementAbbrev.getOrElse(""),
             moduleManagementKind,
             moduleManagementTitle,
-            moduleManagementFirstname,
-            moduleManagementLastname
+            moduleManagementFirstname.getOrElse(""),
+            moduleManagementLastname.getOrElse("")
           ),
           StudyProgramModuleAssociation(
             StudyProgramView(
@@ -199,7 +208,7 @@ final class ModuleViewRepository @Inject() (
                 .map(s => IDLabel(s._1, s._2, s._2))
             ),
             mandatory,
-            recommendedSemester
+            intsToString(recommendedSemester)
           )
         )
     }
@@ -210,8 +219,8 @@ final class ModuleViewRepository @Inject() (
           String,
           String,
           Double,
-          (String, String, String, String, String, String),
-          String,
+          (String, String, Option[String], String, Option[String], Option[String]),
+          List[Int],
           Boolean,
           String,
           Int,
@@ -236,12 +245,12 @@ final class ModuleViewRepository @Inject() (
           (
             a.moduleManagement.id,
             a.moduleManagement.kind,
-            a.moduleManagement.abbreviation,
+            Option.when(a.moduleManagement.abbreviation.nonEmpty)(a.moduleManagement.abbreviation),
             a.moduleManagement.title,
-            a.moduleManagement.firstname,
-            a.moduleManagement.lastname
+            Option.when(a.moduleManagement.firstname.nonEmpty)(a.moduleManagement.firstname),
+            Option.when(a.moduleManagement.lastname.nonEmpty)(a.moduleManagement.lastname)
           ),
-          a.studyProgram.recommendedSemester,
+          stringToInts(a.studyProgram.recommendedSemester),
           a.studyProgram.mandatory,
           a.studyProgram.studyProgram.po.id,
           a.studyProgram.studyProgram.po.version,

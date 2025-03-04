@@ -207,33 +207,14 @@ final class MetadataValidatorSpec extends AnyWordSpec with EitherValues with Opt
     }
 
     "validating ects" should {
-      "pass if ects value is set via contributions to focus areas" in {
-        val ects1 = List(ectsContrib(5))
-        assert(
-          ectsValidator.validate(Right(ects1)).value == ModuleECTS(5, ects1)
-        )
-        val ects2 = List(ectsContrib(5), ectsContrib(3))
-        assert(
-          ectsValidator.validate(Right(ects2)).value == ModuleECTS(8, ects2)
-        )
-      }
-
       "pass if ects value is already set" in {
-        assert(ectsValidator.validate(Left(5)).value == ModuleECTS(5, Nil))
+        assert(ectsValidator.validate(5).value == ModuleECTS(5, Nil))
       }
 
       "fail if neither ects value nor contributions to focus areas are set" in {
         assert(
-          ectsValidator.validate(Left(0)).left.value == List(
+          ectsValidator.validate(0).left.value == List(
             "ects value must be set if contributions to focus areas are empty"
-          )
-        )
-      }
-
-      "fail if ects value is already set, but there are also contributions to focus areas" in {
-        assert(
-          ectsValidator.validate(Right(Nil)).left.value == List(
-            "ects contributions to focus areas must be set if ects value is 0"
           )
         )
       }
@@ -505,7 +486,7 @@ final class MetadataValidatorSpec extends AnyWordSpec with EitherValues with Opt
           "abbrev",
           ModuleType("", "", ""),
           Some(ParsedModuleRelation.Child(m1.id)),
-          Left(1),
+          1,
           ModuleLanguage("", "", ""),
           1,
           Season("", "", ""),
@@ -593,7 +574,7 @@ final class MetadataValidatorSpec extends AnyWordSpec with EitherValues with Opt
           "abbrev",
           ModuleType("", "", ""),
           Some(ParsedModuleRelation.Child(random)),
-          Left(1),
+          1,
           ModuleLanguage("", "", ""),
           1,
           Season("", "", ""),

@@ -8,7 +8,7 @@ import play.api.libs.json.Json
 case class ModulePrerequisiteEntryProtocol(
     text: String,
     modules: List[UUID],
-    pos: List[String]
+    @Deprecated pos: List[String]
 )
 
 object ModulePrerequisiteEntryProtocol {
