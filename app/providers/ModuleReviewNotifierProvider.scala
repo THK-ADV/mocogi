@@ -34,5 +34,5 @@ class ModuleReviewNotifierProvider @Inject() (
     LocalTime.parse(configuration.nonEmptyString("reviewNotification.time"), DateTimeFormatter.ISO_LOCAL_TIME)
 
   private def url: String =
-    configuration.nonEmptyString("reviewNotification.url")
+    configuration.nonEmptyString("mail.approvalUrl")
 }

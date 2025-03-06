@@ -8,6 +8,7 @@ sealed trait ModuleUpdatePermissionType extends IDLabel {
   def deLabel: String
   def enLabel: String
   def isInherited       = this == ModuleUpdatePermissionType.Inherited
+  def isGranted         = this == ModuleUpdatePermissionType.Granted
   override def toString = id
 }
 

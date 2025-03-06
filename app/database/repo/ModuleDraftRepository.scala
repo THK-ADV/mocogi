@@ -42,6 +42,9 @@ final class ModuleDraftRepository @Inject() (
   ) =
     db.run(query.result)
 
+  def getModuleTitle(module: UUID): Future[String] =
+    db.run(tableQuery.filter(_.module === module).map(_.moduleTitle).result.single)
+
   def getMergeRequestId(module: UUID): Future[Option[MergeRequestId]] =
     db.run(tableQuery.filter(_.module === module).map(_.mergeRequestId).result.single)
 

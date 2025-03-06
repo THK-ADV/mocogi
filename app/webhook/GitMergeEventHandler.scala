@@ -1,6 +1,7 @@
 package webhook
 
 import java.nio.file.Paths
+import java.util.Locale
 import java.util.UUID
 import javax.inject.Singleton
 
@@ -17,9 +18,11 @@ import scala.util.Success
 
 import catalog.ModuleCatalogService
 import catalog.Semester
+import cats.data.NonEmptyList
 import database.repo.ModuleCatalogGenerationRequestRepository
 import database.repo.ModuleDraftRepository
 import database.repo.ModuleReviewRepository
+import database.repo.ModuleUpdatePermissionRepository
 import git.*
 import git.api.GitBranchService
 import git.api.GitCommitService
@@ -33,8 +36,11 @@ import org.apache.pekko.actor.Props
 import parser.ParsingError
 import parsing.RawModuleParser
 import parsing.YamlParsingError
+import play.api.i18n.Lang
+import play.api.i18n.MessagesApi
 import play.api.libs.json.*
 import play.api.Logging
+import service.mail.MailerService
 import service.ModuleCreationService
 
 @Singleton
@@ -58,12 +64,16 @@ object GitMergeEventHandler {
       branchService: GitBranchService,
       gitCommitService: GitCommitService,
       moduleCatalogService: ModuleCatalogService,
+      moduleUpdatePermissionRepository: ModuleUpdatePermissionRepository,
+      mailerService: MailerService,
+      messages: MessagesApi,
       bigBangLabel: String,
       moduleCatalogLabel: String,
       autoApprovedLabel: String,
       reviewRequiredLabel: String,
       moduleCatalogGenerationDelay: FiniteDuration,
       maxMergeRetries: Int,
+      moduleEditUrl: String,
       ctx: ExecutionContext
   ) = Props(
     new Impl(
@@ -76,12 +86,16 @@ object GitMergeEventHandler {
       branchService,
       gitCommitService,
       moduleCatalogService,
+      moduleUpdatePermissionRepository,
+      mailerService,
+      messages,
       bigBangLabel,
       moduleCatalogLabel,
       autoApprovedLabel,
       reviewRequiredLabel,
       moduleCatalogGenerationDelay,
       maxMergeRetries,
+      moduleEditUrl,
       ctx
     )
   )
@@ -96,16 +110,22 @@ object GitMergeEventHandler {
       branchService: GitBranchService,
       gitCommitService: GitCommitService,
       moduleCatalogService: ModuleCatalogService,
+      moduleUpdatePermissionRepository: ModuleUpdatePermissionRepository,
+      mailerService: MailerService,
+      messages: MessagesApi,
       bigBangLabel: String,
       moduleCatalogLabel: String,
       autoApprovedLabel: String,
       reviewRequiredLabel: String,
       moduleCatalogGenerationDelay: FiniteDuration,
       maxMergeRetries: Int,
+      moduleEditUrl: String,
       implicit val ctx: ExecutionContext
   ) extends Actor
       with Logging
       with LoggerOps {
+
+    given Lang(Locale.GERMANY)
 
     override def receive: Receive = {
       case HandleEvent(json) =>
@@ -142,6 +162,8 @@ object GitMergeEventHandler {
               case (_, gitConfig.draftBranch, "merge") =>
                 val sha = json.\("object_attributes").\("merge_commit_sha").validate[Action].get
                 handleModuleBulkUpdate(id, sha)
+              case (moduleBranch, gitConfig.draftBranch, "close") if labels.contains(reviewRequiredLabel) =>
+                withUUID(moduleBranch)(moduleId => handleReviewReject(moduleId))
               case _ =>
                 abort(id, result)
             }
@@ -490,6 +512,64 @@ object GitMergeEventHandler {
           val module = parseCreatedModuleInformation(content, diff.newPath.moduleId(gitConfig).get)
           createNewModuleWithPermissions(id, module, diff)
         })
+      yield ()
+
+      f.onComplete {
+        case Success(_) =>
+          self ! Finished(id)
+        case Failure(e) =>
+          logger.error(s"[$id][${Thread.currentThread().getName.last}]", e)
+          self ! Finished(id)
+      }
+    }
+
+    private def handleReviewReject(module: UUID)(using id: UUID): Unit = {
+      def sendMail(rejectedReview: ModuleReview.Atomic) = {
+        for
+          moduleTitle <- moduleDraftRepository.getModuleTitle(module)
+          users       <- moduleUpdatePermissionRepository.allPeopleWithPermissionForModule(module)
+        yield {
+          logger.info(s"[$id][${Thread.currentThread().getName.last}] module review for $module got rejected")
+          val sb = new StringBuilder()
+          sb.append(
+            messages(
+              "module_review.rejection.notification.opening",
+              moduleTitle,
+              rejectedReview.respondedBy.fold("???")(_.fullName),
+              moduleEditUrl.replace("$moduleid", module.toString)
+            )
+          )
+          rejectedReview.comment.foreach { comment =>
+            sb.append("\n\n")
+            val quoted = s"\n${comment.trim}".replaceAll("\n", "\n>")
+            sb.append(messages("module_review.rejection.notification.reason", quoted))
+          }
+          sb.append("\n\n")
+          sb.append(messages("module_review.rejection.notification.closing"))
+
+          val to = users.collect { case (person, perm) if perm.isInherited && person.hasEmail => person.email.get }
+          val cc = users.collect { case (person, perm) if perm.isGranted && person.hasEmail => person.email.get }
+
+          NonEmptyList.fromList(to.toList) match
+            case Some(to) =>
+              mailerService.sendMail(
+                messages("module_review.rejection.notification.subject", moduleTitle),
+                sb.toString(),
+                to,
+                cc.toList
+              )
+            case None =>
+              logger.error(
+                s"[$id][${Thread.currentThread().getName.last}] expected at least one user with inherited permission, but found none"
+              )
+        }
+      }
+      val f = for
+        reviews <- moduleReviewRepository.getAtomicByModule(module)
+        _ <- {
+          val rejected = reviews.filter(_.status.isRejected)
+          if rejected.size == 1 then sendMail(rejected.head) else Future.unit
+        }
       yield ()
 
       f.onComplete {
