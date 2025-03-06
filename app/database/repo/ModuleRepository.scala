@@ -319,7 +319,7 @@ final class ModuleRepository @Inject() (
       action.map(
         _.groupBy(_._1._1._1._1._1._1.id)
           .map {
-            case (m, deps) =>
+            case (_, deps) =>
               val module                     = deps.head._1._1._1._1._1._1
               val relations                  = mutable.HashSet[ModuleRelationDbEntry]()
               val moduleManagement           = mutable.HashSet[String]()

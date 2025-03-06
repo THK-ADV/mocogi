@@ -8,11 +8,13 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 import auth.CampusId
+import database.table.core.IdentityTable
 import database.table.CreatedModuleTable
 import database.table.ModuleDraftTable
 import database.table.ModuleTable
 import database.table.ModuleUpdatePermissionTable
 import models.*
+import models.core.Identity
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.db.slick.HasDatabaseConfigProvider
 import slick.jdbc.JdbcProfile
@@ -43,16 +45,6 @@ final class ModuleUpdatePermissionRepository @Inject() (
   ) =
     db.run(query.result)
 
-  def deleteByModules(
-      modules: Seq[UUID],
-      kind: ModuleUpdatePermissionType
-  ): Future[Int] =
-    db.run(
-      tableQuery
-        .filter(e => e.kind === kind && e.module.inSet(modules))
-        .delete
-    )
-
   def delete(
       module: UUID,
       campusIds: List[CampusId],
@@ -79,6 +71,18 @@ final class ModuleUpdatePermissionRepository @Inject() (
 
   def deleteGranted(module: UUID) =
     db.run(tableQuery.filter(a => a.module === module && a.isGranted).delete)
+
+  def allPeopleWithPermissionForModule(module: UUID): Future[Seq[(Identity.Person, ModuleUpdatePermissionType)]] =
+    db.run(
+      tableQuery
+        .filter(_.module === module)
+        .join(TableQuery[IdentityTable].filter(_.isPerson))
+        .on(_.campusId.value.asColumnOf[String] === _.campusId)
+        .map(a => (a._2, a._1.kind))
+        .distinctOn(_._1.id)
+        .result
+        .map(_.map { case (id, perm) => (Identity.toPersonUnsafe(id), perm) })
+    )
 
   def allFromUser(campusId: CampusId) =
     db.run(

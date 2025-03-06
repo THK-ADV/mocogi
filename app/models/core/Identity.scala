@@ -42,6 +42,8 @@ object Identity {
     def fullName: String = s"$firstname $lastname"
 
     def email: Option[String] = username.map(CampusId.apply(_).toMailAddress)
+
+    def hasEmail: Boolean = username.isDefined
   }
 
   case class Group(id: String, label: String) extends Identity {

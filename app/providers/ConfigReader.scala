@@ -11,7 +11,7 @@ import ops.ConfigurationOps.Ops
 import play.api.Configuration
 
 @Singleton
-final class ConfigReader @Inject() (config: Configuration) {
+final class ConfigReader @Inject() (val config: Configuration) {
 
   val res = for {
     trigger <- config.underlying

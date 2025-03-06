@@ -88,7 +88,13 @@ content.particularities.desc=
 module_review.notification.subject=Änderungsfreigabe für Module
 module_review.notification.opening=Für die folgenden Module wurden Änderungsfreigaben angefordert:
 module_review.notification.body={0}, erstellt von {1}, für den Studiengang {2}.\nÄnderungen als {3} freigeben: {4}
-module_review.notification.closing=Automatisch gesendet von Modulverwaltung THK-GM
+module_review.notification.closing=Automatisch gesendet von Modulverwaltung THK-GM (module@gm.th-koeln.de)
+
+# Module Review Rejection
+module_review.rejection.notification.subject=Überarbeitung für das Modul "{0}" angefordert
+module_review.rejection.notification.opening=Das Review für das Modul "{0}" wurden von "{1}" zurückgewiesen. Es wird um eine Überarbeitung gebeten: {2}.
+module_review.rejection.notification.reason=Der dazugehörige Kommentar ist:{0}
+module_review.rejection.notification.closing=Automatisch gesendet von Modulverwaltung THK-GM (module@gm.th-koeln.de)
 
 # Latex
 latex.lang.package_name=ngerman
