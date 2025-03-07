@@ -92,7 +92,7 @@ module_review.notification.closing=Automatisch gesendet von Modulverwaltung THK-
 
 # Module Review Rejection
 module_review.rejection.notification.subject=Überarbeitung für das Modul "{0}" angefordert
-module_review.rejection.notification.opening=Das Review für das Modul "{0}" wurden von "{1}" zurückgewiesen. Es wird um eine Überarbeitung gebeten: {2}.
+module_review.rejection.notification.opening=Das Review für das Modul "{0}" wurden von "{1}" zurückgewiesen. Es wird um eine Überarbeitung gebeten: {2}
 module_review.rejection.notification.reason=Der dazugehörige Kommentar ist:{0}
 module_review.rejection.notification.closing=Automatisch gesendet von Modulverwaltung THK-GM (module@gm.th-koeln.de)
 
