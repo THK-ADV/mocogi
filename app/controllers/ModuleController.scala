@@ -7,6 +7,7 @@ import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
 
+import scala.annotation.unused
 import scala.collection.parallel.CollectionConverters.seqIsParallelizable
 import scala.concurrent.duration.*
 import scala.concurrent.ExecutionContext
@@ -15,6 +16,7 @@ import scala.util.control.NonFatal
 
 import auth.AuthorizationAction
 import auth.Role.AccessDraftBranch
+import auth.Role.Admin
 import controllers.actions.PermissionCheck
 import controllers.actions.RoleCheck
 import database.view.ModuleViewRepository
@@ -197,6 +199,13 @@ final class ModuleController @Inject() (
         case None        => getPreviewFile0(id)
       }
     }
+
+  def parseValidate(@unused id: UUID) =
+    auth
+      .andThen(hasRole(Admin))
+      .async(parse.byteString.map(_.utf8String))(r =>
+        pipeline.parseValidate(Print(r.body)).map(m => Ok(Json.toJson(m)))
+      )
 
   private def printHtml(print: Print, lastModified: LocalDateTime, lang: PrintingLanguage): Future[String] =
     for

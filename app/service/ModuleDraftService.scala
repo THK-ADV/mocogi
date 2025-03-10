@@ -152,7 +152,7 @@ final class ModuleDraftService @Inject() (
       res <-
         /*
 TODO this check causes a problem when a merged key is modified because it doesn't change the hashset of changed keys
- */
+         */
         //      res <-
         //        if (modifiedKeys.removedAll(draft.modifiedKeys).isEmpty) abortNoChanges
         //        else pipeline.printParseValidate(updated, versionScheme, moduleId)
