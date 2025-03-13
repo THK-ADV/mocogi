@@ -8,16 +8,20 @@ import play.api.mvc.Results.InternalServerError
 
 object ErrorHandler {
 
+  private def getCause(t: Throwable) =
+    if t.getCause != null then t.getCause else t
+
   def internalServerError(
       request: String,
       throwable: Throwable
-  ) = InternalServerError(
-    Json.obj(
-      "type"    -> "server error",
-      "request" -> request,
-      "message" -> throwable.getMessage
+  ) =
+    InternalServerError(
+      Json.obj(
+        "type"    -> "server error",
+        "request" -> request,
+        "message" -> getCause(throwable).getMessage
+      )
     )
-  )
 
   def badRequest(
       request: String,
@@ -25,7 +29,7 @@ object ErrorHandler {
   ) = BadRequest(
     Json.obj(
       "request" -> request,
-      "message" -> throwable.getMessage
+      "message" -> getCause(throwable).getMessage
     )
   )
 
