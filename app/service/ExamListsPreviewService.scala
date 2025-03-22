@@ -16,6 +16,7 @@ import database.view.StudyProgramViewRepository
 import git.api.GitDiffApiService
 import git.api.GitFileDownloadService
 import git.GitConfig
+import models.core.ModuleStatus
 import models.core.Specialization
 import models.FullPoId
 import ops.EitherOps.EStringThrowOps
@@ -58,7 +59,7 @@ final class ExamListsPreviewService @Inject() (
       people            <- people
       specialization    <- specialization
       liveModules       <- moduleService.allFromPO(specialization.fold(fullPoId.id)(identity), activeOnly = true)
-      changedModule <- changedModuleFromPreview(
+      changedModule <- changedActiveModulesFromPreview(
         specialization.fold(fullPoId.id)(identity),
         liveModules.map(_._1.id.get)
       )
@@ -69,7 +70,7 @@ final class ExamListsPreviewService @Inject() (
     yield pdf
   }
 
-  private def changedModuleFromPreview(po: String | Specialization, liveModules: Seq[UUID]) = {
+  private def changedActiveModulesFromPreview(po: String | Specialization, liveModules: Seq[UUID]) = {
     def matchesPO(poId: String, specializationId: Option[String]) =
       po match
         case po: String                => poId == po
@@ -93,8 +94,9 @@ final class ExamListsPreviewService @Inject() (
       }
       .map(_.collect {
         case Some(m)
-            if m.metadata.po.mandatory.exists(a => matchesPO(a.po, a.specialization)) ||
-              m.metadata.po.optional.exists(a => matchesPO(a.po, a.specialization)) =>
+            if ModuleStatus.isActive(m.metadata.status) &&
+              (m.metadata.po.mandatory.exists(a => matchesPO(a.po, a.specialization)) ||
+                m.metadata.po.optional.exists(a => matchesPO(a.po, a.specialization))) =>
           m
       })
   }
