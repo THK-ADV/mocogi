@@ -169,7 +169,7 @@ final class ModuleCatalogLatexPrinter(
 
   private val localDatePattern = DateTimeFormatter.ofPattern("dd.MM.yyyy", lang.locale)
 
-  private implicit def identityOrd: Ordering[Identity] =
+  private given Ordering[Identity] =
     Ordering
       .by[Identity, Int] {
         case _: Identity.Person  => 1
@@ -216,8 +216,23 @@ final class ModuleCatalogLatexPrinter(
         .sortBy(_._1.metadata.title)
         .foreach {
           case (m, lm) =>
-            module(m, lm)
-            newPage
+            m.metadata.moduleRelation match {
+              case Some(ModuleRelationProtocol.Child(_)) =>
+              case Some(ModuleRelationProtocol.Parent(children)) =>
+                module(m, lm, isChild = false)
+                newPage
+                children.toList
+                  .map(id => modulesInPO.find(_._1.id.contains(id)).get)
+                  .sortBy(_._1.metadata.title)
+                  .foreach {
+                    case (m, lm) =>
+                      module(m, lm, isChild = true)
+                      newPage
+                  }
+              case None =>
+                module(m, lm, isChild = false)
+                newPage
+            }
         }
   }
 
@@ -270,18 +285,19 @@ final class ModuleCatalogLatexPrinter(
       .append(
         "[\\vspace*{\\fill}] % vertical space after the chapter title\n"
       )
-      .append("% define the subsection format\n")
-      .append("\\titleformat{name=\\subsection}\n")
-      .append("{\\normalfont\\large\\bfseries} % default font attributes\n")
-      .append("{} % remove numbers\n")
-      .append("{0pt} % no space between subsection and left margin\n")
-      .append("{} % nothing after subsection\n")
+//      .append("% define the subsection format\n")
+//      .append("\\titleformat{name=\\subsection}\n")
+//      .append("{\\normalfont\\large\\bfseries} % default font attributes\n")
+//      .append("{} % remove numbers\n")
+//      .append("{0pt} % no space between subsection and left margin\n")
+//      .append("{} % nothing after subsection\n")
 
   private def commands() =
     builder
       .append("% commands and settings\n")
+//      .append("\\setcounter{tocdepth}{1} % set tocdepth to 1 (includes only chapters and sections)\n")
       .append(
-        "\\setcounter{tocdepth}{1} % set tocdepth to 1 (includes only chapters and sections)\n"
+        "\\setcounter{tocdepth}{2} % set tocdepth to 2 (includes chapters, sections (modules) and subsections (child modules))\n"
       )
       .append(
         "\\providecommand{\\tightlist}{\\setlength{\\itemsep}{0pt}\\setlength{\\parskip}{0pt}}\n"
@@ -304,7 +320,7 @@ final class ModuleCatalogLatexPrinter(
       .append("\\setlength{\\marginparwidth}{0pt} % no margin notes\n")
       .append("\\setlength{\\marginparsep}{0pt} % no margin notes\n")
 
-  private def replaceSubsection(origin: String, p: String => Boolean, replacement: String => String) = {
+  private def rewriteSubsections(origin: String) = {
     val pattern = """\\subsection\{([^}]*)\}""".r
     val result  = new StringBuilder()
     var lastEnd = 0
@@ -312,8 +328,24 @@ final class ModuleCatalogLatexPrinter(
     for (m <- pattern.findAllMatchIn(origin)) {
       val subsectionName = m.group(1)
       result.append(origin.substring(lastEnd, m.start))
+      result.append(s"\\subsection*{$subsectionName}")
+      lastEnd = m.end
+    }
 
-      if p(subsectionName) then result.append(s"\\subsection{${replacement(subsectionName)}}")
+    result.append(origin.substring(lastEnd))
+    result
+  }
+
+  private def replaceSubsection(origin: String, p: String => Boolean, replacement: String => String) = {
+    val pattern = """\\subsection*\{([^}]*)\}""".r
+    val result  = new StringBuilder()
+    var lastEnd = 0
+
+    for (m <- pattern.findAllMatchIn(origin)) {
+      val subsectionName = m.group(1)
+      result.append(origin.substring(lastEnd, m.start))
+
+      if p(subsectionName) then result.append(s"\\subsection*{${replacement(subsectionName)}}")
       else result.append(m.matched)
 
       lastEnd = m.end
@@ -323,7 +355,11 @@ final class ModuleCatalogLatexPrinter(
     result
   }
 
-  private def module(module: ModuleProtocol, lastModified: LocalDateTime | Option[LocalDateTime]): Unit = {
+  private def module(
+      module: ModuleProtocol,
+      lastModified: LocalDateTime | Option[LocalDateTime],
+      isChild: Boolean
+  ): Unit = {
     def row(key: String, value: String) =
       builder.append(s"$key & $value \\\\\n")
 
@@ -407,7 +443,7 @@ final class ModuleCatalogLatexPrinter(
         case Some(lm)          => lm.format(localDatePattern)
         case None              => pLang.unknownLabel
 
-    sectionWithRef(module.metadata.title, module.id)
+    sectionWithRef(module.metadata.title, module.id, isChild)
     builder.append("\\begin{tabularx}{\\linewidth}{@{}>{\\bfseries}l@{\\hspace{.5em}}X@{}}\n")
     row("ID", module.id.fold("Unknown ID")(_.toString))
     row(pLang.lastModifiedLabel, lastModifiedRow)
@@ -485,14 +521,14 @@ final class ModuleCatalogLatexPrinter(
     val markdownContent = new StringBuilder()
     entries.foreach {
       case (headline, lens) =>
-        markdownContent.append(s"## $headline\n")
         val content = pLang.fold(lens.get(deContent), lens.get(enContent))
-        if (content.nonEmpty && !content.forall(_.isWhitespace))
+        if content.nonEmpty && !content.forall(_.isWhitespace) then {
+          markdownContent.append(s"## $headline\n")
           markdownContent.append(content)
-        else markdownContent.append(pLang.noneLabel)
-        markdownContent.append("\n\n")
+          markdownContent.append("\n\n")
+        }
     }
-    pandocApi.toLatex(markdownContent.toString()) match {
+    pandocApi.toLatex(markdownContent.toString()).map(rewriteSubsections) match {
       case Left((e, stdErr)) =>
         logger.error(
           s"""content conversation from markdown to latex failed on $id:
@@ -529,14 +565,14 @@ final class ModuleCatalogLatexPrinter(
     }
   }
 
-  private def sectionWithRef(text: String, id: Option[UUID])(implicit builder: StringBuilder) = {
-    val sectionTitle = escape(text)
+  private def sectionWithRef(text: String, id: Option[UUID], isChild: Boolean)(implicit builder: StringBuilder) = {
+    val title = escape(text)
     id match
       case Some(id) =>
         val ref = s"\\label{sec:${id.toString}}"
-        builder.append(s"\\section{$sectionTitle}$ref\n")
+        if isChild then builder.append(s"\\subsection{$title}$ref\n") else builder.append(s"\\section{$title}$ref\n")
       case None =>
-        builder.append(s"\\section{$sectionTitle}\n")
+        if isChild then builder.append(s"\\subsection{$title}\n") else builder.append(s"\\section{$title}\n")
   }
 
   private def highlight(str: String) =

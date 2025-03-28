@@ -89,12 +89,15 @@ final class ModuleCatalogController @Inject() (
               .map(path =>
                 Ok.sendPath(
                   path,
-                  onClose = () => file.getParentFile.toPath.deleteDirectory()
+                  onClose = () => {
+//                    path.rename(s"$po.pdf").move(Paths.get(tmpDir))
+                    // file.getParentFile.toPath.deleteDirectory()
+                  }
                 ).as(MimeTypes.PDF)
               )
               .recoverWith {
                 case NonFatal(e) =>
-                  file.getParentFile.toPath.deleteDirectory()
+//                  file.getParentFile.toPath.deleteDirectory()
                   Future.failed(e)
               }
           case _ =>
