@@ -3,11 +3,15 @@ exam_phase.label.wise_1=Wintersemester Termin 1 (Jan.-Apr.)
 exam_phase.label.sose_1=Sommersemester Termin 1 (Juli)
 exam_phase.label.sose_2=Sommersemester Termin 2 (Sep./Okt.)
 exam_phase.label.off_schedule=Außerhalb der Prüfungswochen
+exam_phase.label.off_wise=Außerhalb des Wintersemesters
+exam_phase.label.off_sose=Außerhalb des Sommersemesters
 exam_phase.label.none=TBA
 exam_phase.short.wise_1=WiSe
 exam_phase.short.sose_1=SoSe 1
 exam_phase.short.sose_2=SoSe 2
 exam_phase.short.off_schedule=Außerhalb
+exam_phase.short.off_wise=Außerhalb WiSe
+exam_phase.short.off_sose=Außerhalb SoSe
 exam_phase.short.none=TBA
 
 # Module Keys
