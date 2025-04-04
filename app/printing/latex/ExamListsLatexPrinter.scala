@@ -1,9 +1,7 @@
 package printing.latex
 
-import javax.inject.Inject
-import javax.inject.Singleton
-
 import catalog.Semester
+import cats.data.NonEmptyList
 import controllers.LangOps
 import models.*
 import models.core.AssessmentMethod
@@ -16,64 +14,126 @@ import printing.IDLabelDescOps
 import printing.LabelOps
 import printing.PrintingLanguage
 
-@Singleton
-final class ExamListsLatexPrinter @Inject() (messages: MessagesApi) {
-
+object ExamListsLatexPrinter {
   def preview(
       modules: Seq[ModuleProtocol],
       studyProgram: StudyProgramView,
       assessmentMethods: Seq[AssessmentMethod],
-      people: Seq[Identity]
-  )(using Lang): StringBuilder =
-    print(modules, studyProgram, assessmentMethods, people, None)
-
-  private def print(
-      modules: Seq[ModuleProtocol],
-      studyProgram: StudyProgramView,
-      assessmentMethods: Seq[AssessmentMethod],
       people: Seq[Identity],
-      semester: Option[Semester]
-  )(
-      using lang: Lang
-  ) = {
-    given printingLang: PrintingLanguage = lang.toPrintingLang()
-    given builder: StringBuilder         = new StringBuilder()
+      messages: MessagesApi,
+      lang: Lang
+  ): ExamListsLatexPrinter =
+    new ExamListsLatexPrinter(modules, studyProgram, assessmentMethods, people, None, messages)(
+      using lang
+    )
+}
+
+final class ExamListsLatexPrinter(
+    modules: Seq[ModuleProtocol],
+    studyProgram: StudyProgramView,
+    assessmentMethods: Seq[AssessmentMethod],
+    people: Seq[Identity],
+    semester: Option[Semester],
+    messages: MessagesApi,
+)(using lang: Lang) {
+
+  private val builder: StringBuilder = new StringBuilder()
+
+  given printingLang: PrintingLanguage = lang.toPrintingLang()
+
+  def print() = {
     builder.append("\\documentclass[article, 11pt, oneside]{book}\n")
     packages(true)
-    commands
+    commands()
     builder.append(s"""\\begin{document}
                       |\\selectlanguage{${messages("latex.lang.package_name")}}
                       |""".stripMargin)
-    title(studyProgram, semester)
+    title()
     builder.append("""% defines table colors
                      |\definecolor{lightgray}{gray}{0.95}
                      |\rowcolors{1}{lightgray}{}
                      |""".stripMargin)
-    val (mandatory, elective) = splitModules(modules, studyProgram)
+    val (mandatory, elective) = splitModules()
     builder.append(s"""\\chapter{${messages("latex.exam_lists.mandatory_modules.chapter")}}
                       |\\newpage
                       |""".stripMargin)
-    examLists(mandatory, assessmentMethods, people, _.mandatory)
+    examLists(mandatory, _.mandatory)
     builder.append(s"""\\chapter{${messages("latex.exam_lists.elective_modules.chapter")}}
                       |\\newpage
                       |""".stripMargin)
-    examLists(elective, assessmentMethods, people, a => if a.optional.isEmpty then a.mandatory else a.optional)
+    examLists(elective, a => if a.optional.isEmpty then a.mandatory else a.optional)
     builder.append("\\end{document}")
     builder
   }
 
+  private def assessmentRow(xs: List[ModuleAssessmentMethodEntryProtocol]) =
+    if xs.isEmpty then messages("latex.exam_lists.no-assessment.label")
+    else
+      xs
+        .sortBy(_.method)
+        .map { m =>
+          val label = assessmentMethods.find(_.id == m.method).get.localizedLabel
+          escape(m.percentage.fold(label)(d => s"$label (${fmtDouble(d)} %)"))
+        }
+        .mkString(", ")
+
+  private def examinerRow(id: String) =
+    escape(people.find(_.id == id).get.fullName)
+
+  private def examPhasesRow(xs: NonEmptyList[String]) =
+    xs.sorted
+      .map(id => escape(messages(s"exam_phase.short.$id")))
+      .toList
+      .mkString(", ")
+
+  private def titleRow(title: String) =
+    escape(title)
+
+  private def moduleRow(
+      row: Int,
+      title: String,
+      assessmentMethods: List[ModuleAssessmentMethodEntryProtocol],
+      examPhases: NonEmptyList[String],
+      examiner: Examiner.ID
+  ) = {
+    builder.append(s"${row + 1}")
+    builder.append(s" & ${this.titleRow(title)}")
+    builder.append(s" & ${this.assessmentRow(assessmentMethods)}")
+    builder.append(s" & ${this.examinerRow(examiner.first)}")
+    builder.append(s" & ${this.examinerRow(examiner.second)}")
+    builder.append(s" & ${this.examPhasesRow(examPhases)}")
+    builder.append("\\\\\n")
+  }
+
+  private def parentModuleRow(row: Int, title: String) = {
+    builder.append(s"${row + 1}")
+    builder.append(s" & ${this.titleRow(title)}")
+    builder.append(" &")
+    builder.append(" &")
+    builder.append(" &")
+    builder.append(" &")
+    builder.append("\\\\\n")
+  }
+
+  private def childModuleRow(
+      title: String,
+      assessmentMethods: List[ModuleAssessmentMethodEntryProtocol],
+      examPhases: NonEmptyList[String],
+      examiner: Examiner.ID
+  ) = {
+    builder.append(s" & ${this.titleRow(title)}")
+    builder.append(s" & ${this.assessmentRow(assessmentMethods)}")
+    builder.append(s" & ${this.examinerRow(examiner.first)}")
+    builder.append(s" & ${this.examinerRow(examiner.second)}")
+    builder.append(s" & ${this.examPhasesRow(examPhases)}")
+    builder.append("\\\\\n")
+  }
+
   private def examLists(
       modules: Seq[ModuleProtocol],
-      assessmentMethods: Seq[AssessmentMethod],
-      people: Seq[Identity],
       moduleAssessmentMethodEntries: ModuleAssessmentMethodsProtocol => List[ModuleAssessmentMethodEntryProtocol]
-  )(
-      using lang: Lang,
-      pLang: PrintingLanguage,
-      builder: StringBuilder
   ): Unit = {
     if modules.isEmpty then return
-    val conjunctionSeparator = s" ${messages("latex.exam_lists.logical.conjunction")} "
     builder
       .append(s"""\\begin{landscape}
                  |\\centering
@@ -102,25 +162,27 @@ final class ExamListsLatexPrinter @Inject() (messages: MessagesApi) {
       .zipWithIndex
       .foreach {
         case (m, i) =>
-          val assessmentRow = moduleAssessmentMethodEntries(m.metadata.assessmentMethods)
-            .sortBy(_.method)
-            .map { m =>
-              val label = assessmentMethods.find(_.id == m.method).get.localizedLabel
-              escape(m.percentage.fold(label)(d => s"$label (${fmtDouble(d)} %)"))
-            }
-            .mkString(conjunctionSeparator)
-          val examinerRow = (id: String) => escape(people.find(_.id == id).get.fullName)
-          val examPhases = m.metadata.examPhases.sorted
-            .map(id => escape(messages(s"exam_phase.short.$id")))
-            .toList
-            .mkString(conjunctionSeparator)
-          builder.append(s"${i + 1}")
-          builder.append(s" & ${escape(m.metadata.title)}")
-          builder.append(s" & $assessmentRow")
-          builder.append(s" & ${examinerRow(m.metadata.examiner.first)}")
-          builder.append(s" & ${examinerRow(m.metadata.examiner.second)}")
-          builder.append(s" & $examPhases")
-          builder.append("\\\\\n")
+          m.metadata.moduleRelation match {
+            case Some(ModuleRelationProtocol.Child(_)) => // child modules are rendered below their parent module
+            case Some(ModuleRelationProtocol.Parent(children)) =>
+              parentModuleRow(i, m.metadata.title)
+              children.toList.map(id => modules.find(_.id.contains(id)).get).sortBy(_.metadata.title).foreach { m =>
+                childModuleRow(
+                  m.metadata.title,
+                  moduleAssessmentMethodEntries(m.metadata.assessmentMethods),
+                  m.metadata.examPhases,
+                  m.metadata.examiner
+                )
+              }
+            case None =>
+              moduleRow(
+                i,
+                m.metadata.title,
+                moduleAssessmentMethodEntries(m.metadata.assessmentMethods),
+                m.metadata.examPhases,
+                m.metadata.examiner
+              )
+          }
       }
     builder.append("""\hline
                      |\end{longtable}
@@ -128,10 +190,7 @@ final class ExamListsLatexPrinter @Inject() (messages: MessagesApi) {
                      |""".stripMargin)
   }
 
-  private def title(
-      studyProgram: StudyProgramView,
-      semester: Option[Semester]
-  )(using pLang: PrintingLanguage, lang: Lang, builder: StringBuilder) = {
+  private def title() = {
     val titleLabel = messages("latex.exam_lists.title")
     val studyProgramLabel =
       s"${escape(studyProgram.localizedLabel(studyProgram.specialization))} PO ${studyProgram.po.version}"
@@ -148,7 +207,7 @@ final class ExamListsLatexPrinter @Inject() (messages: MessagesApi) {
     )
   }
 
-  private def packages(draft: Boolean)(using lang: Lang, builder: StringBuilder) =
+  private def packages(draft: Boolean) =
     builder
       .append("""% packages
                 |\usepackage[english, ngerman]{babel}
@@ -159,6 +218,7 @@ final class ExamListsLatexPrinter @Inject() (messages: MessagesApi) {
                 |\usepackage{lscape} % landscape
                 |\usepackage{longtable} % page break tables
                 |\usepackage[table]{xcolor} % table color
+                |\usepackage{pdflscape} % automatically rotates pdf page where lscape is used
                 |""".stripMargin)
       .appendOpt(
         Option.when(draft)(
@@ -166,7 +226,7 @@ final class ExamListsLatexPrinter @Inject() (messages: MessagesApi) {
         )
       )
 
-  private def commands(using builder: StringBuilder) =
+  private def commands() =
     builder.append("""% commands and settings
                      |\providecommand{\tightlist}{\setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
                      |% customize the page style
@@ -194,10 +254,7 @@ final class ExamListsLatexPrinter @Inject() (messages: MessagesApi) {
                      |[\vspace*{\fill}] % vertical space after the chapter title
                      |""".stripMargin)
 
-  private def splitModules(
-      modules: Seq[ModuleProtocol],
-      studyProgram: StudyProgramView
-  ): (Seq[ModuleProtocol], Seq[ModuleProtocol]) =
+  private def splitModules(): (Seq[ModuleProtocol], Seq[ModuleProtocol]) =
     modules.partition { m =>
       val mandatory = m.metadata.po.mandatory.exists { a =>
         a.po == studyProgram.po.id && a.specialization

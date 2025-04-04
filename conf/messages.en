@@ -111,7 +111,7 @@ latex.exam_lists.table.header.firstExaminer=First examiner
 latex.exam_lists.table.header.secondExaminer=Second examiner
 latex.exam_lists.table.header.examPhases=Exam phases
 latex.exam_lists.table.footer.nextPageHint=Continued on next page
-latex.exam_lists.logical.conjunction=and
+latex.exam_lists.no-assessment.label=Not specified
 
 # Module Examination
 module.exam.written-exam.label=written examination
