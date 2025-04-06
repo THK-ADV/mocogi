@@ -22,6 +22,7 @@ import database.repo.core.StudyProgramPersonRepository
 import database.repo.ModuleCatalogRepository
 import models.FullPoId
 import models.UniversityRole
+import ops.FileOps.FileOps0
 import play.api.cache.Cached
 import play.api.i18n.Lang
 import play.api.libs.json.JsError
@@ -29,6 +30,7 @@ import play.api.libs.json.JsSuccess
 import play.api.libs.json.JsValue
 import play.api.libs.json.Json
 import play.api.libs.Files.DefaultTemporaryFileCreator
+import play.api.libs.Files.TemporaryFile.temporaryFileToFile
 import play.api.mvc.AbstractController
 import play.api.mvc.ControllerComponents
 import play.mvc.Http.HeaderNames
@@ -88,15 +90,12 @@ final class ModuleCatalogController @Inject() (
               .map(path =>
                 Ok.sendPath(
                   path,
-                  onClose = () => {
-//                    path.rename(s"$po.pdf").move(Paths.get(tmpDir))
-                    // file.getParentFile.toPath.deleteDirectory()
-                  }
+                  onClose = () => file.getParentFile.toPath.deleteDirectory()
                 ).as(MimeTypes.PDF)
               )
               .recoverWith {
                 case NonFatal(e) =>
-//                  file.getParentFile.toPath.deleteDirectory()
+                  file.getParentFile.toPath.deleteDirectory()
                   Future.failed(e)
               }
           case _ =>

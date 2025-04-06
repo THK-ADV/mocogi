@@ -333,7 +333,7 @@ final class ModuleCatalogLatexPrinter(
     }
 
     result.append(origin.substring(lastEnd))
-    result
+    result.result()
   }
 
   private def replaceSubsection(origin: String, p: String => Boolean, replacement: String => String) = {

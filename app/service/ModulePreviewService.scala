@@ -2,7 +2,6 @@ package service
 
 import java.nio.file.Files
 import java.nio.file.Path
-import java.nio.file.Paths
 import java.time.LocalDateTime
 import java.util.UUID
 import javax.inject.Inject
@@ -26,7 +25,6 @@ import models.ModuleCore
 import models.ModuleProtocol
 import models.StudyProgramView
 import ops.EitherOps.EStringThrowOps
-import ops.FileOps.FileOps0
 import parsing.metadata.ModulePOParser
 import play.api.i18n.Lang
 import play.api.i18n.MessagesApi
@@ -138,8 +136,8 @@ final class ModulePreviewService @Inject() (
 
   private def changedActiveModulesFromPreview(po: String | Specialization, liveModules: Seq[UUID]) = {
     val poId = po match
-      case po: String               => po
-      case Specialization(id, _, _) => id
+      case po: String                  => po
+      case Specialization(id, _, _, _) => id
 
     diffApiService
       .compare(gitConfig.mainBranch, gitConfig.draftBranch)
@@ -156,8 +154,8 @@ final class ModulePreviewService @Inject() (
         case Some((m, lastModified)) if ModuleStatus.isActive(m.metadata.status) && m.metadata.po.mandatory.exists {
               a =>
                 po match
-                  case po: String                => a.po == po
-                  case Specialization(id, _, po) => a.po == po && a.specialization.fold(true)(_ == id)
+                  case po: String                   => a.po == po
+                  case Specialization(id, _, _, po) => a.po == po && a.specialization.fold(true)(_ == id)
             } =>
           (m, lastModified)
       }.toSeq)
