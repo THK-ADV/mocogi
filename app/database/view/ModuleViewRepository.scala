@@ -86,6 +86,7 @@ final class ModuleViewRepository @Inject() (
     private def mandatory                 = column[Boolean]("mandatory")
     private def studyProgramDeLabel       = column[String]("sp_de_label")
     private def studyProgramEnLabel       = column[String]("sp_en_label")
+    private def studyProgramAbbreviation  = column[String]("sp_abbrev")
     private def studyProgramId            = column[String]("sp_id")
     private def degreeId                  = column[String]("degree_id")
     private def degreeDeLabel             = column[String]("degree_de_label")
@@ -117,6 +118,7 @@ final class ModuleViewRepository @Inject() (
       studyProgramId,
       studyProgramDeLabel,
       studyProgramEnLabel,
+      studyProgramAbbreviation,
       degreeId,
       degreeDeLabel,
       degreeEnLabel,
@@ -137,6 +139,7 @@ final class ModuleViewRepository @Inject() (
             Boolean,
             String,
             Int,
+            String,
             String,
             String,
             String,
@@ -169,6 +172,7 @@ final class ModuleViewRepository @Inject() (
             studyProgramId,
             studyProgramDeLabel,
             studyProgramEnLabel,
+            studyProgramAbbreviation,
             degreeId,
             degreeDeLabel,
             degreeEnLabel,
@@ -195,6 +199,7 @@ final class ModuleViewRepository @Inject() (
               studyProgramId,
               studyProgramDeLabel,
               studyProgramEnLabel,
+              studyProgramAbbreviation,
               POCore(poId, poVersion),
               Degree(
                 degreeId,
@@ -232,6 +237,7 @@ final class ModuleViewRepository @Inject() (
           String,
           String,
           String,
+          String,
           Option[String],
           Option[String]
       )
@@ -257,6 +263,7 @@ final class ModuleViewRepository @Inject() (
           a.studyProgram.studyProgram.id,
           a.studyProgram.studyProgram.deLabel,
           a.studyProgram.studyProgram.enLabel,
+          a.studyProgram.studyProgram.abbreviation,
           a.studyProgram.studyProgram.degree.id,
           a.studyProgram.studyProgram.degree.deLabel,
           a.studyProgram.studyProgram.degree.enLabel,

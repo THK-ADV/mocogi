@@ -67,15 +67,15 @@ final class ModuleReviewService @Inject() (
    * @return
    */
   def delete(moduleId: UUID): Future[Unit] = {
-    def go(id: MergeRequestId) =
+    def go(id: Option[MergeRequestId]) =
       for {
-        _ <- api.delete(id)
+        _ <- id.fold(Future.unit)(api.delete)
         _ <- reviewRepo.delete(moduleId)
         _ <- draftRepo.updateMergeRequest(moduleId, None)
-      } yield logger.info(s"Successfully deleted merge request with id ${id.value}")
+      } yield logger.info(s"Successfully deleted reviews for module $moduleId")
     draftRepo.getByModuleOpt(moduleId).flatMap {
-      case Some(draft) if draft.mergeRequestId.isDefined => go(draft.mergeRequestId.get)
-      case _                                             => Future.unit
+      case Some(draft) => go(draft.mergeRequestId)
+      case _           => Future.unit
     }
   }
 

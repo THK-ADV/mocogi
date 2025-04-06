@@ -7,8 +7,11 @@ exam_phase.label.off_wise=Außerhalb des Wintersemesters
 exam_phase.label.off_sose=Außerhalb des Sommersemesters
 exam_phase.label.none=TBA
 exam_phase.short.wise_1=WiSe
+exam_phase.short.sose=SoSe
+exam_phase.short.wise=Wise
 exam_phase.short.sose_1=SoSe 1
 exam_phase.short.sose_2=SoSe 2
+exam_phase.short.off=Außerhalb
 exam_phase.short.off_schedule=Außerhalb
 exam_phase.short.off_wise=Außerhalb WiSe
 exam_phase.short.off_sose=Außerhalb SoSe
@@ -109,15 +112,19 @@ latex.module.label=Module
 
 # Latex Exam Lists
 latex.exam_lists.title=Prüfungsliste
+latex.exam_lists.modules.chapter=Module
+latex.exam_lists.module_matrix.chapter=Modulmatrix
+latex.exam_lists.module_matrix.mandatory_module.label=Pflichtmodul
+latex.exam_lists.module_matrix.elective_module.label=Wahlmodul
 latex.exam_lists.mandatory_modules.chapter=Pflichtmodule
 latex.exam_lists.elective_modules.chapter=Wahlmodule
 latex.exam_lists.table.header.moduleName=Modulname
 latex.exam_lists.table.header.assessmentMethod=Prüfungsleistung
 latex.exam_lists.table.header.firstExaminer=Erstprüfer
-latex.exam_lists.table.header.secondExaminer=ZweitPrüfer
+latex.exam_lists.table.header.secondExaminer=Zweitprüfer
 latex.exam_lists.table.header.examPhases=Prüfungsphasen
 latex.exam_lists.table.footer.nextPageHint=Fortsetzung auf der nächsten Seite
-latex.exam_lists.logical.conjunction=und
+latex.exam_lists.no-assessment.label=Keine Angabe
 
 # Module Examination
 module.exam.written-exam.label=Klausurarbeit

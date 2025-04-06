@@ -17,8 +17,9 @@ object SpecializationFileParser extends YamlFileParser[Specialization] {
       val key = c.key.get
       val obj = c.root.downField(key)
       for {
-        label <- obj.get[String]("label")
-        po    <- obj.get[String]("po")
-      } yield Specialization(key, label, po)
+        label        <- obj.get[String]("label")
+        abbreviation <- obj.get[String]("abbreviation")
+        po           <- obj.get[String]("po")
+      } yield Specialization(key, label, abbreviation, po)
     }
 }

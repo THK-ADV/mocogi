@@ -8,5 +8,7 @@ case class ModuleStatus(id: String, deLabel: String, enLabel: String) extends ID
 object ModuleStatus {
   implicit def writes: Writes[ModuleStatus] = Json.writes
 
-  def isActive(id: String) = id == "active"
+  def activeId = "active"
+
+  def isActive(id: String) = id == activeId
 }

@@ -9,11 +9,14 @@ final class SpecializationTable(tag: Tag) extends Table[Specialization](tag, "sp
 
   def label = column[String]("label")
 
+  def abbreviation = column[String]("abbreviation")
+
   def po = column[String]("po")
 
   override def * = (
     id,
     label,
+    abbreviation,
     po
   ) <> (Specialization.apply.tupled, Specialization.unapply)
 }

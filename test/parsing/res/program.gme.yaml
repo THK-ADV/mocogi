@@ -1,6 +1,7 @@
 ing_gme:
   de_label: Allgemeiner Maschinenbau
   en_label: General Mechanical Engineering
+  abbreviation: TEST
   de_url: https://www.th-koeln.de/studium/allgemeiner-maschinenbau-bachelor_2709.php
   en_url: https://www.th-koeln.de/en/academics/general-mechanical-engineering-bachelors-program_7323.php
   grade: grade.beng

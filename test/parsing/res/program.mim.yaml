@@ -1,6 +1,7 @@
 inf_mim:
   de_label: Medieninformatik
   en_label: Media Informatics
+  abbreviation: TEST
   de_url: https://www.th-koeln.de/studium/medieninformatik-master_3729.php
   en_url: https://www.th-koeln.de/en/academics/media-informatics-masters-program_7781.php
   grade: grade.msc

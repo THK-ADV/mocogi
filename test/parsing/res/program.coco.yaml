@@ -1,6 +1,7 @@
 inf_coco:
   de_label: Code & Context
   en_label: Code & Context
+  abbreviation: TEST
   de_url: https://www.th-koeln.de/studium/code--context-bachelor_62103.php
   grade: grade.bsc
   program_director: person.ald

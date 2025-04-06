@@ -30,6 +30,7 @@ import play.api.libs.json.JsSuccess
 import play.api.libs.json.JsValue
 import play.api.libs.json.Json
 import play.api.libs.Files.DefaultTemporaryFileCreator
+import play.api.libs.Files.TemporaryFile.temporaryFileToFile
 import play.api.mvc.AbstractController
 import play.api.mvc.ControllerComponents
 import play.mvc.Http.HeaderNames

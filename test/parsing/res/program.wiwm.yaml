@@ -1,6 +1,7 @@
 ing_wiwm:
   de_label: Wirtschaftsingenieurwesen
   en_label: Business Administration and Engineering
+  abbreviation: TEST
   de_url: https://www.th-koeln.de/studium/wirtschaftsingenieurwesen-master_49282.php
   en_url: https://www.th-koeln.de/en/academics/business-administration-and-engineering-masters-program_49280.php
   grade: grade.msc

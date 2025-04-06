@@ -1,6 +1,7 @@
 inf_itm:
   de_label: IT-Management (Informatik)
   en_label: IT Management (Computer Science)
+  abbreviation: TEST
   de_url: https://www.th-koeln.de/studium/it-management-informatik---bachelor_40759.php
   en_url: https://www.th-koeln.de/en/academics/it-management-computer-science---bachelors-program_40818.php
   grade: grade.bsc

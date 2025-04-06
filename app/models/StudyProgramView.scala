@@ -10,6 +10,7 @@ case class StudyProgramView(
     id: String,
     deLabel: String,
     enLabel: String,
+    abbreviation: String,
     po: POCore,
     degree: Degree,
     specialization: Option[IDLabel]

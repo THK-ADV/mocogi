@@ -1,6 +1,7 @@
 inf_wi:
   de_label: Wirtschaftsinformatik
   en_label: Business Information Systems
+  abbreviation: TEST
   de_url: https://www.th-koeln.de/studium/wirtschaftsinformatik-bachelor_2770.php
   en_url: https://www.th-koeln.de/en/academics/business-information-systems-bachelors-program_7329.php
   grade: grade.bsc

@@ -40,4 +40,7 @@ final class ModuleCreationService @Inject() (
 
   def deleteMany(modules: Seq[UUID]): Future[Int] =
     repo.delete(modules)
+
+  def allGeneric(): Future[Seq[ModuleCore]] =
+    repo.allGeneric()
 }

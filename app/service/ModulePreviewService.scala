@@ -18,6 +18,7 @@ import database.view.StudyProgramViewRepository
 import git.api.GitDiffApiService
 import git.api.GitFileDownloadService
 import git.GitConfig
+import models.core.ModuleStatus
 import models.core.Specialization
 import models.FullPoId
 import models.ModuleCore
@@ -84,7 +85,7 @@ final class ModulePreviewService @Inject() (
           )
       }
       liveModules <- moduleService.allFromMandatoryPO(specialization.fold(fullPoId.id)(identity))
-      changedModules <- changedModuleFromPreview(
+      changedModules <- changedActiveModulesFromPreview(
         specialization.fold(fullPoId.id)(identity),
         liveModules.map(_._1.id.get)
       )
@@ -133,10 +134,10 @@ final class ModulePreviewService @Inject() (
         (ModuleCore(p.id.get, p.metadata.title, p.metadata.abbrev), diffs)
     }
 
-  private def changedModuleFromPreview(po: String | Specialization, liveModules: Seq[UUID]) = {
+  private def changedActiveModulesFromPreview(po: String | Specialization, liveModules: Seq[UUID]) = {
     val poId = po match
-      case po: String               => po
-      case Specialization(id, _, _) => id
+      case po: String                  => po
+      case Specialization(id, _, _, _) => id
 
     diffApiService
       .compare(gitConfig.mainBranch, gitConfig.draftBranch)
@@ -150,10 +151,11 @@ final class ModulePreviewService @Inject() (
         Future.sequence(downloads.seq)
       }
       .map(_.collect {
-        case Some((m, lastModified)) if m.metadata.po.mandatory.exists { a =>
-              po match
-                case po: String                => a.po == po
-                case Specialization(id, _, po) => a.po == po && a.specialization.fold(true)(_ == id)
+        case Some((m, lastModified)) if ModuleStatus.isActive(m.metadata.status) && m.metadata.po.mandatory.exists {
+              a =>
+                po match
+                  case po: String                   => a.po == po
+                  case Specialization(id, _, _, po) => a.po == po && a.specialization.fold(true)(_ == id)
             } =>
           (m, lastModified)
       }.toSeq)

@@ -45,8 +45,14 @@ final class ModuleService @Inject() (
   def allNewlyCreatedGenericModulesWithPOs(): Future[Seq[(ModuleCore, Seq[String])]] =
     moduleCreationService.allGenericWithPOsAsModuleCore()
 
+  def allGeneric(): Future[Seq[ModuleCore]] =
+    for
+      a <- repo.allGeneric()
+      b <- moduleCreationService.allGeneric()
+    yield a.concat(b).distinctBy(_.id)
+
   def allFromMandatoryPO(po: String | Specialization): Future[Seq[(ModuleProtocol, LocalDateTime)]] =
-    repo.allFromMandatoryPO(po)
+    repo.allActiveFromMandatoryPO(po)
 
   def allFromPO(po: String | Specialization, activeOnly: Boolean): Future[Seq[(ModuleProtocol, LocalDateTime)]] =
     repo.allFromPO(po, activeOnly)

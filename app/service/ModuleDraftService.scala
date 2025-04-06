@@ -94,6 +94,7 @@ final class ModuleDraftService @Inject() (
           ).map(_.map(_ => logger.info(s"Successfully created module draft $moduleId (${protocol.metadata.title})")))
       })
 
+  // TODO maybe this can be turned off
   private def abortNoChanges =
     Future.failed(new Exception("no changes to the module could be found"))
 

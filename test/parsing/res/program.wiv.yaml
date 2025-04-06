@@ -1,6 +1,7 @@
 inf_wiv:
   de_label: Wirtschaftsinformatik (Verbundstudiengang)
   en_label: Business Information Systems (Integrated Campus and Distance Education)
+  abbreviation: TEST
   de_url: https://www.th-koeln.de/studium/wirtschaftsinformatik-bachelor-verbundstudiengang_23993.php
   en_url: https://www.th-koeln.de/en/academics/business-information-systems-bachelors-program--joint-degree-program_7330.php
   grade: grade.bsc

@@ -106,11 +106,14 @@ final class ModuleRepository @Inject() (
         .map(_.map(ModuleCore.apply.tupled))
     )
 
+  def allGeneric(): Future[Seq[ModuleCore]] =
+    db.run(tableQuery.filter(_.isGeneric).map(a => (a.id, a.title, a.abbrev)).result.map(_.map(ModuleCore.apply)))
+
   // TODO the po join does not consider full po id
   def allGenericModulesWithPOs(): Future[Seq[(ModuleCore, Seq[String])]] =
     db.run(
       tableQuery
-        .filter(_.moduleType === "generic_module")
+        .filter(_.isGeneric)
         .join(modulePOMandatoryTable)
         .on(_.id === _.module)
         .map { case (m, po) => ((m.id, m.title, m.abbrev), po.po) }
@@ -126,13 +129,16 @@ final class ModuleRepository @Inject() (
     )
 
   // TODO this should be used to fetch modules for po
-  def allFromMandatoryPO(po: String | Specialization): Future[Seq[(ModuleProtocol, LocalDateTime)]] = {
+  def allActiveFromMandatoryPO(po: String | Specialization): Future[Seq[(ModuleProtocol, LocalDateTime)]] = {
     val poFilter: ModuleTable => Rep[Boolean] = po match
-      case po: String => t => modulePOMandatoryTable.filter(a => t.id === a.module && a.po === po).exists
-      case Specialization(id, _, po) =>
+      case po: String =>
+        t => modulePOMandatoryTable.filter(a => t.id === a.module && a.po === po && t.isActive()).exists
+      case Specialization(id, _, _, po) =>
         t =>
           modulePOMandatoryTable
-            .filter(a => t.id === a.module && a.po === po && a.specialization.map(_ === id).getOrElse(true))
+            .filter(a =>
+              t.id === a.module && a.po === po && t.isActive() && a.specialization.map(_ === id).getOrElse(true)
+            )
             .exists
     retrieve(tableQuery.filter(poFilter))
   }
@@ -144,7 +150,7 @@ final class ModuleRepository @Inject() (
         t =>
           modulePOMandatoryTable.filter(a => t.id === a.module && a.po === po).exists ||
             modulePOOptionalTable.filter(a => t.id === a.module && a.po === po).exists
-      case Specialization(id, _, po) =>
+      case Specialization(id, _, _, po) =>
         t =>
           modulePOMandatoryTable
             .filter(a => t.id === a.module && a.po === po && a.specialization.map(_ === id).getOrElse(true))

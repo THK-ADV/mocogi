@@ -7,4 +7,6 @@ case class ModuleType(id: String, deLabel: String, enLabel: String) extends IDLa
 
 object ModuleType {
   implicit def writes: Writes[ModuleType] = Json.writes
+
+  def genericId = "generic_module"
 }
