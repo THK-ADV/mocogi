@@ -7,8 +7,11 @@ exam_phase.label.off_wise=Outside Winter Semester
 exam_phase.label.off_sose=Outside Summer Semester
 exam_phase.label.none=TBA
 exam_phase.short.wise_1=WiSe
+exam_phase.short.sose=SoSe
+exam_phase.short.wise=Wise
 exam_phase.short.sose_1=SoSe 1
 exam_phase.short.sose_2=SoSe 2
+exam_phase.short.off=Outside
 exam_phase.short.off_schedule=Outside
 exam_phase.short.off_wise=Outside WiSe
 exam_phase.short.off_sose=Outside SoSe
@@ -103,6 +106,10 @@ latex.module.label=Modules
 
 # Latex Exam Lists
 latex.exam_lists.title=Exam List
+latex.exam_lists.modules.chapter=Modules
+latex.exam_lists.module_matrix.chapter=Module Matrix
+latex.exam_lists.module_matrix.mandatory_module.label=Mandatory Module
+latex.exam_lists.module_matrix.elective_module.label=Elective Module
 latex.exam_lists.mandatory_modules.chapter=Mandatory Modules
 latex.exam_lists.elective_modules.chapter=Elective Modules
 latex.exam_lists.table.header.moduleName=Module name

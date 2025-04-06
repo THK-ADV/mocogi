@@ -1,19 +1,24 @@
 inf_mim4_hci:
   label: Human-Computer Interaction
+  abbreviation: TEST
   po: po.inf1
 
 inf_mim4_mppd:
   label: Multiperspective Product Development
+  abbreviation: TEST
   po: po.itm1
 
 inf_mim4_sc:
   label: Social Computing
+  abbreviation: TEST
   po: po.inf1
 
 inf_mim4_vc:
   label: Visual Computing
+  abbreviation: TEST
   po: po.wi1
 
 inf_mim4_wtw:
   label: Weaving the Web
+  abbreviation: TEST
   po: po.mi1

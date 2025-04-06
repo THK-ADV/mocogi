@@ -118,6 +118,7 @@ class StudyProgramRepository @Inject() (
                   sp.id,
                   sp.deLabel,
                   sp.enLabel,
+                  sp.abbreviation,
                   sp.degree,
                   NonEmptyList.fromListUnsafe(directors.toList),
                   NonEmptyList.fromListUnsafe(examDirectors.toList)
@@ -132,6 +133,7 @@ class StudyProgramRepository @Inject() (
       sp.id,
       sp.deLabel,
       sp.enLabel,
+      sp.abbreviation,
       sp.degree
     )
 }

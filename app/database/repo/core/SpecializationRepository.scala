@@ -37,4 +37,7 @@ final class SpecializationRepository @Inject() (
 
   def get(id: String): Future[Option[Specialization]] =
     db.run(tableQuery.filter(_.id === id).result.singleOpt)
+
+  def allByPO(po: String): Future[Seq[Specialization]] =
+    db.run(tableQuery.filter(_.po === po).result)
 }

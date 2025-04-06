@@ -7,6 +7,7 @@ case class StudyProgramDbEntry(
     id: String,
     deLabel: String,
     enLabel: String,
+    abbreviation: String,
     degree: String
 )
 
@@ -16,6 +17,8 @@ final class StudyProgramTable(tag: Tag)
 
   def degree = column[String]("degree")
 
+  def abbreviation = column[String]("abbreviation")
+
   def degreeFk =
     foreignKey("degree", degree, TableQuery[DegreeTable])(_.id)
 
@@ -24,6 +27,7 @@ final class StudyProgramTable(tag: Tag)
       id,
       deLabel,
       enLabel,
+      abbreviation,
       degree
     ) <> (StudyProgramDbEntry.apply, StudyProgramDbEntry.unapply)
 }

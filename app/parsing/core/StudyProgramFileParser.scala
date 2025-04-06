@@ -42,6 +42,7 @@ object StudyProgramFileParser extends YamlFileParser[StudyProgram] {
       for {
         deLabel         <- obj.get[String]("de_label")
         enLabel         <- obj.get[String]("en_label")
+        abbreviation    <- obj.get[String]("abbreviation")
         degree          <- obj.get[String]("grade")
         programDirector <- obj.getNonEmptyList("program_director")
         examDirector    <- obj.getNonEmptyList("exam_director")
@@ -49,6 +50,7 @@ object StudyProgramFileParser extends YamlFileParser[StudyProgram] {
         key,
         deLabel,
         enLabel,
+        abbreviation,
         degree,
         programDirector,
         examDirector

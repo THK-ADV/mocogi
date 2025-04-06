@@ -22,7 +22,6 @@ import database.repo.core.StudyProgramPersonRepository
 import database.repo.ModuleCatalogRepository
 import models.FullPoId
 import models.UniversityRole
-import ops.FileOps.FileOps0
 import play.api.cache.Cached
 import play.api.i18n.Lang
 import play.api.libs.json.JsError

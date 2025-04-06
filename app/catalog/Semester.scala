@@ -1,5 +1,8 @@
 package catalog
 
+import java.time.LocalDate
+import java.time.Month
+
 import models.core.Label
 import play.api.libs.json.Json
 import play.api.libs.json.Writes
@@ -37,6 +40,14 @@ object Semester {
       case "wise" => winter(year.toInt)
       case "sose" => summer(year.toInt)
     }
+  }
+
+  def current(): Semester = {
+    val now       = LocalDate.now
+    val date      = now.getMonth.getValue
+    val soseStart = Month.MARCH.getValue
+    val soseEnd   = Month.AUGUST.getValue
+    if date >= soseStart && date <= soseEnd then Semester.summer(now.getYear) else Semester.winter(now.getYear)
   }
 
   implicit def writes: Writes[Semester] =

@@ -24,6 +24,7 @@ final class SpecializationFileParserSpec
       val input =
         """inf1_abc:
           |  label: ABC
+          |  abbreviation: TEST
           |  po: po.inf1""".stripMargin
       val (res, rest) = fileParser.parse(input)
       assert(rest.isEmpty)
@@ -37,20 +38,24 @@ final class SpecializationFileParserSpec
       val input =
         """inf1_abc:
           |  label: ABC
+          |  abbreviation: TEST
           |  po: po.inf1
           |
           |wi1_def:
           |  label: WI
+          |  abbreviation: TEST
           |  po: po.wi1""".stripMargin
       val (res, rest) = fileParser.parse(input)
       assert(rest.isEmpty)
       val entry1 = res.value.head
       assert(entry1.id == "inf1_abc")
       assert(entry1.label == "ABC")
+      assert(entry1.abbreviation == "TEST")
       assert(entry1.po == "inf1")
       val entry2 = res.value(1)
       assert(entry2.id == "wi1_def")
       assert(entry2.label == "WI")
+      assert(entry2.abbreviation == "TEST")
       assert(entry2.po == "wi1")
     }
 
@@ -60,22 +65,27 @@ final class SpecializationFileParserSpec
       assert(rest.isEmpty)
       val first = res.value.find(_.id == "inf_mim4_hci").value
       assert(first.label == "Human-Computer Interaction")
+      assert(first.abbreviation == "TEST")
       assert(first.po == "inf1")
 
       val second = res.value.find(_.id == "inf_mim4_mppd").value
       assert(second.label == "Multiperspective Product Development")
+      assert(second.abbreviation == "TEST")
       assert(second.po == "itm1")
 
       val third = res.value.find(_.id == "inf_mim4_sc").value
       assert(third.label == "Social Computing")
+      assert(third.abbreviation == "TEST")
       assert(third.po == "inf1")
 
       val forth = res.value.find(_.id == "inf_mim4_vc").value
       assert(forth.label == "Visual Computing")
+      assert(forth.abbreviation == "TEST")
       assert(forth.po == "wi1")
 
       val fifth = res.value.find(_.id == "inf_mim4_wtw").value
       assert(fifth.label == "Weaving the Web")
+      assert(fifth.abbreviation == "TEST")
       assert(fifth.po == "mi1")
     }
   }

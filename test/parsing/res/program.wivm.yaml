@@ -1,6 +1,7 @@
 inf_wivm:
   de_label: Wirtschaftsinformatik (Verbundstudiengang)
   en_label: Business Information Systems (Integrated Campus and Distance Education)
+  abbreviation: TEST
   de_url: https://www.th-koeln.de/studium/wirtschaftsinformatik-master-verbundstudiengang_4189.php
   en_url: https://www.th-koeln.de/en/academics/business-information-systems-masters-programjoint-degree-program_7783.php
   grade: grade.msc

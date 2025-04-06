@@ -1,6 +1,7 @@
 inf_wsc:
   de_label: Web Science
   en_label: Web Science
+  abbreviation: TEST
   de_url: https://www.th-koeln.de/studium/web-science-master_3903.php
   grade: grade.msc
   program_director: person.nn

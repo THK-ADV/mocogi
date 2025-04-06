@@ -1,6 +1,7 @@
 inf_inf:
   de_label: Informatik
   en_label: Computer Science
+  abbreviation: TEST
   de_url: https://www.th-koeln.de/studium/informatik-bachelor_3488.php
   en_url: https://www.th-koeln.de/en/academics/computer-science-bachelors-program_7326.php
   grade: grade.bsc

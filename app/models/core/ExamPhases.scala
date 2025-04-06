@@ -9,15 +9,19 @@ object ExamPhases:
   opaque type ExamPhase = String
 
   object ExamPhase extends NelWrites:
-    lazy val none: ExamPhase = "none"
+    def none: ExamPhase    = "none"
+    def sose1: ExamPhase   = "sose_1"
+    def sose2: ExamPhase   = "sose_2"
+    def offWise: ExamPhase = "off_wise"
+    def offSose: ExamPhase = "off_sose"
 
     def all: NonEmptyList[ExamPhase] =
       NonEmptyList.of(
         "wise_1",
-        "sose_1",
-        "sose_2",
-        "off_wise",
-        "off_sose",
+        sose1,
+        sose2,
+        offWise,
+        offSose,
         "off_schedule",
         none
       )

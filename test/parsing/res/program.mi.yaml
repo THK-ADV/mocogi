@@ -1,6 +1,7 @@
 inf_mi:
   de_label: Medieninformatik
   en_label: Media Informatics
+  abbreviation: TEST
   de_url: https://www.th-koeln.de/studium/medieninformatik-bachelor_2379.php
   en_url: https://www.th-koeln.de/en/academics/media-informatics-bachelors-program_7327.php
   grade: grade.bsc

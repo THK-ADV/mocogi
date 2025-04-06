@@ -4,6 +4,8 @@ import java.time.LocalDateTime
 import java.util.UUID
 
 import cats.data.NonEmptyList
+import models.core.ModuleStatus
+import models.core.ModuleType
 import models.Examiner
 import models.ModulePrerequisiteEntryProtocol
 import models.ModuleWorkload
@@ -100,7 +102,10 @@ final class ModuleTable(tag: Tag) extends Table[ModuleDbEntry](tag, "module") {
   def particularitiesEn = column[String]("particularities_en")
 
   def isActive(): Rep[Boolean] =
-    this.status === "active"
+    this.status === ModuleStatus.activeId
+
+  def isGeneric: Rep[Boolean] =
+    this.moduleType === ModuleType.genericId
 
   override def * = (
     id,

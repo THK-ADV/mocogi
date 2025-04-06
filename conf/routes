@@ -69,6 +69,7 @@ GET           /electivesCatalogs/:semester                        controllers.El
 # Exam Lists
 
 GET           /examLists/preview/:studyProgram/:po                controllers.ExamListsController.getPreview(studyProgram: java.lang.String, po: java.lang.String)
+GET           /examLists/:studyProgram/:po                        controllers.ExamListsController.get(studyProgram: java.lang.String, po: java.lang.String)
 
 # Module Draft
 

@@ -44,6 +44,8 @@ final class StudyProgramViewRepository @Inject() (
 
     def studyProgramId = column[String]("sp_id")
 
+    def studyProgramAbbreviation = column[String]("sp_abbrev")
+
     def degreeId = column[String]("degree_id")
 
     def degreeDeLabel = column[String]("degree_de_label")
@@ -68,6 +70,7 @@ final class StudyProgramViewRepository @Inject() (
       studyProgramId,
       studyProgramDeLabel,
       studyProgramEnLabel,
+      studyProgramAbbreviation,
       degreeId,
       degreeDeLabel,
       degreeEnLabel,
@@ -89,6 +92,7 @@ final class StudyProgramViewRepository @Inject() (
             String,
             String,
             String,
+            String,
             Option[String],
             Option[String]
         )
@@ -99,6 +103,7 @@ final class StudyProgramViewRepository @Inject() (
             studyProgramId,
             studyProgramDeLabel,
             studyProgramEnLabel,
+            studyProgramAbbreviation,
             degreeId,
             degreeDeLabel,
             degreeEnLabel,
@@ -111,6 +116,7 @@ final class StudyProgramViewRepository @Inject() (
           studyProgramId,
           studyProgramDeLabel,
           studyProgramEnLabel,
+          studyProgramAbbreviation,
           POCore(poId, poVersion),
           Degree(
             degreeId,
@@ -137,6 +143,7 @@ final class StudyProgramViewRepository @Inject() (
           String,
           String,
           String,
+          String,
           Option[String],
           Option[String]
       )
@@ -148,6 +155,7 @@ final class StudyProgramViewRepository @Inject() (
           a.id,
           a.deLabel,
           a.enLabel,
+          a.abbreviation,
           a.degree.id,
           a.degree.deLabel,
           a.degree.enLabel,

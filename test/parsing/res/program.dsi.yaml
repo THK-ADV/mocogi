@@ -1,8 +1,7 @@
 inf_dsi:
   de_label: Digital Sciences
   en_label: Digital Sciences
-  abbreviation:
-    external: dsi
+  abbreviation: dsi
   de_url: https://www.th-koeln.de/studium/digital-sciences-master_83002.php
   en_url: https://www.th-koeln.de/en/academics/digital-sciences-masters-program_83005.php
   grade: grade.msc

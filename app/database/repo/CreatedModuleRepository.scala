@@ -8,6 +8,7 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 import database.table.CreatedModuleTable
+import models.core.ModuleType
 import models.CreatedModule
 import models.ModuleCore
 import play.api.db.slick.DatabaseConfigProvider
@@ -37,10 +38,19 @@ final class CreatedModuleRepository @Inject() (
     import database.MyPostgresProfile.MyAPI.simpleStrListTypeMapper
     db.run(
       tableQuery
-        .filter(_.moduleType === "generic_module")
+        .filter(_.moduleType === ModuleType.genericId)
         .map(m => ((m.module, m.moduleTitle, m.moduleAbbrev), m.moduleMandatoryPOs))
         .result
         .map(_.map(m => (ModuleCore(m._1._1, m._1._2, m._1._3), m._2.toSeq)))
     )
   }
+
+  def allGeneric(): Future[Seq[ModuleCore]] =
+    db.run(
+      tableQuery
+        .filter(_.moduleType === ModuleType.genericId)
+        .map(a => (a.module, a.moduleTitle, a.moduleAbbrev))
+        .result
+        .map(_.map(ModuleCore.apply))
+    )
 }

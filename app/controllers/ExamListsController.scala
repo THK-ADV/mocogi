@@ -1,5 +1,6 @@
 package controllers
 
+import java.nio.file.Path
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -13,21 +14,21 @@ import controllers.actions.PermissionCheck
 import controllers.actions.PersonAction
 import database.repo.core.IdentityRepository
 import database.repo.core.StudyProgramPersonRepository
-import models.FullPoId
 import models.UniversityRole
 import ops.FileOps.FileOps0
 import play.api.libs.Files.DefaultTemporaryFileCreator
+import play.api.libs.Files.TemporaryFile
 import play.api.mvc.AbstractController
 import play.api.mvc.ControllerComponents
 import play.mvc.Http.HeaderNames
-import service.ExamListsPreviewService
+import service.ExamListService
 
 @Singleton
 final class ExamListsController @Inject() (
     cc: ControllerComponents,
     fileCreator: DefaultTemporaryFileCreator,
     auth: AuthorizationAction,
-    previewService: ExamListsPreviewService,
+    service: ExamListService,
     val identityRepository: IdentityRepository,
     val studyProgramPersonRepository: StudyProgramPersonRepository,
     implicit val ctx: ExecutionContext
@@ -37,6 +38,12 @@ final class ExamListsController @Inject() (
     with PersonAction {
 
   def getPreview(studyProgram: String, po: String) =
+    get0(studyProgram, po)((po, file) => service.previewExamLists(po, file))
+
+  def get(studyProgram: String, po: String) =
+    get0(studyProgram, po)((po, file) => service.examLists(po, file))
+
+  private def get0(studyProgram: String, po: String)(createPDF: (String, TemporaryFile) => Future[Path]) =
     auth
       .andThen(personAction)
       .andThen(hasRoleInStudyProgram(List(UniversityRole.PAV), studyProgram))
@@ -45,8 +52,7 @@ final class ExamListsController @Inject() (
           case Some(MimeTypes.PDF) =>
             val filename = s"exam_lists_draft_$po"
             val file     = fileCreator.create(filename, ".tex")
-            previewService
-              .previewExamLists(FullPoId(po), file)
+            createPDF(po, file)
               .map(path =>
                 Ok.sendPath(
                   path,
@@ -58,7 +64,6 @@ final class ExamListsController @Inject() (
                   file.getParentFile.toPath.deleteDirectory()
                   Future.failed(e)
               }
-
           case _ =>
             Future.successful(
               UnsupportedMediaType(

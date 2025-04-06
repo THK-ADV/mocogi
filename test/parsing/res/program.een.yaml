@@ -1,6 +1,7 @@
 ing_een:
   de_label: Elektrotechnik
   en_label: Electrical Engineering
+  abbreviation: TEST
   de_url: https://www.th-koeln.de/studium/elektrotechnik-bachelor-campus-gummersbach_3476.php
   en_url: https://www.th-koeln.de/en/academics/electrical-engineering-bachelors-program-gummersbach-campus_7325.php
   grade: grade.beng

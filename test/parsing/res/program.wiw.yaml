@@ -1,6 +1,7 @@
 ing_wiw:
   de_label: Wirtschaftsingenieurwesen
   en_label: Business Administration and Engineering
+  abbreviation: TEST
   de_url: https://www.th-koeln.de/studium/wirtschaftsingenieurwesen-bachelor_2917.php
   en_url: https://www.th-koeln.de/en/academics/business-administration-and-engineering-bachelors-program_7331.php
   grade: grade.beng
