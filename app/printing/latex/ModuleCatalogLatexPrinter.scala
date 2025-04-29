@@ -222,7 +222,12 @@ final class ModuleCatalogLatexPrinter(
                 module(m, lm, isChild = false)
                 newPage
                 children.toList
-                  .map(id => modulesInPO.find(_._1.id.contains(id)).get)
+                  .map { id =>
+                    val module = modulesInPO.find(_._1.id.contains(id))
+                    if module.isEmpty then logger.error(s"unable to find child module $id from parent ${m.id}")
+                    module
+                  }
+                  .collect { case Some(m) => m }
                   .sortBy(_._1.metadata.title)
                   .foreach {
                     case (m, lm) =>
