@@ -106,6 +106,7 @@ latex.module.label=Modules
 
 # Latex Exam Lists
 latex.exam_lists.title=Exam List
+latex.exam_lists.validity_statement=This Exam list was adopted by the examination committee on {0}. This document is valid without a signature.
 latex.exam_lists.modules.chapter=Modules
 latex.exam_lists.module_matrix.chapter=Module Matrix
 latex.exam_lists.module_matrix.mandatory_module.label=Mandatory Module
@@ -117,7 +118,8 @@ latex.exam_lists.table.header.assessmentMethod=Assessment method
 latex.exam_lists.table.header.firstExaminer=First examiner
 latex.exam_lists.table.header.secondExaminer=Second examiner
 latex.exam_lists.table.header.examPhases=Exam phases
-latex.exam_lists.table.footer.nextPageHint=Continued on next page
+latex.exam_lists.table.header.continuation=Continuation of Modules…
+latex.exam_lists.table.footer.continuation=Continued on next page
 latex.exam_lists.no-assessment.label=Not specified
 
 # Module Examination

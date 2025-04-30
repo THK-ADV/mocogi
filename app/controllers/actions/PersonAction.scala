@@ -3,10 +3,12 @@ package controllers.actions
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
+import auth.Token
 import auth.TokenRequest
 import controllers.actions.PersonAction.PersonRequest
 import database.repo.core.IdentityRepository
 import models.core.Identity
+import models.EmploymentType.Unknown
 import play.api.libs.json.Json
 import play.api.mvc.ActionRefiner
 import play.api.mvc.Result
@@ -21,6 +23,17 @@ trait PersonAction {
     def executionContext = ctx
 
     protected override def refine[A](request: TokenRequest[A]): Future[Either[Result, PersonRequest[A]]] =
+      request.token match {
+        case _: Token.UserToken    => getByUsername(request)
+        case _: Token.ServiceToken => adminUser(request)
+      }
+
+    private def adminUser[A](request: TokenRequest[A]) = {
+      val admin = Identity.Person("", "", "", "", Nil, "", None, isActive = true, Unknown, None, None)
+      Future.successful(Right(PersonRequest(admin, request)))
+    }
+
+    private def getByUsername[A](request: TokenRequest[A]) =
       identityRepository
         .getByCampusId(request.campusId)
         .map {

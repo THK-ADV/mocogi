@@ -112,6 +112,7 @@ latex.module.label=Module
 
 # Latex Exam Lists
 latex.exam_lists.title=Prüfungsliste
+latex.exam_lists.validity_statement=Diese Prüfungsliste wurde am {0} vom Prüfungsausschuss verabschiedet. Dieses Dokument ist ohne Unterschrift gültig.
 latex.exam_lists.modules.chapter=Module
 latex.exam_lists.module_matrix.chapter=Modulmatrix
 latex.exam_lists.module_matrix.mandatory_module.label=Pflichtmodul
@@ -123,7 +124,8 @@ latex.exam_lists.table.header.assessmentMethod=Prüfungsleistung
 latex.exam_lists.table.header.firstExaminer=Erstprüfer
 latex.exam_lists.table.header.secondExaminer=Zweitprüfer
 latex.exam_lists.table.header.examPhases=Prüfungsphasen
-latex.exam_lists.table.footer.nextPageHint=Fortsetzung auf der nächsten Seite
+latex.exam_lists.table.header.continuation=Fortsetzung der Module…
+latex.exam_lists.table.footer.continuation=Fortsetzung auf der nächsten Seite
 latex.exam_lists.no-assessment.label=Keine Angabe
 
 # Module Examination

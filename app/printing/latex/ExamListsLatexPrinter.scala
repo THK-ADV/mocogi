@@ -109,17 +109,14 @@ final class ExamListsLatexPrinter(
   private var usedW = false
 
   def print() = {
-    builder.append("\\documentclass[article, 11pt, oneside]{book}\n")
+    builder.append("\\documentclass[12pt, oneside]{article}\n")
     packages()
     commands()
     builder.append(s"""\\begin{document}
                       |\\selectlanguage{${messages("latex.lang.package_name")}}
                       |""".stripMargin)
     title()
-    builder.append("""% defines table colors
-                     |\definecolor{lightgray}{gray}{0.95}
-                     |\rowcolors{1}{lightgray}{}
-                     |""".stripMargin)
+    tableColors()
     if specializations.isEmpty then defaultPrint() else specializationsPrint()
     builder.append("\\end{document}")
     builder
@@ -128,29 +125,31 @@ final class ExamListsLatexPrinter(
   private def defaultPrint(): Unit = {
     val (mandatory, elective) = splitModules()
     if mandatory.nonEmpty then {
-      builder.append(s"""\\chapter{${messages("latex.exam_lists.mandatory_modules.chapter")}}
-                        |\\newpage
-                        |""".stripMargin)
-      examLists(mandatory, _.mandatory)
+      examLists(
+        mandatory,
+        messages("latex.exam_lists.mandatory_modules.chapter"),
+        _.mandatory
+      )
     }
     if elective.nonEmpty then {
-      builder.append(s"""\\chapter{${messages("latex.exam_lists.elective_modules.chapter")}}
-                        |\\newpage
-                        |""".stripMargin)
-      examLists(elective, a => if a.optional.isEmpty then a.mandatory else a.optional)
+      examLists(
+        elective,
+        messages("latex.exam_lists.elective_modules.chapter"),
+        a => if a.optional.isEmpty then a.mandatory else a.optional
+      )
     }
+  }
+
+  private def tableColors() = {
+    builder.append("""% defines table colors
+                     |\definecolor{lightgray}{gray}{0.95}
+                     |""".stripMargin)
   }
 
   private def specializationsPrint(): Unit = {
     if modules.isEmpty then return
-    builder.append(s"""\\chapter{${messages("latex.exam_lists.modules.chapter")}}
-                      |\\newpage
-                      |""".stripMargin)
-    examLists(modules, _.mandatory)
-    builder.append(s"""\\chapter{${messages("latex.exam_lists.module_matrix.chapter")}}
-                      |\\newpage
-                      |""".stripMargin)
-    moduleMatrix()
+    examLists(modules, messages("latex.exam_lists.modules.chapter"), _.mandatory)
+    moduleMatrix(messages("latex.exam_lists.module_matrix.chapter"))
   }
 
   private def assessmentRow(xs: List[ModuleAssessmentMethodEntryProtocol]) =
@@ -277,12 +276,16 @@ final class ExamListsLatexPrinter(
 
   private def examLists(
       modules: Seq[ModuleProtocol],
+      titleLabel: String,
       moduleAssessmentMethodEntries: ModuleAssessmentMethodsProtocol => List[ModuleAssessmentMethodEntryProtocol]
   ): Unit = {
+    val continuationHeaderLabel = messages("latex.exam_lists.table.header.continuation")
+    val continuationFooterLabel = messages("latex.exam_lists.table.footer.continuation")
+
     builder
       .append(s"""\\begin{landscape}
-                 |\\centering
-                 |\\large
+                 |\\rowcolors{1}{lightgray}{}
+                 |\\section*{$titleLabel}
                  |\\begin{longtable}{|
                  |$rowWidth
                  |$moduleTitleWidth
@@ -290,17 +293,18 @@ final class ExamListsLatexPrinter(
                  |$examinerWidth
                  |$examinerWidth
                  |$examPhasesWidth|}
-                 |\\hline
-                 |\\textbf{Nr.}
-                 |& \\textbf{${messages("latex.exam_lists.table.header.moduleName")}}
-                 |& \\textbf{${messages("latex.exam_lists.table.header.assessmentMethod")}}
-                 |& \\textbf{${messages("latex.exam_lists.table.header.firstExaminer")}}
-                 |& \\textbf{${messages("latex.exam_lists.table.header.secondExaminer")}}
-                 |& \\textbf{${messages("latex.exam_lists.table.header.examPhases")}}
-                 |\\\\ \\hline \\endhead
-                 |\\multicolumn{6}{r}{{\\underline{${messages("latex.exam_lists.table.footer.nextPageHint")}}}} \\\\
+                 |% First page header
+                 |\\tablehead
+                 |\\endfirsthead
+                 |% Continuation page header
+                 |\\multicolumn{6}{l}{\\textit{$continuationHeaderLabel}} \\\\
+                 |\\tablehead
+                 |\\endhead
+                 |% Continuation page footer
+                 |\\multicolumn{6}{r}{{\\underline{$continuationFooterLabel}}} \\\\
                  |\\endfoot
                  |\\endlastfoot
+                 |% table data
                  |""".stripMargin)
     var row = 1
     modules
@@ -343,27 +347,28 @@ final class ExamListsLatexPrinter(
                      |""".stripMargin)
   }
 
-  private def moduleMatrix() = {
+  private def moduleMatrix(titleLabel: String) = {
     val remainingWidth = 0.9 - moduleTitleWidthValue
     val cols: Seq[POShort] = specializations
       .map(s => (s.id, s.label, s.abbreviation))
       .prepended((studyProgram.po.id, studyProgram.localizedLabel, studyProgram.abbreviation))
-    val width     = Math.max(remainingWidth / cols.size, 0.08)
-    val colWidth  = cols.map(_ => s"||Cp{$width\\linewidth}").mkString("\n")
-    val colHeader = cols.map(po => s"& \\textbf{${escape(po._3)}}").mkString("\n")
-    val colIds    = cols.map(_._1)
+    val width                   = Math.max(remainingWidth / cols.size, 0.08)
+    val colWidth                = cols.map(_ => s"||Cp{$width\\linewidth}").mkString("\n")
+    val colHeader               = cols.map(po => s"& \\textbf{${escape(po._3)}}").mkString("\n")
+    val colIds                  = cols.map(_._1)
+    val continuationFooterLabel = messages("latex.exam_lists.table.footer.continuation")
 
     builder
       .append(
         s"""\\begin{landscape}
-           |\\centering
-           |\\large
+           |\\rowcolors{1}{lightgray}{}
+           |\\section*{$titleLabel}
            |\\begin{longtable}{|\n$moduleTitleWidth\n$colWidth|}
            |\\hline
            |\\textbf{${messages("latex.exam_lists.table.header.moduleName")}}
            |$colHeader
            |\\\\ \\hline \\endhead
-           |\\multicolumn{${cols.size + 1}}{r}{{\\underline{${messages("latex.exam_lists.table.footer.nextPageHint")}}}} \\\\
+           |\\multicolumn{${cols.size + 1}}{r}{{\\underline{$continuationFooterLabel}}} \\\\
            |\\endfoot
            |\\endlastfoot
            |""".stripMargin
@@ -405,15 +410,23 @@ final class ExamListsLatexPrinter(
     val titleLabel = messages("latex.exam_lists.title")
     val studyProgramLabel =
       s"${escape(studyProgram.localizedLabel(studyProgram.specialization))} PO ${studyProgram.po.version}"
+    val degreeLabel       = studyProgram.degree.localizedDesc
+    val semesterLabel     = semester.fold(messages("latex.preview_label"))(s => s"\\LARGE ${s.localizedLabel} ${s.year}")
+    val validityStatement = messages("latex.exam_lists.validity_statement", "\\rule{4cm}{0.4pt}")
     builder.append(
-      s"""\\title{
+      s"""\\begin{titlepage}
+         |\\vspace*{\\fill}
+         |\\begin{center}
          |\\Huge $titleLabel \\\\ [1.5ex]
          |\\LARGE $studyProgramLabel \\\\ [1ex]
-         |\\LARGE ${studyProgram.degree.localizedDesc} \\\\ [1ex]
-         |${semester.fold(messages("latex.preview_label"))(s => s"\\LARGE ${s.localizedLabel} ${s.year}\n")}}
-         |\\author{TH Köln, Campus Gummersbach}
-         |\\date{\\today}
-         |\\maketitle
+         |\\LARGE $degreeLabel \\\\ [1ex]
+         |\\LARGE $semesterLabel \\\\ [4.5ex]
+         |\\large TH Köln, Campus Gummersbach \\\\ [1.5ex]
+         |\\large \\today
+         |\\end{center}
+         |\\vspace*{\\fill}
+         |$validityStatement
+         |\\end{titlepage}
          |""".stripMargin
     )
   }
@@ -423,7 +436,6 @@ final class ExamListsLatexPrinter(
       .append("""% packages
                 |\usepackage[english, ngerman]{babel}
                 |\usepackage[a4paper, left=1cm, right=1cm, top=1cm, bottom=1cm]{geometry}
-                |\usepackage{titlesec} % customize chapter style
                 |\usepackage{lscape} % landscape
                 |\usepackage{longtable} % page break tables
                 |\usepackage[table]{xcolor} % table color
@@ -435,11 +447,12 @@ final class ExamListsLatexPrinter(
         )
       )
 
-  private def commands() =
+  private def commands() = {
     builder.append("""% commands and settings
-                     |\providecommand{\tightlist}{\setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
                      |\setlength{\marginparwidth}{0pt} % no margin notes
                      |\setlength{\marginparsep}{0pt} % no margin notes
+                     |\setlength{\parindent}{0pt} % removes paragraph indentation
+                     |\setlength{\parskip}{.8em} % adds space between paragraphs
                      |% empty page style (no headers or footers)
                      |\pagestyle{empty}
                      |\makeatletter
@@ -449,16 +462,20 @@ final class ExamListsLatexPrinter(
                      |\newcolumntype{L}{>{\raggedright\arraybackslash}}
                      |\newcolumntype{R}{>{\raggedleft\arraybackslash}}
                      |\newcolumntype{C}{>{\centering\arraybackslash}}
-                     |\renewcommand{\chaptermark}[1]{\markboth{#1}{}} % removes chapter label of the footer
                      |\renewcommand{\arraystretch}{1.5} % adds line spacing to table cells
-                     |% define the chapter format
-                     |\titleformat{\chapter}[display]
-                     |{\normalfont\Huge\bfseries} % font attributes
-                     |{\vspace*{\fill}} % vertical space before the chapter title
-                     |{0pt} % horizontal space between the chapter title and the left margin
-                     |{\Huge\centering} % font size of the chapter title
-                     |[\vspace*{\fill}] % vertical space after the chapter title
                      |""".stripMargin)
+    builder.append(s"""\\newcommand{\\tablehead}{%
+                      |\\hline
+                      |\\textbf{Nr.}
+                      |& \\textbf{${messages("latex.exam_lists.table.header.moduleName")}}
+                      |& \\textbf{${messages("latex.exam_lists.table.header.assessmentMethod")}}
+                      |& \\textbf{${messages("latex.exam_lists.table.header.firstExaminer")}}
+                      |& \\textbf{${messages("latex.exam_lists.table.header.secondExaminer")}}
+                      |& \\textbf{${messages("latex.exam_lists.table.header.examPhases")}}
+                      |\\\\ \\hline
+                      |}
+                      |""".stripMargin)
+  }
 
   private def splitModules(): (Seq[ModuleProtocol], Seq[ModuleProtocol]) =
     modules.partition { m =>

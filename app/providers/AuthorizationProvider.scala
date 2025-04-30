@@ -16,15 +16,18 @@ final class AuthorizationProvider @Inject() (env: Environment) extends Provider[
       def get(attr: String) =
         if attributes.contains(attr) then Right(attributes(attr).toString)
         else Left(s"user attribute '$attr' not found")
-      get("clientId") match
-        case Right("service") => get("username").map(u => Token.ServiceToken(u, roles))
-        case _ =>
-          for
-            firstname <- get("firstname")
-            lastname  <- get("lastname")
-            username  <- get("username")
-            mail      <- mail.toRight("mail attribute not found")
-          yield Token.UserToken(firstname, lastname, username, mail, roles)
+
+      for
+        username <- get("username")
+        token <-
+          if username.contains("service-account") then Right(Token.ServiceToken(username, roles))
+          else
+            for
+              firstname <- get("firstname")
+              lastname  <- get("lastname")
+              mail      <- mail.toRight("mail attribute not found")
+            yield Token.UserToken(firstname, lastname, username, mail, roles)
+      yield token
     }
 
   private def keycloakDeployment() =
