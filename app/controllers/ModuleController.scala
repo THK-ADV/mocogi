@@ -158,10 +158,9 @@ final class ModuleController @Inject() (
   // GET by ID
 
   def get(id: UUID) =
-    caching {
-      Action.async { _ =>
-        service.get(id).map(x => Ok(Json.toJson(x)))
-      }
+    Action.async { r =>
+      if (r.isExtended) moduleViewRepository.get(id).map(_.fold(NotFound)(Ok(_)))
+      else service.get(id).map(x => Ok(Json.toJson(x)))
     }
 
   def getPreview(id: UUID) =
