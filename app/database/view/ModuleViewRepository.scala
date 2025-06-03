@@ -13,6 +13,7 @@ import models.core.Degree
 import models.core.IDLabel
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.db.slick.HasDatabaseConfigProvider
+import slick.jdbc.GetResult
 import slick.jdbc.JdbcProfile
 
 @Singleton
@@ -22,6 +23,9 @@ final class ModuleViewRepository @Inject() (
 ) extends HasDatabaseConfigProvider[JdbcProfile]
     with MaterializedView {
   import profile.api.*
+
+  private given GetResult[Option[String]] =
+    GetResult(_.nextStringOption())
 
   private type DbEntry = ModuleView[
     ModuleManagement,
@@ -37,16 +41,21 @@ final class ModuleViewRepository @Inject() (
 
   private val tableQuery = TableQuery[ModuleViewTable]
 
-  def intsToString(xs: List[Int]): String =
+  private def intsToString(xs: List[Int]): String =
     if (xs.isEmpty) "" else xs.mkString(",")
 
-  def stringToInts(s: String): List[Int] =
+  private def stringToInts(s: String): List[Int] =
     if (s.isEmpty) Nil
     else
       s.split(",").foldLeft(List.empty[Int]) {
         case (acc, s) =>
           s.toInt :: acc
       }
+
+  def get(id: UUID): Future[Option[String]] = {
+    val query = sql"select get_module_details(${id.toString}::uuid)".as[Option[String]].head
+    db.run(query)
+  }
 
   def all(): Future[Iterable[Entry]] =
     db.run(
