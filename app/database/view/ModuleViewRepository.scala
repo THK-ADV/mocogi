@@ -57,6 +57,11 @@ final class ModuleViewRepository @Inject() (
     db.run(query)
   }
 
+  def allModuleCore(): Future[String] = {
+    val query = sql"select * from module_core".as[String].head
+    db.run(query)
+  }
+
   def all(): Future[Iterable[Entry]] =
     db.run(
       tableQuery.result.map(_.groupBy(_.id).map {

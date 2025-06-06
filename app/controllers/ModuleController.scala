@@ -115,14 +115,9 @@ final class ModuleController @Inject() (
               }))
             )
           case (false, false, false, false, None, ds) =>
-            val modules = ds match
-              case DataSource.Live => service.allModuleCore()
-              case DataSource.All =>
-                for
-                  live    <- service.allModuleCore()
-                  created <- service.allNewlyCreated()
-                yield live ++ created
-            modules.map(xs => Ok(Json.toJson(xs)))
+            ds match
+              case DataSource.Live => service.allModuleCore().map(xs => Ok(Json.toJson(xs)))
+              case DataSource.All  => moduleViewRepository.allModuleCore().map(Ok(_))
           case (true, false, false, true, Some(po), DataSource.Live) =>
             service
               .allFromPOWithCompanion(po, activeOnly = true)
