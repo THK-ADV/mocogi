@@ -109,20 +109,19 @@ final class ModuleRepository @Inject() (
   def allGeneric(): Future[Seq[ModuleCore]] =
     db.run(tableQuery.filter(_.isGeneric).map(a => (a.id, a.title, a.abbrev)).result.map(_.map(ModuleCore.apply)))
 
-  // TODO the po join does not consider full po id
   def allGenericModulesWithPOs(): Future[Seq[(ModuleCore, Seq[String])]] =
     db.run(
       tableQuery
         .filter(_.isGeneric)
         .join(modulePOMandatoryTable)
         .on(_.id === _.module)
-        .map { case (m, po) => ((m.id, m.title, m.abbrev), po.po) }
+        .map { case (m, po) => ((m.id, m.title, m.abbrev), po.po, po.specialization) }
         .result
         .map(
           _.groupBy(_._1)
             .map {
               case (m, pos) =>
-                (ModuleCore(m._1, m._2, m._3), pos.map(_._2))
+                (ModuleCore(m._1, m._2, m._3), pos.map { case (_, po, spec) => spec.getOrElse(po) })
             }
             .toSeq
         )
