@@ -64,7 +64,7 @@ final class ModuleUpdatePermissionService @Inject() (
   def allForCampusId(
       campusId: CampusId
   ): Future[
-    Seq[(ModuleCore, ModuleUpdatePermissionType, Option[ModuleDraft])]
+    Seq[((ModuleCore, Option[Double]), ModuleUpdatePermissionType, Option[ModuleDraft])]
   ] =
     repo.allForCampusId(campusId)
 }

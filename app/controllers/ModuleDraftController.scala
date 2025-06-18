@@ -52,11 +52,11 @@ final class ModuleDraftController @Inject() (
         modules <- moduleUpdatePermissionService
           .allForCampusId(r.request.campusId)
       } yield Ok(Json.toJson(modules.map {
-        case (module, kind, draft) =>
+        case ((module, ects), kind, draft) =>
           Json.obj(
-            "module" -> module,
-            "moduleDraft" -> draft
-              .map(moduleDraftWrites(r.messages).writes),
+            "module"              -> module,
+            "moduleDraft"         -> draft.map(moduleDraftWrites(r.messages).writes),
+            "ects"                -> ects,
             "moduleDraftState"    -> draft.state(),
             "privilegedForModule" -> kind.isInherited
           )
