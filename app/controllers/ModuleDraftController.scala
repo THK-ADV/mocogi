@@ -63,6 +63,13 @@ final class ModuleDraftController @Inject() (
       }))
     }
 
+  def getModuleDraft(moduleId: UUID) =
+    auth.andThen(personAction).andThen(hasPermissionToViewDraft(moduleId, moduleApprovalService)).async { _ =>
+      moduleDraftService
+        .getByModuleOpt(moduleId)
+        .map(draft => Ok(Json.toJson(draft.state())))
+    }
+
   def keys(moduleId: UUID) =
     auth.andThen(personAction).andThen(hasPermissionToViewDraft(moduleId, moduleApprovalService)).async { request =>
       moduleDraftService

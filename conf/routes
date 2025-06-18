@@ -79,6 +79,7 @@ GET           /moduleDrafts/:id/mrurl                             controllers.Mo
 POST          /moduleDrafts                                       controllers.ModuleDraftController.createNewModuleDraft()
 PUT           /moduleDrafts/:id                                   controllers.ModuleDraftController.createOrUpdateModuleDraft(id: java.util.UUID)
 DELETE        /moduleDrafts/:id                                   controllers.ModuleDraftController.deleteModuleDraft(id: java.util.UUID)
+GET           /moduleDrafts/:id                                   controllers.ModuleDraftController.getModuleDraft(id: java.util.UUID)
 
 # Review
 POST          /moduleReviews/:id                                  controllers.ModuleDraftReviewController.create(id: java.util.UUID)
