@@ -3,10 +3,10 @@ package parsing.metadata
 import cats.data.NonEmptyList
 import helper.FakeIdentities
 import models.core.Identity
+import models.EmploymentType.WMA
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatest.EitherValues
 import parsing.ParserSpecHelper
-import models.EmploymentType.WMA
 
 class IdentityParserSpec extends AnyWordSpec with ParserSpecHelper with EitherValues with FakeIdentities {
 

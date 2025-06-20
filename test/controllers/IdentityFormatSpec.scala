@@ -1,9 +1,11 @@
 package controllers
 
-import models.EmploymentType.Unknown
 import models.core.Identity
+import models.EmploymentType.Unknown
 import org.scalatest.wordspec.AnyWordSpec
-import play.api.libs.json.{JsArray, JsBoolean, JsString}
+import play.api.libs.json.JsArray
+import play.api.libs.json.JsBoolean
+import play.api.libs.json.JsString
 
 final class IdentityFormatSpec extends AnyWordSpec {
   "A Person Format Spec" should {

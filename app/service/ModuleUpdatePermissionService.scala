@@ -61,6 +61,7 @@ final class ModuleUpdatePermissionService @Inject() (
   ): Future[Boolean] =
     repo.hasInheritedPermission(campusId, module)
 
+  @Deprecated(since = "the introduction of a better api: ModuleDraftRepository.allForCampusId", forRemoval = true)
   def allForCampusId(
       campusId: CampusId
   ): Future[

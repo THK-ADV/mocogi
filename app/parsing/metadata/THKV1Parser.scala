@@ -38,7 +38,7 @@ final class THKV1Parser extends MetadataParser {
   import THKV1Parser.idParser
   import THKV1Parser.titleParser
 
-  override val versionScheme = VersionScheme(1, "s")
+  override val versionScheme = VersionScheme.default
 
   // TODO replace with real data at some point
   implicit def allExamPhases: List[ExamPhase] = ExamPhase.all.toList

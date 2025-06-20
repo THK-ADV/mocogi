@@ -7,6 +7,7 @@ sealed trait ModuleUpdatePermissionType extends IDLabel {
   def id: String
   def deLabel: String
   def enLabel: String
+  // changes to the "isInherited" logic have to be synchronized with the "get_modules_for_user" function in functions.sql
   def isInherited       = this == ModuleUpdatePermissionType.Inherited
   def isGranted         = this == ModuleUpdatePermissionType.Granted
   override def toString = id

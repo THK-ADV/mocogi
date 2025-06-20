@@ -56,6 +56,8 @@ object ModuleDraft {
     def mergeRequestStatus: Option[MergeRequestStatus] =
       self.mergeRequest.map(_._2)
 
+    // changes to the module draft state calculation have to be synchronized with the "get_modules_for_user" function in functions.sql
+
     def state(): ModuleDraftState =
       if (
         self.lastCommit.isDefined &&

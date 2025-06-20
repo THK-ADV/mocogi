@@ -18,6 +18,8 @@ sealed trait ModuleDraftState extends IDLabel {
   }
 }
 
+// changes to ModuleDraftStates have to be synchronized with the "get_modules_for_user" function in functions.sql
+
 object ModuleDraftState {
 
   implicit def writes: Writes[ModuleDraftState] =

@@ -22,6 +22,7 @@ import play.api.i18n.Messages
 import play.api.libs.json.*
 import play.api.mvc.AbstractController
 import play.api.mvc.ControllerComponents
+import play.api.Logging
 import service.*
 import service.core.StudyProgramService
 import service.PipelineError.parsingErrorWrites
@@ -44,11 +45,12 @@ final class ModuleDraftController @Inject() (
     with PermissionCheck
     with PersonAction
     with JsonNullWritable
-    with I18nSupport {
+    with I18nSupport
+    with Logging {
 
   def moduleDrafts() =
     auth.andThen(personAction).async { r =>
-      for {
+      def oldImpl() = for {
         modules <- moduleUpdatePermissionService
           .allForCampusId(r.request.campusId)
       } yield Ok(Json.toJson(modules.map {
@@ -61,6 +63,9 @@ final class ModuleDraftController @Inject() (
             "privilegedForModule" -> kind.isInherited
           )
       }))
+      def newImpl() = moduleDraftService.repo.allForCampusId(r.request.campusId).map(Ok(_))
+      val newApi    = r.getQueryString("newApi").flatMap(_.toBooleanOption).getOrElse(false)
+      if newApi then newImpl() else oldImpl()
     }
 
   def getModuleDraft(moduleId: UUID) =

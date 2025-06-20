@@ -26,7 +26,7 @@ import service.modulediff.ModuleProtocolDiff.nonEmptyKeys
 
 @Singleton
 final class ModuleDraftService @Inject() (
-    private val moduleDraftRepository: ModuleDraftRepository,
+    val repo: ModuleDraftRepository,
     private val gitBranchService: GitBranchService,
     private val gitCommitService: GitCommitService,
     private val keysToReview: ModuleKeysToReview,
@@ -36,16 +36,16 @@ final class ModuleDraftService @Inject() (
 ) extends Logging {
 
   def getMergeRequestId(module: UUID): Future[Option[MergeRequestId]] =
-    moduleDraftRepository.getMergeRequestId(module)
+    repo.getMergeRequestId(module)
 
   def getByModule(moduleId: UUID): Future[ModuleDraft] =
-    moduleDraftRepository.getByModule(moduleId)
+    repo.getByModule(moduleId)
 
   def getByModuleOpt(moduleId: UUID): Future[Option[ModuleDraft]] =
-    moduleDraftRepository.getByModuleOpt(moduleId)
+    repo.getByModuleOpt(moduleId)
 
   def isAuthorOf(moduleId: UUID, personId: String) =
-    moduleDraftRepository.isAuthorOf(moduleId, personId)
+    repo.isAuthorOf(moduleId, personId)
 
   def createNew(
       protocol: ModuleProtocol,
@@ -70,7 +70,7 @@ final class ModuleDraftService @Inject() (
   def delete(moduleId: UUID): Future[Unit] =
     for {
       _ <- gitBranchService.deleteModuleBranch(moduleId)
-      _ <- moduleDraftRepository.delete(moduleId).map(_ => ())
+      _ <- repo.delete(moduleId).map(_ => ())
     } yield logger.info(s"Successfully deleted module draft $moduleId")
 
   def createOrUpdate(
@@ -79,7 +79,7 @@ final class ModuleDraftService @Inject() (
       person: Identity.Person,
       versionScheme: VersionScheme
   ): Future[Either[PipelineError, Unit]] =
-    moduleDraftRepository
+    repo
       .hasModuleDraft(moduleId)
       .flatMap(hasDraft => {
         if (hasDraft)
@@ -139,7 +139,7 @@ final class ModuleDraftService @Inject() (
       versionScheme: VersionScheme
   ): Future[Either[PipelineError, Unit]] =
     for {
-      draft <- moduleDraftRepository
+      draft <- repo
         .getByModule(moduleId)
         .continueIf(_.state().canEdit, "can't edit module")
       origin <- getFromStaging(draft.module)
@@ -170,7 +170,7 @@ TODO this check causes a problem when a merged key is modified because it doesn'
                   draft.module,
                   print
                 )
-                _ <- moduleDraftRepository.updateDraft(
+                _ <- repo.updateDraft(
                   moduleId,
                   module.metadata.title,
                   module.metadata.abbrev,
@@ -235,7 +235,7 @@ TODO this check causes a problem when a merged key is modified because it doesn'
             None,
             LocalDateTime.now()
           )
-          created <- moduleDraftRepository.create(moduleDraft)
+          created <- repo.create(moduleDraft)
         } yield Right(created)
     }
 

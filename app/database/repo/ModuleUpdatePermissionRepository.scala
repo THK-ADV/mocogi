@@ -126,6 +126,7 @@ final class ModuleUpdatePermissionRepository @Inject() (
         .result
     )
 
+  @Deprecated(since = "the introduction of a better api: ModuleDraftRepository.allForCampusId", forRemoval = true)
   def allForCampusId(
       campusId: CampusId
   ): Future[
