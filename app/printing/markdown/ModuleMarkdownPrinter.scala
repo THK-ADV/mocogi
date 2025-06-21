@@ -21,6 +21,7 @@ import printing.LanguageOps
 import printing.PrintingLanguage
 
 @Singleton
+@deprecated(message = "we will move to explicit rendered modules instead of static html files")
 final class ModuleMarkdownPrinter(
     private val substituteLocalisedContent: Boolean
 ) {
@@ -191,7 +192,7 @@ final class ModuleMarkdownPrinter(
     )
 
   private def workload(implicit m: Metadata, language: PrintingLanguage) = {
-    val (workload, contactHour, selfStudy) = language.workload(m.workload)
+    val (workload, contactHour, selfStudy) = language.workload(m.workload, m.ects.value)
     row(workload._1, workload._2)
       .skip(row(contactHour._1, contactHour._2))
       .skip(row(selfStudy._1, selfStudy._2))

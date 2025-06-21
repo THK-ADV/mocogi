@@ -6,6 +6,7 @@ import javax.inject.Singleton
 import scala.concurrent.duration.*
 import scala.concurrent.ExecutionContext
 
+import controllers.POController.ids
 import controllers.POController.validAttribute
 import models.core.PO
 import play.api.cache.Cached
@@ -17,6 +18,7 @@ import service.core.POService
 
 object POController {
   val validAttribute = "valid"
+  val ids            = "ids"
 }
 
 @Singleton
@@ -36,7 +38,10 @@ final class POController @Inject() (
           .getOrElse(true)
         val res =
           if (validOnly) service.allValid()
-          else service.all()
+          else {
+            val poIds = request.getQueryString(ids).map(_.split(',').toList)
+            poIds.fold(service.all())(service.allWithIds)
+          }
         res.map(xs => Ok(Json.toJson(xs)))
       }
     }

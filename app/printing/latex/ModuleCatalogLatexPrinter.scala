@@ -382,7 +382,7 @@ final class ModuleCatalogLatexPrinter(
       if diffs.exists(_.exists(p)) then highlight(str) else str
 
     val (workload, contactHour, selfStudy) =
-      pLang.workload(module.metadata.workload)
+      pLang.workload(module.metadata.workload, module.metadata.ects)
 
     def poMandatoryRow =
       if (module.metadata.po.mandatory.size == 1) pLang.noneLabel

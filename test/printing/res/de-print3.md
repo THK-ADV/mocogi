@@ -14,7 +14,7 @@
 | Dozierende | unknown |
 | Prüfungsformen | method |
 | Workload | 150 h |
-| Präsenzzeit | 150 h (15 h Vorlesung, 11 h Übung, 34 h Praktikum) |
+| Präsenzzeit | 150 h (150 h Vorlesung) |
 | Selbststudium | Keine |
 | Empfohlene Voraussetzungen | Keine |
 | Zwingende Voraussetzungen | Keine |

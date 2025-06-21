@@ -7,6 +7,7 @@ import helper.*
 import models.core.*
 import models.core.ExamPhases.ExamPhase
 import models.EmploymentType.WMA
+import models.ModuleWorkload
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatest.EitherValues
 import org.scalatest.OptionValues
@@ -174,7 +175,7 @@ class THKV1ParserSpec
             Nil
           )
         )
-        assert(metadata.workload == ParsedWorkload(36, 0, 18, 18, 0, 0))
+        assert(metadata.workload == ModuleWorkload(36, 0, 18, 18, 0, 0))
         assert(
           metadata.prerequisites == ParsedPrerequisites(
             Some(
@@ -326,7 +327,7 @@ class THKV1ParserSpec
             )
           )
         )
-        assert(metadata.workload == ParsedWorkload(30, 0, 10, 10, 0, 0))
+        assert(metadata.workload == ModuleWorkload(30, 0, 10, 10, 0, 0))
         assert(metadata.prerequisites == ParsedPrerequisites(None, None))
         assert(metadata.status == ModuleStatus("active", "Aktiv", "--"))
         assert(metadata.location == ModuleLocation("gm", "Gummersbach", "--"))

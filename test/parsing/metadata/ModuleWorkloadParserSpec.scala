@@ -1,9 +1,9 @@
 package parsing.metadata
 
+import models.ModuleWorkload
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatest.EitherValues
 import parsing.metadata.ModuleWorkloadParser.parser
-import parsing.types.ParsedWorkload
 import parsing.ParserSpecHelper
 
 class ModuleWorkloadParserSpec extends AnyWordSpec with ParserSpecHelper with EitherValues {
@@ -19,7 +19,7 @@ class ModuleWorkloadParserSpec extends AnyWordSpec with ParserSpecHelper with Ei
           |  project_supervision: 0
           |  project_work: 0""".stripMargin
       val (res, rest) = parser.parse(input)
-      assert(res.value == ParsedWorkload(36, 0, 18, 18, 0, 0))
+      assert(res.value == ModuleWorkload(36, 0, 18, 18, 0, 0))
       assert(rest.isEmpty)
     }
 

@@ -22,7 +22,7 @@ final class ModuleProtocolDiffSpec extends AnyWordSpec {
       "language",
       0,
       "season",
-      ModuleWorkload(0, 0, 0, 0, 0, 0, 0, 0),
+      ModuleWorkload(0, 0, 0, 0, 0, 0),
       "status",
       "location",
       None,
@@ -187,9 +187,7 @@ final class ModuleProtocolDiffSpec extends AnyWordSpec {
                 existing0.metadata.workload.practical,
                 existing0.metadata.workload.exercise,
                 existing0.metadata.workload.projectSupervision,
-                existing0.metadata.workload.projectWork,
-                0,
-                0
+                existing0.metadata.workload.projectWork
               ),
               existing0.metadata.status,
               existing0.metadata.location,

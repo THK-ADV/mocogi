@@ -11,7 +11,8 @@ case class PO(
     version: Int,
     program: String,
     dateFrom: LocalDate,
-    dateTo: Option[LocalDate]
+    dateTo: Option[LocalDate],
+    ectsFactor: Int
 )
 
 object PO extends JsonNullWritable {

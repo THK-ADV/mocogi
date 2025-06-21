@@ -1,5 +1,6 @@
 package parsing.metadata
 
+import models.ModuleWorkload
 import parser.Parser
 import parser.Parser.*
 import parser.ParserOps.P0
@@ -8,7 +9,6 @@ import parser.ParserOps.P3
 import parser.ParserOps.P4
 import parser.ParserOps.P5
 import parsing.posIntForKey
-import parsing.types.ParsedWorkload
 
 object ModuleWorkloadParser {
 
@@ -26,7 +26,7 @@ object ModuleWorkloadParser {
 
   def key = "workload"
 
-  def parser: Parser[ParsedWorkload] =
+  def parser: Parser[ModuleWorkload] =
     prefix(key + ":")
       .skip(zeroOrMoreSpaces)
       .take(posIntForKey(lectureKey))
@@ -40,5 +40,5 @@ object ModuleWorkloadParser {
       .take(posIntForKey(projectSupervisionKey))
       .skip(zeroOrMoreSpaces)
       .take(posIntForKey(projectWorkKey))
-      .map(a => ParsedWorkload(a._1, a._2, a._3, a._4, a._5, a._6))
+      .map(a => ModuleWorkload(a._1, a._2, a._3, a._4, a._5, a._6))
 }

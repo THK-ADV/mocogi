@@ -17,17 +17,12 @@ final class MetadataValidatorSpec extends AnyWordSpec with EitherValues with Opt
 
   private case class PosInt(value: Int)
 
-  private lazy val am                = AssessmentMethod("", "", "")
-  private lazy val fa                = FocusAreaID("")
-  private lazy val ld                = LocalDate.of(1998, 5, 9)
-  private lazy val sp                = PO("", 0, "", ld, None)
-  private lazy val creditPointFactor = 30
+  private lazy val am = AssessmentMethod("", "", "")
+  private lazy val ld = LocalDate.of(1998, 5, 9)
+  private lazy val sp = PO("", 0, "", ld, None, 30)
 
   private def method(percentage: Option[Double]) =
     ModuleAssessmentMethodEntry(am, percentage, Nil)
-
-  private def ectsContrib(value: Double) =
-    ModuleECTSFocusAreaContribution(fa, value, "", "")
 
   private def prerequisiteEntry(modules: List[UUID]) =
     ParsedPrerequisiteEntry("", modules, Nil)
@@ -363,22 +358,29 @@ final class MetadataValidatorSpec extends AnyWordSpec with EitherValues with Opt
     }
 
     "validating workload" should {
-      "pass by setting self study and total value" in {
+      "pass if allowed hours and self study are considered" in {
         assert(
-          workloadValidator(creditPointFactor)
-            .validate((ParsedWorkload(10, 10, 0, 0, 10, 0), ModuleECTS(2, Nil)))
-            .value == ModuleWorkload(10, 10, 0, 0, 10, 0, 30, 60)
+          workloadValidator
+            .validate((ModuleWorkload(10, 10, 0, 0, 10, 0), 2, Set(30)))
+            .value == ModuleWorkload(10, 10, 0, 0, 10, 0)
         )
         assert(
-          workloadValidator(creditPointFactor)
-            .validate((ParsedWorkload(0, 0, 0, 0, 0, 0), ModuleECTS(2, Nil)))
-            .value == ModuleWorkload(0, 0, 0, 0, 0, 0, 60, 60)
+          workloadValidator
+            .validate((ModuleWorkload(60, 0, 0, 0, 0, 0), 2, Set(30)))
+            .value == ModuleWorkload(60, 0, 0, 0, 0, 0)
         )
         assert(
-          workloadValidator(creditPointFactor)
-            .validate((ParsedWorkload(0, 0, 0, 0, 0, 0), ModuleECTS(0, Nil)))
-            .value == ModuleWorkload(0, 0, 0, 0, 0, 0, 0, 0)
+          workloadValidator
+            .validate((ModuleWorkload(50, 0, 0, 0, 0, 0), 2, Set(25, 30)))
+            .value == ModuleWorkload(50, 0, 0, 0, 0, 0)
         )
+        assert(
+          workloadValidator
+            .validate((ModuleWorkload(50, 0, 0, 0, 0, 0), 2, Set.empty))
+            .value == ModuleWorkload(50, 0, 0, 0, 0, 0)
+        )
+        assert(workloadValidator.validate((ModuleWorkload(60, 0, 0, 0, 0, 0), 2, Set(25, 30))).isLeft)
+        assert(workloadValidator.validate((ModuleWorkload(65, 0, 0, 0, 0, 0), 2, Set(30))).isLeft)
       }
     }
 
@@ -414,19 +416,25 @@ final class MetadataValidatorSpec extends AnyWordSpec with EitherValues with Opt
 
       "handle pos validation" in {
         val random = UUID.randomUUID
-        posValidator(lookup)
-          .validate(ParsedPOs(Nil, List(poOpt(m1.id))))
-          .value == ModulePOs(
-          Nil,
-          List(ModulePOOptional(sp, None, m1, partOfCatalog = false, Nil))
+        assert(
+          posValidator(lookup)
+            .validate(ParsedPOs(Nil, List(poOpt(m1.id))))
+            .value == ModulePOs(
+            Nil,
+            List(ModulePOOptional(sp, None, m1, partOfCatalog = false, Nil))
+          )
         )
-        posValidator(lookup)
-          .validate(ParsedPOs(Nil, Nil))
-          .value == ModulePOs(Nil, Nil)
-        posValidator(lookup)
-          .validate(ParsedPOs(Nil, List(poOpt(random))))
-          .left
-          .value == List(s"module not found: $random")
+        assert(
+          posValidator(lookup)
+            .validate(ParsedPOs(Nil, Nil))
+            .value == ModulePOs(Nil, Nil)
+        )
+        assert(
+          posValidator(lookup)
+            .validate(ParsedPOs(Nil, List(poOpt(random))))
+            .left
+            .value == List(s"module in 'po optional' not found: $random")
+        )
       }
     }
 
@@ -500,7 +508,7 @@ final class MetadataValidatorSpec extends AnyWordSpec with EitherValues with Opt
           ),
           Examiner(Identity.NN, Identity.NN),
           ExamPhase.all,
-          ParsedWorkload(5, 0, 0, 0, 0, 0),
+          ModuleWorkload(5, 0, 0, 0, 0, 0),
           ParsedPrerequisites(None, None),
           ModuleStatus("", "", ""),
           ModuleLocation("", "", ""),
@@ -529,7 +537,7 @@ final class MetadataValidatorSpec extends AnyWordSpec with EitherValues with Opt
           ivm1.assessmentMethods,
           ivm1.examiner,
           ivm1.examPhases,
-          ModuleWorkload(5, 0, 0, 0, 0, 0, 5, 10),
+          ModuleWorkload(5, 0, 0, 0, 0, 0),
           ModulePrerequisites(None, None),
           ivm1.status,
           ivm1.location,
@@ -543,7 +551,7 @@ final class MetadataValidatorSpec extends AnyWordSpec with EitherValues with Opt
           Nil
         )
 
-        val res = validateMany(Seq(ivm1), 10, lookup).head.value
+        val res = validateMany(Seq(ivm1), lookup).head.value
         assert(res.id == vm1.id)
         assert(res.title == vm1.title)
         assert(res.abbrev == vm1.abbrev)
@@ -588,7 +596,7 @@ final class MetadataValidatorSpec extends AnyWordSpec with EitherValues with Opt
           ),
           Examiner(Identity.NN, Identity.NN),
           ExamPhase.all,
-          ParsedWorkload(5, 0, 0, 0, 0, 0),
+          ModuleWorkload(5, 0, 0, 0, 0, 0),
           ParsedPrerequisites(None, None),
           ModuleStatus("", "", ""),
           ModuleLocation("", "", ""),
@@ -604,7 +612,7 @@ final class MetadataValidatorSpec extends AnyWordSpec with EitherValues with Opt
           Nil
         )
         assert(
-          validateMany(Seq(ivm1), 10, lookup).head.left.value == List(
+          validateMany(Seq(ivm1), lookup).head.left.value == List(
             "title must be set, but was empty",
             "participants min must be lower than max. min: 20, max: 15",
             s"module in 'module relation' not found: $random"

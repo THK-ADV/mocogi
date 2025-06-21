@@ -136,7 +136,7 @@ final class MetadataYamlPrinterSpec extends AnyWordSpec with PrinterSpec {
     }
 
     "print workload" in {
-      val workload = ModuleWorkload(1, 2, 3, 4, 5, 6, 0, 0)
+      val workload = ModuleWorkload(1, 2, 3, 4, 5, 6)
       val res =
         s"""workload:
            |  lecture: 1
@@ -322,7 +322,7 @@ final class MetadataYamlPrinterSpec extends AnyWordSpec with PrinterSpec {
         "de",
         1,
         "ws",
-        ModuleWorkload(10, 10, 10, 10, 10, 10, 10, 10),
+        ModuleWorkload(10, 10, 10, 10, 10, 10),
         "active",
         "gm",
         Some(ModuleParticipants(0, 10)),

@@ -3,7 +3,7 @@ package database.table.core
 import java.time.LocalDate
 
 import models.core.PO
-import slick.jdbc.PostgresProfile.api._
+import slick.jdbc.PostgresProfile.api.*
 
 final class POTable(tag: Tag) extends Table[PO](tag, "po") {
 
@@ -16,6 +16,8 @@ final class POTable(tag: Tag) extends Table[PO](tag, "po") {
   def dateFrom = column[LocalDate]("date_from")
 
   def dateTo = column[Option[LocalDate]]("date_to")
+
+  def ectsFactor = column[Int]("ects_factor")
 
   def isValid(date: LocalDate = LocalDate.now): Rep[Boolean] =
     this.dateFrom <= date && this.dateTo.map(_ >= date).getOrElse(true)
@@ -30,6 +32,7 @@ final class POTable(tag: Tag) extends Table[PO](tag, "po") {
     version,
     studyProgram,
     dateFrom,
-    dateTo
+    dateTo,
+    ectsFactor
   ) <> (PO.apply.tupled, PO.unapply)
 }

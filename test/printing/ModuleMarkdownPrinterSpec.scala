@@ -48,19 +48,19 @@ final class ModuleMarkdownPrinterSpec extends AnyWordSpec with EitherValues {
         ),
         Examiner(Identity.NN, Identity.NN),
         ExamPhase.all,
-        ModuleWorkload(0, 0, 34, 11, 0, 0, 105, 150),
+        ModuleWorkload(0, 0, 34, 11, 0, 0),
         ModulePrerequisites(None, None),
         ModuleStatus("status", "status", "status"),
         ModuleLocation("location", "location", "location"),
         ModulePOs(
           List(
             ModulePOMandatory(
-              PO("po1", 0, "program1", LocalDate.now, None),
+              PO("po1", 0, "program1", LocalDate.now, None, 30),
               None,
               List(1)
             ),
             ModulePOMandatory(
-              PO("po2", 0, "program1", LocalDate.now, None),
+              PO("po2", 0, "program1", LocalDate.now, None, 30),
               None,
               Nil
             )
@@ -129,15 +129,16 @@ final class ModuleMarkdownPrinterSpec extends AnyWordSpec with EitherValues {
           .value
           .toString()
           .dropRight(16) == deFile2
-          .dropRight(16)
+          .dropRight(17)
       )
 
       val deFile3 = withFile0("test/printing/res/de-print3.md")(identity)
       val mc3 = module.copy(metadata =
         module.metadata.copy(workload =
           module.metadata.workload.copy(
-            lecture = 15,
-            selfStudy = 0
+            lecture = 150,
+            practical = 0,
+            exercise = 0
           )
         )
       )

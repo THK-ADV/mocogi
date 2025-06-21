@@ -31,9 +31,7 @@ import parsing.metadata.THKV1Parser.durationParser
 import parsing.metadata.THKV1Parser.idParser
 import parsing.metadata.THKV1Parser.titleParser
 import parsing.types.ParsedModuleRelation
-import parsing.types.ParsedWorkload
 import service.ContentParsingService
-import service.MetadataValidatingService
 
 object RawModuleParser {
 
@@ -224,7 +222,7 @@ object RawModuleParser {
               lang,
               dur,
               season,
-              toModuleWorkload(workload, credits),
+              workload,
               status,
               location,
               parts,
@@ -255,13 +253,6 @@ object RawModuleParser {
             enContent
           )
       }
-
-  private def toModuleWorkload(workload: ParsedWorkload, ects: Double) =
-    MetadataValidatingService.validateWorkload(workload, ects) match
-      case Left(value) =>
-        throw Exception(s"unexpected exception. can't validate workload $workload. Errors: ${value.mkString(", ")}")
-      case Right(workload) =>
-        workload
 
   private def toModuleRelation(
       mr: ParsedModuleRelation

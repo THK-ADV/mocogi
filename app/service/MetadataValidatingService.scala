@@ -2,21 +2,13 @@ package service
 
 import models.Metadata
 import models.ModuleCore
-import models.ModuleWorkload
 import ops.EitherOps.EOps
 import parsing.types.Module
 import parsing.types.ModuleContent
-import parsing.types.ModuleECTS
 import parsing.types.ParsedMetadata
-import parsing.types.ParsedWorkload
 import validation.*
 
 object MetadataValidatingService {
-
-  private val ectsFactor = 30
-
-  def validateWorkload(workload: ParsedWorkload, moduleECTS: Double): Validation[ModuleWorkload] =
-    MetadataValidator.workloadValidator(ectsFactor).validate((workload, ModuleECTS(moduleECTS, Nil)))
 
   def validateMany(
       existing: Seq[ModuleCore],
@@ -26,7 +18,7 @@ object MetadataValidatingService {
       parsed.map(a => ModuleCore(a._2.id, a._2.title, a._2.abbrev))
     val modules = existing ++ parsedModules
     val validator =
-      MetadataValidator.validate(ectsFactor, id => modules.find(_.id == id))
+      MetadataValidator.validate(id => modules.find(_.id == id))
     val (errs, validated) =
       parsed.partitionMap {
         case (print, parsedMetadata, de, en) =>
@@ -48,9 +40,8 @@ object MetadataValidatingService {
   ): Validation[Metadata] = {
     val parsedModule =
       ModuleCore(metadata.id, metadata.title, metadata.abbrev)
-    val modules = existing.+:(parsedModule)
-    val validator =
-      MetadataValidator.validate(ectsFactor, id => modules.find(_.id == id))
+    val modules   = existing.+:(parsedModule)
+    val validator = MetadataValidator.validate(id => modules.find(_.id == id))
     validator(metadata)
   }
 }

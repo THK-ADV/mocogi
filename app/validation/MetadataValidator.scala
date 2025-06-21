@@ -3,6 +3,7 @@ package validation
 import java.util.UUID
 
 import scala.collection.mutable.ListBuffer
+import scala.util.Right
 
 import cats.data.NonEmptyList
 import models.*
@@ -54,38 +55,18 @@ object MetadataValidator {
       )
     }
 
-  def workloadValidator(
-      creditPointFactor: Int
-  ): Validator[(ParsedWorkload, ModuleECTS), ModuleWorkload] = {
-    def sumWorkload(w: ParsedWorkload): Int =
-      w.lecture +
-        w.seminar +
-        w.practical +
-        w.exercise +
-        w.projectSupervision +
-        w.projectWork
-
+  def workloadValidator: Validator[(ModuleWorkload, Double, Set[Int]), ModuleWorkload] =
     Validator {
-      case (workload, ects) =>
-        val total     = (ects.value * creditPointFactor).toInt
-        val selfStudy = total - sumWorkload(workload)
+      case (workload, _, ectsFactors) if ectsFactors.isEmpty =>
+        Right(workload)
+      case (workload, ects, ectsFactors) =>
+        val ectsFactor = ectsFactors.min
+        val total      = ModuleWorkload.totalHours(ects, ectsFactor)
+        val selfStudy  = total - workload.sum()
         if (selfStudy < 0)
-          Left(List("workload's self study must be positive"))
-        else
-          Right(
-            ModuleWorkload(
-              workload.lecture,
-              workload.seminar,
-              workload.practical,
-              workload.exercise,
-              workload.projectSupervision,
-              workload.projectWork,
-              selfStudy,
-              total
-            )
-          )
+          Left(List(s"workload's self study must be positive to match ects $ects and ectsFactor $ectsFactor"))
+        else Right(workload)
     }
-  }
 
   def moduleValidator(
       label: String,
@@ -192,20 +173,10 @@ object MetadataValidator {
   ): Validator[ParsedMetadata, List[ModuleCore]] =
     taughtWithValidator(lookup).pullback(_.taughtWith)
 
-  def workloadValidatorAdapter(
-      creditPointFactor: Int,
-      ects: ModuleECTS
-  ): Validator[ParsedMetadata, ModuleWorkload] =
-    workloadValidator(creditPointFactor).pullback(a => (a.workload, ects))
-
-  def ectsWorkloadAdapter(
-      creditPointFactor: Int
-  ): Validator[ParsedMetadata, (ModuleECTS, ModuleWorkload)] =
-    ectsValidatorAdapter
-      .flatMap((_, ects) =>
-        workloadValidatorAdapter(creditPointFactor, ects)
-          .map((_, workload) => (ects, workload))
-      )
+  def workloadValidatorAdapter: Validator[ParsedMetadata, ModuleWorkload] =
+    workloadValidator.pullback(a =>
+      (a.workload, a.credits, (a.pos.mandatory.map(_.po.ectsFactor) ::: a.pos.optional.map(_.po.ectsFactor)).toSet)
+    )
 
   def posValidatorAdapter(
       lookup: Lookup
@@ -217,15 +188,13 @@ object MetadataValidator {
   ): Validator[ParsedMetadata, Option[ModuleRelation]] =
     moduleRelationValidator(lookup).pullback(_.relation)
 
-  def validations(
-      creditPointFactor: Int,
-      lookup: Lookup
-  ): Validator[ParsedMetadata, Metadata] = {
+  def validations(lookup: Lookup): Validator[ParsedMetadata, Metadata] = {
     titleValidatorAdapter()
       .zip(abbrevValidatorAdapter())
       .zip(assessmentMethodsValidatorAdapter)
       .zip(participantsValidatorAdapter)
-      .zip(ectsWorkloadAdapter(creditPointFactor))
+      .zip(ectsValidatorAdapter)
+      .zip(workloadValidatorAdapter)
       .zip(taughtWithValidatorAdapter(lookup))
       .zip(prerequisitesValidatorAdapter(lookup))
       .zip(posValidatorAdapter(lookup))
@@ -233,7 +202,7 @@ object MetadataValidator {
       .map {
         case (
               m,
-              ((((((((t, abbrev), am), part), (ects, wl)), tw), pre), pos), rel)
+              (((((((((t, abbrev), am), part), ects), wl), tw), pre), pos), rel)
             ) =>
           Metadata(
             m.id,
@@ -262,19 +231,13 @@ object MetadataValidator {
       }
   }
 
-  def validateMany(
-      metadata: Seq[ParsedMetadata],
-      creditPointFactor: Int,
-      lookup: Lookup
-  ): Seq[Validation[Metadata]] = {
-    val validator = validations(creditPointFactor, lookup)
+  def validateMany(metadata: Seq[ParsedMetadata], lookup: Lookup): Seq[Validation[Metadata]] = {
+    val validator = validations(lookup)
     metadata.map(m => validator.validate(m))
   }
 
-  def validate(creditPointFactor: Int, lookup: Lookup)(
-      metadata: ParsedMetadata
-  ): Validation[Metadata] = {
-    val validator = validations(creditPointFactor, lookup)
+  def validate(lookup: Lookup)(metadata: ParsedMetadata): Validation[Metadata] = {
+    val validator = validations(lookup)
     validator.validate(metadata)
   }
 }

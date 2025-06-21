@@ -20,7 +20,7 @@ final class PORepository @Inject() (
     implicit val ctx: ExecutionContext
 ) extends HasDatabaseConfigProvider[JdbcProfile]
     with Repository[PO, PO, POTable] {
-  import profile.api._
+  import profile.api.*
 
   protected val tableQuery = TableQuery[POTable]
 
@@ -29,6 +29,9 @@ final class PORepository @Inject() (
 
   def allValid(date: LocalDate = LocalDate.now): Future[Seq[PO]] =
     retrieve(tableQuery.filter(_.isValid(date)))
+
+  def allWithIds(pos: List[String]): Future[Seq[PO]] =
+    retrieve(tableQuery.filter(_.id.inSet(pos)))
 
   protected override def retrieve(
       query: Query[POTable, PO, Seq]

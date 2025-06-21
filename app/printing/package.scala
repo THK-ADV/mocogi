@@ -136,9 +136,14 @@ package object printing {
       s"$duration ${self.semesterLabel}"
 
     def workload(
-        wl: ModuleWorkload
+        wl: ModuleWorkload,
+        ects: Double,
     ): ((String, String), (String, String), (String, String)) = {
-      val contactHoursValue = wl.total - wl.selfStudy
+      // TODO: this is hardcoded for now, because the current data structure does not support the ects factor. change it soon
+      val ectsFactor        = 30
+      val totalHoursValue   = (ects * ectsFactor).toInt
+      val selfStudyValue    = wl.selfStudy(totalHoursValue)
+      val contactHoursValue = totalHoursValue - selfStudyValue
       val contactHoursParts = List(
         self.lectureValue(wl),
         self.exerciseValue(wl),
@@ -148,13 +153,13 @@ package object printing {
         self.projectWorkValue(wl)
       ).filter(_.nonEmpty)
       val contactHoursParts0 = fmtCommaSeparated(contactHoursParts)(identity)
-      val totalWlLabel       = s"${wl.total} h"
+      val totalWlLabel       = s"$totalHoursValue h"
       val contactHoursValueLabel =
         if (contactHoursParts0.isEmpty) s"$contactHoursValue h"
         else s"$contactHoursValue h ($contactHoursParts0)"
       val selfStudyLabel =
-        if (wl.selfStudy == 0) self.noneLabel
-        else s"${wl.selfStudy} h"
+        if (selfStudyValue == 0) self.noneLabel
+        else s"$selfStudyValue h"
 
       (
         (self.workloadLabel, totalWlLabel),

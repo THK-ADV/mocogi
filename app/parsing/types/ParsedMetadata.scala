@@ -6,6 +6,7 @@ import cats.data.NonEmptyList
 import models.core.*
 import models.core.ExamPhases.ExamPhase
 import models.Examiner
+import models.ModuleWorkload
 
 case class ParsedMetadata(
     id: UUID,
@@ -21,7 +22,7 @@ case class ParsedMetadata(
     assessmentMethods: ModuleAssessmentMethods,
     examiner: Examiner.Default,
     examPhases: NonEmptyList[ExamPhase],
-    workload: ParsedWorkload,
+    workload: ModuleWorkload,
     prerequisites: ParsedPrerequisites,
     status: ModuleStatus,
     location: ModuleLocation,

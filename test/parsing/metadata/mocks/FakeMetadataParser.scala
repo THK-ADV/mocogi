@@ -6,6 +6,7 @@ import cats.data.NonEmptyList
 import models.core.*
 import models.core.ExamPhases.ExamPhase
 import models.Examiner
+import models.ModuleWorkload
 import parser.Parser.always
 import parsing.metadata.MetadataParser
 import parsing.metadata.VersionScheme
@@ -42,7 +43,7 @@ class FakeMetadataParser extends MetadataParser {
       ModuleAssessmentMethods(Nil, Nil),
       Examiner(Identity.NN, Identity.NN),
       ExamPhase.all,
-      ParsedWorkload(0, 0, 0, 0, 0, 0),
+      ModuleWorkload(0, 0, 0, 0, 0, 0),
       ParsedPrerequisites(None, None),
       ModuleStatus("", "", ""),
       ModuleLocation("", "", ""),

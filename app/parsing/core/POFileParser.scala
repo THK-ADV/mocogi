@@ -6,7 +6,7 @@ import io.circe.Decoder
 import io.circe.HCursor
 import models.core.PO
 import monocle.macros.GenLens
-import parsing._
+import parsing.*
 import parsing.validator.StudyProgramValidator
 
 object POFileParser extends YamlFileParser[PO] {
@@ -23,10 +23,11 @@ object POFileParser extends YamlFileParser[PO] {
       val key = c.key.get
       val obj = c.root.downField(key)
       for {
-        version  <- obj.get[Int]("version")
-        dateFrom <- obj.get[LocalDate]("date_from")
-        dateTo   <- obj.get[Option[LocalDate]]("date_to")
-        program  <- obj.get[String]("program")
-      } yield PO(key, version, program, dateFrom, dateTo)
+        version    <- obj.get[Int]("version")
+        dateFrom   <- obj.get[LocalDate]("date_from")
+        dateTo     <- obj.get[Option[LocalDate]]("date_to")
+        program    <- obj.get[String]("program")
+        ectsFactor <- obj.get[Option[Int]]("ects_factor")
+      } yield PO(key, version, program, dateFrom, dateTo, ectsFactor.getOrElse(30))
     }
 }
