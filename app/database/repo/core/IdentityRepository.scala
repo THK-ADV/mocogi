@@ -12,6 +12,7 @@ import database.table.core.*
 import models.core.Identity
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.db.slick.HasDatabaseConfigProvider
+import slick.jdbc.GetResult
 import slick.jdbc.JdbcProfile
 
 @Singleton
@@ -49,4 +50,12 @@ class IdentityRepository @Inject() (
 
   def deleteMany(ids: Seq[String]) =
     db.run(tableQuery.filter(_.id.inSet(ids)).delete)
+
+  private given GetResult[String] =
+    GetResult(_.nextString())
+
+  def getUserInfo(id: String, campusId: String): Future[String] = {
+    val query = sql"select get_user_info($id::text, $campusId::text)".as[String].head
+    db.run(query)
+  }
 }

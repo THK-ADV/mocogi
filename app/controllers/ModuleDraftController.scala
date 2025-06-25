@@ -64,8 +64,7 @@ final class ModuleDraftController @Inject() (
           )
       }))
       def newImpl() = moduleDraftService.repo.allForCampusId(r.request.campusId).map(Ok(_))
-      val newApi    = r.getQueryString("newApi").flatMap(_.toBooleanOption).getOrElse(false)
-      if newApi then newImpl() else oldImpl()
+      if r.isNewApi then newImpl() else oldImpl()
     }
 
   def getModuleDraft(moduleId: UUID) =

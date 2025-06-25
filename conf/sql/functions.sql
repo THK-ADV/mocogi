@@ -18,6 +18,8 @@ DROP FUNCTION IF EXISTS get_module_details (uuid) CASCADE;
 
 DROP FUNCTION IF EXISTS get_modules_for_user (text) CASCADE;
 
+DROP FUNCTION IF EXISTS get_user_info (text, text) CASCADE;
+
 CREATE OR REPLACE FUNCTION identity_to_json (i IDENTITY)
     RETURNS jsonb
     LANGUAGE sql
@@ -44,7 +46,7 @@ $$;
 CREATE OR REPLACE FUNCTION resolve_prereqs (prerequisites jsonb)
     RETURNS jsonb
     LANGUAGE sql
-    IMMUTABLE
+    STABLE
     AS $$
     SELECT
         CASE WHEN prerequisites IS NULL THEN
@@ -63,7 +65,7 @@ CREATE OR REPLACE FUNCTION resolve_responsibilities (module_id uuid)
         module_management jsonb,
         lecturer jsonb)
     LANGUAGE sql
-    IMMUTABLE
+    STABLE
     AS $$
     SELECT
         coalesce(jsonb_agg(identity_to_json (i)) FILTER (WHERE mr.responsibility_type = 'module_management'), '[]'::jsonb) AS module_management,
@@ -78,7 +80,7 @@ $$;
 CREATE OR REPLACE FUNCTION resolve_assessment_methods (module_id uuid)
     RETURNS jsonb
     LANGUAGE sql
-    IMMUTABLE
+    STABLE
     AS $$
     SELECT
         coalesce(jsonb_agg(jsonb_build_object('label', am.de_label, 'source', am.source, 'percentage', mam.percentage, 'preconditions', coalesce((
@@ -98,7 +100,7 @@ CREATE OR REPLACE FUNCTION resolve_po_relationships (module_id uuid)
         po_mandatory jsonb,
         po_optional jsonb)
     LANGUAGE sql
-    IMMUTABLE
+    STABLE
     AS $$
     SELECT
         -- PO Mandatory
@@ -129,7 +131,7 @@ $$;
 CREATE OR REPLACE FUNCTION resolve_taught_with (module_id uuid)
     RETURNS jsonb
     LANGUAGE sql
-    IMMUTABLE
+    STABLE
     AS $$
     SELECT
         coalesce(jsonb_agg(module_to_json_short (m)), '[]'::jsonb)
@@ -143,7 +145,7 @@ $$;
 CREATE OR REPLACE FUNCTION resolve_module_relation (module_id uuid)
     RETURNS jsonb
     LANGUAGE sql
-    IMMUTABLE
+    STABLE
     AS $$
     SELECT
         CASE
@@ -268,5 +270,39 @@ WHERE
             AND cm.module IS NULL)
         OR (m.id IS NULL
             AND cm.module IS NOT NULL));
+$$;
+
+CREATE OR REPLACE FUNCTION get_user_info (uid text, cid text)
+    RETURNS jsonb
+    LANGUAGE sql
+    STABLE
+    AS $$
+    SELECT
+        jsonb_build_object('hasUniversityRole', EXISTS (
+                SELECT
+                    1
+                FROM study_program_person p
+                WHERE
+                    p.person = uid), 'hasModulesToEdit', EXISTS (
+                SELECT
+                    1
+                FROM module_update_permission m
+                WHERE
+                    m.campus_id = cid), 'rejectedReviews', (
+                SELECT
+                    count(*)
+                FROM module_update_permission mp
+                JOIN module_review mr ON mp.module = mr.module_draft
+            WHERE
+                mp.campus_id = cid
+                AND mr.status = 'rejected'), 'reviewsToApprove', (
+                SELECT
+                    count(*)
+                FROM study_program_person sp
+                JOIN module_review mr ON sp.study_program = mr.study_program
+                    AND sp.role = mr.role
+                    AND mr.status = 'pending'
+            WHERE
+                sp.person = uid))
 $$;
 

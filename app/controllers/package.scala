@@ -41,6 +41,12 @@ package object controllers {
         .getQueryString("extend")
         .flatMap(_.toBooleanOption)
         .getOrElse(false)
+
+    def isNewApi: Boolean =
+      self
+        .getQueryString("newApi")
+        .flatMap(_.toBooleanOption)
+        .getOrElse(false)
   }
 
   object MimeTypes {

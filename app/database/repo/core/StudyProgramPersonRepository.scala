@@ -21,7 +21,7 @@ final class StudyProgramPersonRepository @Inject() (
     implicit val ctx: ExecutionContext
 ) extends HasDatabaseConfigProvider[JdbcProfile] {
   import database.table.universityRoleColumnType
-  import profile.api._
+  import profile.api.*
 
   private def studyProgramPersonTable = TableQuery[StudyProgramPersonTable]
 
@@ -50,6 +50,7 @@ final class StudyProgramPersonRepository @Inject() (
         .result
     )
 
+  @deprecated("replaced by IdentityRepository.getUserInfo")
   def getStudyProgramPrivileges(
       person: String
   ): Future[Iterable[StudyProgramPrivileges]] =
