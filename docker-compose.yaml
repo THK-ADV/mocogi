@@ -3,7 +3,7 @@ version: '3.8'
 services:
   psql:
     container_name: mocogi-db
-    image: postgres:17.4-alpine3.21
+    image: postgres:14.4-alpine
     restart: always
     expose:
       - 5432
@@ -22,19 +22,21 @@ services:
       context: .
       dockerfile: Dockerfile_Dependencies
       args:
-        PANDOC_PLATFORM_SUFFIX: amd64
+        PANDOC_PLATFORM_SUFFIX: arm64
+  #        PANDOC_PLATFORM_SUFFIX: amd64
 
   backend:
     container_name: mocogi-backend
     image: mocogi-backend
     restart: always
+    ports:
+      - "9000:9000"
     volumes:
       - backend_logs_vol:/mocogi/logs
       - app_vol:/mocogi/output
       - mc_vol:/mocogi/mc
     depends_on:
       - psql
-      - core
     build:
       context: .
       dockerfile: Dockerfile
@@ -45,6 +47,9 @@ services:
     container_name: mocogi-frontend
     image: mocogi-frontend
     restart: always
+    ports:
+      - "8080:80"
+      - "4433:443"
     volumes:
       - app_vol:/usr/share/nginx/html/public
     build:
@@ -53,6 +58,13 @@ services:
     configs:
       - source: nginx_conf
         target: /etc/nginx/conf.d/default.conf
+        mode: 0440
+    secrets:
+      - source: server_cert_pem
+        target: /etc/cert/cert.pem
+        mode: 0440
+      - source: server_cert_key
+        target: /etc/cert/cert.key
         mode: 0440
 
 volumes:
@@ -64,3 +76,9 @@ volumes:
 configs:
   nginx_conf:
     file: ../mocogi-ui/conf/default.conf
+
+secrets:
+  server_cert_pem:
+    file: ../mocogi-ui/cert/cert.pem
+  server_cert_key:
+    file: ../mocogi-ui/cert/cert.key
