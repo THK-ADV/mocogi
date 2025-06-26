@@ -306,3 +306,18 @@ CREATE OR REPLACE FUNCTION get_user_info (uid text, cid text)
                 sp.person = uid))
 $$;
 
+CREATE OR REPLACE FUNCTION get_users_with_granted_permissions_from_module (module_id uuid)
+    RETURNS jsonb
+    LANGUAGE sql
+    STABLE
+    AS $$
+    SELECT
+        coalesce(json_agg(i.id), '[]'::json)
+    FROM
+        module_update_permission mup
+        JOIN IDENTITY i ON mup.campus_id = i.campus_id
+    WHERE
+        mup.module = module_id
+        AND mup.kind = 'granted'
+$$;
+

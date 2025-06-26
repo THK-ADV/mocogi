@@ -25,4 +25,7 @@ final class IdentityService @Inject() (
 
   override def all(): Future[Seq[Identity]] =
     repo.all().map(_.map(Identity.fromDbEntry))
+
+  def allByIds(ids: List[String]) =
+    repo.allByIds(ids)
 }

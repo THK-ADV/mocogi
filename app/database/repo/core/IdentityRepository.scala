@@ -58,4 +58,13 @@ class IdentityRepository @Inject() (
     val query = sql"select get_user_info($id::text, $campusId::text)".as[String].head
     db.run(query)
   }
+
+  def allByIds(ids: List[String]): Future[List[CampusId]] =
+    db.run(
+      tableQuery
+        .filter(a => a.campusId.isDefined && a.id.inSet(ids))
+        .map(_.campusId)
+        .result
+        .map(_.collect { case Some(id) => CampusId(id) }.toList)
+    )
 }

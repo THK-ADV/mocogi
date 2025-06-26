@@ -99,13 +99,18 @@ final class ModuleUpdatePermissionRepository @Inject() (
         })
     )
 
-  def allGrantedFromModule(module: UUID) =
+  def allGrantedFromModule2(module: UUID) =
     db.run(
       tableQuery
         .filter(a => a.module === module && a.isGranted)
         .map(_.campusId)
         .result
     )
+
+  def allGrantedFromModule(module: UUID) = {
+    val query = sql"select get_users_with_granted_permissions_from_module(${module.toString}::uuid)".as[String].head
+    db.run(query)
+  }
 
   def hasPermission(campusId: CampusId, module: UUID): Future[Boolean] =
     db.run(

@@ -2,8 +2,7 @@ import play.api.i18n.Lang
 import play.api.libs.json.Json
 import play.api.libs.json.Reads
 import play.api.libs.json.Writes
-import play.api.mvc.AnyContent
-import play.api.mvc.Request
+import play.api.mvc.RequestHeader
 import printing.PrintingLanguage
 
 package object controllers {
@@ -29,7 +28,13 @@ package object controllers {
       else PrintingLanguage.English
   }
 
-  implicit class RequestOps(private val self: Request[AnyContent]) extends AnyVal {
+  extension (self: RequestHeader) {
+    def isNewApi: Boolean =
+      self
+        .getQueryString("newApi")
+        .flatMap(_.toBooleanOption)
+        .getOrElse(false)
+
     def parseLang(): PrintingLanguage =
       self
         .getQueryString("lang")
@@ -39,12 +44,6 @@ package object controllers {
     def isExtended: Boolean =
       self
         .getQueryString("extend")
-        .flatMap(_.toBooleanOption)
-        .getOrElse(false)
-
-    def isNewApi: Boolean =
-      self
-        .getQueryString("newApi")
         .flatMap(_.toBooleanOption)
         .getOrElse(false)
   }

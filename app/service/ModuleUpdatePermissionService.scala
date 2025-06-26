@@ -52,7 +52,11 @@ final class ModuleUpdatePermissionService @Inject() (
   def allFromUser(campusId: CampusId): Future[Seq[ModuleUpdatePermission]] =
     repo.allFromUser(campusId)
 
-  def allGrantedFromModule(moduleId: UUID): Future[Seq[CampusId]] =
+  @deprecated("replaced by allGrantedFromModule, which returns the user ids intead of campus id")
+  def allGrantedFromModule2(moduleId: UUID): Future[Seq[CampusId]] =
+    repo.allGrantedFromModule2(moduleId)
+
+  def allGrantedFromModule(moduleId: UUID): Future[String] =
     repo.allGrantedFromModule(moduleId)
 
   def hasInheritedPermission(
