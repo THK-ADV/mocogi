@@ -53,7 +53,7 @@ final class ModuleDraftService @Inject() (
       versionScheme: VersionScheme
   ): Future[Either[PipelineError, ModuleDraft]] = {
     val updatedKeys = nonEmptyKeys(protocol)
-    if (updatedKeys.isEmpty) abortNoChanges
+    if (updatedKeys.isEmpty) Future.failed(new Exception("no changes to the module could be found"))
     else
       create(
         protocol,
@@ -94,10 +94,6 @@ final class ModuleDraftService @Inject() (
           ).map(_.map(_ => logger.info(s"Successfully created module draft $moduleId (${protocol.metadata.title})")))
       })
 
-  // TODO maybe this can be turned off
-  private def abortNoChanges =
-    Future.failed(new Exception("no changes to the module could be found"))
-
   private def getFromStaging(uuid: UUID) =
     gitFileDownloadService.downloadModuleFromPreviewBranch(uuid)
 
@@ -106,7 +102,7 @@ final class ModuleDraftService @Inject() (
       protocol: ModuleProtocol,
       person: Identity.Person,
       versionScheme: VersionScheme
-  ): Future[Either[PipelineError, ModuleDraft]] =
+  ): Future[Either[PipelineError, Unit]] =
     for {
       module <- getFromStaging(moduleId)
         .continueIf(
@@ -120,7 +116,7 @@ final class ModuleDraftService @Inject() (
         Set.empty
       )
       res <-
-        if (modifiedKeys.isEmpty) abortNoChanges
+        if (modifiedKeys.isEmpty) Future.successful(Right(()))
         else
           create(
             protocol,
@@ -129,7 +125,7 @@ final class ModuleDraftService @Inject() (
             moduleId,
             person,
             modifiedKeys
-          )
+          ).map(_.map(_ => ()))
     } yield res
 
   private def update(
