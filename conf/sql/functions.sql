@@ -232,7 +232,8 @@ CREATE OR REPLACE FUNCTION get_modules_for_user (campus_id_param text)
     STABLE
     AS $$
     SELECT
-        coalesce(json_agg(json_build_object('isPrivilegedForModule', p.kind = 'inherited', 'isNewModule', cm.module IS NOT NULL, 'module', json_build_object('id', coalesce(m.id, cm.module), 'title', coalesce(m.title, cm.module_title), 'abbreviation', coalesce(m.abbrev, cm.module_abbrev)), 'ects', coalesce((md.module_json -> 'metadata' -> 'ects')::numeric, m.ects, cm.module_ects), 'mandatoryPOs', cm.module_mandatory_pos, 'moduleDraftState', CASE WHEN md.module IS NULL THEN
+        coalesce(json_agg(json_build_object('isPrivilegedForModule', p.kind = 'inherited', 'isNewModule', cm.module IS NOT NULL
+                    OR md.module IS NOT NULL, 'module', json_build_object('id', coalesce(m.id, cm.module, md.module), 'title', coalesce(m.title, cm.module_title, md.module_title), 'abbreviation', coalesce(m.abbrev, cm.module_abbrev, md.module_abbrev)), 'ects', coalesce((md.module_json -> 'metadata' -> 'ects')::numeric, m.ects, cm.module_ects), 'mandatoryPOs', cm.module_mandatory_pos, 'moduleDraftState', CASE WHEN md.module IS NULL THEN
                     'published'
                 WHEN md.last_commit_id IS NULL THEN
                     'unknown'
@@ -269,7 +270,10 @@ WHERE
     AND ((m.id IS NOT NULL
             AND cm.module IS NULL)
         OR (m.id IS NULL
-            AND cm.module IS NOT NULL));
+            AND cm.module IS NOT NULL)
+        OR (m.id IS NULL
+            AND cm.module IS NULL
+            AND md.module IS NOT NULL));
 $$;
 
 CREATE OR REPLACE FUNCTION get_user_info (uid text, cid text)
