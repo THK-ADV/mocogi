@@ -40,7 +40,7 @@ final class ModuleUpdatePermissionController @Inject() (
     }
 
   def allByModule(moduleId: UUID) =
-    auth.andThen(hasInheritedPermission(moduleId)).async { r =>
+    auth.andThen(hasModuleUpdatePermission(moduleId)).async { r =>
       if r.isNewApi then moduleUpdatePermissionService.allGrantedFromModule(moduleId).map(Ok(_))
       else
         moduleUpdatePermissionService
@@ -49,7 +49,7 @@ final class ModuleUpdatePermissionController @Inject() (
     }
 
   def replace(moduleId: UUID) =
-    auth(parse.json).andThen(hasInheritedPermission(moduleId)).async { r =>
+    auth(parse.json).andThen(hasModuleUpdatePermission(moduleId)).async { r =>
       def go(ids: List[CampusId]) =
         moduleUpdatePermissionService
           .replace(moduleId, ids, ModuleUpdatePermissionType.Granted)

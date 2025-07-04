@@ -13,12 +13,12 @@ import service.ModuleUpdatePermissionService
 trait ModuleUpdatePermissionCheck { self: PermissionCheck =>
   implicit def moduleUpdatePermissionService: ModuleUpdatePermissionService
 
-  def hasInheritedPermission(moduleId: UUID) =
+  def hasModuleUpdatePermission(moduleId: UUID) =
     new ActionFilter[TokenRequest] {
       protected override def filter[A](request: TokenRequest[A]): Future[Option[Result]] =
         continueAsAdmin(
           request,
-          otherwise = moduleUpdatePermissionService.hasInheritedPermission(request.campusId, moduleId)
+          otherwise = moduleUpdatePermissionService.hasPermission(request.campusId, moduleId)
         )
 
       protected override def executionContext: ExecutionContext = ctx
