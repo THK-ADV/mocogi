@@ -17,6 +17,8 @@ import models.ModuleDraft
 import models.ModuleUpdatePermission
 import models.ModuleUpdatePermissionType
 import models.ModuleUpdatePermissionType.Inherited
+import play.api.libs.json.JsValue
+import play.api.libs.json.Json
 
 @Singleton
 final class ModuleUpdatePermissionService @Inject() (
@@ -59,12 +61,6 @@ final class ModuleUpdatePermissionService @Inject() (
   def allGrantedFromModule(moduleId: UUID): Future[String] =
     repo.allGrantedFromModule(moduleId)
 
-  def hasInheritedPermission(
-      campusId: CampusId,
-      module: UUID
-  ): Future[Boolean] =
-    repo.hasInheritedPermission(campusId, module)
-
   @Deprecated(since = "the introduction of a better api: ModuleDraftRepository.allForCampusId", forRemoval = true)
   def allForCampusId(
       campusId: CampusId
@@ -72,4 +68,41 @@ final class ModuleUpdatePermissionService @Inject() (
     Seq[((ModuleCore, Option[Double]), ModuleUpdatePermissionType, Option[ModuleDraft])]
   ] =
     repo.allForCampusId(campusId)
+
+  private def parsePOs(roles: Set[String]) = {
+    def parseAccreditationPOs(role: String): Option[List[String]] = {
+      if (!role.startsWith("[") || !role.endsWith("]")) return None
+
+      val content = role.drop(1).dropRight(1)
+      if (content.isEmpty) return None
+
+      val pos = content.split(",").map(_.trim).filter(_.nonEmpty).toList
+      Option.when(pos.nonEmpty)(pos)
+    }
+
+    val prefix = "accreditation-member_"
+    roles.find(_.startsWith(prefix)).flatMap(a => parseAccreditationPOs(a.drop(prefix.length)))
+  }
+
+  def allForUser(cid: CampusId, roles: Set[String]): Future[JsValue] = {
+    val forUser = repo.allForUser(cid)
+
+    parsePOs(roles) match {
+      case Some(pos) =>
+        for {
+          forUser <- forUser
+          forPo   <- repo.allForPos(pos)
+        } yield {
+          if forPo == "[]" then Json.obj("default" -> Json.parse(forUser))
+          else Json.obj("default"                  -> Json.parse(forUser), "accreditation" -> Json.parse(forPo))
+        }
+      case None => forUser.map(s => Json.obj("default" -> Json.parse(s)))
+    }
+  }
+
+  def isModuleInPO(module: UUID, roles: Set[String]): Future[Boolean] =
+    parsePOs(roles) match {
+      case Some(pos) => repo.isModuleInPO(module, pos)
+      case None      => Future.successful(false)
+    }
 }

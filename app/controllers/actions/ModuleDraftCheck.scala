@@ -24,8 +24,11 @@ trait ModuleDraftCheck { self: PermissionCheck =>
     val person   = request.person
     for {
       b1 <- moduleUpdatePermissionService.hasPermission(campusId, moduleId)
-      b2 <- moduleDraftService.isAuthorOf(moduleId, person.id)
-    } yield b1 || b2
+      b2 <- if b1 then Future.successful(b1) else moduleDraftService.isAuthorOf(moduleId, person.id)
+      b3 <-
+        if b2 then Future.successful(b2)
+        else moduleUpdatePermissionService.isModuleInPO(moduleId, request.request.token.roles)
+    } yield b3
   }
 
   def hasPermissionToEditDraft(moduleId: UUID) =
@@ -49,8 +52,8 @@ trait ModuleDraftCheck { self: PermissionCheck =>
         val person = request.person
         val hasPermission = for {
           b1 <- hasPermissionToEditDraft0(moduleId, request)
-          b2 <- moduleApprovalService.canApproveModule(moduleId, person.id)
-        } yield b1 || b2
+          b2 <- if b1 then Future.successful(b1) else moduleApprovalService.canApproveModule(moduleId, person.id)
+        } yield b2
         toResult(hasPermission, request.request)
       }
 

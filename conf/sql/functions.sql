@@ -16,9 +16,19 @@ DROP FUNCTION IF EXISTS resolve_module_relation (uuid) CASCADE;
 
 DROP FUNCTION IF EXISTS get_module_details (uuid) CASCADE;
 
+DROP FUNCTION IF EXISTS calculate_module_draft_state (module_draft) CASCADE;
+
+DROP FUNCTION IF EXISTS build_module_info_json (bool, module, created_module_in_draft, module_draft) CASCADE;
+
 DROP FUNCTION IF EXISTS get_modules_for_user (text) CASCADE;
 
+DROP FUNCTION IF EXISTS get_modules_for_po (text[]) CASCADE;
+
+DROP FUNCTION IF EXISTS module_of_po (uuid, text[]) CASCADE;
+
 DROP FUNCTION IF EXISTS get_user_info (text, text) CASCADE;
+
+DROP FUNCTION IF EXISTS get_users_with_granted_permissions_from_module (uuid) CASCADE;
 
 CREATE OR REPLACE FUNCTION identity_to_json (i IDENTITY)
     RETURNS jsonb
@@ -223,6 +233,51 @@ CREATE OR REPLACE FUNCTION get_module_details (module_id uuid)
     LEFT JOIN LATERAL resolve_po_relationships (b.id) AS po ON TRUE;
 $$;
 
+CREATE OR REPLACE FUNCTION calculate_module_draft_state (md module_draft)
+    RETURNS text
+    LANGUAGE sql
+    IMMUTABLE
+    AS $$
+    SELECT
+        CASE WHEN md IS NULL THEN
+            'published'
+        WHEN md.last_commit_id IS NULL THEN
+            'unknown'
+        WHEN md.merge_request_status IS NULL THEN
+            CASE WHEN md.modified_keys != '' and md.keys_to_be_reviewed = '' THEN
+                'valid_for_publication'
+            WHEN md.modified_keys != '' and md.keys_to_be_reviewed != '' THEN
+                'valid_for_review'
+            ELSE
+                'unknown'
+        END
+        WHEN md.merge_request_status = 'open' THEN
+            CASE WHEN md.keys_to_be_reviewed != '' THEN
+                'waiting_for_review'
+            WHEN md.keys_to_be_reviewed = '' THEN
+                'waiting_for_publication'
+            ELSE
+                'unknown'
+        END
+        WHEN md.merge_request_status = 'closed' THEN
+            'waiting_for_changes'
+        ELSE
+            'unknown'
+        END
+$$;
+
+CREATE OR REPLACE FUNCTION build_module_info_json (inherited_perm bool, m module, cm created_module_in_draft, md module_draft)
+    RETURNS jsonb
+    LANGUAGE sql
+    IMMUTABLE
+    AS $$
+    SELECT
+        json_build_object('isPrivilegedForModule', inherited_perm, 'isNewModule', cm.module IS NOT NULL
+            OR md.module IS NOT NULL, 'module', json_build_object('id', coalesce(m.id, cm.module, md.module), 'title', coalesce(m.title, cm.module_title, md.module_title), 'abbreviation', coalesce(m.abbrev, cm.module_abbrev, md.module_abbrev)), 'ects', coalesce((md.module_json -> 'metadata' -> 'ects')::numeric, m.ects, cm.module_ects), 'mandatoryPOs', cm.module_mandatory_pos, 'moduleDraftState', calculate_module_draft_state (md), 'moduleDraft', CASE WHEN md.module IS NOT NULL THEN
+            json_build_object('id', md.module, 'title', md.module_title, 'abbreviation', md.module_abbrev, 'modifiedKeys', md.modified_keys, 'keysToBeReviewed', md.keys_to_be_reviewed)
+        END)::jsonb
+$$;
+
 -- Returns modules for a given campus with their draft states and permissions
 -- @param campus_id_param: The campus ID to filter modules for
 -- @returns: JSON array of modules with their metadata, draft state, and permissions
@@ -232,34 +287,7 @@ CREATE OR REPLACE FUNCTION get_modules_for_user (campus_id_param text)
     STABLE
     AS $$
     SELECT
-        coalesce(json_agg(json_build_object('isPrivilegedForModule', p.kind = 'inherited', 'isNewModule', cm.module IS NOT NULL
-                    OR md.module IS NOT NULL, 'module', json_build_object('id', coalesce(m.id, cm.module, md.module), 'title', coalesce(m.title, cm.module_title, md.module_title), 'abbreviation', coalesce(m.abbrev, cm.module_abbrev, md.module_abbrev)), 'ects', coalesce((md.module_json -> 'metadata' -> 'ects')::numeric, m.ects, cm.module_ects), 'mandatoryPOs', cm.module_mandatory_pos, 'moduleDraftState', CASE WHEN md.module IS NULL THEN
-                    'published'
-                WHEN md.last_commit_id IS NULL THEN
-                    'unknown'
-                WHEN md.merge_request_status IS NULL THEN
-                    CASE WHEN md.modified_keys != '' and md.keys_to_be_reviewed = '' THEN
-                        'valid_for_publication'
-                    WHEN md.modified_keys != '' and md.keys_to_be_reviewed != '' THEN
-                        'valid_for_review'
-                    ELSE
-                        'unknown'
-                END
-                WHEN md.merge_request_status = 'open' THEN
-                    CASE WHEN md.keys_to_be_reviewed != '' THEN
-                        'waiting_for_review'
-                    WHEN md.keys_to_be_reviewed = '' THEN
-                        'waiting_for_publication'
-                    ELSE
-                        'unknown'
-                END
-                WHEN md.merge_request_status = 'closed' THEN
-                    'waiting_for_changes'
-                ELSE
-                    'unknown'
-                END, 'moduleDraft', CASE WHEN md.module IS NOT NULL THEN
-                    json_build_object('id', md.module, 'title', md.module_title, 'abbreviation', md.module_abbrev, 'modifiedKeys', md.modified_keys, 'keysToBeReviewed', md.keys_to_be_reviewed)
-                END))::jsonb, '[]'::jsonb)
+        coalesce(json_agg(build_module_info_json (p.kind = 'inherited', m, cm, md))::jsonb, '[]'::jsonb)
     FROM
         module_update_permission p
     LEFT JOIN module m ON p.module = m.id
@@ -274,6 +302,111 @@ WHERE
         OR (m.id IS NULL
             AND cm.module IS NULL
             AND md.module IS NOT NULL));
+$$;
+
+CREATE OR REPLACE FUNCTION get_modules_for_po (pos_param text[])
+    RETURNS jsonb
+    LANGUAGE sql
+    STABLE
+    AS $$
+    SELECT
+        CASE WHEN pos_param IS NULL
+            OR array_length(pos_param, 1) IS NULL THEN
+            '[]'::jsonb
+        ELSE
+            coalesce(json_agg(build_module_info_json (FALSE, NULL::module, cm, md))::jsonb, '[]'::jsonb)
+        END
+    FROM (
+        -- Get created_module_in_draft entries that match POs, with their drafts
+        SELECT DISTINCT ON (cm.module)
+            cm,
+            md
+        FROM
+            unnest(pos_param) AS po_id
+            JOIN created_module_in_draft cm ON (po_id = ANY (cm.module_mandatory_pos)
+                    OR po_id = ANY (cm.module_optional_pos))
+            LEFT JOIN module_draft md ON md.module = cm.module
+    UNION
+    -- Get module_draft entries that match POs but don't have created_module_in_draft
+    SELECT DISTINCT ON (md.module)
+        NULL::created_module_in_draft AS cm,
+        md
+    FROM
+        unnest(pos_param) AS po_id
+        JOIN module_draft md ON (EXISTS (
+                SELECT
+                    1
+                FROM
+                    jsonb_array_elements(md.module_json -> 'metadata' -> 'po' -> 'mandatory') AS mandatory_po
+                WHERE
+                    mandatory_po ->> 'po' = po_id)
+                OR EXISTS (
+                    SELECT
+                        1
+                    FROM
+                        jsonb_array_elements(md.module_json -> 'metadata' -> 'po' -> 'optional') AS optional_po
+                    WHERE
+                        optional_po ->> 'po' = po_id))
+            WHERE
+                NOT EXISTS (
+                    SELECT
+                        1
+                    FROM
+                        created_module_in_draft cm
+                    WHERE
+                        cm.module = md.module)) AS distinct_modules;
+$$;
+
+CREATE OR REPLACE FUNCTION module_of_po (module_param uuid, pos_param text[])
+    RETURNS bool
+    LANGUAGE sql
+    STABLE
+    AS $$
+    SELECT
+        CASE WHEN module_param IS NULL
+            OR pos_param IS NULL
+            OR array_length(pos_param, 1) IS NULL THEN
+            FALSE
+        ELSE
+            EXISTS (
+                SELECT
+                    1
+                FROM
+                    unnest(pos_param) AS po_id
+                WHERE
+                    po_id IS NOT NULL
+                    AND (
+                        -- Check mandatory PO relationships
+                        EXISTS (
+                            SELECT
+                                1
+                            FROM
+                                module_po_mandatory
+                            WHERE
+                                module = module_param
+                                AND po = po_id)
+                            OR
+                            -- Check optional PO relationships
+                            EXISTS (
+                                SELECT
+                                    1
+                                FROM
+                                    module_po_optional
+                                WHERE
+                                    module = module_param
+                                    AND po = po_id)
+                                OR
+                                -- Check draft modules
+                                EXISTS (
+                                    SELECT
+                                        1
+                                    FROM
+                                        created_module_in_draft
+                                    WHERE
+                                        module = module_param
+                                        AND (po_id = ANY (module_mandatory_pos)
+                                            OR po_id = ANY (module_optional_pos)))))
+        END;
 $$;
 
 CREATE OR REPLACE FUNCTION get_user_info (uid text, cid text)

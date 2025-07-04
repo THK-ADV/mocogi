@@ -10,26 +10,30 @@ import scala.concurrent.Future
 
 import auth.AuthorizationAction
 import auth.CampusId
-import controllers.actions.ModuleUpdatePermissionCheck
+import controllers.actions.ModuleDraftCheck
 import controllers.actions.PermissionCheck
+import controllers.actions.PersonAction
+import database.repo.core.IdentityRepository
 import models.ModuleUpdatePermissionType
 import play.api.libs.json.JsPath
 import play.api.libs.json.Json
 import play.api.libs.json.JsonValidationError
 import play.api.mvc.AbstractController
 import play.api.mvc.ControllerComponents
-import service.core.IdentityService
+import service.ModuleDraftService
 import service.ModuleUpdatePermissionService
 
 @Singleton
 final class ModuleUpdatePermissionController @Inject() (
     cc: ControllerComponents,
     val moduleUpdatePermissionService: ModuleUpdatePermissionService,
-    val identityService: IdentityService,
+    val moduleDraftService: ModuleDraftService,
+    val identityRepository: IdentityRepository,
     auth: AuthorizationAction,
     implicit val ctx: ExecutionContext
 ) extends AbstractController(cc)
-    with ModuleUpdatePermissionCheck
+    with ModuleDraftCheck
+    with PersonAction
     with PermissionCheck {
 
   def getOwn =
@@ -40,7 +44,7 @@ final class ModuleUpdatePermissionController @Inject() (
     }
 
   def allByModule(moduleId: UUID) =
-    auth.andThen(hasModuleUpdatePermission(moduleId)).async { r =>
+    auth.andThen(personAction).andThen(hasPermissionToEditDraft(moduleId)).async { r =>
       if r.isNewApi then moduleUpdatePermissionService.allGrantedFromModule(moduleId).map(Ok(_))
       else
         moduleUpdatePermissionService
@@ -49,7 +53,7 @@ final class ModuleUpdatePermissionController @Inject() (
     }
 
   def replace(moduleId: UUID) =
-    auth(parse.json).andThen(hasModuleUpdatePermission(moduleId)).async { r =>
+    auth(parse.json).andThen(personAction).andThen(hasPermissionToEditDraft(moduleId)).async { r =>
       def go(ids: List[CampusId]) =
         moduleUpdatePermissionService
           .replace(moduleId, ids, ModuleUpdatePermissionType.Granted)
@@ -60,7 +64,7 @@ final class ModuleUpdatePermissionController @Inject() (
           .validate[List[String]]
           .fold(
             respondWithError,
-            ids => identityService.allByIds(ids).flatMap(go)
+            ids => identityRepository.allByIds(ids).flatMap(go)
           )
       else r.body.validate[List[CampusId]].fold(respondWithError, go)
     }

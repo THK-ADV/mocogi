@@ -63,7 +63,12 @@ final class ModuleDraftController @Inject() (
             "privilegedForModule" -> kind.isInherited
           )
       }))
-      def newImpl() = moduleDraftService.repo.allForCampusId(r.request.campusId).map(Ok(_))
+      def newImpl() = {
+        val cid   = r.request.campusId
+        val roles = r.request.token.roles
+        moduleUpdatePermissionService.allForUser(cid, roles).map(Ok(_))
+      }
+
       if r.isNewApi then newImpl() else oldImpl()
     }
 

@@ -50,10 +50,10 @@ final class ModuleReviewService @Inject() (
       draft <- draftRepo
         .getByModule(moduleId)
         .continueIf(
-          _.state().canRequestReview,
+          _.state().canRequestReview, // TODO bypass this by checking the users role for accreditation
           "can't request a review"
         )
-      mergeRequest <-
+      mergeRequest <- // TODO bypass this by checking the users role for accreditation
         if draft.keysToBeReviewed.nonEmpty then createApproveReview(draft, author)
         else createAutoAcceptedReview(draft, author)
       _ <- draftRepo.updateMergeRequest(draft.module, Some(mergeRequest))

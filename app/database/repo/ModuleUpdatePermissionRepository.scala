@@ -17,7 +17,9 @@ import models.*
 import models.core.Identity
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.db.slick.HasDatabaseConfigProvider
+import slick.jdbc.GetResult
 import slick.jdbc.JdbcProfile
+import slick.jdbc.TypedParameter
 
 @Singleton
 final class ModuleUpdatePermissionRepository @Inject() (
@@ -120,17 +122,6 @@ final class ModuleUpdatePermissionRepository @Inject() (
         .result
     )
 
-  def hasInheritedPermission(
-      campusId: CampusId,
-      module: UUID
-  ): Future[Boolean] =
-    db.run(
-      tableQuery
-        .filter(a => a.module === module && a.campusId === campusId && a.isInherited)
-        .exists
-        .result
-    )
-
   @Deprecated(since = "the introduction of a better api: ModuleDraftRepository.allForCampusId", forRemoval = true)
   def allForCampusId(
       campusId: CampusId
@@ -178,5 +169,27 @@ final class ModuleUpdatePermissionRepository @Inject() (
           res
         }
     )
+  }
+
+  private given GetResult[String] =
+    GetResult(_.nextString())
+
+  private def arrayLiteral(pos: List[String]) =
+    "'{" + pos.mkString(",") + "}'"
+
+  def allForUser(cid: CampusId): Future[String] = {
+    val query = sql"select get_modules_for_user(${cid.value}::text)".as[String].head
+    db.run(query)
+  }
+
+  // This function is only used for accreditation members which can access all the modules for a given PO
+  def allForPos(pos: List[String]): Future[String] = {
+    val query = sql"select get_modules_for_po(#${arrayLiteral(pos)}::text[])".as[String].head
+    db.run(query)
+  }
+
+  def isModuleInPO(module: UUID, pos: List[String]): Future[Boolean] = {
+    val query = sql"select module_of_po(${module.toString}::uuid, #${arrayLiteral(pos)}::text[])".as[Boolean].head
+    db.run(query)
   }
 }

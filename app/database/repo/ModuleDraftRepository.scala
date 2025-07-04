@@ -8,13 +8,13 @@ import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-import auth.CampusId
 import database.table
 import database.table.ModuleDraftTable
 import git.CommitId
 import git.MergeRequestId
 import git.MergeRequestStatus
 import models.*
+import models.core.Identity.Person
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.db.slick.HasDatabaseConfigProvider
 import play.api.libs.json.JsValue
@@ -154,12 +154,4 @@ final class ModuleDraftRepository @Inject() (
         .exists
         .result
     )
-
-  private given GetResult[String] =
-    GetResult(_.nextString())
-
-  def allForCampusId(campusId: CampusId): Future[String] = {
-    val query = sql"select get_modules_for_user(${campusId.value}::text)".as[String].head
-    db.run(query)
-  }
 }
