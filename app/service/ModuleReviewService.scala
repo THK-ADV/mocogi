@@ -14,7 +14,7 @@ import database.repo.ModuleReviewRepository
 import git.api.GitMergeRequestApiService
 import git.MergeRequestId
 import git.MergeRequestStatus
-import models._
+import models.*
 import models.core.Identity
 import models.ModuleReviewStatus.Approved
 import models.ModuleReviewStatus.Pending
@@ -36,6 +36,30 @@ final class ModuleReviewService @Inject() (
   private type MergeRequest = (MergeRequestId, MergeRequestStatus)
 
   /**
+   * Creates a merge request which is accepted and merged
+   * instantly. The module draft is updated by the merge request id afterward.
+   *
+   * @param moduleId
+   * ID of the module draft
+   * @param author
+   * Author of the merge request
+   * @return
+   */
+  def createAutoAccepted(moduleId: UUID, author: Identity.Person): Future[Unit] =
+    for {
+      draft <- draftRepo
+        .getByModule(moduleId)
+        .continueIf(
+          _.state().canRequestReview,
+          "can't request a review"
+        )
+      mergeRequest <- createAutoAcceptedReview(draft, author)
+      _            <- draftRepo.updateMergeRequest(draft.module, Some(mergeRequest))
+    } yield logger.info(
+      s"Auto accepting merge request with id ${mergeRequest._1.value} because ${author.campusId.getOrElse(author.id)} has special permission to do so"
+    )
+
+  /**
    * Either creates a merge request with fresh reviewers based on modified keys
    * which need to be reviewed or a merge request which is accepted and merged
    * instantly. The module draft is updated by the merge request id afterward.
@@ -50,10 +74,10 @@ final class ModuleReviewService @Inject() (
       draft <- draftRepo
         .getByModule(moduleId)
         .continueIf(
-          _.state().canRequestReview, // TODO bypass this by checking the users role for accreditation
+          _.state().canRequestReview,
           "can't request a review"
         )
-      mergeRequest <- // TODO bypass this by checking the users role for accreditation
+      mergeRequest <-
         if draft.keysToBeReviewed.nonEmpty then createApproveReview(draft, author)
         else createAutoAcceptedReview(draft, author)
       _ <- draftRepo.updateMergeRequest(draft.module, Some(mergeRequest))

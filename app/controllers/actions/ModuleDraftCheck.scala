@@ -25,10 +25,12 @@ trait ModuleDraftCheck { self: PermissionCheck =>
     for {
       b1 <- moduleUpdatePermissionService.hasPermission(campusId, moduleId)
       b2 <- if b1 then Future.successful(b1) else moduleDraftService.isAuthorOf(moduleId, person.id)
-      b3 <-
-        if b2 then Future.successful(b2)
-        else moduleUpdatePermissionService.isModuleInPO(moduleId, request.request.token.roles)
+      b3 <- if b2 then Future.successful(b2) else moduleInReaccreditation(moduleId, request)
     } yield b3
+  }
+
+  def moduleInReaccreditation[A](moduleId: UUID, request: PersonRequest[A]) = {
+    moduleUpdatePermissionService.isModuleInPO(moduleId, request.request.token.roles)
   }
 
   def hasPermissionToEditDraft(moduleId: UUID) =

@@ -40,7 +40,11 @@ final class ModuleDraftReviewController @Inject() (
    */
   def create(moduleId: UUID) =
     auth.andThen(personAction).andThen(hasPermissionToEditDraft(moduleId)).async { r =>
-      service.create(moduleId, r.person).map(_ => Created)
+      moduleInReaccreditation(moduleId, r)
+        .flatMap(fastForward =>
+          if fastForward then service.createAutoAccepted(moduleId, r.person) else service.create(moduleId, r.person)
+        )
+        .map(_ => Created)
     }
 
   /**
