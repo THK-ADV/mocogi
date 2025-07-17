@@ -109,6 +109,11 @@ final class RawModuleParserSpec extends AnyWordSpec with EitherValues with Optio
       assert(metadata.examiner.second == Identity.NN.id)
       assert(metadata.examPhases.size == 1)
       assert(metadata.examPhases.head == ExamPhase.none.id)
+      assert(metadata.attendanceRequirement.value.min.nonEmpty)
+      assert(metadata.attendanceRequirement.value.reason.nonEmpty)
+      assert(metadata.attendanceRequirement.value.absence.nonEmpty)
+      assert(metadata.assessmentPrerequisite.value.modules.nonEmpty)
+      assert(metadata.assessmentPrerequisite.value.reason.nonEmpty)
     }
 
     "parse module2.md" in {
@@ -182,6 +187,10 @@ final class RawModuleParserSpec extends AnyWordSpec with EitherValues with Optio
       assert(metadata.examiner.first == "ald")
       assert(metadata.examiner.second == "abe")
       assert(metadata.examPhases == NonEmptyList.of("a", "b"))
+      assert(metadata.attendanceRequirement.value.min.nonEmpty)
+      assert(metadata.attendanceRequirement.value.reason.nonEmpty)
+      assert(metadata.attendanceRequirement.value.absence.nonEmpty)
+      assert(metadata.assessmentPrerequisite.isEmpty)
     }
 
     "parse module3.md" in {
@@ -264,6 +273,8 @@ final class RawModuleParserSpec extends AnyWordSpec with EitherValues with Optio
       assert(enContent.recommendedReading == "")
       assert(deContent.particularities == "")
       assert(enContent.particularities == "")
+      assert(metadata.attendanceRequirement.isEmpty)
+      assert(metadata.assessmentPrerequisite.isEmpty)
     }
   }
 }

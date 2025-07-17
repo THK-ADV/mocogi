@@ -4,11 +4,9 @@ import java.time.LocalDateTime
 import java.util.UUID
 
 import cats.data.NonEmptyList
+import models.*
 import models.core.ModuleStatus
 import models.core.ModuleType
-import models.Examiner
-import models.ModulePrerequisiteEntryProtocol
-import models.ModuleWorkload
 import parsing.types.ModuleContent
 import parsing.types.ModuleParticipants
 import play.api.libs.json.Format
@@ -34,6 +32,8 @@ case class ModuleDbEntry(
     participants: Option[ModuleParticipants],
     recommendedPrerequisites: Option[ModulePrerequisiteEntryProtocol],
     requiredPrerequisites: Option[ModulePrerequisiteEntryProtocol],
+    attendanceRequirement: Option[AttendanceRequirement],
+    assessmentPrerequisite: Option[AssessmentPrerequisite],
     deContent: ModuleContent,
     enContent: ModuleContent
 )
@@ -81,6 +81,10 @@ final class ModuleTable(tag: Tag) extends Table[ModuleDbEntry](tag, "module") {
 
   def requiredPrerequisites = column[Option[JsValue]]("required_prerequisites")
 
+  def attendanceRequirement = column[Option[JsValue]]("attendance_requirement")
+
+  def assessmentPrerequisite = column[Option[JsValue]]("assessment_prerequisite")
+
   def learningOutcomeDe = column[String]("learning_outcome_de")
 
   def learningOutcomeEn = column[String]("learning_outcome_en")
@@ -123,8 +127,8 @@ final class ModuleTable(tag: Tag) extends Table[ModuleDbEntry](tag, "module") {
     (firstExaminer, secondExaminer),
     examPhases,
     participants,
-    recommendedPrerequisites,
-    requiredPrerequisites,
+    (recommendedPrerequisites, requiredPrerequisites),
+    (attendanceRequirement, assessmentPrerequisite),
     (learningOutcomeDe, learningOutcomeEn),
     (moduleContentDe, moduleContentEn),
     (learningMethodsDe, learningMethodsEn),
@@ -149,8 +153,8 @@ final class ModuleTable(tag: Tag) extends Table[ModuleDbEntry](tag, "module") {
           (String, String),
           List[String],
           Option[JsValue],
-          Option[JsValue],
-          Option[JsValue],
+          (Option[JsValue], Option[JsValue]),
+          (Option[JsValue], Option[JsValue]),
           (String, String),
           (String, String),
           (String, String),
@@ -174,8 +178,8 @@ final class ModuleTable(tag: Tag) extends Table[ModuleDbEntry](tag, "module") {
           (firstExaminer, secondExaminer),
           examPhases,
           participants,
-          recommendedPrerequisites,
-          requiredPrerequisites,
+          (recommendedPrerequisites, requiredPrerequisites),
+          (attendanceRequirement, assessmentPrerequisite),
           (learningOutcomeDe, learningOutcomeEn),
           (moduleContentDe, moduleContentEn),
           (learningMethodsDe, learningMethodsEn),
@@ -200,6 +204,8 @@ final class ModuleTable(tag: Tag) extends Table[ModuleDbEntry](tag, "module") {
         participants.map(j => Json.fromJson[ModuleParticipants](j).get),
         recommendedPrerequisites.map(j => Json.fromJson[ModulePrerequisiteEntryProtocol](j).get),
         requiredPrerequisites.map(j => Json.fromJson[ModulePrerequisiteEntryProtocol](j).get),
+        attendanceRequirement.map(j => Json.fromJson[AttendanceRequirement](j).get),
+        assessmentPrerequisite.map(j => Json.fromJson[AssessmentPrerequisite](j).get),
         ModuleContent(
           learningOutcomeDe,
           moduleContentDe,
@@ -234,8 +240,8 @@ final class ModuleTable(tag: Tag) extends Table[ModuleDbEntry](tag, "module") {
         (String, String),
         List[String],
         Option[JsValue],
-        Option[JsValue],
-        Option[JsValue],
+        (Option[JsValue], Option[JsValue]),
+        (Option[JsValue], Option[JsValue]),
         (String, String),
         (String, String),
         (String, String),
@@ -260,8 +266,8 @@ final class ModuleTable(tag: Tag) extends Table[ModuleDbEntry](tag, "module") {
         (a.examiner.first, a.examiner.second),
         a.examPhases.toList,
         a.participants.map(Json.toJson),
-        a.recommendedPrerequisites.map(Json.toJson),
-        a.requiredPrerequisites.map(Json.toJson),
+        (a.recommendedPrerequisites.map(Json.toJson), a.requiredPrerequisites.map(Json.toJson)),
+        (a.attendanceRequirement.map(Json.toJson), a.assessmentPrerequisite.map(Json.toJson)),
         (a.deContent.learningOutcome, a.enContent.learningOutcome),
         (a.deContent.content, a.enContent.content),
         (a.deContent.teachingAndLearningMethods, a.enContent.teachingAndLearningMethods),

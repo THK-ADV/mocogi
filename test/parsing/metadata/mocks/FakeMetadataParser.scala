@@ -51,7 +51,9 @@ class FakeMetadataParser extends MetadataParser {
       None,
       Nil,
       Nil,
-      Nil
+      Nil,
+      None,
+      None
     )
   )
 }

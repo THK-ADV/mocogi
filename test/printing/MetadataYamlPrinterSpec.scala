@@ -3,7 +3,7 @@ package printing
 import java.util.UUID
 
 import cats.data.NonEmptyList
-import models._
+import models.*
 import org.scalatest.wordspec.AnyWordSpec
 import parsing.metadata.VersionScheme
 import parsing.types.ModuleParticipants
@@ -313,6 +313,29 @@ final class MetadataYamlPrinterSpec extends AnyWordSpec with PrinterSpec {
       assert(run(input) == output)
     }
 
+    "print attendance requirement" in {
+      val att   = AttendanceRequirement("min", "reason", "absence")
+      val input = printer.attendanceRequirement(att)
+      val output =
+        """attendance_requirement:
+          |  min: min
+          |  reason: reason
+          |  absence: absence
+          |""".stripMargin
+      assert(run(input) == output)
+    }
+
+    "print assessment prerequisite" in {
+      val ass   = AssessmentPrerequisite("modules", "reason")
+      val input = printer.assessmentPrerequisite(ass)
+      val output =
+        """assessment_prerequisite:
+          |  modules: modules
+          |  reason: reason
+          |""".stripMargin
+      assert(run(input) == output)
+    }
+
     "print" in {
       val metadata = models.MetadataProtocol(
         "Module A",
@@ -378,7 +401,9 @@ final class MetadataYamlPrinterSpec extends AnyWordSpec with PrinterSpec {
         ),
         List("competence1", "competence2"),
         List("global_criteria1", "global_criteria2"),
-        List(m1)
+        List(m1),
+        None,
+        Some(AssessmentPrerequisite("modules", "reason"))
       )
       val id                     = UUID.randomUUID
       val version: VersionScheme = VersionScheme(1, "s")
@@ -462,6 +487,9 @@ final class MetadataYamlPrinterSpec extends AnyWordSpec with PrinterSpec {
            |  - global_criteria.global_criteria1
            |  - global_criteria.global_criteria2
            |taught_with: module.$m1
+           |assessment_prerequisite:
+           |  modules: modules
+           |  reason: reason
            |---""".stripMargin
       assert(print == res)
     }

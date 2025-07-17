@@ -191,6 +191,10 @@ object RawModuleParser {
           .skip(zeroOrMoreSpaces)
           .take(ModuleTaughtWithParser.parser.option.map(_.getOrElse(Nil)))
           .skip(zeroOrMoreSpaces)
+          .take(AttendanceRequirementParser.parser.option)
+          .skip(zeroOrMoreSpaces)
+          .take(AssessmentPrerequisiteParser.parser.option)
+          .skip(zeroOrMoreSpaces)
       )
       .skip(prefix("---"))
       .map {
@@ -210,7 +214,7 @@ object RawModuleParser {
               status,
               location,
               pos,
-              (parts, competences, criteria, taughtWiths),
+              (parts, competences, criteria, taughtWiths, attReq, assPre),
             ) =>
           (
             id,
@@ -236,7 +240,9 @@ object RawModuleParser {
               pos,
               competences,
               criteria,
-              taughtWiths
+              taughtWiths,
+              attReq,
+              assPre
             )
           )
       }

@@ -50,7 +50,9 @@ case class ModuleJson(
         this.metadata.po,
         this.metadata.competences,
         this.metadata.globalCriteria,
-        this.metadata.taughtWith
+        this.metadata.taughtWith,
+        this.metadata.attendanceRequirement,
+        this.metadata.assessmentPrerequisite
       ),
       this.deContent,
       this.enContent
@@ -79,7 +81,9 @@ case class MetadataJson(
     po: ModulePOProtocol,
     competences: List[String],
     globalCriteria: List[String],
-    taughtWith: List[UUID]
+    taughtWith: List[UUID],
+    attendanceRequirement: Option[AttendanceRequirement],
+    assessmentPrerequisite: Option[AssessmentPrerequisite]
 )
 
 object ModuleJson {

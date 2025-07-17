@@ -82,6 +82,8 @@ final class MetadataYamlPrinter(identLevel: Int) {
             NonEmptyList.fromList(metadata.globalCriteria).map(globalCriteria)
           )
           .skipOpt(NonEmptyList.fromList(metadata.taughtWith).map(taughtWith))
+          .skipOpt(metadata.attendanceRequirement.map(attendanceRequirement))
+          .skipOpt(metadata.assessmentPrerequisite.map(assessmentPrerequisite))
           .skip(closer())
           .print((), input)
     }
@@ -517,4 +519,47 @@ final class MetadataYamlPrinter(identLevel: Int) {
           .reduceLeft(_.skip(_))
       )
   }
+
+  def attendanceRequirement(attendanceRequirement: AttendanceRequirement) =
+    prefix(s"${AttendanceRequirementParser.key}:")
+      .skip(newline)
+      .skip(
+        whitespace
+          .repeat(identLevel)
+          .skip(
+            entry(AttendanceRequirementParser.minKey, attendanceRequirement.min)
+          )
+      )
+      .skip(
+        whitespace
+          .repeat(identLevel)
+          .skip(
+            entry(AttendanceRequirementParser.reasonKey, attendanceRequirement.reason)
+          )
+      )
+      .skip(
+        whitespace
+          .repeat(identLevel)
+          .skip(
+            entry(AttendanceRequirementParser.absenceKey, attendanceRequirement.absence)
+          )
+      )
+
+  def assessmentPrerequisite(assessmentPrerequisite: AssessmentPrerequisite) =
+    prefix(s"${AssessmentPrerequisiteParser.key}:")
+      .skip(newline)
+      .skip(
+        whitespace
+          .repeat(identLevel)
+          .skip(
+            entry(AssessmentPrerequisiteParser.modulesKey, assessmentPrerequisite.modules)
+          )
+      )
+      .skip(
+        whitespace
+          .repeat(identLevel)
+          .skip(
+            entry(AssessmentPrerequisiteParser.reasonKey, assessmentPrerequisite.reason)
+          )
+      )
 }

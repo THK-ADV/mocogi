@@ -144,6 +144,7 @@ object ModuleCatalogLatexPrinter {
     )(using pLang, lang)
 }
 
+// TODO: use attendanceRequirement and assessmentPrerequisite as "required prerequisites"
 /**
  * Style from: https://www.overleaf.com/learn/latex/Page_size_and_margins
  */

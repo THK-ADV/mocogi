@@ -5,6 +5,8 @@ import java.util.UUID
 import cats.data.NonEmptyList
 import models.core.*
 import models.core.ExamPhases.ExamPhase
+import models.AssessmentPrerequisite
+import models.AttendanceRequirement
 import models.Examiner
 import models.ModuleWorkload
 
@@ -30,5 +32,7 @@ case class ParsedMetadata(
     participants: Option[ModuleParticipants],
     competences: List[ModuleCompetence],
     globalCriteria: List[ModuleGlobalCriteria],
-    taughtWith: List[UUID]
+    taughtWith: List[UUID],
+    attendanceRequirement: Option[AttendanceRequirement],
+    assessmentPrerequisite: Option[AssessmentPrerequisite]
 )

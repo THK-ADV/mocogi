@@ -9,6 +9,7 @@ import parsing.types.ModuleParticipants
 import play.api.libs.json.Json
 import play.api.libs.json.OFormat
 
+// update ModuleProtocolDiff.fields, nonEmptyKeys, diff when new attributes are added
 case class MetadataProtocol(
     title: String,
     abbrev: String,
@@ -31,7 +32,9 @@ case class MetadataProtocol(
     po: ModulePOProtocol,
     @Deprecated(forRemoval = true) competences: List[String],
     @Deprecated(forRemoval = true) globalCriteria: List[String],
-    taughtWith: List[UUID]
+    taughtWith: List[UUID],
+    attendanceRequirement: Option[AttendanceRequirement],
+    assessmentPrerequisite: Option[AssessmentPrerequisite]
 )
 
 object MetadataProtocol extends JsonNullWritable with NelWrites {

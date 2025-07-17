@@ -521,7 +521,9 @@ final class MetadataValidatorSpec extends AnyWordSpec with EitherValues with Opt
           Some(ModuleParticipants(10, 20)),
           Nil,
           Nil,
-          Nil
+          Nil,
+          None,
+          None
         )
         val vm1 = Metadata(
           ivm1.id,
@@ -548,7 +550,9 @@ final class MetadataValidatorSpec extends AnyWordSpec with EitherValues with Opt
           Some(ModuleParticipants(10, 20)),
           Nil,
           Nil,
-          Nil
+          Nil,
+          None,
+          None
         )
 
         val res = validateMany(Seq(ivm1), lookup).head.value
@@ -609,7 +613,9 @@ final class MetadataValidatorSpec extends AnyWordSpec with EitherValues with Opt
           Some(ModuleParticipants(20, 15)),
           Nil,
           Nil,
-          Nil
+          Nil,
+          None,
+          None
         )
         assert(
           validateMany(Seq(ivm1), lookup).head.left.value == List(

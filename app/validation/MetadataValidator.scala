@@ -226,7 +226,9 @@ object MetadataValidator {
             part,
             m.competences,
             m.globalCriteria,
-            tw
+            tw,
+            m.attendanceRequirement,
+            m.assessmentPrerequisite
           )
       }
   }

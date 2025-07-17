@@ -42,7 +42,9 @@ final class ModuleProtocolDiffSpec extends AnyWordSpec {
       ),
       Nil,
       Nil,
-      Nil
+      Nil,
+      None,
+      None
     ),
     ModuleContent(
       "de_learningOutcome",
@@ -202,7 +204,9 @@ final class ModuleProtocolDiffSpec extends AnyWordSpec {
               existing0.metadata.po,
               existing0.metadata.competences,
               existing0.metadata.globalCriteria,
-              existing0.metadata.taughtWith
+              existing0.metadata.taughtWith,
+              existing0.metadata.attendanceRequirement,
+              existing0.metadata.assessmentPrerequisite,
             ),
             existing0.deContent,
             existing0.enContent

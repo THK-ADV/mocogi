@@ -47,6 +47,13 @@ competences:
 global_criteria:
   - global_criteria.internationalization
   - global_criteria.digitization
+attendance_requirement:
+  min: 5 von 7 Terminen (Beispiel)
+  reason: Hier Begründung
+  absence: Umgang mit Fehlzeiten eintragen
+assessment_prerequisite:
+  modules: Module...
+  reason: Hier Begründung
 ---
 
 ## (de) Angestrebte Lernergebnisse:

@@ -70,7 +70,9 @@ final class ModuleMarkdownPrinterSpec extends AnyWordSpec with EitherValues {
         None,
         Nil,
         Nil,
-        Nil
+        Nil,
+        None,
+        None
       )
       val module = Module(
         metadata,

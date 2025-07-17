@@ -31,7 +31,9 @@ case class Metadata(
     participants: Option[ModuleParticipants],
     competences: List[ModuleCompetence],
     globalCriteria: List[ModuleGlobalCriteria],
-    taughtWith: List[ModuleCore]
+    taughtWith: List[ModuleCore],
+    attendanceRequirement: Option[AttendanceRequirement],
+    assessmentPrerequisite: Option[AssessmentPrerequisite]
 )
 
 object Metadata {

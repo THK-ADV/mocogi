@@ -44,6 +44,10 @@ participants:
   max: 20
 taught_with:
   - module.d1cecfbc-a314-42f6-99b3-be92f22c3295
+attendance_requirement:
+  min: 5 von 7 Terminen (Beispiel)
+  reason: Hier Begründung
+  absence: Umgang mit Fehlzeiten eintragen
 ---
 
 ## (de) Angestrebte Lernergebnisse:

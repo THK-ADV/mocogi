@@ -54,7 +54,9 @@ object ModuleProtocolDiff extends Logging {
     "metadata.po.optional",
     "metadata.competences",
     "metadata.globalCriteria",
-    "metadata.taughtWith"
+    "metadata.taughtWith",
+    "metadata.attendanceRequirement",
+    "metadata.assessmentPrerequisite",
   )
 
   def nonEmptyKeys(p: ModuleProtocol): Set[String] =
@@ -62,6 +64,10 @@ object ModuleProtocolDiff extends Logging {
       case (acc, field) =>
         def takeIf(p: Boolean): Set[String] = if (p) acc + field else acc
         field match {
+          case "metadata.attendanceRequirement" =>
+            takeIf(p.metadata.attendanceRequirement.nonEmpty)
+          case "metadata.assessmentPrerequisite" =>
+            takeIf(p.metadata.assessmentPrerequisite.nonEmpty)
           case "enContent.particularities" =>
             takeIf(p.enContent.particularities.nonEmpty)
           case "enContent.recommendedReading" =>
@@ -180,6 +186,10 @@ object ModuleProtocolDiff extends Logging {
         }
 
         field match {
+          case "metadata.attendanceRequirement" =>
+            go(GenLens[ModuleProtocol].apply(_.metadata.attendanceRequirement))
+          case "metadata.assessmentPrerequisite" =>
+            go(GenLens[ModuleProtocol].apply(_.metadata.assessmentPrerequisite))
           case "enContent.particularities" =>
             go(GenLens[ModuleProtocol].apply(_.enContent.particularities))
           case "enContent.recommendedReading" =>

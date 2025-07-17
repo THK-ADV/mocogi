@@ -14,13 +14,11 @@ import git.CommitId
 import git.MergeRequestId
 import git.MergeRequestStatus
 import models.*
-import models.core.Identity.Person
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.db.slick.HasDatabaseConfigProvider
 import play.api.libs.json.JsValue
 import service.Print
 import slick.dbio.DBIOAction
-import slick.jdbc.GetResult
 import slick.jdbc.JdbcProfile
 
 @Singleton

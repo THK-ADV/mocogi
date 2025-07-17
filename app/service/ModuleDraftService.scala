@@ -147,40 +147,36 @@ final class ModuleDraftService @Inject() (
         draft.modifiedKeys
       )
       res <-
-        /*
-TODO this check causes a problem when a merged key is modified because it doesn't change the hashset of changed keys
-         */
-        //      res <-
-        //        if (modifiedKeys.removedAll(draft.modifiedKeys).isEmpty) abortNoChanges
-        //        else pipeline.printParseValidate(updated, versionScheme, moduleId)
-        for {
-          res <- pipeline.printParseValidate(updated, versionScheme, moduleId)
-          res <- res match {
-            case Left(err) => Future.successful(Left(err))
-            case Right((module, print)) =>
-              for {
-                commitId <- gitCommitService.commit(
-                  draft.branch,
-                  person,
-                  commitMessage(modifiedKeys -- draft.modifiedKeys),
-                  draft.module,
-                  print
-                )
-                _ <- repo.updateDraft(
-                  moduleId,
-                  module.metadata.title,
-                  module.metadata.abbrev,
-                  toJson(updated),
-                  toJson(module),
-                  print,
-                  keysToBeReviewed(modifiedKeys),
-                  modifiedKeys,
-                  commitId,
-                  None
-                )
-              } yield Right(())
-          }
-        } yield res
+        if (modifiedKeys.isEmpty) delete(moduleId).map(Right.apply)
+        else
+          for {
+            res <- pipeline.printParseValidate(updated, versionScheme, moduleId)
+            res <- res match {
+              case Left(err) => Future.successful(Left(err))
+              case Right((module, print)) =>
+                for {
+                  commitId <- gitCommitService.commit(
+                    draft.branch,
+                    person,
+                    commitMessage(modifiedKeys -- draft.modifiedKeys),
+                    draft.module,
+                    print
+                  )
+                  _ <- repo.updateDraft(
+                    moduleId,
+                    module.metadata.title,
+                    module.metadata.abbrev,
+                    toJson(updated),
+                    toJson(module),
+                    print,
+                    keysToBeReviewed(modifiedKeys),
+                    modifiedKeys,
+                    commitId,
+                    None
+                  )
+                } yield Right(())
+            }
+          } yield res
     } yield res
 
   private def commitMessage(updatedKeys: Set[String]) =

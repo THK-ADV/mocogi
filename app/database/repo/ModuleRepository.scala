@@ -206,6 +206,8 @@ final class ModuleRepository @Inject() (
       module.metadata.participants,
       module.metadata.prerequisites.recommended.map(ModulePrerequisiteEntry.toProtocol),
       module.metadata.prerequisites.required.map(ModulePrerequisiteEntry.toProtocol),
+      module.metadata.attendanceRequirement,
+      module.metadata.assessmentPrerequisite,
       module.deContent,
       module.enContent
     )
@@ -403,6 +405,8 @@ final class ModuleRepository @Inject() (
                     Nil,
                     Nil,
                     taughtWith.toList,
+                    module.attendanceRequirement,
+                    module.assessmentPrerequisite
                   ),
                   module.deContent,
                   module.enContent
