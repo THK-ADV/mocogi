@@ -28,8 +28,6 @@ import ops.EitherOps.EStringThrowOps
 import parsing.metadata.ModulePOParser
 import play.api.i18n.Lang
 import play.api.i18n.MessagesApi
-import play.api.libs
-import play.api.libs.Files.TemporaryFile
 import play.api.Logging
 import printing.latex.IntroContent
 import printing.latex.IntroContentProvider
@@ -66,7 +64,7 @@ final class ModulePreviewService @Inject() (
       fullPoId: FullPoId,
       pLang: PrintingLanguage,
       lang: Lang,
-      latexFile: TemporaryFile
+      latexFile: Path
   ): Future[Path] = {
     logger.info(s"generating module catalog preview for po ${fullPoId.id}")
 
@@ -91,7 +89,7 @@ final class ModulePreviewService @Inject() (
       )
       modules = mergeModules(liveModules, changedModules)
       diffs   = diff(liveModules, changedModules)
-      intro   = getIntroContent(latexFile.path.getParent, fullPoId)
+      intro   = getIntroContent(latexFile.getParent, fullPoId)
       content <- print(studyProgram, modules, studyPrograms, pLang, lang, diffs, intro)
       path = Files.writeString(latexFile, content.toString)
       pdf <- compile(path).flatMap(_ => getPdf(path)).toFuture

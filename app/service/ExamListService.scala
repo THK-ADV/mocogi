@@ -23,7 +23,6 @@ import ops.EitherOps.EStringThrowOps
 import parsing.metadata.ModulePOParser
 import play.api.i18n.Lang
 import play.api.i18n.MessagesApi
-import play.api.libs.Files.TemporaryFile
 import play.api.Logging
 import printing.latex
 import printing.latex.ExamListsLatexPrinter
@@ -46,10 +45,10 @@ final class ExamListService @Inject() (
 
   private given gitConfig: GitConfig = diffApiService.config
 
-  def examLists(po: String, latexFile: TemporaryFile): Future[Path] =
+  def examLists(po: String, latexFile: Path): Future[Path] =
     generateExamLists(po, latexFile, preview = false)
 
-  def previewExamLists(po: String, latexFile: TemporaryFile): Future[Path] =
+  def previewExamLists(po: String, latexFile: Path): Future[Path] =
     generateExamLists(po, latexFile, preview = true)
 
   private def getModules(po: String, preview: Boolean): Future[Seq[ModuleProtocol]] = {
@@ -64,7 +63,7 @@ final class ExamListService @Inject() (
     }
   }
 
-  private def generateExamLists(po: String, latexFile: TemporaryFile, preview: Boolean) =
+  private def generateExamLists(po: String, latexFile: Path, preview: Boolean) =
     studyProgramViewRepo.getByPo(FullPoId(po)).flatMap { studyProgram =>
       logger.info(s"generating exam list for po $po (preview = $preview)")
 

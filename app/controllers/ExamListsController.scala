@@ -1,7 +1,10 @@
 package controllers
 
+import java.nio.file.Files
 import java.nio.file.Path
+import java.nio.file.Paths
 import javax.inject.Inject
+import javax.inject.Named
 import javax.inject.Singleton
 
 import scala.concurrent.ExecutionContext
@@ -16,8 +19,6 @@ import database.repo.core.IdentityRepository
 import database.repo.core.StudyProgramPersonRepository
 import models.UniversityRole
 import ops.FileOps.FileOps0
-import play.api.libs.Files.DefaultTemporaryFileCreator
-import play.api.libs.Files.TemporaryFile
 import play.api.mvc.AbstractController
 import play.api.mvc.ControllerComponents
 import play.mvc.Http.HeaderNames
@@ -26,9 +27,9 @@ import service.ExamListService
 @Singleton
 final class ExamListsController @Inject() (
     cc: ControllerComponents,
-    fileCreator: DefaultTemporaryFileCreator,
     auth: AuthorizationAction,
     service: ExamListService,
+    @Named("tmp.dir") tmpDir: String,
     val identityRepository: IdentityRepository,
     val studyProgramPersonRepository: StudyProgramPersonRepository,
     implicit val ctx: ExecutionContext
@@ -43,7 +44,7 @@ final class ExamListsController @Inject() (
   def get(studyProgram: String, po: String) =
     get0(studyProgram, po)((po, file) => service.examLists(po, file))
 
-  private def get0(studyProgram: String, po: String)(createPDF: (String, TemporaryFile) => Future[Path]) =
+  private def get0(studyProgram: String, po: String)(createPDF: (String, Path) => Future[Path]) =
     auth
       .andThen(personAction)
       .andThen(hasRoleInStudyProgram(List(UniversityRole.PAV), studyProgram))
@@ -51,17 +52,18 @@ final class ExamListsController @Inject() (
         r.headers.get(HeaderNames.ACCEPT) match {
           case Some(MimeTypes.PDF) =>
             val filename = s"exam_lists_draft_$po"
-            val file     = fileCreator.create(filename, ".tex")
+            val newDir   = Files.createDirectories(Paths.get(tmpDir).resolve(System.currentTimeMillis().toString))
+            val file     = Files.createFile(newDir.resolve(s"$filename.tex"))
             createPDF(po, file)
               .map(path =>
                 Ok.sendPath(
                   path,
-                  onClose = () => file.getParentFile.toPath.deleteDirectory()
+                  onClose = () => file.getParent.deleteDirectory()
                 ).as(MimeTypes.PDF)
               )
               .recoverWith {
                 case NonFatal(e) =>
-                  file.getParentFile.toPath.deleteDirectory()
+                  file.getParent.deleteDirectory()
                   Future.failed(e)
               }
           case _ =>

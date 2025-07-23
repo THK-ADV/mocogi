@@ -1,5 +1,6 @@
 package controllers
 
+import java.nio.file.Files
 import java.nio.file.Paths
 import java.util.Locale
 import javax.inject.Inject
@@ -29,8 +30,6 @@ import play.api.libs.json.JsError
 import play.api.libs.json.JsSuccess
 import play.api.libs.json.JsValue
 import play.api.libs.json.Json
-import play.api.libs.Files.DefaultTemporaryFileCreator
-import play.api.libs.Files.TemporaryFile.temporaryFileToFile
 import play.api.mvc.AbstractController
 import play.api.mvc.ControllerComponents
 import play.mvc.Http.HeaderNames
@@ -43,7 +42,6 @@ import service.ModulePreviewService
 final class ModuleCatalogController @Inject() (
     cc: ControllerComponents,
     repo: ModuleCatalogRepository,
-    fileCreator: DefaultTemporaryFileCreator,
     previewService: ModulePreviewService,
     auth: AuthorizationAction,
     @Named("tmp.dir") tmpDir: String,
@@ -79,7 +77,8 @@ final class ModuleCatalogController @Inject() (
             val pLang    = PrintingLanguage.German
             val lang     = Lang(Locale.GERMANY)
             val filename = s"${pLang.id}_module_catalog_draft_$po"
-            val file     = fileCreator.create(filename, ".tex")
+            val newDir   = Files.createDirectories(Paths.get(tmpDir).resolve(System.currentTimeMillis().toString))
+            val file     = Files.createFile(newDir.resolve(s"$filename.tex"))
             previewService
               .previewCatalog(
                 FullPoId(po),
@@ -90,12 +89,12 @@ final class ModuleCatalogController @Inject() (
               .map(path =>
                 Ok.sendPath(
                   path,
-                  onClose = () => file.getParentFile.toPath.deleteDirectory()
+                  onClose = () => file.getParent.deleteDirectory()
                 ).as(MimeTypes.PDF)
               )
               .recoverWith {
                 case NonFatal(e) =>
-                  file.getParentFile.toPath.deleteDirectory()
+                  file.getParent.deleteDirectory()
                   Future.failed(e)
               }
           case _ =>
