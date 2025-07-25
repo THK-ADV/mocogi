@@ -116,7 +116,7 @@ CREATE OR REPLACE FUNCTION resolve_po_relationships (module_id uuid)
         -- PO Mandatory
         coalesce((
             SELECT
-                jsonb_agg(jsonb_build_object('poId', po.id, 'poVersion', po.version, 'poECTSFactor', po.ects_factor, 'studyProgramLabel', sp.de_label, 'studyProgramAbbreviation', sp.abbreviation, 'degree', deg.de_label, 'specialization', spec.label, 'recommendedSemester', mpm.recommended_semester, 'studyProgramId', sp.id))
+                jsonb_agg(jsonb_build_object('poId', po.id, 'poVersion', po.version, 'poECTSFactor', po.ects_factor, 'studyProgramLabel', sp.de_label, 'studyProgramAbbreviation', sp.abbreviation, 'degree', deg.de_label, 'specializationLabel', spec.label, 'specializationAbbrev', spec.abbreviation, 'recommendedSemester', mpm.recommended_semester, 'studyProgramId', sp.id))
             FROM module_po_mandatory AS mpm
             JOIN po ON po.id = mpm.po
             JOIN study_program AS sp ON sp.id = po.study_program
@@ -127,7 +127,7 @@ CREATE OR REPLACE FUNCTION resolve_po_relationships (module_id uuid)
         -- PO Optional
         coalesce((
             SELECT
-                jsonb_agg(jsonb_build_object('poId', po.id, 'poVersion', po.version, 'poECTSFactor', po.ects_factor, 'studyProgramLabel', sp.de_label, 'studyProgramAbbreviation', sp.abbreviation, 'degree', deg.de_label, 'specialization', spec.label, 'recommendedSemester', mpo.recommended_semester, 'instanceOf', module_to_json_short (inst_mod), 'studyProgramId', sp.id))
+                jsonb_agg(jsonb_build_object('poId', po.id, 'poVersion', po.version, 'poECTSFactor', po.ects_factor, 'studyProgramLabel', sp.de_label, 'studyProgramAbbreviation', sp.abbreviation, 'degree', deg.de_label, 'specializationLabel', spec.label, 'specializationAbbrev', spec.abbreviation, 'recommendedSemester', mpo.recommended_semester, 'instanceOf', module_to_json_short (inst_mod), 'studyProgramId', sp.id))
             FROM module_po_optional AS mpo
             JOIN po ON po.id = mpo.po
             JOIN study_program AS sp ON sp.id = po.study_program
