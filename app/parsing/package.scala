@@ -4,20 +4,19 @@ import java.time.LocalDate
 import java.util.UUID
 
 import scala.annotation.tailrec
-import scala.collection.mutable.ListBuffer
 import scala.io.Source
 import scala.util.Try
 
 import cats.data.NonEmptyList
-import cats.syntax.either._
+import cats.implicits.*
 import io.circe.ACursor
 import io.circe.Decoder
 import io.circe.HCursor
 
 package object parsing {
   import parser.Parser
-  import parser.Parser._
-  import parser.ParserOps._
+  import parser.Parser.*
+  import parser.ParserOps.*
 
   implicit class ParserListOps[A](private val parser: Parser[List[A]]) {
     def nel(): Parser[NonEmptyList[A]] =
@@ -173,18 +172,12 @@ package object parsing {
 
   implicit def decoderList[A](implicit decoder: Decoder[A]): Decoder[List[A]] =
     (c: HCursor) => {
-      val builder = ListBuffer.empty[A]
-      c.keys.foreach(
-        _.foreach(key =>
-          c.get[A](key) match {
-            case Left(value) =>
-              return Decoder.failed(value)
-            case Right(value) =>
-              builder += value
-          }
-        )
-      )
-      Right(builder.result())
+      c.keys match {
+        case Some(keys) =>
+          keys.toList.traverse(key => c.get[A](key))
+        case None =>
+          Right(List.empty[A])
+      }
     }
 
   def withFile0[A](path: String)(input: String => A): A = {

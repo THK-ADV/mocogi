@@ -30,6 +30,8 @@ def:
   abbreviation: abc
   campusid: def
   status: active
+  employment_type: prof
+  website_url: "https://www.th-koeln.de/personen/foo.bar/"
 ghi:
   lastname: foo
   firstname: bar
@@ -48,3 +50,28 @@ jkl:
   abbreviation: abc
   campusid: jkl
   status: active
+  employment_type: wma
+  website_url: "https://www.th-koeln.de/personen/foo.bar/"
+zya:
+  lastname: foo
+  firstname: bar
+  title: bar. baz.
+  faculty:
+    - faculty.f10
+    - faculty.f03
+  abbreviation: abc
+  campusid: jkl
+  status: active
+  employment_type: adjunct_lecturer
+aaa:
+  lastname: foo
+  firstname: bar
+  title: bar. baz.
+  faculty:
+    - faculty.f10
+    - faculty.f03
+  abbreviation: abc
+  campusid: jkl
+  status: active
+  employment_type: adjunct_lecturer
+  website_url: "https://www.th-koeln.de/personen/foo.bar/"

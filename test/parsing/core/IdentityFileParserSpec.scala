@@ -15,7 +15,7 @@ final class IdentityFileParserSpec extends AnyWordSpec with ParserSpecHelper wit
   "A Person File Parser" should {
     "parse all people in person.yaml" in {
       val (res, rest) = withFile0("test/parsing/res/person.yaml")(IdentityFileParser.parser().parse)
-      assert(res.value.size == 12)
+      assert(res.value.size == 14)
       assert(rest.isEmpty)
       assert(res.value.head == Unknown("nn", "N.N."))
       assert(res.value(1) == Group("all", "alle aktiven Lehrenden der Hochschule"))
@@ -50,9 +50,9 @@ final class IdentityFileParserSpec extends AnyWordSpec with ParserSpecHelper wit
           "abc",
           Some("def"),
           isActive = true,
-          EmploymentType.Unknown,
+          EmploymentType.Professor,
           None,
-          None
+          Some("https://www.th-koeln.de/personen/foo.bar/")
         )
       )
       assert(
@@ -80,9 +80,39 @@ final class IdentityFileParserSpec extends AnyWordSpec with ParserSpecHelper wit
           "abc",
           Some("jkl"),
           isActive = true,
-          EmploymentType.Unknown,
+          EmploymentType.WMA,
+          None,
+          Some("https://www.th-koeln.de/personen/foo.bar/")
+        )
+      )
+      assert(
+        res.value(12) == Person(
+          "zya",
+          "foo",
+          "bar",
+          "bar. baz.",
+          List("f10", "f03"),
+          "abc",
+          Some("jkl"),
+          isActive = true,
+          EmploymentType.AdjunctLecturer,
           None,
           None
+        )
+      )
+      assert(
+        res.value(13) == Person(
+          "aaa",
+          "foo",
+          "bar",
+          "bar. baz.",
+          List("f10", "f03"),
+          "abc",
+          Some("jkl"),
+          isActive = true,
+          EmploymentType.AdjunctLecturer,
+          None,
+          Some("https://www.th-koeln.de/personen/foo.bar/")
         )
       )
     }
