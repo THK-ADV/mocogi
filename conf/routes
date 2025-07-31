@@ -54,6 +54,7 @@ GET           /modules/:id/latest                                 controllers.Mo
 GET           /modules/:id/file                                   controllers.ModuleController.getFile(id: java.util.UUID)
 GET           /modules/:id/preview/file                           controllers.ModuleController.getPreviewFile(id: java.util.UUID)
 GET           /modules/:id/latest/file                            controllers.ModuleController.getLatestFile(id: java.util.UUID)
+GET           /modules/:id/options                                controllers.ModuleController.allGenericOptions(id: java.util.UUID)
 PUT           /modules/parse/:id                                  controllers.ModuleController.parseValidate(id: java.util.UUID)
 
 # Module Catalog

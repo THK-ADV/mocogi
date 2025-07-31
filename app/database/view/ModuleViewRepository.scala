@@ -62,6 +62,11 @@ final class ModuleViewRepository @Inject() (
     db.run(query)
   }
 
+  def allGenericModuleOptions(id: UUID): Future[String] = {
+    val query = sql"select get_generic_module_options(${id.toString}::uuid)".as[String].head
+    db.run(query)
+  }
+
   def all(): Future[Iterable[Entry]] =
     db.run(
       tableQuery.result.map(_.groupBy(_.id).map {

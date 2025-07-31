@@ -132,6 +132,9 @@ final class ModuleController @Inject() (
       }
     }
 
+  def allGenericOptions(id: UUID) =
+    Action.async(_ => moduleViewRepository.allGenericModuleOptions(id).map(Ok(_)))
+
   def allFromPreview() =
     auth.andThen(hasRole(AccessDraftBranch)).async { _ =>
       val config = gitRepositoryApiService.config

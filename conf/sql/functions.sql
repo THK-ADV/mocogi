@@ -30,6 +30,8 @@ DROP FUNCTION IF EXISTS get_user_info (text, text) CASCADE;
 
 DROP FUNCTION IF EXISTS get_users_with_granted_permissions_from_module (uuid) CASCADE;
 
+DROP FUNCTION IF EXISTS get_generic_module_options (uuid) CASCADE;
+
 CREATE OR REPLACE FUNCTION identity_to_json (i IDENTITY)
     RETURNS jsonb
     LANGUAGE sql
@@ -456,5 +458,21 @@ CREATE OR REPLACE FUNCTION get_users_with_granted_permissions_from_module (modul
     WHERE
         mup.module = module_id
         AND mup.kind = 'granted'
+$$;
+
+CREATE OR REPLACE FUNCTION get_generic_module_options (module_id uuid)
+    RETURNS jsonb
+    LANGUAGE sql
+    STABLE
+    AS $$
+    SELECT
+        coalesce(json_agg(module_to_json_short (m) || jsonb_build_object('status', m.status)), '[]'::json)
+    FROM ( SELECT DISTINCT ON (m.id)
+            m.*
+        FROM
+            module_po_optional AS opt
+            JOIN module m ON m.id = opt.module
+        WHERE
+            instance_of = module_id) AS m;
 $$;
 
