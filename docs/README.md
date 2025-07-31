@@ -132,6 +132,41 @@ GET `/identities`
 
 Gibt alle Personen und Gruppen zurück
 
+Datenstruktur Person:
+
+```ts
+interface Person {
+  kind: 'person' // Zur Unterscheidung von Personen und Gruppen
+  id: string
+  lastname: string
+  firstname: string
+  title: string
+  faculties: string[]
+  abbreviation: string
+  campusId: string | null
+  isActive: boolean
+  employmentType: EmploymentType
+  imageUrl: string | null // URL zum Bild aus der Personendetailseite
+  websiteUrl: string | null // URL zur Personendetailseite
+}
+
+type EmploymentType =
+  | "prof" // Professor
+  | "wma" // Wissenschaftlicher Mitarbeiter
+  | "adjunct_lecturer" // Lehrbeauftragter
+  | "unknown" // Unbekannt
+```
+
+Datenstruktur Gruppe:
+
+```ts
+interface Group {
+  kind: 'group' // Zur Unterscheidung von Personen und Gruppen
+  id: string
+  label: string
+}
+```
+
 ## Prüfungsformen
 
 GET `/assessmentMethods`
@@ -155,6 +190,10 @@ entsprechen. Diese werden bald entfernt. Die RPO konformen Prüfungsformen sind:
 - `role-play`
 - `admission-colloquium`
 - `specimen`
+
+Auf Wunsch einiger PAVs haben wir noch folgende Prüfungsformen als *valide* deklariert:
+
+- `e-exam`
 
 ## Seasons
 
