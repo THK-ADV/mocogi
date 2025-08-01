@@ -16,7 +16,6 @@ case class IdentityDbEntry(
     isActive: Boolean,
     kind: String,
     employmentType: Option[EmploymentType],
-    imageUrl: Option[String],
     websiteUrl: Option[String],
 ) {
   def isPerson = this.kind == Identity.PersonKind
@@ -49,8 +48,6 @@ final class IdentityTable(tag: Tag) extends Table[IdentityDbEntry](tag, "identit
 
   def employmentType = column[Option[EmploymentType]]("employment_type")
 
-  def imageUrl = column[Option[String]]("image_url")
-
   def websiteUrl = column[Option[String]]("website_url")
 
   def isPerson: Rep[Boolean] =
@@ -67,7 +64,6 @@ final class IdentityTable(tag: Tag) extends Table[IdentityDbEntry](tag, "identit
     isActive,
     kind,
     employmentType,
-    imageUrl,
     websiteUrl
   ) <> (IdentityDbEntry.apply, IdentityDbEntry.unapply)
 }

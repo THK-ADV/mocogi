@@ -21,7 +21,6 @@ final class IdentityFormatSpec extends AnyWordSpec {
         isActive = true,
         Unknown,
         None,
-        None
       )
       val studentJson = Identity.writes.writes(student)
       assert((studentJson \ "id").get == JsString("1"))
@@ -35,7 +34,6 @@ final class IdentityFormatSpec extends AnyWordSpec {
       assert((studentJson \ "campusId").get == JsString("id"))
       assert((studentJson \ "isActive").get == JsBoolean(true))
       assert((studentJson \ "employmentType").get == JsString("unknown"))
-      assert((studentJson \ "imageUrl").isEmpty)
       assert((studentJson \ "websiteUrl").isEmpty)
       assert((studentJson \ "kind").get == JsString(Identity.PersonKind))
     }

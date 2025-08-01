@@ -39,7 +39,7 @@ CREATE OR REPLACE FUNCTION identity_to_json (i IDENTITY)
     AS $$
     SELECT
         CASE WHEN i.kind = 'person' THEN
-            jsonb_build_object('id', i.id, 'kind', i.kind, 'title', i.title, 'lastname', i.lastname, 'firstname', i.firstname, 'faculties', i.faculties, 'imageUrl', i.image_url, 'isActive', i.is_active, 'websiteUrl', i.website_url, 'abbreviation', i.abbreviation, 'employmentType', i.employment_type)
+            jsonb_build_object('id', i.id, 'kind', i.kind, 'title', i.title, 'lastname', i.lastname, 'firstname', i.firstname, 'faculties', i.faculties, 'isActive', i.is_active, 'websiteUrl', i.website_url, 'abbreviation', i.abbreviation, 'employmentType', i.employment_type)
         ELSE
             -- other kinds are 'group' or 'unknown'
             jsonb_build_object('id', i.id, 'title', i.title, 'isActive', i.is_active, 'kind', i.kind)
@@ -80,11 +80,12 @@ CREATE OR REPLACE FUNCTION resolve_responsibilities (module_id uuid)
     STABLE
     AS $$
     SELECT
-        coalesce(jsonb_agg(identity_to_json (i)) FILTER (WHERE mr.responsibility_type = 'module_management'), '[]'::jsonb) AS module_management,
-        coalesce(jsonb_agg(identity_to_json (i)) FILTER (WHERE mr.responsibility_type = 'lecturer'), '[]'::jsonb) AS lecturer
+        coalesce(jsonb_agg(identity_to_json (i) || jsonb_build_object('imageUrl', pi.image_url)) FILTER (WHERE mr.responsibility_type = 'module_management'), '[]'::jsonb) AS module_management,
+        coalesce(jsonb_agg(identity_to_json (i) || jsonb_build_object('imageUrl', pi.image_url)) FILTER (WHERE mr.responsibility_type = 'lecturer'), '[]'::jsonb) AS lecturer
     FROM
         module_responsibility AS mr
         JOIN IDENTITY AS i ON i.id = mr.identity
+        LEFT JOIN people_images AS pi ON pi.person = i.id
     WHERE
         mr.module = module_id;
 $$;

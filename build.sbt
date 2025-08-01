@@ -27,6 +27,7 @@ lazy val `mocogi` = (project in file("."))
     libraryDependencies += parallelCollections,
     libraryDependencies += circle,
     libraryDependencies ++= mail,
+    libraryDependencies += scalaScraper,
     externalResolvers ++= Seq(
       "GitHub <THK-ADV> Apache Maven Packages".at("https://maven.pkg.github.com/THK-ADV/nebulak")
     ),
@@ -92,3 +93,5 @@ val mail = Seq(
   "org.playframework" %% "play-mailer"       % playMailVersion,
   "org.playframework" %% "play-mailer-guice" % playMailVersion
 )
+
+val scalaScraper = "net.ruippeixotog" %% "scala-scraper" % "3.2.0"

@@ -31,7 +31,6 @@ class IdentityParserSpec extends AnyWordSpec with ParserSpecHelper with EitherVa
               isActive = true,
               WMA,
               None,
-              None,
             )
           )
         )
@@ -61,7 +60,6 @@ class IdentityParserSpec extends AnyWordSpec with ParserSpecHelper with EitherVa
               isActive = true,
               WMA,
               None,
-              None
             )
           )
         )
@@ -100,7 +98,6 @@ class IdentityParserSpec extends AnyWordSpec with ParserSpecHelper with EitherVa
               isActive = true,
               WMA,
               None,
-              None
             ),
             Identity.Person(
               "abe",
@@ -113,7 +110,6 @@ class IdentityParserSpec extends AnyWordSpec with ParserSpecHelper with EitherVa
               isActive = true,
               WMA,
               None,
-              None
             )
           )
         )
@@ -150,7 +146,6 @@ class IdentityParserSpec extends AnyWordSpec with ParserSpecHelper with EitherVa
               isActive = true,
               WMA,
               None,
-              None
             ),
             Identity.Person(
               "abe",
@@ -163,7 +158,6 @@ class IdentityParserSpec extends AnyWordSpec with ParserSpecHelper with EitherVa
               isActive = true,
               WMA,
               None,
-              None
             )
           )
         )
@@ -190,7 +184,6 @@ class IdentityParserSpec extends AnyWordSpec with ParserSpecHelper with EitherVa
               isActive = true,
               WMA,
               None,
-              None
             ),
             Identity.Person(
               "abe",
@@ -203,7 +196,6 @@ class IdentityParserSpec extends AnyWordSpec with ParserSpecHelper with EitherVa
               isActive = true,
               WMA,
               None,
-              None
             )
           )
         )
@@ -232,7 +224,6 @@ class IdentityParserSpec extends AnyWordSpec with ParserSpecHelper with EitherVa
               isActive = true,
               WMA,
               None,
-              None
             ),
             Identity.Person(
               "abe",
@@ -244,7 +235,6 @@ class IdentityParserSpec extends AnyWordSpec with ParserSpecHelper with EitherVa
               Some("abe"),
               isActive = true,
               WMA,
-              None,
               None
             )
           )

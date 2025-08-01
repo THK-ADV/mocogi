@@ -130,7 +130,6 @@ class THKV1ParserSpec
                 isActive = true,
                 WMA,
                 None,
-                None
               )
             ),
             NonEmptyList.of(
@@ -145,7 +144,6 @@ class THKV1ParserSpec
                 isActive = true,
                 WMA,
                 None,
-                None
               ),
               Identity.Person(
                 "abe",
@@ -158,7 +156,6 @@ class THKV1ParserSpec
                 isActive = true,
                 WMA,
                 None,
-                None
               )
             )
           )
@@ -284,7 +281,6 @@ class THKV1ParserSpec
                 isActive = true,
                 WMA,
                 None,
-                None
               )
             ),
             NonEmptyList.one(
@@ -299,7 +295,6 @@ class THKV1ParserSpec
                 isActive = true,
                 WMA,
                 None,
-                None
               )
             )
           )

@@ -29,7 +29,7 @@ trait PersonAction {
       }
 
     private def adminUser[A](request: TokenRequest[A]) = {
-      val admin = Identity.Person("", "", "", "", Nil, "", None, isActive = true, Unknown, None, None)
+      val admin = Identity.Person("", "", "", "", Nil, "", None, isActive = true, Unknown, None)
       Future.successful(Right(PersonRequest(admin, request)))
     }
 

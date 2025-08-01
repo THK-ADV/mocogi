@@ -28,6 +28,7 @@ POST          /webhook/onMergeEvent                               controllers.Gi
 POST          /git/coreFiles                                      controllers.GitController.updateCoreFiles()
 POST          /git/moduleFiles                                    controllers.GitController.updateModuleFiles()
 GET           /git/lastMergeDate                                  controllers.GitController.lastMergeDate()
+
 # Core
 
 GET           /locations                                          controllers.LocationController.all()
@@ -96,6 +97,10 @@ PUT           /moduleApprovals/:moduleId/:reviewId                controllers.Mo
 GET           /moduleUpdatePermissions/own                        controllers.ModuleUpdatePermissionController.getOwn()
 GET           /moduleUpdatePermissions/:moduleId                  controllers.ModuleUpdatePermissionController.allByModule(moduleId: java.util.UUID)
 POST          /moduleUpdatePermissions/:moduleId                  controllers.ModuleUpdatePermissionController.replace(moduleId: java.util.UUID)
+
+# People Images
+
+POST          /identities/updateImages                            controllers.IdentityController.updateAllImages()
 
 # Map static resources from the /public folder to the /assets URL path
 GET           /assets/*file                                       controllers.Assets.versioned(path="/public", file: Asset)

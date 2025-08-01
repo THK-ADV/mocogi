@@ -33,7 +33,6 @@ object Identity {
       campusId: Option[String],
       isActive: Boolean,
       employmentType: EmploymentType,
-      imageUrl: Option[String],
       websiteUrl: Option[String],
   ) extends Identity {
     override val kind                     = PersonKind
@@ -69,7 +68,6 @@ object Identity {
       p.campusId,
       p.isActive,
       p.employmentType.getOrElse(EmploymentType.Unknown),
-      p.imageUrl,
       p.websiteUrl
     )
 
@@ -95,7 +93,6 @@ object Identity {
             campusId,
             isActive,
             employmentType,
-            imageUrl,
             websiteUrl
           ) =>
         IdentityDbEntry(
@@ -109,7 +106,6 @@ object Identity {
           isActive,
           PersonKind,
           Some(employmentType),
-          imageUrl,
           websiteUrl
         )
       case Group(id, title) =>
@@ -123,7 +119,6 @@ object Identity {
           None,
           isActive = true,
           GroupKind,
-          None,
           None,
           None
         )
@@ -140,7 +135,6 @@ object Identity {
           UnknownKind,
           None,
           None,
-          None
         )
     }
 

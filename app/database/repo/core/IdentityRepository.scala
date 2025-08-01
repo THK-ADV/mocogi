@@ -10,6 +10,7 @@ import auth.CampusId
 import database.repo.Repository
 import database.table.core.*
 import models.core.Identity
+import models.core.Identity.Person
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.db.slick.HasDatabaseConfigProvider
 import slick.jdbc.GetResult
@@ -67,4 +68,7 @@ class IdentityRepository @Inject() (
         .result
         .map(_.collect { case Some(id) => CampusId(id) }.toList)
     )
+
+  def allPeople(): Future[Seq[Person]] =
+    db.run(tableQuery.filter(_.isPerson).result.map(_.map(Identity.toPersonUnsafe)))
 }

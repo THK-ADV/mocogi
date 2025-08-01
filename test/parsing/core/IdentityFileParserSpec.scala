@@ -37,7 +37,6 @@ final class IdentityFileParserSpec extends AnyWordSpec with ParserSpecHelper wit
           isActive = true,
           EmploymentType.Unknown,
           None,
-          None
         )
       )
       assert(
@@ -51,7 +50,6 @@ final class IdentityFileParserSpec extends AnyWordSpec with ParserSpecHelper wit
           Some("def"),
           isActive = true,
           EmploymentType.Professor,
-          None,
           Some("https://www.th-koeln.de/personen/foo.bar/")
         )
       )
@@ -67,7 +65,6 @@ final class IdentityFileParserSpec extends AnyWordSpec with ParserSpecHelper wit
           isActive = true,
           EmploymentType.Unknown,
           None,
-          None
         )
       )
       assert(
@@ -81,7 +78,6 @@ final class IdentityFileParserSpec extends AnyWordSpec with ParserSpecHelper wit
           Some("jkl"),
           isActive = true,
           EmploymentType.WMA,
-          None,
           Some("https://www.th-koeln.de/personen/foo.bar/")
         )
       )
@@ -96,7 +92,6 @@ final class IdentityFileParserSpec extends AnyWordSpec with ParserSpecHelper wit
           Some("jkl"),
           isActive = true,
           EmploymentType.AdjunctLecturer,
-          None,
           None
         )
       )
@@ -111,7 +106,6 @@ final class IdentityFileParserSpec extends AnyWordSpec with ParserSpecHelper wit
           Some("jkl"),
           isActive = true,
           EmploymentType.AdjunctLecturer,
-          None,
           Some("https://www.th-koeln.de/personen/foo.bar/")
         )
       )

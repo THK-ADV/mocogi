@@ -166,9 +166,9 @@ final class ExamListsLatexPrinter(
   private def examinerRow(id: String) =
     escape(
       people.find(_.id == id).get match
-        case Identity.Person(_, lastname, firstname, _, _, _, _, _, _, _, _) => s"${firstname.head}. $lastname"
-        case Identity.Group(_, label)                                        => label
-        case Identity.Unknown(_, label)                                      => label
+        case Identity.Person(_, lastname, firstname, _, _, _, _, _, _, _) => s"${firstname.head}. $lastname"
+        case Identity.Group(_, label)                                     => label
+        case Identity.Unknown(_, label)                                   => label
     )
 
   private def examPhasesRow(xs: NonEmptyList[String]) = {

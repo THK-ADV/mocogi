@@ -15,7 +15,6 @@ trait FakeIdentities {
       Some("ald"),
       isActive = true,
       WMA,
-      None,
       None
     ),
     Identity.Person(
@@ -29,7 +28,6 @@ trait FakeIdentities {
       isActive = true,
       WMA,
       None,
-      None
     ),
     Identity.Person(
       "ddu",
@@ -41,7 +39,6 @@ trait FakeIdentities {
       None,
       isActive = true,
       WMA,
-      None,
       None
     ),
     unknown

@@ -32,7 +32,6 @@ object IdentityFileParser extends YamlFileParser[Identity] {
             campusId       <- obj.get[Option[String]]("campusid")
             isActive       <- obj.get[String]("status").map(_ == "active")
             employmentType <- obj.get[Option[String]]("employment_type")
-            imageUrl       <- obj.get[Option[String]]("image_url")
             websiteUrl     <- obj.get[Option[String]]("website_url")
           } yield Identity
             .Person(
@@ -45,7 +44,6 @@ object IdentityFileParser extends YamlFileParser[Identity] {
               campusId.map(_.trim),
               isActive,
               employmentType.fold(EmploymentType.Unknown)(EmploymentType.apply),
-              imageUrl,
               websiteUrl
             )
         )
