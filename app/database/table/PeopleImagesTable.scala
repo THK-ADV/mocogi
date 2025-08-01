@@ -1,6 +1,5 @@
 package database.table
 
-
 import slick.jdbc.PostgresProfile.api.*
 
 case class PeopleImage(person: String, imageUrl: String)

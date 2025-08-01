@@ -1,15 +1,17 @@
 package service
 
+import javax.inject.Inject
+
+import scala.collection.parallel.CollectionConverters.seqIsParallelizable
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+
 import database.repo.PeopleImagesRepository
 import database.table.PeopleImage
 import net.ruippeixotog.scalascraper.browser.JsoupBrowser
 import net.ruippeixotog.scalascraper.dsl.DSL.*
 import net.ruippeixotog.scalascraper.dsl.DSL.Extract.*
 import service.core.IdentityService
-
-import javax.inject.Inject
-import scala.collection.parallel.CollectionConverters.seqIsParallelizable
-import scala.concurrent.{ExecutionContext, Future}
 
 final class PeopleImagesService @Inject() (
     private val repo: PeopleImagesRepository,
@@ -20,8 +22,7 @@ final class PeopleImagesService @Inject() (
     val browser = JsoupBrowser()
     for {
       people <- identityService.allPeople()
-      entries = people
-        .par
+      entries = people.par
         .collect {
           case p if p.websiteUrl.isDefined =>
             val profileImageUrl =

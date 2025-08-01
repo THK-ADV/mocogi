@@ -11,6 +11,7 @@ import models.core.Identity
 import models.core.Identity.toDbEntry
 import models.core.Identity.Person
 import parsing.core.IdentityFileParser
+import play.api.libs.json.*
 
 @Singleton
 final class IdentityService @Inject() (
@@ -29,4 +30,16 @@ final class IdentityService @Inject() (
 
   def allPeople(): Future[Seq[Person]] =
     repo.allPeople()
+
+  def allWithImages(): Future[JsValue] =
+    repo
+      .allWithImages()
+      .map(entries =>
+        JsArray(entries.map {
+          case (db, img) =>
+            val id   = Identity.fromDbEntry(db)
+            val json = Json.toJson(id).as[JsObject]
+            json + (("imageUrl", img.fold(JsNull)(i => JsString(i.imageUrl))))
+        })
+      )
 }

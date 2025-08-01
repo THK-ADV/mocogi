@@ -9,6 +9,8 @@ import scala.concurrent.Future
 import auth.CampusId
 import database.repo.Repository
 import database.table.core.*
+import database.table.PeopleImage
+import database.table.PeopleImagesTable
 import models.core.Identity
 import models.core.Identity.Person
 import play.api.db.slick.DatabaseConfigProvider
@@ -71,4 +73,7 @@ class IdentityRepository @Inject() (
 
   def allPeople(): Future[Seq[Person]] =
     db.run(tableQuery.filter(_.isPerson).result.map(_.map(Identity.toPersonUnsafe)))
+
+  def allWithImages(): Future[Seq[(IdentityDbEntry, Option[PeopleImage])]] =
+    db.run(tableQuery.joinLeft(TableQuery[PeopleImagesTable]).on(_.id === _.person).result)
 }
