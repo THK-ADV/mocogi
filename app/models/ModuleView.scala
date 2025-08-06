@@ -7,6 +7,7 @@ case class ModuleView[ModuleManagement, StudyProgram](
     title: String,
     abbrev: String,
     ects: Double,
+    status: String,
     moduleManagement: ModuleManagement,
     studyProgram: StudyProgram
 )

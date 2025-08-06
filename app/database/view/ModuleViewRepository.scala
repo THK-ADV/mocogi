@@ -95,6 +95,7 @@ final class ModuleViewRepository @Inject() (
     private def title                     = column[String]("title")
     private def abbrev                    = column[String]("abbrev")
     private def ects                      = column[Double]("ects")
+    private def status                    = column[String]("status")
     private def moduleManagementId        = column[String]("module_management_id")
     private def moduleManagementKind      = column[String]("module_management_kind")
     private def moduleManagementAbbrev    = column[Option[String]]("module_management_abbreviation")
@@ -122,6 +123,7 @@ final class ModuleViewRepository @Inject() (
       title,
       abbrev,
       ects,
+      status,
       (
         moduleManagementId,
         moduleManagementKind,
@@ -153,6 +155,7 @@ final class ModuleViewRepository @Inject() (
             String,
             String,
             Double,
+            String,
             (String, String, Option[String], String, Option[String], Option[String]),
             List[Int],
             Boolean,
@@ -176,6 +179,7 @@ final class ModuleViewRepository @Inject() (
             title,
             abbrev,
             ects,
+            status,
             (
               moduleManagementId,
               moduleManagementKind,
@@ -205,6 +209,7 @@ final class ModuleViewRepository @Inject() (
           title,
           abbrev,
           ects,
+          status,
           ModuleManagement(
             moduleManagementId,
             moduleManagementAbbrev.getOrElse(""),
@@ -243,6 +248,7 @@ final class ModuleViewRepository @Inject() (
           String,
           String,
           Double,
+          String,
           (String, String, Option[String], String, Option[String], Option[String]),
           List[Int],
           Boolean,
@@ -267,6 +273,7 @@ final class ModuleViewRepository @Inject() (
           a.title,
           a.abbrev,
           a.ects,
+          a.status,
           (
             a.moduleManagement.id,
             a.moduleManagement.kind,
