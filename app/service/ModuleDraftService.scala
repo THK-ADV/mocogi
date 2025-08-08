@@ -173,8 +173,7 @@ final class ModuleDraftService @Inject() (
                     print,
                     keysToBeReviewed(modifiedKeys),
                     modifiedKeys,
-                    commitId,
-                    None
+                    commitId
                   )
                 } yield Right(())
             }

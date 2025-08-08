@@ -87,8 +87,7 @@ final class ModuleDraftRepository @Inject() (
       print: Print,
       keysToBeReviewed: Set[String],
       modifiedKeys: Set[String],
-      lastCommit: CommitId,
-      mergeRequest: Option[(MergeRequestId, MergeRequestStatus)]
+      lastCommit: CommitId
   ): Future[Int] =
     db.run(
       tableQuery
@@ -103,8 +102,6 @@ final class ModuleDraftRepository @Inject() (
             a.keysToBeReviewed,
             a.modifiedKeys,
             a.lastCommit,
-            a.mergeRequestId,
-            a.mergeRequestStatus,
             a.lastModified
           )
         )
@@ -118,8 +115,6 @@ final class ModuleDraftRepository @Inject() (
             keysToBeReviewed,
             modifiedKeys,
             Some(lastCommit),
-            mergeRequest.map(_._1),
-            mergeRequest.map(_._2),
             LocalDateTime.now
           )
         )
