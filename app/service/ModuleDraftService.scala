@@ -76,6 +76,7 @@ final class ModuleDraftService @Inject() (
   def createOrUpdate(
       moduleId: UUID,
       protocol: ModuleProtocol,
+      canApproveModule: Boolean,
       person: Identity.Person,
       versionScheme: VersionScheme
   ): Future[Either[PipelineError, Unit]] =
@@ -83,7 +84,7 @@ final class ModuleDraftService @Inject() (
       .hasModuleDraft(moduleId)
       .flatMap(hasDraft => {
         if (hasDraft)
-          update(moduleId, protocol, person, versionScheme)
+          update(moduleId, protocol, canApproveModule, person, versionScheme)
             .map(_.map(_ => logger.info(s"Successfully updated module draft $moduleId (${protocol.metadata.title})")))
         else
           createFromExistingModule(
@@ -131,13 +132,14 @@ final class ModuleDraftService @Inject() (
   private def update(
       moduleId: UUID,
       protocol: ModuleProtocol,
+      canApproveModule: Boolean,
       person: Identity.Person,
       versionScheme: VersionScheme
   ): Future[Either[PipelineError, Unit]] =
     for {
       draft <- repo
         .getByModule(moduleId)
-        .continueIf(_.state().canEdit, "can't edit module")
+        .continueIf(_.state().canEdit(canApproveModule), "can't edit module")
       origin <- getFromStaging(draft.module)
       existing = draft.protocol()
       (updated, modifiedKeys) = diff(

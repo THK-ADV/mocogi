@@ -136,20 +136,23 @@ final class ModuleDraftController @Inject() (
   def createOrUpdateModuleDraft(moduleId: UUID) =
     auth(parse.json[ModuleJson])
       .andThen(personAction)
-      .andThen(hasPermissionToEditDraft(moduleId))
+      .andThen(hasPermissionToViewDraft(moduleId, moduleApprovalService))
       .andThen(new VersionSchemeAction(VersionSchemeHeader))
       .async { r =>
-        moduleDraftService
-          .createOrUpdate(
-            moduleId,
-            r.body.toProtocol,
-            r.request.person,
-            r.versionScheme
-          )
-          .map {
-            case Left(err) => BadRequest(Json.toJson(err))
-            case Right(_)  => NoContent
-          }
+        for {
+          canApproveModule <- moduleApprovalService.canApproveModule(moduleId, r.request.person.id)
+          res <- moduleDraftService
+            .createOrUpdate(
+              moduleId,
+              r.body.toProtocol,
+              canApproveModule,
+              r.request.person,
+              r.versionScheme
+            )
+        } yield res match {
+          case Left(err) => BadRequest(Json.toJson(err))
+          case Right(_)  => NoContent
+        }
       }
 
   /**

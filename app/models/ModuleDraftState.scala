@@ -9,12 +9,15 @@ sealed trait ModuleDraftState extends IDLabel {
   def canRequestReview: Boolean =
     this == ValidForReview || this == ValidForPublication
 
-  def canEdit: Boolean = this match {
-    case ModuleDraftState.Published | ModuleDraftState.ValidForReview | ModuleDraftState.ValidForPublication |
-        ModuleDraftState.WaitingForChanges =>
-      true
-    case ModuleDraftState.WaitingForReview | ModuleDraftState.Unknown | ModuleDraftState.WaitingForPublication =>
-      false
+  def canEdit(canApproveModule: Boolean): Boolean = {
+    def go() = this match {
+      case ModuleDraftState.Published | ModuleDraftState.ValidForReview | ModuleDraftState.ValidForPublication |
+          ModuleDraftState.WaitingForChanges =>
+        true
+      case ModuleDraftState.WaitingForReview | ModuleDraftState.Unknown | ModuleDraftState.WaitingForPublication =>
+        false
+    }
+    go() || (this == ModuleDraftState.WaitingForReview && canApproveModule)
   }
 }
 
