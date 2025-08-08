@@ -175,6 +175,11 @@ final class ModuleDraftService @Inject() (
                     modifiedKeys,
                     commitId
                   )
+                  updatedDraft <- repo.getByModule(moduleId)
+                  _ <-
+                    if updatedDraft.state() == ModuleDraftState.WaitingForChanges then
+                      repo.updateMergeRequest(moduleId, None)
+                    else Future.unit
                 } yield Right(())
             }
           } yield res

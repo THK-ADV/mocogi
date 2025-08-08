@@ -69,7 +69,7 @@ final class ModuleDraftRepository @Inject() (
   def updateMergeRequest(
       moduleId: UUID,
       mergeRequest: Option[(MergeRequestId, MergeRequestStatus)]
-  ) =
+  ): Future[Unit] =
     db.run(
       tableQuery
         .filter(_.module === moduleId)
