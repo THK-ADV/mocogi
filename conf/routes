@@ -86,6 +86,7 @@ GET           /moduleDrafts/:id                                   controllers.Mo
 # Review
 POST          /moduleReviews/:id                                  controllers.ModuleDraftReviewController.create(id: java.util.UUID)
 DELETE        /moduleReviews/:id                                  controllers.ModuleDraftReviewController.delete(id: java.util.UUID)
+GET           /moduleReviewKeys                                   controllers.ModuleDraftReviewController.keys()
 
 # Approval
 GET           /moduleApprovals/own                                controllers.ModuleDraftApprovalController.getOwn()
