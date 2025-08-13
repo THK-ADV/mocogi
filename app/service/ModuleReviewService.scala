@@ -104,18 +104,18 @@ final class ModuleReviewService @Inject() (
   }
 
   /**
-   * Updates the review by changing the status to approved or rejected and
-   * setting the comment if defined. Updates the merge request associated by
+   * Updates the review by changing the status to approve or rejected and
+   * sets the comment if defined. Updates the merge request associated with
    * the underlying module with status updates. Performs the following actions
-   * based on the value of approve:
+   * based on the value of approval:
    *   - If true, checks if all approvals are set. If so, the merge request
    *     will be approved and merged right after. The module draft's status is
-   *     updated to merged respectively.
+   *     updated to "merged" respectively.
    *   - If false, the merge request will be closed and the module draft's
    *     status is updated respectively.
    *
-   * @param id
-   *   ID of the review which will be updated
+   * @param ids
+   *   IDs of the reviews which will be updated
    * @param reviewer
    *   The reviewer
    * @param approve
@@ -124,12 +124,7 @@ final class ModuleReviewService @Inject() (
    *   Optional comment from the reviewer
    * @return
    */
-  def update(
-      id: UUID,
-      reviewer: Identity.Person,
-      approve: Boolean,
-      comment: Option[String]
-  ): Future[Unit] = {
+  def update(ids: List[UUID], reviewer: Identity.Person, approve: Boolean, comment: Option[String]): Future[Unit] = {
     val newStatus = if (approve) Approved else Rejected
 
     def commentBody(summaryStatus: ModuleReviewSummaryStatus) = {
@@ -143,12 +138,9 @@ final class ModuleReviewService @Inject() (
     }
 
     for {
-      review <- reviewRepo
-        .get(id)
-        .abortIf(_.isEmpty, "no module review was found")
-        .map(_.get)
+      moduleId <- reviewRepo.moduleId(ids)
       draft <- draftRepo
-        .getByModuleOpt(review.moduleDraft)
+        .getByModuleOpt(moduleId)
         .abortIf(
           _.forall(d =>
             d.mergeRequestId.isEmpty || d
@@ -158,7 +150,7 @@ final class ModuleReviewService @Inject() (
         )
         .map(_.get)
       mergeRequestId = draft.mergeRequestId.get
-      _      <- reviewRepo.update(id, newStatus, comment, reviewer.id)
+      _      <- reviewRepo.update(ids, newStatus, comment, reviewer.id)
       status <- approvalService.summaryStatus(draft.module)
       _      <- api.comment(mergeRequestId, commentBody(status.get))
       _ <-

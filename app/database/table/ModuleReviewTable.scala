@@ -33,8 +33,8 @@ final class ModuleReviewTable(tag: Tag)
   def isApproved: Rep[Boolean] =
     this.status === ModuleReviewStatus.Approved
 
-  def isRejected: Rep[Boolean] =
-    this.status === ModuleReviewStatus.Rejected
+  def isPending: Rep[Boolean] =
+    this.status === ModuleReviewStatus.Pending
 
   override def * =
     (
