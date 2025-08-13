@@ -437,7 +437,7 @@ CREATE OR REPLACE FUNCTION get_user_info (uid text, cid text)
                 mp.campus_id = cid
                 AND mr.status = 'rejected'), 'reviewsToApprove', (
                 SELECT
-                    count(*)
+                    count(DISTINCT mr.module_draft)
                 FROM study_program_person sp
                 JOIN module_review mr ON sp.study_program = mr.study_program
                     AND sp.role = mr.role
