@@ -4,7 +4,6 @@ import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
 
-import scala.annotation.unused
 import scala.concurrent.ExecutionContext
 
 import auth.AuthorizationAction
@@ -13,13 +12,15 @@ import controllers.actions.ModuleDraftCheck
 import controllers.actions.PermissionCheck
 import controllers.actions.PersonAction
 import database.repo.core.IdentityRepository
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.mvc.AbstractController
 import play.api.mvc.ControllerComponents
 import service.ModuleApprovalService
 import service.ModuleDraftService
 import service.ModuleReviewService
 import service.ModuleUpdatePermissionService
+
+case class ModuleReviewRequest(approved: Boolean, comment: Option[String], reviews: List[UUID])
 
 @Singleton
 final class ModuleDraftApprovalController @Inject() (
@@ -38,7 +39,7 @@ final class ModuleDraftApprovalController @Inject() (
     with PersonAction
     with JsonNullWritable {
 
-  implicit val readsUpdate: Reads[(Boolean, Option[String])] =
+  implicit val readsUpdate: Reads[ModuleReviewRequest] =
     js =>
       for {
         approved <- js.\("action").validate[String].flatMap {
@@ -49,14 +50,13 @@ final class ModuleDraftApprovalController @Inject() (
               s"expected action to be 'approve' or 'reject', but was $other"
             )
         }
-        comment <- js.\("comment").validateOpt[String]
-      } yield (approved, comment)
+        comment   <- js.\("comment").validateOpt[String]
+        reviewIds <- js.\("reviews").validate[List[UUID]]
+      } yield ModuleReviewRequest(approved, comment, reviewIds)
 
   def getOwn =
     auth.andThen(personAction).async { r =>
-      approvalService
-        .reviewerApprovals(r.person)
-        .map(xs => Ok(Json.toJson(xs)))
+      approvalService.reviewerApprovals(r.person).map(xs => Ok(Json.toJson(xs)))
     }
 
   def getByModule(moduleId: UUID) =
@@ -65,10 +65,9 @@ final class ModuleDraftApprovalController @Inject() (
         reviewService.allByModule(moduleId).map(xs => Ok(Json.toJson(xs)))
     }
 
-  def update(@unused moduleId: UUID, reviewId: UUID) =
-    auth(parse.json(readsUpdate)).andThen(personAction).andThen(hasPermissionToApproveReview(reviewId)).async { r =>
-      reviewService
-        .update(reviewId, r.person, r.body._1, r.body._2)
-        .map(_ => NoContent)
+  def update() =
+    auth(parse.json(readsUpdate)).andThen(personAction).andThen(hasPermissionToApproveReview).async { r =>
+      val json = r.request.body
+      reviewService.update(json.reviews, r.person, json.approved, json.comment).map(_ => NoContent)
     }
 }

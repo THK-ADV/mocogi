@@ -18,7 +18,7 @@ import models.ModuleReviewSummaryStatus
 import models.ModuleReviewSummaryStatus.WaitingForChanges
 import models.ModuleReviewSummaryStatus.WaitingForReview
 import models.ReviewerApproval
-import monocle.syntax.all._
+import monocle.syntax.all.*
 
 @Singleton
 final class ModuleApprovalService @Inject() (
@@ -57,9 +57,7 @@ final class ModuleApprovalService @Inject() (
    *   The person which requested the reviews
    * @return
    */
-  def reviewerApprovals(
-      person: Identity.Person
-  ): Future[Iterable[ReviewerApproval]] = {
+  def reviewerApprovals(person: Identity.Person): Future[Iterable[ReviewerApproval]] = {
     approvalRepository
       .allByModulesWhereUserExists(person.id)
       .map(_.groupBy(_._1).flatMap {
@@ -100,22 +98,17 @@ final class ModuleApprovalService @Inject() (
   }
 
   /**
-   * Returns whether the given person has a pending approval for the review
-   * @param reviewId
-   *   ID of the review to check against
+   * Returns whether the given person has a pending approval for all the reviews
+   * @param reviewIds
+   *   IDs of the review to check against
    * @param person
    *   Person to check against
    * @return
    */
-  def hasPendingApproval(
-      reviewId: UUID,
-      person: Identity.Person
-  ): Future[Boolean] =
-    approvalRepository.hasPendingApproval(reviewId, person.id)
+  def hasPendingApprovals(reviewIds: List[UUID], person: Identity.Person): Future[Boolean] =
+    approvalRepository.hasPendingApprovals(reviewIds, person.id)
 
-  private def summaryStatus0(
-      xs: Seq[ModuleReviewStatus]
-  ): Option[ModuleReviewSummaryStatus] =
+  private def summaryStatus0(xs: Seq[ModuleReviewStatus]): Option[ModuleReviewSummaryStatus] =
     Option.when(xs.nonEmpty) {
       val (approved, rejected) =
         xs.foldLeft((0, 0)) {

@@ -91,7 +91,7 @@ GET           /moduleReviewKeys                                   controllers.Mo
 # Approval
 GET           /moduleApprovals/own                                controllers.ModuleDraftApprovalController.getOwn()
 GET           /moduleApprovals/:moduleId                          controllers.ModuleDraftApprovalController.getByModule(moduleId: java.util.UUID)
-PUT           /moduleApprovals/:moduleId/:reviewId                controllers.ModuleDraftApprovalController.update(moduleId: java.util.UUID, reviewId: java.util.UUID)
+PUT           /moduleApprovals                                    controllers.ModuleDraftApprovalController.update()
 
 # Module Update Permissions
 

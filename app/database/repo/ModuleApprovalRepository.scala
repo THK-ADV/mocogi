@@ -11,7 +11,6 @@ import database.repo.core.StudyProgramPersonRepository
 import database.table.ModuleDraftTable
 import database.table.ModuleReviewTable
 import models.ModuleReviewStatus
-import models.ModuleReviewStatus.Pending
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.db.slick.HasDatabaseConfigProvider
 import slick.jdbc.JdbcProfile
@@ -45,17 +44,20 @@ final class ModuleApprovalRepository @Inject() (
     db.run(query.result)
   }
 
-  def hasPendingApproval(reviewId: UUID, person: String): Future[Boolean] = {
-    val pending: ModuleReviewStatus = Pending
-    val spp                         = studyProgramPersonRepository.directorsQuery(person).map(_._1)
-    val query = tableQuery
-      .join(spp)
-      .on((r, spp) =>
-        r.studyProgram === spp.studyProgram && r.role === spp.role && r.id === reviewId && r.status === pending
-      )
-      .exists
-    db.run(query.result)
-  }
+  def hasPendingApprovals(reviewIds: List[UUID], person: String): Future[Boolean] =
+    if reviewIds.isEmpty then Future.successful(true)
+    else {
+      val spp = studyProgramPersonRepository.directorsQuery(person).map(_._1)
+      val query = tableQuery
+        .join(spp)
+        .on((r, spp) =>
+          r.studyProgram === spp.studyProgram && r.role === spp.role && r.id.inSet(reviewIds) && r.isPending
+        )
+        .map(_._1.id)
+        .distinct
+        .size
+      db.run(query.result).map(_ == reviewIds.size)
+    }
 
   def allByModulesWhereUserExists(person: String) = {
     val spp = studyProgramPersonRepository.directorsQuery(person)

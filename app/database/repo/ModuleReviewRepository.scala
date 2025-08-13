@@ -26,11 +26,7 @@ import slick.jdbc.JdbcProfile
 final class ModuleReviewRepository @Inject() (
     val dbConfigProvider: DatabaseConfigProvider,
     implicit val ctx: ExecutionContext
-) extends Repository[
-      ModuleReview.DB,
-      ModuleReview.DB,
-      ModuleReviewTable
-    ]
+) extends Repository[ModuleReview.DB, ModuleReview.DB, ModuleReviewTable]
     with HasDatabaseConfigProvider[JdbcProfile] {
 
   import database.table.moduleReviewStatusColumnType
@@ -41,21 +37,24 @@ final class ModuleReviewRepository @Inject() (
   def delete(moduleId: UUID): Future[Int] =
     db.run(tableQuery.filter(_.moduleDraft === moduleId).delete)
 
-  def get(id: UUID): Future[Option[ModuleReview.DB]] =
-    db.run(tableQuery.filter(_.id === id).result.map(_.headOption))
+  def moduleId(ids: List[UUID]): Future[UUID] =
+    db.run(tableQuery.filter(_.id.inSet(ids)).result).flatMap { reviews =>
+      if reviews.isEmpty then Future.failed(new Exception(s"expected one module for review ids ($ids)"))
+      else {
+        val moduleId     = reviews.head.moduleDraft
+        val isSameModule = reviews.forall(_.moduleDraft == moduleId)
+        if isSameModule then Future.successful(moduleId)
+        else Future.failed(new Exception(s"review ids ($ids) must belong to one module ($moduleId), but was: $reviews"))
+      }
+    }
 
   def getStatusByModule(moduleId: UUID): Future[Seq[ModuleReviewStatus]] =
     db.run(tableQuery.filter(_.moduleDraft === moduleId).map(_.status).result)
 
-  def update(
-      id: UUID,
-      status: ModuleReviewStatus,
-      comment: Option[String],
-      person: String
-  ): Future[Int] =
+  def update(ids: List[UUID], status: ModuleReviewStatus, comment: Option[String], person: String): Future[Int] =
     db.run(
       tableQuery
-        .filter(_.id === id)
+        .filter(_.id.inSet(ids))
         .map(a => (a.status, a.comment, a.respondedBy, a.respondedAt))
         .update((status, comment, Some(person), Some(LocalDateTime.now)))
     )
