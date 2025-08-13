@@ -26,15 +26,37 @@ final class StudyProgramViewRepository @Inject() (
 
   override def name: String = "study_program_view"
 
-  val tableQuery = TableQuery[StudyProgramViewTable]
+  private val notExpiredTableQuery =
+    TableQuery[StudyProgramViewTable]((tag: Tag) => new StudyProgramViewTable(tag, "study_program_view_not_expired"))
 
-  def all(): Future[Seq[StudyProgramView]] =
-    db.run(tableQuery.result)
+  private val currentlyActiveTableQuery = TableQuery[StudyProgramViewTable]((tag: Tag) =>
+    new StudyProgramViewTable(tag, "study_program_view_currently_active")
+  )
+
+  val tableQuery = notExpiredTableQuery
+
+  /**
+   * Retrieves all study programs with non-expired POs.
+   * Includes POs that are currently active, future POs, and POs with no expiry date.
+   *
+   * @return Future sequence of study programs where PO date_to is null or >= now()
+   */
+  def notExpired(): Future[Seq[StudyProgramView]] =
+    db.run(notExpiredTableQuery.result)
+
+  /**
+   * Retrieves study programs with currently active POs only.
+   * Includes POs that have started and not yet expired.
+   *
+   * @return Future sequence of study programs where PO date_from <= now() <= date_to (or date_to is null)
+   */
+  def currentlyActive(): Future[Seq[StudyProgramView]] =
+    db.run(currentlyActiveTableQuery.result)
 
   def getByPo(fullPoId: FullPoId): Future[StudyProgramView] =
-    db.run(tableQuery.filter(_.fullPo === fullPoId.id).result.single)
+    db.run(notExpiredTableQuery.filter(_.fullPo === fullPoId.id).result.single)
 
-  final class StudyProgramViewTable(tag: Tag) extends Table[StudyProgramView](tag, name) {
+  final class StudyProgramViewTable(tag: Tag, tableName: String) extends Table[StudyProgramView](tag, tableName) {
 
     def fullPo = specializationId.fold(poId)(identity)
 

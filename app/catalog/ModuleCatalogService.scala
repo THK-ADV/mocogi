@@ -180,7 +180,7 @@ final class ModuleCatalogService @Inject() (
     val createdModules = moduleService.allNewlyCreated()
 
     for {
-      sps <- studyProgramViewRepo.all()
+      sps <- studyProgramViewRepo.notExpired()
       poIds = sps.map(_.po.id)
       ms <- Future
         .sequence(poIds.map(po => moduleService.allFromMandatoryPO(po)))

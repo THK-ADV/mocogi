@@ -69,7 +69,7 @@ final class ElectivesCatalogService @Inject() (
   def create(semester: Semester): Future[List[(ElectivesFile, String)]] = {
     logger.info(s"creating elective catalog for ${semester.id}")
     val studyPrograms = studyProgramViewRepo
-      .all()
+      .notExpired()
       .map(_.sortBy(a => (a.degree.id, a.fullPoId, a.po.version)))
     val electiveModules = electivesRepository.all()
 

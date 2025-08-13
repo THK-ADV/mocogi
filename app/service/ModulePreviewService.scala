@@ -68,7 +68,7 @@ final class ModulePreviewService @Inject() (
   ): Future[Path] = {
     logger.info(s"generating module catalog preview for po ${fullPoId.id}")
 
-    val studyPrograms  = studyProgramViewRepo.all()
+    val studyPrograms  = studyProgramViewRepo.notExpired()
     val specialization = specializationRepository.get(fullPoId.id)
 
     for {
