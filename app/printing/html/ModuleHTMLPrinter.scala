@@ -40,7 +40,7 @@ final class ModuleHTMLPrinter @Inject() (
       lastModified: LocalDateTime,
       outputType: PrinterOutputType
   ): Future[Either[Throwable, PrinterOutput]] =
-    studyProgramViewRepo.all().map { sps =>
+    studyProgramViewRepo.notExpired().map { sps =>
       print(
         module,
         lang,

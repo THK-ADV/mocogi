@@ -46,7 +46,7 @@ object ModulePrintingActor {
 
     override def receive = {
       case Handle(modules) if modules.nonEmpty =>
-        studyProgramViewRepo.all().onComplete {
+        studyProgramViewRepo.notExpired().onComplete {
           case Success(sps) =>
             modules.par.foreach {
               case (module, moduleFile) =>

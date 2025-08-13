@@ -13,7 +13,6 @@ import database.table.core.StudyProgramDbEntry
 import database.table.core.StudyProgramPersonDbEntry
 import database.table.core.StudyProgramPersonTable
 import database.table.core.StudyProgramTable
-import models.core.IDLabel
 import models.core.StudyProgram
 import models.UniversityRole
 import play.api.db.slick.DatabaseConfigProvider
@@ -31,8 +30,7 @@ class StudyProgramRepository @Inject() (
 
   protected val tableQuery = TableQuery[StudyProgramTable]
 
-  protected val personAssocQuery =
-    TableQuery[StudyProgramPersonTable]
+  private val personAssocQuery = TableQuery[StudyProgramPersonTable]
 
   def all(): Future[Seq[StudyProgram]] =
     retrieve(tableQuery)
@@ -76,14 +74,6 @@ class StudyProgramRepository @Inject() (
         .transactionally
         .map(_ => xs)
     )
-  }
-
-  def allWithDegrees() = {
-    val query = for {
-      q <- tableQuery
-      d <- q.degreeFk
-    } yield (q.id, q.deLabel, q.enLabel, d)
-    db.run(query.result.map(_.map(a => (IDLabel(a._1, a._2, a._3), a._4))))
   }
 
   def deleteMany(ids: Seq[String]) =

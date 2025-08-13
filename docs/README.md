@@ -129,7 +129,11 @@ Keys, die bald entfernt werden (bitte nicht verwenden):
 
 ## Studiengänge und POs
 
-GET `/studyPrograms?extend=true`
+| Methode | Pfad             | Query                     | Beschreibung                                                                                           |
+|---------|------------------|---------------------------|--------------------------------------------------------------------------------------------------------|
+| GET     | `/studyPrograms` | `filter=currently-active` | Gibt alle aktiven Studiengänge mit PO zurück (PO gestartet und nicht ausgelaufen)                      |
+| GET     | `/studyPrograms` | `filter=not-expired`      | Wie `currently-active`, nur dass zusätzlich zukünftige, noch nicht gestartete POs zurückgegeben werden |
+| GET     | `/studyPrograms` | –                         | Wie `not-expired` (default)                                                                            |
 
 Gibt alle Studiengänge mit PO zurück. Bei uns haben Studiengänge nicht so einen hohen Wert wie eine PO. So gibt es z.B.
 im Studiengang Medieninformatik Bachelor (`inf_mi`) mehrere POs (`inf_mi4`, `inf_mi5`). Module werden entsprechend mit
