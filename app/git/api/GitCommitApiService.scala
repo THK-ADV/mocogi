@@ -78,7 +78,7 @@ final class GitCommitApiService @Inject() (
 
   def getCommitDate(path: GitFilePath, branch: Branch): Future[Option[LocalDateTime]] =
     ws.url(this.commitUrl())
-      .withQueryStringParameters("path" -> path.value, "ref_name" -> branch.value)
+      .withQueryStringParameters("path" -> path.value, "ref_name" -> branch.value, "per_page" -> "1")
       .withHttpHeaders(tokenHeader(), contentTypeJson())
       .get()
       .flatMap { resp =>

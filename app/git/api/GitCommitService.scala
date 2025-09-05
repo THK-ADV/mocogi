@@ -1,5 +1,6 @@
 package git.api
 
+import java.time.LocalDateTime
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -76,4 +77,10 @@ final class GitCommitService @Inject() (
           fileApiService.download(cd.newPath, branch).collect { case Some((c, _)) => (c, cd) }
       })
     yield downloads
+
+  /**
+   * Returns the last commit date of a path in a branch
+   */
+  def getLatestCommitDateOfModulesFolder(): Future[Option[LocalDateTime]] =
+    apiService.getCommitDate(GitFilePath(config.modulesFolder), config.mainBranch)
 }
