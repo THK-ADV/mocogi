@@ -55,3 +55,4 @@ public/
 !public/style.css
 gitlab/
 mc
+app/controllers/DevController.scala
