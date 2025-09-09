@@ -23,7 +23,10 @@ final class ModuleCreationService @Inject() (
   def createWithPermissions(module: CreatedModule): Future[Unit] =
     repo.create(module).flatMap(_ => updateModuleManagement(module.module, module.moduleManagement))
 
-  def updateModuleManagement(module: UUID, moduleManagement: List[String]): Future[Unit] =
+  def updateWithPermissions(module: CreatedModule): Future[Unit] =
+    repo.update(module).flatMap(_ => updateModuleManagement(module.module, module.moduleManagement))
+
+  private def updateModuleManagement(module: UUID, moduleManagement: List[String]): Future[Unit] =
     for
       campusIds <- identityRepo.getCampusIds(moduleManagement)
       _         <- permissionService.replace(module, campusIds, ModuleUpdatePermissionType.Inherited)

@@ -28,6 +28,9 @@ final class CreatedModuleRepository @Inject() (
   def create(module: CreatedModule): Future[Unit] =
     db.run(tableQuery.insertOrUpdate(module)).map(_ => ())
 
+  def update(module: CreatedModule): Future[Unit] =
+    db.run(tableQuery.filter(_.module === module.module).update(module)).map(_ => ())
+
   def delete(modules: Seq[UUID]): Future[Int] =
     db.run(tableQuery.filter(_.module.inSet(modules)).delete)
 
