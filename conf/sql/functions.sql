@@ -307,6 +307,7 @@ WHERE
             AND md.module IS NOT NULL));
 $$;
 
+-- the POs passed are base POs, not full POs! We must use string contains to match them with specializations
 CREATE OR REPLACE FUNCTION get_modules_for_po (pos_param text[])
     RETURNS jsonb
     LANGUAGE sql
@@ -325,41 +326,55 @@ CREATE OR REPLACE FUNCTION get_modules_for_po (pos_param text[])
             cm,
             md
         FROM
-            unnest(pos_param) AS po_id
-            JOIN created_module_in_draft cm ON (po_id = ANY (cm.module_mandatory_pos)
-                    OR po_id = ANY (cm.module_optional_pos))
-            LEFT JOIN module_draft md ON md.module = cm.module
-    UNION
-    -- Get module_draft entries that match POs but don't have created_module_in_draft
-    SELECT DISTINCT ON (md.module)
-        NULL::created_module_in_draft AS cm,
-        md
-    FROM
-        unnest(pos_param) AS po_id
-        JOIN module_draft md ON (EXISTS (
-                SELECT
-                    1
-                FROM
-                    jsonb_array_elements(md.module_json -> 'metadata' -> 'po' -> 'mandatory') AS mandatory_po
-                WHERE
-                    mandatory_po ->> 'po' = po_id)
-                OR EXISTS (
+            unnest(pos_param) AS po_id -- full po id
+            JOIN created_module_in_draft cm ON (EXISTS (
                     SELECT
                         1
                     FROM
-                        jsonb_array_elements(md.module_json -> 'metadata' -> 'po' -> 'optional') AS optional_po
+                        unnest(cm.module_mandatory_pos) AS e (el)
                     WHERE
-                        optional_po ->> 'po' = po_id))
-            WHERE
-                NOT EXISTS (
-                    SELECT
-                        1
-                    FROM
-                        created_module_in_draft cm
+                        el LIKE po_id || '%') -- the po_id can either match directly or be a suffix
+                    OR EXISTS (
+                        SELECT
+                            1
+                        FROM
+                            unnest(cm.module_optional_pos) AS e (el)
+                        WHERE
+                            el LIKE po_id || '%') -- the po_id can either match directly or be a suffix
+)
+                    LEFT JOIN module_draft md ON md.module = cm.module
+            UNION
+            -- Get module_draft entries that match POs but don't have created_module_in_draft
+            SELECT DISTINCT ON (md.module)
+                NULL::created_module_in_draft AS cm,
+                md
+            FROM
+                unnest(pos_param) AS po_id -- full po id
+                JOIN module_draft md ON (EXISTS (
+                        SELECT
+                            1
+                        FROM
+                            jsonb_array_elements(md.module_json -> 'metadata' -> 'po' -> 'mandatory') AS mandatory_po
+                        WHERE
+                            mandatory_po ->> 'po' LIKE po_id || '%') -- the po_id can either match directly or be a suffix
+                        OR EXISTS (
+                            SELECT
+                                1
+                            FROM
+                                jsonb_array_elements(md.module_json -> 'metadata' -> 'po' -> 'optional') AS optional_po
+                            WHERE
+                                optional_po ->> 'po' LIKE po_id || '%')) -- the po_id can either match directly or be a suffix
                     WHERE
-                        cm.module = md.module)) AS distinct_modules;
+                        NOT EXISTS (
+                            SELECT
+                                1
+                            FROM
+                                created_module_in_draft cm
+                            WHERE
+                                cm.module = md.module)) AS distinct_modules;
 $$;
 
+-- the POs passed are base POs, not full POs! We must use string contains to match them with specializations
 CREATE OR REPLACE FUNCTION module_of_po (module_param uuid, pos_param text[])
     RETURNS bool
     LANGUAGE sql
@@ -407,8 +422,22 @@ CREATE OR REPLACE FUNCTION module_of_po (module_param uuid, pos_param text[])
                                         created_module_in_draft
                                     WHERE
                                         module = module_param
-                                        AND (po_id = ANY (module_mandatory_pos)
-                                            OR po_id = ANY (module_optional_pos)))))
+                                        AND (EXISTS (
+                                                SELECT
+                                                    1
+                                                FROM
+                                                    unnest(module_mandatory_pos) AS full_po_id
+                                                    -- the po_id can either match directly or be a suffix
+                                                WHERE
+                                                    full_po_id LIKE po_id || '%')
+                                                OR EXISTS (
+                                                    SELECT
+                                                        1
+                                                    FROM
+                                                        unnest(module_optional_pos) AS full_po_id
+                                                        -- the po_id can either match directly or be a suffix
+                                                    WHERE
+                                                        full_po_id LIKE po_id || '%')))))
         END;
 $$;
 

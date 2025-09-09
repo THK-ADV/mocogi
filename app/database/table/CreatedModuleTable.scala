@@ -10,12 +10,13 @@ final class CreatedModuleTable(tag: Tag) extends Table[CreatedModule](tag, "crea
 
   import database.MyPostgresProfile.MyAPI.simpleStrListTypeMapper
 
-  def module             = column[UUID]("module", O.PrimaryKey)
-  def moduleTitle        = column[String]("module_title")
-  def moduleAbbrev       = column[String]("module_abbrev")
-  def moduleManagement   = column[List[String]]("module_management")
-  def moduleECTS         = column[Double]("module_ects")
-  def moduleType         = column[String]("module_type")
+  def module           = column[UUID]("module", O.PrimaryKey)
+  def moduleTitle      = column[String]("module_title")
+  def moduleAbbrev     = column[String]("module_abbrev")
+  def moduleManagement = column[List[String]]("module_management")
+  def moduleECTS       = column[Double]("module_ects")
+  def moduleType       = column[String]("module_type")
+  // both are the full PO ids, which means that either the po id or the specialization id is used
   def moduleMandatoryPOs = column[List[String]]("module_mandatory_pos")
   def moduleOptionalPOs  = column[List[String]]("module_optional_pos")
 

@@ -66,7 +66,8 @@ final class RawModuleParserSpec extends AnyWordSpec with EitherValues with Optio
       assert(metadata.location == "gm")
       assert(
         metadata.po.mandatory == List(
-          ModulePOMandatoryProtocol("inf1", None, List(3))
+          ModulePOMandatoryProtocol("inf1", None, List(3)),
+          ModulePOMandatoryProtocol("inf1", Some("foo1"), List(4))
         )
       )
       assert(
@@ -275,6 +276,18 @@ final class RawModuleParserSpec extends AnyWordSpec with EitherValues with Optio
       assert(enContent.particularities == "")
       assert(metadata.attendanceRequirement.isEmpty)
       assert(metadata.assessmentPrerequisite.isEmpty)
+    }
+
+    "parse module1.md as 'created module'" in {
+      val module = withFile0("test/parsing/res/module1.md")(RawModuleParser.parseCreatedModuleInformation)
+      assert(module.module == UUID.fromString("00895144-30e4-4bd2-b800-bb706686d950"))
+      assert(module.moduleTitle == "Algorithmik")
+      assert(module.moduleAbbrev == "ALG")
+      assert(module.moduleType == "module")
+      assert(module.moduleECTS == 5)
+      assert(module.moduleManagement == List("ald"))
+      assert(module.moduleMandatoryPOs == List("inf1", "foo1"))
+      assert(module.moduleOptionalPOs == List("wi1"))
     }
   }
 }

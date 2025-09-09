@@ -100,6 +100,8 @@ object RawModuleParser {
                 .asString
                 .get
                 .stripPrefix(ModulePOParser.studyProgramPrefix)
+                .split('.')
+                .last
             )
             .toList
         case None => Nil
@@ -121,6 +123,8 @@ object RawModuleParser {
                 .asString
                 .get
                 .stripPrefix(ModulePOParser.studyProgramPrefix)
+                .split('.')
+                .last
             )
             .toList
         case None => Nil

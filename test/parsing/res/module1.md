@@ -33,6 +33,8 @@ location: location.gm
 po_mandatory:
   - study_program: study_program.inf1
     recommended_semester: 3
+  - study_program: study_program.inf1.foo1
+    recommended_semester: 4
 po_optional:
   - study_program: study_program.wi1
     instance_of: module.d1cecfbc-a314-42f6-99b3-be92f22c3295
