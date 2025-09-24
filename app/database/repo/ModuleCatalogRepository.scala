@@ -26,7 +26,7 @@ final class ModuleCatalogRepository @Inject() (
       ModuleCatalog
     ]
     with HasDatabaseConfigProvider[JdbcProfile] {
-  import profile.api._
+  import profile.api.*
 
   protected val tableQuery = TableQuery[ModuleCatalog]
 
@@ -45,8 +45,7 @@ final class ModuleCatalogRepository @Inject() (
             catalog.ModuleCatalogList(
               sp,
               Semester(mcl.semester),
-              mcl.deUrl,
-              mcl.enUrl,
+              mcl.url,
               mcl.generated
             )
         }.toSeq)

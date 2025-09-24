@@ -2,103 +2,35 @@ package printing
 
 import org.scalatest.wordspec.AnyWordSpec
 import parsing.types.ModuleContent
+import play.api.i18n.DefaultMessagesApi
 import printing.yaml.ContentMarkdownPrinter
 
+// https://www.playframework.com/documentation/3.0.x/ScalaTestingWithSpecs2#Unit-Testing-Messages
 final class ModuleContentMarkdownPrinterSpec extends AnyWordSpec with PrinterSpec {
 
-  val printer = new ContentMarkdownPrinter()
+  val messagesApi =
+    new DefaultMessagesApi(
+      Map(
+        "de" -> Map(
+          "latex.module_catalog.content.learning_outcome" -> "Angestrebte Lernergebnisse",
+          "latex.module_catalog.content.module"           -> "Modulinhalte",
+          "latex.module_catalog.content.teaching_methods" -> "Lehr- und Lernmethoden (Medienformen)",
+          "latex.module_catalog.content.reading"          -> "Empfohlene Literatur",
+          "latex.module_catalog.content.particularities"  -> "Besonderheiten",
+        ),
+        "en" -> Map(
+          "latex.module_catalog.content.learning_outcome" -> "Learning Outcome",
+          "latex.module_catalog.content.module"           -> "Module Content",
+          "latex.module_catalog.content.teaching_methods" -> "Teaching and Learning Methods",
+          "latex.module_catalog.content.reading"          -> "Recommended Reading",
+          "latex.module_catalog.content.particularities"  -> "Particularities",
+        ),
+      )
+    )
+
+  val printer = new ContentMarkdownPrinter(messagesApi)
 
   "A Content Printer" should {
-    "print learning outcome header" in {
-      assert(
-        run(
-          printer.learningOutcomeHeader(PrintingLanguage.German)
-        ) == "## (de) Angestrebte Lernergebnisse:"
-      )
-      assert(
-        run(
-          printer.learningOutcomeHeader(PrintingLanguage.English)
-        ) == "## (en) Learning Outcome:"
-      )
-    }
-
-    "print module content header" in {
-      assert(
-        run(
-          printer.moduleContentHeader(PrintingLanguage.German)
-        ) == "## (de) Modulinhalte:"
-      )
-      assert(
-        run(
-          printer.moduleContentHeader(PrintingLanguage.English)
-        ) == "## (en) Module Content:"
-      )
-    }
-
-    "print teaching and learning methods header" in {
-      assert(
-        run(
-          printer.teachingAndLearningMethodsHeader(PrintingLanguage.German)
-        ) == "## (de) Lehr- und Lernmethoden (Medienformen):"
-      )
-      assert(
-        run(
-          printer.teachingAndLearningMethodsHeader(PrintingLanguage.English)
-        ) == "## (en) Teaching and Learning Methods:"
-      )
-    }
-
-    "print recommended reading header" in {
-      assert(
-        run(
-          printer.recommendedReadingHeader(PrintingLanguage.German)
-        ) == "## (de) Empfohlene Literatur:"
-      )
-      assert(
-        run(
-          printer.recommendedReadingHeader(PrintingLanguage.English)
-        ) == "## (en) Recommended Reading:"
-      )
-    }
-
-    "print particularities header" in {
-      assert(
-        run(
-          printer.particularitiesHeader(PrintingLanguage.German)
-        ) == "## (de) Besonderheiten:"
-      )
-      assert(
-        run(
-          printer.particularitiesHeader(PrintingLanguage.English)
-        ) == "## (en) Particularities:"
-      )
-    }
-
-    "print learning outcome" in {
-      val gerText = "- Klassen\n- Vererbung\n- Polymorphie"
-      val gerRes =
-        """## (de) Angestrebte Lernergebnisse:
-          |
-          |- Klassen
-          |- Vererbung
-          |- Polymorphie
-          |""".stripMargin
-      assert(
-        run(printer.learningOutcome(PrintingLanguage.German, gerText)) == gerRes
-      )
-      val enText = "- Classes\n- Inheritance\n- Polymorphism"
-      val enRes =
-        """## (en) Learning Outcome:
-          |
-          |- Classes
-          |- Inheritance
-          |- Polymorphism
-          |""".stripMargin
-      assert(
-        run(printer.learningOutcome(PrintingLanguage.English, enText)) == enRes
-      )
-    }
-
     "print" in {
       val de = ModuleContent(
         "Programmieren lernen",

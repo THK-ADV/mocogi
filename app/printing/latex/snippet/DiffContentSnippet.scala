@@ -15,8 +15,8 @@ final class DiffContentSnippet(diffs: NonEmptyList[(ModuleCore, Set[String])], m
   import ModuleCatalogLatexPrinter.newPage
 
   override def print(using lang: Lang, builder: StringBuilder): Unit = {
-    val sectionTitle = messagesApi("latex.module_diff.section.title")
-    val sectionIntro = messagesApi("latex.module_diff.section.intro")
+    val sectionTitle = messagesApi("latex.module_catalog.module_diff.section.title")
+    val sectionIntro = messagesApi("latex.module_catalog.module_diff.section.intro")
     chapter(sectionTitle)
     newPage()
     builder.append(s"$sectionIntro\n")

@@ -16,7 +16,6 @@ import parsing.RawModuleParser
 import printing.html.ModuleHTMLPrinter
 import printing.pandoc.PrinterOutput
 import printing.pandoc.PrinterOutputType
-import printing.PrintingLanguage
 import service.*
 
 @Singleton
@@ -89,7 +88,7 @@ final class GitFileDownloadService @Inject() (
         Future.successful(None)
     }
 
-  def downloadModuleFromPreviewBranchAsHTML(module: UUID)(implicit lang: PrintingLanguage): Future[Option[String]] =
+  def downloadModuleFromPreviewBranchAsHTML(module: UUID): Future[Option[String]] =
     for {
       content <- downloadFileContentWithLastModified(GitFilePath(module), config.draftBranch)
       res <- content match {
@@ -99,7 +98,6 @@ final class GitFileDownloadService @Inject() (
             output <- printer
               .print(
                 module,
-                lang,
                 lastModified.getOrElse(LocalDateTime.now),
                 PrinterOutputType.HTMLStandalone
               )

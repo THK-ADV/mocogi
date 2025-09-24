@@ -23,11 +23,7 @@ import printing.fmtIdentity
 import printing.latex.snippet.LatexContentSnippet
 import printing.latex.RenderingContext.Parent
 import printing.pandoc.PandocApi
-import printing.IDLabelDescOps
-import printing.LabelOps
-import printing.LabelOptOps
-import printing.LanguageOps
-import printing.PrintingLanguage
+import printing.LocalizedStrings
 import service.modulediff.ModuleProtocolDiff
 
 private enum RenderingContext {
@@ -57,7 +53,6 @@ object ModuleCatalogLatexPrinter {
       currentPO: PO,
       modules: Seq[(ModuleProtocol, Option[LocalDateTime])],
       payload: Payload,
-      pLang: PrintingLanguage,
       lang: Lang,
   ) = {
     new ModuleCatalogLatexPrinter(
@@ -70,10 +65,7 @@ object ModuleCatalogLatexPrinter {
       payload,
       latexSnippets,
       Some(diffsForModule)
-    )(
-      using pLang,
-      lang
-    )
+    )(using lang)
   }
 
   // TODO: make the same adjustments here
@@ -85,7 +77,6 @@ object ModuleCatalogLatexPrinter {
       currentPO: PO,
       modules: Seq[(ModuleProtocol, LocalDateTime | Option[LocalDateTime])],
       payload: Payload,
-      pLang: PrintingLanguage,
       lang: Lang
   ) =
     new ModuleCatalogLatexPrinter(
@@ -98,7 +89,7 @@ object ModuleCatalogLatexPrinter {
       payload,
       Nil,
       None
-    )(using pLang, lang)
+    )(using lang)
 }
 
 /**
@@ -114,12 +105,9 @@ final class ModuleCatalogLatexPrinter(
     payload: Payload,
     latexSnippets: List[LatexContentSnippet],
     diffsForModule: Option[UUID => Option[Set[String]]]
-)(
-    using pLang: PrintingLanguage,
-    lang: Lang
-) extends Logging {
+)(using lang: Lang)
+    extends Logging {
 
-  // TODO: replace PrintingLanguage with Lang
   import ModuleCatalogLatexPrinter.chapter
   import ModuleCatalogLatexPrinter.nameRef
   import ModuleCatalogLatexPrinter.newPage
@@ -133,6 +121,8 @@ final class ModuleCatalogLatexPrinter(
   private var renderingContext = RenderingContext.None
 
   private def isPreview = semester.isEmpty
+
+  private val strings = new LocalizedStrings(messages)
 
   private def currentModuleType(m: MetadataProtocol) =
     renderingContext match {
@@ -173,7 +163,7 @@ final class ModuleCatalogLatexPrinter(
     commands()
     builder.append(s"""
                       |\\begin{document}
-                      |\\selectlanguage{${messages("latex.lang.package_name")}}""".stripMargin)
+                      |\\selectlanguage{${strings.languagePackage}}""".stripMargin)
     title()
     newPage
     builder.append("\\tableofcontents\n")
@@ -363,11 +353,10 @@ final class ModuleCatalogLatexPrinter(
 
   private def title() = {
     val studyProgram      = pos.find(_.po.id == currentPO.id).get
-    val titleLabel        = pLang.moduleCatalogHeadline
-    val studyProgramLabel = s"${escape(studyProgram.localizedLabel)} PO ${studyProgram.po.version}"
-    val degreeLabel       = studyProgram.degree.localizedDesc
-    val semesterLabel     = semester.fold(messages("latex.preview_label"))(s => s"\\LARGE ${s.localizedLabel} ${s.year}")
-
+    val titleLabel        = strings.headline
+    val studyProgramLabel = s"${escape(strings.label(studyProgram))} PO ${studyProgram.po.version}"
+    val degreeLabel       = strings.description(studyProgram.degree)
+    val semesterLabel     = semester.fold(strings.previewLabel)(s => s"\\LARGE ${strings.label(s)} ${s.year}")
     builder.append(
       s"""
          |\\begin{titlepage}
@@ -408,7 +397,7 @@ final class ModuleCatalogLatexPrinter(
       .appendOpt(
         Option.when(isDraft)(
           s"""
-             |\\usepackage[colorspec=0.9,text=${pLang.previewLabel}]{draftwatermark} % watermark
+             |\\usepackage[colorspec=0.9,text=${strings.previewLabel}]{draftwatermark} % watermark
              |\\usepackage[defaultcolor=orange]{changes} % highlights changes (https://ctan.org/pkg/changes?lang=en)""".stripMargin
         )
       )
@@ -511,11 +500,11 @@ final class ModuleCatalogLatexPrinter(
 
       // assumes that the current PO is definitely included in either of mandatory or optional
       (mandatorySize, electiveSize) match {
-        case (1, 0) => pLang.noneLabel
-        case (0, 1) => pLang.noneLabel
+        case (1, 0) => strings.noneLabel
+        case (0, 1) => strings.noneLabel
         case (0, 0) =>
           logger.error(s"expected module to be part of some po relationship of po ${currentPO.id}")
-          pLang.unknownLabel
+          strings.unknownLabel
         case _ =>
           // remove ourselves for rendering
           val mandatory = module.metadata.po.mandatory.filterNot(p => p.po == currentPO.id).sortBy(_.po)
@@ -538,7 +527,7 @@ final class ModuleCatalogLatexPrinter(
           for (po, i) <- mandatory.zipWithIndex yield {
             val content = studyPrograms.find(_.fullPoId.id == po.fullPo) match {
               case Some(studyProgram) =>
-                val spLabel = escape(studyProgram.localizedLabel(studyProgram.specialization))
+                val spLabel = escape(strings.label(studyProgram, studyProgram.specialization))
                 var content = s"$spLabel PO-${studyProgram.po.version}"
                 if po.recommendedSemester.nonEmpty then {
                   content += s" (Sem. ${fmtCommaSeparated(po.recommendedSemester.sorted)(_.toString())})"
@@ -562,7 +551,7 @@ final class ModuleCatalogLatexPrinter(
           for (po, i) <- optional.zipWithIndex yield {
             val content = studyPrograms.find(_.po.id == po.po) match {
               case Some(studyProgram) =>
-                val spLabel = escape(studyProgram.localizedLabel(studyProgram.specialization))
+                val spLabel = escape(strings.label(studyProgram, studyProgram.specialization))
                 s"$spLabel PO-${studyProgram.po.version} (Wahlmodul)"
               case None =>
                 logger.error(s"expected po ${po.fullPo} to exists for module ${module.id.get}")
@@ -574,7 +563,7 @@ final class ModuleCatalogLatexPrinter(
             }
           }
 
-          if builder.isEmpty then pLang.noneLabel else builder.toString()
+          if builder.isEmpty then strings.noneLabel else builder.toString()
       }
     }
 
@@ -587,7 +576,7 @@ final class ModuleCatalogLatexPrinter(
           }
           if p.modules.nonEmpty then {
             val subBuilder  = new StringBuilder()
-            val moduleLabel = messages("latex.module.label")
+            val moduleLabel = messages("latex.module_catalog.module.label")
             subBuilder.append(s"$moduleLabel: ")
             p.modules.zipWithIndex.foreach {
               case (m, i) =>
@@ -602,8 +591,7 @@ final class ModuleCatalogLatexPrinter(
             builder.append(subBuilder.toString())
           }
           builder.toString()
-        case None =>
-          pLang.noneLabel
+        case None => strings.noneLabel
 
     def attendanceRequirementRow(att: Option[AttendanceRequirement]) =
       att match
@@ -620,9 +608,8 @@ final class ModuleCatalogLatexPrinter(
             if builder.nonEmpty then builder.append("\\,\\textbullet\\,")
             builder.append(s"Fehlzeiten: ${escape(att.absence)}")
           }
-          if builder.isEmpty then pLang.noneLabel else builder.toString()
-        case None =>
-          pLang.noneLabel
+          if builder.isEmpty then strings.noneLabel else builder.toString()
+        case None => strings.noneLabel
 
     def assessmentPrerequisiteRow(ass: Option[AssessmentPrerequisite]) =
       ass match
@@ -635,21 +622,20 @@ final class ModuleCatalogLatexPrinter(
             if builder.nonEmpty then builder.append("\\,\\textbullet\\,")
             builder.append(s"Begründung: ${escape(ass.reason)}")
           }
-          if builder.isEmpty then pLang.noneLabel else builder.toString()
-        case None =>
-          pLang.noneLabel
+          if builder.isEmpty then strings.noneLabel else builder.toString()
+        case None => strings.noneLabel
 
     def assessmentMethodsRow =
-      if module.metadata.assessmentMethods.mandatory.isEmpty then pLang.noneLabel
+      if module.metadata.assessmentMethods.mandatory.isEmpty then strings.noneLabel
       else
         fmtCommaSeparated(module.metadata.assessmentMethods.mandatory.sortBy(_.method), "\\newline ") { a =>
-          val method = assessmentMethods.find(_.id == a.method).localizedLabel
+          val method = strings.label(assessmentMethods.find(_.id == a.method))
           a.percentage.fold(method)(d => s"$method (${fmtDouble(d)} \\%)")
         }
 
     def renderWorkloadRow = {
       val (workload, contactHour, selfStudy) =
-        pLang.workload(module.metadata.workload, module.metadata.ects, currentPO.ectsFactor)
+        strings.workloadLabels(module.metadata.workload, module.metadata.ects, currentPO.ectsFactor)
 
       row(highlightIf(workload._1, ModuleProtocolDiff.isModuleWorkload), workload._2)
       row(highlightIf(contactHour._1, ModuleProtocolDiff.isModuleWorkload), contactHour._2)
@@ -671,72 +657,74 @@ final class ModuleCatalogLatexPrinter(
         case RenderingContext.None =>
           Nil
       }
-      if recommendedSemester.isEmpty then pLang.unknownLabel
-      else s"${recommendedSemester.sorted.map(s => s"$s.").mkString(", ")} ${pLang.semesterLabel}"
+      if recommendedSemester.isEmpty then strings.unknownLabel
+      else s"${recommendedSemester.sorted.map(s => s"$s.").mkString(", ")} ${strings.semesterLabel}"
     }
+
+    def durationRow = s"${module.metadata.duration} ${strings.semesterLabel}"
 
     sectionWithRef(module.metadata.title, module.id, isChild)
     builder.append("\\begin{tabularx}{\\linewidth}{@{}>{\\bfseries}l@{\\hspace{.5em}}X@{}}\n")
-    row(highlightIf(pLang.moduleCodeLabel, ModuleProtocolDiff.isModuleAbbrev), escape(module.metadata.abbrev))
-    row(highlightIf(pLang.moduleTitleLabel, ModuleProtocolDiff.isModuleTitle), escape(module.metadata.title))
-    row(pLang.moduleTypeLabel, currentModuleType(module.metadata))
-    row(highlightIf(pLang.ectsLabel, ModuleProtocolDiff.isModuleEcts), fmtDouble(module.metadata.ects))
+    row(highlightIf(strings.moduleAbbrevLabel, ModuleProtocolDiff.isModuleAbbrev), escape(module.metadata.abbrev))
+    row(highlightIf(strings.moduleTitleLabel, ModuleProtocolDiff.isModuleTitle), escape(module.metadata.title))
+    row(strings.moduleTypeLabel, currentModuleType(module.metadata))
+    row(highlightIf(strings.ectsLabel, ModuleProtocolDiff.isModuleEcts), fmtDouble(module.metadata.ects))
     row(
-      highlightIf(pLang.languageLabel, ModuleProtocolDiff.isModuleLanguage),
-      languages.find(_.id == module.metadata.language).localizedLabel
+      highlightIf(strings.languageLabel, ModuleProtocolDiff.isModuleLanguage),
+      strings.label(languages.find(_.id == module.metadata.language))
     )
     row(
-      highlightIf(pLang.durationLabel, ModuleProtocolDiff.isModuleDuration),
-      pLang.durationValue(module.metadata.duration)
+      highlightIf(strings.durationLabel, ModuleProtocolDiff.isModuleDuration),
+      durationRow
     )
-    row(pLang.recommendedSemesterLabel, recommendedSemesterRow)
+    row(strings.recommendedSemesterLabel, recommendedSemesterRow)
     row(
-      highlightIf(pLang.frequencyLabel, ModuleProtocolDiff.isModuleSeason),
-      seasons.find(_.id == module.metadata.season).localizedLabel
+      highlightIf(strings.frequencyLabel, ModuleProtocolDiff.isModuleSeason),
+      strings.label(seasons.find(_.id == module.metadata.season))
     )
     row(
-      highlightIf(pLang.moduleCoordinatorLabel, ModuleProtocolDiff.isModuleModuleManagement),
+      highlightIf(strings.moduleCoordinatorLabel, ModuleProtocolDiff.isModuleModuleManagement),
       fmtCommaSeparated(
         people.filter(p => module.metadata.moduleManagement.exists(_ == p.id)).sorted,
         "\\newline "
       )(fmtIdentity)
     )
     row(
-      highlightIf(pLang.lecturersLabel, ModuleProtocolDiff.isModuleLecturers),
+      highlightIf(strings.lecturersLabel, ModuleProtocolDiff.isModuleLecturers),
       fmtCommaSeparated(people.filter(p => module.metadata.lecturers.exists(_ == p.id)).sorted, "\\newline ")(
         fmtIdentity
       )
     )
     row(
-      highlightIf(pLang.assessmentMethodLabel, ModuleProtocolDiff.isModuleAssessmentMethodsMandatory),
+      highlightIf(strings.assessmentMethodLabel, ModuleProtocolDiff.isModuleAssessmentMethodsMandatory),
       assessmentMethodsRow
     )
     renderWorkloadRow
     row(
-      highlightIf(pLang.recommendedPrerequisitesLabel, ModuleProtocolDiff.isModuleRecommendedPrerequisites),
+      highlightIf(strings.recommendedPrerequisitesLabel, ModuleProtocolDiff.isModuleRecommendedPrerequisites),
       prerequisitesLabelRow(module.metadata.prerequisites.recommended)
     )
     row(
-      highlightIf(pLang.requiredPrerequisitesLabel, ModuleProtocolDiff.isModuleRequiredPrerequisites),
+      highlightIf(strings.requiredPrerequisitesLabel, ModuleProtocolDiff.isModuleRequiredPrerequisites),
       prerequisitesLabelRow(module.metadata.prerequisites.required)
     )
     row(
-      highlightIf(pLang.attendanceRequirementLabel, ModuleProtocolDiff.isModuleAttendanceRequirement),
+      highlightIf(strings.attendanceRequirementLabel, ModuleProtocolDiff.isModuleAttendanceRequirement),
       attendanceRequirementRow(module.metadata.attendanceRequirement)
     )
     row(
-      highlightIf(pLang.assessmentPrerequisiteLabel, ModuleProtocolDiff.isModuleAssessmentPrerequisite),
+      highlightIf(strings.assessmentPrerequisiteLabel, ModuleProtocolDiff.isModuleAssessmentPrerequisite),
       assessmentPrerequisiteRow(module.metadata.assessmentPrerequisite)
     )
-    row(highlightIf(pLang.poLabelShort, ModuleProtocolDiff.isPOMandatory), poRow)
+    row(highlightIf(strings.poLabelShort, ModuleProtocolDiff.isPOMandatory), poRow)
     if isPreview then {
       row("ID", module.id.get.toString)
       row(
-        pLang.lastModifiedLabel,
+        strings.lastModifiedLabel,
         lastModified match
           case lm: LocalDateTime => lm.format(localDatePattern)
           case Some(lm)          => lm.format(localDatePattern)
-          case None              => pLang.unknownLabel
+          case None              => strings.unknownLabel
       )
     }
 
@@ -746,11 +734,11 @@ final class ModuleCatalogLatexPrinter(
       module.deContent,
       module.enContent,
       List(
-        (pLang.learningOutcomeLabel, GenLens[ModuleContent](_.learningOutcome)),
-        (pLang.moduleContentLabel, GenLens[ModuleContent](_.content)),
-        (pLang.teachingAndLearningMethodsLabel, GenLens[ModuleContent](_.teachingAndLearningMethods)),
-        (pLang.recommendedReadingLabel, GenLens[ModuleContent](_.recommendedReading)),
-        (pLang.particularitiesLabel, GenLens[ModuleContent](_.particularities))
+        (strings.learningOutcomeLabel, GenLens[ModuleContent](_.learningOutcome)),
+        (strings.moduleContentLabel, GenLens[ModuleContent](_.content)),
+        (strings.teachingAndLearningMethodsLabel, GenLens[ModuleContent](_.teachingAndLearningMethods)),
+        (strings.recommendedReadingLabel, GenLens[ModuleContent](_.recommendedReading)),
+        (strings.particularitiesLabel, GenLens[ModuleContent](_.particularities))
       ),
       diffs
     )
@@ -766,7 +754,7 @@ final class ModuleCatalogLatexPrinter(
     val markdownContent = new StringBuilder()
     entries.foreach {
       case (headline, lens) =>
-        val content = pLang.fold(lens.get(deContent), lens.get(enContent))
+        val content = if strings.isGerman then lens.get(deContent) else lens.get(enContent)
         if content.nonEmpty && !content.forall(_.isWhitespace) then {
           markdownContent.append(s"## $headline\n")
           markdownContent.append(content)
@@ -792,12 +780,12 @@ final class ModuleCatalogLatexPrinter(
                 text,
                 subsection => {
                   val key =
-                    if subsection == pLang.learningOutcomeLabel then ModuleProtocolDiff.learningOutcomeKey
-                    else if subsection == pLang.moduleContentLabel then ModuleProtocolDiff.moduleContentKey
-                    else if subsection == pLang.teachingAndLearningMethodsLabel then
+                    if subsection == strings.learningOutcomeLabel then ModuleProtocolDiff.learningOutcomeKey
+                    else if subsection == strings.moduleContentLabel then ModuleProtocolDiff.moduleContentKey
+                    else if subsection == strings.teachingAndLearningMethodsLabel then
                       ModuleProtocolDiff.teachingAndLearningMethodsKey
-                    else if subsection == pLang.recommendedReadingLabel then ModuleProtocolDiff.recommendedReadingKey
-                    else if subsection == pLang.particularitiesLabel then ModuleProtocolDiff.particularitiesKey
+                    else if subsection == strings.recommendedReadingLabel then ModuleProtocolDiff.recommendedReadingKey
+                    else if subsection == strings.particularitiesLabel then ModuleProtocolDiff.particularitiesKey
                     else ""
                   contentDiffs.contains(key)
                 },

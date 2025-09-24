@@ -9,8 +9,7 @@ import play.api.libs.json.Writes
 case class ModuleCatalogList(
     studyProgram: StudyProgramView,
     semester: Semester,
-    deUrl: String,
-    enUrl: String,
+    url: String,
     generated: LocalDateTime
 )
 

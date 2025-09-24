@@ -6,7 +6,6 @@ import scala.collection.mutable.ListBuffer
 
 import catalog.Semester
 import cats.data.NonEmptyList
-import controllers.LangOps
 import models.*
 import models.core.AssessmentMethod
 import models.core.ExamPhases
@@ -18,9 +17,7 @@ import play.api.i18n.Lang
 import play.api.i18n.MessagesApi
 import play.api.Logging
 import printing.fmtDouble
-import printing.IDLabelDescOps
-import printing.LabelOps
-import printing.PrintingLanguage
+import printing.LocalizedStrings
 
 object ExamListsLatexPrinter {
   def default(
@@ -88,6 +85,8 @@ final class ExamListsLatexPrinter(
 
   private val builder: StringBuilder = new StringBuilder()
 
+  private val strings = new LocalizedStrings(messages)(using lang)
+
   private val rowWidth = "Lp{.02\\linewidth}"
 
   private val moduleTitleWidthValue = .255
@@ -100,8 +99,6 @@ final class ExamListsLatexPrinter(
 
   private val examPhasesWidth = "Lp{.125\\linewidth}"
 
-  private given printingLang: PrintingLanguage = lang.toPrintingLang()
-
   private val genericModuleLegend = scala.collection.mutable.Set[ModuleCore]()
 
   private var usedP = false
@@ -113,7 +110,7 @@ final class ExamListsLatexPrinter(
     packages()
     commands()
     builder.append(s"""\\begin{document}
-                      |\\selectlanguage{${messages("latex.lang.package_name")}}
+                      |\\selectlanguage{${strings.languagePackage}}
                       |""".stripMargin)
     title()
     tableColors()
@@ -158,7 +155,7 @@ final class ExamListsLatexPrinter(
       xs
         .sortBy(_.method)
         .map { m =>
-          val label = assessmentMethods.find(_.id == m.method).get.localizedLabel
+          val label = strings.label(assessmentMethods.find(_.id == m.method))
           escape(m.percentage.fold(label)(d => s"$label (${fmtDouble(d)} %)"))
         }
         .mkString(", ")
@@ -351,7 +348,7 @@ final class ExamListsLatexPrinter(
     val remainingWidth = 0.9 - moduleTitleWidthValue
     val cols: Seq[POShort] = specializations
       .map(s => (s.id, s.label, s.abbreviation))
-      .prepended((studyProgram.po.id, studyProgram.localizedLabel, studyProgram.abbreviation))
+      .prepended((studyProgram.po.id, strings.label(studyProgram), studyProgram.abbreviation))
     val width                   = Math.max(remainingWidth / cols.size, 0.08)
     val colWidth                = cols.map(_ => s"||Cp{$width\\linewidth}").mkString("\n")
     val colHeader               = cols.map(po => s"& \\textbf{${escape(po._3)}}").mkString("\n")
@@ -407,11 +404,10 @@ final class ExamListsLatexPrinter(
   }
 
   private def title() = {
-    val titleLabel = messages("latex.exam_lists.title")
-    val studyProgramLabel =
-      s"${escape(studyProgram.localizedLabel(studyProgram.specialization))} PO ${studyProgram.po.version}"
-    val degreeLabel       = studyProgram.degree.localizedDesc
-    val semesterLabel     = semester.fold(messages("latex.preview_label"))(s => s"\\LARGE ${s.localizedLabel} ${s.year}")
+    val titleLabel        = messages("latex.exam_lists.title")
+    val studyProgramLabel = s"${escape(strings.label(studyProgram))} PO ${studyProgram.po.version}"
+    val degreeLabel       = strings.description(studyProgram.degree)
+    val semesterLabel     = semester.fold(strings.previewLabel)(s => s"\\LARGE ${strings.label(s)} ${s.year}")
     val validityStatement = messages("latex.exam_lists.validity_statement", "\\rule{4cm}{0.4pt}")
     builder.append(
       s"""\\begin{titlepage}
@@ -443,7 +439,7 @@ final class ExamListsLatexPrinter(
                 |""".stripMargin)
       .appendOpt(
         Option.when(semester.isEmpty)(
-          s"\\usepackage[colorspec=0.9,text=${messages("latex.preview_label")}]{draftwatermark}\n"
+          s"\\usepackage[colorspec=0.9,text=${strings.previewLabel}]{draftwatermark}\n"
         )
       )
 

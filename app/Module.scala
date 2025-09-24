@@ -17,7 +17,6 @@ import ops.ConfigurationOps.Ops
 import parsing.metadata.MetadataParser
 import play.api.Configuration
 import play.api.Environment
-import printing.markdown.ModuleMarkdownPrinter
 import printing.pandoc.PandocApi
 import printing.yaml.MetadataYamlPrinter
 import providers.*
@@ -77,9 +76,6 @@ class Module(@unused environment: Environment, configuration: Configuration) ext
     bind(classOf[MetadataYamlPrinter]).toInstance(
       new MetadataYamlPrinter(2)
     )
-    bind(classOf[ModuleMarkdownPrinter]).toInstance(
-      new ModuleMarkdownPrinter(true)
-    )
 
     bind(classOf[String])
       .annotatedWith(Names.named("gitHost"))
@@ -104,5 +100,9 @@ class Module(@unused environment: Environment, configuration: Configuration) ext
     bind(classOf[String])
       .annotatedWith(Names.named("path.mcAssets"))
       .toInstance(configuration.nonEmptyString("pandoc.mcAssetsPath"))
+
+    bind(classOf[Boolean])
+      .annotatedWith(Names.named("substituteLocalisedContent"))
+      .toInstance(true)
   }
 }

@@ -3,7 +3,6 @@ package catalog
 import java.nio.file.Path
 
 import models.StudyProgramView
-import printing.PrintingLanguage
 
 case class ModuleCatalogFile[PDF](
     filename: String,
@@ -11,6 +10,5 @@ case class ModuleCatalogFile[PDF](
     semester: Semester,
     content: String,
     texFile: Path,
-    pdfFile: PDF,
-    lang: PrintingLanguage
+    pdfFile: PDF
 )

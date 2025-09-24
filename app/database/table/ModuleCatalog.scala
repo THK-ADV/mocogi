@@ -9,8 +9,7 @@ case class ModuleCatalogEntry(
     specialization: Option[String],
     studyProgram: String,
     semester: String,
-    deUrl: String,
-    enUrl: String,
+    url: String,
     generated: LocalDateTime
 )
 
@@ -43,7 +42,6 @@ final class ModuleCatalog(tag: Tag)
     studyProgram,
     semester,
     deUrl,
-    enUrl,
     generated
   ) <> (ModuleCatalogEntry.apply, ModuleCatalogEntry.unapply)
 }

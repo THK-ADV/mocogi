@@ -37,7 +37,6 @@ import printing.latex.snippet.LayoutContentSnippet
 import printing.latex.ModuleCatalogLatexPrinter
 import printing.latex.Payload
 import printing.pandoc.PandocApi
-import printing.PrintingLanguage
 import service.core.IdentityService
 import service.modulediff.ModuleProtocolDiff
 import service.LatexCompiler.compile
@@ -67,7 +66,7 @@ final class ModulePreviewService @Inject() (
 
   private type ModuleDiffs = List[(ModuleCore, Set[String])]
 
-  def previewCatalog(po: String, pLang: PrintingLanguage, lang: Lang, latexFile: Path): Future[Path] = {
+  def previewCatalog(po: String, lang: Lang, latexFile: Path): Future[Path] = {
     logger.info(s"generating module catalog preview for po $po")
 
     val studyPrograms = studyProgramViewRepo.notExpired().map { all =>
@@ -84,7 +83,7 @@ final class ModulePreviewService @Inject() (
       moduleDiffs   = diffs(liveModules, changedModules)
       latexSnippets = getLatexSnippets(latexFile.getParent, po, moduleDiffs)
       _             = copyAssets(latexFile.getParent)
-      content <- print(poOnly, modules, all, pLang, lang, moduleDiffs, latexSnippets)
+      content <- print(poOnly, modules, all, lang, moduleDiffs, latexSnippets)
       path = Files.writeString(latexFile, content.toString)
       pdf <- compile(path).flatMap(_ => getPdf(path)).toFuture
     } yield pdf
@@ -151,7 +150,6 @@ final class ModulePreviewService @Inject() (
       poOnly: Seq[StudyProgramView],
       modules: List[(ModuleProtocol, Option[LocalDateTime])],
       studyPrograms: Seq[StudyProgramView],
-      pLang: PrintingLanguage,
       lang: Lang,
       diffs: ModuleDiffs,
       latexSnippets: List[LatexContentSnippet]
@@ -193,7 +191,6 @@ final class ModulePreviewService @Inject() (
         currentPO,
         modules,
         payload,
-        pLang,
         lang,
       )
       printer.print()

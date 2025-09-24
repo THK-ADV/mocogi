@@ -12,8 +12,6 @@ import scala.util.Failure
 import scala.util.Success
 import scala.util.Try
 
-import printing.PrintingLanguage
-
 @Singleton
 final class PandocApi(htmlCmd: String, pdfCmd: String, texCmd: String) {
 
@@ -40,7 +38,6 @@ final class PandocApi(htmlCmd: String, pdfCmd: String, texCmd: String) {
       id: UUID,
       outputType: PrinterOutputType,
       input: String,
-      lang: PrintingLanguage
   ): Either[Throwable, PrinterOutput] = {
     val inputStream = toStream(input)
     val res = outputType match {
@@ -48,25 +45,25 @@ final class PandocApi(htmlCmd: String, pdfCmd: String, texCmd: String) {
         createText(htmlCmd, htmlExtension, inputStream)
       case PrinterOutputType.HTMLStandalone =>
         createText(standalone(htmlCmd), htmlExtension, inputStream)
-      case PrinterOutputType.HTMLFile(de, en) =>
-        createFile(id, htmlExtension, htmlCmd, inputStream, lang.fold(de, en))
-      case PrinterOutputType.HTMLStandaloneFile(de, en) =>
+      case PrinterOutputType.HTMLFile(path) =>
+        createFile(id, htmlExtension, htmlCmd, inputStream, path)
+      case PrinterOutputType.HTMLStandaloneFile(path) =>
         createFile(
           id,
           htmlExtension,
           standalone(htmlCmd),
           inputStream,
-          lang.fold(de, en)
+          path
         )
-      case PrinterOutputType.PDFFile(de, en) =>
-        createFile(id, pdfExtension, pdfCmd, inputStream, lang.fold(de, en))
-      case PrinterOutputType.PDFStandaloneFile(de, en) =>
+      case PrinterOutputType.PDFFile(path) =>
+        createFile(id, pdfExtension, pdfCmd, inputStream, path)
+      case PrinterOutputType.PDFStandaloneFile(path) =>
         createFile(
           id,
           pdfExtension,
           standalone(pdfCmd),
           inputStream,
-          lang.fold(de, en)
+          path
         )
     }
     inputStream.close()

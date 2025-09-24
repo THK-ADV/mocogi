@@ -1,9 +1,7 @@
-import play.api.i18n.Lang
 import play.api.libs.json.Json
 import play.api.libs.json.Reads
 import play.api.libs.json.Writes
 import play.api.mvc.RequestHeader
-import printing.PrintingLanguage
 
 package object controllers {
 
@@ -22,24 +20,12 @@ package object controllers {
       "message" -> e.getMessage
     )
 
-  implicit class LangOps(private val self: Lang) extends AnyVal {
-    def toPrintingLang(): PrintingLanguage =
-      if (self.code.startsWith("de")) PrintingLanguage.German
-      else PrintingLanguage.English
-  }
-
   extension (self: RequestHeader) {
     def isNewApi: Boolean =
       self
         .getQueryString("newApi")
         .flatMap(_.toBooleanOption)
         .getOrElse(false)
-
-    def parseLang(): PrintingLanguage =
-      self
-        .getQueryString("lang")
-        .flatMap(PrintingLanguage.apply)
-        .getOrElse(PrintingLanguage.German)
 
     def isExtended: Boolean =
       self

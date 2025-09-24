@@ -12,11 +12,59 @@ import org.scalatest.wordspec.AnyWordSpec
 import org.scalatest.EitherValues
 import parsing.types.*
 import parsing.withFile0
+import play.api.i18n.DefaultMessagesApi
 import printing.markdown.ModuleMarkdownPrinter
 
 final class ModuleMarkdownPrinterSpec extends AnyWordSpec with EitherValues {
 
-  val printer = new ModuleMarkdownPrinter(false)
+  val messagesApi =
+    new DefaultMessagesApi(
+      Map(
+        "de" -> Map(
+          "latex.module_catalog.none"                        -> "Keine",
+          "latex.module_catalog.unknown"                     -> "Keine Angabe",
+          "latex.module_catalog.semester"                    -> "Semester",
+          "latex.module_catalog.module_abbrev"               -> "Modulnummer",
+          "latex.module_catalog.module_title"                -> "Modulbezeichnung",
+          "latex.module_catalog.module_type"                 -> "Art des Moduls",
+          "latex.module_catalog.ects"                        -> "ECTS credits",
+          "latex.module_catalog.language"                    -> "Sprache",
+          "latex.module_catalog.duration"                    -> "Dauer des Moduls",
+          "latex.module_catalog.recommended_semester"        -> "Empfohlenes Studiensemester",
+          "latex.module_catalog.frequency"                   -> "Häufigkeit des Angebots",
+          "latex.module_catalog.module_management"           -> "Modulverantwortliche*r",
+          "latex.module_catalog.lecturer"                    -> "Dozierende",
+          "latex.module_catalog.assessment_method"           -> "Prüfungsformen",
+          "latex.module_catalog.workload"                    -> "Workload",
+          "latex.module_catalog.workload.contact_hours"      -> "Präsenzzeit",
+          "latex.module_catalog.workload.self_study"         -> "Selbststudium",
+          "latex.module_catalog.workload.lecture"            -> "{0} h Vorlesung",
+          "latex.module_catalog.workload.exercise"           -> "{0} h Übung",
+          "latex.module_catalog.workload.practical"          -> "{0} h Praktikum",
+          "latex.module_catalog.workload.seminar"            -> "{0} h Seminar",
+          "latex.module_catalog.workload.projectSupervision" -> "{0} h Projektbetreuung",
+          "latex.module_catalog.workload.projectWork"        -> "{0} h Projektarbeit",
+          "latex.module_catalog.prerequisite.recommended"    -> "Empfohlene Voraussetzungen",
+          "latex.module_catalog.prerequisite.required"       -> "Zwingende Voraussetzungen",
+          "latex.module_catalog.prerequisite.attendance"     -> "Anwesenheitspflicht",
+          "latex.module_catalog.prerequisite.assessment"     -> "Prüfungsvorleistung",
+          "latex.module_catalog.prerequisite.module"         -> "Module",
+          "latex.module_catalog.po"                          -> "Verwendung des Moduls in weiteren Studiengängen",
+          "latex.module_catalog.po_short"                    -> "In anderen Studiengängen",
+          "latex.module_catalog.last_modified"               -> "Letzte Aktualisierung am",
+          "latex.module_catalog.parent"                      -> "Besteht aus den Teilmodulen",
+          "latex.module_catalog.child"                       -> "Gehört zum Modul",
+          "latex.module_catalog.content.learning_outcome"    -> "Angestrebte Lernergebnisse",
+          "latex.module_catalog.content.module"              -> "Modulinhalte",
+          "latex.module_catalog.content.teaching_methods"    -> "Lehr- und Lernmethoden (Medienformen)",
+          "latex.module_catalog.content.reading"             -> "Empfohlene Literatur",
+          "latex.module_catalog.content.particularities"     -> "Besonderheiten",
+          "latex.module_catalog.season"                      -> "Jedes {0}",
+        )
+      )
+    )
+
+  val printer = new ModuleMarkdownPrinter(messagesApi, false)
 
   "A Module Markdown Printer" should {
     "print markdown file" in {
@@ -86,10 +134,7 @@ final class ModuleMarkdownPrinterSpec extends AnyWordSpec with EitherValues {
         ModuleContent("", "", "", "", "")
       )
       val dePrinter =
-        printer.printer(_ => None)(
-          PrintingLanguage.German,
-          LocalDateTime.now()
-        )
+        printer.printer(_ => None)(LocalDateTime.now())
       val deFile = withFile0("test/printing/res/de-print.md")(identity)
       assert(
         dePrinter
@@ -97,22 +142,6 @@ final class ModuleMarkdownPrinterSpec extends AnyWordSpec with EitherValues {
           .value
           .toString()
           .dropRight(16) == deFile
-          .dropRight(16)
-      )
-
-      val enPrinter =
-        printer
-          .printer(_ => None)(
-            PrintingLanguage.English,
-            LocalDateTime.now()
-          )
-      val enFile = withFile0("test/printing/res/en-print.md")(identity)
-      assert(
-        enPrinter
-          .print(module, new StringBuilder())
-          .value
-          .toString()
-          .dropRight(16) == enFile
           .dropRight(16)
       )
 
@@ -151,53 +180,6 @@ final class ModuleMarkdownPrinterSpec extends AnyWordSpec with EitherValues {
           .toString()
           .dropRight(16) == deFile3
           .dropRight(16)
-      )
-    }
-
-    "print content block" in {
-      implicit val substituteLocalisedContent: Boolean = true
-      implicit var lang: PrintingLanguage              = PrintingLanguage.German
-      var p                                            = printer.contentBlock("Title", "de text", "en text")
-      assert(
-        p.print((), new StringBuilder())
-          .value
-          .toString() === "## Title\n\nde text\n\n"
-      )
-
-      lang = PrintingLanguage.English
-      p = printer.contentBlock("Title", "de text", "en text")
-      assert(
-        p.print((), new StringBuilder())
-          .value
-          .toString() === "## Title\n\nen text\n\n"
-      )
-
-      lang = PrintingLanguage.German
-      p = printer.contentBlock("Title", "", "en text")
-      assert(
-        p.print((), new StringBuilder())
-          .value
-          .toString() === "## Title\n\nen text\n\n"
-      )
-
-      lang = PrintingLanguage.English
-      p = printer.contentBlock("Title", "de text", "")
-      assert(
-        p.print((), new StringBuilder())
-          .value
-          .toString() === "## Title\n\nde text\n\n"
-      )
-
-      lang = PrintingLanguage.German
-      p = printer.contentBlock("Title", "", "")
-      assert(
-        p.print((), new StringBuilder()).value.toString() === "## Title\n\n"
-      )
-
-      lang = PrintingLanguage.English
-      p = printer.contentBlock("Title", "", "")
-      assert(
-        p.print((), new StringBuilder()).value.toString() === "## Title\n\n"
       )
     }
   }

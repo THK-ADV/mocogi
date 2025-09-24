@@ -1,39 +1,37 @@
 package printing.yaml
 
+import java.util.Locale
+import javax.inject.Inject
 import javax.inject.Singleton
 
 import parsing.types.ModuleContent
+import play.api.i18n.Lang
+import play.api.i18n.MessagesApi
 import printer.Printer
 import printer.Printer.newline
 import printer.Printer.prefix
-import printing.LanguageOps
-import printing.PrintingLanguage
-import printing.PrintingLanguage.English
-import printing.PrintingLanguage.German
+import printing.LocalizedStrings
 
 @Singleton
-final class ContentMarkdownPrinter {
+final class ContentMarkdownPrinter @Inject() (messages: MessagesApi) {
 
-  private def abbrev(lang: PrintingLanguage) =
-    lang match {
-      case PrintingLanguage.German  => "de"
-      case PrintingLanguage.English => "en"
-    }
+  private def abbrev(string: LocalizedStrings) =
+    if string.isGerman then "de" else "en"
 
-  def learningOutcomeHeader(lang: PrintingLanguage) =
-    prefix(s"## (${abbrev(lang)}) ${lang.learningOutcomeLabel}:")
+  private def learningOutcomeHeader(string: LocalizedStrings) =
+    prefix(s"## (${abbrev(string)}) ${string.learningOutcomeLabel}:")
 
-  def moduleContentHeader(lang: PrintingLanguage) =
-    prefix(s"## (${abbrev(lang)}) ${lang.moduleContentLabel}:")
+  private def moduleContentHeader(string: LocalizedStrings) =
+    prefix(s"## (${abbrev(string)}) ${string.moduleContentLabel}:")
 
-  def teachingAndLearningMethodsHeader(lang: PrintingLanguage) =
-    prefix(s"## (${abbrev(lang)}) ${lang.teachingAndLearningMethodsLabel}:")
+  private def teachingAndLearningMethodsHeader(string: LocalizedStrings) =
+    prefix(s"## (${abbrev(string)}) ${string.teachingAndLearningMethodsLabel}:")
 
-  def recommendedReadingHeader(lang: PrintingLanguage) =
-    prefix(s"## (${abbrev(lang)}) ${lang.recommendedReadingLabel}:")
+  private def recommendedReadingHeader(string: LocalizedStrings) =
+    prefix(s"## (${abbrev(string)}) ${string.recommendedReadingLabel}:")
 
-  def particularitiesHeader(lang: PrintingLanguage) =
-    prefix(s"## (${abbrev(lang)}) ${lang.particularitiesLabel}:")
+  private def particularitiesHeader(string: LocalizedStrings) =
+    prefix(s"## (${abbrev(string)}) ${string.particularitiesLabel}:")
 
   private def content(header: Printer[Unit], text: String) =
     if (text.isEmpty) {
@@ -47,52 +45,55 @@ final class ContentMarkdownPrinter {
         .skip(newline)
     }
 
-  def learningOutcome(lang: PrintingLanguage, text: String) =
-    content(learningOutcomeHeader(lang), text)
+  def learningOutcome(string: LocalizedStrings, text: String) =
+    content(learningOutcomeHeader(string), text)
 
-  def moduleContent(lang: PrintingLanguage, text: String) =
-    content(moduleContentHeader(lang), text)
+  def moduleContent(string: LocalizedStrings, text: String) =
+    content(moduleContentHeader(string), text)
 
-  def teachingAndLearningMethods(lang: PrintingLanguage, text: String) =
-    content(teachingAndLearningMethodsHeader(lang), text)
+  def teachingAndLearningMethods(string: LocalizedStrings, text: String) =
+    content(teachingAndLearningMethodsHeader(string), text)
 
-  def recommendedReading(lang: PrintingLanguage, text: String) =
-    content(recommendedReadingHeader(lang), text)
+  def recommendedReading(string: LocalizedStrings, text: String) =
+    content(recommendedReadingHeader(string), text)
 
-  def particularities(lang: PrintingLanguage, text: String) =
-    content(particularitiesHeader(lang), text)
+  def particularities(string: LocalizedStrings, text: String) =
+    content(particularitiesHeader(string), text)
 
   def printer(): Printer[(ModuleContent, ModuleContent)] =
     Printer {
       case ((de, en), input) =>
-        learningOutcome(German, de.learningOutcome)
+        val deStrings = new LocalizedStrings(messages)(using Lang(Locale.GERMAN))
+        val enStrings = new LocalizedStrings(messages)(using Lang(Locale.ENGLISH))
+
+        learningOutcome(deStrings, de.learningOutcome)
           .skip(newline)
-          .skip(learningOutcome(English, en.learningOutcome))
+          .skip(learningOutcome(enStrings, en.learningOutcome))
           .skip(newline)
           .skip(
-            moduleContent(German, de.content)
+            moduleContent(deStrings, de.content)
               .skip(newline)
-              .skip(moduleContent(English, en.content))
+              .skip(moduleContent(enStrings, en.content))
               .skip(newline)
           )
           .skip(
-            teachingAndLearningMethods(German, de.teachingAndLearningMethods)
+            teachingAndLearningMethods(deStrings, de.teachingAndLearningMethods)
               .skip(newline)
               .skip(
-                teachingAndLearningMethods(English, en.teachingAndLearningMethods)
+                teachingAndLearningMethods(enStrings, en.teachingAndLearningMethods)
               )
               .skip(newline)
           )
           .skip(
-            recommendedReading(German, de.recommendedReading)
+            recommendedReading(deStrings, de.recommendedReading)
               .skip(newline)
-              .skip(recommendedReading(English, en.recommendedReading))
+              .skip(recommendedReading(enStrings, en.recommendedReading))
               .skip(newline)
           )
           .skip(
-            particularities(German, de.particularities)
+            particularities(deStrings, de.particularities)
               .skip(newline)
-              .skip(particularities(English, en.particularities))
+              .skip(particularities(enStrings, en.particularities))
           )
           .print((), input)
     }
