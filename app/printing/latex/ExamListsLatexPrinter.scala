@@ -421,7 +421,7 @@ final class ExamListsLatexPrinter(
          |\\LARGE $studyProgramLabel \\\\ [1ex]
          |\\LARGE $degreeLabel \\\\ [1ex]
          |\\LARGE $semesterLabel \\\\ [4.5ex]
-         |\\large TH Köln, Campus Gummersbach \\\\ [1.5ex]
+         |\\large Fakultät für Informatik und Ingenieurwissenschaften \\\\ [1.5ex]
          |\\large \\today
          |\\end{center}
          |\\vspace*{\\fill}
