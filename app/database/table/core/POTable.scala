@@ -22,6 +22,9 @@ final class POTable(tag: Tag) extends Table[PO](tag, "po") {
   def isValid(date: LocalDate = LocalDate.now): Rep[Boolean] =
     this.dateFrom <= date && this.dateTo.map(_ >= date).getOrElse(true)
 
+  def isExpired(date: LocalDate = LocalDate.now): Rep[Boolean] =
+    this.dateFrom <= date && this.dateTo.map(_ <= date).getOrElse(false)
+
   def studyProgramFk =
     foreignKey("study_program", studyProgram, TableQuery[StudyProgramTable])(
       _.id

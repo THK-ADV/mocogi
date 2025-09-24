@@ -1,7 +1,5 @@
 import java.time.format.DateTimeFormatter
 
-import scala.annotation.unused
-
 import models.core.*
 import models.ModuleWorkload
 
@@ -36,11 +34,10 @@ package object printing {
     builder.toString()
   }
 
+  // TODO: move them to the localization file
   final implicit class LanguageOps(private val self: PrintingLanguage) extends AnyVal {
 
     def moduleCatalogHeadline = self.fold("Modulhandbuch", "Module Catalog")
-
-    def prologHeadline = "Prolog"
 
     def previewLabel = self.fold("Vorschau", "Preview")
 
@@ -60,7 +57,6 @@ package object printing {
 
     def durationLabel = self.fold("Dauer des Moduls", "Duration of Module")
 
-    @unused
     def recommendedSemesterLabel =
       self.fold("Empfohlenes Studiensemester", "Recommended for Semester")
 
@@ -84,6 +80,12 @@ package object printing {
 
     def requiredPrerequisitesLabel =
       self.fold("Zwingende Voraussetzungen", "Required Prerequisites")
+
+    def attendanceRequirementLabel =
+      self.fold("Anwesenheitspflicht", "Attendance Requirement")
+
+    def assessmentPrerequisiteLabel =
+      self.fold("Prüfungsvorleistung", "Assessment Prerequisite")
 
     def poLabel = self.fold(
       "Verwendung des Moduls in weiteren Studiengängen",
@@ -138,9 +140,9 @@ package object printing {
     def workload(
         wl: ModuleWorkload,
         ects: Double,
+        ectsFactor: Int
     ): ((String, String), (String, String), (String, String)) = {
       // TODO: this is hardcoded for now, because the current data structure does not support the ects factor. change it soon
-      val ectsFactor        = 30
       val totalHoursValue   = (ects * ectsFactor).toInt
       val selfStudyValue    = wl.selfStudy(totalHoursValue)
       val contactHoursValue = totalHoursValue - selfStudyValue

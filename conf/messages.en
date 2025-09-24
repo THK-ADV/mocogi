@@ -18,6 +18,7 @@ exam_phase.short.off_sose=Outside SoSe
 exam_phase.short.none=TBA
 
 # Module Keys
+all.label=New module
 metadata.title.label=Modulbezeichnung
 metadata.title.desc=
 metadata.abbrev.label=Modulabkürzung

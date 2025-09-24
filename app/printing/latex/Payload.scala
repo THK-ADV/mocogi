@@ -5,12 +5,11 @@ import models.ModuleCore
 import models.StudyProgramView
 
 case class Payload(
-    studyProgram: StudyProgramView,
     moduleTypes: Seq[ModuleType],
     languages: Seq[ModuleLanguage],
     seasons: Seq[Season],
     people: Seq[Identity],
     assessmentMethods: Seq[AssessmentMethod],
-    studyProgramViews: Seq[StudyProgramView],
+    studyPrograms: Seq[StudyProgramView],
     modules: Seq[ModuleCore]
 )

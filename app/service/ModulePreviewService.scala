@@ -2,6 +2,7 @@ package service
 
 import java.nio.file.Files
 import java.nio.file.Path
+import java.nio.file.Paths
 import java.time.LocalDateTime
 import java.util.UUID
 import javax.inject.Inject
@@ -12,25 +13,27 @@ import scala.collection.mutable.ListBuffer
 import scala.collection.parallel.CollectionConverters.seqIsParallelizable
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
+import scala.util.control.NonFatal
 
+import cats.data.NonEmptyList
 import database.repo.core.*
 import database.view.StudyProgramViewRepository
 import git.api.GitDiffApiService
 import git.api.GitFileDownloadService
 import git.GitConfig
 import models.core.ModuleStatus
-import models.core.Specialization
-import models.FullPoId
 import models.ModuleCore
 import models.ModuleProtocol
 import models.StudyProgramView
 import ops.EitherOps.EStringThrowOps
-import parsing.metadata.ModulePOParser
+import ops.FileOps.FileOps0
 import play.api.i18n.Lang
 import play.api.i18n.MessagesApi
 import play.api.Logging
-import printing.latex.IntroContent
-import printing.latex.IntroContentProvider
+import printing.latex.snippet.DiffContentSnippet
+import printing.latex.snippet.IntroContentProvider
+import printing.latex.snippet.LatexContentSnippet
+import printing.latex.snippet.LayoutContentSnippet
 import printing.latex.ModuleCatalogLatexPrinter
 import printing.latex.Payload
 import printing.pandoc.PandocApi
@@ -52,45 +55,36 @@ final class ModulePreviewService @Inject() (
     identityService: IdentityService,
     assessmentMethodService: AssessmentMethodService,
     specializationRepository: SpecializationRepository,
+    poRepository: PORepository,
     pandocApi: PandocApi,
     messagesApi: MessagesApi,
     @Named("path.mcIntro") mcIntroPath: String,
+    @Named("path.mcAssets") mcAssetsPath: String,
     implicit val ctx: ExecutionContext
 ) extends Logging {
 
   implicit def gitConfig: GitConfig = diffApiService.config
 
-  def previewCatalog(
-      fullPoId: FullPoId,
-      pLang: PrintingLanguage,
-      lang: Lang,
-      latexFile: Path
-  ): Future[Path] = {
-    logger.info(s"generating module catalog preview for po ${fullPoId.id}")
+  private type ModuleDiffs = List[(ModuleCore, Set[String])]
 
-    val studyPrograms  = studyProgramViewRepo.notExpired()
-    val specialization = specializationRepository.get(fullPoId.id)
+  def previewCatalog(po: String, pLang: PrintingLanguage, lang: Lang, latexFile: Path): Future[Path] = {
+    logger.info(s"generating module catalog preview for po $po")
+
+    val studyPrograms = studyProgramViewRepo.notExpired().map { all =>
+      val poOnly = all.filter(_.po.id == po)
+      assume(poOnly.nonEmpty, s"expected study programs for po $po")
+      (all, poOnly)
+    }
 
     for {
-      studyPrograms  <- studyPrograms
-      specialization <- specialization
-      studyProgram <- studyPrograms.find(_.fullPoId == fullPoId) match {
-        case Some(value) =>
-          Future.successful(value)
-        case None =>
-          Future.failed(
-            new Exception(s"study program's po $fullPoId needs to be valid")
-          )
-      }
-      liveModules <- moduleService.allFromMandatoryPO(specialization.fold(fullPoId.id)(identity))
-      changedModules <- changedActiveModulesFromPreview(
-        specialization.fold(fullPoId.id)(identity),
-        liveModules.map(_._1.id.get)
-      )
-      modules = mergeModules(liveModules, changedModules)
-      diffs   = diff(liveModules, changedModules)
-      intro   = getIntroContent(latexFile.getParent, fullPoId)
-      content <- print(studyProgram, modules, studyPrograms, pLang, lang, diffs, intro)
+      (all, poOnly)  <- studyPrograms
+      liveModules    <- moduleService.allFromPO(po, activeOnly = true)
+      changedModules <- changedActiveModulesFromPreview(po, liveModules.map(_._1.id.get))
+      modules       = mergeModules(liveModules, changedModules)
+      moduleDiffs   = diffs(liveModules, changedModules)
+      latexSnippets = getLatexSnippets(latexFile.getParent, po, moduleDiffs)
+      _             = copyAssets(latexFile.getParent)
+      content <- print(poOnly, modules, all, pLang, lang, moduleDiffs, latexSnippets)
       path = Files.writeString(latexFile, content.toString)
       pdf <- compile(path).flatMap(_ => getPdf(path)).toFuture
     } yield pdf
@@ -100,23 +94,29 @@ final class ModulePreviewService @Inject() (
       liveModules: Seq[(ModuleProtocol, LocalDateTime)],
       changedModules: Seq[(ModuleProtocol, Option[LocalDateTime])]
   ) = {
-    val builder = ListBuffer[(ModuleProtocol, Option[LocalDateTime])]()
+    val builder = ListBuffer[(ModuleProtocol, Option[LocalDateTime])](changedModules*)
     liveModules.foreach {
-      case (module, lastModified) =>
-        if !changedModules.exists(_._1.id == module.id) then {
-          builder.append((module, Some(lastModified)))
+      case (liveModule, lastModified) =>
+        if !builder.exists(_._1.id.get == liveModule.id.get) then {
+          builder.append((liveModule, Some(lastModified)))
         }
     }
-    changedModules.foreach(builder.append)
+    assume(
+      builder.size == builder.distinctBy(_._1.id.get).size,
+      s"""expected modules to be unique
+         |liveModules: ${liveModules.map(_._1.id.get)}
+         |changedModules: ${changedModules.map(_._1.id.get)}
+         |builder: ${builder.map(_._1.id.get)}""".stripMargin
+    )
     builder.toList
   }
 
-  private def diff(
+  private def diffs(
       liveModules: Seq[(ModuleProtocol, LocalDateTime)],
       changedModules: Seq[(ModuleProtocol, Option[LocalDateTime])]
-  ): Seq[(ModuleCore, Set[String])] =
-    changedModules.map {
-      case (p, _) =>
+  ): ModuleDiffs =
+    changedModules.foldLeft(Nil) {
+      case (acc, (p, _)) =>
         val diffs = liveModules.find(_._1.id == p.id) match {
           case Some((existing, _)) =>
             val (_, diffs) = ModuleProtocolDiff.diff(
@@ -129,44 +129,32 @@ final class ModulePreviewService @Inject() (
           case None =>
             Set("all")
         }
-        (ModuleCore(p.id.get, p.metadata.title, p.metadata.abbrev), diffs)
+        acc.prepended((ModuleCore(p.id.get, p.metadata.title, p.metadata.abbrev), diffs))
     }
 
-  private def changedActiveModulesFromPreview(po: String | Specialization, liveModules: Seq[UUID]) = {
-    val poId = po match
-      case po: String                  => po
-      case Specialization(id, _, _, _) => id
-
+  private def changedActiveModulesFromPreview(po: String, liveModules: Seq[UUID]) =
     diffApiService
       .compare(gitConfig.mainBranch, gitConfig.draftBranch)
       .flatMap { diffs =>
-        val downloads = diffs.par.collect {
-          case d
-              if d.path.moduleId.exists(liveModules.contains) ||
-                (d.diff.contains(ModulePOParser.modulePOMandatoryKey) && d.diff.contains(poId)) =>
-            downloadService.downloadModuleFromPreviewBranchWithLastModified(d.path.moduleId.get)
-        }
+        val downloads =
+          diffs.par.map(d => downloadService.downloadModuleFromPreviewBranchWithLastModified(d.path.moduleId.get))
         Future.sequence(downloads.seq)
       }
       .map(_.collect {
-        case Some((m, lastModified)) if ModuleStatus.isActive(m.metadata.status) && m.metadata.po.mandatory.exists {
-              a =>
-                po match
-                  case po: String                   => a.po == po
-                  case Specialization(id, _, _, po) => a.po == po && a.specialization.fold(true)(_ == id)
-            } =>
+        case Some((m, lastModified))
+            if ModuleStatus.isActive(m.metadata.status) && (m.metadata.po.mandatory
+              .exists(a => a.po == po) || m.metadata.po.optional.exists(a => a.po == po)) =>
           (m, lastModified)
       }.toSeq)
-  }
 
   private def print(
-      studyProgram: StudyProgramView,
+      poOnly: Seq[StudyProgramView],
       modules: List[(ModuleProtocol, Option[LocalDateTime])],
       studyPrograms: Seq[StudyProgramView],
       pLang: PrintingLanguage,
       lang: Lang,
-      diffs: Seq[(ModuleCore, Set[String])],
-      intro: Option[IntroContent]
+      diffs: ModuleDiffs,
+      latexSnippets: List[LatexContentSnippet]
   ): Future[StringBuilder] = {
     val liveModules       = moduleService.allModuleCore()
     val createdModules    = moduleService.allNewlyCreated()
@@ -175,6 +163,7 @@ final class ModulePreviewService @Inject() (
     val seasons           = seasonRepository.all()
     val people            = identityService.all()
     val assessmentMethods = assessmentMethodService.all()
+    val currentPO         = poRepository.get(poOnly.head.po.id)
 
     for {
       liveModules       <- liveModules
@@ -184,9 +173,9 @@ final class ModulePreviewService @Inject() (
       seasons           <- seasons
       people            <- people
       assessmentMethods <- assessmentMethods
+      currentPO         <- currentPO
     } yield {
       val payload = Payload(
-        studyProgram,
         moduleTypes,
         languages,
         seasons,
@@ -198,8 +187,10 @@ final class ModulePreviewService @Inject() (
       val printer = ModuleCatalogLatexPrinter.preview(
         pandocApi,
         messagesApi,
-        diffs,
-        intro,
+        id => diffs.find(_._1.id == id).map(_._2),
+        latexSnippets,
+        poOnly,
+        currentPO,
         modules,
         payload,
         pLang,
@@ -209,8 +200,23 @@ final class ModulePreviewService @Inject() (
     }
   }
 
-  private def getIntroContent(dir: Path, fullPoId: FullPoId) = {
-    val provider = IntroContentProvider(dir, fullPoId, mcIntroPath)
-    provider.createIntroContent()
+  // TODO: same for prod catalog
+  private def copyAssets(parentDir: Path): Unit =
+    try {
+      Paths.get(mcAssetsPath).foreachFileOfDirectory { path =>
+        path.copy(parentDir).match {
+          case Left(err) => throw Exception(s"failed to copy assets into media folder: $err")
+          case Right(_)  =>
+        }
+      }
+    } catch {
+      case NonFatal(e) => throw Exception(e)
+    }
+
+  private def getLatexSnippets(dir: Path, po: String, moduleDiffs: ModuleDiffs): List[LatexContentSnippet] = {
+    val introContent = IntroContentProvider(dir, po, mcIntroPath).createIntroContent()
+    val diffContent  = NonEmptyList.fromList(moduleDiffs).map(DiffContentSnippet(_, messagesApi))
+    val layout       = LayoutContentSnippet()
+    layout :: List(diffContent, introContent).collect { case Some(snippet) => snippet }
   }
 }

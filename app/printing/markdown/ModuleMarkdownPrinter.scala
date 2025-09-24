@@ -192,7 +192,7 @@ final class ModuleMarkdownPrinter(
     )
 
   private def workload(implicit m: Metadata, language: PrintingLanguage) = {
-    val (workload, contactHour, selfStudy) = language.workload(m.workload, m.ects.value)
+    val (workload, contactHour, selfStudy) = language.workload(m.workload, m.ects.value, 30)
     row(workload._1, workload._2)
       .skip(row(contactHour._1, contactHour._2))
       .skip(row(selfStudy._1, selfStudy._2))

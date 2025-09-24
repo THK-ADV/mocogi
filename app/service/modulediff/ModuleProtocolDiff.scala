@@ -317,6 +317,8 @@ object ModuleProtocolDiff extends Logging {
   def isModuleAssessmentMethodsMandatory(key: String) = key == "metadata.assessmentMethods.mandatory"
   def isModuleRecommendedPrerequisites(key: String)   = key == "metadata.prerequisites.recommended"
   def isModuleRequiredPrerequisites(key: String)      = key == "metadata.prerequisites.required"
+  def isModuleAttendanceRequirement(key: String)      = key == "metadata.attendanceRequirement"
+  def isModuleAssessmentPrerequisite(key: String)     = key == "metadata.assessmentPrerequisite"
 
   private def log[A](
       field: String,

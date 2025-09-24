@@ -196,7 +196,6 @@ final class ModuleCatalogService @Inject() (
       def print(sp: StudyProgramView, pLang: PrintingLanguage) = {
         logger.info(s"printing ${sp.fullPoId}...")
         val payload = Payload(
-          sp,
           mts,
           lang,
           seasons,
@@ -209,7 +208,9 @@ final class ModuleCatalogService @Inject() (
           pandocApi,
           messagesApi,
           semester,
-          ms, // TODO all modules of all pos are passed. this is unnecessary and inefficient. investigate and fix
+          Seq(sp), // TODO
+          ???,     // TODO
+          ms,      // TODO all modules of all pos are passed. this is unnecessary and inefficient. investigate and fix
           payload,
           pLang,
           Lang.defaultLang // TODO replace with real lang

@@ -100,5 +100,9 @@ class Module(@unused environment: Environment, configuration: Configuration) ext
     bind(classOf[String])
       .annotatedWith(Names.named("path.mcIntro"))
       .toInstance(configuration.nonEmptyString("pandoc.mcIntroPath"))
+
+    bind(classOf[String])
+      .annotatedWith(Names.named("path.mcAssets"))
+      .toInstance(configuration.nonEmptyString("pandoc.mcAssetsPath"))
   }
 }
