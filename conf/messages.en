@@ -18,6 +18,7 @@ exam_phase.short.off_sose=Outside SoSe
 exam_phase.short.none=TBA
 
 # Module Keys
+all.label=New module
 metadata.title.label=Modulbezeichnung
 metadata.title.desc=
 metadata.abbrev.label=Modulabkürzung
@@ -99,10 +100,50 @@ module_review.notification.closing=???
 
 # Latex
 latex.lang.package_name=english
-latex.preview_label=Preview
-latex.module_diff.section.title=Module Changes
-latex.module_diff.section.intro=List of all module changes in the current editing phase. Click on a module name to navigate to the module. Changes are highlighted.
-latex.module.label=Modules
+latex.module_catalog.preview_label=Preview
+latex.module_catalog.module_diff.section.title=Module Changes
+latex.module_catalog.module_diff.section.intro=List of all module changes in the current editing phase. Click on a module name to navigate to the module. Changes are highlighted.
+latex.module_catalog.module.label=Modules
+latex.module_catalog.headline=Module Catalog
+latex.module_catalog.none=None
+latex.module_catalog.unknown=Unknown
+latex.module_catalog.semester=Semester
+latex.module_catalog.module_abbrev=Module Code
+latex.module_catalog.module_title=Module Title
+latex.module_catalog.module_type=Type of Module
+latex.module_catalog.ects=ECTS credits
+latex.module_catalog.language=Language
+latex.module_catalog.duration=Duration of Module
+latex.module_catalog.recommended_semester=Recommended for Semester
+latex.module_catalog.frequency=Frequency
+latex.module_catalog.module_management=Module Coordinator
+latex.module_catalog.lecturer=Lecturers
+latex.module_catalog.assessment_method=Assessment Method
+latex.module_catalog.workload=Workload
+latex.module_catalog.workload.contact_hours=Contact hours
+latex.module_catalog.workload.self_study=Self-study
+latex.module_catalog.workload.lecture={0} h Lecture
+latex.module_catalog.workload.exercise={0} h Exercise
+latex.module_catalog.workload.practical={0} h Practical
+latex.module_catalog.workload.seminar={0} h Seminar
+latex.module_catalog.workload.projectSupervision={0} h Project Supervision
+latex.module_catalog.workload.projectWork={0} h Project Work
+latex.module_catalog.prerequisite.recommended=Recommended Prerequisites
+latex.module_catalog.prerequisite.required=Required Prerequisites
+latex.module_catalog.prerequisite.attendance=Attendance Requirement
+latex.module_catalog.prerequisite.assessment=Assessment Prerequisite
+latex.module_catalog.prerequisite.module=Modules
+latex.module_catalog.po=Use of the Module in Other Degree Programs
+latex.module_catalog.po_short=Used in other Programs
+latex.module_catalog.last_modified=Last update at
+latex.module_catalog.parent=Consists of the submodules
+latex.module_catalog.child=Part of module
+latex.module_catalog.content.learning_outcome=Learning Outcome
+latex.module_catalog.content.module=Module Content
+latex.module_catalog.content.teaching_methods=Teaching and Learning Methods
+latex.module_catalog.content.reading=Recommended Reading
+latex.module_catalog.content.particularities=Particularities
+latex.module_catalog.season=Each {0}
 
 # Latex Exam Lists
 latex.exam_lists.title=Exam List

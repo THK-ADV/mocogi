@@ -5,6 +5,7 @@ import java.nio.file.Path
 import java.nio.file.Paths
 import java.nio.file.StandardCopyOption
 import java.time.LocalDateTime
+import java.util.Locale
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -34,12 +35,12 @@ import play.api.Logging
 import printing.latex.ModuleCatalogLatexPrinter
 import printing.latex.Payload
 import printing.pandoc.PandocApi
-import printing.PrintingLanguage
 import service.core.IdentityService
 import service.AssessmentMethodService
 import service.LatexCompiler
 import service.ModuleService
 
+// TODO: merge this call with ModuleCatalogPreviewService somehow
 @Singleton
 final class ModuleCatalogService @Inject() (
     private val apiAvailableService: GitAvailabilityChecker,
@@ -193,10 +194,9 @@ final class ModuleCatalogService @Inject() (
       liveModules    <- liveModules
       createdModules <- createdModules
     } yield {
-      def print(sp: StudyProgramView, pLang: PrintingLanguage) = {
+      def print(sp: StudyProgramView) = {
         logger.info(s"printing ${sp.fullPoId}...")
         val payload = Payload(
-          sp,
           mts,
           lang,
           seasons,
@@ -209,17 +209,17 @@ final class ModuleCatalogService @Inject() (
           pandocApi,
           messagesApi,
           semester,
-          ms, // TODO all modules of all pos are passed. this is unnecessary and inefficient. investigate and fix
+          Seq(sp), // TODO
+          ???,     // TODO
+          ms,      // TODO all modules of all pos are passed. this is unnecessary and inefficient. investigate and fix
           payload,
-          pLang,
-          Lang.defaultLang // TODO replace with real lang
+          Lang(Locale.GERMANY) // TODO replace with real lang
         )
         printer.print()
       }
 
       def compileAndRecover(
           sp: StudyProgramView,
-          pLang: PrintingLanguage,
           content: String,
           filename: String
       ) =
@@ -255,7 +255,6 @@ final class ModuleCatalogService @Inject() (
                     content,
                     texFile,
                     (),
-                    pLang
                   )
                 )
             }
@@ -265,12 +264,10 @@ final class ModuleCatalogService @Inject() (
       val brokenFiles        = ListBuffer.empty[Path]
 
       sps.par
-        .flatMap(po => PrintingLanguage.all().map(po -> _))
-        .map {
-          case (sp, pLang) =>
-            val content  = print(sp, pLang)
-            val filename = s"${pLang.id}_${semester.id}_${sp.fullPoId}"
-            compileAndRecover(sp, pLang, content.toString(), filename)
+        .map { sp =>
+          val content  = print(sp)
+          val filename = s"${semester.id}_${sp.fullPoId}"
+          compileAndRecover(sp, content.toString(), filename)
         }
         .seq
         .foreach {
@@ -342,17 +339,6 @@ final class ModuleCatalogService @Inject() (
   }
 
   private def createCatalogFiles(xs: Iterable[ModuleCatalogFile[Path]]) = {
-    def getPdfFileName(
-        xs: Iterable[ModuleCatalogFile[Path]],
-        lang: PrintingLanguage
-    ): String =
-      xs
-        .find(_.lang == lang)
-        .get
-        .pdfFile
-        .getFileName
-        .toString
-
     val moduleCatalogFolder =
       Paths.get(config.moduleCatalogOutputFolderPath).getFileName
 
@@ -360,17 +346,14 @@ final class ModuleCatalogService @Inject() (
       .groupBy(_.studyProgram.fullPoId)
       .map {
         case (_, xs) =>
-          val file  = xs.head
-          val dePdf = getPdfFileName(xs, PrintingLanguage.German)
-          val enPdf = getPdfFileName(xs, PrintingLanguage.English)
+          val file = xs.head
           ModuleCatalogEntry(
             file.studyProgram.fullPoId.id,
             file.studyProgram.po.id,
             file.studyProgram.specialization.map(_.id),
             file.studyProgram.id,
             file.semester.id,
-            FileController.makeURI(moduleCatalogFolder.toString, dePdf),
-            FileController.makeURI(moduleCatalogFolder.toString, enPdf),
+            FileController.makeURI(moduleCatalogFolder.toString, file.pdfFile.getFileName.toString),
             LocalDateTime.now()
           )
       }

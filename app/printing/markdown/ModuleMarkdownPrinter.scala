@@ -1,6 +1,9 @@
 package printing.markdown
 
 import java.time.LocalDateTime
+import java.util.Locale
+import javax.inject.Inject
+import javax.inject.Named
 import javax.inject.Singleton
 
 import scala.collection.mutable.ListBuffer
@@ -9,26 +12,24 @@ import cats.data.NonEmptyList
 import models.*
 import models.core.Identity
 import parsing.types.*
+import play.api.i18n.Lang
+import play.api.i18n.MessagesApi
 import printer.Printer
 import printer.Printer.newline
 import printer.Printer.prefix
-import printing.fmtCommaSeparated
-import printing.fmtDouble
-import printing.fmtIdentity
-import printing.localDatePattern
-import printing.LabelOps
-import printing.LanguageOps
-import printing.PrintingLanguage
+import printing.*
 
 @Singleton
 @deprecated(message = "we will move to explicit rendered modules instead of static html files")
-final class ModuleMarkdownPrinter(
-    private val substituteLocalisedContent: Boolean
+final class ModuleMarkdownPrinter @Inject() (
+    private val message: MessagesApi,
+    @Named("substituteLocalisedContent") private val substituteLocalisedContent: Boolean
 ) {
 
+  private val strings = new LocalizedStrings(message)(using Lang(Locale.GERMANY))
+
   private def row(key: String, value: String): Printer[Unit] =
-    prefix(s"| $key | $value |")
-      .skip(newline)
+    prefix(s"| $key | $value |").skip(newline)
 
   private def rows(key: String, value: NonEmptyList[String]): Printer[Unit] =
     value.zipWithIndex
@@ -38,17 +39,11 @@ final class ModuleMarkdownPrinter(
       }
       .reduceLeft(_ skip _)
 
-  private def fmtPeople(
-      label: String,
-      xs: NonEmptyList[Identity]
-  ): Printer[Unit] = {
+  private def fmtPeople(label: String, xs: NonEmptyList[Identity]): Printer[Unit] = {
     rows(label, xs.map(fmtIdentity))
   }
 
-  private def fmtPrerequisites(
-      label: String,
-      entry: Option[ModulePrerequisiteEntry]
-  )(implicit lang: PrintingLanguage): Printer[Unit] =
+  private def fmtPrerequisites(label: String, entry: Option[ModulePrerequisiteEntry]): Printer[Unit] =
     entry match {
       case Some(p) if p.text.nonEmpty || p.modules.nonEmpty =>
         val builder = new ListBuffer[String]()
@@ -57,29 +52,25 @@ final class ModuleMarkdownPrinter(
         }
         if p.modules.nonEmpty then {
           val subBuilder  = new StringBuilder()
-          val moduleLabel = lang.prerequisitesModuleLabel
+          val moduleLabel = strings.prerequisitesModuleLabel
           subBuilder.append(s"$moduleLabel: ")
           subBuilder.append(p.modules.map(a => s"${a.title} (${a.abbrev})").mkString(", "))
           builder.append(subBuilder.toString())
         }
         rows(label, NonEmptyList.fromList(builder.toList).get)
       case _ =>
-        row(label, lang.noneLabel)
+        row(label, strings.noneLabel)
     }
 
-  private def fmtPOs(
-      label: String,
-      pos: ModulePOs,
-      studyProgram: String => Option[StudyProgramView]
-  )(implicit lang: PrintingLanguage): Printer[Unit] = {
+  private def fmtPOs(label: String, pos: ModulePOs, studyProgram: String => Option[StudyProgramView]): Printer[Unit] = {
     def fmt(p: ModulePOMandatory) = {
       val semester = Option.when(p.recommendedSemester.nonEmpty)(
-        s"(${lang.semesterLabel} ${fmtCommaSeparated(p.recommendedSemester)(_.toString)})"
+        s"(${strings.semesterLabel} ${fmtCommaSeparated(p.recommendedSemester)(_.toString)})"
       )
       val studyProgramWithPO = studyProgram(p.po.program) match {
         case Some(sp) =>
-          val spLabel     = sp.localizedLabel
-          val degreeLabel = sp.degree.localizedLabel
+          val spLabel     = strings.label(sp)
+          val degreeLabel = strings.label(sp.degree)
           s"$degreeLabel: $spLabel PO ${p.po.version}"
         case None =>
           p.po.id
@@ -88,33 +79,28 @@ final class ModuleMarkdownPrinter(
     }
     NonEmptyList
       .fromList(pos.mandatory)
-      .fold(row(label, lang.noneLabel))(xs => rows(label, xs.map(fmt)))
+      .fold(row(label, strings.noneLabel))(xs => rows(label, xs.map(fmt)))
   }
 
-  private def fmtModuleRelation(
-      relation: ModuleRelation
-  )(implicit lang: PrintingLanguage): Printer[Unit] =
+  private def fmtModuleRelation(relation: ModuleRelation): Printer[Unit] =
     relation match {
       case ModuleRelation.Parent(children) =>
         row(
-          lang.parentLabel,
+          strings.parentLabel,
           fmtCommaSeparated(children.toList)(_.abbrev)
         )
       case ModuleRelation.Child(parent) =>
-        row(lang.childLabel, parent.abbrev)
+        row(strings.childLabel, parent.abbrev)
     }
 
-  private def fmtAssessmentMethod(
-      label: String,
-      ams: ModuleAssessmentMethods
-  )(implicit lang: PrintingLanguage): Printer[Unit] =
+  private def fmtAssessmentMethod(label: String, ams: ModuleAssessmentMethods): Printer[Unit] =
     NonEmptyList
       .fromList(ams.mandatory)
-      .fold(row(label, lang.noneLabel)) { xs =>
+      .fold(row(label, strings.noneLabel)) { xs =>
         rows(
           label,
           xs.map { am =>
-            val methodValue = lang.value(am.method)
+            val methodValue = strings.label(am.method)
             am.percentage.fold(methodValue)(d => s"$methodValue (${fmtDouble(d)} %)")
           }
         )
@@ -123,13 +109,10 @@ final class ModuleMarkdownPrinter(
   private def header(title: String) =
     prefix(s"## $title").skip(newline)
 
-  def contentBlock(title: String, de: String, en: String)(
-      implicit lang: PrintingLanguage,
-      substituteLocalisedContent: Boolean
-  ) = {
+  def contentBlock(title: String, de: String, en: String) = {
     val content = {
-      val l = lang.fold(de, en)
-      if (l.isEmpty && substituteLocalisedContent) lang.fold(en, de) else l
+      val l = if strings.isGerman then de else en
+      if (l.isEmpty && substituteLocalisedContent) if strings.isGerman then en else de else l
     }
     val contentPrinter =
       if (content.isEmpty) newline
@@ -140,126 +123,77 @@ final class ModuleMarkdownPrinter(
     header(title).skip(contentPrinter)
   }
 
-  private def moduleNumber(implicit m: Metadata, language: PrintingLanguage) =
-    row(language.moduleCodeLabel, m.abbrev)
+  private def moduleNumber(implicit m: Metadata) =
+    row(strings.moduleAbbrevLabel, m.abbrev)
 
-  private def moduleTitle(implicit m: Metadata, language: PrintingLanguage) =
-    row(language.moduleTitleLabel, m.title)
+  private def moduleTitle(implicit m: Metadata) =
+    row(strings.moduleTitleLabel, m.title)
 
-  private def moduleType(implicit m: Metadata, language: PrintingLanguage) =
-    row(language.moduleTypeLabel, language.value(m.kind))
+  private def moduleType(implicit m: Metadata) =
+    row(strings.moduleTypeLabel, strings.label(m.kind))
 
-  private def ects(implicit m: Metadata, language: PrintingLanguage) =
-    row(language.ectsLabel, fmtDouble(m.ects.value))
+  private def ects(implicit m: Metadata) =
+    row(strings.ectsLabel, fmtDouble(m.ects.value))
 
-  private def language(implicit m: Metadata, language: PrintingLanguage) =
-    row(language.languageLabel, language.value(m.language))
+  private def language(implicit m: Metadata) =
+    row(strings.languageLabel, strings.label(m.language))
 
-  private def duration(implicit m: Metadata, language: PrintingLanguage) =
-    row(language.durationLabel, s"${m.duration} ${language.semesterLabel}")
+  private def duration(implicit m: Metadata) =
+    row(strings.durationLabel, s"${m.duration} ${strings.semesterLabel}")
 
-  private def frequency(implicit m: Metadata, language: PrintingLanguage) =
-    row(language.frequencyLabel, language.frequencyValue(m.season))
+  private def frequency(implicit m: Metadata) =
+    row(strings.frequencyLabel, strings.frequencyLabel(m.season))
 
-  private def moduleCoordinator(implicit m: Metadata, language: PrintingLanguage) =
-    fmtPeople(
-      language.moduleCoordinatorLabel,
-      m.responsibilities.moduleManagement
-    )
+  private def moduleCoordinator(implicit m: Metadata) =
+    fmtPeople(strings.moduleCoordinatorLabel, m.responsibilities.moduleManagement)
 
-  private def moduleLecturer(implicit m: Metadata, language: PrintingLanguage) =
-    fmtPeople(
-      language.lecturersLabel,
-      m.responsibilities.lecturers
-    )
+  private def moduleLecturer(implicit m: Metadata) =
+    fmtPeople(strings.lecturersLabel, m.responsibilities.lecturers)
 
-  private def assessmentMethods(implicit m: Metadata, language: PrintingLanguage) =
-    fmtAssessmentMethod(
-      language.assessmentMethodLabel,
-      m.assessmentMethods
-    )
+  private def assessmentMethods(implicit m: Metadata) =
+    fmtAssessmentMethod(strings.assessmentMethodLabel, m.assessmentMethods)
 
-  private def recommendedPrerequisites(implicit m: Metadata, language: PrintingLanguage) =
-    fmtPrerequisites(
-      language.recommendedPrerequisitesLabel,
-      m.prerequisites.recommended
-    )
+  private def recommendedPrerequisites(implicit m: Metadata) =
+    fmtPrerequisites(strings.recommendedPrerequisitesLabel, m.prerequisites.recommended)
 
-  private def requiredPrerequisites(implicit m: Metadata, language: PrintingLanguage) =
-    fmtPrerequisites(
-      language.requiredPrerequisitesLabel,
-      m.prerequisites.required
-    )
+  private def requiredPrerequisites(implicit m: Metadata) =
+    fmtPrerequisites(strings.requiredPrerequisitesLabel, m.prerequisites.required)
 
-  private def workload(implicit m: Metadata, language: PrintingLanguage) = {
-    val (workload, contactHour, selfStudy) = language.workload(m.workload, m.ects.value)
+  private def workload(implicit m: Metadata) = {
+    val (workload, contactHour, selfStudy) = strings.workloadLabels(m.workload, m.ects.value, 30)
     row(workload._1, workload._2)
       .skip(row(contactHour._1, contactHour._2))
       .skip(row(selfStudy._1, selfStudy._2))
   }
 
-  private def pos(studyProgram: String => Option[StudyProgramView])(implicit m: Metadata, language: PrintingLanguage) =
-    fmtPOs(language.poLabel, m.pos, studyProgram)
+  private def pos(studyProgram: String => Option[StudyProgramView])(implicit m: Metadata) =
+    fmtPOs(strings.poLabel, m.pos, studyProgram)
 
-  private def lastModified(implicit lang: PrintingLanguage, localDateTime: LocalDateTime) =
-    prefix(s"${lang.lastModifiedLabel} ${localDateTime.format(localDatePattern)}")
+  private def lastModified(implicit localDateTime: LocalDateTime) =
+    prefix(s"${strings.lastModifiedLabel} ${localDateTime.format(localDatePattern)}")
 
   private def header(implicit m: Metadata) =
     prefix("# ").skip(prefix(m.title))
 
-  private def particularities(
-      de: ModuleContent,
-      en: ModuleContent
-  )(implicit lang: PrintingLanguage, substituteLocalisedContent: Boolean) =
-    contentBlock(
-      lang.particularitiesLabel,
-      de.particularities,
-      en.particularities
-    )
+  private def particularities(de: ModuleContent, en: ModuleContent) =
+    contentBlock(strings.particularitiesLabel, de.particularities, en.particularities)
 
-  private def recommendedReading(
-      de: ModuleContent,
-      en: ModuleContent
-  )(implicit lang: PrintingLanguage, substituteLocalisedContent: Boolean) =
-    contentBlock(
-      lang.recommendedReadingLabel,
-      de.recommendedReading,
-      en.recommendedReading
-    )
+  private def recommendedReading(de: ModuleContent, en: ModuleContent) =
+    contentBlock(strings.recommendedReadingLabel, de.recommendedReading, en.recommendedReading)
 
-  private def teachingAndLearningMethods(de: ModuleContent, en: ModuleContent)(
-      implicit lang: PrintingLanguage,
-      substituteLocalisedContent: Boolean
-  ) =
-    contentBlock(
-      lang.teachingAndLearningMethodsLabel,
-      de.teachingAndLearningMethods,
-      en.teachingAndLearningMethods
-    )
+  private def teachingAndLearningMethods(de: ModuleContent, en: ModuleContent) =
+    contentBlock(strings.teachingAndLearningMethodsLabel, de.teachingAndLearningMethods, en.teachingAndLearningMethods)
 
-  private def moduleContent(de: ModuleContent, en: ModuleContent)(
-      implicit lang: PrintingLanguage,
-      substituteLocalisedContent: Boolean
-  ) =
-    contentBlock(lang.moduleContentLabel, de.content, en.content)
+  private def moduleContent(de: ModuleContent, en: ModuleContent) =
+    contentBlock(strings.moduleContentLabel, de.content, en.content)
 
-  private def learningOutcome(
-      de: ModuleContent,
-      en: ModuleContent
-  )(implicit lang: PrintingLanguage, substituteLocalisedContent: Boolean) =
-    contentBlock(
-      lang.learningOutcomeLabel,
-      de.learningOutcome,
-      en.learningOutcome
-    )
+  private def learningOutcome(de: ModuleContent, en: ModuleContent) =
+    contentBlock(strings.learningOutcomeLabel, de.learningOutcome, en.learningOutcome)
 
-  def printer(
-      studyProgram: String => Option[StudyProgramView]
-  )(implicit lang: PrintingLanguage, lastModified: LocalDateTime): Printer[Module] =
+  def printer(studyProgram: String => Option[StudyProgramView])(implicit lastModified: LocalDateTime): Printer[Module] =
     Printer {
       case (module, input) =>
-        implicit val m: Metadata  = module.metadata
-        implicit val slc: Boolean = substituteLocalisedContent
+        implicit val m: Metadata = module.metadata
 
         header
           .skip(newline.repeat(2))
@@ -286,7 +220,7 @@ final class ModuleMarkdownPrinter(
           .skip(teachingAndLearningMethods(module.deContent, module.enContent))
           .skip(recommendedReading(module.deContent, module.enContent))
           .skip(particularities(module.deContent, module.enContent))
-          .skip(prefix("---").skip(newline.repeat(2)).skip(this.lastModified(lang, lastModified)))
+          .skip(prefix("---").skip(newline.repeat(2)).skip(this.lastModified(lastModified)))
           .print((), input)
     }
 }

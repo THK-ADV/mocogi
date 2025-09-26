@@ -10,6 +10,7 @@ import scala.concurrent.Future
 import database.repo.Repository
 import database.table.core.POTable
 import models.core.PO
+import ops.FutureOps.SeqOps
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.db.slick.HasDatabaseConfigProvider
 import slick.jdbc.JdbcProfile
@@ -30,8 +31,14 @@ final class PORepository @Inject() (
   def allValid(date: LocalDate = LocalDate.now): Future[Seq[PO]] =
     retrieve(tableQuery.filter(_.isValid(date)))
 
+  def allExpired(date: LocalDate = LocalDate.now): Future[Seq[PO]] =
+    retrieve(tableQuery.filter(_.isExpired(date)))
+
   def allWithIds(pos: List[String]): Future[Seq[PO]] =
     retrieve(tableQuery.filter(_.id.inSet(pos)))
+
+  def get(id: String): Future[PO] =
+    retrieve(tableQuery.filter(_.id === id)).single
 
   protected override def retrieve(
       query: Query[POTable, PO, Seq]

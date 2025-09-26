@@ -35,7 +35,6 @@ import play.api.mvc.ControllerComponents
 import play.mvc.Http.HeaderNames
 import printing.latex.TextIntroRewriter
 import printing.latex.WordTexPrinter
-import printing.PrintingLanguage
 import service.ModulePreviewService
 
 @Singleton
@@ -73,19 +72,12 @@ final class ModuleCatalogController @Inject() (
       .async { r =>
         r.headers.get(HeaderNames.ACCEPT) match {
           case Some(MimeTypes.PDF) =>
-            // german locale
-            val pLang    = PrintingLanguage.German
             val lang     = Lang(Locale.GERMANY)
-            val filename = s"${pLang.id}_module_catalog_draft_$po"
+            val filename = s"module_catalog_draft_$po"
             val newDir   = Files.createDirectories(Paths.get(tmpDir).resolve(System.currentTimeMillis().toString))
             val file     = Files.createFile(newDir.resolve(s"$filename.tex"))
             previewService
-              .previewCatalog(
-                FullPoId(po),
-                pLang,
-                lang,
-                file
-              )
+              .previewCatalog(po, lang, file)
               .map(path =>
                 Ok.sendPath(
                   path,

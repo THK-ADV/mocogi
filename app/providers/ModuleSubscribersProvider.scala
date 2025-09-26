@@ -9,7 +9,6 @@ import scala.concurrent.ExecutionContext
 import database.view.ModuleViewRepository
 import database.view.StudyProgramViewRepository
 import git.subscriber.*
-import kafka.Topics
 import ops.ConfigurationOps.Ops
 import org.apache.pekko.actor.ActorSystem
 import play.api.Configuration
@@ -38,10 +37,7 @@ final class ModuleSubscribersProvider @Inject() (
         system.actorOf(
           ModulePrintingActor.props(
             printer,
-            PrinterOutputType.HTMLStandaloneFile(
-              configReader.deOutputFolderPath,
-              configReader.enOutputFolderPath
-            ),
+            PrinterOutputType.HTMLStandaloneFile(configReader.deOutputFolderPath),
             studyProgramViewRepo,
             ctx
           )
@@ -56,17 +52,17 @@ final class ModuleSubscribersProvider @Inject() (
               ctx
             )
         ),
-        system.actorOf(
-          ModulePublishActor.props(
-            kafkaServerUrl,
-            ctx,
-            Topics(
-              kafkaModuleCreatedTopic,
-              kafkaModuleUpdatedTopic,
-              kafkaModuleDeletedTopic
-            )
-          )
-        )
+//        system.actorOf(
+        //          ModulePublishActor.props(
+        //            kafkaServerUrl,
+        //            ctx,
+        //            Topics(
+        //              kafkaModuleCreatedTopic,
+        //              kafkaModuleUpdatedTopic,
+        //              kafkaModuleDeletedTopic
+        //            )
+        //          )
+        //        )
       )
     )
 

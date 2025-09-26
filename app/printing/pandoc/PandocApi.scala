@@ -12,26 +12,20 @@ import scala.util.Failure
 import scala.util.Success
 import scala.util.Try
 
-import printing.PrintingLanguage
-
 @Singleton
-final class PandocApi(
-    htmlCmd: String,
-    pdfCmd: String,
-    texCmd: String
-) {
+final class PandocApi(htmlCmd: String, pdfCmd: String, texCmd: String) {
 
   private val htmlExtension = "html"
 
   private val pdfExtension = "pdf"
 
-  def toLatex(
-      input: String
-  ): Either[(Throwable, String), String] = {
+  def toLatex(input: String): Either[(Throwable, String), String] = {
     val inputStream = toStream(input)
-    val process     = texCmd #< inputStream
-    val sdtErr      = new StringBuilder()
-    val logger      = ProcessLogger(_ => {}, sdtErr.append(_))
+    // replaces backslashes with the appropriate \textbackslash{} command
+    val sedCmd  = "sed s/\\\\/\\\\textbackslash{}/g"
+    val process = sedCmd #| texCmd #< inputStream
+    val sdtErr  = new StringBuilder()
+    val logger  = ProcessLogger(_ => {}, sdtErr.append)
     try {
       Right(process !! logger)
     } catch {
@@ -44,7 +38,6 @@ final class PandocApi(
       id: UUID,
       outputType: PrinterOutputType,
       input: String,
-      lang: PrintingLanguage
   ): Either[Throwable, PrinterOutput] = {
     val inputStream = toStream(input)
     val res = outputType match {
@@ -52,25 +45,25 @@ final class PandocApi(
         createText(htmlCmd, htmlExtension, inputStream)
       case PrinterOutputType.HTMLStandalone =>
         createText(standalone(htmlCmd), htmlExtension, inputStream)
-      case PrinterOutputType.HTMLFile(de, en) =>
-        createFile(id, htmlExtension, htmlCmd, inputStream, lang.fold(de, en))
-      case PrinterOutputType.HTMLStandaloneFile(de, en) =>
+      case PrinterOutputType.HTMLFile(path) =>
+        createFile(id, htmlExtension, htmlCmd, inputStream, path)
+      case PrinterOutputType.HTMLStandaloneFile(path) =>
         createFile(
           id,
           htmlExtension,
           standalone(htmlCmd),
           inputStream,
-          lang.fold(de, en)
+          path
         )
-      case PrinterOutputType.PDFFile(de, en) =>
-        createFile(id, pdfExtension, pdfCmd, inputStream, lang.fold(de, en))
-      case PrinterOutputType.PDFStandaloneFile(de, en) =>
+      case PrinterOutputType.PDFFile(path) =>
+        createFile(id, pdfExtension, pdfCmd, inputStream, path)
+      case PrinterOutputType.PDFStandaloneFile(path) =>
         createFile(
           id,
           pdfExtension,
           standalone(pdfCmd),
           inputStream,
-          lang.fold(de, en)
+          path
         )
     }
     inputStream.close()
@@ -78,9 +71,7 @@ final class PandocApi(
   }
 
   private def toStream(input: String) =
-    new ByteArrayInputStream(
-      input.getBytes(StandardCharsets.UTF_8)
-    )
+    new ByteArrayInputStream(input.getBytes(StandardCharsets.UTF_8))
 
   private def standalone(cmd: String): String = s"$cmd -s"
 

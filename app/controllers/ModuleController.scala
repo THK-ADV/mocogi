@@ -36,7 +36,6 @@ import play.api.mvc.Request
 import printing.html.ModuleHTMLPrinter
 import printing.pandoc.PrinterOutput
 import printing.pandoc.PrinterOutputType
-import printing.PrintingLanguage
 import providers.ConfigReader
 import service.MetadataPipeline
 import service.ModuleDraftService
@@ -192,7 +191,7 @@ final class ModuleController @Inject() (
   def getLatestFile(id: UUID) =
     auth.async { implicit r =>
       draftService.getByModuleOpt(id).flatMap {
-        case Some(draft) => printHtml(draft.print, draft.lastModified, r.lang.toPrintingLang()).map(respondWithFile)
+        case Some(draft) => printHtml(draft.print, draft.lastModified).map(respondWithFile)
         case None        => getPreviewFile0(id)
       }
     }
@@ -204,10 +203,10 @@ final class ModuleController @Inject() (
         pipeline.parseValidate(Print(r.body)).map(m => Ok(Json.toJson(m)))
       )
 
-  private def printHtml(print: Print, lastModified: LocalDateTime, lang: PrintingLanguage): Future[String] =
+  private def printHtml(print: Print, lastModified: LocalDateTime): Future[String] =
     for
       module <- pipeline.parseValidate(print)
-      output <- printer.print(module, lang, lastModified, PrinterOutputType.HTMLStandalone)
+      output <- printer.print(module, lastModified, PrinterOutputType.HTMLStandalone)
       res <- output match {
         case Left(err)                          => Future.failed(err)
         case Right(PrinterOutput.Text(c, _, _)) => Future.successful(c)
@@ -227,21 +226,18 @@ final class ModuleController @Inject() (
 
   private def getPreviewFile0(module: UUID)(implicit r: Request[AnyContent]) =
     gitFileDownloadService
-      .downloadModuleFromPreviewBranchAsHTML(module)(r.parseLang())
+      .downloadModuleFromPreviewBranchAsHTML(module)
       .map {
         case Some(content) => respondWithFile(content)
         case None          => NotFound
       }
-
-  private def outputFolderPath(lang: PrintingLanguage) =
-    lang.fold(configReader.deOutputFolderPath, configReader.enOutputFolderPath)
 
   private def getFromPreview(moduleId: UUID) =
     gitFileDownloadService.downloadModuleFromPreviewBranch(moduleId)
 
   private def getStaticFile(moduleId: UUID)(implicit r: Request[AnyContent]) = {
     val filename = s"$moduleId.html"
-    val folder   = outputFolderPath(r.parseLang())
+    val folder   = configReader.deOutputFolderPath
     try {
       val path = Paths.get(s"$folder/$filename")
       Ok.sendFile(content = path.toFile, fileName = f => Some(f.getName))

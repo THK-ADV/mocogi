@@ -20,11 +20,8 @@ final class ModuleCreationService @Inject() (
     private val identityRepo: IdentityRepository,
     private implicit val ctx: ExecutionContext,
 ) {
-  def createWithPermissions(module: CreatedModule): Future[Unit] =
-    repo.create(module).flatMap(_ => updateModuleManagement(module.module, module.moduleManagement))
-
-  def updateWithPermissions(module: CreatedModule): Future[Unit] =
-    repo.update(module).flatMap(_ => updateModuleManagement(module.module, module.moduleManagement))
+  def createOrUpdateWithPermissions(module: CreatedModule): Future[Unit] =
+    repo.insertOrUpdate(module).flatMap(_ => updateModuleManagement(module.module, module.moduleManagement))
 
   private def updateModuleManagement(module: UUID, moduleManagement: List[String]): Future[Unit] =
     for
@@ -33,7 +30,7 @@ final class ModuleCreationService @Inject() (
     yield ()
 
   def createManyWithPermissions(modules: List[CreatedModule]): Future[Unit] =
-    Future.sequence(modules.map(createWithPermissions)).map(_ => ())
+    Future.sequence(modules.map(createOrUpdateWithPermissions)).map(_ => ())
 
   def allAsModuleCore(): Future[Seq[ModuleCore]] =
     repo.allAsModuleCore()

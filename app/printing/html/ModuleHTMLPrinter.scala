@@ -14,8 +14,8 @@ import printing.markdown.ModuleMarkdownPrinter
 import printing.pandoc.PandocApi
 import printing.pandoc.PrinterOutput
 import printing.pandoc.PrinterOutputType
-import printing.PrintingLanguage
 
+@deprecated
 @Singleton
 final class ModuleHTMLPrinter @Inject() (
     studyProgramViewRepo: StudyProgramViewRepository,
@@ -25,25 +25,22 @@ final class ModuleHTMLPrinter @Inject() (
 ) {
   def print(
       module: Module,
-      lang: PrintingLanguage,
       lastModified: LocalDateTime,
       outputType: PrinterOutputType,
       studyProgram: String => Option[StudyProgramView]
   ): Either[Throwable, PrinterOutput] = printer
-    .printer(studyProgram)(lang, lastModified)
+    .printer(studyProgram)(lastModified)
     .print(module, new StringBuilder())
-    .flatMap(s => pandoc.run(module.metadata.id, outputType, s.toString(), lang))
+    .flatMap(s => pandoc.run(module.metadata.id, outputType, s.toString()))
 
   def print(
       module: Module,
-      lang: PrintingLanguage,
       lastModified: LocalDateTime,
       outputType: PrinterOutputType
   ): Future[Either[Throwable, PrinterOutput]] =
     studyProgramViewRepo.notExpired().map { sps =>
       print(
         module,
-        lang,
         lastModified,
         outputType,
         sp => sps.find(_.id == sp)

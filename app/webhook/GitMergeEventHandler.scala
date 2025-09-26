@@ -480,16 +480,13 @@ object GitMergeEventHandler {
       }
     }
 
-    private def createNewModuleWithPermissions(id: UUID, module: CreatedModule, diff: CommitDiff) = {
-      val action =
-        if diff.isNewFile then moduleCreationService.createWithPermissions(module).map(_ => "created new module")
-        else moduleCreationService.updateWithPermissions(module).map(_ => "updated module")
-      action.map(prefixStr =>
+    private def createNewModuleWithPermissions(id: UUID, module: CreatedModule, diff: CommitDiff) =
+      moduleCreationService.createOrUpdateWithPermissions(module).map { _ =>
+        val prefixStr = if diff.isNewFile then "created new module" else "updated module"
         logger.info(
           s"[$id][${Thread.currentThread().getName.last}] $prefixStr ${module.module} with ${module.moduleManagement.size} permissions"
         )
-      )
-    }
+      }
 
     private def parseCreatedModuleInformation(content: GitFileContent, module: => UUID) =
       try RawModuleParser.parseCreatedModuleInformation(content.value)

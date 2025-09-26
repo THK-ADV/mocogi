@@ -25,6 +25,9 @@ final class POService @Inject() (
   def allValid() =
     repo.allValid()
 
+  def allExpired() =
+    repo.allExpired()
+
   def allWithIds(pos: List[String]) =
     repo.allWithIds(pos)
 }
