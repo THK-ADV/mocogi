@@ -4,13 +4,10 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.time.LocalDateTime
-import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Named
 import javax.inject.Singleton
 
-import scala.collection.mutable.ListBuffer
-import scala.collection.parallel.CollectionConverters.seqIsParallelizable
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.util.control.NonFatal
@@ -21,7 +18,6 @@ import database.view.StudyProgramViewRepository
 import git.api.GitDiffApiService
 import git.api.GitFileDownloadService
 import git.GitConfig
-import models.core.ModuleStatus
 import models.ModuleCore
 import models.ModuleProtocol
 import models.StudyProgramView
@@ -44,8 +40,8 @@ import service.LatexCompiler.getPdf
 
 @Singleton
 final class ModulePreviewService @Inject() (
-    diffApiService: GitDiffApiService,
-    downloadService: GitFileDownloadService,
+    val diffApiService: GitDiffApiService,
+    val downloadService: GitFileDownloadService,
     moduleService: ModuleService,
     studyProgramViewRepo: StudyProgramViewRepository,
     moduleTypeRepository: ModuleTypeRepository,
@@ -60,7 +56,8 @@ final class ModulePreviewService @Inject() (
     @Named("path.mcIntro") mcIntroPath: String,
     @Named("path.mcAssets") mcAssetsPath: String,
     implicit val ctx: ExecutionContext
-) extends Logging {
+) extends Logging
+    with ModulePreview {
 
   implicit def gitConfig: GitConfig = diffApiService.config
 
@@ -78,7 +75,7 @@ final class ModulePreviewService @Inject() (
     for {
       (all, poOnly)  <- studyPrograms
       liveModules    <- moduleService.allFromPO(po, activeOnly = true)
-      changedModules <- changedActiveModulesFromPreview(po, liveModules.map(_._1.id.get))
+      changedModules <- changedActiveModulesFromPreviewWithLastModified(po, liveModules.map(_._1.id.get))
       modules       = mergeModules(liveModules, changedModules)
       moduleDiffs   = diffs(liveModules, changedModules)
       latexSnippets = getLatexSnippets(latexFile.getParent, po, moduleDiffs)
@@ -87,27 +84,6 @@ final class ModulePreviewService @Inject() (
       path = Files.writeString(latexFile, content.toString)
       pdf <- compile(path).flatMap(_ => getPdf(path)).toFuture
     } yield pdf
-  }
-
-  private def mergeModules(
-      liveModules: Seq[(ModuleProtocol, LocalDateTime)],
-      changedModules: Seq[(ModuleProtocol, Option[LocalDateTime])]
-  ) = {
-    val builder = ListBuffer[(ModuleProtocol, Option[LocalDateTime])](changedModules*)
-    liveModules.foreach {
-      case (liveModule, lastModified) =>
-        if !builder.exists(_._1.id.get == liveModule.id.get) then {
-          builder.append((liveModule, Some(lastModified)))
-        }
-    }
-    assume(
-      builder.size == builder.distinctBy(_._1.id.get).size,
-      s"""expected modules to be unique
-         |liveModules: ${liveModules.map(_._1.id.get)}
-         |changedModules: ${changedModules.map(_._1.id.get)}
-         |builder: ${builder.map(_._1.id.get)}""".stripMargin
-    )
-    builder.toList
   }
 
   private def diffs(
@@ -131,24 +107,9 @@ final class ModulePreviewService @Inject() (
         acc.prepended((ModuleCore(p.id.get, p.metadata.title, p.metadata.abbrev), diffs))
     }
 
-  private def changedActiveModulesFromPreview(po: String, liveModules: Seq[UUID]) =
-    diffApiService
-      .compare(gitConfig.mainBranch, gitConfig.draftBranch)
-      .flatMap { diffs =>
-        val downloads =
-          diffs.par.map(d => downloadService.downloadModuleFromPreviewBranchWithLastModified(d.path.moduleId.get))
-        Future.sequence(downloads.seq)
-      }
-      .map(_.collect {
-        case Some((m, lastModified))
-            if ModuleStatus.isActive(m.metadata.status) && (m.metadata.po.mandatory
-              .exists(a => a.po == po) || m.metadata.po.optional.exists(a => a.po == po)) =>
-          (m, lastModified)
-      }.toSeq)
-
   private def print(
       poOnly: Seq[StudyProgramView],
-      modules: List[(ModuleProtocol, Option[LocalDateTime])],
+      modules: Seq[(ModuleProtocol, Option[LocalDateTime])],
       studyPrograms: Seq[StudyProgramView],
       lang: Lang,
       diffs: ModuleDiffs,

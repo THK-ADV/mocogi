@@ -17,4 +17,5 @@ RUN mkdir -p output/catalogs
 RUN mkdir -p output/electives
 RUN mkdir -p mc
 RUN mkdir -p mc/intro
+RUN mkdir -p mc/assets
 CMD bin/mocogi -Dconfig.file=conf/application-prod.conf

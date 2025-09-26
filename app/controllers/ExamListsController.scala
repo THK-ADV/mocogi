@@ -39,7 +39,7 @@ final class ExamListsController @Inject() (
     with PersonAction {
 
   def getPreview(studyProgram: String, po: String) =
-    get0(studyProgram, po)((po, file) => service.previewExamLists(po, file))
+    get0(studyProgram, po)((po, file) => service.examListsPreview(po, file))
 
   def get(studyProgram: String, po: String) =
     get0(studyProgram, po)((po, file) => service.examLists(po, file))

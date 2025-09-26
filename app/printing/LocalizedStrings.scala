@@ -1,6 +1,5 @@
 package printing
 
-
 import models.core.IDLabelDesc
 import models.core.Label
 import models.core.Season
