@@ -94,7 +94,7 @@ content.particularities.desc=
 
 # Module Review
 module_review.notification.subject=Änderungsfreigabe für Module
-module_review.notification.opening=Für die folgenden Module wurden Änderungsfreigaben angefordert:
+module_review.notification.opening=Für die folgenden Module wurde ein Prüfprozess angefordert:
 module_review.notification.body={0}, erstellt von {1}, für den Studiengang {2}.\nÄnderungen als {3} freigeben: {4}
 module_review.notification.closing=Automatisch gesendet von Modulverwaltung THK-GM (module@gm.th-koeln.de)
 

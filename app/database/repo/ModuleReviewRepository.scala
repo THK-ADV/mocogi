@@ -92,13 +92,13 @@ final class ModuleReviewRepository @Inject() (
       for
         d <- TableQuery[ModuleDraftTable]
         a <- d.authorFk if a.isPerson
-      yield (d.module, d.moduleTitle, d.moduleAbbrev, a.id, a.firstname.get, a.lastname.get, a.campusId)
+      yield (d.module, d.moduleTitle, d.moduleAbbrev, a.id, a.firstname, a.lastname, a.campusId)
 
     val studyProgramDirQuery =
       for
         q <- TableQuery[StudyProgramPersonTable]
-        d <- q.personFk if d.isPerson
-      yield (q.studyProgram, q.role, d.id, d.firstname.get, d.lastname.get, d.campusId)
+        d <- q.personFk if d.isPerson && d.isActive
+      yield (q.studyProgram, q.role, d.id, d.firstname, d.lastname, d.campusId)
 
     val query = base
       .join(moduleDraftQuery)
