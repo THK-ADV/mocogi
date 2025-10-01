@@ -15,16 +15,20 @@ import git.GitConfig
 import models.ModuleKeysToReview
 import ops.ConfigurationOps.Ops
 import parsing.metadata.MetadataParser
+import play.api.libs.concurrent.PekkoGuiceSupport
 import play.api.Configuration
 import play.api.Environment
 import printing.pandoc.PandocApi
 import printing.yaml.MetadataYamlPrinter
 import providers.*
 import service.mail.MailerService
+import service.notification.ReviewNotificationActor
 import webhook.GitMergeEventHandler
 import webhook.GitPushEventHandler
 
-class Module(@unused environment: Environment, configuration: Configuration) extends AbstractModule {
+class Module(@unused environment: Environment, configuration: Configuration)
+    extends AbstractModule
+    with PekkoGuiceSupport {
 
   override def configure(): Unit = {
     super.configure()
@@ -104,5 +108,11 @@ class Module(@unused environment: Environment, configuration: Configuration) ext
     bind(classOf[Boolean])
       .annotatedWith(Names.named("substituteLocalisedContent"))
       .toInstance(true)
+
+    bind(classOf[String])
+      .annotatedWith(Names.named("reviewNotificationUrl"))
+      .toInstance(configuration.nonEmptyString("mail.reviewUrl"))
+
+    bindActor[ReviewNotificationActor]("ReviewNotificationActor")
   }
 }

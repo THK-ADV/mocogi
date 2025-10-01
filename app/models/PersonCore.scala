@@ -1,3 +1,3 @@
 package models
 
-case class PersonCore(id: String, firstname: String, lastname: String, campusId: Option[String])
+case class PersonCore(id: String, firstname: Option[String], lastname: Option[String], campusId: Option[String])
