@@ -275,8 +275,9 @@ CREATE OR REPLACE FUNCTION build_module_info_json (inherited_perm bool, m module
     IMMUTABLE
     AS $$
     SELECT
+        -- coalesce with module drafts first (md), because they represent the latest data
         json_build_object('isPrivilegedForModule', inherited_perm, 'isNewModule', cm.module IS NOT NULL
-            OR md.module IS NOT NULL, 'module', json_build_object('id', coalesce(m.id, cm.module, md.module), 'title', coalesce(m.title, cm.module_title, md.module_title), 'abbreviation', coalesce(m.abbrev, cm.module_abbrev, md.module_abbrev)), 'ects', coalesce((md.module_json -> 'metadata' -> 'ects')::numeric, m.ects, cm.module_ects), 'mandatoryPOs', cm.module_mandatory_pos, 'moduleDraftState', calculate_module_draft_state (md), 'moduleDraft', CASE WHEN md.module IS NOT NULL THEN
+            OR md.module IS NOT NULL, 'module', json_build_object('id', coalesce(md.module, cm.module, m.id), 'title', coalesce(md.module_title, cm.module_title, m.title), 'abbreviation', coalesce(md.module_abbrev, cm.module_abbrev, m.abbrev)), 'ects', coalesce((md.module_json -> 'metadata' -> 'ects')::numeric, cm.module_ects, m.ects), 'mandatoryPOs', cm.module_mandatory_pos, 'moduleDraftState', calculate_module_draft_state (md), 'moduleDraft', CASE WHEN md.module IS NOT NULL THEN
             json_build_object('id', md.module, 'title', md.module_title, 'abbreviation', md.module_abbrev, 'modifiedKeys', md.modified_keys, 'keysToBeReviewed', md.keys_to_be_reviewed)
         END)::jsonb
 $$;
@@ -290,21 +291,24 @@ CREATE OR REPLACE FUNCTION get_modules_for_user (campus_id_param text)
     STABLE
     AS $$
     SELECT
-        coalesce(json_agg(build_module_info_json (p.kind = 'inherited', m, cm, md))::jsonb, '[]'::jsonb)
-    FROM
-        module_update_permission p
-    LEFT JOIN module m ON p.module = m.id
-    LEFT JOIN created_module_in_draft cm ON p.module = cm.module
-    LEFT JOIN module_draft md ON p.module = md.module
-WHERE
-    p.campus_id = campus_id_param
-    AND ((m.id IS NOT NULL
-            AND cm.module IS NULL)
-        OR (m.id IS NULL
-            AND cm.module IS NOT NULL)
-        OR (m.id IS NULL
-            AND cm.module IS NULL
-            AND md.module IS NOT NULL));
+        coalesce(json_agg(build_module_info_json (kind = 'inherited', m, cm, md))::jsonb, '[]'::jsonb)
+    FROM (
+        -- p.module has always a valid module id which is either linked to m, cm or md
+        SELECT DISTINCT ON (p.module)
+            p.kind,
+            m,
+            cm,
+            md
+        FROM
+            module_update_permission p
+        LEFT JOIN module m ON p.module = m.id
+        LEFT JOIN created_module_in_draft cm ON p.module = cm.module
+        LEFT JOIN module_draft md ON p.module = md.module
+    WHERE
+        p.campus_id = campus_id_param) AS subquery (kind,
+        m,
+        cm,
+        md)
 $$;
 
 -- the POs passed are base POs, not full POs! We must use string contains to match them with specializations
