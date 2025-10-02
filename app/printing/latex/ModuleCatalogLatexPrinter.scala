@@ -10,6 +10,8 @@ import catalog.Semester
 import cats.data.NonEmptyList
 import models.*
 import models.core.*
+import models.ModuleRelationProtocol.Child
+import models.ModuleRelationProtocol.Parent
 import monocle.macros.GenLens
 import monocle.Lens
 import ops.StringBuilderOps.SBOps
@@ -21,7 +23,6 @@ import printing.fmtCommaSeparated
 import printing.fmtDouble
 import printing.fmtIdentity
 import printing.latex.snippet.LatexContentSnippet
-import printing.latex.RenderingContext.Parent
 import printing.pandoc.PandocApi
 import printing.LocalizedStrings
 import service.modulediff.ModuleProtocolDiff
@@ -30,7 +31,6 @@ private enum RenderingContext {
   case Mandatory
   case Elective
   case FieldOfStudy(po: String)
-  case Parent(children: NonEmptyList[UUID])
   case None
 }
 
@@ -126,16 +126,21 @@ final class ModuleCatalogLatexPrinter(
 
   private def currentModuleType(m: MetadataProtocol) =
     renderingContext match {
-      case RenderingContext.Mandatory | RenderingContext.FieldOfStudy(_) => "Pflichtmodul"
+      case RenderingContext.Mandatory | RenderingContext.FieldOfStudy(_) =>
+        m.moduleRelation match {
+          case Some(Parent(children)) =>
+            val submodules = children.map(nameRef).toList.mkString(", ")
+            s"Obermodul von $submodules"
+          case Some(Child(parent)) =>
+            s"Teilmodul von ${nameRef(parent)}"
+          case None => "Pflichtmodul"
+        }
       case RenderingContext.Elective =>
         val baseStr    = "Wahlmodul"
         val optionalPO = m.po.optional.filter(_.po == currentPO.id)
-
+        // TODO: reference to generic modules might go away in the future. use module title instead of nameref
         if optionalPO.isEmpty then baseStr
         else s"$baseStr (${optionalPO.map(m => nameRef(m.instanceOf)).mkString(", ")})"
-      case RenderingContext.Parent(children) =>
-        val submodules = children.map(nameRef).toList.mkString(", ")
-        s"Obermodul von $submodules"
       case RenderingContext.None => "Keine Angabe"
     }
 
@@ -173,7 +178,6 @@ final class ModuleCatalogLatexPrinter(
     printBaseModules()
     printSpecializationModules()
     printElectiveModules()
-    printParentModules()
     assumeConsumption()
     builder.append("\\end{document}")
   }
@@ -220,48 +224,15 @@ final class ModuleCatalogLatexPrinter(
     )
   }
 
-  private def printParentModules(): Unit = {
-    val modules = modulesInPO
-      // TODO remove this filter
-      .filter(a =>
-        a._1.metadata.moduleRelation.fold(false) {
-          case ModuleRelationProtocol.Parent(children) => true
-          case ModuleRelationProtocol.Child(parent)    => false
-        }
-      )
-      .sortBy(_._1.metadata.title)
-
-    if modules.nonEmpty then {
-      chapter("Obermodule")
-      newPage
-      modules
-        .foreach {
-          case (m, lm) =>
-            m.metadata.moduleRelation.get match {
-              case ModuleRelationProtocol.Child(_) =>
-              case ModuleRelationProtocol.Parent(children) =>
-                renderingContext = RenderingContext.Parent(children)
-                printModule(m, lm, isChild = false)
-                newPage
-            }
-        }
-    }
-  }
-
+  /*
+    Modules of all kinds (parent, child, generic, …) which belong to the current PO.
+    Sorted by recommended semester and module title
+   */
   private def baseModules() =
     modulesInPO
-      // TODO remove this filter
-      .filter(a =>
-        a._1.metadata.moduleRelation.fold(true) {
-          case ModuleRelationProtocol.Parent(children) => false
-          case ModuleRelationProtocol.Child(parent)    => true
-        }
-      )
-      .filterNot { module =>
+      .filter { module =>
         val po = module._1.metadata.po
-        po.mandatory.exists(a => a.po == currentPO.id && a.specialization.isDefined) || po.optional.exists(a =>
-          a.po == currentPO.id
-        )
+        po.mandatory.exists(a => a.po == currentPO.id && a.specialization.isEmpty)
       }
       .sortBy { module =>
         val po                  = module._1.metadata.po.mandatory
@@ -270,15 +241,12 @@ final class ModuleCatalogLatexPrinter(
         if recommendedSemester.isEmpty then (Int.MaxValue, title) else (recommendedSemester.min, title)
       }
 
+  /*
+    Modules of all kinds (parent, child, generic, …) which belong to the specialization of the current PO.
+    Sorted by recommended semester and module title
+   */
   private def specializationModules(specialization: String) =
     modulesInPO
-      // TODO remove this filter
-      .filter(a =>
-        a._1.metadata.moduleRelation.fold(true) {
-          case ModuleRelationProtocol.Parent(children) => false
-          case ModuleRelationProtocol.Child(parent)    => true
-        }
-      )
       .filter { module =>
         val po = module._1.metadata.po
         // consider using mandatory and elective entries here
@@ -292,15 +260,12 @@ final class ModuleCatalogLatexPrinter(
         if recommendedSemester.isEmpty then (Int.MaxValue, title) else (recommendedSemester.min, title)
       }
 
+  /*
+    Modules of all kinds (parent, child, generic, …) which are electives of the current PO.
+    Sorted by recommended semester and module title
+   */
   private def electiveModules() =
     modulesInPO
-      // TODO remove this filter
-      .filter(a =>
-        a._1.metadata.moduleRelation.fold(true) {
-          case ModuleRelationProtocol.Parent(children) => false
-          case ModuleRelationProtocol.Child(parent)    => true
-        }
-      )
       .filter { module =>
         val po = module._1.metadata.po
         po.optional.exists(a => a.po == currentPO.id)
@@ -315,35 +280,48 @@ final class ModuleCatalogLatexPrinter(
   private def printModules(chapterTitle: String, mods: Seq[(ModuleProtocol, LocalDateTime | Option[LocalDateTime])]) = {
     chapter(chapterTitle)
     newPage
-    go(mods)
-  }
-
-  private def go(mods: Seq[(ModuleProtocol, LocalDateTime | Option[LocalDateTime])]) = {
     if (mods.isEmpty) newPage
     else
       mods
         .foreach {
           case (m, lm) =>
             m.metadata.moduleRelation match {
-              case Some(ModuleRelationProtocol.Child(_)) =>
+              case Some(Child(parent)) =>
+                val isParentPartOfPO = mods.exists(_._1.id.get == parent)
+                // child modules are rendered inside parent modules, unless their parent is NOT part of the PO
+                if !isParentPartOfPO then {
+                  printModule(m, lm, isChild = false)
+                  newPage
+                }
+              case Some(Parent(children)) =>
                 printModule(m, lm, isChild = false)
                 newPage
-              case Some(ModuleRelationProtocol.Parent(children)) =>
-//                printModule(m, lm, isChild = false)
-//                newPage
-//                children.toList
-//                  .map { id =>
-//                    val printModule = mods.find(_._1.id.contains(id))
-//                    if printModule.isEmpty then logger.error(s"unable to find child printModule $id from parent ${m.id}")
-//                    printModule
-//                  }
-//                  .collect { case Some(m) => m }
-//                  .sortBy(_._1.metadata.title)
-//                  .foreach {
-//                    case (m, lm) =>
-//                      printModule(m, lm, isChild = true)
-//                      newPage
-//                  }
+                children.toList
+                  .map { id =>
+                    val child = modulesInPO.find(_._1.id.contains(id))
+                    if child.isEmpty then
+                      logger.error(s"error while printing parent module ${m.id.get}: unable to find child module $id")
+                    child
+                  }
+                  .collect { case Some(m) => m }
+                  .sortBy { m =>
+                    val metadata = m._1.metadata
+                    val recommendedSemester =
+                      metadata.po.mandatory
+                        .flatMap(_.recommendedSemester)
+                        .minOption
+                        .orElse(
+                          metadata.po.optional
+                            .flatMap(_.recommendedSemester)
+                            .minOption
+                        )
+                    (recommendedSemester.getOrElse(Int.MaxValue), metadata.title)
+                  }
+                  .foreach {
+                    case (m, lm) =>
+                      printModule(m, lm, isChild = true)
+                      newPage
+                  }
               case None =>
                 printModule(m, lm, isChild = false)
                 newPage
@@ -651,9 +629,6 @@ final class ModuleCatalogLatexPrinter(
         case RenderingContext.FieldOfStudy(fullPo) =>
           // consider using mandatory and elective entries here
           module.metadata.po.mandatory.filter(_.fullPo == fullPo).flatMap(_.recommendedSemester).distinct
-        case RenderingContext.Parent(children) =>
-          // consider using mandatory and elective entries here
-          module.metadata.po.mandatory.filter(_.po == currentPO.id).flatMap(_.recommendedSemester).distinct
         case RenderingContext.None =>
           Nil
       }
