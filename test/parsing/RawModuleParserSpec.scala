@@ -46,7 +46,6 @@ final class RawModuleParserSpec extends AnyWordSpec with EitherValues with Optio
           ModuleAssessmentMethodEntryProtocol("written-exam", None, Nil)
         )
       )
-      assert(metadata.assessmentMethods.optional.isEmpty)
       assert(metadata.workload == ModuleWorkload(36, 0, 18, 18, 0, 0))
       assert(metadata.prerequisites.required.isEmpty)
       assert(
@@ -147,11 +146,6 @@ final class RawModuleParserSpec extends AnyWordSpec with EitherValues with Optio
           ModuleAssessmentMethodEntryProtocol("practical-report", Some(30), Nil)
         )
       )
-      assert(
-        metadata.assessmentMethods.optional == List(
-          ModuleAssessmentMethodEntryProtocol("written-exam", None, Nil)
-        )
-      )
       assert(metadata.workload == ModuleWorkload(30, 0, 10, 10, 0, 0))
       assert(metadata.prerequisites.required.isEmpty)
       assert(metadata.prerequisites.recommended.isEmpty)
@@ -225,8 +219,6 @@ final class RawModuleParserSpec extends AnyWordSpec with EitherValues with Optio
           ModuleAssessmentMethodEntryProtocol("written-exam", None, Nil)
         )
       )
-
-      assert(metadata.assessmentMethods.optional.isEmpty)
       assert(metadata.workload == ModuleWorkload(36, 0, 18, 18, 0, 0))
       assert(metadata.prerequisites.required.isEmpty)
       assert(

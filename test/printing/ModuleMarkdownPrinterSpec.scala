@@ -91,8 +91,7 @@ final class ModuleMarkdownPrinterSpec extends AnyWordSpec with EitherValues {
               None,
               Nil
             )
-          ),
-          Nil
+          )
         ),
         Examiner(Identity.NN, Identity.NN),
         ExamPhase.all,

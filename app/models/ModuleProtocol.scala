@@ -20,7 +20,7 @@ object ModuleProtocol {
   implicit def format: Format[ModuleProtocol] = Json.format
 
   final implicit class Ops(private val self: ModuleProtocol) extends AnyVal {
-    import monocle.syntax.all._
+    import monocle.syntax.all.*
 
     private def string = Traversal
       .applyN(
@@ -53,9 +53,6 @@ object ModuleProtocol {
       .applyN(
         GenLens[ModuleProtocol](
           _.metadata.assessmentMethods.mandatory
-        ),
-        GenLens[ModuleProtocol](
-          _.metadata.assessmentMethods.optional
         )
       )
       .modify(_.map(_.focus(_.precondition).modify(_.sorted)).sortBy(_.method))

@@ -33,7 +33,7 @@ class THKV1ParserSpec
     with FakePOs
     with FakeSpecializations {
 
-  import THKV1Parser._
+  import THKV1Parser.*
   val parser = app.injector.instanceOf(classOf[THKV1Parser])
 
   val moduleCodeParser   = idParser
@@ -168,8 +168,7 @@ class THKV1ParserSpec
                 None,
                 Nil
               )
-            ),
-            Nil
+            )
           )
         )
         assert(metadata.workload == ModuleWorkload(36, 0, 18, 18, 0, 0))
@@ -310,13 +309,6 @@ class THKV1ParserSpec
               ModuleAssessmentMethodEntry(
                 AssessmentMethod("practical-report", "Praktikumsbericht", "--"),
                 Some(30),
-                Nil
-              )
-            ),
-            List(
-              ModuleAssessmentMethodEntry(
-                AssessmentMethod("written-exam", "Klausurarbeiten", "--"),
-                None,
                 Nil
               )
             )

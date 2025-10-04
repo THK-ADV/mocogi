@@ -17,18 +17,9 @@ object MetadataValidator {
     def sum(xs: List[ModuleAssessmentMethodEntry]): Double =
       xs.foldLeft(0.0) { case (acc, a) => acc + a.percentage.getOrElse(0.0) }
 
-    def go(
-        xs: List[ModuleAssessmentMethodEntry],
-        name: String
-    ): List[String] = {
-      val s = sum(xs)
-      if (s == 0 || s == 100.0) Nil
-      else List(s"$name sum must be null or 100, but was $s")
-    }
-
     SimpleValidator { am =>
-      val res = go(am.mandatory, "mandatory") ++ go(am.optional, "optional")
-      Either.cond(res.isEmpty, am, res)
+      val s = sum(am.mandatory)
+      Either.cond(s == 0 || s == 100.0, am, List(s"mandatory sum must be null or 100, but was $s"))
     }
   }
 

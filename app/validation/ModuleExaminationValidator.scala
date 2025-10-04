@@ -148,7 +148,7 @@ final class ModuleExaminationValidator @Inject() (
                 }
                 (
                   ModuleCore(module._1, module._2, module._3),
-                  ModuleAssessmentMethodsProtocol(mandatory.toList, Nil),
+                  ModuleAssessmentMethodsProtocol(mandatory.toList),
                   xs.map(_._2.identity).toList
                 )
             }
@@ -162,10 +162,7 @@ final class ModuleExaminationValidator @Inject() (
       .flatMap { diffs =>
         val downloads = diffs
           .collect {
-            case d
-                if d.path.isModule ||
-                  d.diff.contains(ModuleAssessmentMethodParser.mandatoryKey) ||
-                  d.diff.contains(ModuleAssessmentMethodParser.electiveKey) =>
+            case d if d.path.isModule || d.diff.contains(ModuleAssessmentMethodParser.mandatoryKey) =>
               downloadService
                 .downloadModuleFromPreviewBranch(d.path.moduleId.get)
                 .map(_.map { p =>

@@ -58,11 +58,6 @@ final class MetadataYamlPrinter(identLevel: Int) {
               .fromList(metadata.assessmentMethods.mandatory)
               .map(assessmentMethodsMandatory)
           )
-          .skipOpt(
-            NonEmptyList
-              .fromList(metadata.assessmentMethods.optional)
-              .map(assessmentMethodsOptional)
-          )
           .skip(examiner(metadata.examiner))
           .skip(examPhases(metadata.examPhases))
           .skip(workload(metadata.workload))
@@ -266,14 +261,6 @@ final class MetadataYamlPrinter(identLevel: Int) {
   ) =
     assessmentMethods(
       prefix(s"${ModuleAssessmentMethodParser.mandatoryKey}:"),
-      value
-    )
-
-  def assessmentMethodsOptional(
-      value: NonEmptyList[ModuleAssessmentMethodEntryProtocol]
-  ) =
-    assessmentMethods(
-      prefix(s"${ModuleAssessmentMethodParser.electiveKey}:"),
       value
     )
 

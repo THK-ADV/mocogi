@@ -49,9 +49,6 @@ object Module {
       .applyN(
         GenLens[Module](
           _.metadata.assessmentMethods.mandatory
-        ),
-        GenLens[Module](
-          _.metadata.assessmentMethods.optional
         )
       )
       .modify(

@@ -50,10 +50,7 @@ final class StudyProgramPersonRepository @Inject() (
         .result
     )
 
-  @deprecated("replaced by IdentityRepository.getUserInfo")
-  def getStudyProgramPrivileges(
-      person: String
-  ): Future[Iterable[StudyProgramPrivileges]] =
+  def getStudyProgramPrivileges(person: String): Future[Iterable[StudyProgramPrivileges]] =
     db.run(
       studyProgramPersonTable
         .filter(_.person === person)

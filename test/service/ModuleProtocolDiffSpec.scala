@@ -29,10 +29,7 @@ final class ModuleProtocolDiffSpec extends AnyWordSpec {
       None,
       NonEmptyList.one("a"),
       NonEmptyList.one("a"),
-      ModuleAssessmentMethodsProtocol(
-        List(ModuleAssessmentMethodEntryProtocol("method", None, Nil)),
-        Nil
-      ),
+      ModuleAssessmentMethodsProtocol(List(ModuleAssessmentMethodEntryProtocol("method", None, Nil))),
       Examiner.NN,
       NonEmptyList.one(ExamPhase.none.id),
       ModulePrerequisitesProtocol(None, None),

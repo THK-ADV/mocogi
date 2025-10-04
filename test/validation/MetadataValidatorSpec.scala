@@ -69,80 +69,37 @@ final class MetadataValidatorSpec extends AnyWordSpec with EitherValues with Opt
 
     "validating assessment methods" should {
       "pass if their percentage is 0" in {
-        val am1 = ModuleAssessmentMethods(Nil, Nil)
+        val am1 = ModuleAssessmentMethods(Nil)
         assert(assessmentMethodsValidator.validate(am1).value == am1)
 
-        val am2 = ModuleAssessmentMethods(List(method(None)), Nil)
+        val am2 = ModuleAssessmentMethods(List(method(None)))
         assert(assessmentMethodsValidator.validate(am2).value == am2)
 
-        val am3 =
-          ModuleAssessmentMethods(List(method(None)), List(method(None)))
+        val am3 = ModuleAssessmentMethods(List(method(Some(0))))
         assert(assessmentMethodsValidator.validate(am3).value == am3)
-
-        val am4 =
-          ModuleAssessmentMethods(List(method(Some(0))), List(method(Some(0))))
-        assert(assessmentMethodsValidator.validate(am4).value == am4)
       }
 
       "pass if their percentage matches 100" in {
-        val am1 =
-          ModuleAssessmentMethods(List(method(Some(30)), method(Some(70))), Nil)
+        val am1 = ModuleAssessmentMethods(List(method(Some(30)), method(Some(70))))
         assert(assessmentMethodsValidator.validate(am1).value == am1)
 
-        val am2 = ModuleAssessmentMethods(List(method(Some(100))), Nil)
+        val am2 = ModuleAssessmentMethods(List(method(Some(100))))
         assert(assessmentMethodsValidator.validate(am2).value == am2)
-
-        val am3 = ModuleAssessmentMethods(Nil, List(method(Some(100))))
-        assert(assessmentMethodsValidator.validate(am3).value == am3)
-
-        val am4 = ModuleAssessmentMethods(
-          List(method(Some(50)), method(Some(50))),
-          List(method(Some(100)))
-        )
-        assert(assessmentMethodsValidator.validate(am4).value == am4)
       }
 
       "fail if their percentage doesn't match 100" in {
         val am1 =
-          ModuleAssessmentMethods(List(method(Some(10)), method(Some(10))), Nil)
+          ModuleAssessmentMethods(List(method(Some(10)), method(Some(10))))
         assert(
           assessmentMethodsValidator.validate(am1).left.value == List(
             "mandatory sum must be null or 100, but was 20.0"
           )
         )
 
-        val am2 = ModuleAssessmentMethods(List(method(Some(50))), Nil)
+        val am2 = ModuleAssessmentMethods(List(method(Some(50))))
         assert(
           assessmentMethodsValidator.validate(am2).left.value == List(
             "mandatory sum must be null or 100, but was 50.0"
-          )
-        )
-
-        val am3 = ModuleAssessmentMethods(Nil, List(method(Some(30))))
-        assert(
-          assessmentMethodsValidator.validate(am3).left.value == List(
-            "optional sum must be null or 100, but was 30.0"
-          )
-        )
-
-        val am4 = ModuleAssessmentMethods(
-          List(method(Some(20)), method(Some(20))),
-          List(method(Some(100)))
-        )
-        assert(
-          assessmentMethodsValidator.validate(am4).left.value == List(
-            "mandatory sum must be null or 100, but was 40.0"
-          )
-        )
-
-        val am5 = ModuleAssessmentMethods(
-          List(method(Some(20)), method(Some(20))),
-          List(method(Some(50)))
-        )
-        assert(
-          assessmentMethodsValidator.validate(am5).left.value == List(
-            "mandatory sum must be null or 100, but was 40.0",
-            "optional sum must be null or 100, but was 50.0"
           )
         )
       }
@@ -502,10 +459,7 @@ final class MetadataValidatorSpec extends AnyWordSpec with EitherValues with Opt
             NonEmptyList.one(Identity.Unknown("id", "label")),
             NonEmptyList.one(Identity.Unknown("id", "label"))
           ),
-          ModuleAssessmentMethods(
-            List(method(Some(50)), method(Some(50))),
-            List(method(None))
-          ),
+          ModuleAssessmentMethods(List(method(Some(50)), method(Some(50)))),
           Examiner(Identity.NN, Identity.NN),
           ExamPhase.all,
           ModuleWorkload(5, 0, 0, 0, 0, 0),
@@ -594,10 +548,7 @@ final class MetadataValidatorSpec extends AnyWordSpec with EitherValues with Opt
             NonEmptyList.one(Identity.Unknown("id", "label")),
             NonEmptyList.one(Identity.Unknown("id", "label"))
           ),
-          ModuleAssessmentMethods(
-            List(method(Some(50)), method(Some(50))),
-            List(method(None))
-          ),
+          ModuleAssessmentMethods(List(method(Some(50)), method(Some(50)))),
           Examiner(Identity.NN, Identity.NN),
           ExamPhase.all,
           ModuleWorkload(5, 0, 0, 0, 0, 0),

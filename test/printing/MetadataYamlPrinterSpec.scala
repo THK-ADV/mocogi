@@ -361,9 +361,6 @@ final class MetadataYamlPrinterSpec extends AnyWordSpec with PrinterSpec {
               Some(100),
               List("practical")
             )
-          ),
-          List(
-            ModuleAssessmentMethodEntryProtocol("written-exam", None, Nil)
           )
         ),
         Examiner("ald", "abe"),
@@ -435,8 +432,6 @@ final class MetadataYamlPrinterSpec extends AnyWordSpec with PrinterSpec {
            |  - method: assessment.written-exam
            |    percentage: 100.0
            |    precondition: assessment.practical
-           |assessment_methods_optional:
-           |  - method: assessment.written-exam
            |first_examiner: person.ald
            |second_examiner: person.abe
            |exam_phases:

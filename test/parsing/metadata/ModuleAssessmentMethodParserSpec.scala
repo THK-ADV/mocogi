@@ -22,25 +22,15 @@ class ModuleAssessmentMethodParserSpec
       assert(res1.value.isEmpty)
       assert(rest1 == "foo: bar")
 
-      val (res2, rest2) = electiveParser.parse(input)
-      assert(res2.value.isEmpty)
-      assert(rest2 == "foo: bar")
-
       val (res3, rest3) = mandatoryParserRaw.parse(input)
       assert(res3.value.isEmpty)
       assert(rest3 == "foo: bar")
 
-      val (res4, rest4) = electiveParserRaw.parse(input)
-      assert(res4.value.isEmpty)
-      assert(rest4 == "foo: bar")
-
       val (res5, rest5) = raw.parse(input)
-      assert(res5.value.optional.isEmpty)
       assert(res5.value.mandatory.isEmpty)
       assert(rest5 == "foo: bar")
 
       val (res6, rest6) = parser.parse(input)
-      assert(res6.value.optional.isEmpty)
       assert(res6.value.mandatory.isEmpty)
       assert(rest6 == "foo: bar")
     }

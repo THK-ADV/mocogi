@@ -16,8 +16,6 @@ assessment_methods_mandatory:
     precondition: assessment.practical
   - method: assessment.practical-report
     percentage: 30
-assessment_methods_optional:
-  - method: assessment.written-exam
 first_examiner: person.ald 
 second_examiner: person.abe
 exam_phases:

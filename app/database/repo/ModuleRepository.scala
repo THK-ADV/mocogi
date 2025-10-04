@@ -283,23 +283,19 @@ final class ModuleRepository @Inject() (
   private def metadataAssessmentMethods(metadata: Metadata): List[ModuleAssessmentMethodDbEntry] = {
     val metadataAssessmentMethods = ListBuffer[ModuleAssessmentMethodDbEntry]()
 
-    def go(xs: List[ModuleAssessmentMethodEntry]): Unit =
-      xs.foreach { m =>
-        // this check prevents from adding duplicate values
-        if !metadataAssessmentMethods.exists(_.assessmentMethod == m.method.id) then {
-          val metadataAssessmentMethod = ModuleAssessmentMethodDbEntry(
-            UUID.randomUUID,
-            metadata.id,
-            m.method.id,
-            m.percentage,
-            Option.when(m.precondition.nonEmpty)(m.precondition.map(_.id))
-          )
-          metadataAssessmentMethods += metadataAssessmentMethod
-        }
+    metadata.assessmentMethods.mandatory.foreach { m =>
+      // this check prevents from adding duplicate values
+      if !metadataAssessmentMethods.exists(_.assessmentMethod == m.method.id) then {
+        val metadataAssessmentMethod = ModuleAssessmentMethodDbEntry(
+          UUID.randomUUID,
+          metadata.id,
+          m.method.id,
+          m.percentage,
+          Option.when(m.precondition.nonEmpty)(m.precondition.map(_.id))
+        )
+        metadataAssessmentMethods += metadataAssessmentMethod
       }
-
-    go(metadata.assessmentMethods.mandatory)
-    go(metadata.assessmentMethods.optional) // TODO remove this when the format changes
+    }
 
     metadataAssessmentMethods.toList
   }
@@ -397,7 +393,7 @@ final class ModuleRepository @Inject() (
                     relation,
                     NonEmptyList.fromListUnsafe(moduleManagement.toList),
                     NonEmptyList.fromListUnsafe(lecturer.toList),
-                    ModuleAssessmentMethodsProtocol(mandatoryAssessmentMethods.toList, Nil),
+                    ModuleAssessmentMethodsProtocol(mandatoryAssessmentMethods.toList),
                     module.examiner,
                     module.examPhases,
                     ModulePrerequisitesProtocol(module.recommendedPrerequisites, module.requiredPrerequisites),

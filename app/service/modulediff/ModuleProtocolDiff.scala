@@ -102,8 +102,6 @@ object ModuleProtocolDiff extends Logging {
             takeIf(p.metadata.prerequisites.required.nonEmpty)
           case "metadata.prerequisites.recommended" =>
             takeIf(p.metadata.prerequisites.recommended.nonEmpty)
-          case "metadata.assessmentMethods.optional" =>
-            takeIf(p.metadata.assessmentMethods.optional.nonEmpty)
           case "metadata.assessmentMethods.mandatory" =>
             takeIf(p.metadata.assessmentMethods.mandatory.nonEmpty)
           case "metadata.lecturers" =>
@@ -233,10 +231,6 @@ object ModuleProtocolDiff extends Logging {
           case "metadata.prerequisites.recommended" =>
             go(
               GenLens[ModuleProtocol].apply(_.metadata.prerequisites.recommended)
-            )
-          case "metadata.assessmentMethods.optional" =>
-            go(
-              GenLens[ModuleProtocol].apply(_.metadata.assessmentMethods.optional)
             )
           case "metadata.assessmentMethods.mandatory" =>
             go(
