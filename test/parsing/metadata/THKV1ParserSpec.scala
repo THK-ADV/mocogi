@@ -207,42 +207,6 @@ class THKV1ParserSpec
         assert(
           metadata.participants.value == ModuleParticipants(4, 20)
         )
-        assert(
-          metadata.competences == List(
-            ModuleCompetence(
-              "analyze-domains",
-              "",
-              "",
-              "",
-              ""
-            ),
-            ModuleCompetence(
-              "model-systems",
-              "",
-              "",
-              "",
-              ""
-            )
-          )
-        )
-        assert(
-          metadata.globalCriteria == List(
-            ModuleGlobalCriteria(
-              "internationalization",
-              "",
-              "",
-              "",
-              ""
-            ),
-            ModuleGlobalCriteria(
-              "digitization",
-              "",
-              "",
-              "",
-              ""
-            )
-          )
-        )
         assert(metadata.taughtWith.isEmpty)
         assert(metadata.examiner.first == fakeIdentities.find(_.id == "ald").value)
         assert(metadata.examiner.second == fakeIdentities.find(_.id == "abe").value)
@@ -329,8 +293,6 @@ class THKV1ParserSpec
           )
         )
         assert(metadata.participants.value == ModuleParticipants(4, 20))
-        assert(metadata.competences.isEmpty)
-        assert(metadata.globalCriteria.isEmpty)
         assert(
           metadata.taughtWith == List(
             UUID.fromString("d1cecfbc-a314-42f6-99b3-be92f22c3295")

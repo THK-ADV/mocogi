@@ -43,12 +43,6 @@ po_optional:
 participants:
   min: 4
   max: 20
-competences:
-  - competence.analyze-domains
-  - competence.model-systems
-global_criteria:
-  - global_criteria.internationalization
-  - global_criteria.digitization
 attendance_requirement:
   min: 5 von 7 Terminen (Beispiel)
   reason: Hier Begründung

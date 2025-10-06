@@ -72,10 +72,6 @@ final class MetadataYamlPrinter(identLevel: Int) {
           .skipOpt(NonEmptyList.fromList(metadata.po.mandatory).map(poMandatory))
           .skipOpt(NonEmptyList.fromList(metadata.po.optional).map(poOptional))
           .skipOpt(metadata.participants.map(participants))
-          .skipOpt(NonEmptyList.fromList(metadata.competences).map(competences))
-          .skipOpt(
-            NonEmptyList.fromList(metadata.globalCriteria).map(globalCriteria)
-          )
           .skipOpt(NonEmptyList.fromList(metadata.taughtWith).map(taughtWith))
           .skipOpt(metadata.attendanceRequirement.map(attendanceRequirement))
           .skipOpt(metadata.assessmentPrerequisite.map(assessmentPrerequisite))
@@ -397,22 +393,6 @@ final class MetadataYamlPrinter(identLevel: Int) {
           .repeat(identLevel)
           .skip(entry(ModuleParticipantsParser.maxKey, value.max.toString))
       )
-
-  def competences(value: NonEmptyList[String]) =
-    list(
-      prefix(s"${ModuleCompetencesParser.key}:"),
-      value,
-      ModuleCompetencesParser.prefix.dropRight(1),
-      0
-    )
-
-  def globalCriteria(value: NonEmptyList[String]) =
-    list(
-      prefix(s"${ModuleGlobalCriteriaParser.key}:"),
-      value,
-      ModuleGlobalCriteriaParser.prefix.dropRight(1),
-      0
-    )
 
   def taughtWith(value: NonEmptyList[UUID]) =
     list(

@@ -52,8 +52,6 @@ object ModuleProtocolDiff extends Logging {
     "metadata.prerequisites.required",
     "metadata.po.mandatory",
     "metadata.po.optional",
-    "metadata.competences",
-    "metadata.globalCriteria",
     "metadata.taughtWith",
     "metadata.attendanceRequirement",
     "metadata.assessmentPrerequisite",
@@ -90,10 +88,6 @@ object ModuleProtocolDiff extends Logging {
             takeIf(p.deContent.learningOutcome.nonEmpty)
           case "metadata.taughtWith" =>
             takeIf(p.metadata.taughtWith.nonEmpty)
-          case "metadata.globalCriteria" =>
-            takeIf(p.metadata.globalCriteria.nonEmpty)
-          case "metadata.competences" =>
-            takeIf(p.metadata.competences.nonEmpty)
           case "metadata.po.optional" =>
             takeIf(p.metadata.po.optional.nonEmpty)
           case "metadata.po.mandatory" =>
@@ -218,10 +212,6 @@ object ModuleProtocolDiff extends Logging {
             go(GenLens[ModuleProtocol].apply(_.deContent.learningOutcome))
           case "metadata.taughtWith" =>
             go(GenLens[ModuleProtocol].apply(_.metadata.taughtWith))
-          case "metadata.globalCriteria" =>
-            go(GenLens[ModuleProtocol].apply(_.metadata.globalCriteria))
-          case "metadata.competences" =>
-            go(GenLens[ModuleProtocol].apply(_.metadata.competences))
           case "metadata.po.optional" =>
             go(GenLens[ModuleProtocol].apply(_.metadata.po.optional))
           case "metadata.po.mandatory" =>

@@ -215,8 +215,6 @@ object MetadataValidator {
             m.location,
             pos,
             part,
-            m.competences,
-            m.globalCriteria,
             tw,
             m.attendanceRequirement,
             m.assessmentPrerequisite

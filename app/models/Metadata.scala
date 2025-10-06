@@ -29,8 +29,6 @@ case class Metadata(
     location: ModuleLocation,
     pos: ModulePOs,
     participants: Option[ModuleParticipants],
-    competences: List[ModuleCompetence],
-    globalCriteria: List[ModuleGlobalCriteria],
     taughtWith: List[ModuleCore],
     attendanceRequirement: Option[AttendanceRequirement],
     assessmentPrerequisite: Option[AssessmentPrerequisite]

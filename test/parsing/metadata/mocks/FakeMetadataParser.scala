@@ -50,8 +50,6 @@ class FakeMetadataParser extends MetadataParser {
       ParsedPOs(Nil, Nil),
       None,
       Nil,
-      Nil,
-      Nil,
       None,
       None
     )

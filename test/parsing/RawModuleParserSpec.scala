@@ -83,13 +83,6 @@ final class RawModuleParserSpec extends AnyWordSpec with EitherValues with Optio
       assert(
         metadata.participants.value == ModuleParticipants(4, 20)
       )
-      assert(metadata.competences == List("analyze-domains", "model-systems"))
-      assert(
-        metadata.globalCriteria == List(
-          "internationalization",
-          "digitization"
-        )
-      )
       assert(metadata.taughtWith.isEmpty)
       assert(deContent.learningOutcome == "Programmieren lernen")
       assert(enContent.learningOutcome == "Learn to code")
@@ -162,8 +155,6 @@ final class RawModuleParserSpec extends AnyWordSpec with EitherValues with Optio
       assert(
         metadata.participants.value == ModuleParticipants(4, 20)
       )
-      assert(metadata.competences.isEmpty)
-      assert(metadata.globalCriteria.isEmpty)
       assert(
         metadata.taughtWith == List(
           UUID.fromString("d1cecfbc-a314-42f6-99b3-be92f22c3295")
@@ -250,10 +241,6 @@ final class RawModuleParserSpec extends AnyWordSpec with EitherValues with Optio
       )
       assert(
         metadata.participants.value == ModuleParticipants(4, 20)
-      )
-      assert(metadata.competences == List("analyze-domains", "model-systems"))
-      assert(
-        metadata.globalCriteria == List("internationalization", "digitization")
       )
       assert(metadata.taughtWith.isEmpty)
       assert(deContent.learningOutcome == "")

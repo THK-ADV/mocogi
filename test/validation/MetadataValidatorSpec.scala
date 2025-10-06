@@ -474,8 +474,6 @@ final class MetadataValidatorSpec extends AnyWordSpec with EitherValues with Opt
           ),
           Some(ModuleParticipants(10, 20)),
           Nil,
-          Nil,
-          Nil,
           None,
           None
         )
@@ -503,8 +501,6 @@ final class MetadataValidatorSpec extends AnyWordSpec with EitherValues with Opt
           ),
           Some(ModuleParticipants(10, 20)),
           Nil,
-          Nil,
-          Nil,
           None,
           None
         )
@@ -527,8 +523,6 @@ final class MetadataValidatorSpec extends AnyWordSpec with EitherValues with Opt
         assert(res.location == vm1.location)
         assert(res.pos == vm1.pos)
         assert(res.participants == vm1.participants)
-        assert(res.competences == vm1.competences)
-        assert(res.globalCriteria == vm1.globalCriteria)
         assert(res.taughtWith == vm1.taughtWith)
       }
 
@@ -562,8 +556,6 @@ final class MetadataValidatorSpec extends AnyWordSpec with EitherValues with Opt
             )
           ),
           Some(ModuleParticipants(20, 15)),
-          Nil,
-          Nil,
           Nil,
           None,
           None

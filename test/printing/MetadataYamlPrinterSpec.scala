@@ -217,24 +217,6 @@ final class MetadataYamlPrinterSpec extends AnyWordSpec with PrinterSpec {
       assert(run(printer.participants(participants)) == res)
     }
 
-    "print competences" in {
-      val competences = NonEmptyList.of("def", "abc")
-      val res =
-        s"""competences:
-           |  - competence.abc
-           |  - competence.def\n""".stripMargin
-      assert(run(printer.competences(competences)) == res)
-    }
-
-    "print global criteria" in {
-      val globalCriteria = NonEmptyList.of("abc", "def")
-      val res =
-        s"""global_criteria:
-           |  - global_criteria.abc
-           |  - global_criteria.def\n""".stripMargin
-      assert(run(printer.globalCriteria(globalCriteria)) == res)
-    }
-
     "print taught with" in {
       val taughtWith = NonEmptyList.of(m1, m2)
       val res =
@@ -396,8 +378,6 @@ final class MetadataYamlPrinterSpec extends AnyWordSpec with PrinterSpec {
             )
           )
         ),
-        List("competence1", "competence2"),
-        List("global_criteria1", "global_criteria2"),
         List(m1),
         None,
         Some(AssessmentPrerequisite("modules", "reason"))
@@ -475,12 +455,6 @@ final class MetadataYamlPrinterSpec extends AnyWordSpec with PrinterSpec {
            |participants:
            |  min: 0
            |  max: 10
-           |competences:
-           |  - competence.competence1
-           |  - competence.competence2
-           |global_criteria:
-           |  - global_criteria.global_criteria1
-           |  - global_criteria.global_criteria2
            |taught_with: module.$m1
            |assessment_prerequisite:
            |  modules: modules

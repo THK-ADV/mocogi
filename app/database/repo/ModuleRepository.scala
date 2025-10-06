@@ -398,8 +398,6 @@ final class ModuleRepository @Inject() (
                     module.examPhases,
                     ModulePrerequisitesProtocol(module.recommendedPrerequisites, module.requiredPrerequisites),
                     ModulePOProtocol(poMandatory.toList, poOptional.toList),
-                    Nil,
-                    Nil,
                     taughtWith.toList,
                     module.attendanceRequirement,
                     module.assessmentPrerequisite

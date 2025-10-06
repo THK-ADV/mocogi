@@ -116,8 +116,6 @@ final class ModuleMarkdownPrinterSpec extends AnyWordSpec with EitherValues {
         ),
         None,
         Nil,
-        Nil,
-        Nil,
         None,
         None
       )
