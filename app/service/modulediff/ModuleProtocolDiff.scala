@@ -44,7 +44,6 @@ object ModuleProtocolDiff extends Logging {
     "metadata.moduleManagement",
     "metadata.lecturers",
     "metadata.assessmentMethods.mandatory",
-    "metadata.assessmentMethods.optional",
     "metadata.examiner.first",
     "metadata.examiner.second",
     "metadata.examPhases",
