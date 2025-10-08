@@ -30,8 +30,6 @@ case class ParsedMetadata(
     location: ModuleLocation,
     pos: ParsedPOs,
     participants: Option[ModuleParticipants],
-    competences: List[ModuleCompetence],
-    globalCriteria: List[ModuleGlobalCriteria],
     taughtWith: List[UUID],
     attendanceRequirement: Option[AttendanceRequirement],
     assessmentPrerequisite: Option[AssessmentPrerequisite]

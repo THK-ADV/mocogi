@@ -58,11 +58,6 @@ final class MetadataYamlPrinter(identLevel: Int) {
               .fromList(metadata.assessmentMethods.mandatory)
               .map(assessmentMethodsMandatory)
           )
-          .skipOpt(
-            NonEmptyList
-              .fromList(metadata.assessmentMethods.optional)
-              .map(assessmentMethodsOptional)
-          )
           .skip(examiner(metadata.examiner))
           .skip(examPhases(metadata.examPhases))
           .skip(workload(metadata.workload))
@@ -77,10 +72,6 @@ final class MetadataYamlPrinter(identLevel: Int) {
           .skipOpt(NonEmptyList.fromList(metadata.po.mandatory).map(poMandatory))
           .skipOpt(NonEmptyList.fromList(metadata.po.optional).map(poOptional))
           .skipOpt(metadata.participants.map(participants))
-          .skipOpt(NonEmptyList.fromList(metadata.competences).map(competences))
-          .skipOpt(
-            NonEmptyList.fromList(metadata.globalCriteria).map(globalCriteria)
-          )
           .skipOpt(NonEmptyList.fromList(metadata.taughtWith).map(taughtWith))
           .skipOpt(metadata.attendanceRequirement.map(attendanceRequirement))
           .skipOpt(metadata.assessmentPrerequisite.map(assessmentPrerequisite))
@@ -269,14 +260,6 @@ final class MetadataYamlPrinter(identLevel: Int) {
       value
     )
 
-  def assessmentMethodsOptional(
-      value: NonEmptyList[ModuleAssessmentMethodEntryProtocol]
-  ) =
-    assessmentMethods(
-      prefix(s"${ModuleAssessmentMethodParser.electiveKey}:"),
-      value
-    )
-
   def workload(workload: ModuleWorkload) =
     prefix(s"${ModuleWorkloadParser.key}:")
       .skip(newline)
@@ -336,7 +319,7 @@ final class MetadataYamlPrinter(identLevel: Int) {
       key: Printer[Unit],
       value: ModulePrerequisiteEntryProtocol
   ) = {
-    if (value.text.isEmpty && value.pos.isEmpty && value.modules.isEmpty)
+    if (value.text.isEmpty && value.modules.isEmpty)
       always[Unit]()
     else
       key
@@ -359,22 +342,6 @@ final class MetadataYamlPrinter(identLevel: Int) {
                     prefix(s"${ModulePrerequisitesParser.modulesKey}:"),
                     xs,
                     ModulePrerequisitesParser.modulesPrefix.dropRight(1),
-                    identLevel
-                  )
-                )
-            )
-        )
-        .skipOpt(
-          NonEmptyList
-            .fromList(value.pos)
-            .map(xs =>
-              whitespace
-                .repeat(identLevel)
-                .skip(
-                  list(
-                    prefix(s"${ModulePrerequisitesParser.studyProgramsKey}:"),
-                    xs,
-                    ModulePrerequisitesParser.studyProgramsPrefix.dropRight(1),
                     identLevel
                   )
                 )
@@ -410,22 +377,6 @@ final class MetadataYamlPrinter(identLevel: Int) {
           .repeat(identLevel)
           .skip(entry(ModuleParticipantsParser.maxKey, value.max.toString))
       )
-
-  def competences(value: NonEmptyList[String]) =
-    list(
-      prefix(s"${ModuleCompetencesParser.key}:"),
-      value,
-      ModuleCompetencesParser.prefix.dropRight(1),
-      0
-    )
-
-  def globalCriteria(value: NonEmptyList[String]) =
-    list(
-      prefix(s"${ModuleGlobalCriteriaParser.key}:"),
-      value,
-      ModuleGlobalCriteriaParser.prefix.dropRight(1),
-      0
-    )
 
   def taughtWith(value: NonEmptyList[UUID]) =
     list(

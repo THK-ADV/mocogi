@@ -4,7 +4,7 @@ import models.core.AssessmentMethod
 import models.ModuleAssessmentMethodEntryProtocol
 import models.ModuleAssessmentMethodsProtocol
 import parser.Parser
-import parser.Parser._
+import parser.Parser.*
 import parser.ParserOps.P0
 import parser.ParserOps.P2
 import parsing.multipleValueParser
@@ -16,7 +16,6 @@ object ModuleAssessmentMethodParser {
   def assessmentPrefix = "assessment."
   def preconditionKey  = "precondition"
   def mandatoryKey     = "assessment_methods_mandatory"
-  def electiveKey      = "assessment_methods_optional"
 
   private def assessmentMethodParser(implicit assessmentMethods: Seq[AssessmentMethod]): Parser[AssessmentMethod] =
     oneOf(
@@ -97,22 +96,12 @@ object ModuleAssessmentMethodParser {
   def mandatoryParser(implicit xs: Seq[AssessmentMethod]): Parser[List[ModuleAssessmentMethodEntry]] =
     parser(mandatoryKey)(xs.sortBy(_.id).reverse).option.map(_.getOrElse(Nil))
 
-  def electiveParser(implicit xs: Seq[AssessmentMethod]): Parser[List[ModuleAssessmentMethodEntry]] =
-    parser(electiveKey)(xs.sortBy(_.id).reverse).option.map(_.getOrElse(Nil))
-
   def parser(implicit xs: Seq[AssessmentMethod]): Parser[ModuleAssessmentMethods] =
-    mandatoryParser
-      .zip(electiveParser)
-      .map(ModuleAssessmentMethods.apply.tupled)
+    mandatoryParser.map(ModuleAssessmentMethods.apply)
 
   def mandatoryParserRaw: Parser[List[ModuleAssessmentMethodEntryProtocol]] =
     raw(mandatoryKey).option.map(_.getOrElse(Nil))
 
-  def electiveParserRaw: Parser[List[ModuleAssessmentMethodEntryProtocol]] =
-    raw(electiveKey).option.map(_.getOrElse(Nil))
-
   def raw: Parser[ModuleAssessmentMethodsProtocol] =
-    mandatoryParserRaw
-      .zip(electiveParserRaw)
-      .map(ModuleAssessmentMethodsProtocol.apply.tupled)
+    mandatoryParserRaw.map(ModuleAssessmentMethodsProtocol.apply)
 }

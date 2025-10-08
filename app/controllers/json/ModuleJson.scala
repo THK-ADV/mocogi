@@ -48,8 +48,6 @@ case class ModuleJson(
           .getOrElse(NonEmptyList.one(ExamPhase.none.id)),
         this.metadata.prerequisites,
         this.metadata.po,
-        this.metadata.competences,
-        this.metadata.globalCriteria,
         this.metadata.taughtWith,
         this.metadata.attendanceRequirement,
         this.metadata.assessmentPrerequisite
@@ -79,8 +77,6 @@ case class MetadataJson(
     examPhases: Option[List[String]],
     prerequisites: ModulePrerequisitesProtocol,
     po: ModulePOProtocol,
-    competences: List[String],
-    globalCriteria: List[String],
     taughtWith: List[UUID],
     attendanceRequirement: Option[AttendanceRequirement],
     assessmentPrerequisite: Option[AssessmentPrerequisite]

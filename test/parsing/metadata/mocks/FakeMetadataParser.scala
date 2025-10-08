@@ -40,7 +40,7 @@ class FakeMetadataParser extends MetadataParser {
         NonEmptyList.one(Identity.Unknown("id", "label")),
         NonEmptyList.one(Identity.Unknown("id", "label"))
       ),
-      ModuleAssessmentMethods(Nil, Nil),
+      ModuleAssessmentMethods(Nil),
       Examiner(Identity.NN, Identity.NN),
       ExamPhase.all,
       ModuleWorkload(0, 0, 0, 0, 0, 0),
@@ -49,8 +49,6 @@ class FakeMetadataParser extends MetadataParser {
       ModuleLocation("", "", ""),
       ParsedPOs(Nil, Nil),
       None,
-      Nil,
-      Nil,
       Nil,
       None,
       None

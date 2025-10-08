@@ -122,18 +122,10 @@ final class ExamListsLatexPrinter(
   private def defaultPrint(): Unit = {
     val (mandatory, elective) = splitModules()
     if mandatory.nonEmpty then {
-      examLists(
-        mandatory,
-        messages("latex.exam_lists.mandatory_modules.chapter"),
-        _.mandatory
-      )
+      examLists(mandatory, messages("latex.exam_lists.mandatory_modules.chapter"))
     }
     if elective.nonEmpty then {
-      examLists(
-        elective,
-        messages("latex.exam_lists.elective_modules.chapter"),
-        a => if a.optional.isEmpty then a.mandatory else a.optional
-      )
+      examLists(elective, messages("latex.exam_lists.elective_modules.chapter"))
     }
   }
 
@@ -145,7 +137,7 @@ final class ExamListsLatexPrinter(
 
   private def specializationsPrint(): Unit = {
     if modules.isEmpty then return
-    examLists(modules, messages("latex.exam_lists.modules.chapter"), _.mandatory)
+    examLists(modules, messages("latex.exam_lists.modules.chapter"))
     moduleMatrix(messages("latex.exam_lists.module_matrix.chapter"))
   }
 
@@ -271,11 +263,7 @@ final class ExamListsLatexPrinter(
     builder.append("\\\\\n")
   }
 
-  private def examLists(
-      modules: Seq[ModuleProtocol],
-      titleLabel: String,
-      moduleAssessmentMethodEntries: ModuleAssessmentMethodsProtocol => List[ModuleAssessmentMethodEntryProtocol]
-  ): Unit = {
+  private def examLists(modules: Seq[ModuleProtocol], titleLabel: String): Unit = {
     val continuationHeaderLabel = messages("latex.exam_lists.table.header.continuation")
     val continuationFooterLabel = messages("latex.exam_lists.table.footer.continuation")
 
@@ -319,7 +307,7 @@ final class ExamListsLatexPrinter(
                 case Right(m) =>
                   childModuleRow(
                     m.metadata.title,
-                    moduleAssessmentMethodEntries(m.metadata.assessmentMethods),
+                    m.metadata.assessmentMethods.mandatory,
                     m.metadata.examPhases,
                     m.metadata.examiner
                   )
@@ -331,7 +319,7 @@ final class ExamListsLatexPrinter(
             moduleRow(
               row,
               m.metadata.title,
-              moduleAssessmentMethodEntries(m.metadata.assessmentMethods),
+              m.metadata.assessmentMethods.mandatory,
               m.metadata.examPhases,
               m.metadata.examiner
             )

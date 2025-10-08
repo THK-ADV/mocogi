@@ -85,11 +85,7 @@ final class THKV1Parser extends MetadataParser {
       .take(
         ModuleParticipantsParser.parser.option
           .skip(zeroOrMoreSpaces)
-          .zip(ModuleCompetencesParser.parser.option)
-          .skip(zeroOrMoreSpaces)
-          .take(ModuleGlobalCriteriaParser.parser.option)
-          .skip(zeroOrMoreSpaces)
-          .take(ModuleTaughtWithParser.parser.option.map(_.getOrElse(Nil)))
+          .zip(ModuleTaughtWithParser.parser.option.map(_.getOrElse(Nil)))
           .skip(zeroOrMoreSpaces)
           .take(AttendanceRequirementParser.parser.option)
           .skip(zeroOrMoreSpaces)
@@ -115,7 +111,7 @@ final class THKV1Parser extends MetadataParser {
               status,
               location,
               pos,
-              (participants, competences, globalCriteria, taughtWith, attReq, assPre)
+              (participants, taughtWith, attReq, assPre)
             ) =>
           ParsedMetadata(
             id,
@@ -137,8 +133,6 @@ final class THKV1Parser extends MetadataParser {
             location,
             pos,
             participants,
-            competences.getOrElse(Nil),
-            globalCriteria.getOrElse(Nil),
             taughtWith,
             attReq,
             assPre

@@ -189,11 +189,7 @@ object RawModuleParser {
       .take(
         ModuleParticipantsParser.parser.option
           .skip(zeroOrMoreSpaces)
-          .zip(ModuleCompetencesParser.raw.option.map(_.getOrElse(Nil)))
-          .skip(zeroOrMoreSpaces)
-          .take(ModuleGlobalCriteriaParser.raw.option.map(_.getOrElse(Nil)))
-          .skip(zeroOrMoreSpaces)
-          .take(ModuleTaughtWithParser.parser.option.map(_.getOrElse(Nil)))
+          .zip(ModuleTaughtWithParser.parser.option.map(_.getOrElse(Nil)))
           .skip(zeroOrMoreSpaces)
           .take(AttendanceRequirementParser.parser.option)
           .skip(zeroOrMoreSpaces)
@@ -218,7 +214,7 @@ object RawModuleParser {
               status,
               location,
               pos,
-              (parts, competences, criteria, taughtWiths, attReq, assPre),
+              (parts, taughtWiths, attReq, assPre),
             ) =>
           (
             id,
@@ -242,8 +238,6 @@ object RawModuleParser {
               examPhases,
               prerequisites,
               pos,
-              competences,
-              criteria,
               taughtWiths,
               attReq,
               assPre

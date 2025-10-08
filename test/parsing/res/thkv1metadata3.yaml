@@ -25,7 +25,6 @@ workload:
 required_prerequisites:
   text: dasdasd
   modules: module.d1cecfbc-a314-42f6-99b3-be92f22c3295
-  study_programs: study_program.wi1
 status: status.inactive
 location: location.gm
 po_optional:
@@ -36,9 +35,3 @@ po_optional:
 participants:
   min: 4
   max: 20
-competences:
-  - competence.analyze-domains
-  - competence.model-systems
-global_criteria:
-  - global_criteria.internationalization
-  - global_criteria.digitization

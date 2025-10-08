@@ -76,7 +76,7 @@ final class ModuleMarkdownPrinterSpec extends AnyWordSpec with EitherValues {
         Some(
           ModuleRelation.Child(ModuleCore(UUID.randomUUID(), "title", "abbrev"))
         ),
-        ModuleECTS(5, Nil),
+        ModuleECTS(5),
         ModuleLanguage("lang", "lang", "lang"),
         1,
         Season("season", "season", "season"),
@@ -91,8 +91,7 @@ final class ModuleMarkdownPrinterSpec extends AnyWordSpec with EitherValues {
               None,
               Nil
             )
-          ),
-          Nil
+          )
         ),
         Examiner(Identity.NN, Identity.NN),
         ExamPhase.all,
@@ -116,8 +115,6 @@ final class ModuleMarkdownPrinterSpec extends AnyWordSpec with EitherValues {
           Nil
         ),
         None,
-        Nil,
-        Nil,
         Nil,
         None,
         None

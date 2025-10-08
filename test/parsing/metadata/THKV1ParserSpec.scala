@@ -33,7 +33,7 @@ class THKV1ParserSpec
     with FakePOs
     with FakeSpecializations {
 
-  import THKV1Parser._
+  import THKV1Parser.*
   val parser = app.injector.instanceOf(classOf[THKV1Parser])
 
   val moduleCodeParser   = idParser
@@ -168,8 +168,7 @@ class THKV1ParserSpec
                 None,
                 Nil
               )
-            ),
-            Nil
+            )
           )
         )
         assert(metadata.workload == ModuleWorkload(36, 0, 18, 18, 0, 0))
@@ -182,8 +181,7 @@ class THKV1ParserSpec
                   UUID.fromString("ce09539e-fc0a-4c74-b85d-40a293998bb4"),
                   UUID.fromString("d4365c35-a3aa-4dab-b6a3-e17449269055"),
                   UUID.fromString("84223dc5-69b9-4dbb-a6ea-45bf5e9672e3")
-                ),
-                Nil
+                )
               )
             ),
             None
@@ -207,42 +205,6 @@ class THKV1ParserSpec
         )
         assert(
           metadata.participants.value == ModuleParticipants(4, 20)
-        )
-        assert(
-          metadata.competences == List(
-            ModuleCompetence(
-              "analyze-domains",
-              "",
-              "",
-              "",
-              ""
-            ),
-            ModuleCompetence(
-              "model-systems",
-              "",
-              "",
-              "",
-              ""
-            )
-          )
-        )
-        assert(
-          metadata.globalCriteria == List(
-            ModuleGlobalCriteria(
-              "internationalization",
-              "",
-              "",
-              "",
-              ""
-            ),
-            ModuleGlobalCriteria(
-              "digitization",
-              "",
-              "",
-              "",
-              ""
-            )
-          )
         )
         assert(metadata.taughtWith.isEmpty)
         assert(metadata.examiner.first == fakeIdentities.find(_.id == "ald").value)
@@ -312,13 +274,6 @@ class THKV1ParserSpec
                 Some(30),
                 Nil
               )
-            ),
-            List(
-              ModuleAssessmentMethodEntry(
-                AssessmentMethod("written-exam", "Klausurarbeiten", "--"),
-                None,
-                Nil
-              )
             )
           )
         )
@@ -337,8 +292,6 @@ class THKV1ParserSpec
           )
         )
         assert(metadata.participants.value == ModuleParticipants(4, 20))
-        assert(metadata.competences.isEmpty)
-        assert(metadata.globalCriteria.isEmpty)
         assert(
           metadata.taughtWith == List(
             UUID.fromString("d1cecfbc-a314-42f6-99b3-be92f22c3295")

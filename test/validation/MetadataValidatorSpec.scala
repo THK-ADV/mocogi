@@ -25,7 +25,7 @@ final class MetadataValidatorSpec extends AnyWordSpec with EitherValues with Opt
     ModuleAssessmentMethodEntry(am, percentage, Nil)
 
   private def prerequisiteEntry(modules: List[UUID]) =
-    ParsedPrerequisiteEntry("", modules, Nil)
+    ParsedPrerequisiteEntry("", modules)
 
   private def poOpt(module: UUID) =
     ParsedPOOptional(sp, None, module, partOfCatalog = false, Nil)
@@ -69,80 +69,37 @@ final class MetadataValidatorSpec extends AnyWordSpec with EitherValues with Opt
 
     "validating assessment methods" should {
       "pass if their percentage is 0" in {
-        val am1 = ModuleAssessmentMethods(Nil, Nil)
+        val am1 = ModuleAssessmentMethods(Nil)
         assert(assessmentMethodsValidator.validate(am1).value == am1)
 
-        val am2 = ModuleAssessmentMethods(List(method(None)), Nil)
+        val am2 = ModuleAssessmentMethods(List(method(None)))
         assert(assessmentMethodsValidator.validate(am2).value == am2)
 
-        val am3 =
-          ModuleAssessmentMethods(List(method(None)), List(method(None)))
+        val am3 = ModuleAssessmentMethods(List(method(Some(0))))
         assert(assessmentMethodsValidator.validate(am3).value == am3)
-
-        val am4 =
-          ModuleAssessmentMethods(List(method(Some(0))), List(method(Some(0))))
-        assert(assessmentMethodsValidator.validate(am4).value == am4)
       }
 
       "pass if their percentage matches 100" in {
-        val am1 =
-          ModuleAssessmentMethods(List(method(Some(30)), method(Some(70))), Nil)
+        val am1 = ModuleAssessmentMethods(List(method(Some(30)), method(Some(70))))
         assert(assessmentMethodsValidator.validate(am1).value == am1)
 
-        val am2 = ModuleAssessmentMethods(List(method(Some(100))), Nil)
+        val am2 = ModuleAssessmentMethods(List(method(Some(100))))
         assert(assessmentMethodsValidator.validate(am2).value == am2)
-
-        val am3 = ModuleAssessmentMethods(Nil, List(method(Some(100))))
-        assert(assessmentMethodsValidator.validate(am3).value == am3)
-
-        val am4 = ModuleAssessmentMethods(
-          List(method(Some(50)), method(Some(50))),
-          List(method(Some(100)))
-        )
-        assert(assessmentMethodsValidator.validate(am4).value == am4)
       }
 
       "fail if their percentage doesn't match 100" in {
         val am1 =
-          ModuleAssessmentMethods(List(method(Some(10)), method(Some(10))), Nil)
+          ModuleAssessmentMethods(List(method(Some(10)), method(Some(10))))
         assert(
           assessmentMethodsValidator.validate(am1).left.value == List(
             "mandatory sum must be null or 100, but was 20.0"
           )
         )
 
-        val am2 = ModuleAssessmentMethods(List(method(Some(50))), Nil)
+        val am2 = ModuleAssessmentMethods(List(method(Some(50))))
         assert(
           assessmentMethodsValidator.validate(am2).left.value == List(
             "mandatory sum must be null or 100, but was 50.0"
-          )
-        )
-
-        val am3 = ModuleAssessmentMethods(Nil, List(method(Some(30))))
-        assert(
-          assessmentMethodsValidator.validate(am3).left.value == List(
-            "optional sum must be null or 100, but was 30.0"
-          )
-        )
-
-        val am4 = ModuleAssessmentMethods(
-          List(method(Some(20)), method(Some(20))),
-          List(method(Some(100)))
-        )
-        assert(
-          assessmentMethodsValidator.validate(am4).left.value == List(
-            "mandatory sum must be null or 100, but was 40.0"
-          )
-        )
-
-        val am5 = ModuleAssessmentMethods(
-          List(method(Some(20)), method(Some(20))),
-          List(method(Some(50)))
-        )
-        assert(
-          assessmentMethodsValidator.validate(am5).left.value == List(
-            "mandatory sum must be null or 100, but was 40.0",
-            "optional sum must be null or 100, but was 50.0"
           )
         )
       }
@@ -203,13 +160,13 @@ final class MetadataValidatorSpec extends AnyWordSpec with EitherValues with Opt
 
     "validating ects" should {
       "pass if ects value is already set" in {
-        assert(ectsValidator.validate(5).value == ModuleECTS(5, Nil))
+        assert(ectsValidator.validate(5).value == ModuleECTS(5))
       }
 
-      "fail if neither ects value nor contributions to focus areas are set" in {
+      "fail if ects value is not set" in {
         assert(
           ectsValidator.validate(0).left.value == List(
-            "ects value must be set if contributions to focus areas are empty"
+            "ects value must be set"
           )
         )
       }
@@ -265,19 +222,19 @@ final class MetadataValidatorSpec extends AnyWordSpec with EitherValues with Opt
           prerequisitesEntryValidator("prerequisites", lookup)
             .validate(Some(prerequisiteEntry(List(m1.id, m2.id))))
             .value
-            .value == ModulePrerequisiteEntry("", List(m1, m2), Nil)
+            .value == ModulePrerequisiteEntry("", List(m1, m2))
         )
         assert(
           prerequisitesEntryValidator("prerequisites", lookup)
             .validate(Some(prerequisiteEntry(List(m1.id))))
             .value
-            .value == ModulePrerequisiteEntry("", List(m1), Nil)
+            .value == ModulePrerequisiteEntry("", List(m1))
         )
         assert(
           prerequisitesEntryValidator("prerequisites", lookup)
             .validate(Some(prerequisiteEntry(Nil)))
             .value
-            .value == ModulePrerequisiteEntry("", Nil, Nil)
+            .value == ModulePrerequisiteEntry("", Nil)
         )
       }
 
@@ -304,8 +261,8 @@ final class MetadataValidatorSpec extends AnyWordSpec with EitherValues with Opt
               )
             )
             .value == ModulePrerequisites(
-            Some(ModulePrerequisiteEntry("", List(m1), Nil)),
-            Some(ModulePrerequisiteEntry("", List(m2), Nil))
+            Some(ModulePrerequisiteEntry("", List(m1))),
+            Some(ModulePrerequisiteEntry("", List(m2)))
           )
         )
         assert(
@@ -317,7 +274,7 @@ final class MetadataValidatorSpec extends AnyWordSpec with EitherValues with Opt
               )
             )
             .value == ModulePrerequisites(
-            Some(ModulePrerequisiteEntry("", List(m1), Nil)),
+            Some(ModulePrerequisiteEntry("", List(m1))),
             None
           )
         )
@@ -502,10 +459,7 @@ final class MetadataValidatorSpec extends AnyWordSpec with EitherValues with Opt
             NonEmptyList.one(Identity.Unknown("id", "label")),
             NonEmptyList.one(Identity.Unknown("id", "label"))
           ),
-          ModuleAssessmentMethods(
-            List(method(Some(50)), method(Some(50))),
-            List(method(None))
-          ),
+          ModuleAssessmentMethods(List(method(Some(50)), method(Some(50)))),
           Examiner(Identity.NN, Identity.NN),
           ExamPhase.all,
           ModuleWorkload(5, 0, 0, 0, 0, 0),
@@ -520,8 +474,6 @@ final class MetadataValidatorSpec extends AnyWordSpec with EitherValues with Opt
           ),
           Some(ModuleParticipants(10, 20)),
           Nil,
-          Nil,
-          Nil,
           None,
           None
         )
@@ -531,7 +483,7 @@ final class MetadataValidatorSpec extends AnyWordSpec with EitherValues with Opt
           ivm1.abbrev,
           ivm1.kind,
           Some(ModuleRelation.Child(m1)),
-          ModuleECTS(1, Nil),
+          ModuleECTS(1),
           ivm1.language,
           ivm1.duration,
           ivm1.season,
@@ -548,8 +500,6 @@ final class MetadataValidatorSpec extends AnyWordSpec with EitherValues with Opt
             List(ModulePOOptional(sp, None, m2, partOfCatalog = false, List(2)))
           ),
           Some(ModuleParticipants(10, 20)),
-          Nil,
-          Nil,
           Nil,
           None,
           None
@@ -573,8 +523,6 @@ final class MetadataValidatorSpec extends AnyWordSpec with EitherValues with Opt
         assert(res.location == vm1.location)
         assert(res.pos == vm1.pos)
         assert(res.participants == vm1.participants)
-        assert(res.competences == vm1.competences)
-        assert(res.globalCriteria == vm1.globalCriteria)
         assert(res.taughtWith == vm1.taughtWith)
       }
 
@@ -594,10 +542,7 @@ final class MetadataValidatorSpec extends AnyWordSpec with EitherValues with Opt
             NonEmptyList.one(Identity.Unknown("id", "label")),
             NonEmptyList.one(Identity.Unknown("id", "label"))
           ),
-          ModuleAssessmentMethods(
-            List(method(Some(50)), method(Some(50))),
-            List(method(None))
-          ),
+          ModuleAssessmentMethods(List(method(Some(50)), method(Some(50)))),
           Examiner(Identity.NN, Identity.NN),
           ExamPhase.all,
           ModuleWorkload(5, 0, 0, 0, 0, 0),
@@ -611,8 +556,6 @@ final class MetadataValidatorSpec extends AnyWordSpec with EitherValues with Opt
             )
           ),
           Some(ModuleParticipants(20, 15)),
-          Nil,
-          Nil,
           Nil,
           None,
           None

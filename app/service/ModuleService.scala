@@ -27,7 +27,6 @@ final class ModuleService @Inject() (
   def createOrUpdateMany(modules: Seq[(Module, LocalDateTime)]) =
     repo.createOrUpdateMany(modules)
 
-  @Deprecated(since = "Introduction of /modules/$id?extend=true")
   def get(id: UUID) =
     repo.all(Map("id" -> Seq(id.toString))).single.map(_._1)
 

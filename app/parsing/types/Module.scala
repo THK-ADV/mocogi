@@ -40,8 +40,6 @@ object Module {
             .modify(_.trim)
             .focus(_.modules)
             .modify(_.sortBy(_.id))
-            .focus(_.pos)
-            .modify(_.sortBy(_.id))
         )
       )
 
@@ -49,9 +47,6 @@ object Module {
       .applyN(
         GenLens[Module](
           _.metadata.assessmentMethods.mandatory
-        ),
-        GenLens[Module](
-          _.metadata.assessmentMethods.optional
         )
       )
       .modify(
@@ -84,14 +79,6 @@ object Module {
       )
       .modify(_.sortBy(_.id))
 
-    private def competences =
-      GenLens[Module](_.metadata.competences)
-        .modify(_.sortBy(_.id))
-
-    private def globalCriteria =
-      GenLens[Module](_.metadata.globalCriteria)
-        .modify(_.sortBy(_.id))
-
     private def taughtWith =
       GenLens[Module](_.metadata.taughtWith).modify(_.sortBy(_.id))
 
@@ -109,8 +96,6 @@ object Module {
         .andThen(poMandatory)
         .andThen(poOptional)
         .andThen(identities)
-        .andThen(competences)
-        .andThen(globalCriteria)
         .andThen(taughtWith)
         .andThen(content)
         .apply(self)

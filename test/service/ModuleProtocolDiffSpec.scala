@@ -29,10 +29,7 @@ final class ModuleProtocolDiffSpec extends AnyWordSpec {
       None,
       NonEmptyList.one("a"),
       NonEmptyList.one("a"),
-      ModuleAssessmentMethodsProtocol(
-        List(ModuleAssessmentMethodEntryProtocol("method", None, Nil)),
-        Nil
-      ),
+      ModuleAssessmentMethodsProtocol(List(ModuleAssessmentMethodEntryProtocol("method", None, Nil))),
       Examiner.NN,
       NonEmptyList.one(ExamPhase.none.id),
       ModulePrerequisitesProtocol(None, None),
@@ -40,8 +37,6 @@ final class ModuleProtocolDiffSpec extends AnyWordSpec {
         List(ModulePOMandatoryProtocol("po1", None, List(1))),
         Nil
       ),
-      Nil,
-      Nil,
       Nil,
       None,
       None
@@ -202,8 +197,6 @@ final class ModuleProtocolDiffSpec extends AnyWordSpec {
               existing0.metadata.examPhases,
               existing0.metadata.prerequisites,
               existing0.metadata.po,
-              existing0.metadata.competences,
-              existing0.metadata.globalCriteria,
               existing0.metadata.taughtWith,
               existing0.metadata.attendanceRequirement,
               existing0.metadata.assessmentPrerequisite,

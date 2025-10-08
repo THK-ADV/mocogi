@@ -1,6 +1,5 @@
 package models
 
-import models.core.PO
 import play.api.libs.json.Json
 import play.api.libs.json.Writes
 
@@ -19,15 +18,11 @@ object ModulePrerequisites {
     )
 }
 
-case class ModulePrerequisiteEntry(
-    text: String,
-    modules: List[ModuleCore],
-    @Deprecated(forRemoval = true) pos: List[PO]
-)
+case class ModulePrerequisiteEntry(text: String, modules: List[ModuleCore])
 
 object ModulePrerequisiteEntry {
   implicit def writes: Writes[ModulePrerequisiteEntry] = Json.writes
 
   def toProtocol(e: ModulePrerequisiteEntry): ModulePrerequisiteEntryProtocol =
-    ModulePrerequisiteEntryProtocol(e.text, e.modules.map(_.id), e.pos.map(_.id))
+    ModulePrerequisiteEntryProtocol(e.text, e.modules.map(_.id))
 }

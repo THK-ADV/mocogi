@@ -9,8 +9,6 @@ import scala.concurrent.Future
 
 import auth.CampusId
 import database.table.core.IdentityTable
-import database.table.CreatedModuleTable
-import database.table.ModuleDraftTable
 import database.table.ModuleTable
 import database.table.ModuleUpdatePermissionTable
 import models.*
@@ -101,14 +99,6 @@ final class ModuleUpdatePermissionRepository @Inject() (
         })
     )
 
-  def allGrantedFromModule2(module: UUID) =
-    db.run(
-      tableQuery
-        .filter(a => a.module === module && a.isGranted)
-        .map(_.campusId)
-        .result
-    )
-
   def allGrantedFromModule(module: UUID) = {
     val query = sql"select get_users_with_granted_permissions_from_module(${module.toString}::uuid)".as[String].head
     db.run(query)
@@ -121,55 +111,6 @@ final class ModuleUpdatePermissionRepository @Inject() (
         .exists
         .result
     )
-
-  @Deprecated(since = "the introduction of a better api: ModuleDraftRepository.allForCampusId", forRemoval = true)
-  def allForCampusId(
-      campusId: CampusId
-  ): Future[
-    Seq[((ModuleCore, Option[Double]), ModuleUpdatePermissionType, Option[ModuleDraft])]
-  ] = {
-    val permissions = tableQuery.filter(_.campusId === campusId)
-    val liveTable   = TableQuery[ModuleTable].map(a => (a.id, a.title, a.abbrev, a.ects))
-    val draftTable  = TableQuery[CreatedModuleTable].map(a => (a.module, a.moduleTitle, a.moduleAbbrev, a.moduleECTS))
-
-    val q1 = permissions
-      .joinLeft(liveTable)
-      .on(_.module === _._1)
-      .joinLeft(TableQuery[ModuleDraftTable])
-      .on(_._1.module === _.module)
-      .filter(a => a._1._2.isDefined || a._2.isDefined)
-    val q2 = permissions
-      .joinLeft(draftTable)
-      .on(_.module === _._1)
-      .joinLeft(TableQuery[ModuleDraftTable])
-      .on(_._1.module === _.module)
-      // I am failing to project a constant null column for module draft. One module should only exist in either live or draft table
-      .filter(a => a._1._2.isDefined && a._2.isEmpty)
-
-    db.run(
-      q1.unionAll(q2)
-        .result
-        .map { xs =>
-          val res = xs.map {
-            case (((_, _, kind), core), draft) =>
-              val moduleCore = core
-                .map(a => (ModuleCore(a._1, a._2, a._3), Some(a._4)))
-                .orElse(
-                  draft.map(d =>
-                    (
-                      ModuleCore(d.module, d.moduleTitle, d.moduleAbbrev),
-                      d.moduleJson.\("metadata").\("ects").validateOpt[Double].getOrElse(None)
-                    )
-                  )
-                )
-                .get
-              (moduleCore, kind, draft)
-          }
-          assume(xs.size == res.distinctBy(_._1._1.id).size, s"expected unique modules, but found: $res")
-          res
-        }
-    )
-  }
 
   private given GetResult[String] =
     GetResult(_.nextString())

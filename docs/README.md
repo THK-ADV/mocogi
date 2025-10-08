@@ -68,7 +68,6 @@ Gibt ein Array von Modulen zurück. Ein Modul besteht aus
       - ~~`precondition`~~ (Array<String>): Gedacht für Prüfungsvoraussetzungen. Bitte nicht verwenden. Wird ersetzt
         durch [Anwesenheitspflicht und Prüfungsvorleistung](#anwesenheitspflicht-und-prüfungsvorleistung)
       - `percentage` (Double oder null): Prozentuale Verteilung bei mehreren mit UND kombinierten Prüfungsformen
-    - ~~`optional`~~ (Array): Wird entfernt, bitte nicht verwenden
   - `examiner` (Object): Prüfer (siehe [Personen und Gruppen](#personen-und-gruppen))
     - `first` (String): ID der Erstprüfer*in
     - `second` (String): ID der Zweitprüfer*in
@@ -76,7 +75,6 @@ Gibt ein Array von Modulen zurück. Ein Modul besteht aus
   - `prerequisites` (Object): Voraussetzungen
     - `recommended` (Object oder null): Empfohlene Voraussetzungen
       - `modules` (Array<String>): ID der Module, die vorausgesetzt werden
-      - ~~`pos`~~ (Array<String>): ID der POs, die vorausgesetzt werden. Wird entfernt, bitte nicht verwenden
       - `text` (String): Freitext
     - `required` (Object oder null): Zwingende Voraussetzungen
       - `modules` (Array<String>): ID der Module, die vorausgesetzt werden
@@ -121,11 +119,6 @@ Gibt ein Array von Modulen zurück. Ein Modul besteht aus
   - wenn `inf_mim5`, dann Medieninformatik Master spezifische Keys
   - wenn `inf_dsi1`, dann Digital Sciences Master spezifische Keys (kann aktuell nur wenn in Kombination mit `inf_mim5`
     auftreten)
-
-Keys, die bald entfernt werden (bitte nicht verwenden):
-
-- `module.metadata.competences`
-- `module.metadata.globalCriteria`
 
 ## Studiengänge und POs
 

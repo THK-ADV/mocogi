@@ -149,17 +149,17 @@ final class MetadataYamlPrinterSpec extends AnyWordSpec with PrinterSpec {
     }
 
     "print recommended prerequisites" in {
-      val entry0 = ModulePrerequisiteEntryProtocol("", Nil, Nil)
+      val entry0 = ModulePrerequisiteEntryProtocol("", Nil)
       val res0   = ""
       assert(run(printer.recommendedPrerequisites(entry0)) == res0)
 
-      val entry1 = ModulePrerequisiteEntryProtocol("abc", Nil, Nil)
+      val entry1 = ModulePrerequisiteEntryProtocol("abc", Nil)
       val res1 =
         s"""recommended_prerequisites:
            |  text: abc\n""".stripMargin
       assert(run(printer.recommendedPrerequisites(entry1)) == res1)
 
-      val entry2 = ModulePrerequisiteEntryProtocol("abc", List(m2, m1), Nil)
+      val entry2 = ModulePrerequisiteEntryProtocol("abc", List(m2, m1))
       val res2 =
         s"""recommended_prerequisites:
            |  text: abc
@@ -167,37 +167,6 @@ final class MetadataYamlPrinterSpec extends AnyWordSpec with PrinterSpec {
            |    - module.$m1
            |    - module.$m2\n""".stripMargin
       assert(run(printer.recommendedPrerequisites(entry2)) == res2)
-
-      val entry3 =
-        ModulePrerequisiteEntryProtocol("abc", List(m1, m2), List("def", "abc"))
-      val res3 =
-        s"""recommended_prerequisites:
-           |  text: abc
-           |  modules:
-           |    - module.$m1
-           |    - module.$m2
-           |  study_programs:
-           |    - study_program.abc
-           |    - study_program.def\n""".stripMargin
-      assert(run(printer.recommendedPrerequisites(entry3)) == res3)
-
-      val entry4 =
-        ModulePrerequisiteEntryProtocol("abc", Nil, List("abc", "def"))
-      val res4 =
-        s"""recommended_prerequisites:
-           |  text: abc
-           |  study_programs:
-           |    - study_program.abc
-           |    - study_program.def\n""".stripMargin
-      assert(run(printer.recommendedPrerequisites(entry4)) == res4)
-
-      val entry5 = ModulePrerequisiteEntryProtocol("", Nil, List("abc", "def"))
-      val res5 =
-        s"""recommended_prerequisites:
-           |  study_programs:
-           |    - study_program.abc
-           |    - study_program.def\n""".stripMargin
-      assert(run(printer.recommendedPrerequisites(entry5)) == res5)
     }
 
     "print status" in {
@@ -215,24 +184,6 @@ final class MetadataYamlPrinterSpec extends AnyWordSpec with PrinterSpec {
            |  min: 0
            |  max: 10\n""".stripMargin
       assert(run(printer.participants(participants)) == res)
-    }
-
-    "print competences" in {
-      val competences = NonEmptyList.of("def", "abc")
-      val res =
-        s"""competences:
-           |  - competence.abc
-           |  - competence.def\n""".stripMargin
-      assert(run(printer.competences(competences)) == res)
-    }
-
-    "print global criteria" in {
-      val globalCriteria = NonEmptyList.of("abc", "def")
-      val res =
-        s"""global_criteria:
-           |  - global_criteria.abc
-           |  - global_criteria.def\n""".stripMargin
-      assert(run(printer.globalCriteria(globalCriteria)) == res)
     }
 
     "print taught with" in {
@@ -361,20 +312,13 @@ final class MetadataYamlPrinterSpec extends AnyWordSpec with PrinterSpec {
               Some(100),
               List("practical")
             )
-          ),
-          List(
-            ModuleAssessmentMethodEntryProtocol("written-exam", None, Nil)
           )
         ),
         Examiner("ald", "abe"),
         NonEmptyList.of("a", "b"),
         ModulePrerequisitesProtocol(
-          Some(
-            ModulePrerequisiteEntryProtocol("abc", List(m1), Nil)
-          ),
-          Some(
-            ModulePrerequisiteEntryProtocol("", Nil, List("po1", "po2"))
-          )
+          Some(ModulePrerequisiteEntryProtocol("abc", List(m1))),
+          None
         ),
         ModulePOProtocol(
           List(
@@ -399,8 +343,6 @@ final class MetadataYamlPrinterSpec extends AnyWordSpec with PrinterSpec {
             )
           )
         ),
-        List("competence1", "competence2"),
-        List("global_criteria1", "global_criteria2"),
         List(m1),
         None,
         Some(AssessmentPrerequisite("modules", "reason"))
@@ -435,8 +377,6 @@ final class MetadataYamlPrinterSpec extends AnyWordSpec with PrinterSpec {
            |  - method: assessment.written-exam
            |    percentage: 100.0
            |    precondition: assessment.practical
-           |assessment_methods_optional:
-           |  - method: assessment.written-exam
            |first_examiner: person.ald
            |second_examiner: person.abe
            |exam_phases:
@@ -452,10 +392,6 @@ final class MetadataYamlPrinterSpec extends AnyWordSpec with PrinterSpec {
            |recommended_prerequisites:
            |  text: abc
            |  modules: module.$m1
-           |required_prerequisites:
-           |  study_programs:
-           |    - study_program.po1
-           |    - study_program.po2
            |status: status.active
            |location: location.gm
            |po_mandatory:
@@ -480,12 +416,6 @@ final class MetadataYamlPrinterSpec extends AnyWordSpec with PrinterSpec {
            |participants:
            |  min: 0
            |  max: 10
-           |competences:
-           |  - competence.competence1
-           |  - competence.competence2
-           |global_criteria:
-           |  - global_criteria.global_criteria1
-           |  - global_criteria.global_criteria2
            |taught_with: module.$m1
            |assessment_prerequisite:
            |  modules: modules
