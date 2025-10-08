@@ -56,8 +56,7 @@ final class RawModuleParserSpec extends AnyWordSpec with EitherValues with Optio
               UUID.fromString("ce09539e-fc0a-4c74-b85d-40a293998bb4"),
               UUID.fromString("d4365c35-a3aa-4dab-b6a3-e17449269055"),
               UUID.fromString("84223dc5-69b9-4dbb-a6ea-45bf5e9672e3")
-            ),
-            Nil
+            )
           )
         )
       )
@@ -220,8 +219,7 @@ final class RawModuleParserSpec extends AnyWordSpec with EitherValues with Optio
               UUID.fromString("ce09539e-fc0a-4c74-b85d-40a293998bb4"),
               UUID.fromString("d4365c35-a3aa-4dab-b6a3-e17449269055"),
               UUID.fromString("84223dc5-69b9-4dbb-a6ea-45bf5e9672e3")
-            ),
-            Nil
+            )
           )
         )
       )

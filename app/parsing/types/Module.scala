@@ -40,8 +40,6 @@ object Module {
             .modify(_.trim)
             .focus(_.modules)
             .modify(_.sortBy(_.id))
-            .focus(_.pos)
-            .modify(_.sortBy(_.id))
         )
       )
 

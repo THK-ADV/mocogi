@@ -319,7 +319,7 @@ final class MetadataYamlPrinter(identLevel: Int) {
       key: Printer[Unit],
       value: ModulePrerequisiteEntryProtocol
   ) = {
-    if (value.text.isEmpty && value.pos.isEmpty && value.modules.isEmpty)
+    if (value.text.isEmpty && value.modules.isEmpty)
       always[Unit]()
     else
       key
@@ -342,22 +342,6 @@ final class MetadataYamlPrinter(identLevel: Int) {
                     prefix(s"${ModulePrerequisitesParser.modulesKey}:"),
                     xs,
                     ModulePrerequisitesParser.modulesPrefix.dropRight(1),
-                    identLevel
-                  )
-                )
-            )
-        )
-        .skipOpt(
-          NonEmptyList
-            .fromList(value.pos)
-            .map(xs =>
-              whitespace
-                .repeat(identLevel)
-                .skip(
-                  list(
-                    prefix(s"${ModulePrerequisitesParser.studyProgramsKey}:"),
-                    xs,
-                    ModulePrerequisitesParser.studyProgramsPrefix.dropRight(1),
                     identLevel
                   )
                 )

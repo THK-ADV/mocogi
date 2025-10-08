@@ -75,7 +75,6 @@ Gibt ein Array von Modulen zurück. Ein Modul besteht aus
   - `prerequisites` (Object): Voraussetzungen
     - `recommended` (Object oder null): Empfohlene Voraussetzungen
       - `modules` (Array<String>): ID der Module, die vorausgesetzt werden
-      - ~~`pos`~~ (Array<String>): ID der POs, die vorausgesetzt werden. Wird entfernt, bitte nicht verwenden
       - `text` (String): Freitext
     - `required` (Object oder null): Zwingende Voraussetzungen
       - `modules` (Array<String>): ID der Module, die vorausgesetzt werden

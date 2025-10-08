@@ -44,8 +44,6 @@ object ModuleProtocol {
             .modify(_.trim)
             .focus(_.modules)
             .modify(_.sorted)
-            .focus(_.pos)
-            .modify(_.sorted)
         )
       )
 

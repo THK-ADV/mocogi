@@ -25,7 +25,7 @@ final class MetadataValidatorSpec extends AnyWordSpec with EitherValues with Opt
     ModuleAssessmentMethodEntry(am, percentage, Nil)
 
   private def prerequisiteEntry(modules: List[UUID]) =
-    ParsedPrerequisiteEntry("", modules, Nil)
+    ParsedPrerequisiteEntry("", modules)
 
   private def poOpt(module: UUID) =
     ParsedPOOptional(sp, None, module, partOfCatalog = false, Nil)
@@ -222,19 +222,19 @@ final class MetadataValidatorSpec extends AnyWordSpec with EitherValues with Opt
           prerequisitesEntryValidator("prerequisites", lookup)
             .validate(Some(prerequisiteEntry(List(m1.id, m2.id))))
             .value
-            .value == ModulePrerequisiteEntry("", List(m1, m2), Nil)
+            .value == ModulePrerequisiteEntry("", List(m1, m2))
         )
         assert(
           prerequisitesEntryValidator("prerequisites", lookup)
             .validate(Some(prerequisiteEntry(List(m1.id))))
             .value
-            .value == ModulePrerequisiteEntry("", List(m1), Nil)
+            .value == ModulePrerequisiteEntry("", List(m1))
         )
         assert(
           prerequisitesEntryValidator("prerequisites", lookup)
             .validate(Some(prerequisiteEntry(Nil)))
             .value
-            .value == ModulePrerequisiteEntry("", Nil, Nil)
+            .value == ModulePrerequisiteEntry("", Nil)
         )
       }
 
@@ -261,8 +261,8 @@ final class MetadataValidatorSpec extends AnyWordSpec with EitherValues with Opt
               )
             )
             .value == ModulePrerequisites(
-            Some(ModulePrerequisiteEntry("", List(m1), Nil)),
-            Some(ModulePrerequisiteEntry("", List(m2), Nil))
+            Some(ModulePrerequisiteEntry("", List(m1))),
+            Some(ModulePrerequisiteEntry("", List(m2)))
           )
         )
         assert(
@@ -274,7 +274,7 @@ final class MetadataValidatorSpec extends AnyWordSpec with EitherValues with Opt
               )
             )
             .value == ModulePrerequisites(
-            Some(ModulePrerequisiteEntry("", List(m1), Nil)),
+            Some(ModulePrerequisiteEntry("", List(m1))),
             None
           )
         )

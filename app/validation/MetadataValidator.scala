@@ -84,7 +84,7 @@ object MetadataValidator {
       .pullback[Option[ParsedPrerequisiteEntry]](
         _.map(_.modules).getOrElse(Nil)
       )
-      .map((p, ms) => p.map(e => ModulePrerequisiteEntry(e.text, ms, e.studyPrograms)))
+      .map((p, ms) => p.map(e => ModulePrerequisiteEntry(e.text, ms)))
 
   def prerequisitesValidator(
       lookup: Lookup
