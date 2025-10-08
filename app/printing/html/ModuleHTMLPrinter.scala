@@ -15,7 +15,7 @@ import printing.pandoc.PandocApi
 import printing.pandoc.PrinterOutput
 import printing.pandoc.PrinterOutputType
 
-@deprecated
+@deprecated("Gets replaced by JSON representation")
 @Singleton
 final class ModuleHTMLPrinter @Inject() (
     studyProgramViewRepo: StudyProgramViewRepository,

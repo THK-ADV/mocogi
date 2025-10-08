@@ -50,26 +50,9 @@ final class ModuleDraftController @Inject() (
 
   def moduleDrafts() =
     auth.andThen(personAction).async { r =>
-      def oldImpl() = for {
-        modules <- moduleUpdatePermissionService
-          .allForCampusId(r.request.campusId)
-      } yield Ok(Json.toJson(modules.map {
-        case ((module, ects), kind, draft) =>
-          Json.obj(
-            "module"              -> module,
-            "moduleDraft"         -> draft.map(moduleDraftWrites(r.messages).writes),
-            "ects"                -> ects,
-            "moduleDraftState"    -> draft.state(),
-            "privilegedForModule" -> kind.isInherited
-          )
-      }))
-      def newImpl() = {
-        val cid   = r.request.campusId
-        val roles = r.request.token.roles
-        moduleUpdatePermissionService.allForUser(cid, roles).map(Ok(_))
-      }
-
-      if r.isNewApi then newImpl() else oldImpl()
+      val cid   = r.request.campusId
+      val roles = r.request.token.roles
+      moduleUpdatePermissionService.allForUser(cid, roles).map(Ok(_))
     }
 
   def getModuleDraft(moduleId: UUID) =
@@ -182,14 +165,13 @@ final class ModuleDraftController @Inject() (
   private def moduleDraftWrites(messages: Messages): Writes[ModuleDraft] =
     Writes.apply(d =>
       Json.obj(
-        "module" -> d.module,
-        "author" -> d.author,
-        "status" -> d.source,
-        "data"   -> d.moduleJson,
-        "keysToBeReviewed" -> d.keysToBeReviewed
-          .map(moduleKeyToJson(_, messages)),
-        "mergeRequestId" -> d.mergeRequest.map(_._1.value),
-        "lastModified"   -> d.lastModified
+        "module"           -> d.module,
+        "author"           -> d.author,
+        "status"           -> d.source,
+        "data"             -> d.moduleJson,
+        "keysToBeReviewed" -> d.keysToBeReviewed.map(moduleKeyToJson(_, messages)),
+        "mergeRequestId"   -> d.mergeRequest.map(_._1.value),
+        "lastModified"     -> d.lastModified
       )
     )
 }

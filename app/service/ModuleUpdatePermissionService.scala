@@ -12,8 +12,6 @@ import auth.CampusId
 import cats.data.NonEmptyList
 import database.repo.ModuleUpdatePermissionRepository
 import models.core.Identity
-import models.ModuleCore
-import models.ModuleDraft
 import models.ModuleUpdatePermission
 import models.ModuleUpdatePermissionType
 import models.ModuleUpdatePermissionType.Inherited
@@ -60,14 +58,6 @@ final class ModuleUpdatePermissionService @Inject() (
 
   def allGrantedFromModule(moduleId: UUID): Future[String] =
     repo.allGrantedFromModule(moduleId)
-
-  @Deprecated(since = "the introduction of a better api: ModuleDraftRepository.allForCampusId", forRemoval = true)
-  def allForCampusId(
-      campusId: CampusId
-  ): Future[
-    Seq[((ModuleCore, Option[Double]), ModuleUpdatePermissionType, Option[ModuleDraft])]
-  ] =
-    repo.allForCampusId(campusId)
 
   private def parsePOs(roles: Set[String]) = {
     def parseAccreditationPOs(role: String): Option[List[String]] = {
