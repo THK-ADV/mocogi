@@ -84,18 +84,14 @@ final class MetadataParsingService @Inject() (
       Either.cond(errs.isEmpty, parses, errs)
     }
 
-  def parse(
-      print: Print
-  ): Future[
-    Either[ParsingError, (ParsedMetadata, ModuleContent, ModuleContent)]
-  ] =
+  def parse(print: Print): Future[Either[ParsingError, (ParsedMetadata, ModuleContent, ModuleContent)]] =
     parser.map { p =>
-      val (res, rest) = p.parse(print.value)
-      res.flatMap { parsedMetadata =>
-        ContentParsingService.parse(rest)._1.map {
-          case (de, en) =>
-            (parsedMetadata, de, en)
-        }
+      val (res, rest) = p.zip(ContentParsingService.parser).parse(print.value)
+      if rest.nonEmpty then {
+        logger.error(
+          s"failed to parse ${print.value.take(20)} …. expected file to be fully parsed, but the remaining string is: $rest"
+        )
       }
+      res.map { case (m, (de, en)) => (m, de, en) }
     }
 }
