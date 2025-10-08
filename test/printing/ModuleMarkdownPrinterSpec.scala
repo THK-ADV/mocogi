@@ -76,7 +76,7 @@ final class ModuleMarkdownPrinterSpec extends AnyWordSpec with EitherValues {
         Some(
           ModuleRelation.Child(ModuleCore(UUID.randomUUID(), "title", "abbrev"))
         ),
-        ModuleECTS(5, Nil),
+        ModuleECTS(5),
         ModuleLanguage("lang", "lang", "lang"),
         1,
         Season("season", "season", "season"),

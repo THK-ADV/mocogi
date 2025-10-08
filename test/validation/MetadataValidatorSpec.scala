@@ -160,13 +160,13 @@ final class MetadataValidatorSpec extends AnyWordSpec with EitherValues with Opt
 
     "validating ects" should {
       "pass if ects value is already set" in {
-        assert(ectsValidator.validate(5).value == ModuleECTS(5, Nil))
+        assert(ectsValidator.validate(5).value == ModuleECTS(5))
       }
 
-      "fail if neither ects value nor contributions to focus areas are set" in {
+      "fail if ects value is not set" in {
         assert(
           ectsValidator.validate(0).left.value == List(
-            "ects value must be set if contributions to focus areas are empty"
+            "ects value must be set"
           )
         )
       }
@@ -483,7 +483,7 @@ final class MetadataValidatorSpec extends AnyWordSpec with EitherValues with Opt
           ivm1.abbrev,
           ivm1.kind,
           Some(ModuleRelation.Child(m1)),
-          ModuleECTS(1, Nil),
+          ModuleECTS(1),
           ivm1.language,
           ivm1.duration,
           ivm1.season,

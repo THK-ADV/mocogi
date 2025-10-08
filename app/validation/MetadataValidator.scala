@@ -41,8 +41,8 @@ object MetadataValidator {
     Validator { ectsValue =>
       Either.cond(
         ectsValue != 0,
-        ModuleECTS(ectsValue, Nil),
-        List("ects value must be set if contributions to focus areas are empty")
+        ModuleECTS(ectsValue),
+        List("ects value must be set")
       )
     }
 
