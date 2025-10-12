@@ -2,8 +2,10 @@ package catalog
 
 import javax.inject.Inject
 import javax.inject.Singleton
+
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
+
 import git.api.GitCommitApiService
 import git.api.GitFileApiService
 import git.Branch

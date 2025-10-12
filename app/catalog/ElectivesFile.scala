@@ -1,6 +1,7 @@
 package catalog
 
 import java.nio.file.Path
+
 import catalog.ElectivesFile.fileExt
 import models.Semester
 

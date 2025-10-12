@@ -8,9 +8,11 @@ import java.time.LocalDateTime
 import javax.inject.Inject
 import javax.inject.Named
 import javax.inject.Singleton
+
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.util.control.NonFatal
+
 import auth.AuthorizationAction
 import controllers.actions.DirectorCheck
 import controllers.actions.PermissionCheck
@@ -27,7 +29,11 @@ import ops.EitherOps.EStringThrowOps
 import ops.FileOps.FileOps0
 import play.api.libs.json.Json
 import play.api.libs.json.Reads
-import play.api.mvc.{AbstractController, Action, AnyContent, ControllerComponents, Request}
+import play.api.mvc.AbstractController
+import play.api.mvc.Action
+import play.api.mvc.AnyContent
+import play.api.mvc.ControllerComponents
+import play.api.mvc.Request
 import play.mvc.Http.HeaderNames
 import service.ExamListService
 
@@ -100,7 +106,7 @@ final class ExamListsController @Inject() (
 
   // TODO: message that things get overridden
 
-  def replace(studyProgram: String, po: String): Action[AnyContent] =
+  def replace(studyProgram: String, po: String): Action[(String, LocalDate)] =
     auth(parse.json(createExamListReads))
       .andThen(personAction)
       .andThen(hasRoleInStudyProgram(List(UniversityRole.PAV), studyProgram))

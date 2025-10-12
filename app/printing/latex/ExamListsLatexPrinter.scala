@@ -5,6 +5,7 @@ import java.time.LocalDate
 import java.util.UUID
 
 import scala.collection.mutable.ListBuffer
+
 import cats.data.NonEmptyList
 import models.*
 import models.core.AssessmentMethod
@@ -365,9 +366,18 @@ final class ExamListsLatexPrinter(
         m.metadata.moduleRelation match {
           case Some(ModuleRelationProtocol.Child(_)) => // child modules are rendered below their parent module
           case Some(ModuleRelationProtocol.Parent(children)) =>
-            children.toList.map(id => modules.find(_.id.contains(id)).get).sortBy(_.metadata.title).foreach { m =>
-              moduleMatrixRow(m.metadata.title, m.metadata.po, colIds, m.id.get)
-            }
+            children.toList
+              .map { id =>
+                val child = modules.find(_.id.contains(id))
+                if child.isEmpty then
+                  logger.error(s"error while printing parent module ${m.id.get}: unable to find child module $id")
+                child
+              }
+              .collect { case Some(m) => m }
+              .sortBy(_.metadata.title)
+              .foreach { m =>
+                moduleMatrixRow(m.metadata.title, m.metadata.po, colIds, m.id.get)
+              }
           case None =>
             moduleMatrixRow(m.metadata.title, m.metadata.po, colIds, m.id.get)
         }
