@@ -14,8 +14,9 @@ import git.api.GitFileDownloadService
 import git.GitConfig
 import models.core.ModuleStatus
 import models.ModuleProtocol
+import play.api.Logging
 
-trait ModulePreview {
+trait ModulePreview { self: Logging =>
 
   protected def diffApiService: GitDiffApiService
   protected def downloadService: GitFileDownloadService
@@ -23,21 +24,35 @@ trait ModulePreview {
 
   private implicit def config: GitConfig = diffApiService.config
 
-  def changedActiveModulesFromPreview(po: String, liveModules: Seq[UUID]): Future[Seq[ModuleProtocol]] =
+  def mergeWithChangedModulesFromPreview(po: String, liveModules: Seq[ModuleProtocol]): Future[Seq[ModuleProtocol]] =
     diffApiService
       .compare(config.mainBranch, config.draftBranch)
       .flatMap { diffs =>
         val downloads = diffs.par.map(d => downloadService.downloadModuleFromPreviewBranch(d.path.moduleId.get))
         Future.sequence(downloads.seq)
       }
-      .map(_.collect {
-        case Some(m) if ModuleStatus.isActive(m.metadata.status) && m.metadata.po.hasPORelation(po) => m
-      }.toSeq)
+      .map { preview =>
+        val modules         = new ListBuffer[ModuleProtocol]()
+        val inactiveModules = new ListBuffer[UUID]()
+        preview.foreach {
+          case Some(m) if m.metadata.po.hasPORelation(po) =>
+            if liveModules.exists(_.id.get == m.id.get) && !ModuleStatus.isActive(m.metadata.status) then {
+              // Ignore modules switch went inactive from live to preview
+              inactiveModules += m.id.get
+            } else if ModuleStatus.isActive(m.metadata.status) then {
+              // only consider active modules
+              modules += m
+            }
+          case _ =>
+        }
+        val activeLiveModules = liveModules.filterNot(m => inactiveModules.contains(m.id.get))
+        mergeModules(activeLiveModules, modules.toSeq)
+      }
 
   def changedActiveModulesFromPreviewWithLastModified(
       po: String,
-      liveModules: Seq[UUID]
-  ): Future[Seq[(ModuleProtocol, Option[LocalDateTime])]] =
+      liveModules: Seq[(ModuleProtocol, LocalDateTime)]
+  ): Future[(Seq[(ModuleProtocol, LocalDateTime)], Seq[(ModuleProtocol, Option[LocalDateTime])])] =
     diffApiService
       .compare(config.mainBranch, config.draftBranch)
       .flatMap { diffs =>
@@ -45,10 +60,24 @@ trait ModulePreview {
           diffs.par.map(d => downloadService.downloadModuleFromPreviewBranchWithLastModified(d.path.moduleId.get))
         Future.sequence(downloads.seq)
       }
-      .map(_.collect {
-        case Some((m, lastModified)) if ModuleStatus.isActive(m.metadata.status) && m.metadata.po.hasPORelation(po) =>
-          (m, lastModified)
-      }.toSeq)
+      .map { preview =>
+        val modules         = new ListBuffer[(ModuleProtocol, Option[LocalDateTime])]()
+        val inactiveModules = new ListBuffer[UUID]()
+        preview.foreach {
+          case Some((m, ld)) if m.metadata.po.hasPORelation(po) =>
+            if liveModules.exists(_._1.id.get == m.id.get) && !ModuleStatus.isActive(m.metadata.status) then {
+              // Ignore modules switch went inactive from live to preview
+              inactiveModules += m.id.get
+            } else if ModuleStatus.isActive(m.metadata.status) then {
+              // only consider active modules
+              modules += (m -> ld)
+            }
+          case _ =>
+        }
+        val activeLiveModules = liveModules.filterNot(m => inactiveModules.contains(m._1.id.get))
+        val previewModules    = modules.toSeq
+        (activeLiveModules, previewModules)
+      }
 
   @targetName("mergeModulesWithLastModified")
   def mergeModules(
@@ -62,6 +91,12 @@ trait ModulePreview {
           builder.append((liveModule, Some(lastModified)))
         }
     }
+    val nonActiveModules = builder.filterNot(m => ModuleStatus.isActive(m._1.metadata.status))
+    if nonActiveModules.nonEmpty then {
+      logger.error(
+        s"expected active modules, but found: ${nonActiveModules.map(a => (a._1.id.get, a._1.metadata.title))}"
+      )
+    }
     assume(
       builder.size == builder.distinctBy(_._1.id.get).size,
       s"""expected modules to be unique
@@ -72,7 +107,7 @@ trait ModulePreview {
     builder.toList
   }
 
-  def mergeModules(
+  private def mergeModules(
       liveModules: Seq[ModuleProtocol],
       changedModules: Seq[ModuleProtocol]
   ): Seq[ModuleProtocol] = {
@@ -81,6 +116,10 @@ trait ModulePreview {
       if !builder.exists(_.id.get == liveModule.id.get) then {
         builder.append(liveModule)
       }
+    }
+    val nonActiveModules = builder.filterNot(m => ModuleStatus.isActive(m.metadata.status))
+    if nonActiveModules.nonEmpty then {
+      logger.error(s"expected active modules, but found: ${nonActiveModules.map(a => (a.id.get, a.metadata.title))}")
     }
     assume(
       builder.size == builder.distinctBy(_.id.get).size,
