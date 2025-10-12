@@ -8,8 +8,8 @@ import javax.inject.Singleton
 import scala.jdk.CollectionConverters.IteratorHasAsScala
 
 import catalog.ElectivesFile
-import catalog.Semester
 import models.core.IDLabel
+import models.Semester
 import play.api.libs.json.JsArray
 import play.api.libs.json.Json
 import play.api.mvc.AbstractController
@@ -18,6 +18,7 @@ import play.api.mvc.ControllerComponents
 import play.api.mvc.Request
 import providers.ConfigReader
 
+@deprecated("Discuss the existence of this class")
 @Singleton
 final class ElectiveCatalogueController @Inject() (
     cc: ControllerComponents,

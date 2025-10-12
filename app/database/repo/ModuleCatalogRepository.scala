@@ -7,10 +7,10 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 import catalog.ModuleCatalogList
-import catalog.Semester
 import database.table.ModuleCatalog
 import database.table.ModuleCatalogEntry
 import database.view.StudyProgramViewRepository
+import models.Semester
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.db.slick.HasDatabaseConfigProvider
 import slick.jdbc.JdbcProfile

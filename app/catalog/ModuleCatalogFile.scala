@@ -1,8 +1,7 @@
 package catalog
 
 import java.nio.file.Path
-
-import models.StudyProgramView
+import models.{Semester, StudyProgramView}
 
 case class ModuleCatalogFile[PDF](
     filename: String,
