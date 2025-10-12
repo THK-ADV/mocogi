@@ -6,7 +6,6 @@ import java.util.UUID
 
 import scala.collection.mutable.ListBuffer
 
-import catalog.Semester
 import cats.data.NonEmptyList
 import models.*
 import models.core.*

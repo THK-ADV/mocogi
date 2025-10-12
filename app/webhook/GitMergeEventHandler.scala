@@ -17,7 +17,6 @@ import scala.util.Failure
 import scala.util.Success
 
 import catalog.ModuleCatalogService
-import catalog.Semester
 import cats.data.NonEmptyList
 import database.repo.ModuleCatalogGenerationRequestRepository
 import database.repo.ModuleDraftRepository

@@ -12,6 +12,7 @@ import git.Branch
 import git.GitCommitAction
 import git.GitCommitActionType
 import git.GitFilePath
+import models.Semester
 
 @Singleton
 final class ModuleCatalogCommitService @Inject() (

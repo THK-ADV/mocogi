@@ -6,11 +6,11 @@ import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-import catalog.Semester
 import database.table.ModuleCatalogGenerationRequestTable
 import git.MergeRequestId
 import git.MergeRequestStatus
 import models.ModuleCatalogGenerationRequest
+import models.Semester
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.db.slick.HasDatabaseConfigProvider
 import slick.jdbc.JdbcProfile

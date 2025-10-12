@@ -9,14 +9,15 @@ import auth.AuthorizationAction
 import auth.Role.Admin
 import catalog.ModuleCatalogService
 import catalog.PreviewMergeActor
-import catalog.Semester
 import controllers.actions.PermissionCheck
 import controllers.actions.RoleCheck
+import models.Semester
 import play.api.mvc.AbstractController
 import play.api.mvc.AnyContent
 import play.api.mvc.ControllerComponents
 import play.api.mvc.Request
 
+@deprecated("Discuss the existence of this class")
 @Singleton
 final class BigBangController @Inject() (
     cc: ControllerComponents,

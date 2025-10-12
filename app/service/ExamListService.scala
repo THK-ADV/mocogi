@@ -2,6 +2,7 @@ package service
 
 import java.nio.file.Files
 import java.nio.file.Path
+import java.time.LocalDate
 import java.util.Locale
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -9,7 +10,6 @@ import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-import catalog.Semester
 import database.repo.core.SpecializationRepository
 import database.view.StudyProgramViewRepository
 import git.api.GitDiffApiService
@@ -17,6 +17,7 @@ import git.api.GitFileDownloadService
 import git.GitConfig
 import models.FullPoId
 import models.ModuleProtocol
+import models.Semester
 import ops.EitherOps.EStringThrowOps
 import play.api.i18n.Lang
 import play.api.i18n.MessagesApi
@@ -43,27 +44,23 @@ final class ExamListService @Inject() (
 
   private given gitConfig: GitConfig = diffApiService.config
 
-  def examLists(po: String, latexFile: Path): Future[Path] =
-    generateExamLists(po, latexFile, preview = false)
+  def createExamList(po: String, latexFile: Path, semester: Semester, date: LocalDate): Future[Path] =
+    generateExamList(po, latexFile, Some((semester, date)))
 
-  def examListsPreview(po: String, latexFile: Path): Future[Path] =
-    generateExamLists(po, latexFile, preview = true)
+  def previewExamList(po: String, latexFile: Path): Future[Path] =
+    generateExamList(po, latexFile, None)
 
-  private def getModules(po: String, preview: Boolean): Future[Seq[ModuleProtocol]] = {
+  private def getModules(po: String): Future[Seq[ModuleProtocol]] = {
     val liveModules = moduleService.allFromPO(po, activeOnly = true).map(_.map(_._1))
-    if preview then {
-      for
-        liveModules   <- liveModules
-        changedModule <- changedActiveModulesFromPreview(po, liveModules.map(_.id.get))
-      yield mergeModules(liveModules, changedModule)
-    } else {
-      liveModules
-    }
+    for
+      liveModules   <- liveModules
+      changedModule <- changedActiveModulesFromPreview(po, liveModules.map(_.id.get))
+    yield mergeModules(liveModules, changedModule)
   }
 
-  private def generateExamLists(po: String, latexFile: Path, preview: Boolean) =
+  private def generateExamList(po: String, latexFile: Path, semester: Option[(Semester, LocalDate)]) =
     studyProgramViewRepo.getByPo(FullPoId(po)).flatMap { studyProgram =>
-      logger.info(s"generating exam list for po $po (preview = $preview)")
+      logger.info(s"generating exam list for po $po (preview = ${semester.isEmpty})")
 
       if studyProgram.specialization.isDefined then
         Future.failed(new Exception("exam list generation is only supported for pos without specialization"))
@@ -71,7 +68,8 @@ final class ExamListService @Inject() (
         val assessmentMethods = assessmentMethodService.all()
         val people            = identityService.all()
         val specializations   = specializationRepository.allByPO(po)
-        val modules           = getModules(po, preview)
+        val modules           = getModules(po)
+        val lang              = Lang(Locale.GERMANY)
 
         for
           assessmentMethods <- assessmentMethods
@@ -79,8 +77,22 @@ final class ExamListService @Inject() (
           people            <- people
           modules           <- modules
           genericModules    <- if specializations.nonEmpty then moduleService.allGeneric() else Future.successful(Nil)
-          printer =
-            if preview then
+          printer = semester match {
+            case Some((s, d)) =>
+              ExamListsLatexPrinter
+                .default(
+                  modules,
+                  studyProgram,
+                  assessmentMethods,
+                  people,
+                  specializations,
+                  genericModules,
+                  s,
+                  d,
+                  messagesApi,
+                  lang
+                )
+            case None =>
               ExamListsLatexPrinter
                 .preview(
                   modules,
@@ -90,21 +102,9 @@ final class ExamListService @Inject() (
                   specializations,
                   genericModules,
                   messagesApi,
-                  Lang(Locale.GERMANY)
+                  lang
                 )
-            else
-              ExamListsLatexPrinter
-                .default(
-                  modules,
-                  studyProgram,
-                  assessmentMethods,
-                  people,
-                  specializations,
-                  genericModules,
-                  Semester.current(),
-                  messagesApi,
-                  Lang(Locale.GERMANY)
-                )
+          }
           content = printer.print().toString()
           path    = Files.writeString(latexFile, content)
           pdf <- compile(path).flatMap(_ => getPdf(path)).toFuture

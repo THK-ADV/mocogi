@@ -10,6 +10,7 @@ import catalog.PreviewMergeActor.CreateMergeRequest
 import database.repo.ModuleCatalogGenerationRequestRepository
 import git.api.GitMergeRequestApiService
 import models.ModuleCatalogGenerationRequest
+import models.Semester
 import ops.FutureOps.Ops
 import ops.LoggerOps
 import org.apache.pekko.actor.Actor

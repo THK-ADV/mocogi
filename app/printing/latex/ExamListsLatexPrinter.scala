@@ -1,10 +1,11 @@
 package printing.latex
 
+import java.time.format.DateTimeFormatter
+import java.time.LocalDate
 import java.util.UUID
 
 import scala.collection.mutable.ListBuffer
 
-import catalog.Semester
 import cats.data.NonEmptyList
 import models.*
 import models.core.AssessmentMethod
@@ -28,6 +29,7 @@ object ExamListsLatexPrinter {
       specializations: Seq[Specialization],
       genericModules: Seq[ModuleCore],
       semester: Semester,
+      timestamp: LocalDate,
       messages: MessagesApi,
       lang: Lang
   ): ExamListsLatexPrinter =
@@ -38,7 +40,7 @@ object ExamListsLatexPrinter {
       people,
       specializations,
       genericModules,
-      Some(semester),
+      Some(semester, timestamp),
       messages
     )(
       using lang
@@ -75,7 +77,7 @@ final class ExamListsLatexPrinter(
     people: Seq[Identity],
     specializations: Seq[Specialization],
     genericModules: Seq[ModuleCore],
-    semester: Option[Semester],
+    semester: Option[(Semester, LocalDate)],
     messages: MessagesApi,
 )(using lang: Lang)
     extends Logging {
@@ -105,7 +107,7 @@ final class ExamListsLatexPrinter(
 
   private var usedW = false
 
-  def print() = {
+  def print(): StringBuilder = {
     builder.append("\\documentclass[12pt, oneside]{article}\n")
     packages()
     commands()
@@ -364,9 +366,18 @@ final class ExamListsLatexPrinter(
         m.metadata.moduleRelation match {
           case Some(ModuleRelationProtocol.Child(_)) => // child modules are rendered below their parent module
           case Some(ModuleRelationProtocol.Parent(children)) =>
-            children.toList.map(id => modules.find(_.id.contains(id)).get).sortBy(_.metadata.title).foreach { m =>
-              moduleMatrixRow(m.metadata.title, m.metadata.po, colIds, m.id.get)
-            }
+            children.toList
+              .map { id =>
+                val child = modules.find(_.id.contains(id))
+                if child.isEmpty then
+                  logger.error(s"error while printing parent module ${m.id.get}: unable to find child module $id")
+                child
+              }
+              .collect { case Some(m) => m }
+              .sortBy(_.metadata.title)
+              .foreach { m =>
+                moduleMatrixRow(m.metadata.title, m.metadata.po, colIds, m.id.get)
+              }
           case None =>
             moduleMatrixRow(m.metadata.title, m.metadata.po, colIds, m.id.get)
         }
@@ -392,11 +403,17 @@ final class ExamListsLatexPrinter(
   }
 
   private def title() = {
+    val (semesterLabel, validityStatementDate) = semester match {
+      case Some((s, d)) =>
+        val df = DateTimeFormatter.ofPattern("dd.MM.yyyy")
+        (s"\\LARGE ${strings.label(s)} ${s.year}", d.format(df))
+      case None =>
+        (strings.previewLabel, "\\rule{4cm}{0.4pt}")
+    }
     val titleLabel        = messages("latex.exam_lists.title")
     val studyProgramLabel = s"${escape(strings.label(studyProgram))} PO ${studyProgram.po.version}"
     val degreeLabel       = strings.description(studyProgram.degree)
-    val semesterLabel     = semester.fold(strings.previewLabel)(s => s"\\LARGE ${strings.label(s)} ${s.year}")
-    val validityStatement = messages("latex.exam_lists.validity_statement", "\\rule{4cm}{0.4pt}")
+    val validityStatement = messages("latex.exam_lists.validity_statement", validityStatementDate)
     builder.append(
       s"""\\begin{titlepage}
          |\\vspace*{\\fill}
