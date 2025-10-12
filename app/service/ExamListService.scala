@@ -53,9 +53,9 @@ final class ExamListService @Inject() (
   private def getModules(po: String): Future[Seq[ModuleProtocol]] = {
     val liveModules = moduleService.allFromPO(po, activeOnly = true).map(_.map(_._1))
     for
-      liveModules   <- liveModules
-      changedModule <- changedActiveModulesFromPreview(po, liveModules.map(_.id.get))
-    yield mergeModules(liveModules, changedModule)
+      liveModules <- liveModules
+      modules     <- mergeWithChangedModulesFromPreview(po, liveModules)
+    yield modules
   }
 
   private def generateExamList(po: String, latexFile: Path, semester: Option[(Semester, LocalDate)]) =

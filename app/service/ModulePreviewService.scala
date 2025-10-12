@@ -73,9 +73,9 @@ final class ModulePreviewService @Inject() (
     }
 
     for {
-      (all, poOnly)  <- studyPrograms
-      liveModules    <- moduleService.allFromPO(po, activeOnly = true)
-      changedModules <- changedActiveModulesFromPreviewWithLastModified(po, liveModules.map(_._1.id.get))
+      (all, poOnly)                 <- studyPrograms
+      liveModules                   <- moduleService.allFromPO(po, activeOnly = true)
+      (liveModules, changedModules) <- changedActiveModulesFromPreviewWithLastModified(po, liveModules)
       modules       = mergeModules(liveModules, changedModules)
       moduleDiffs   = diffs(liveModules, changedModules)
       latexSnippets = getLatexSnippets(latexFile.getParent, po, moduleDiffs)
