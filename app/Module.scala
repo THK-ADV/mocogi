@@ -113,6 +113,10 @@ class Module(@unused environment: Environment, configuration: Configuration)
       .annotatedWith(Names.named("reviewNotificationUrl"))
       .toInstance(configuration.nonEmptyString("mail.reviewUrl"))
 
+    bind(classOf[String])
+      .annotatedWith(Names.named("examListFolder"))
+      .toInstance(configuration.nonEmptyString("pandoc.examListOutputFolderPath"))
+
     bindActor[ReviewNotificationActor]("ReviewNotificationActor")
   }
 }

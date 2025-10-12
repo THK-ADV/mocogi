@@ -15,8 +15,8 @@ GET           /bootstrap/createViews                              controllers.Bo
 
 # Big Bang
 
-GET           /bigbang                                            controllers.BigBangController.go()
-GET           /bigbangCatalogs                                    controllers.BigBangController.goCatalogs()
+# GET           /bigbang                                            controllers.BigBangController.go()
+# GET           /bigbangCatalogs                                    controllers.BigBangController.goCatalogs()
 
 # Git Webhooks
 
@@ -66,12 +66,15 @@ POST          /moduleCatalogs/preview/:studyProgram/upload        controllers.Mo
 
 # Electives Catalog
 
-GET           /electivesCatalogs/:semester                        controllers.ElectiveCatalogueController.allFromSemester(semester: java.lang.String)
+# GET           /electivesCatalogs/:semester                        controllers.ElectiveCatalogueController.allFromSemester(semester: java.lang.String)
 
 # Exam Lists
 
 GET           /examLists/preview/:studyProgram/:po                controllers.ExamListsController.getPreview(studyProgram: java.lang.String, po: java.lang.String)
-GET           /examLists/:studyProgram/:po                        controllers.ExamListsController.get(studyProgram: java.lang.String, po: java.lang.String)
+GET           /examLists/file/:filename                           controllers.ExamListsController.getFile(filename: java.lang.String)
+GET           /examLists                                          controllers.ExamListsController.getAll()
+PUT           /examLists/:studyProgram/:po                        controllers.ExamListsController.replace(studyProgram: java.lang.String, po: java.lang.String)
+GET           /examLists/semesters                                controllers.ExamListsController.currentSemesters()
 
 # Module Draft
 

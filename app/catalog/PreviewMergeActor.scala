@@ -1,15 +1,13 @@
 package catalog
 
 import javax.inject.Singleton
-
 import scala.concurrent.ExecutionContext
 import scala.util.Failure
 import scala.util.Success
-
 import catalog.PreviewMergeActor.CreateMergeRequest
 import database.repo.ModuleCatalogGenerationRequestRepository
 import git.api.GitMergeRequestApiService
-import models.ModuleCatalogGenerationRequest
+import models.{ModuleCatalogGenerationRequest, Semester}
 import ops.FutureOps.Ops
 import ops.LoggerOps
 import org.apache.pekko.actor.Actor

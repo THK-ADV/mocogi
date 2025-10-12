@@ -1,8 +1,7 @@
 package catalog
 
 import java.time.LocalDateTime
-
-import models.StudyProgramView
+import models.{Semester, StudyProgramView}
 import play.api.libs.json.Json
 import play.api.libs.json.Writes
 
