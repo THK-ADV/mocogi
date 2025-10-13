@@ -1,8 +1,8 @@
 package controllers
 
 import java.nio.file.Files
+import java.nio.file.Path
 import java.nio.file.Paths
-import java.util.Locale
 import javax.inject.Inject
 import javax.inject.Named
 import javax.inject.Singleton
@@ -22,10 +22,10 @@ import database.repo.core.IdentityRepository
 import database.repo.core.StudyProgramPersonRepository
 import database.repo.ModuleCatalogRepository
 import models.FullPoId
+import models.Semester
 import models.UniversityRole
 import ops.FileOps.FileOps0
 import play.api.cache.Cached
-import play.api.i18n.Lang
 import play.api.libs.json.JsError
 import play.api.libs.json.JsSuccess
 import play.api.libs.json.JsValue
@@ -55,6 +55,11 @@ final class ModuleCatalogController @Inject() (
     with PermissionCheck
     with PersonAction {
 
+  private def createFile(filename: String): Path = {
+    val newDir = Files.createDirectories(Paths.get(tmpDir).resolve(System.currentTimeMillis().toString))
+    Files.createFile(newDir.resolve(s"$filename.tex"))
+  }
+
   def allFromSemester(semester: String) =
     cached.status(r => r.method + r.uri, 200, 1.hour) {
       Action.async(_ => repo.allFromSemester(semester).map(xs => Ok(Json.toJson(xs))))
@@ -72,12 +77,48 @@ final class ModuleCatalogController @Inject() (
       .async { r =>
         r.headers.get(HeaderNames.ACCEPT) match {
           case Some(MimeTypes.PDF) =>
-            val lang     = Lang(Locale.GERMANY)
             val filename = s"module_catalog_draft_$po"
-            val newDir   = Files.createDirectories(Paths.get(tmpDir).resolve(System.currentTimeMillis().toString))
-            val file     = Files.createFile(newDir.resolve(s"$filename.tex"))
+            val file     = createFile(filename)
             previewService
-              .previewCatalog(po, lang, file)
+              .previewCatalog(po, file)
+              .map(path =>
+                Ok.sendPath(
+                  path,
+                  onClose = () => file.getParent.deleteDirectory()
+                ).as(MimeTypes.PDF)
+              )
+              .recoverWith {
+                case NonFatal(e) =>
+                  file.getParent.deleteDirectory()
+                  Future.failed(e)
+              }
+          case _ =>
+            Future.successful(
+              UnsupportedMediaType(
+                s"expected media type: ${MimeTypes.PDF}"
+              )
+            )
+        }
+      }
+
+  // TODO: This is an ad-hoc implementation. Consider a proper implementation once requirements are clearly defined
+  def get(studyProgram: String, po: String) =
+    auth
+      .andThen(personAction)
+      .andThen(
+        hasRoleInStudyProgram(
+          List(UniversityRole.SGL, UniversityRole.PAV),
+          studyProgram
+        )
+      )
+      .async { r =>
+        r.headers.get(HeaderNames.ACCEPT) match {
+          case Some(MimeTypes.PDF) =>
+            val filename = s"module_catalog_$po"
+            val file     = createFile(filename)
+            val semester = Semester.current()
+            previewService
+              .createCatalog(po, file, semester)
               .map(path =>
                 Ok.sendPath(
                   path,
