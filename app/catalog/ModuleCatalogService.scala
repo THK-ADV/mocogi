@@ -209,6 +209,7 @@ final class ModuleCatalogService @Inject() (
           pandocApi,
           messagesApi,
           semester,
+          ???,
           Seq(sp), // TODO
           ???,     // TODO
           ms,      // TODO all modules of all pos are passed. this is unnecessary and inefficient. investigate and fix

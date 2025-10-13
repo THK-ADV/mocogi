@@ -4,6 +4,7 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.time.LocalDateTime
+import java.util.Locale
 import javax.inject.Inject
 import javax.inject.Named
 import javax.inject.Singleton
@@ -20,6 +21,7 @@ import git.api.GitFileDownloadService
 import git.GitConfig
 import models.ModuleCore
 import models.ModuleProtocol
+import models.Semester
 import models.StudyProgramView
 import ops.EitherOps.EStringThrowOps
 import ops.FileOps.FileOps0
@@ -63,8 +65,15 @@ final class ModulePreviewService @Inject() (
 
   private type ModuleDiffs = List[(ModuleCore, Set[String])]
 
-  def previewCatalog(po: String, lang: Lang, latexFile: Path): Future[Path] = {
-    logger.info(s"generating module catalog preview for po $po")
+  def createCatalog(po: String, latexFile: Path, semester: Semester): Future[Path] =
+    generateCatalog(po, latexFile, Some(semester))
+
+  def previewCatalog(po: String, latexFile: Path): Future[Path] =
+    generateCatalog(po, latexFile, None)
+
+  private def generateCatalog(po: String, latexFile: Path, semester: Option[Semester]) = {
+    val isPreview = semester.isEmpty
+    logger.info(s"generating module catalog preview for po $po (preview = $isPreview)")
 
     val studyPrograms = studyProgramViewRepo.notExpired().map { all =>
       val poOnly = all.filter(_.po.id == po)
@@ -72,15 +81,17 @@ final class ModulePreviewService @Inject() (
       (all, poOnly)
     }
 
+    val lang = Lang(Locale.GERMANY)
+
     for {
       (all, poOnly)                 <- studyPrograms
       liveModules                   <- moduleService.allFromPO(po, activeOnly = true)
       (liveModules, changedModules) <- changedActiveModulesFromPreviewWithLastModified(po, liveModules)
       modules       = mergeModules(liveModules, changedModules)
-      moduleDiffs   = diffs(liveModules, changedModules)
-      latexSnippets = getLatexSnippets(latexFile.getParent, po, moduleDiffs)
+      moduleDiffs   = if isPreview then diffs(liveModules, changedModules) else Nil
+      latexSnippets = getLatexSnippets(latexFile.getParent, po, moduleDiffs, isPreview)
       _             = copyAssets(latexFile.getParent)
-      content <- print(poOnly, modules, all, lang, moduleDiffs, latexSnippets)
+      content <- print(poOnly, modules, all, lang, moduleDiffs, latexSnippets, semester)
       path = Files.writeString(latexFile, content.toString)
       pdf <- compile(path).flatMap(_ => getPdf(path)).toFuture
     } yield pdf
@@ -113,7 +124,8 @@ final class ModulePreviewService @Inject() (
       studyPrograms: Seq[StudyProgramView],
       lang: Lang,
       diffs: ModuleDiffs,
-      latexSnippets: List[LatexContentSnippet]
+      latexSnippets: List[LatexContentSnippet],
+      semester: Option[Semester]
   ): Future[StringBuilder] = {
     val liveModules       = moduleService.allModuleCore()
     val createdModules    = moduleService.allNewlyCreated()
@@ -143,17 +155,32 @@ final class ModulePreviewService @Inject() (
         studyPrograms,
         liveModules ++ createdModules
       )
-      val printer = ModuleCatalogLatexPrinter.preview(
-        pandocApi,
-        messagesApi,
-        id => diffs.find(_._1.id == id).map(_._2),
-        latexSnippets,
-        poOnly,
-        currentPO,
-        modules,
-        payload,
-        lang,
-      )
+      val printer = semester match {
+        case Some(value) =>
+          ModuleCatalogLatexPrinter.default(
+            pandocApi,
+            messagesApi,
+            value,
+            latexSnippets,
+            poOnly,
+            currentPO,
+            modules,
+            payload,
+            lang
+          )
+        case None =>
+          ModuleCatalogLatexPrinter.preview(
+            pandocApi,
+            messagesApi,
+            id => diffs.find(_._1.id == id).map(_._2),
+            latexSnippets,
+            poOnly,
+            currentPO,
+            modules,
+            payload,
+            lang,
+          )
+      }
       printer.print()
     }
   }
@@ -171,10 +198,15 @@ final class ModulePreviewService @Inject() (
       case NonFatal(e) => throw Exception(e)
     }
 
-  private def getLatexSnippets(dir: Path, po: String, moduleDiffs: ModuleDiffs): List[LatexContentSnippet] = {
+  private def getLatexSnippets(
+      dir: Path,
+      po: String,
+      moduleDiffs: ModuleDiffs,
+      preview: Boolean
+  ): List[LatexContentSnippet] = {
     val introContent = IntroContentProvider(dir, po, mcIntroPath).createIntroContent()
     val diffContent  = NonEmptyList.fromList(moduleDiffs).map(DiffContentSnippet(_, messagesApi))
-    val layout       = LayoutContentSnippet()
-    layout :: List(diffContent, introContent).collect { case Some(snippet) => snippet }
+    val layout       = Option.when(preview)(LayoutContentSnippet())
+    List(layout, diffContent, introContent).collect { case Some(snippet) => snippet }
   }
 }

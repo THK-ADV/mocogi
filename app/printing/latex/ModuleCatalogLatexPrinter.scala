@@ -72,6 +72,7 @@ object ModuleCatalogLatexPrinter {
       pandocApi: PandocApi,
       messagesApi: MessagesApi,
       semester: Semester,
+      latexSnippets: List[LatexContentSnippet],
       pos: Seq[StudyProgramView],
       currentPO: PO,
       modules: Seq[(ModuleProtocol, LocalDateTime | Option[LocalDateTime])],
@@ -86,7 +87,7 @@ object ModuleCatalogLatexPrinter {
       currentPO,
       modules,
       payload,
-      Nil,
+      latexSnippets,
       None
     )(using lang)
 }
@@ -163,7 +164,7 @@ final class ModuleCatalogLatexPrinter(
 
   def print(): StringBuilder = {
     builder.append("\\documentclass[article, 11pt, oneside]{book}")
-    packages(semester.isEmpty)
+    packages()
     commands()
     builder.append(s"""
                       |\\begin{document}
@@ -356,12 +357,13 @@ final class ModuleCatalogLatexPrinter(
     )
   }
 
-  private def packages(isDraft: Boolean) =
+  private def packages() =
     builder
       .append("""
                 |% packages
                 |\usepackage[english, ngerman]{babel}
                 |\usepackage[a4paper, total={16cm, 24cm}, left=2.5cm, right=2.5cm, top=2.5cm, bottom=2.5cm]{geometry}
+                |\usepackage{graphicx} % include images
                 |\usepackage{longtable} % needed to support markdown tables
                 |\usepackage{booktabs} % needed to support markdown tables
                 |\usepackage{layout}
@@ -372,7 +374,7 @@ final class ModuleCatalogLatexPrinter(
                 |\usepackage{fancyhdr} % customize the page header
                 |\usepackage{parskip} % customize paragraph style""".stripMargin)
       .appendOpt(
-        Option.when(isDraft)(
+        Option.when(isPreview)(
           s"""
              |\\usepackage[colorspec=0.9,text=${strings.previewLabel}]{draftwatermark} % watermark
              |\\usepackage[defaultcolor=orange]{changes} % highlights changes (https://ctan.org/pkg/changes?lang=en)""".stripMargin
