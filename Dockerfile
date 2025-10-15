@@ -14,7 +14,7 @@ RUN mkdir -p output
 RUN mkdir -p output/de
 RUN mkdir -p output/en
 RUN mkdir -p output/catalogs
-RUN mkdir -p output/examlists
+RUN mkdir -p output/examlist
 RUN mkdir -p mc
 RUN mkdir -p mc/intro
 RUN mkdir -p mc/assets
