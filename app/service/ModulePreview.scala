@@ -82,7 +82,8 @@ trait ModulePreview { self: Logging =>
   @targetName("mergeModulesWithLastModified")
   def mergeModules(
       liveModules: Seq[(ModuleProtocol, LocalDateTime)],
-      changedModules: Seq[(ModuleProtocol, Option[LocalDateTime])]
+      changedModules: Seq[(ModuleProtocol, Option[LocalDateTime])],
+      bannedGenericModules: List[UUID]
   ): Seq[(ModuleProtocol, Option[LocalDateTime])] = {
     val builder = ListBuffer[(ModuleProtocol, Option[LocalDateTime])](changedModules*)
     liveModules.foreach {
@@ -104,7 +105,7 @@ trait ModulePreview { self: Logging =>
          |changedModules: ${changedModules.map(_._1.id.get)}
          |builder: ${builder.map(_._1.id.get)}""".stripMargin
     )
-    builder.toList
+    builder.toList.filterNot((m, _) => bannedGenericModules.contains(m.id.get))
   }
 
   private def mergeModules(

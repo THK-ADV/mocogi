@@ -67,7 +67,6 @@ object ModuleCatalogLatexPrinter {
     )(using lang)
   }
 
-  // TODO: make the same adjustments here
   def default(
       pandocApi: PandocApi,
       messagesApi: MessagesApi,
@@ -136,11 +135,19 @@ final class ModuleCatalogLatexPrinter(
           case None => "Pflichtmodul"
         }
       case RenderingContext.Elective =>
-        val baseStr    = "Wahlmodul"
-        val optionalPO = m.po.optional.filter(_.po == currentPO.id)
-        // TODO: reference to generic modules might go away in the future. use module title instead of nameref
-        if optionalPO.isEmpty then baseStr
-        else s"$baseStr (${optionalPO.map(m => nameRef(m.instanceOf)).mkString(", ")})"
+        val baseStr = "Wahlmodul"
+        val genericModules = m.po.optional
+          .filter(_.po == currentPO.id)
+          .map(_.instanceOf)
+          .distinct
+          .map { id =>
+            if modulesInPO.exists(_._1.id.get == id) then nameRef(id)        // show generic module ref
+            else payload.modules.find(_.id == id).map(_.title).getOrElse("") // show module title
+          }
+          .filter(_.nonEmpty)
+
+        if genericModules.isEmpty then baseStr
+        else s"$baseStr (${genericModules.mkString(", ")})"
       case RenderingContext.None => "Keine Angabe"
     }
 
@@ -574,35 +581,13 @@ final class ModuleCatalogLatexPrinter(
 
     def attendanceRequirementRow(att: Option[AttendanceRequirement]) =
       att match
-        case Some(att) =>
-          val builder = new StringBuilder()
-          if att.min.nonEmpty then {
-            builder.append(escape(att.min))
-          }
-          if att.reason.nonEmpty then {
-            if builder.nonEmpty then builder.append("\\,\\textbullet\\,")
-            builder.append(s"Begründung: ${escape(att.reason)}")
-          }
-          if att.absence.nonEmpty then {
-            if builder.nonEmpty then builder.append("\\,\\textbullet\\,")
-            builder.append(s"Fehlzeiten: ${escape(att.absence)}")
-          }
-          if builder.isEmpty then strings.noneLabel else builder.toString()
-        case None => strings.noneLabel
+        case Some(att) if att.min.nonEmpty => escape(att.min)
+        case _                             => strings.noneLabel
 
     def assessmentPrerequisiteRow(ass: Option[AssessmentPrerequisite]) =
       ass match
-        case Some(ass) =>
-          val builder = new StringBuilder()
-          if ass.modules.nonEmpty then {
-            builder.append(escape(ass.modules))
-          }
-          if ass.reason.nonEmpty then {
-            if builder.nonEmpty then builder.append("\\,\\textbullet\\,")
-            builder.append(s"Begründung: ${escape(ass.reason)}")
-          }
-          if builder.isEmpty then strings.noneLabel else builder.toString()
-        case None => strings.noneLabel
+        case Some(ass) if ass.modules.nonEmpty => escape(ass.modules)
+        case _                                 => strings.noneLabel
 
     def assessmentMethodsRow =
       if module.metadata.assessmentMethods.mandatory.isEmpty then strings.noneLabel

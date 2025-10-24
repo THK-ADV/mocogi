@@ -3,6 +3,7 @@ package controllers
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
+import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Named
 import javax.inject.Singleton
@@ -20,18 +21,15 @@ import controllers.actions.PermissionCheck
 import controllers.actions.PersonAction
 import database.repo.core.IdentityRepository
 import database.repo.core.StudyProgramPersonRepository
+import database.repo.JSONRepository
 import database.repo.ModuleCatalogRepository
 import models.FullPoId
 import models.Semester
 import models.UniversityRole
 import ops.FileOps.FileOps0
 import play.api.cache.Cached
-import play.api.libs.json.JsError
-import play.api.libs.json.JsSuccess
-import play.api.libs.json.JsValue
-import play.api.libs.json.Json
-import play.api.mvc.AbstractController
-import play.api.mvc.ControllerComponents
+import play.api.libs.json.*
+import play.api.mvc.*
 import play.mvc.Http.HeaderNames
 import printing.latex.TextIntroRewriter
 import printing.latex.WordTexPrinter
@@ -43,6 +41,7 @@ final class ModuleCatalogController @Inject() (
     repo: ModuleCatalogRepository,
     previewService: ModulePreviewService,
     auth: AuthorizationAction,
+    jsonRepo: JSONRepository,
     @Named("tmp.dir") tmpDir: String,
     @Named("cmd.word") wordCmd: String,
     @Named("path.mcIntro") mcIntroPath: String,
@@ -60,13 +59,39 @@ final class ModuleCatalogController @Inject() (
     Files.createFile(newDir.resolve(s"$filename.tex"))
   }
 
-  def allFromSemester(semester: String) =
+  /**
+   * Returns all active generic modules for the PO
+   *
+   * @param studyProgram for which SGL or PAV permission must be granted
+   * @param po           for which the generic modules are returned
+   * @return JSON array of generic modules
+   */
+  def allGenericModulesForPO(studyProgram: String, po: String): Action[AnyContent] =
+    auth
+      .andThen(personAction)
+      .andThen(
+        hasRoleInStudyProgram(
+          List(UniversityRole.SGL, UniversityRole.PAV),
+          studyProgram
+        )
+      )
+      .async(_ => jsonRepo.getGenericModulesForPO(po).map(Ok(_)))
+
+  def allFromSemester(semester: String): EssentialAction =
     cached.status(r => r.method + r.uri, 200, 1.hour) {
       Action.async(_ => repo.allFromSemester(semester).map(xs => Ok(Json.toJson(xs))))
     }
 
-  def getPreview(studyProgram: String, po: String) =
-    auth
+  /**
+   * Generates a module catalog for the PO. A preview catalog is generated if the query parameter is set to true.
+   * The body contains a list of generic modules excluded from the generation.
+   *
+   * @param studyProgram for which SGL or PAV permission must be granted
+   * @param po           for which the module catalog is created
+   * @return the PDF file
+   */
+  def generate(studyProgram: String, po: String): Action[List[UUID]] =
+    auth(parse.json[List[UUID]])
       .andThen(personAction)
       .andThen(
         hasRoleInStudyProgram(
@@ -74,13 +99,23 @@ final class ModuleCatalogController @Inject() (
           studyProgram
         )
       )
-      .async { r =>
+      .async { (r: Request[List[UUID]]) =>
         r.headers.get(HeaderNames.ACCEPT) match {
           case Some(MimeTypes.PDF) =>
-            val filename = s"module_catalog_draft_$po"
-            val file     = createFile(filename)
-            previewService
-              .previewCatalog(po, file)
+            val isPreview            = r.getQueryString("preview").flatMap(_.toBooleanOption).getOrElse(true)
+            val bannedGenericModules = r.body
+            val filename             = s"module_catalog_$po"
+            val file                 = createFile(filename)
+            val path =
+              if isPreview then previewService.previewCatalog(po, file, bannedGenericModules)
+              else
+                previewService.createCatalog(
+                  po,
+                  file,
+                  Semester.current(), // assumes current semester
+                  bannedGenericModules
+                )
+            path
               .map(path =>
                 Ok.sendPath(
                   path,
@@ -101,45 +136,8 @@ final class ModuleCatalogController @Inject() (
         }
       }
 
-  // TODO: This is an ad-hoc implementation. Consider a proper implementation once requirements are clearly defined
-  def get(studyProgram: String, po: String) =
-    auth
-      .andThen(personAction)
-      .andThen(
-        hasRoleInStudyProgram(
-          List(UniversityRole.SGL, UniversityRole.PAV),
-          studyProgram
-        )
-      )
-      .async { r =>
-        r.headers.get(HeaderNames.ACCEPT) match {
-          case Some(MimeTypes.PDF) =>
-            val filename = s"module_catalog_$po"
-            val file     = createFile(filename)
-            val semester = Semester.current()
-            previewService
-              .createCatalog(po, file, semester)
-              .map(path =>
-                Ok.sendPath(
-                  path,
-                  onClose = () => file.getParent.deleteDirectory()
-                ).as(MimeTypes.PDF)
-              )
-              .recoverWith {
-                case NonFatal(e) =>
-                  file.getParent.deleteDirectory()
-                  Future.failed(e)
-              }
-          case _ =>
-            Future.successful(
-              UnsupportedMediaType(
-                s"expected media type: ${MimeTypes.PDF}"
-              )
-            )
-        }
-      }
-
-  def uploadIntroFile(studyProgram: String) =
+  // TODO: rewrite to work with proper uploads
+  def uploadIntroFile(studyProgram: String): Action[JsValue] =
     auth
       .andThen(personAction)
       .andThen(
