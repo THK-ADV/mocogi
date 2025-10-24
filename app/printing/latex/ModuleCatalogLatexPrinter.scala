@@ -67,7 +67,6 @@ object ModuleCatalogLatexPrinter {
     )(using lang)
   }
 
-  // TODO: make the same adjustments here
   def default(
       pandocApi: PandocApi,
       messagesApi: MessagesApi,
@@ -136,11 +135,19 @@ final class ModuleCatalogLatexPrinter(
           case None => "Pflichtmodul"
         }
       case RenderingContext.Elective =>
-        val baseStr    = "Wahlmodul"
-        val optionalPO = m.po.optional.filter(_.po == currentPO.id)
-        // TODO: reference to generic modules might go away in the future. use module title instead of nameref
-        if optionalPO.isEmpty then baseStr
-        else s"$baseStr (${optionalPO.map(m => nameRef(m.instanceOf)).mkString(", ")})"
+        val baseStr = "Wahlmodul"
+        val genericModules = m.po.optional
+          .filter(_.po == currentPO.id)
+          .map(_.instanceOf)
+          .distinct
+          .map { id =>
+            if modulesInPO.exists(_._1.id.get == id) then nameRef(id)        // show generic module ref
+            else payload.modules.find(_.id == id).map(_.title).getOrElse("") // show module title
+          }
+          .filter(_.nonEmpty)
+
+        if genericModules.isEmpty then baseStr
+        else s"$baseStr (${genericModules.mkString(", ")})"
       case RenderingContext.None => "Keine Angabe"
     }
 

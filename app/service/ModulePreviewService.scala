@@ -5,6 +5,7 @@ import java.nio.file.Path
 import java.nio.file.Paths
 import java.time.LocalDateTime
 import java.util.Locale
+import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Named
 import javax.inject.Singleton
@@ -65,13 +66,18 @@ final class ModulePreviewService @Inject() (
 
   private type ModuleDiffs = List[(ModuleCore, Set[String])]
 
-  def createCatalog(po: String, latexFile: Path, semester: Semester): Future[Path] =
-    generateCatalog(po, latexFile, Some(semester))
+  def createCatalog(po: String, latexFile: Path, semester: Semester, bannedGenericModules: List[UUID]): Future[Path] =
+    generateCatalog(po, latexFile, Some(semester), bannedGenericModules)
 
-  def previewCatalog(po: String, latexFile: Path): Future[Path] =
-    generateCatalog(po, latexFile, None)
+  def previewCatalog(po: String, latexFile: Path, bannedGenericModules: List[UUID]): Future[Path] =
+    generateCatalog(po, latexFile, None, bannedGenericModules)
 
-  private def generateCatalog(po: String, latexFile: Path, semester: Option[Semester]) = {
+  private def generateCatalog(
+      po: String,
+      latexFile: Path,
+      semester: Option[Semester],
+      bannedGenericModules: List[UUID]
+  ) = {
     val isPreview = semester.isEmpty
     logger.info(s"generating module catalog preview for po $po (preview = $isPreview)")
 
@@ -87,8 +93,8 @@ final class ModulePreviewService @Inject() (
       (all, poOnly)                 <- studyPrograms
       liveModules                   <- moduleService.allFromPO(po, activeOnly = true)
       (liveModules, changedModules) <- changedActiveModulesFromPreviewWithLastModified(po, liveModules)
-      modules       = mergeModules(liveModules, changedModules)
-      moduleDiffs   = if isPreview then diffs(liveModules, changedModules) else Nil
+      modules       = mergeModules(liveModules, changedModules, bannedGenericModules)
+      moduleDiffs   = if isPreview then diffs(liveModules, changedModules, bannedGenericModules) else Nil
       latexSnippets = getLatexSnippets(latexFile.getParent, po, moduleDiffs, isPreview)
       _             = copyAssets(latexFile.getParent)
       content <- print(poOnly, modules, all, lang, moduleDiffs, latexSnippets, semester)
@@ -99,23 +105,27 @@ final class ModulePreviewService @Inject() (
 
   private def diffs(
       liveModules: Seq[(ModuleProtocol, LocalDateTime)],
-      changedModules: Seq[(ModuleProtocol, Option[LocalDateTime])]
+      changedModules: Seq[(ModuleProtocol, Option[LocalDateTime])],
+      bannedGenericModules: List[UUID]
   ): ModuleDiffs =
     changedModules.foldLeft(Nil) {
       case (acc, (p, _)) =>
-        val diffs = liveModules.find(_._1.id == p.id) match {
-          case Some((existing, _)) =>
-            val (_, diffs) = ModuleProtocolDiff.diff(
-              existing.normalize(),
-              p.normalize(),
-              None,
-              Set.empty
-            )
-            diffs
-          case None =>
-            Set("all")
+        if bannedGenericModules.contains(p.id.get) then acc
+        else {
+          val diffs = liveModules.find(_._1.id == p.id) match {
+            case Some((existing, _)) =>
+              val (_, diffs) = ModuleProtocolDiff.diff(
+                existing.normalize(),
+                p.normalize(),
+                None,
+                Set.empty
+              )
+              diffs
+            case None =>
+              Set("all")
+          }
+          acc.prepended((ModuleCore(p.id.get, p.metadata.title, p.metadata.abbrev), diffs))
         }
-        acc.prepended((ModuleCore(p.id.get, p.metadata.title, p.metadata.abbrev), diffs))
     }
 
   private def print(

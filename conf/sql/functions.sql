@@ -32,6 +32,8 @@ DROP FUNCTION IF EXISTS get_users_with_granted_permissions_from_module (uuid) CA
 
 DROP FUNCTION IF EXISTS get_generic_module_options (uuid) CASCADE;
 
+DROP FUNCTION IF EXISTS generic_modules_for_po (text) CASCADE;
+
 CREATE OR REPLACE FUNCTION identity_to_json (i IDENTITY)
     RETURNS jsonb
     LANGUAGE sql
@@ -508,5 +510,36 @@ CREATE OR REPLACE FUNCTION get_generic_module_options (module_id uuid)
             JOIN module m ON m.id = opt.module
         WHERE
             instance_of = module_id) AS m;
+$$;
+
+-- Returns all active generic modules from live and preview for po
+-- The query does only consider mandatory POs
+CREATE OR REPLACE FUNCTION generic_modules_for_po (po_id text)
+    RETURNS jsonb
+    LANGUAGE sql
+    STABLE
+    AS $$
+    SELECT
+        coalesce(jsonb_agg(jsonb_build_object('id', m.id, 'title', m.title, 'abbrev', m.abbrev)), '[]'::jsonb)
+    FROM ( SELECT DISTINCT ON (m.id)
+            m.id AS id,
+            m.title AS title,
+            m.abbrev AS abbrev
+        FROM
+            module m
+            JOIN module_po_mandatory po ON po.module = m.id
+                AND po.po = po_id
+        WHERE
+            m.module_type = 'generic_module'
+            AND m.status = 'active'
+        UNION ( SELECT DISTINCT ON (cm.module)
+                cm.module AS id,
+                cm.module_title AS title,
+                cm.module_abbrev AS abbrev
+            FROM
+                created_module_in_draft cm
+            WHERE
+                cm.module_type = 'generic_module'
+                AND po_id = ANY (module_mandatory_pos))) AS m;
 $$;
 
