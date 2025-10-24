@@ -581,35 +581,13 @@ final class ModuleCatalogLatexPrinter(
 
     def attendanceRequirementRow(att: Option[AttendanceRequirement]) =
       att match
-        case Some(att) =>
-          val builder = new StringBuilder()
-          if att.min.nonEmpty then {
-            builder.append(escape(att.min))
-          }
-          if att.reason.nonEmpty then {
-            if builder.nonEmpty then builder.append("\\,\\textbullet\\,")
-            builder.append(s"Begründung: ${escape(att.reason)}")
-          }
-          if att.absence.nonEmpty then {
-            if builder.nonEmpty then builder.append("\\,\\textbullet\\,")
-            builder.append(s"Fehlzeiten: ${escape(att.absence)}")
-          }
-          if builder.isEmpty then strings.noneLabel else builder.toString()
-        case None => strings.noneLabel
+        case Some(att) if att.min.nonEmpty => escape(att.min)
+        case _                             => strings.noneLabel
 
     def assessmentPrerequisiteRow(ass: Option[AssessmentPrerequisite]) =
       ass match
-        case Some(ass) =>
-          val builder = new StringBuilder()
-          if ass.modules.nonEmpty then {
-            builder.append(escape(ass.modules))
-          }
-          if ass.reason.nonEmpty then {
-            if builder.nonEmpty then builder.append("\\,\\textbullet\\,")
-            builder.append(s"Begründung: ${escape(ass.reason)}")
-          }
-          if builder.isEmpty then strings.noneLabel else builder.toString()
-        case None => strings.noneLabel
+        case Some(ass) if ass.modules.nonEmpty => escape(ass.modules)
+        case _                                 => strings.noneLabel
 
     def assessmentMethodsRow =
       if module.metadata.assessmentMethods.mandatory.isEmpty then strings.noneLabel
