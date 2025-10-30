@@ -41,10 +41,11 @@ import service.modulediff.ModuleProtocolDiff
 import service.LatexCompiler.compile
 import service.LatexCompiler.getPdf
 
+// TODO: rename this class. it isn't a preview service anymore
 @Singleton
 final class ModulePreviewService @Inject() (
-    val diffApiService: GitDiffApiService,
-    val downloadService: GitFileDownloadService,
+    diffApiService: GitDiffApiService,
+    downloadService: GitFileDownloadService,
     moduleService: ModuleService,
     studyProgramViewRepo: StudyProgramViewRepository,
     moduleTypeRepository: ModuleTypeRepository,
@@ -59,8 +60,7 @@ final class ModulePreviewService @Inject() (
     @Named("path.mcIntro") mcIntroPath: String,
     @Named("path.mcAssets") mcAssetsPath: String,
     implicit val ctx: ExecutionContext
-) extends Logging
-    with ModulePreview {
+) extends Logging {
 
   implicit def gitConfig: GitConfig = diffApiService.config
 
@@ -78,7 +78,8 @@ final class ModulePreviewService @Inject() (
       semester: Option[Semester],
       bannedGenericModules: List[UUID]
   ) = {
-    val isPreview = semester.isEmpty
+    val previewService = new ModulePreview(diffApiService, downloadService, ctx)
+    val isPreview      = semester.isEmpty
     logger.info(s"generating module catalog preview for po $po (preview = $isPreview)")
 
     val studyPrograms = studyProgramViewRepo.notExpired().map { all =>
@@ -92,8 +93,8 @@ final class ModulePreviewService @Inject() (
     for {
       (all, poOnly)                 <- studyPrograms
       liveModules                   <- moduleService.allFromPO(po, activeOnly = true)
-      (liveModules, changedModules) <- changedActiveModulesFromPreviewWithLastModified(po, liveModules)
-      modules       = mergeModules(liveModules, changedModules, bannedGenericModules)
+      (liveModules, changedModules) <- previewService.changedActiveModulesFromPreviewWithLastModified(po, liveModules)
+      modules       = previewService.mergeModules(liveModules, changedModules, bannedGenericModules)
       moduleDiffs   = if isPreview then diffs(liveModules, changedModules, bannedGenericModules) else Nil
       latexSnippets = getLatexSnippets(latexFile.getParent, po, moduleDiffs, isPreview)
       _             = copyAssets(latexFile.getParent)

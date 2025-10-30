@@ -21,6 +21,7 @@ services:
       dockerfile: Dockerfile_Dependencies
       args:
         PANDOC_PLATFORM_SUFFIX: arm64
+        GIT_REPO_URL: ${GIT_REPO_URL}
   #        PANDOC_PLATFORM_SUFFIX: amd64
 
   backend:

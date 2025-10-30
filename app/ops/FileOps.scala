@@ -69,6 +69,16 @@ object FileOps {
         case file if !Files.isDirectory(file) && !Files.isHidden(file) => file
       }
 
+    def getFilesOfDirectory[A](p: Path => Boolean)(f: Path => A): Vector[A] =
+      Files
+        .walk(self)
+        .toList
+        .asScala
+        .toVector
+        .collect {
+          case file if !Files.isDirectory(file) && !Files.isHidden(file) && p(file) => f(file)
+        }
+
     def createFile(
         name: String,
         content: String

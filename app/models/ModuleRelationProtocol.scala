@@ -4,9 +4,14 @@ import java.util.UUID
 
 import cats.data.NonEmptyList
 import controllers.NelWrites
-import play.api.libs.json._
+import play.api.libs.json.*
 
-sealed trait ModuleRelationProtocol
+sealed trait ModuleRelationProtocol {
+  def parentID: Option[UUID] = this match {
+    case ModuleRelationProtocol.Parent(_)     => None
+    case ModuleRelationProtocol.Child(parent) => Some(parent)
+  }
+}
 
 object ModuleRelationProtocol extends NelWrites {
   case class Parent(children: NonEmptyList[UUID]) extends ModuleRelationProtocol

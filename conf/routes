@@ -3,7 +3,7 @@
 # This file defines all application routes (Higher priority routes first)
 # ~~~~
 
-GET           /                                                   controllers.HomeController.index
+GET           /                                                       controllers.HomeController.index
 
 GET           /admin/invalidModuleExams                               controllers.AdminController.invalidModuleExams()
 DELETE        /admin/modules/:id                                      controllers.AdminController.deleteModule(id: java.util.UUID)
@@ -76,6 +76,10 @@ GET           /examLists/file/:filename                               controller
 GET           /examLists                                              controllers.ExamListsController.getAll()
 PUT           /examLists/:studyProgram/:po                            controllers.ExamListsController.replace(studyProgram: java.lang.String, po: java.lang.String)
 GET           /examLists/semesters                                    controllers.ExamListsController.currentSemesters()
+
+# Exam Load
+
+GET           /examLoad/:studyProgram/:po                             controllers.ExamLoadController.generateExamLoad(studyProgram: java.lang.String, po: java.lang.String)
 
 # Module Draft
 
