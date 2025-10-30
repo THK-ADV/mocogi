@@ -1,16 +1,21 @@
 package database.repo
 
-import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfigProvider}
-import slick.jdbc.{GetResult, JdbcProfile}
+import javax.inject.Inject
+import javax.inject.Singleton
 
-import javax.inject.{Inject, Singleton}
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+
+import play.api.db.slick.DatabaseConfigProvider
+import play.api.db.slick.HasDatabaseConfigProvider
+import slick.jdbc.GetResult
+import slick.jdbc.JdbcProfile
 
 // TODO: Use this class for every function call which is directly exposed as json to the REST API
 @Singleton
 final class JSONRepository @Inject() (
-  val dbConfigProvider: DatabaseConfigProvider,
-  implicit val ctx: ExecutionContext
+    val dbConfigProvider: DatabaseConfigProvider,
+    implicit val ctx: ExecutionContext
 ) extends HasDatabaseConfigProvider[JdbcProfile] {
   import profile.api.*
 

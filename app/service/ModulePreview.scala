@@ -12,15 +12,14 @@ import scala.concurrent.Future
 import git.api.GitDiffApiService
 import git.api.GitFileDownloadService
 import git.GitConfig
-import models.core.ModuleStatus
 import models.ModuleProtocol
 import play.api.Logging
 
-trait ModulePreview { self: Logging =>
-
-  protected def diffApiService: GitDiffApiService
-  protected def downloadService: GitFileDownloadService
-  protected implicit def ctx: ExecutionContext
+final class ModulePreview(
+    diffApiService: GitDiffApiService,
+    downloadService: GitFileDownloadService,
+    implicit val ctx: ExecutionContext
+) extends Logging {
 
   private implicit def config: GitConfig = diffApiService.config
 
@@ -36,10 +35,10 @@ trait ModulePreview { self: Logging =>
         val inactiveModules = new ListBuffer[UUID]()
         preview.foreach {
           case Some(m) if m.metadata.po.hasPORelation(po) =>
-            if liveModules.exists(_.id.get == m.id.get) && !ModuleStatus.isActive(m.metadata.status) then {
+            if liveModules.exists(_.id.get == m.id.get) && !m.metadata.isActive then {
               // Ignore modules switch went inactive from live to preview
               inactiveModules += m.id.get
-            } else if ModuleStatus.isActive(m.metadata.status) then {
+            } else if m.metadata.isActive then {
               // only consider active modules
               modules += m
             }
@@ -65,10 +64,10 @@ trait ModulePreview { self: Logging =>
         val inactiveModules = new ListBuffer[UUID]()
         preview.foreach {
           case Some((m, ld)) if m.metadata.po.hasPORelation(po) =>
-            if liveModules.exists(_._1.id.get == m.id.get) && !ModuleStatus.isActive(m.metadata.status) then {
+            if liveModules.exists(_._1.id.get == m.id.get) && !m.metadata.isActive then {
               // Ignore modules switch went inactive from live to preview
               inactiveModules += m.id.get
-            } else if ModuleStatus.isActive(m.metadata.status) then {
+            } else if m.metadata.isActive then {
               // only consider active modules
               modules += (m -> ld)
             }
@@ -92,7 +91,7 @@ trait ModulePreview { self: Logging =>
           builder.append((liveModule, Some(lastModified)))
         }
     }
-    val nonActiveModules = builder.filterNot(m => ModuleStatus.isActive(m._1.metadata.status))
+    val nonActiveModules = builder.filterNot(_._1.metadata.isActive)
     if nonActiveModules.nonEmpty then {
       logger.error(
         s"expected active modules, but found: ${nonActiveModules.map(a => (a._1.id.get, a._1.metadata.title))}"
@@ -118,7 +117,7 @@ trait ModulePreview { self: Logging =>
         builder.append(liveModule)
       }
     }
-    val nonActiveModules = builder.filterNot(m => ModuleStatus.isActive(m.metadata.status))
+    val nonActiveModules = builder.filterNot(_.metadata.isActive)
     if nonActiveModules.nonEmpty then {
       logger.error(s"expected active modules, but found: ${nonActiveModules.map(a => (a.id.get, a.metadata.title))}")
     }

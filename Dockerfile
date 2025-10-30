@@ -18,4 +18,5 @@ RUN mkdir -p output/examlist
 RUN mkdir -p mc
 RUN mkdir -p mc/intro
 RUN mkdir -p mc/assets
+RUN git clone $GIT_REPO_URL
 CMD bin/mocogi -Dconfig.file=conf/application-prod.conf

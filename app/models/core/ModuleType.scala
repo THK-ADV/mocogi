@@ -9,4 +9,6 @@ object ModuleType {
   implicit def writes: Writes[ModuleType] = Json.writes
 
   def genericId = "generic_module"
+
+  def isGeneric(id: String): Boolean = id == genericId
 }

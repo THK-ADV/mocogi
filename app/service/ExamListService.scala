@@ -30,8 +30,8 @@ import service.LatexCompiler.getPdf
 
 @Singleton
 final class ExamListService @Inject() (
-    val diffApiService: GitDiffApiService,
-    val downloadService: GitFileDownloadService,
+    diffApiService: GitDiffApiService,
+    downloadService: GitFileDownloadService,
     moduleService: ModuleService,
     studyProgramViewRepo: StudyProgramViewRepository,
     specializationRepository: SpecializationRepository,
@@ -39,8 +39,7 @@ final class ExamListService @Inject() (
     identityService: IdentityService,
     messagesApi: MessagesApi,
     implicit val ctx: ExecutionContext
-) extends Logging
-    with ModulePreview {
+) extends Logging {
 
   private given gitConfig: GitConfig = diffApiService.config
 
@@ -51,10 +50,11 @@ final class ExamListService @Inject() (
     generateExamList(po, latexFile, None)
 
   private def getModules(po: String): Future[Seq[ModuleProtocol]] = {
-    val liveModules = moduleService.allFromPO(po, activeOnly = true).map(_.map(_._1))
+    val previewService = new ModulePreview(diffApiService, downloadService, ctx)
+    val liveModules    = moduleService.allFromPO(po, activeOnly = true).map(_.map(_._1))
     for
       liveModules <- liveModules
-      modules     <- mergeWithChangedModulesFromPreview(po, liveModules)
+      modules     <- previewService.mergeWithChangedModulesFromPreview(po, liveModules)
     yield modules
   }
 

@@ -5,6 +5,8 @@ import java.util.UUID
 import cats.data.NonEmptyList
 import controllers.JsonNullWritable
 import controllers.NelWrites
+import models.core.ModuleStatus
+import models.core.ModuleType
 import parsing.types.ModuleParticipants
 import play.api.libs.json.Json
 import play.api.libs.json.OFormat
@@ -33,7 +35,11 @@ case class MetadataProtocol(
     taughtWith: List[UUID],
     attendanceRequirement: Option[AttendanceRequirement],
     assessmentPrerequisite: Option[AssessmentPrerequisite]
-)
+) {
+  def isActive: Boolean = ModuleStatus.isActive(status)
+
+  def isGeneric: Boolean = ModuleType.isGeneric(moduleType)
+}
 
 object MetadataProtocol extends JsonNullWritable with NelWrites {
   implicit def format: OFormat[MetadataProtocol] = Json.format
