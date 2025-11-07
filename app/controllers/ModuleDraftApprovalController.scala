@@ -11,7 +11,7 @@ import controllers.actions.ApprovalCheck
 import controllers.actions.ModuleDraftCheck
 import controllers.actions.PermissionCheck
 import controllers.actions.PersonAction
-import database.repo.core.IdentityRepository
+import database.repo.PermissionRepository
 import play.api.libs.json.*
 import play.api.mvc.AbstractController
 import play.api.mvc.ControllerComponents
@@ -30,7 +30,7 @@ final class ModuleDraftApprovalController @Inject() (
     val auth: AuthorizationAction,
     val moduleDraftService: ModuleDraftService,
     val moduleUpdatePermissionService: ModuleUpdatePermissionService,
-    val identityRepository: IdentityRepository,
+    val permissionRepository: PermissionRepository,
     implicit val ctx: ExecutionContext
 ) extends AbstractController(cc)
     with ApprovalCheck
@@ -60,7 +60,7 @@ final class ModuleDraftApprovalController @Inject() (
     }
 
   def getByModule(moduleId: UUID) =
-    auth.andThen(personAction).andThen(hasPermissionToViewDraft(moduleId, approvalService)).async {
+    auth.andThen(personAction).andThen(canViewDraft(moduleId, approvalService)).async {
       _ => // TODO this should not be in ModuleDraftCheck
         reviewService.allByModule(moduleId).map(xs => Ok(Json.toJson(xs)))
     }

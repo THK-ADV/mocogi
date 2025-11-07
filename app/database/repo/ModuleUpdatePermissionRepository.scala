@@ -115,7 +115,7 @@ final class ModuleUpdatePermissionRepository @Inject() (
   private given GetResult[String] =
     GetResult(_.nextString())
 
-  private def arrayLiteral(pos: List[String]) =
+  private def arrayLiteral(pos: Seq[String]) =
     "'{" + pos.mkString(",") + "}'"
 
   def allForUser(cid: CampusId): Future[String] = {
@@ -124,7 +124,7 @@ final class ModuleUpdatePermissionRepository @Inject() (
   }
 
   // This function is only used for accreditation members which can access all the modules for a given PO
-  def allForPos(pos: List[String]): Future[String] = {
+  def allForPos(pos: Seq[String]): Future[String] = {
     val query = sql"select get_modules_for_po(#${arrayLiteral(pos)}::text[])".as[String].head
     db.run(query)
   }

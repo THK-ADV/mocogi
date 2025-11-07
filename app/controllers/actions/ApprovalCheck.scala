@@ -3,7 +3,6 @@ package controllers.actions
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-import controllers.actions.PersonAction.PersonRequest
 import controllers.ModuleReviewRequest
 import play.api.libs.json.Json
 import play.api.mvc.ActionFilter

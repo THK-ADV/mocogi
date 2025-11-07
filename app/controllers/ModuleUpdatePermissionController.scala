@@ -11,6 +11,7 @@ import controllers.actions.ModuleDraftCheck
 import controllers.actions.PermissionCheck
 import controllers.actions.PersonAction
 import database.repo.core.IdentityRepository
+import database.repo.PermissionRepository
 import models.ModuleUpdatePermissionType
 import play.api.libs.json.Json
 import play.api.mvc.AbstractController
@@ -23,7 +24,8 @@ final class ModuleUpdatePermissionController @Inject() (
     cc: ControllerComponents,
     val moduleUpdatePermissionService: ModuleUpdatePermissionService,
     val moduleDraftService: ModuleDraftService,
-    val identityRepository: IdentityRepository,
+    val permissionRepository: PermissionRepository,
+    identityRepository: IdentityRepository,
     auth: AuthorizationAction,
     implicit val ctx: ExecutionContext
 ) extends AbstractController(cc)

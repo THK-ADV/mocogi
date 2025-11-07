@@ -3,10 +3,8 @@ package controllers.actions
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-import auth.Token
-import auth.TokenRequest
-import controllers.actions.PersonAction.PersonRequest
-import database.repo.core.IdentityRepository
+import auth.*
+import database.repo.PermissionRepository
 import models.core.Identity
 import models.EmploymentType.Unknown
 import play.api.libs.json.Json
@@ -15,39 +13,57 @@ import play.api.mvc.Result
 import play.api.mvc.Results.BadRequest
 import play.api.mvc.WrappedRequest
 
-trait PersonAction {
-  implicit def ctx: ExecutionContext
-  implicit def identityRepository: IdentityRepository
+case class PersonRequest[A](
+    person: Identity.Person,
+    permissions: Permissions,
+    request: TokenRequest[A]
+) extends WrappedRequest[A](request) {
 
-  def personAction = new ActionRefiner[TokenRequest, PersonRequest] {
-    def executionContext = ctx
+  def accreditationPOs: Option[List[String]] = {
+    def parse(role: String): Option[List[String]] = {
+      if (!role.startsWith("[") || !role.endsWith("]")) return None
 
-    protected override def refine[A](request: TokenRequest[A]): Future[Either[Result, PersonRequest[A]]] =
-      request.token match {
-        case _: Token.UserToken    => getByUsername(request)
-        case _: Token.ServiceToken => adminUser(request)
-      }
+      val content = role.drop(1).dropRight(1)
+      if (content.isEmpty) return None
 
-    private def adminUser[A](request: TokenRequest[A]) = {
-      val admin = Identity.Person("", "", "", "", Nil, "", None, isActive = true, Unknown, None)
-      Future.successful(Right(PersonRequest(admin, request)))
+      val pos = content.split(",").map(_.trim).filter(_.nonEmpty).toList
+      Option.when(pos.nonEmpty)(pos)
     }
 
-    private def getByUsername[A](request: TokenRequest[A]) =
-      identityRepository
-        .getByCampusId(request.campusId)
-        .map {
-          case Some(p) =>
-            if p.isActive then Right(PersonRequest(p, request))
-            else Left(BadRequest(Json.obj("message" -> s"user with campusId ${request.campusId.value} is inactive")))
-          case None => Left(BadRequest(Json.obj("message" -> s"no user found for campusId ${request.campusId.value}")))
-        }
+    val prefix = "accreditation-member_"
+    request.token.roles.find(_.startsWith(prefix)).flatMap(a => parse(a.drop(prefix.length)))
   }
 }
 
-object PersonAction {
-  case class PersonRequest[A](
-      person: Identity.Person,
-      request: TokenRequest[A]
-  ) extends WrappedRequest[A](request)
+trait PersonAction {
+  implicit def ctx: ExecutionContext
+  implicit def permissionRepository: PermissionRepository
+
+  def personAction: ActionRefiner[TokenRequest, PersonRequest] =
+    new ActionRefiner[TokenRequest, PersonRequest] {
+      def executionContext: ExecutionContext = ctx
+
+      protected override def refine[A](request: TokenRequest[A]): Future[Either[Result, PersonRequest[A]]] =
+        request.token match {
+          case _: Token.UserToken    => getByUsername(request)
+          case _: Token.ServiceToken => adminUser(request)
+        }
+
+      private def adminUser[A](request: TokenRequest[A]) = {
+        val adminUser = Identity.Person("", "", "", "", Nil, "", None, isActive = true, Unknown, None)
+        val adminPerm = Permissions(Map((PermissionType.Admin, Nil)))
+        Future.successful(Right(PersonRequest(adminUser, adminPerm, request)))
+      }
+
+      private def getByUsername[A](request: TokenRequest[A]) =
+        permissionRepository
+          .all(request.campusId)
+          .map {
+            case Some((p, perms)) =>
+              if p.isActive then Right(PersonRequest(p, perms, request))
+              else Left(BadRequest(Json.obj("message" -> s"user with campusId ${request.campusId.value} is inactive")))
+            case None =>
+              Left(BadRequest(Json.obj("message" -> s"no user found for campusId ${request.campusId.value}")))
+          }
+    }
 }

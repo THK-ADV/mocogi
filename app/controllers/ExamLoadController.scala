@@ -15,8 +15,8 @@ import auth.AuthorizationAction
 import controllers.actions.DirectorCheck
 import controllers.actions.PermissionCheck
 import controllers.actions.PersonAction
-import database.repo.core.IdentityRepository
 import database.repo.core.StudyProgramPersonRepository
+import database.repo.PermissionRepository
 import models.UniversityRole
 import play.api.http.MimeTypes
 import play.api.mvc.AbstractController
@@ -30,7 +30,7 @@ final class ExamLoadController @Inject() (
     cc: ControllerComponents,
     auth: AuthorizationAction,
     examLoadService: ExamLoadService,
-    val identityRepository: IdentityRepository,
+    val permissionRepository: PermissionRepository,
     val studyProgramPersonRepository: StudyProgramPersonRepository,
     @Named("tmp.dir") tmpDir: String,
     implicit val ctx: ExecutionContext

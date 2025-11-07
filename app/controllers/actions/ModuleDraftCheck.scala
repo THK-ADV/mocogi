@@ -5,7 +5,6 @@ import java.util.UUID
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-import controllers.actions.PersonAction.PersonRequest
 import play.api.mvc.ActionFilter
 import play.api.mvc.Result
 import service.ModuleApprovalService
@@ -16,10 +15,7 @@ trait ModuleDraftCheck { self: PermissionCheck =>
   implicit def moduleDraftService: ModuleDraftService
   implicit def moduleUpdatePermissionService: ModuleUpdatePermissionService
 
-  private def hasPermissionToEditDraft0[A](
-      moduleId: UUID,
-      request: PersonRequest[A]
-  ): Future[Boolean] = {
+  private def hasPermissionToEditDraft0[A](moduleId: UUID, request: PersonRequest[A]): Future[Boolean] = {
     val campusId = request.request.campusId
     val person   = request.person
     for {
@@ -29,9 +25,15 @@ trait ModuleDraftCheck { self: PermissionCheck =>
     } yield b3
   }
 
-  def moduleInReaccreditation[A](moduleId: UUID, request: PersonRequest[A]) = {
+  def moduleInReaccreditation[A](moduleId: UUID, request: PersonRequest[A]): Future[Boolean] = {
     moduleUpdatePermissionService.isModuleInPO(moduleId, request.request.token.roles)
   }
+
+  def canDeleteDraft(moduleId: UUID) =
+    hasPermissionToEditDraft(moduleId)
+
+  def canUpdateDraft(moduleId: UUID, moduleApprovalService: ModuleApprovalService) =
+    canViewDraft(moduleId, moduleApprovalService)
 
   def hasPermissionToEditDraft(moduleId: UUID) =
     new ActionFilter[PersonRequest] {
@@ -43,14 +45,12 @@ trait ModuleDraftCheck { self: PermissionCheck =>
       protected override def executionContext: ExecutionContext = ctx
     }
 
-  def hasPermissionToViewDraft(
+  def canViewDraft(
       moduleId: UUID,
       moduleApprovalService: ModuleApprovalService
   ) =
     new ActionFilter[PersonRequest] {
-      protected override def filter[A](
-          request: PersonRequest[A]
-      ): Future[Option[Result]] = {
+      protected override def filter[A](request: PersonRequest[A]): Future[Option[Result]] = {
         val person = request.person
         val hasPermission = for {
           b1 <- hasPermissionToEditDraft0(moduleId, request)

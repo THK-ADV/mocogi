@@ -9,13 +9,14 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 import auth.CampusId
+import auth.Permissions
 import cats.data.NonEmptyList
 import database.repo.ModuleUpdatePermissionRepository
 import models.core.Identity
 import models.ModuleUpdatePermission
 import models.ModuleUpdatePermissionType
 import models.ModuleUpdatePermissionType.Inherited
-import play.api.libs.json.JsValue
+import play.api.libs.json.JsObject
 import play.api.libs.json.Json
 
 @Singleton
@@ -70,19 +71,24 @@ final class ModuleUpdatePermissionService @Inject() (
     roles.find(_.startsWith(prefix)).flatMap(a => parseAccreditationPOs(a.drop(prefix.length)))
   }
 
-  def allForUser(cid: CampusId, roles: Set[String]): Future[JsValue] = {
-    val forUser = repo.allForUser(cid)
+  /**
+   * Fetch all modules that can be edited by the user through inherited (MV) or granted permission.
+   * Then fetch all modules that can be edited by a role.
+   * @return The combination of the two module-lists as a JSON object
+   */
+  def allForUser(cid: CampusId, permissions: Permissions): Future[JsObject] = {
+    val forUser = repo.allForUser(cid).map(s => Json.obj("direct" -> Json.parse(s)))
 
-    parsePOs(roles) match {
-      case Some(pos) =>
+    permissions.modulePermissions match {
+      case Some(pos) if pos.nonEmpty =>
         for {
           forUser <- forUser
           forPo   <- repo.allForPos(pos)
         } yield {
-          if forPo == "[]" then Json.obj("default" -> Json.parse(forUser))
-          else Json.obj("default"                  -> Json.parse(forUser), "accreditation" -> Json.parse(forPo))
+          if forPo == "[]" then forUser
+          else forUser + ("indirect" -> Json.parse(forPo))
         }
-      case None => forUser.map(s => Json.obj("default" -> Json.parse(s)))
+      case _ => forUser
     }
   }
 

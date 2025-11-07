@@ -278,8 +278,7 @@ CREATE OR REPLACE FUNCTION build_module_info_json (inherited_perm bool, m module
     AS $$
     SELECT
         -- coalesce with module drafts first (md), because they represent the latest data
-        json_build_object('isPrivilegedForModule', inherited_perm, 'isNewModule', cm.module IS NOT NULL
-            OR md.module IS NOT NULL, 'module', json_build_object('id', coalesce(md.module, cm.module, m.id), 'title', coalesce(md.module_title, cm.module_title, m.title), 'abbreviation', coalesce(md.module_abbrev, cm.module_abbrev, m.abbrev)), 'ects', coalesce((md.module_json -> 'metadata' -> 'ects')::numeric, cm.module_ects, m.ects), 'mandatoryPOs', cm.module_mandatory_pos, 'moduleDraftState', calculate_module_draft_state (md), 'moduleDraft', CASE WHEN md.module IS NOT NULL THEN
+        json_build_object('isModuleManager', inherited_perm, 'isNewModule', cm.module IS NOT NULL, 'module', json_build_object('id', coalesce(md.module, cm.module, m.id), 'title', coalesce(md.module_title, cm.module_title, m.title), 'abbreviation', coalesce(md.module_abbrev, cm.module_abbrev, m.abbrev)), 'ects', coalesce((md.module_json -> 'metadata' -> 'ects')::numeric, cm.module_ects, m.ects), 'mandatoryPOs', cm.module_mandatory_pos, 'moduleDraftState', calculate_module_draft_state (md), 'moduleDraft', CASE WHEN md.module IS NOT NULL THEN
             json_build_object('id', md.module, 'title', md.module_title, 'abbreviation', md.module_abbrev, 'modifiedKeys', md.modified_keys, 'keysToBeReviewed', md.keys_to_be_reviewed)
         END)::jsonb
 $$;
@@ -315,20 +314,20 @@ $$;
 
 -- the POs passed are base POs, not full POs! We must use string contains to match them with specializations
 CREATE OR REPLACE FUNCTION get_modules_for_po (pos_param text[])
-    RETURNS jsonb
+    RETURNS jsonb STABLE
     LANGUAGE sql
-    STABLE
     AS $$
     SELECT
         CASE WHEN pos_param IS NULL
             OR array_length(pos_param, 1) IS NULL THEN
             '[]'::jsonb
         ELSE
-            coalesce(json_agg(build_module_info_json (FALSE, NULL::module, cm, md))::jsonb, '[]'::jsonb)
+            coalesce(json_agg(build_module_info_json (FALSE, m, cm, md))::jsonb, '[]'::jsonb)
         END
     FROM (
-        -- Get created_module_in_draft entries that match POs, with their drafts
+        -- Get created_module_in_draft entries that match POs with their drafts
         SELECT DISTINCT ON (cm.module)
+            NULL::module AS m,
             cm,
             md
         FROM
@@ -350,34 +349,63 @@ CREATE OR REPLACE FUNCTION get_modules_for_po (pos_param text[])
 )
                     LEFT JOIN module_draft md ON md.module = cm.module
             UNION
-            -- Get module_draft entries that match POs but don't have created_module_in_draft
-            SELECT DISTINCT ON (md.module)
+            -- Get module entries with their drafts that match POs, but don't have created_module_in_draft
+            SELECT DISTINCT ON (m.id)
+                m,
                 NULL::created_module_in_draft AS cm,
                 md
             FROM
-                unnest(pos_param) AS po_id -- full po id
-                JOIN module_draft md ON (EXISTS (
-                        SELECT
-                            1
-                        FROM
-                            jsonb_array_elements(md.module_json -> 'metadata' -> 'po' -> 'mandatory') AS mandatory_po
-                        WHERE
-                            mandatory_po ->> 'po' LIKE po_id || '%') -- the po_id can either match directly or be a suffix
-                        OR EXISTS (
-                            SELECT
-                                1
-                            FROM
-                                jsonb_array_elements(md.module_json -> 'metadata' -> 'po' -> 'optional') AS optional_po
-                            WHERE
-                                optional_po ->> 'po' LIKE po_id || '%')) -- the po_id can either match directly or be a suffix
-                    WHERE
-                        NOT EXISTS (
-                            SELECT
-                                1
-                            FROM
-                                created_module_in_draft cm
-                            WHERE
-                                cm.module = md.module)) AS distinct_modules;
+                module m
+            LEFT JOIN module_draft md ON md.module = m.id
+            CROSS JOIN unnest(pos_param) AS po_id -- full po id
+        WHERE
+            NOT EXISTS ( -- ensure that a module is fetched either from module or created_module_in_draft
+                SELECT
+                    1
+                FROM
+                    created_module_in_draft cm
+                WHERE
+                    cm.module = m.id)
+                AND (
+                    -- If module has a draft, use draft POs (preferred)
+                    (md.module IS NOT NULL
+                        AND (EXISTS (
+                                SELECT
+                                    1
+                                FROM
+                                    jsonb_array_elements(md.module_json -> 'metadata' -> 'po' -> 'mandatory') AS mandatory_po
+                                WHERE
+                                    mandatory_po ->> 'po' LIKE po_id || '%' -- the po_id can either match directly or be a suffix
+)
+                                OR EXISTS (
+                                    SELECT
+                                        1
+                                    FROM
+                                        jsonb_array_elements(md.module_json -> 'metadata' -> 'po' -> 'optional') AS optional_po
+                                    WHERE
+                                        optional_po ->> 'po' LIKE po_id || '%' -- the po_id can either match directly or be a suffix
+)))
+                            OR
+                            -- If module has no draft, use module_po tables
+                            (md.module IS NULL
+                                AND (EXISTS (
+                                        SELECT
+                                            1
+                                        FROM
+                                            module_po_mandatory mpm
+                                        WHERE
+                                            mpm.module = m.id
+                                            AND (mpm.specialization = po_id
+                                                OR mpm.po = po_id))
+                                        OR EXISTS (
+                                            SELECT
+                                                1
+                                            FROM
+                                                module_po_optional mpo
+                                            WHERE
+                                                mpo.module = m.id
+                                                AND (mpo.specialization = po_id
+                                                    OR mpo.po = po_id)))))) AS distinct_modules;
 $$;
 
 -- the POs passed are base POs, not full POs! We must use string contains to match them with specializations

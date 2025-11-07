@@ -1,6 +1,5 @@
 package controllers.actions
 
-import controllers.actions.PersonAction.PersonRequest
 import parsing.metadata.VersionScheme
 import play.api.mvc.WrappedRequest
 

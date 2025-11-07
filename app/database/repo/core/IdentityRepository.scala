@@ -40,14 +40,6 @@ class IdentityRepository @Inject() (
         .map(_.map(CampusId.apply))
     )
 
-  def getByCampusId(campusId: CampusId): Future[Option[Identity.Person]] =
-    db.run(
-      tableQuery
-        .filter(a => a.campusId === campusId.value && a.isPerson)
-        .result
-        .map(p => Option.when(p.size == 1)(Identity.toPersonUnsafe(p.head)))
-    )
-
   def allIds() =
     db.run(tableQuery.map(_.id).result)
 

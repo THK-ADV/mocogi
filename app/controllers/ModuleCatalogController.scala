@@ -19,10 +19,11 @@ import auth.AuthorizationAction
 import controllers.actions.DirectorCheck
 import controllers.actions.PermissionCheck
 import controllers.actions.PersonAction
-import database.repo.core.IdentityRepository
+import controllers.actions.PersonRequest
 import database.repo.core.StudyProgramPersonRepository
 import database.repo.JSONRepository
 import database.repo.ModuleCatalogRepository
+import database.repo.PermissionRepository
 import models.FullPoId
 import models.Semester
 import models.UniversityRole
@@ -45,7 +46,7 @@ final class ModuleCatalogController @Inject() (
     @Named("tmp.dir") tmpDir: String,
     @Named("cmd.word") wordCmd: String,
     @Named("path.mcIntro") mcIntroPath: String,
-    val identityRepository: IdentityRepository,
+    val permissionRepository: PermissionRepository,
     val studyProgramPersonRepository: StudyProgramPersonRepository,
     cached: Cached,
     implicit val ctx: ExecutionContext
@@ -146,7 +147,7 @@ final class ModuleCatalogController @Inject() (
           studyProgram
         )
       )
-      .apply(parse.json) { (r: PersonAction.PersonRequest[JsValue]) =>
+      .apply(parse.json) { (r: PersonRequest[JsValue]) =>
         (r.body \ "po").validate[String] match
           case JsSuccess(po, _) =>
             val fullPoId = FullPoId(po)

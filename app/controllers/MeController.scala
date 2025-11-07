@@ -10,6 +10,7 @@ import auth.AuthorizationAction
 import controllers.actions.PersonAction
 import database.repo.core.IdentityRepository
 import database.repo.core.StudyProgramPersonRepository
+import database.repo.PermissionRepository
 import play.api.libs.json.JsObject
 import play.api.libs.json.Json
 import play.api.mvc.AbstractController
@@ -19,7 +20,8 @@ import play.api.mvc.ControllerComponents
 final class MeController @Inject() (
     cc: ControllerComponents,
     auth: AuthorizationAction,
-    val identityRepository: IdentityRepository,
+    val permissionRepository: PermissionRepository,
+    identityRepository: IdentityRepository,
     studyProgramPersonRepository: StudyProgramPersonRepository,
     implicit val ctx: ExecutionContext
 ) extends AbstractController(cc)

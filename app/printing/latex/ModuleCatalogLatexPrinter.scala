@@ -225,12 +225,6 @@ final class ModuleCatalogLatexPrinter(
     }
   }
 
-  private def moduleType(m: MetadataProtocol) = {
-    m.po.mandatory.exists(a => a.po == currentPO.id && a.specialization.isDefined) || m.po.mandatory.exists(a =>
-      a.po == currentPO.id
-    )
-  }
-
   /*
     Modules of all kinds (parent, child, generic, …) which belong to the current PO.
     Sorted by recommended semester and module title
@@ -468,7 +462,6 @@ final class ModuleCatalogLatexPrinter(
     def row(key: String, value: String) =
       builder.append(s"$key & $value \\\\\n")
 
-    val moduleTypes       = payload.moduleTypes
     val languages         = payload.languages
     val seasons           = payload.seasons
     val people            = payload.people

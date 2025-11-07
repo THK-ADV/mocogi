@@ -17,10 +17,10 @@ import auth.AuthorizationAction
 import controllers.actions.DirectorCheck
 import controllers.actions.PermissionCheck
 import controllers.actions.PersonAction
-import controllers.actions.PersonAction.PersonRequest
-import database.repo.core.IdentityRepository
+import controllers.actions.PersonRequest
 import database.repo.core.StudyProgramPersonRepository
 import database.repo.ExamListRepository
+import database.repo.PermissionRepository
 import database.table.ExamListDbEntry
 import models.ExamList
 import models.Semester
@@ -29,11 +29,7 @@ import ops.EitherOps.EStringThrowOps
 import ops.FileOps.FileOps0
 import play.api.libs.json.Json
 import play.api.libs.json.Reads
-import play.api.mvc.AbstractController
-import play.api.mvc.Action
-import play.api.mvc.AnyContent
-import play.api.mvc.ControllerComponents
-import play.api.mvc.Request
+import play.api.mvc.*
 import play.mvc.Http.HeaderNames
 import service.ExamListService
 
@@ -44,7 +40,7 @@ final class ExamListsController @Inject() (
     service: ExamListService,
     @Named("tmp.dir") tmpDir: String,
     @Named("examListFolder") examListFolder: String,
-    val identityRepository: IdentityRepository,
+    val permissionRepository: PermissionRepository,
     val studyProgramPersonRepository: StudyProgramPersonRepository,
     val examListRepo: ExamListRepository,
     implicit val ctx: ExecutionContext

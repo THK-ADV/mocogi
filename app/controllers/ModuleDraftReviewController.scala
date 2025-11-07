@@ -10,7 +10,7 @@ import auth.AuthorizationAction
 import controllers.actions.ModuleDraftCheck
 import controllers.actions.PermissionCheck
 import controllers.actions.PersonAction
-import database.repo.core.IdentityRepository
+import database.repo.PermissionRepository
 import models.ModuleKeysToReview
 import play.api.libs.json.Json
 import play.api.mvc.AbstractController
@@ -27,7 +27,7 @@ final class ModuleDraftReviewController @Inject() (
     val service: ModuleReviewService,
     val moduleUpdatePermissionService: ModuleUpdatePermissionService,
     val moduleDraftService: ModuleDraftService,
-    val identityRepository: IdentityRepository,
+    val permissionRepository: PermissionRepository,
     private val keysToReview: ModuleKeysToReview,
     implicit val ctx: ExecutionContext
 ) extends AbstractController(cc)
