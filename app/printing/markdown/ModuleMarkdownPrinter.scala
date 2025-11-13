@@ -176,19 +176,19 @@ final class ModuleMarkdownPrinter @Inject() (
     prefix("# ").skip(prefix(m.title))
 
   private def particularities(de: ModuleContent, en: ModuleContent) =
-    contentBlock(strings.particularitiesLabel, de.particularities, en.particularities)
+    contentBlock(strings.particularitiesMarkdownLabel, de.particularities, en.particularities)
 
   private def recommendedReading(de: ModuleContent, en: ModuleContent) =
-    contentBlock(strings.recommendedReadingLabel, de.recommendedReading, en.recommendedReading)
+    contentBlock(strings.recommendedReadingMarkdownLabel, de.recommendedReading, en.recommendedReading)
 
   private def teachingAndLearningMethods(de: ModuleContent, en: ModuleContent) =
-    contentBlock(strings.teachingAndLearningMethodsLabel, de.teachingAndLearningMethods, en.teachingAndLearningMethods)
+    contentBlock(strings.teachingAndLearningMethodsMarkdownLabel, de.teachingAndLearningMethods, en.teachingAndLearningMethods)
 
   private def moduleContent(de: ModuleContent, en: ModuleContent) =
-    contentBlock(strings.moduleContentLabel, de.content, en.content)
+    contentBlock(strings.moduleContentMarkdownLabel, de.content, en.content)
 
   private def learningOutcome(de: ModuleContent, en: ModuleContent) =
-    contentBlock(strings.learningOutcomeLabel, de.learningOutcome, en.learningOutcome)
+    contentBlock(strings.learningOutcomeMarkdownLabel, de.learningOutcome, en.learningOutcome)
 
   def printer(studyProgram: String => Option[StudyProgramView])(implicit lastModified: LocalDateTime): Printer[Module] =
     Printer {

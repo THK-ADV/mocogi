@@ -438,12 +438,12 @@ final class ModuleCatalogLatexPrinter(
     for (m <- pattern.findAllMatchIn(origin)) {
       val subsectionName = m.group(1)
       result.append(origin.substring(lastEnd, m.start))
-      if subsectionName == strings.learningOutcomeLabel then {
+      if subsectionName == strings.learningOutcomeModuleCatalogLabel then {
         // reduce the gap between the bottom rule of the upper table and the “Learning Outcome” heading
         result.append("\\vspace{-2em}\n")
-      } else if subsectionName == strings.moduleContentLabel ||
-        subsectionName == strings.teachingAndLearningMethodsLabel ||
-        subsectionName == strings.recommendedReadingLabel
+      } else if subsectionName == strings.moduleContentModuleCatalogLabel ||
+        subsectionName == strings.teachingAndLearningMethodsModuleCatalogLabel ||
+        subsectionName == strings.recommendedReadingModuleCatalogLabel
       then {
         // insert a horizontal line before each subsequent subsection
         result.append("\\subsectiondivider\n")
@@ -709,10 +709,10 @@ final class ModuleCatalogLatexPrinter(
       module.deContent,
       module.enContent,
       List(
-        (strings.learningOutcomeLabel, GenLens[ModuleContent](_.learningOutcome)),
-        (strings.moduleContentLabel, GenLens[ModuleContent](_.content)),
-        (strings.teachingAndLearningMethodsLabel, GenLens[ModuleContent](_.teachingAndLearningMethods)),
-        (strings.recommendedReadingLabel, GenLens[ModuleContent](_.recommendedReading)),
+        (strings.learningOutcomeModuleCatalogLabel, GenLens[ModuleContent](_.learningOutcome)),
+        (strings.moduleContentModuleCatalogLabel, GenLens[ModuleContent](_.content)),
+        (strings.teachingAndLearningMethodsModuleCatalogLabel, GenLens[ModuleContent](_.teachingAndLearningMethods)),
+        (strings.recommendedReadingModuleCatalogLabel, GenLens[ModuleContent](_.recommendedReading)),
       ),
       diffs
     )
@@ -747,7 +747,7 @@ final class ModuleCatalogLatexPrinter(
         )
         printTableRow(highlightIf(strings.poLabelShort, ModuleProtocolDiff.isPOMandatory), poRow)
         printTableRow(
-          strings.particularitiesLabel,
+          strings.particularitiesModuleCatalogLabel,
           particularitiesToLatex(module.id.get, module.deContent, module.enContent)
         )
         printTableRow(
@@ -822,12 +822,12 @@ final class ModuleCatalogLatexPrinter(
                 text,
                 subsection => {
                   val key =
-                    if subsection == strings.learningOutcomeLabel then ModuleProtocolDiff.learningOutcomeKey
-                    else if subsection == strings.moduleContentLabel then ModuleProtocolDiff.moduleContentKey
-                    else if subsection == strings.teachingAndLearningMethodsLabel then
+                    if subsection == strings.learningOutcomeModuleCatalogLabel then ModuleProtocolDiff.learningOutcomeKey
+                    else if subsection == strings.moduleContentModuleCatalogLabel then ModuleProtocolDiff.moduleContentKey
+                    else if subsection == strings.teachingAndLearningMethodsModuleCatalogLabel then
                       ModuleProtocolDiff.teachingAndLearningMethodsKey
-                    else if subsection == strings.recommendedReadingLabel then ModuleProtocolDiff.recommendedReadingKey
-                    else if subsection == strings.particularitiesLabel then ModuleProtocolDiff.particularitiesKey
+                    else if subsection == strings.recommendedReadingModuleCatalogLabel then ModuleProtocolDiff.recommendedReadingKey
+                    else if subsection == strings.particularitiesModuleCatalogLabel then ModuleProtocolDiff.particularitiesKey
                     else ""
                   contentDiffs.contains(key)
                 },

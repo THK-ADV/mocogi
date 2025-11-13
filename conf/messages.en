@@ -94,6 +94,13 @@ module_review.notification.opening=???
 module_review.notification.body=???
 module_review.notification.closing=???
 
+# Markdown
+markdown.content.learning_outcome=Learning Outcome
+markdown.content.module=Module Content
+markdown.content.teaching_methods=Teaching and Learning Methods
+markdown.content.reading=Recommended Reading
+markdown.content.particularities=Particularities
+
 # Latex
 latex.lang.package_name=english
 latex.module_catalog.preview_label=Preview

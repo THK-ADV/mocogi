@@ -100,6 +100,13 @@ module_review.rejection.notification.opening=Das Review für das Modul "{0}" wur
 module_review.rejection.notification.reason=Der dazugehörige Kommentar ist:{0}
 module_review.rejection.notification.closing=Automatisch gesendet von Modulverwaltung THK-GM (module@gm.th-koeln.de)
 
+# Markdown
+markdown.content.learning_outcome=Angestrebte Lernergebnisse
+markdown.content.module=Modulinhalte
+markdown.content.teaching_methods=Lehr- und Lernmethoden (Medienformen)
+markdown.content.reading=Empfohlene Literatur
+markdown.content.particularities=Besonderheiten
+
 # Latex
 latex.lang.package_name=ngerman
 latex.module_catalog.preview_label=Vorschau
