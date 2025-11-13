@@ -14,7 +14,7 @@ import scala.util.control.NonFatal
 import auth.AuthorizationAction
 import controllers.actions.DirectorCheck
 import controllers.actions.PermissionCheck
-import controllers.actions.PersonAction
+import controllers.actions.UserResolveAction
 import database.repo.core.StudyProgramPersonRepository
 import database.repo.PermissionRepository
 import models.UniversityRole
@@ -37,7 +37,7 @@ final class ExamLoadController @Inject() (
 ) extends AbstractController(cc)
     with DirectorCheck
     with PermissionCheck
-    with PersonAction {
+    with UserResolveAction {
 
   private def createCSVFile(): Path = {
     val path = Paths.get(tmpDir).resolve(System.currentTimeMillis().toString)
@@ -45,7 +45,7 @@ final class ExamLoadController @Inject() (
   }
 
   def generateExamLoad(studyProgram: String, po: String): Action[AnyContent] = auth
-    .andThen(personAction)
+    .andThen(resolveUser)
     .andThen(hasRoleInStudyProgram(List(UniversityRole.PAV), studyProgram))
     .async { _ =>
       val file = createCSVFile()

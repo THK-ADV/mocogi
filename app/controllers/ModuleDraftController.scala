@@ -36,21 +36,19 @@ final class ModuleDraftController @Inject() (
     val identityRepository: IdentityRepository,
     val permissionRepository: PermissionRepository,
     val moduleService: ModuleService,
-    val moduleApprovalService: ModuleApprovalService,
     @Named("git.repoUrl") val repoUrl: String,
     implicit val ctx: ExecutionContext
 ) extends AbstractController(cc)
     with ModuleDraftCheck
-    with PermissionCheck
-    with PersonAction
+    with UserResolveAction
     with JsonNullWritable
     with I18nSupport
     with Logging {
 
   // /my-modules
   def moduleDrafts() =
-    auth.andThen(personAction).async { (r: PersonRequest[AnyContent]) =>
-      moduleUpdatePermissionService.allForUser(r.request.campusId, r.permissions).map { moduleJs =>
+    auth.andThen(resolveUser).async { (r: UserRequest[AnyContent]) =>
+      moduleUpdatePermissionService.allModulesForUser(r.request.campusId, r.permissions).map { moduleJs =>
         var js = moduleJs
         r.accreditationPOs.foreach(accreditationPOs => js = js + ("accreditationPOs" -> Json.toJson(accreditationPOs)))
         r.permissions.modulePermissions.foreach(pos => js = js + ("pos" -> Json.toJson(pos)))
@@ -58,15 +56,15 @@ final class ModuleDraftController @Inject() (
       }
     }
 
+  // Returns module draft state to check if the user can edit the module
   def getModuleDraft(moduleId: UUID) =
-    auth.andThen(personAction).andThen(canViewDraft(moduleId, moduleApprovalService)).async { _ =>
-      moduleDraftService
-        .getByModuleOpt(moduleId)
-        .map(draft => Ok(Json.toJson(draft.state())))
+    auth.andThen(resolveUser).andThen(canEditModule(moduleId)).async { _ =>
+      moduleDraftService.getByModuleOpt(moduleId).map(draft => Ok(Json.toJson(draft.state())))
     }
 
+  // Returns changed module draft keys for module edit
   def keys(moduleId: UUID) =
-    auth.andThen(personAction).andThen(canViewDraft(moduleId, moduleApprovalService)).async { request =>
+    auth.andThen(resolveUser).andThen(canEditModule(moduleId)).async { request =>
       moduleDraftService
         .getByModuleOpt(moduleId)
         .map { draft =>
@@ -89,7 +87,7 @@ final class ModuleDraftController @Inject() (
     }
 
   def mergeRequestUrl(moduleId: UUID) =
-    auth.andThen(personAction).andThen(canViewDraft(moduleId, moduleApprovalService)).async { _ =>
+    auth.andThen(resolveUser).andThen(canEditModule(moduleId)).async { _ =>
       moduleDraftService
         .getMergeRequestId(moduleId)
         .map {
@@ -98,19 +96,21 @@ final class ModuleDraftController @Inject() (
         }
     }
 
+  // Update the module
   def createOrUpdateModuleDraft(moduleId: UUID) =
     auth(parse.json[ModuleJson])
-      .andThen(personAction)
-      .andThen(canUpdateDraft(moduleId, moduleApprovalService))
+      .andThen(resolveUser)
+      .andThen(canEditModule(moduleId))
       .andThen(new VersionSchemeAction(VersionSchemeHeader))
       .async { r =>
         for {
-          canApproveModule <- moduleApprovalService.canApproveModule(moduleId, r.request.person.id)
+          // TODO: rethink this
+          //canApproveModule <- moduleApprovalService.canApproveModule(moduleId, r.request.person.id)
           res <- moduleDraftService
             .createOrUpdate(
               moduleId,
               r.body.toProtocol,
-              canApproveModule,
+              ???, // TODO
               r.request.person,
               r.versionScheme
             )
@@ -120,16 +120,9 @@ final class ModuleDraftController @Inject() (
         }
       }
 
-  /**
-   * Deletes the merge request, all reviews, the branch and module draft which
-   * are associated with the module id.
-   * @param moduleId
-   *   ID of the module draft which needs to be deleted
-   * @return
-   *   204 No Content
-   */
+  // Deletes the merge request, all reviews, the branch and module draft which are associated with the module id
   def deleteModuleDraft(moduleId: UUID) =
-    auth.andThen(personAction).andThen(canDeleteDraft(moduleId)).async { _ =>
+    auth.andThen(resolveUser).andThen(canEditModule(moduleId)).async { _ =>
       for {
         _ <- moduleDraftReviewService.delete(moduleId)
         _ <- moduleDraftService.delete(moduleId)
@@ -143,7 +136,6 @@ final class ModuleDraftController @Inject() (
       "label" -> messages(s"$normalizedKey.label"),
       "desc"  -> messages(s"$normalizedKey.desc")
     )
-
 }
 
 object ModuleDraftController {

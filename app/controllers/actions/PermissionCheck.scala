@@ -8,6 +8,7 @@ import auth.TokenRequest
 import play.api.libs.json.Json
 import play.api.mvc.Results.Forbidden
 
+@deprecated
 trait PermissionCheck {
   implicit def ctx: ExecutionContext
 

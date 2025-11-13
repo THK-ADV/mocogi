@@ -4,6 +4,13 @@ import scala.annotation.unused
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
+extension (f: Future[Boolean])
+  infix def ||(other: => Future[Boolean])(using ExecutionContext): Future[Boolean] =
+    f.flatMap { result =>
+      if result then Future.successful(true)
+      else other
+    }
+
 object FutureOps {
 
   def abort[A](msg: String): Future[A] =

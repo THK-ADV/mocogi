@@ -13,7 +13,7 @@ import play.api.mvc.Result
 import play.api.mvc.Results.BadRequest
 import play.api.mvc.WrappedRequest
 
-case class PersonRequest[A](
+case class UserRequest[A](
     person: Identity.Person,
     permissions: Permissions,
     request: TokenRequest[A]
@@ -35,15 +35,15 @@ case class PersonRequest[A](
   }
 }
 
-trait PersonAction {
+trait UserResolveAction {
   implicit def ctx: ExecutionContext
   implicit def permissionRepository: PermissionRepository
 
-  def personAction: ActionRefiner[TokenRequest, PersonRequest] =
-    new ActionRefiner[TokenRequest, PersonRequest] {
+  def resolveUser: ActionRefiner[TokenRequest, UserRequest] =
+    new ActionRefiner[TokenRequest, UserRequest] {
       def executionContext: ExecutionContext = ctx
 
-      protected override def refine[A](request: TokenRequest[A]): Future[Either[Result, PersonRequest[A]]] =
+      protected override def refine[A](request: TokenRequest[A]): Future[Either[Result, UserRequest[A]]] =
         request.token match {
           case _: Token.UserToken    => getByUsername(request)
           case _: Token.ServiceToken => adminUser(request)
@@ -52,7 +52,7 @@ trait PersonAction {
       private def adminUser[A](request: TokenRequest[A]) = {
         val adminUser = Identity.Person("", "", "", "", Nil, "", None, isActive = true, Unknown, None)
         val adminPerm = Permissions(Map((PermissionType.Admin, Nil)))
-        Future.successful(Right(PersonRequest(adminUser, adminPerm, request)))
+        Future.successful(Right(UserRequest(adminUser, adminPerm, request)))
       }
 
       private def getByUsername[A](request: TokenRequest[A]) =
@@ -60,7 +60,7 @@ trait PersonAction {
           .all(request.campusId)
           .map {
             case Some((p, perms)) =>
-              if p.isActive then Right(PersonRequest(p, perms, request))
+              if p.isActive then Right(UserRequest(p, perms, request))
               else Left(BadRequest(Json.obj("message" -> s"user with campusId ${request.campusId.value} is inactive")))
             case None =>
               Left(BadRequest(Json.obj("message" -> s"no user found for campusId ${request.campusId.value}")))

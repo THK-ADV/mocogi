@@ -1,28 +1,22 @@
 package service
 
-import java.time.LocalDateTime
-import java.util.UUID
-import javax.inject.Inject
-import javax.inject.Singleton
-
-import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
-import scala.util.Success
-
 import database.repo.ModuleDraftRepository
-import git.api.GitBranchService
-import git.api.GitCommitService
-import git.api.GitFileDownloadService
 import git.MergeRequestId
+import git.api.{GitBranchService, GitCommitService, GitFileDownloadService}
 import models.*
 import models.core.Identity
 import ops.FutureOps.Ops
 import parsing.metadata.VersionScheme
 import parsing.types.*
-import play.api.libs.json.*
 import play.api.Logging
-import service.modulediff.ModuleProtocolDiff.diff
-import service.modulediff.ModuleProtocolDiff.nonEmptyKeys
+import play.api.libs.json.*
+import service.modulediff.ModuleProtocolDiff.{diff, nonEmptyKeys}
+
+import java.time.LocalDateTime
+import java.util.UUID
+import javax.inject.{Inject, Singleton}
+import scala.concurrent.{ExecutionContext, Future}
+import scala.util.Success
 
 @Singleton
 final class ModuleDraftService @Inject() (
@@ -43,9 +37,6 @@ final class ModuleDraftService @Inject() (
 
   def getByModuleOpt(moduleId: UUID): Future[Option[ModuleDraft]] =
     repo.getByModuleOpt(moduleId)
-
-  def isAuthorOf(moduleId: UUID, personId: String) =
-    repo.isAuthorOf(moduleId, personId)
 
   def createNew(
       protocol: ModuleProtocol,

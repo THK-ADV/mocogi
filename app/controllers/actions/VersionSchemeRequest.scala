@@ -5,5 +5,5 @@ import play.api.mvc.WrappedRequest
 
 case class VersionSchemeRequest[A](
     versionScheme: VersionScheme,
-    request: PersonRequest[A]
+    request: UserRequest[A]
 ) extends WrappedRequest[A](request)

@@ -12,8 +12,8 @@ trait DirectorCheck { self: PermissionCheck =>
   protected def studyProgramPersonRepository: StudyProgramPersonRepository
 
   def hasRoleInStudyProgram(role: List[UniversityRole], studyProgram: String) =
-    new ActionFilter[PersonRequest] {
-      protected override def filter[A](request: PersonRequest[A]): Future[Option[Result]] =
+    new ActionFilter[UserRequest] {
+      protected override def filter[A](request: UserRequest[A]): Future[Option[Result]] =
         continueAsAdmin(
           request.request,
           otherwise = studyProgramPersonRepository.hasRoles(request.person.id, studyProgram, role)

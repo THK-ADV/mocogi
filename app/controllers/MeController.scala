@@ -7,7 +7,7 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 import auth.AuthorizationAction
-import controllers.actions.PersonAction
+import controllers.actions.UserResolveAction
 import database.repo.core.IdentityRepository
 import database.repo.core.StudyProgramPersonRepository
 import database.repo.PermissionRepository
@@ -25,15 +25,15 @@ final class MeController @Inject() (
     studyProgramPersonRepository: StudyProgramPersonRepository,
     implicit val ctx: ExecutionContext
 ) extends AbstractController(cc)
-    with PersonAction {
+    with UserResolveAction {
 
   def me() =
-    auth.andThen(personAction).async { r =>
+    auth.andThen(resolveUser).async { r =>
       if r.isNewApi then
         r.person.campusId match {
           case Some(cid) =>
             identityRepository.getUserInfo(r.person.id, cid).map { js =>
-              Ok(Json.parse(js).validate[JsObject].get.+(("person", Json.toJson(r.person))))
+              Ok(js.validate[JsObject].get.+(("person", Json.toJson(r.person))))
             }
           case None => Future.successful(NotFound)
         }

@@ -18,8 +18,8 @@ import scala.util.Success
 import auth.AuthorizationAction
 import controllers.actions.DirectorCheck
 import controllers.actions.PermissionCheck
-import controllers.actions.PersonAction
-import controllers.actions.PersonRequest
+import controllers.actions.UserResolveAction
+import controllers.actions.UserRequest
 import database.repo.core.StudyProgramPersonRepository
 import database.repo.JSONRepository
 import database.repo.ModuleCatalogRepository
@@ -53,7 +53,7 @@ final class ModuleCatalogController @Inject() (
 ) extends AbstractController(cc)
     with DirectorCheck
     with PermissionCheck
-    with PersonAction {
+    with UserResolveAction {
 
   private def createFile(filename: String): Path = {
     val newDir = Files.createDirectories(Paths.get(tmpDir).resolve(System.currentTimeMillis().toString))
@@ -69,7 +69,7 @@ final class ModuleCatalogController @Inject() (
    */
   def allGenericModulesForPO(studyProgram: String, po: String): Action[AnyContent] =
     auth
-      .andThen(personAction)
+      .andThen(resolveUser)
       .andThen(
         hasRoleInStudyProgram(
           List(UniversityRole.SGL, UniversityRole.PAV),
@@ -93,7 +93,7 @@ final class ModuleCatalogController @Inject() (
    */
   def generate(studyProgram: String, po: String): Action[List[UUID]] =
     auth(parse.json[List[UUID]])
-      .andThen(personAction)
+      .andThen(resolveUser)
       .andThen(
         hasRoleInStudyProgram(
           List(UniversityRole.SGL, UniversityRole.PAV),
@@ -140,14 +140,14 @@ final class ModuleCatalogController @Inject() (
   // TODO: rewrite to work with proper uploads
   def uploadIntroFile(studyProgram: String): Action[JsValue] =
     auth
-      .andThen(personAction)
+      .andThen(resolveUser)
       .andThen(
         hasRoleInStudyProgram(
           List(UniversityRole.SGL, UniversityRole.PAV),
           studyProgram
         )
       )
-      .apply(parse.json) { (r: PersonRequest[JsValue]) =>
+      .apply(parse.json) { (r: UserRequest[JsValue]) =>
         (r.body \ "po").validate[String] match
           case JsSuccess(po, _) =>
             val fullPoId = FullPoId(po)

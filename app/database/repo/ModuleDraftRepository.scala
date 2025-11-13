@@ -1,25 +1,19 @@
 package database.repo
 
-import java.time.LocalDateTime
-import java.util.UUID
-import javax.inject.Inject
-import javax.inject.Singleton
-
-import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
-
 import database.table
 import database.table.ModuleDraftTable
-import git.CommitId
-import git.MergeRequestId
-import git.MergeRequestStatus
+import git.{CommitId, MergeRequestId, MergeRequestStatus}
 import models.*
-import play.api.db.slick.DatabaseConfigProvider
-import play.api.db.slick.HasDatabaseConfigProvider
+import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfigProvider}
 import play.api.libs.json.JsValue
 import service.Print
 import slick.dbio.DBIOAction
 import slick.jdbc.JdbcProfile
+
+import java.time.LocalDateTime
+import java.util.UUID
+import javax.inject.{Inject, Singleton}
+import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 final class ModuleDraftRepository @Inject() (
@@ -27,13 +21,10 @@ final class ModuleDraftRepository @Inject() (
     implicit val ctx: ExecutionContext
 ) extends Repository[ModuleDraft, ModuleDraft, ModuleDraftTable]
     with HasDatabaseConfigProvider[JdbcProfile] {
+  import ModuleDraftTable.given_BaseColumnType_Set
   import database.MyPostgresProfile.MyAPI.playJsonTypeMapper
   import profile.api.*
-  import table.commitColumnType
-  import table.mergeRequestIdColumnType
-  import table.mergeRequestStatusColumnType
-  import table.printColumnType
-  import ModuleDraftTable.given_BaseColumnType_Set
+  import table.{commitColumnType, mergeRequestIdColumnType, mergeRequestStatusColumnType, printColumnType}
 
   protected val tableQuery = TableQuery[ModuleDraftTable]
 
@@ -139,12 +130,4 @@ final class ModuleDraftRepository @Inject() (
 
   def getByModuleOpt(moduleId: UUID) =
     db.run(tableQuery.filter(_.module === moduleId).result.map(_.headOption))
-
-  def isAuthorOf(moduleId: UUID, personId: String) =
-    db.run(
-      tableQuery
-        .filter(a => a.module === moduleId && a.author === personId)
-        .exists
-        .result
-    )
 }

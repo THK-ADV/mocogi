@@ -47,12 +47,12 @@ final class ModuleUpdatePermissionService @Inject() (
       _ <- repo.createMany(campusIds.distinct.map(c => (module, c, kind)))
     } yield ()
 
-  def hasPermission(campusId: CampusId, module: UUID) =
+  def hasPermissionFor(module: UUID, campusId: CampusId) =
     repo.hasPermission(campusId, module)
 
-  def allFromUser(campusId: CampusId): Future[Seq[ModuleUpdatePermission]] =
-    repo.allFromUser(campusId)
-
+  def isAuthorOf(moduleId: UUID, personId: String) =
+    repo.isAuthorOf(moduleId, personId)
+  
   def allGrantedFromModule(moduleId: UUID): Future[String] =
     repo.allGrantedFromModule(moduleId)
 
@@ -76,7 +76,7 @@ final class ModuleUpdatePermissionService @Inject() (
    * Then fetch all modules that can be edited by a role.
    * @return The combination of the two module-lists as a JSON object
    */
-  def allForUser(cid: CampusId, permissions: Permissions): Future[JsObject] = {
+  def allModulesForUser(cid: CampusId, permissions: Permissions): Future[JsObject] = {
     val forUser = repo.allForUser(cid).map(s => Json.obj("direct" -> Json.parse(s)))
 
     permissions.modulePermissions match {
@@ -92,9 +92,6 @@ final class ModuleUpdatePermissionService @Inject() (
     }
   }
 
-  def isModuleInPO(module: UUID, roles: Set[String]): Future[Boolean] =
-    parsePOs(roles) match {
-      case Some(pos) => repo.isModuleInPO(module, pos)
-      case None      => Future.successful(false)
-    }
+  def isModulePartOfPO(module: UUID, pos: Seq[String]): Future[Boolean] =
+    repo.isModulePartOfPO(module, pos)
 }

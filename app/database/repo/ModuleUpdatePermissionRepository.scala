@@ -1,23 +1,16 @@
 package database.repo
 
-import java.util.UUID
-import javax.inject.Inject
-import javax.inject.Singleton
-
-import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
-
 import auth.CampusId
+import database.table.{ModuleDraftTable, ModuleTable, ModuleUpdatePermissionTable}
 import database.table.core.IdentityTable
-import database.table.ModuleTable
-import database.table.ModuleUpdatePermissionTable
 import models.*
 import models.core.Identity
-import play.api.db.slick.DatabaseConfigProvider
-import play.api.db.slick.HasDatabaseConfigProvider
-import slick.jdbc.GetResult
-import slick.jdbc.JdbcProfile
-import slick.jdbc.TypedParameter
+import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfigProvider}
+import slick.jdbc.{GetResult, JdbcProfile, TypedParameter}
+
+import java.util.UUID
+import javax.inject.{Inject, Singleton}
+import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 final class ModuleUpdatePermissionRepository @Inject() (
@@ -30,8 +23,7 @@ final class ModuleUpdatePermissionRepository @Inject() (
     ]
     with HasDatabaseConfigProvider[JdbcProfile] {
 
-  import database.table.campusIdColumnType
-  import database.table.moduleUpdatePermissionTypeColumnType
+  import database.table.{campusIdColumnType, moduleUpdatePermissionTypeColumnType}
   import profile.api.*
 
   protected val tableQuery = TableQuery[ModuleUpdatePermissionTable]
@@ -84,21 +76,6 @@ final class ModuleUpdatePermissionRepository @Inject() (
         .map(_.map { case (id, perm) => (Identity.toPersonUnsafe(id), perm) })
     )
 
-  def allFromUser(campusId: CampusId) =
-    db.run(
-      tableQuery
-        .filter(_.campusId === campusId)
-        .join(
-          TableQuery[ModuleTable].map(a => (a.id, a.title, a.abbrev))
-        )
-        .on(_.module === _._1)
-        .result
-        .map(_.map {
-          case ((id, campusId, kind), (_, title, abbrev)) =>
-            ModuleUpdatePermission(id, title, abbrev, campusId, kind)
-        })
-    )
-
   def allGrantedFromModule(module: UUID) = {
     val query = sql"select get_users_with_granted_permissions_from_module(${module.toString}::uuid)".as[String].head
     db.run(query)
@@ -108,6 +85,14 @@ final class ModuleUpdatePermissionRepository @Inject() (
     db.run(
       tableQuery
         .filter(a => a.module === module && a.campusId === campusId)
+        .exists
+        .result
+    )
+
+  def isAuthorOf(moduleId: UUID, personId: String) =
+    db.run(
+      TableQuery[ModuleDraftTable]
+        .filter(a => a.module === moduleId && a.author === personId)
         .exists
         .result
     )
@@ -129,7 +114,8 @@ final class ModuleUpdatePermissionRepository @Inject() (
     db.run(query)
   }
 
-  def isModuleInPO(module: UUID, pos: List[String]): Future[Boolean] = {
+  // Checks if the module has a PO relationship with any of the passed POs. Both live and draft modules are considered
+  def isModulePartOfPO(module: UUID, pos: Seq[String]): Future[Boolean] = {
     val query = sql"select module_of_po(${module.toString}::uuid, #${arrayLiteral(pos)}::text[])".as[Boolean].head
     db.run(query)
   }
