@@ -5,11 +5,12 @@ import javax.inject.Inject
 import javax.inject.Provider
 
 import scala.concurrent.ExecutionContext
+
+import git.Branch
 import ops.ConfigurationOps.Ops
 import play.api.Configuration
 import service.exam.ExamLoadService
 import service.AssessmentMethodService
-import git.Branch
 
 final class ExamLoadServiceProvider @Inject() (
     assessmentMethodService: AssessmentMethodService,
