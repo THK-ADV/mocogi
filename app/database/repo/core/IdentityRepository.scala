@@ -13,6 +13,7 @@ import database.table.PeopleImage
 import database.table.PeopleImagesTable
 import models.core.Identity
 import models.core.Identity.Person
+import models.UserInfo
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.db.slick.HasDatabaseConfigProvider
 import slick.jdbc.GetResult
@@ -46,11 +47,11 @@ class IdentityRepository @Inject() (
   def deleteMany(ids: Seq[String]) =
     db.run(tableQuery.filter(_.id.inSet(ids)).delete)
 
-  private given GetResult[String] =
-    GetResult(_.nextString())
+  private given GetResult[UserInfo] =
+    GetResult(r => UserInfo(r.nextBoolean(), r.nextBoolean(), r.nextBoolean(), r.nextInt(), r.nextInt()))
 
-  def getUserInfo(id: String, campusId: String): Future[String] = {
-    val query = sql"select get_user_info($id::text, $campusId::text)".as[String].head
+  def getUserInfo(id: String, campusId: String): Future[UserInfo] = {
+    val query = sql"select * from get_user_info($id::text, $campusId::text)".as[UserInfo].head
     db.run(query)
   }
 

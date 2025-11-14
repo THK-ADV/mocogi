@@ -476,37 +476,57 @@ CREATE OR REPLACE FUNCTION module_of_po (module_param uuid, pos_param text[])
 $$;
 
 CREATE OR REPLACE FUNCTION get_user_info (uid text, cid text)
-    RETURNS jsonb
-    LANGUAGE sql
+    RETURNS TABLE (
+        has_director_privileges boolean,
+        has_module_review_privileges boolean,
+        has_modules_to_edit boolean,
+        rejected_reviews integer,
+        reviews_to_approve integer)
     STABLE
+    LANGUAGE sql
     AS $$
     SELECT
-        jsonb_build_object('hasUniversityRole', EXISTS (
-                SELECT
-                    1
-                FROM study_program_person p
-                WHERE
-                    p.person = uid), 'hasModulesToEdit', EXISTS (
-                SELECT
-                    1
-                FROM module_update_permission m
-                WHERE
-                    m.campus_id = cid), 'rejectedReviews', (
-                SELECT
-                    count(*)
-                FROM module_update_permission mp
+        EXISTS (
+            SELECT
+                1
+            FROM
+                study_program_person p
+            WHERE
+                p.person = uid) AS has_director_privileges,
+        EXISTS (
+            SELECT
+                1
+            FROM
+                study_program_person p
+            WHERE
+                p.person = uid
+                AND p.role = 'pav') AS has_module_review_privileges,
+        EXISTS (
+            SELECT
+                1
+            FROM
+                module_update_permission m
+            WHERE
+                m.campus_id = cid) AS has_modules_to_edit,
+        (
+            SELECT
+                count(*)
+            FROM
+                module_update_permission mp
                 JOIN module_review mr ON mp.module = mr.module_draft
             WHERE
                 mp.campus_id = cid
-                AND mr.status = 'rejected'), 'reviewsToApprove', (
-                SELECT
-                    count(DISTINCT mr.module_draft)
-                FROM study_program_person sp
+                AND mr.status = 'rejected') AS rejected_reviews,
+        (
+            SELECT
+                count(DISTINCT mr.module_draft)
+            FROM
+                study_program_person sp
                 JOIN module_review mr ON sp.study_program = mr.study_program
                     AND sp.role = mr.role
                     AND mr.status = 'pending'
             WHERE
-                sp.person = uid))
+                sp.person = uid) AS reviews_to_approve;
 $$;
 
 CREATE OR REPLACE FUNCTION get_users_with_granted_permissions_from_module (module_id uuid)

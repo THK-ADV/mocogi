@@ -9,9 +9,7 @@ GET           /admin/invalidModuleExams                               controller
 DELETE        /admin/modules/:id                                      controllers.AdminController.deleteModule(id: java.util.UUID)
 POST          /admin/modules                                          controllers.AdminController.createNewModulesFromDraftBranch()
 
-GET           /me                                                     controllers.MeController.me()
-
-GET           /bootstrap/createViews                                  controllers.BootstrapController.createViews()
+GET           /user                                                   controllers.UserController.userInfo()
 
 # Git Webhooks
 
