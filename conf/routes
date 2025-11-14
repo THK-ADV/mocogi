@@ -80,18 +80,15 @@ GET           /moduleDrafts/:id/keys                                  controller
 GET           /moduleDrafts/:id/mrurl                                 controllers.ModuleDraftController.mergeRequestUrl(id: java.util.UUID)
 
 # Review
+GET           /moduleReviews                                          controllers.ModuleDraftReviewController.moduleReviews()
+GET           /moduleReviews/:moduleId                                controllers.ModuleDraftReviewController.getForModule(moduleId: java.util.UUID)
 POST          /moduleReviews/:id                                      controllers.ModuleDraftReviewController.create(id: java.util.UUID)
 DELETE        /moduleReviews/:id                                      controllers.ModuleDraftReviewController.delete(id: java.util.UUID)
+PUT           /moduleReviews                                          controllers.ModuleDraftReviewController.update()
 GET           /moduleReviewKeys                                       controllers.ModuleDraftReviewController.keys()
-
-# Approval
-GET           /moduleApprovals/own                                    controllers.ModuleDraftApprovalController.getOwn()
-GET           /moduleApprovals/:moduleId                              controllers.ModuleDraftApprovalController.getByModule(moduleId: java.util.UUID)
-PUT           /moduleApprovals                                        controllers.ModuleDraftApprovalController.update()
 
 # Module Update Permissions
 
-GET           /moduleUpdatePermissions/own                            controllers.ModuleUpdatePermissionController.getOwn()
 GET           /moduleUpdatePermissions/:moduleId                      controllers.ModuleUpdatePermissionController.allByModule(moduleId: java.util.UUID)
 POST          /moduleUpdatePermissions/:moduleId                      controllers.ModuleUpdatePermissionController.replace(moduleId: java.util.UUID)
 

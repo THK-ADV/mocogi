@@ -16,8 +16,8 @@ import scala.util.control.NonFatal
 import auth.AuthorizationAction
 import controllers.actions.DirectorCheck
 import controllers.actions.PermissionCheck
-import controllers.actions.PersonAction
-import controllers.actions.PersonRequest
+import controllers.actions.UserRequest
+import controllers.actions.UserResolveAction
 import database.repo.core.StudyProgramPersonRepository
 import database.repo.ExamListRepository
 import database.repo.PermissionRepository
@@ -47,7 +47,7 @@ final class ExamListsController @Inject() (
 ) extends AbstractController(cc)
     with DirectorCheck
     with PermissionCheck
-    with PersonAction {
+    with UserResolveAction {
 
   private def createExamListFile(filename: String): Path = {
     val newDir = Files.createDirectories(Paths.get(tmpDir).resolve(System.currentTimeMillis().toString))
@@ -59,7 +59,7 @@ final class ExamListsController @Inject() (
 
   def getPreview(studyProgram: String, po: String): Action[AnyContent] =
     auth
-      .andThen(personAction)
+      .andThen(resolveUser)
       .andThen(hasRoleInStudyProgram(List(UniversityRole.PAV), studyProgram))
       .async { r =>
         r.headers.get(HeaderNames.ACCEPT) match {
@@ -104,9 +104,9 @@ final class ExamListsController @Inject() (
 
   def replace(studyProgram: String, po: String): Action[(String, LocalDate)] =
     auth(parse.json(createExamListReads))
-      .andThen(personAction)
+      .andThen(resolveUser)
       .andThen(hasRoleInStudyProgram(List(UniversityRole.PAV), studyProgram))
-      .async { (r: PersonRequest[(String, LocalDate)]) =>
+      .async { (r: UserRequest[(String, LocalDate)]) =>
         val (semester, date) = r.body
         val filename         = s"exam_lists_${semester}_$po"
         val file             = createExamListFile(filename)

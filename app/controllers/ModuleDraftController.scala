@@ -99,7 +99,11 @@ final class ModuleDraftController @Inject() (
       .andThen(new VersionSchemeAction(VersionSchemeHeader))
       .async { (r: VersionSchemeRequest[ModuleJson]) =>
         for {
-          canApproveModule <- moduleDraftReviewService.canApproveModule(moduleId, r.request.person.id)
+          canApproveModule <- moduleDraftReviewService.canApproveModule(
+            moduleId,
+            r.request.person.id,
+            r.request.permissions
+          )
           res <- moduleDraftService.createOrUpdate(
             ModuleUpdateRequest(
               moduleId,

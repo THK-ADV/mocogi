@@ -8,14 +8,18 @@ import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
+import database.repo.core.StudyProgramPersonRepository
 import database.repo.ModuleReviewRepository.PendingModuleReview
 import database.table.core.DegreeTable
 import database.table.core.IdentityTable
+import database.table.core.StudyProgramDbEntry
+import database.table.core.StudyProgramPersonDbEntry
 import database.table.core.StudyProgramPersonTable
 import database.table.core.StudyProgramTable
 import database.table.ModuleDraftTable
 import database.table.ModuleReviewTable
 import models.*
+import models.core.Degree
 import models.core.IDLabel
 import models.core.Identity
 import play.api.db.slick.DatabaseConfigProvider
@@ -25,11 +29,13 @@ import slick.jdbc.JdbcProfile
 @Singleton
 final class ModuleReviewRepository @Inject() (
     val dbConfigProvider: DatabaseConfigProvider,
+    studyProgramPersonRepository: StudyProgramPersonRepository,
     implicit val ctx: ExecutionContext
 ) extends Repository[ModuleReview.DB, ModuleReview.DB, ModuleReviewTable]
     with HasDatabaseConfigProvider[JdbcProfile] {
 
   import database.table.moduleReviewStatusColumnType
+  import database.table.universityRoleColumnType
   import profile.api.*
 
   protected val tableQuery = TableQuery[ModuleReviewTable]
@@ -127,6 +133,83 @@ final class ModuleReviewRepository @Inject() (
       )
 
     db.run(query)
+  }
+
+  private def getAllReviews0(
+      spp: Query[
+        (StudyProgramPersonTable, StudyProgramTable, DegreeTable),
+        (StudyProgramPersonDbEntry, StudyProgramDbEntry, Degree),
+        Seq
+      ]
+  ) = {
+    val query = tableQuery
+      .joinLeft(spp)
+      .on((r, spp) => r.studyProgram === spp._1.studyProgram && r.role === spp._1.role)
+      .join(
+        tableQuery
+          .join(spp)
+          .on((r, spp) => r.studyProgram === spp._1.studyProgram && r.role === spp._1.role)
+      )
+      .on(_._1.moduleDraft === _._1.moduleDraft)
+      .join(TableQuery[ModuleDraftTable])
+      .on(_._1._1.moduleDraft === _.module)
+      .flatMap(a => a._2.authorFk.filter(_.isPerson).map(a -> _))
+      .map {
+        case ((((r, spp), _), d), p) =>
+          (
+            d.module,
+            d.moduleTitle,
+            d.moduleAbbrev,
+            p,
+            r.role,
+            r.studyProgram,
+            r.status,
+            spp.map(s => (s._2.id, s._2.deLabel, s._2.enLabel, s._3)),
+            r.id
+          )
+      }
+      .distinctOn(a => (a._1, a._4, a._5, a._6))
+    db.run(query.result)
+  }
+
+  /**
+   * Retrieves all module reviews
+   */
+  def getAllReviews() = {
+    val spp = studyProgramPersonRepository.directorsQuery()
+    getAllReviews0(spp)
+  }
+
+  /**
+   * Retrieves all module reviews for which the user is eligible
+   */
+  def getAllReviewsForUser(person: String) = {
+    val spp = studyProgramPersonRepository.directorsQuery(person)
+    getAllReviews0(spp)
+  }
+
+  def hasPendingReview(reviewIds: List[UUID], person: String): Future[Boolean] =
+    if reviewIds.isEmpty then Future.successful(true)
+    else {
+      val spp = studyProgramPersonRepository.directorsQuery(person).map(_._1)
+      val query = tableQuery
+        .join(spp)
+        .on((r, spp) =>
+          r.studyProgram === spp.studyProgram && r.role === spp.role && r.id.inSet(reviewIds) && r.isPending
+        )
+        .map(_._1.id)
+        .distinct
+        .size
+      db.run(query.result).map(_ == reviewIds.size)
+    }
+
+  def canApproveModule(moduleId: UUID, person: String): Future[Boolean] = {
+    val spp = studyProgramPersonRepository.directorsQuery(person).map(_._1)
+    val query = tableQuery
+      .join(spp)
+      .on((r, spp) => r.studyProgram === spp.studyProgram && r.role === spp.role && r.moduleDraft === moduleId)
+      .exists
+    db.run(query.result)
   }
 
   protected override def retrieve(query: Query[ModuleReviewTable, ModuleReview.DB, Seq]): Future[Seq[ModuleReview.DB]] =

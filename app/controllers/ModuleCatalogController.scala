@@ -18,8 +18,8 @@ import scala.util.Success
 import auth.AuthorizationAction
 import controllers.actions.DirectorCheck
 import controllers.actions.PermissionCheck
-import controllers.actions.UserResolveAction
 import controllers.actions.UserRequest
+import controllers.actions.UserResolveAction
 import database.repo.core.StudyProgramPersonRepository
 import database.repo.JSONRepository
 import database.repo.ModuleCatalogRepository

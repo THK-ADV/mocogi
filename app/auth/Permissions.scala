@@ -29,4 +29,10 @@ case class Permissions(permissions: Map[PermissionType, Seq[String]]) extends An
 
   def modulePermissions: Option[Seq[String]] =
     request(PermissionType.Module)
+
+  def approvalFastForwardPermissions: Option[Seq[String]] =
+    request(PermissionType.ApprovalFastForward)
+
+  def hasPermission(perms: PermissionType*): Boolean =
+    permissions.contains(PermissionType.Admin) || perms.exists(permissions.contains)
 }

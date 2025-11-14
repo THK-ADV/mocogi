@@ -2,6 +2,7 @@ package controllers.actions
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
+
 import controllers.ModuleReviewRequest
 import database.repo.ModuleReviewRepository
 import play.api.libs.json.Json
@@ -19,7 +20,9 @@ trait ApprovalCheck { self: PermissionCheck =>
           case moduleReviewRequest: ModuleReviewRequest =>
             continueAsAdmin(
               request.request,
-              otherwise = Future.successful(false) // reviewRepository.hasPendingReview(moduleReviewRequest.reviews, request.person) // TODO
+              otherwise = Future.successful(
+                false
+              ) // reviewRepository.hasPendingReview(moduleReviewRequest.reviews, request.person) // TODO
             )
           case _ =>
             Future.successful(Some(Results.BadRequest(Json.obj("message" -> "Invalid request body"))))

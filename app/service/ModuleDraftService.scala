@@ -66,7 +66,8 @@ final class ModuleDraftService @Inject() (
         person,
         updatedKeys
       ).andThen {
-        case Success(Right(d)) => logger.info(s"Successfully created module draft ${d.module} (${d.moduleTitle})")
+        case Success(Right(d)) =>
+          logger.info(s"Successfully created module draft ${d.module} (${d.moduleTitle}) by ${person.id}")
       }
   }
 

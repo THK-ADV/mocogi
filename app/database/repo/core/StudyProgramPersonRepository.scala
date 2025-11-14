@@ -6,8 +6,9 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 import com.google.inject.Inject
-import database.table.core.StudyProgramPersonTable
+import database.table.core.*
 import database.view.StudyProgramViewRepository
+import models.core.Degree
 import models.StudyProgramPrivileges
 import models.UniversityRole
 import play.api.db.slick.DatabaseConfigProvider
@@ -27,9 +28,24 @@ final class StudyProgramPersonRepository @Inject() (
 
   private def studyProgramViewTable = studyProgramViewRepo.tableQuery
 
-  def directorsQuery(person: String) =
+  def directorsQuery(person: String): Query[
+    (StudyProgramPersonTable, StudyProgramTable, DegreeTable),
+    (StudyProgramPersonDbEntry, StudyProgramDbEntry, Degree),
+    Seq
+  ] =
     for {
       q  <- studyProgramPersonTable.filter(_.person === person)
+      sp <- q.studyProgramFk
+      g  <- sp.degreeFk
+    } yield (q, sp, g)
+
+  def directorsQuery(): Query[
+    (StudyProgramPersonTable, StudyProgramTable, DegreeTable),
+    (StudyProgramPersonDbEntry, StudyProgramDbEntry, Degree),
+    Seq
+  ] =
+    for {
+      q  <- studyProgramPersonTable
       sp <- q.studyProgramFk
       g  <- sp.degreeFk
     } yield (q, sp, g)

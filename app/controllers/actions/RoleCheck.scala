@@ -8,6 +8,7 @@ import auth.TokenRequest
 import play.api.mvc.ActionFilter
 import play.api.mvc.Result
 
+@deprecated
 trait RoleCheck { self: PermissionCheck =>
 
   def hasRole(role: Role) =

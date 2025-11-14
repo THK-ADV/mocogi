@@ -8,17 +8,22 @@ import scala.concurrent.ExecutionContext
 
 import auth.AuthorizationAction
 import controllers.actions.ModuleDraftCheck
-import controllers.actions.PermissionCheck
-import controllers.actions.PersonAction
+import controllers.actions.UserRequest
+import controllers.actions.UserResolveAction
 import database.repo.PermissionRepository
 import models.ModuleKeysToReview
+import play.api.libs.json.JsError
+import play.api.libs.json.JsSuccess
 import play.api.libs.json.Json
+import play.api.libs.json.Reads
 import play.api.mvc.AbstractController
+import play.api.mvc.AnyContent
 import play.api.mvc.ControllerComponents
 import play.api.Logging
-import service.ModuleDraftService
 import service.ModuleReviewService
 import service.ModuleUpdatePermissionService
+
+case class ModuleReviewRequest(approved: Boolean, comment: Option[String], reviews: List[UUID])
 
 @Singleton
 final class ModuleDraftReviewController @Inject() (
@@ -26,42 +31,59 @@ final class ModuleDraftReviewController @Inject() (
     val auth: AuthorizationAction,
     val service: ModuleReviewService,
     val moduleUpdatePermissionService: ModuleUpdatePermissionService,
-    val moduleDraftService: ModuleDraftService,
     val permissionRepository: PermissionRepository,
     private val keysToReview: ModuleKeysToReview,
     implicit val ctx: ExecutionContext
 ) extends AbstractController(cc)
+    // with ApprovalCheck
     with ModuleDraftCheck
-    with PermissionCheck
-    with PersonAction
-    with Logging {
+    with UserResolveAction
+    with Logging
+    with JsonNullWritable {
 
-  /**
-   * Creates a full review.
-   * @param moduleId
-   *   ID of the module draft
-   * @return
-   *   201 Created
-   */
-  def create(moduleId: UUID) =
-    auth.andThen(personAction).andThen(hasPermissionToEditDraft(moduleId)).async { r =>
-      moduleInReaccreditation(moduleId, r)
-        .flatMap(fastForward =>
-          if fastForward then service.createAutoAccepted(moduleId, r.person) else service.create(moduleId, r.person)
-        )
-        .map(_ => Created)
+  given Reads[ModuleReviewRequest] =
+    js =>
+      for {
+        approved <- js.\("action").validate[String].flatMap {
+          case "approve" => JsSuccess(true)
+          case "reject"  => JsSuccess(false)
+          case other     => JsError(s"expected action to be 'approve' or 'reject', but was $other")
+        }
+        comment   <- js.\("comment").validateOpt[String]
+        reviewIds <- js.\("reviews").validate[List[UUID]]
+      } yield ModuleReviewRequest(approved, comment, reviewIds)
+
+  // Returns module reviews of the user
+  def moduleReviews() =
+    auth.andThen(resolveUser).async { (r: UserRequest[AnyContent]) =>
+      service.moduleReviews(r.person, r.permissions).map(xs => Ok(Json.toJson(xs)))
     }
 
-  /**
-   * Deletes a full review.
-   * @param moduleId
-   *   ID of the module draft
-   * @return
-   *   204 NoContent
-   */
+  // Creates a full review for the module draft
+  def create(moduleId: UUID) =
+    auth.andThen(resolveUser).andThen(canEditModule(moduleId)).async { (r: UserRequest[AnyContent]) =>
+      service.create(moduleId, r.person, r.permissions).map(_ => Created)
+    }
+
+  // Deletes a full review for the module draft
   def delete(moduleId: UUID) =
-    auth.andThen(personAction).andThen(hasPermissionToEditDraft(moduleId)).async { _ =>
+    auth.andThen(resolveUser).andThen(canEditModule(moduleId)).async { _ =>
       service.delete(moduleId).map(_ => NoContent)
+    }
+
+  // Returns reviews for a module
+  def getForModule(moduleId: UUID) =
+    auth.andThen(resolveUser).andThen(canEditModule(moduleId)).async { _ =>
+      service.allByModule(moduleId).map(xs => Ok(Json.toJson(xs)))
+    }
+
+  // Perform a module review
+  def update() = // TODO: add permission check
+    auth(parse.json[ModuleReviewRequest]).andThen(resolveUser).async { (r: UserRequest[ModuleReviewRequest]) =>
+      val moduleReview = r.request.body
+      service
+        .update(moduleReview.reviews, r.person, moduleReview.approved, moduleReview.comment)
+        .map(_ => NoContent)
     }
 
   def keys() =
