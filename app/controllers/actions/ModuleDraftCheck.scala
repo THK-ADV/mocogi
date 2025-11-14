@@ -17,9 +17,6 @@ trait ModuleDraftCheck {
   protected def moduleUpdatePermissionService: ModuleUpdatePermissionService
   protected implicit def ctx: ExecutionContext
 
-  @deprecated
-  def moduleInReaccreditation[A](moduleId: UUID, request: UserRequest[A]): Future[Boolean] = ???
-
   /**
    * This method checks if the user is allowed to edit the module. The verification process is three-stage:
    * 1. Checks if the user is directly authorized (inherited or granted permission)

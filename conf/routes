@@ -28,7 +28,6 @@ GET           /locations                                              controller
 GET           /languages                                              controllers.LanguageController.all()
 GET           /status                                                 controllers.StatusController.all()
 GET           /assessmentMethods                                      controllers.AssessmentMethodController.all()
-POST          /assessmentMethods                                      controllers.AssessmentMethodController.createPermittedEntries()
 GET           /moduleTypes                                            controllers.ModuleTypeController.all()
 GET           /seasons                                                controllers.SeasonController.all()
 GET           /identities                                             controllers.IdentityController.all()
@@ -41,7 +40,6 @@ GET           /examPhases                                             controller
 # Module
 
 GET           /modules                                                controllers.ModuleController.all()
-GET           /modules/preview                                        controllers.ModuleController.allFromPreview()
 GET           /modules/:id                                            controllers.ModuleController.get(id: java.util.UUID)
 GET           /modules/:id/preview                                    controllers.ModuleController.getPreview(id: java.util.UUID)
 GET           /modules/:id/latest                                     controllers.ModuleController.getLatest(id: java.util.UUID)
@@ -49,7 +47,8 @@ GET           /modules/:id/file                                       controller
 GET           /modules/:id/preview/file                               controllers.ModuleController.getPreviewFile(id: java.util.UUID)
 GET           /modules/:id/latest/file                                controllers.ModuleController.getLatestFile(id: java.util.UUID)
 GET           /modules/:id/options                                    controllers.ModuleController.allGenericOptions(id: java.util.UUID)
-PUT           /modules/parse/:id                                      controllers.ModuleController.parseValidate(id: java.util.UUID)
+
+PUT           /parse                                                  controllers.ModuleController.parseValidate()
 
 # Module Catalog
 

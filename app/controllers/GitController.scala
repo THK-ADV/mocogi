@@ -11,8 +11,9 @@ import scala.concurrent.Future
 import scala.util.control.NonFatal
 
 import auth.AuthorizationAction
-import auth.Role.Admin
-import controllers.actions.RoleCheck
+import controllers.actions.AdminCheck
+import controllers.actions.UserResolveAction
+import database.repo.PermissionRepository
 import git.api.GitCommitService
 import git.api.GitFileDownloadService
 import git.api.GitRepositoryApiService
@@ -38,9 +39,11 @@ final class GitController @Inject() (
     auth: AuthorizationAction,
     gitConfig: GitConfig,
     cached: Cached,
+    val permissionRepository: PermissionRepository,
     implicit val ctx: ExecutionContext
 ) extends AbstractController(cc)
-    with RoleCheck {
+    with AdminCheck
+    with UserResolveAction {
 
   def latestModuleUpdate() =
     cached.status(r => r.method + r.uri, 200, 30.minutes) {
@@ -52,8 +55,9 @@ final class GitController @Inject() (
       )
     }
 
+  // TODO: update to ModuleGitCLI
   def updateCoreFiles() =
-    auth.andThen(hasRole(Admin)).async { _ =>
+    auth.andThen(resolveUser).andThen(isAdmin).async { _ =>
       for {
         paths <- gitRepositoryApiService.listCoreFiles(gitConfig.mainBranch)
         contents <- Future.sequence(
@@ -69,8 +73,9 @@ final class GitController @Inject() (
       }
     }
 
+  // TODO: update to ModuleGitCLI
   def updateModuleFiles() =
-    auth.andThen(hasRole(Admin)).async { _ =>
+    auth.andThen(resolveUser).andThen(isAdmin).async { _ =>
       for {
         paths <- gitRepositoryApiService.listModuleFiles(gitConfig.mainBranch)
         modules <- Future.sequence(

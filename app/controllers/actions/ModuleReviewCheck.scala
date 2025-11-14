@@ -43,7 +43,6 @@ trait ModuleReviewCheck {
               Future.successful(Some(Results.BadRequest(Json.obj("message" -> "Invalid request body"))))
           }
         }
-
       }
 
       protected override def executionContext: ExecutionContext = ctx

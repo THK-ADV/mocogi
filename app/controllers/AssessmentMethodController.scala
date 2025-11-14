@@ -9,8 +9,7 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 import auth.AuthorizationAction
-import auth.Role
-import controllers.actions.RoleCheck
+import controllers.actions.AdminCheck
 import models.core.AssessmentMethod
 import models.AssessmentMethodSource
 import models.PermittedAssessmentMethodForModule
@@ -26,10 +25,8 @@ final class AssessmentMethodController @Inject() (
     cc: ControllerComponents,
     service: AssessmentMethodService,
     cached: Cached,
-    auth: AuthorizationAction,
     implicit val ctx: ExecutionContext
-) extends AbstractController(cc)
-    with RoleCheck {
+) extends AbstractController(cc) {
 
   def all() =
     cached.status(r => r.method + r.uri, 200, 1.hour) {
@@ -49,10 +46,5 @@ final class AssessmentMethodController @Inject() (
               )
             )
       }
-    }
-
-  def createPermittedEntries =
-    auth.andThen(hasRole(Role.Admin)).async(parse.json[List[PermittedAssessmentMethodForModule]]) { r =>
-      service.create(r.body).map(_ => NoContent)
     }
 }

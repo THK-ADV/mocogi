@@ -7,17 +7,14 @@ import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
 
-import scala.annotation.unused
-import scala.collection.parallel.CollectionConverters.seqIsParallelizable
 import scala.concurrent.duration.*
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.util.control.NonFatal
 
 import auth.AuthorizationAction
-import auth.Role.AccessDraftBranch
-import auth.Role.Admin
-import controllers.actions.RoleCheck
+import controllers.actions.AdminCheck
+import controllers.actions.UserResolveAction
 import database.view.ModuleViewRepository
 import git.api.GitFileDownloadService
 import git.api.GitRepositoryApiService
@@ -47,7 +44,6 @@ final class ModuleController @Inject() (
     service: ModuleService,
     moduleViewRepository: ModuleViewRepository,
     gitFileDownloadService: GitFileDownloadService,
-    gitRepositoryApiService: GitRepositoryApiService,
     draftService: ModuleDraftService,
     fileCreator: DefaultTemporaryFileCreator,
     configReader: ConfigReader,
@@ -57,10 +53,9 @@ final class ModuleController @Inject() (
     val auth: AuthorizationAction,
     implicit val ctx: ExecutionContext
 ) extends AbstractController(cc)
-    with I18nSupport
-    with RoleCheck {
+    with I18nSupport {
 
-  enum DataSource:
+  private enum DataSource:
     case Live
     case All
 
@@ -132,24 +127,6 @@ final class ModuleController @Inject() (
   def allGenericOptions(id: UUID) =
     Action.async(_ => moduleViewRepository.allGenericModuleOptions(id).map(Ok(_)))
 
-  def allFromPreview() =
-    auth.andThen(hasRole(AccessDraftBranch)).async { _ =>
-      val config = gitRepositoryApiService.config
-      val branch = config.draftBranch
-      /* TODO: this can be optimized by only downloading files from preview which
-          has changed (diff). The other files can be obtained from the db */
-      for
-        paths <- gitRepositoryApiService.listModuleFiles(branch)
-        modules <- Future
-          .sequence(paths.par.collect {
-            case path if path.isModule(config) =>
-              gitFileDownloadService
-                .downloadModuleMetadataFromPreviewBranch(path)
-                .collect { case Some((id, module)) => Json.toJsObject(module) + ("id" -> Json.toJson(id)) }
-          }.seq)
-      yield Ok(JsArray(modules))
-    }
-
   // GET by ID
 
   def get(id: UUID) =
@@ -194,12 +171,10 @@ final class ModuleController @Inject() (
       }
     }
 
-  def parseValidate(@unused id: UUID) =
-    auth
-      .andThen(hasRole(Admin))
-      .async(parse.byteString.map(_.utf8String))(r =>
-        pipeline.parseValidate(Print(r.body)).map(m => Ok(Json.toJson(m)))
-      )
+  def parseValidate() =
+    auth.async(parse.byteString.map(_.utf8String))(r =>
+      pipeline.parseValidate(Print(r.body)).map(m => Ok(Json.toJson(m)))
+    )
 
   private def printHtml(print: Print, lastModified: LocalDateTime): Future[String] =
     for
