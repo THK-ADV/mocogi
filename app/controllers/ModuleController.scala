@@ -17,7 +17,6 @@ import scala.util.control.NonFatal
 import auth.AuthorizationAction
 import auth.Role.AccessDraftBranch
 import auth.Role.Admin
-import controllers.actions.PermissionCheck
 import controllers.actions.RoleCheck
 import database.view.ModuleViewRepository
 import git.api.GitFileDownloadService
@@ -59,7 +58,6 @@ final class ModuleController @Inject() (
     implicit val ctx: ExecutionContext
 ) extends AbstractController(cc)
     with I18nSupport
-    with PermissionCheck
     with RoleCheck {
 
   enum DataSource:

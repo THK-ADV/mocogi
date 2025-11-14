@@ -8,7 +8,6 @@ import scala.concurrent.Future
 
 import auth.AuthorizationAction
 import auth.Role.Admin
-import controllers.actions.PermissionCheck
 import controllers.actions.RoleCheck
 import database.repo.ModuleDeletionRepository
 import git.api.GitFileDownloadService
@@ -34,7 +33,6 @@ final class AdminController @Inject() (
     implicit val ctx: ExecutionContext
 ) extends AbstractController(cc)
     with RoleCheck
-    with PermissionCheck
     with Logging {
 
   def invalidModuleExams() =

@@ -17,7 +17,6 @@ import scala.util.Success
 
 import auth.AuthorizationAction
 import controllers.actions.DirectorCheck
-import controllers.actions.PermissionCheck
 import controllers.actions.UserRequest
 import controllers.actions.UserResolveAction
 import database.repo.core.StudyProgramPersonRepository
@@ -52,7 +51,6 @@ final class ModuleCatalogController @Inject() (
     implicit val ctx: ExecutionContext
 ) extends AbstractController(cc)
     with DirectorCheck
-    with PermissionCheck
     with UserResolveAction {
 
   private def createFile(filename: String): Path = {

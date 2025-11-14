@@ -8,7 +8,6 @@ import scala.concurrent.ExecutionContext
 
 import auth.AuthorizationAction
 import auth.Role
-import controllers.actions.PermissionCheck
 import controllers.actions.RoleCheck
 import models.core.Identity
 import play.api.cache.Cached
@@ -29,7 +28,6 @@ final class IdentityController @Inject() (
     implicit val ctx: ExecutionContext
 ) extends AbstractController(cc)
     with YamlController[Identity]
-    with PermissionCheck
     with RoleCheck {
   implicit override val writes: Writes[Identity] = Identity.writes
 

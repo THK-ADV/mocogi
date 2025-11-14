@@ -9,12 +9,13 @@ import play.api.mvc.ActionFilter
 import play.api.mvc.Result
 
 @deprecated
-trait RoleCheck { self: PermissionCheck =>
+trait RoleCheck {
+  protected implicit def ctx: ExecutionContext
 
   def hasRole(role: Role) =
     new ActionFilter[TokenRequest] {
       protected override def filter[A](request: TokenRequest[A]): Future[Option[Result]] =
-        toResult(Future.successful(request.token.hasRole(role)), request)
+        ??? // toResult(Future.successful(request.token.hasRole(role)), request)
 
       protected override def executionContext: ExecutionContext = ctx
     }

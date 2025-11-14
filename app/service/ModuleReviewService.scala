@@ -42,6 +42,12 @@ final class ModuleReviewService @Inject() (
   private type MergeRequest = (MergeRequestId, MergeRequestStatus)
 
   /**
+   * Returns whether the user has the passed reviews open
+   */
+  def hasPendingReview(reviewIds: List[UUID], person: String): Future[Boolean] =
+    reviewRepo.hasPendingReview(reviewIds, person)
+
+  /**
    * Returns true if the person can approve the module.
    * This depends on whether the user is a PAV or has admin permissions
    */

@@ -13,7 +13,6 @@ import scala.util.control.NonFatal
 
 import auth.AuthorizationAction
 import controllers.actions.DirectorCheck
-import controllers.actions.PermissionCheck
 import controllers.actions.UserResolveAction
 import database.repo.core.StudyProgramPersonRepository
 import database.repo.PermissionRepository
@@ -36,7 +35,6 @@ final class ExamLoadController @Inject() (
     implicit val ctx: ExecutionContext
 ) extends AbstractController(cc)
     with DirectorCheck
-    with PermissionCheck
     with UserResolveAction {
 
   private def createCSVFile(): Path = {

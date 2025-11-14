@@ -9,7 +9,6 @@ import auth.AuthorizationAction
 import auth.Role.Admin
 import catalog.ModuleCatalogService
 import catalog.PreviewMergeActor
-import controllers.actions.PermissionCheck
 import controllers.actions.RoleCheck
 import models.Semester
 import play.api.mvc.AbstractController
@@ -26,8 +25,7 @@ final class BigBangController @Inject() (
     moduleCatalogService: ModuleCatalogService,
     implicit val ctx: ExecutionContext
 ) extends AbstractController(cc)
-    with RoleCheck
-    with PermissionCheck {
+    with RoleCheck {
 
   private def semester = "wise_2024"
 

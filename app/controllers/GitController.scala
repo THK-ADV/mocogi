@@ -12,7 +12,6 @@ import scala.util.control.NonFatal
 
 import auth.AuthorizationAction
 import auth.Role.Admin
-import controllers.actions.PermissionCheck
 import controllers.actions.RoleCheck
 import git.api.GitCommitService
 import git.api.GitFileDownloadService
@@ -41,7 +40,6 @@ final class GitController @Inject() (
     cached: Cached,
     implicit val ctx: ExecutionContext
 ) extends AbstractController(cc)
-    with PermissionCheck
     with RoleCheck {
 
   def latestModuleUpdate() =

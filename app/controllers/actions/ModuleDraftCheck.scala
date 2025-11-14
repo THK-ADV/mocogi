@@ -9,12 +9,13 @@ import ops.||
 import play.api.libs.json.Json
 import play.api.mvc.ActionFilter
 import play.api.mvc.Result
+import play.api.mvc.Results
 import play.api.mvc.Results.Forbidden
 import service.ModuleUpdatePermissionService
 
 trait ModuleDraftCheck {
-  implicit def moduleUpdatePermissionService: ModuleUpdatePermissionService
-  implicit def ctx: ExecutionContext
+  protected def moduleUpdatePermissionService: ModuleUpdatePermissionService
+  protected implicit def ctx: ExecutionContext
 
   @deprecated
   def moduleInReaccreditation[A](moduleId: UUID, request: UserRequest[A]): Future[Boolean] = ???

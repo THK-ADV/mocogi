@@ -10,7 +10,6 @@ import scala.concurrent.Future
 
 import auth.AuthorizationAction
 import auth.Role
-import controllers.actions.PermissionCheck
 import controllers.actions.RoleCheck
 import models.core.AssessmentMethod
 import models.AssessmentMethodSource
@@ -30,8 +29,7 @@ final class AssessmentMethodController @Inject() (
     auth: AuthorizationAction,
     implicit val ctx: ExecutionContext
 ) extends AbstractController(cc)
-    with RoleCheck
-    with PermissionCheck {
+    with RoleCheck {
 
   def all() =
     cached.status(r => r.method + r.uri, 200, 1.hour) {
