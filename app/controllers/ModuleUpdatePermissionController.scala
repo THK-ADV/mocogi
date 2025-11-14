@@ -12,7 +12,6 @@ import controllers.actions.UserResolveAction
 import database.repo.core.IdentityRepository
 import database.repo.PermissionRepository
 import models.ModuleUpdatePermissionType
-import play.api.libs.json.Json
 import play.api.mvc.AbstractController
 import play.api.mvc.ControllerComponents
 import service.ModuleUpdatePermissionService

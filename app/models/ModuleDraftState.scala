@@ -9,6 +9,7 @@ sealed trait ModuleDraftState extends IDLabel {
   def canRequestReview: Boolean =
     this == ValidForReview || this == ValidForPublication
 
+  // canApproveModule is used to enable editing while the module is in review
   def canEdit(canApproveModule: Boolean): Boolean = {
     def go() = this match {
       case ModuleDraftState.Published | ModuleDraftState.ValidForReview | ModuleDraftState.ValidForPublication |

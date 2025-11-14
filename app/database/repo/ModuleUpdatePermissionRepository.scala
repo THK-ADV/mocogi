@@ -1,16 +1,23 @@
 package database.repo
 
+import java.util.UUID
+import javax.inject.Inject
+import javax.inject.Singleton
+
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+
 import auth.CampusId
-import database.table.{ModuleDraftTable, ModuleTable, ModuleUpdatePermissionTable}
 import database.table.core.IdentityTable
+import database.table.ModuleDraftTable
+import database.table.ModuleUpdatePermissionTable
 import models.*
 import models.core.Identity
-import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfigProvider}
-import slick.jdbc.{GetResult, JdbcProfile, TypedParameter}
-
-import java.util.UUID
-import javax.inject.{Inject, Singleton}
-import scala.concurrent.{ExecutionContext, Future}
+import play.api.db.slick.DatabaseConfigProvider
+import play.api.db.slick.HasDatabaseConfigProvider
+import slick.jdbc.GetResult
+import slick.jdbc.JdbcProfile
+import slick.jdbc.TypedParameter
 
 @Singleton
 final class ModuleUpdatePermissionRepository @Inject() (
@@ -23,7 +30,8 @@ final class ModuleUpdatePermissionRepository @Inject() (
     ]
     with HasDatabaseConfigProvider[JdbcProfile] {
 
-  import database.table.{campusIdColumnType, moduleUpdatePermissionTypeColumnType}
+  import database.table.campusIdColumnType
+  import database.table.moduleUpdatePermissionTypeColumnType
   import profile.api.*
 
   protected val tableQuery = TableQuery[ModuleUpdatePermissionTable]

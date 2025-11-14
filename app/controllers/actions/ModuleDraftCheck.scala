@@ -1,14 +1,16 @@
 package controllers.actions
 
+import java.util.UUID
+
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+
 import ops.||
 import play.api.libs.json.Json
-import play.api.mvc.{ActionFilter, Result}
+import play.api.mvc.ActionFilter
+import play.api.mvc.Result
 import play.api.mvc.Results.Forbidden
 import service.ModuleUpdatePermissionService
-
-import java.util.UUID
-import scala.concurrent.{ExecutionContext, Future}
-import scala.util.Success
 
 trait ModuleDraftCheck {
   implicit def moduleUpdatePermissionService: ModuleUpdatePermissionService
@@ -26,10 +28,10 @@ trait ModuleDraftCheck {
   def canEditModule(module: UUID) =
     new ActionFilter[UserRequest] {
       protected override def filter[A](request: UserRequest[A]): Future[Option[Result]] = {
-        val hasPermission = moduleUpdatePermissionService.hasPermissionFor(module, request.request.campusId).andThen { case Success(true) => println(s"[${request.request.toString}] hasPermissionFor")} ||
-          moduleUpdatePermissionService.isAuthorOf(module, request.person.id).andThen { case Success(true) => println(s"[${request.request.toString}] isAuthorOf")} ||
+        val hasPermission = moduleUpdatePermissionService.hasPermissionFor(module, request.request.campusId) ||
+          moduleUpdatePermissionService.isAuthorOf(module, request.person.id) ||
           request.permissions.modulePermissions
-            .map(pos => moduleUpdatePermissionService.isModulePartOfPO(module, pos).andThen { case Success(true) => println(s"[${request.request.toString}] isModulePartOfPO")})
+            .map(pos => moduleUpdatePermissionService.isModulePartOfPO(module, pos))
             .getOrElse(Future.successful(false))
 
         hasPermission.map {

@@ -13,7 +13,6 @@ import auth.Permissions
 import cats.data.NonEmptyList
 import database.repo.ModuleUpdatePermissionRepository
 import models.core.Identity
-import models.ModuleUpdatePermission
 import models.ModuleUpdatePermissionType
 import models.ModuleUpdatePermissionType.Inherited
 import play.api.libs.json.JsObject
@@ -52,7 +51,7 @@ final class ModuleUpdatePermissionService @Inject() (
 
   def isAuthorOf(moduleId: UUID, personId: String) =
     repo.isAuthorOf(moduleId, personId)
-  
+
   def allGrantedFromModule(moduleId: UUID): Future[String] =
     repo.allGrantedFromModule(moduleId)
 

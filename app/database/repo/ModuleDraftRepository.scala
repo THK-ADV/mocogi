@@ -1,19 +1,25 @@
 package database.repo
 
+import java.time.LocalDateTime
+import java.util.UUID
+import javax.inject.Inject
+import javax.inject.Singleton
+
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+
 import database.table
 import database.table.ModuleDraftTable
-import git.{CommitId, MergeRequestId, MergeRequestStatus}
+import git.CommitId
+import git.MergeRequestId
+import git.MergeRequestStatus
 import models.*
-import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfigProvider}
+import play.api.db.slick.DatabaseConfigProvider
+import play.api.db.slick.HasDatabaseConfigProvider
 import play.api.libs.json.JsValue
 import service.Print
 import slick.dbio.DBIOAction
 import slick.jdbc.JdbcProfile
-
-import java.time.LocalDateTime
-import java.util.UUID
-import javax.inject.{Inject, Singleton}
-import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 final class ModuleDraftRepository @Inject() (
@@ -21,16 +27,17 @@ final class ModuleDraftRepository @Inject() (
     implicit val ctx: ExecutionContext
 ) extends Repository[ModuleDraft, ModuleDraft, ModuleDraftTable]
     with HasDatabaseConfigProvider[JdbcProfile] {
-  import ModuleDraftTable.given_BaseColumnType_Set
   import database.MyPostgresProfile.MyAPI.playJsonTypeMapper
   import profile.api.*
-  import table.{commitColumnType, mergeRequestIdColumnType, mergeRequestStatusColumnType, printColumnType}
+  import table.commitColumnType
+  import table.mergeRequestIdColumnType
+  import table.mergeRequestStatusColumnType
+  import table.printColumnType
+  import ModuleDraftTable.given_BaseColumnType_Set
 
   protected val tableQuery = TableQuery[ModuleDraftTable]
 
-  protected override def retrieve(
-      query: Query[ModuleDraftTable, ModuleDraft, Seq]
-  ) =
+  protected override def retrieve(query: Query[ModuleDraftTable, ModuleDraft, Seq]): Future[Seq[ModuleDraft]] =
     db.run(query.result)
 
   def getModuleTitle(module: UUID): Future[String] =
@@ -45,22 +52,10 @@ final class ModuleDraftRepository @Inject() (
   def hasModuleDraft(moduleId: UUID) =
     db.run(tableQuery.filter(_.module === moduleId).exists.result)
 
-  def updateMergeRequestStatus(
-      moduleId: UUID,
-      status: MergeRequestStatus
-  ) =
-    db.run(
-      tableQuery
-        .filter(_.module === moduleId)
-        .map(_.mergeRequestStatus)
-        .update(Some(status))
-        .map(_ => ())
-    )
+  def updateMergeRequestStatus(moduleId: UUID, status: MergeRequestStatus) =
+    db.run(tableQuery.filter(_.module === moduleId).map(_.mergeRequestStatus).update(Some(status)).map(_ => ()))
 
-  def updateMergeRequest(
-      moduleId: UUID,
-      mergeRequest: Option[(MergeRequestId, MergeRequestStatus)]
-  ): Future[Unit] =
+  def updateMergeRequest(moduleId: UUID, mergeRequest: Option[(MergeRequestId, MergeRequestStatus)]): Future[Unit] =
     db.run(
       tableQuery
         .filter(_.module === moduleId)

@@ -1,22 +1,36 @@
 package service
 
+import java.time.LocalDateTime
+import java.util.UUID
+import javax.inject.Inject
+import javax.inject.Singleton
+
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+import scala.util.Success
+
 import database.repo.ModuleDraftRepository
+import git.api.GitBranchService
+import git.api.GitCommitService
+import git.api.GitFileDownloadService
 import git.MergeRequestId
-import git.api.{GitBranchService, GitCommitService, GitFileDownloadService}
 import models.*
 import models.core.Identity
 import ops.FutureOps.Ops
 import parsing.metadata.VersionScheme
 import parsing.types.*
-import play.api.Logging
 import play.api.libs.json.*
-import service.modulediff.ModuleProtocolDiff.{diff, nonEmptyKeys}
+import play.api.Logging
+import service.modulediff.ModuleProtocolDiff.diff
+import service.modulediff.ModuleProtocolDiff.nonEmptyKeys
 
-import java.time.LocalDateTime
-import java.util.UUID
-import javax.inject.{Inject, Singleton}
-import scala.concurrent.{ExecutionContext, Future}
-import scala.util.Success
+case class ModuleUpdateRequest(
+    moduleId: UUID,
+    protocol: ModuleProtocol,
+    person: Identity.Person,
+    canApproveModule: Boolean,
+    versionScheme: VersionScheme
+)
 
 @Singleton
 final class ModuleDraftService @Inject() (
@@ -32,12 +46,10 @@ final class ModuleDraftService @Inject() (
   def getMergeRequestId(module: UUID): Future[Option[MergeRequestId]] =
     repo.getMergeRequestId(module)
 
-  def getByModule(moduleId: UUID): Future[ModuleDraft] =
-    repo.getByModule(moduleId)
-
   def getByModuleOpt(moduleId: UUID): Future[Option[ModuleDraft]] =
     repo.getByModuleOpt(moduleId)
 
+  @deprecated
   def createNew(
       protocol: ModuleProtocol,
       person: Identity.Person,
@@ -64,46 +76,27 @@ final class ModuleDraftService @Inject() (
       _ <- repo.delete(moduleId).map(_ => ())
     } yield logger.info(s"Successfully deleted module draft $moduleId")
 
-  def createOrUpdate(
-      moduleId: UUID,
-      protocol: ModuleProtocol,
-      canApproveModule: Boolean,
-      person: Identity.Person,
-      versionScheme: VersionScheme
-  ): Future[Either[PipelineError, Unit]] =
+  def createOrUpdate(request: ModuleUpdateRequest): Future[Either[PipelineError, Unit]] =
     repo
-      .hasModuleDraft(moduleId)
-      .flatMap(hasDraft => {
-        if (hasDraft)
-          update(moduleId, protocol, canApproveModule, person, versionScheme)
-            .map(_.map(_ => logger.info(s"Successfully updated module draft $moduleId (${protocol.metadata.title})")))
-        else
-          createFromExistingModule(
-            moduleId,
-            protocol,
-            person,
-            versionScheme
-          ).map(_.map(_ => logger.info(s"Successfully created module draft $moduleId (${protocol.metadata.title})")))
-      })
+      .hasModuleDraft(request.moduleId)
+      .flatMap { hasDraft =>
+        val action = if hasDraft then update(request) else createFromExistingModule(request)
+        action.map(_.map { _ =>
+          val verb = if hasDraft then "updated" else "created"
+          logger.info(s"Successfully $verb module draft ${request.moduleId} (${request.protocol.metadata.title})")
+        })
+      }
 
   private def getFromStaging(uuid: UUID) =
     gitFileDownloadService.downloadModuleFromPreviewBranch(uuid)
 
-  private def createFromExistingModule(
-      moduleId: UUID,
-      protocol: ModuleProtocol,
-      person: Identity.Person,
-      versionScheme: VersionScheme
-  ): Future[Either[PipelineError, Unit]] =
+  private def createFromExistingModule(request: ModuleUpdateRequest): Future[Either[PipelineError, Unit]] =
     for {
-      module <- getFromStaging(moduleId)
-        .continueIf(
-          _.isDefined,
-          s"file for module $moduleId does not existing in git"
-        )
+      module <- getFromStaging(request.moduleId)
+        .continueIf(_.isDefined, s"file for module ${request.moduleId} does not existing in git")
       (_, modifiedKeys) = diff(
         module.get.normalize(),
-        protocol.normalize(),
+        request.protocol.normalize(),
         None,
         Set.empty
       )
@@ -111,52 +104,46 @@ final class ModuleDraftService @Inject() (
         if (modifiedKeys.isEmpty) Future.successful(Right(()))
         else
           create(
-            protocol,
+            request.protocol,
             ModuleDraftSource.Modified,
-            versionScheme,
-            moduleId,
-            person,
+            request.versionScheme,
+            request.moduleId,
+            request.person,
             modifiedKeys
           ).map(_.map(_ => ()))
     } yield res
 
-  private def update(
-      moduleId: UUID,
-      protocol: ModuleProtocol,
-      canApproveModule: Boolean,
-      person: Identity.Person,
-      versionScheme: VersionScheme
-  ): Future[Either[PipelineError, Unit]] =
+  private def update(request: ModuleUpdateRequest): Future[Either[PipelineError, Unit]] =
     for {
       draft <- repo
-        .getByModule(moduleId)
-        .continueIf(_.state().canEdit(canApproveModule), "can't edit module")
+        .getByModule(request.moduleId)
+        .continueIf(_.state().canEdit(request.canApproveModule), "can't edit module")
       origin <- getFromStaging(draft.module)
       existing = draft.protocol()
       (updated, modifiedKeys) = diff(
         existing.normalize(),
-        protocol.normalize(),
+        request.protocol.normalize(),
         origin,
         draft.modifiedKeys
       )
       res <-
-        if (modifiedKeys.isEmpty) delete(moduleId).map(Right.apply)
+        if (modifiedKeys.isEmpty) delete(request.moduleId).map(Right.apply)
         else
           for {
-            res <- pipeline.printParseValidate(updated, versionScheme, moduleId)
+            res <- pipeline.printParseValidate(updated, request.versionScheme, request.moduleId)
             res <- res match {
               case Left(err) => Future.successful(Left(err))
               case Right((module, print)) =>
                 for {
                   commitId <- gitCommitService.commit(
                     draft.branch,
-                    person,
+                    request.person,
                     commitMessage(modifiedKeys -- draft.modifiedKeys),
                     draft.module,
                     print
                   )
                   _ <- repo.updateDraft(
-                    moduleId,
+                    request.moduleId,
                     module.metadata.title,
                     module.metadata.abbrev,
                     toJson(updated),
@@ -166,10 +153,10 @@ final class ModuleDraftService @Inject() (
                     modifiedKeys,
                     commitId
                   )
-                  updatedDraft <- repo.getByModule(moduleId)
+                  updatedDraft <- repo.getByModule(request.moduleId)
                   _ <-
                     if updatedDraft.state() == ModuleDraftState.WaitingForChanges then
-                      repo.updateMergeRequest(moduleId, None)
+                      repo.updateMergeRequest(request.moduleId, None)
                     else Future.unit
                 } yield Right(())
             }
