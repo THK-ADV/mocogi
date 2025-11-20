@@ -5,7 +5,8 @@ import play.api.libs.json.Writes
 
 case class StudyProgramPrivileges(
     studyProgram: StudyProgramView,
-    roles: Set[UniversityRole]
+    canCreate: Boolean,
+    canPreview: Boolean
 )
 
 object StudyProgramPrivileges {

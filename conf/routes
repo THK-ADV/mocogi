@@ -10,6 +10,7 @@ DELETE        /admin/modules/:id                                      controller
 POST          /admin/modules                                          controllers.AdminController.createNewModulesFromDraftBranch()
 
 GET           /user                                                   controllers.UserController.userInfo()
+GET           /user-privileges                                        controllers.UserController.studyProgramPrivileges()
 
 # Git Webhooks
 
@@ -52,7 +53,6 @@ PUT           /parse                                                  controller
 
 # Module Catalog
 
-GET           /moduleCatalogs/:semester                               controllers.ModuleCatalogController.allFromSemester(semester: java.lang.String)
 GET           /moduleCatalogs/:studyProgram/:po/genericModules        controllers.ModuleCatalogController.allGenericModulesForPO(studyProgram: java.lang.String, po: java.lang.String)
 POST          /moduleCatalogs/:studyProgram/:po                       controllers.ModuleCatalogController.generate(studyProgram: java.lang.String, po: java.lang.String)
 POST          /moduleCatalogs/preview/:studyProgram/upload            controllers.ModuleCatalogController.uploadIntroFile(studyProgram: java.lang.String)

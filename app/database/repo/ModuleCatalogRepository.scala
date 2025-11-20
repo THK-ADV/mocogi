@@ -15,6 +15,7 @@ import play.api.db.slick.DatabaseConfigProvider
 import play.api.db.slick.HasDatabaseConfigProvider
 import slick.jdbc.JdbcProfile
 
+@deprecated
 @Singleton
 final class ModuleCatalogRepository @Inject() (
     val dbConfigProvider: DatabaseConfigProvider,

@@ -1,5 +1,6 @@
 package database.table
-import auth.PermissionType
+
+import permission.PermissionType
 import slick.jdbc.PostgresProfile.api.*
 
 case class Permission(id: Long, permType: PermissionType, person: String, context: Option[List[String]])

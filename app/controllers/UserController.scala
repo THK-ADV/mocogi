@@ -8,13 +8,13 @@ import scala.concurrent.ExecutionContext
 import auth.AuthorizationAction
 import controllers.actions.UserRequest
 import controllers.actions.UserResolveAction
-import database.repo.core.StudyProgramPersonRepository
 import database.repo.PermissionRepository
 import play.api.libs.json.Json
 import play.api.mvc.AbstractController
 import play.api.mvc.AnyContent
 import play.api.mvc.ControllerComponents
 import service.core.IdentityService
+import service.StudyProgramPrivilegesService
 
 @Singleton
 final class UserController @Inject() (
@@ -22,7 +22,7 @@ final class UserController @Inject() (
     auth: AuthorizationAction,
     val permissionRepository: PermissionRepository,
     identityService: IdentityService,
-    studyProgramPersonRepository: StudyProgramPersonRepository,
+    studyProgramPrivilegesService: StudyProgramPrivilegesService,
     implicit val ctx: ExecutionContext
 ) extends AbstractController(cc)
     with UserResolveAction {
@@ -33,15 +33,11 @@ final class UserController @Inject() (
         Ok(Json.toJsObject(js).+(("person", Json.toJson(r.person))))
       }
     }
-}
 
-//studyProgramPersonRepository
-//  .getStudyProgramPrivileges(r.person.id)
-//  .map(xs =>
-//    Ok(
-//      Json.obj(
-//        "me" -> Json.toJson(r.person),
-//        "privileges" -> Json.toJson(xs)
-//      )
-//    )
-//  )
+  def studyProgramPrivileges() =
+    auth.andThen(resolveUser).async { (r: UserRequest[AnyContent]) =>
+      studyProgramPrivilegesService
+        .getStudyProgramPrivileges(r.person.id, r.permissions)
+        .map(xs => Ok(Json.toJson(xs)))
+    }
+}

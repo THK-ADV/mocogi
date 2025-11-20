@@ -13,11 +13,8 @@ import scala.concurrent.Future
 import scala.util.control.NonFatal
 
 import auth.AuthorizationAction
-import controllers.actions.AdminCheck
-import controllers.actions.UserResolveAction
 import database.view.ModuleViewRepository
 import git.api.GitFileDownloadService
-import git.api.GitRepositoryApiService
 import models.ModuleManagement
 import models.StudyProgramModuleAssociation
 import ops.FutureOps.OptionOps

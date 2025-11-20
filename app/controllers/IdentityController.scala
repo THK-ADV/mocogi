@@ -7,10 +7,10 @@ import scala.concurrent.duration.*
 import scala.concurrent.ExecutionContext
 
 import auth.AuthorizationAction
-import controllers.actions.AdminCheck
 import controllers.actions.UserResolveAction
 import database.repo.PermissionRepository
 import models.core.Identity
+import permission.AdminCheck
 import play.api.cache.Cached
 import play.api.libs.json.Json
 import play.api.libs.json.Writes

@@ -1,8 +1,9 @@
-package controllers.actions
+package permission
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
+import controllers.actions.UserRequest
 import play.api.libs.json.Json
 import play.api.mvc.ActionFilter
 import play.api.mvc.Result

@@ -8,11 +8,8 @@ import scala.concurrent.duration.*
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-import auth.AuthorizationAction
-import controllers.actions.AdminCheck
 import models.core.AssessmentMethod
 import models.AssessmentMethodSource
-import models.PermittedAssessmentMethodForModule
 import play.api.cache.Cached
 import play.api.libs.json.Json
 import play.api.libs.json.Writes

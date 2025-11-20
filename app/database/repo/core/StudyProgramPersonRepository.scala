@@ -10,6 +10,7 @@ import database.table.core.*
 import database.view.StudyProgramViewRepository
 import models.core.Degree
 import models.StudyProgramPrivileges
+import models.StudyProgramView
 import models.UniversityRole
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.db.slick.HasDatabaseConfigProvider
@@ -21,7 +22,6 @@ final class StudyProgramPersonRepository @Inject() (
     val studyProgramViewRepo: StudyProgramViewRepository,
     implicit val ctx: ExecutionContext
 ) extends HasDatabaseConfigProvider[JdbcProfile] {
-  import database.table.universityRoleColumnType
   import profile.api.*
 
   private def studyProgramPersonTable = TableQuery[StudyProgramPersonTable]
@@ -50,35 +50,37 @@ final class StudyProgramPersonRepository @Inject() (
       g  <- sp.degreeFk
     } yield (q, sp, g)
 
-  def hasRoles(
-      person: String,
-      studyProgram: String,
-      roles: List[UniversityRole]
-  ): Future[Boolean] =
-    db.run(
-      studyProgramPersonTable
-        .filter(a =>
-          a.person === person &&
-            a.studyProgram === studyProgram
-            && a.role.inSet(roles)
-        )
-        .exists
-        .result
-    )
+  def studyProgramIdsForPOs(pos: Set[String]): Future[Seq[String]] =
+    db.run(studyProgramViewTable.filter(_.poId.inSet(pos)).map(_.studyProgramId).distinct.result)
 
-  def getStudyProgramPrivileges(person: String): Future[Iterable[StudyProgramPrivileges]] =
+  /**
+   * Retrieves all study programs that do not have a specialization
+   */
+  def getAllStudyProgramsWithoutSpecialization(): Future[Seq[StudyProgramView]] =
+    db.run(studyProgramViewTable.filter(_.specializationId.isEmpty).result)
+
+  /**
+   * Retrieves all study programs by POs that do not have a specialization
+   */
+  def getAllStudyProgramsWithoutSpecializationForPOs(pos: Set[String]): Future[Seq[StudyProgramView]] =
+    db.run(studyProgramViewTable.filter(s => s.specializationId.isEmpty && s.poId.inSet(pos)).result)
+
+  /**
+   * Retrieves the study program privileges for a given person
+   */
+  def getStudyProgramPrivilegesForPerson(person: String): Future[Iterable[StudyProgramPrivileges]] =
     db.run(
       studyProgramPersonTable
         .filter(_.person === person)
-        .join(studyProgramViewTable)
+        .join(studyProgramViewTable.filter(_.specializationId.isEmpty))
         .on(_.studyProgram === _.studyProgramId)
         .result
         .map(_.groupBy(_._2.fullPoId.id).map {
-          case (_, xs) =>
-            assert(xs.size <= UniversityRole.all().size)
+          case (_, (xs: Seq[(StudyProgramPersonDbEntry, StudyProgramView)])) =>
             val studyProgram = xs.head._2
-            val roles        = xs.map(_._1.role)
-            StudyProgramPrivileges(studyProgram, roles.toSet)
+            val roles        = xs.map(_._1.role).toSet
+            val canCreate    = roles.contains(UniversityRole.PAV)
+            StudyProgramPrivileges(studyProgram, canCreate, true)
         })
     )
 }

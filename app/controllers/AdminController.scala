@@ -7,7 +7,6 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 import auth.AuthorizationAction
-import controllers.actions.AdminCheck
 import controllers.actions.UserResolveAction
 import database.repo.ModuleDeletionRepository
 import database.repo.PermissionRepository
@@ -16,6 +15,7 @@ import git.GitConfig
 import git.GitFilePath
 import models.CreatedModule
 import parsing.RawModuleParser
+import permission.AdminCheck
 import play.api.libs.json.Reads
 import play.api.mvc.AbstractController
 import play.api.mvc.ControllerComponents

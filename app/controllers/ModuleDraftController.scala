@@ -13,6 +13,7 @@ import controllers.json.ModuleJson
 import controllers.ModuleDraftController.VersionSchemeHeader
 import database.repo.PermissionRepository
 import models.*
+import permission.ModuleDraftCheck
 import play.api.i18n.I18nSupport
 import play.api.i18n.Messages
 import play.api.libs.json.*

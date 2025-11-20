@@ -9,12 +9,12 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 import auth.CampusId
-import auth.Permissions
 import cats.data.NonEmptyList
 import database.repo.ModuleUpdatePermissionRepository
 import models.core.Identity
 import models.ModuleUpdatePermissionType
 import models.ModuleUpdatePermissionType.Inherited
+import permission.Permissions
 import play.api.libs.json.JsObject
 import play.api.libs.json.Json
 
@@ -55,21 +55,6 @@ final class ModuleUpdatePermissionService @Inject() (
   def allGrantedFromModule(moduleId: UUID): Future[String] =
     repo.allGrantedFromModule(moduleId)
 
-  private def parsePOs(roles: Set[String]) = {
-    def parseAccreditationPOs(role: String): Option[List[String]] = {
-      if (!role.startsWith("[") || !role.endsWith("]")) return None
-
-      val content = role.drop(1).dropRight(1)
-      if (content.isEmpty) return None
-
-      val pos = content.split(",").map(_.trim).filter(_.nonEmpty).toList
-      Option.when(pos.nonEmpty)(pos)
-    }
-
-    val prefix = "accreditation-member_"
-    roles.find(_.startsWith(prefix)).flatMap(a => parseAccreditationPOs(a.drop(prefix.length)))
-  }
-
   /**
    * Fetch all modules that can be edited by the user through inherited (MV) or granted permission.
    * Then fetch all modules that can be edited by a role.
@@ -91,6 +76,6 @@ final class ModuleUpdatePermissionService @Inject() (
     }
   }
 
-  def isModulePartOfPO(module: UUID, pos: Seq[String]): Future[Boolean] =
+  def isModulePartOfPO(module: UUID, pos: Set[String]): Future[Boolean] =
     repo.isModulePartOfPO(module, pos)
 }

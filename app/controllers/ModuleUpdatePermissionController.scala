@@ -7,11 +7,11 @@ import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
 
 import auth.AuthorizationAction
-import controllers.actions.ModuleDraftCheck
 import controllers.actions.UserResolveAction
 import database.repo.core.IdentityRepository
 import database.repo.PermissionRepository
 import models.ModuleUpdatePermissionType
+import permission.ModuleDraftCheck
 import play.api.mvc.AbstractController
 import play.api.mvc.ControllerComponents
 import service.ModuleUpdatePermissionService

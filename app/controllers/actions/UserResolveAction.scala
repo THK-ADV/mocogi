@@ -7,6 +7,8 @@ import auth.*
 import database.repo.PermissionRepository
 import models.core.Identity
 import models.EmploymentType.Unknown
+import permission.PermissionType
+import permission.Permissions
 import play.api.libs.json.Json
 import play.api.mvc.ActionRefiner
 import play.api.mvc.Result
@@ -49,9 +51,10 @@ trait UserResolveAction {
           case _: Token.ServiceToken => adminUser(request)
         }
 
+      // TODO: maybe we should drop this
       private def adminUser[A](request: TokenRequest[A]) = {
         val adminUser = Identity.Person("", "", "", "", Nil, "", None, isActive = true, Unknown, None)
-        val adminPerm = Permissions(Map((PermissionType.Admin, Nil)))
+        val adminPerm = Permissions(Map((PermissionType.Admin, Set.empty)))
         Future.successful(Right(UserRequest(adminUser, adminPerm, request)))
       }
 

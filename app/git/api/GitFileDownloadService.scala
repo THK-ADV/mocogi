@@ -9,7 +9,6 @@ import scala.concurrent.Future
 
 import com.google.inject.Inject
 import git.*
-import models.MetadataProtocol
 import models.ModuleProtocol
 import ops.EitherOps.EThrowableOps
 import parsing.RawModuleParser

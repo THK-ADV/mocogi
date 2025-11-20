@@ -7,12 +7,12 @@ import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
 
 import auth.AuthorizationAction
-import controllers.actions.ModuleDraftCheck
-import controllers.actions.ModuleReviewCheck
 import controllers.actions.UserRequest
 import controllers.actions.UserResolveAction
 import database.repo.PermissionRepository
 import models.ModuleKeysToReview
+import permission.ModuleDraftCheck
+import permission.ModuleReviewCheck
 import play.api.libs.json.JsError
 import play.api.libs.json.JsSuccess
 import play.api.libs.json.Json

@@ -7,7 +7,6 @@ import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-import auth.Permissions
 import database.repo.core.StudyProgramDirectorsRepository
 import database.repo.core.StudyProgramDirectorsRepository.StudyProgramDirector
 import database.repo.ModuleDraftRepository
@@ -24,9 +23,8 @@ import models.ModuleReviewStatus.Rejected
 import models.ModuleReviewSummaryStatus.WaitingForChanges
 import models.ModuleReviewSummaryStatus.WaitingForReview
 import ops.FutureOps.Ops
+import permission.Permissions
 import play.api.Logging
-
-// TODO: refactor and clean up
 
 @Singleton
 final class ModuleReviewService @Inject() (

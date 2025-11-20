@@ -2,6 +2,7 @@ package ops
 
 import java.nio.file.Files
 import java.nio.file.Path
+import java.nio.file.Paths
 import java.nio.file.StandardCopyOption
 import java.util.Comparator
 
@@ -9,6 +10,23 @@ import scala.jdk.CollectionConverters.*
 import scala.util.control.NonFatal
 
 object FileOps {
+
+  /**
+   * Creates a new temporary tex file with the specified filename in a new a folder
+   */
+  def createLatexFile(filename: String, rootFolderPath: String): Path = {
+    val newDir = Files.createDirectories(Paths.get(rootFolderPath).resolve(System.currentTimeMillis().toString))
+    Files.createFile(newDir.resolve(s"$filename.tex"))
+  }
+
+  /**
+   * Creates a new temporary file
+   */
+  def createRandomFile(rootFolderPath: String): Path = {
+    val path = Paths.get(rootFolderPath).resolve(System.currentTimeMillis().toString)
+    Files.createFile(path)
+  }
+
   implicit class FileOps0(private val self: Path) extends AnyVal {
     def rename(newName: String) =
       Files.move(

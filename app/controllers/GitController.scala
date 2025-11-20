@@ -11,7 +11,6 @@ import scala.concurrent.Future
 import scala.util.control.NonFatal
 
 import auth.AuthorizationAction
-import controllers.actions.AdminCheck
 import controllers.actions.UserResolveAction
 import database.repo.PermissionRepository
 import git.api.GitCommitService
@@ -22,6 +21,7 @@ import git.publisher.ModulePublisher
 import git.GitConfig
 import git.GitFile
 import git.GitFileStatus
+import permission.AdminCheck
 import play.api.cache.Cached
 import play.api.libs.json.JsNull
 import play.api.libs.json.Json

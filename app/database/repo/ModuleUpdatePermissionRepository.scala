@@ -108,7 +108,7 @@ final class ModuleUpdatePermissionRepository @Inject() (
   private given GetResult[String] =
     GetResult(_.nextString())
 
-  private def arrayLiteral(pos: Seq[String]) =
+  private def arrayLiteral(pos: Iterable[String]) =
     "'{" + pos.mkString(",") + "}'"
 
   def allForUser(cid: CampusId): Future[String] = {
@@ -117,13 +117,13 @@ final class ModuleUpdatePermissionRepository @Inject() (
   }
 
   // This function is only used for accreditation members which can access all the modules for a given PO
-  def allForPos(pos: Seq[String]): Future[String] = {
+  def allForPos(pos: Set[String]): Future[String] = {
     val query = sql"select get_modules_for_po(#${arrayLiteral(pos)}::text[])".as[String].head
     db.run(query)
   }
 
   // Checks if the module has a PO relationship with any of the passed POs. Both live and draft modules are considered
-  def isModulePartOfPO(module: UUID, pos: Seq[String]): Future[Boolean] = {
+  def isModulePartOfPO(module: UUID, pos: Set[String]): Future[Boolean] = {
     val query = sql"select module_of_po(${module.toString}::uuid, #${arrayLiteral(pos)}::text[])".as[Boolean].head
     db.run(query)
   }
