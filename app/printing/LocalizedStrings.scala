@@ -72,15 +72,25 @@ final class LocalizedStrings(messages: MessagesApi)(using lang: Lang) {
 
   def prerequisitesModuleLabel = messages("latex.module_catalog.prerequisite.module")
 
-  def learningOutcomeLabel = messages("latex.module_catalog.content.learning_outcome")
+  def learningOutcomeModuleCatalogLabel = messages("latex.module_catalog.content.learning_outcome")
 
-  def moduleContentLabel = messages("latex.module_catalog.content.module")
+  def moduleContentModuleCatalogLabel = messages("latex.module_catalog.content.module")
 
-  def teachingAndLearningMethodsLabel = messages("latex.module_catalog.content.teaching_methods")
+  def teachingAndLearningMethodsModuleCatalogLabel = messages("latex.module_catalog.content.teaching_methods")
 
-  def recommendedReadingLabel = messages("latex.module_catalog.content.reading")
+  def recommendedReadingModuleCatalogLabel = messages("latex.module_catalog.content.reading")
 
-  def particularitiesLabel = messages("latex.module_catalog.content.particularities")
+  def particularitiesModuleCatalogLabel = messages("latex.module_catalog.content.particularities")
+
+  def learningOutcomeMarkdownLabel = messages("markdown.content.learning_outcome")
+
+  def moduleContentMarkdownLabel = messages("markdown.content.module")
+
+  def teachingAndLearningMethodsMarkdownLabel = messages("markdown.content.teaching_methods")
+
+  def recommendedReadingMarkdownLabel = messages("markdown.content.reading")
+
+  def particularitiesMarkdownLabel = messages("markdown.content.particularities")
 
   def frequencyLabel(season: Season): String =
     messages("latex.module_catalog.season", label(season))

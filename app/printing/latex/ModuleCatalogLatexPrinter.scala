@@ -365,10 +365,16 @@ final class ModuleCatalogLatexPrinter(
                 |\usepackage[english, ngerman]{babel}
                 |\usepackage[a4paper, total={16cm, 24cm}, left=2.5cm, right=2.5cm, top=2.5cm, bottom=2.5cm]{geometry}
                 |\usepackage{graphicx} % include images
-                |\usepackage{longtable} % needed to support markdown tables
-                |\usepackage{booktabs} % needed to support markdown tables
                 |\usepackage{layout}
-                |\usepackage{tabularx}
+                |\usepackage{ltablex} % tables created with tabularx automatically gains longtable’s ability to break across pages
+                |\usepackage{booktabs} % typographically correct horizontal rules for tables
+                |\renewcommand{\arraystretch}{1.2}
+                |\keepXColumns % lock the layout of flexible X columns so that multi-page tables stay aligned
+                |\newcommand{\subsectiondivider}{% % imitates \midrule command
+                |  \vspace{-.5em}
+                |  \noindent\rule{\linewidth}{\lightrulewidth}%
+                |  \vspace{-1.0em}
+                |}
                 |\usepackage{hyperref} % support for hyperlinks
                 |\usepackage{xurl} % line breaking in urls
                 |\usepackage{titlesec}
@@ -417,6 +423,7 @@ final class ModuleCatalogLatexPrinter(
           |\setlength{\marginparsep}{0pt} % no margin notes""".stripMargin
       )
 
+  // replace \subsection{title} with \subsection*{title} and add a divider
   private def rewriteSubsections(origin: String) = {
     val pattern = """\\subsection\{([^}]*)\}""".r
     val result  = new StringBuilder()
@@ -425,6 +432,16 @@ final class ModuleCatalogLatexPrinter(
     for (m <- pattern.findAllMatchIn(origin)) {
       val subsectionName = m.group(1)
       result.append(origin.substring(lastEnd, m.start))
+      if subsectionName == strings.learningOutcomeModuleCatalogLabel then {
+        // reduce the gap between the bottom rule of the upper table and the “Learning Outcome” heading
+        result.append("\\vspace{-2em}\n")
+      } else if subsectionName == strings.moduleContentModuleCatalogLabel ||
+        subsectionName == strings.teachingAndLearningMethodsModuleCatalogLabel ||
+        subsectionName == strings.recommendedReadingModuleCatalogLabel
+      then {
+        // insert a horizontal line before each subsequent subsection
+        result.append("\\subsectiondivider\n")
+      }
       result.append(s"\\subsection*{$subsectionName}")
       lastEnd = m.end
     }
@@ -452,16 +469,34 @@ final class ModuleCatalogLatexPrinter(
     result
   }
 
+  private def printTableRow(key: String, value: String, isLast: Boolean = false): Unit = {
+    if isLast then builder.append(s"$key & $value \\\\\n")
+    else builder.append(s"$key & $value \\\\\\midrule\n")
+  }
+
+  private def printTable(tableIndex: "first" | "second", printRows: () => Unit) = {
+    // the first table shows solid top rule and soft bottom rule
+    // the second table shows soft top rule and solid bottom rule
+    val (topRule, botRule) = tableIndex match {
+      case "first"  => "toprule" -> "midrule"
+      case "second" => "midrule" -> "bottomrule"
+    }
+    // create a two-column table that spans the full text width, where the first column is a fixed-width (5.5 cm)
+    // left-aligned cell using normal body font and the second column (X) automatically expands to fill the remaining
+    // horizontal space, with tidy spacing between and no extra margins at the table edges
+    builder.append(
+      s"\\begin{tabularx}{\\linewidth}{@{}>{\\normalfont\\normalsize\\raggedright\\arraybackslash}p{5.5cm}@{\\hspace{0.4em}}X@{}}\n\\$topRule\n"
+    )
+    printRows()
+    builder.append(s"\\$botRule\n\\end{tabularx}\n")
+  }
+
   private def printModule(
       module: ModuleProtocol,
       lastModified: LocalDateTime | Option[LocalDateTime],
       isChild: Boolean
   ): Unit = {
     consume(module.id.get)
-
-    def row(key: String, value: String) =
-      builder.append(s"$key & $value \\\\\n")
-
     val languages         = payload.languages
     val seasons           = payload.seasons
     val people            = payload.people
@@ -546,7 +581,7 @@ final class ModuleCatalogLatexPrinter(
       }
     }
 
-    def prerequisitesLabelRow(p: Option[ModulePrerequisiteEntryProtocol]) =
+    def prerequisitesLabelRow(p: Option[ModulePrerequisiteEntryProtocol], currentModule: UUID) =
       p match
         case Some(p) =>
           val builder = new StringBuilder()
@@ -559,9 +594,17 @@ final class ModuleCatalogLatexPrinter(
             subBuilder.append(s"$moduleLabel: ")
             p.modules.zipWithIndex.foreach {
               case (m, i) =>
-                val module = payload.modules.find(_.id == m).get
                 if modulesInPO.exists(_._1.id.get == m) then subBuilder.append(nameRef(m))
-                else subBuilder.append(escape(module.title))
+                else {
+                  payload.modules.find(_.id == m) match {
+                    case Some(module) =>
+                      subBuilder.append(escape(module.title))
+                    case None =>
+                      logger.error(
+                        s"error while printing parent module $currentModule: unable to find prerequisite module $m"
+                      )
+                  }
+                }
                 if i < p.modules.size - 1 then subBuilder.append(", ")
             }
             if builder.nonEmpty then {
@@ -590,15 +633,6 @@ final class ModuleCatalogLatexPrinter(
           a.percentage.fold(method)(d => s"$method (${fmtDouble(d)} \\%)")
         }
 
-    def renderWorkloadRow = {
-      val (workload, contactHour, selfStudy) =
-        strings.workloadLabels(module.metadata.workload, module.metadata.ects, currentPO.ectsFactor)
-
-      row(highlightIf(workload._1, ModuleProtocolDiff.isModuleWorkload), workload._2)
-      row(highlightIf(contactHour._1, ModuleProtocolDiff.isModuleWorkload), contactHour._2)
-      row(highlightIf(selfStudy._1, ModuleProtocolDiff.isModuleWorkload), selfStudy._2)
-    }
-
     def recommendedSemesterRow = {
       val recommendedSemester = this.renderingContext match {
         case RenderingContext.Mandatory =>
@@ -618,84 +652,131 @@ final class ModuleCatalogLatexPrinter(
     def durationRow = s"${module.metadata.duration} ${strings.semesterLabel}"
 
     sectionWithRef(module.metadata.title, module.id, isChild)
-    builder.append("\\begin{tabularx}{\\linewidth}{@{}>{\\bfseries}l@{\\hspace{.5em}}X@{}}\n")
-    row(highlightIf(strings.moduleAbbrevLabel, ModuleProtocolDiff.isModuleAbbrev), escape(module.metadata.abbrev))
-    row(highlightIf(strings.moduleTitleLabel, ModuleProtocolDiff.isModuleTitle), escape(module.metadata.title))
-    row(strings.moduleTypeLabel, currentModuleType(module.metadata))
-    row(highlightIf(strings.ectsLabel, ModuleProtocolDiff.isModuleEcts), fmtDouble(module.metadata.ects))
-    row(
-      highlightIf(strings.languageLabel, ModuleProtocolDiff.isModuleLanguage),
-      strings.label(languages.find(_.id == module.metadata.language))
-    )
-    row(
-      highlightIf(strings.durationLabel, ModuleProtocolDiff.isModuleDuration),
-      durationRow
-    )
-    row(strings.recommendedSemesterLabel, recommendedSemesterRow)
-    row(
-      highlightIf(strings.frequencyLabel, ModuleProtocolDiff.isModuleSeason),
-      strings.label(seasons.find(_.id == module.metadata.season))
-    )
-    row(
-      highlightIf(strings.moduleCoordinatorLabel, ModuleProtocolDiff.isModuleModuleManagement),
-      fmtCommaSeparated(
-        people.filter(p => module.metadata.moduleManagement.exists(_ == p.id)).sorted,
-        "\\newline "
-      )(fmtIdentity)
-    )
-    row(
-      highlightIf(strings.lecturersLabel, ModuleProtocolDiff.isModuleLecturers),
-      fmtCommaSeparated(people.filter(p => module.metadata.lecturers.exists(_ == p.id)).sorted, "\\newline ")(
-        fmtIdentity
-      )
-    )
-    row(
-      highlightIf(strings.assessmentMethodLabel, ModuleProtocolDiff.isModuleAssessmentMethodsMandatory),
-      assessmentMethodsRow
-    )
-    renderWorkloadRow
-    row(
-      highlightIf(strings.recommendedPrerequisitesLabel, ModuleProtocolDiff.isModuleRecommendedPrerequisites),
-      prerequisitesLabelRow(module.metadata.prerequisites.recommended)
-    )
-    row(
-      highlightIf(strings.requiredPrerequisitesLabel, ModuleProtocolDiff.isModuleRequiredPrerequisites),
-      prerequisitesLabelRow(module.metadata.prerequisites.required)
-    )
-    row(
-      highlightIf(strings.attendanceRequirementLabel, ModuleProtocolDiff.isModuleAttendanceRequirement),
-      attendanceRequirementRow(module.metadata.attendanceRequirement)
-    )
-    row(
-      highlightIf(strings.assessmentPrerequisiteLabel, ModuleProtocolDiff.isModuleAssessmentPrerequisite),
-      assessmentPrerequisiteRow(module.metadata.assessmentPrerequisite)
-    )
-    row(highlightIf(strings.poLabelShort, ModuleProtocolDiff.isPOMandatory), poRow)
-    if isPreview then {
-      row("ID", module.id.get.toString)
-      row(
-        strings.lastModifiedLabel,
-        lastModified match
-          case lm: LocalDateTime => lm.format(localDatePattern)
-          case Some(lm)          => lm.format(localDatePattern)
-          case None              => strings.unknownLabel
-      )
-    }
 
-    builder.append("\\end{tabularx}\n")
+    // print the first part of the table
+    printTable(
+      "first",
+      { () =>
+        printTableRow(
+          highlightIf(strings.moduleAbbrevLabel, ModuleProtocolDiff.isModuleAbbrev),
+          escape(module.metadata.abbrev)
+        )
+        printTableRow(
+          highlightIf(strings.moduleTitleLabel, ModuleProtocolDiff.isModuleTitle),
+          escape(module.metadata.title)
+        )
+        printTableRow(strings.moduleTypeLabel, currentModuleType(module.metadata))
+        printTableRow(highlightIf(strings.ectsLabel, ModuleProtocolDiff.isModuleEcts), fmtDouble(module.metadata.ects))
+        printTableRow(
+          highlightIf(strings.languageLabel, ModuleProtocolDiff.isModuleLanguage),
+          strings.label(languages.find(_.id == module.metadata.language))
+        )
+        printTableRow(
+          highlightIf(strings.durationLabel, ModuleProtocolDiff.isModuleDuration),
+          durationRow
+        )
+        printTableRow(strings.recommendedSemesterLabel, recommendedSemesterRow)
+        printTableRow(
+          highlightIf(strings.frequencyLabel, ModuleProtocolDiff.isModuleSeason),
+          strings.label(seasons.find(_.id == module.metadata.season))
+        )
+        printTableRow(
+          highlightIf(strings.moduleCoordinatorLabel, ModuleProtocolDiff.isModuleModuleManagement),
+          fmtCommaSeparated(
+            people.filter(p => module.metadata.moduleManagement.exists(_ == p.id)).sorted,
+            "\\newline "
+          )(fmtIdentity)
+        )
+        printTableRow(
+          highlightIf(strings.lecturersLabel, ModuleProtocolDiff.isModuleLecturers),
+          fmtCommaSeparated(people.filter(p => module.metadata.lecturers.exists(_ == p.id)).sorted, "\\newline ")(
+            fmtIdentity
+          ),
+          isLast = true
+        )
+      }
+    )
+    // continue with text
     moduleContent(
       module.id,
       module.deContent,
       module.enContent,
       List(
-        (strings.learningOutcomeLabel, GenLens[ModuleContent](_.learningOutcome)),
-        (strings.moduleContentLabel, GenLens[ModuleContent](_.content)),
-        (strings.teachingAndLearningMethodsLabel, GenLens[ModuleContent](_.teachingAndLearningMethods)),
-        (strings.recommendedReadingLabel, GenLens[ModuleContent](_.recommendedReading)),
-        (strings.particularitiesLabel, GenLens[ModuleContent](_.particularities))
+        (strings.learningOutcomeModuleCatalogLabel, GenLens[ModuleContent](_.learningOutcome)),
+        (strings.moduleContentModuleCatalogLabel, GenLens[ModuleContent](_.content)),
+        (strings.teachingAndLearningMethodsModuleCatalogLabel, GenLens[ModuleContent](_.teachingAndLearningMethods)),
+        (strings.recommendedReadingModuleCatalogLabel, GenLens[ModuleContent](_.recommendedReading)),
       ),
       diffs
     )
+    // print the second part of the table
+    printTable(
+      "second",
+      { () =>
+        printTableRow(
+          highlightIf(strings.assessmentMethodLabel, ModuleProtocolDiff.isModuleAssessmentMethodsMandatory),
+          assessmentMethodsRow
+        )
+        val (workload, contactHour, selfStudy) =
+          strings.workloadLabels(module.metadata.workload, module.metadata.ects, currentPO.ectsFactor)
+        printTableRow(highlightIf(workload._1, ModuleProtocolDiff.isModuleWorkload), workload._2)
+        printTableRow(highlightIf(contactHour._1, ModuleProtocolDiff.isModuleWorkload), contactHour._2)
+        printTableRow(highlightIf(selfStudy._1, ModuleProtocolDiff.isModuleWorkload), selfStudy._2)
+        printTableRow(
+          highlightIf(strings.recommendedPrerequisitesLabel, ModuleProtocolDiff.isModuleRecommendedPrerequisites),
+          prerequisitesLabelRow(module.metadata.prerequisites.recommended, module.id.get)
+        )
+        printTableRow(
+          highlightIf(strings.requiredPrerequisitesLabel, ModuleProtocolDiff.isModuleRequiredPrerequisites),
+          prerequisitesLabelRow(module.metadata.prerequisites.required, module.id.get)
+        )
+        printTableRow(
+          highlightIf(strings.attendanceRequirementLabel, ModuleProtocolDiff.isModuleAttendanceRequirement),
+          attendanceRequirementRow(module.metadata.attendanceRequirement)
+        )
+        printTableRow(
+          highlightIf(strings.assessmentPrerequisiteLabel, ModuleProtocolDiff.isModuleAssessmentPrerequisite),
+          assessmentPrerequisiteRow(module.metadata.assessmentPrerequisite)
+        )
+        printTableRow(highlightIf(strings.poLabelShort, ModuleProtocolDiff.isPOMandatory), poRow)
+        printTableRow(
+          strings.particularitiesModuleCatalogLabel,
+          particularitiesToLatex(module.id.get, module.deContent, module.enContent)
+        )
+        printTableRow(
+          strings.lastModifiedLabel,
+          lastModified match {
+            case lm: LocalDateTime => lm.format(localDatePattern)
+            case Some(lm)          => lm.format(localDatePattern)
+            case None              => strings.unknownLabel
+          },
+          isLast = !isPreview
+        )
+        if isPreview then {
+          printTableRow("ID", module.id.get.toString, isLast = true)
+        }
+      }
+    )
+  }
+
+  // does not support highlighting
+  private def particularitiesToLatex(id: UUID, deContent: ModuleContent, enContent: ModuleContent): String = {
+    val content = if strings.isGerman then deContent.particularities else enContent.particularities
+    if content.nonEmpty && !content.forall(_.isWhitespace) then {
+      pandocApi.toLatex(content) match {
+        case Left((e, stdErr)) =>
+          logger.error(
+            s"""content conversation from markdown to latex failed on $id:
+               |  - throwable: ${e.getMessage}
+               |  - sdtErr: $stdErr""".stripMargin
+          )
+          "ERROR"
+        case Right(text) =>
+          text
+      }
+    } else {
+      strings.noneLabel
+    }
   }
 
   private def moduleContent(
@@ -734,12 +815,16 @@ final class ModuleCatalogLatexPrinter(
                 text,
                 subsection => {
                   val key =
-                    if subsection == strings.learningOutcomeLabel then ModuleProtocolDiff.learningOutcomeKey
-                    else if subsection == strings.moduleContentLabel then ModuleProtocolDiff.moduleContentKey
-                    else if subsection == strings.teachingAndLearningMethodsLabel then
+                    if subsection == strings.learningOutcomeModuleCatalogLabel then
+                      ModuleProtocolDiff.learningOutcomeKey
+                    else if subsection == strings.moduleContentModuleCatalogLabel then
+                      ModuleProtocolDiff.moduleContentKey
+                    else if subsection == strings.teachingAndLearningMethodsModuleCatalogLabel then
                       ModuleProtocolDiff.teachingAndLearningMethodsKey
-                    else if subsection == strings.recommendedReadingLabel then ModuleProtocolDiff.recommendedReadingKey
-                    else if subsection == strings.particularitiesLabel then ModuleProtocolDiff.particularitiesKey
+                    else if subsection == strings.recommendedReadingModuleCatalogLabel then
+                      ModuleProtocolDiff.recommendedReadingKey
+                    else if subsection == strings.particularitiesModuleCatalogLabel then
+                      ModuleProtocolDiff.particularitiesKey
                     else ""
                   contentDiffs.contains(key)
                 },

@@ -19,19 +19,19 @@ final class ContentMarkdownPrinter @Inject() (messages: MessagesApi) {
     if string.isGerman then "de" else "en"
 
   private def learningOutcomeHeader(string: LocalizedStrings) =
-    prefix(s"## (${abbrev(string)}) ${string.learningOutcomeLabel}:")
+    prefix(s"## (${abbrev(string)}) ${string.learningOutcomeMarkdownLabel}:")
 
   private def moduleContentHeader(string: LocalizedStrings) =
-    prefix(s"## (${abbrev(string)}) ${string.moduleContentLabel}:")
+    prefix(s"## (${abbrev(string)}) ${string.moduleContentMarkdownLabel}:")
 
   private def teachingAndLearningMethodsHeader(string: LocalizedStrings) =
-    prefix(s"## (${abbrev(string)}) ${string.teachingAndLearningMethodsLabel}:")
+    prefix(s"## (${abbrev(string)}) ${string.teachingAndLearningMethodsMarkdownLabel}:")
 
   private def recommendedReadingHeader(string: LocalizedStrings) =
-    prefix(s"## (${abbrev(string)}) ${string.recommendedReadingLabel}:")
+    prefix(s"## (${abbrev(string)}) ${string.recommendedReadingMarkdownLabel}:")
 
   private def particularitiesHeader(string: LocalizedStrings) =
-    prefix(s"## (${abbrev(string)}) ${string.particularitiesLabel}:")
+    prefix(s"## (${abbrev(string)}) ${string.particularitiesMarkdownLabel}:")
 
   private def content(header: Printer[Unit], text: String) =
     if (text.isEmpty) {
