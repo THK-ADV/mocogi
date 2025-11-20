@@ -6,11 +6,17 @@ import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
+import auth.CampusId
 import database.repo.core.IdentityRepository
 import models.core.Identity
 import models.core.Identity.toDbEntry
 import models.core.Identity.Person
+import models.UserInfo
 import parsing.core.IdentityFileParser
+import permission.PermissionType.ArtifactsCreate
+import permission.PermissionType.ArtifactsPreview
+import permission.PermissionType.Module
+import permission.Permissions
 import play.api.libs.json.*
 
 @Singleton
@@ -42,4 +48,20 @@ final class IdentityService @Inject() (
             json + (("imageUrl", img.fold(JsNull)(i => JsString(i.imageUrl))))
         })
       )
+
+  def getUserInfo(userId: String, campusId: CampusId, permissions: Permissions): Future[UserInfo] =
+    repo.getUserInfo(userId, campusId.value).map { userInfo =>
+      // PAV or SGL grant, or ArtifactsPreview, ArtifactsCreate, Admin permission
+      val hasDirectorPrivileges =
+        userInfo.hasDirectorPrivileges || permissions.hasAnyPermission(ArtifactsPreview, ArtifactsCreate)
+      // PAV grant, or Admin permission
+      val hasModuleReviewPrivileges = userInfo.hasModuleReviewPrivileges || permissions.isAdmin
+      // Has direct grant, or Module permission
+      val hasModulesToEdit = userInfo.hasModulesToEdit || permissions.hasAnyPermission(Module)
+      userInfo.copy(
+        hasDirectorPrivileges = hasDirectorPrivileges,
+        hasModuleReviewPrivileges = hasModuleReviewPrivileges,
+        hasModulesToEdit = hasModulesToEdit
+      )
+    }
 }

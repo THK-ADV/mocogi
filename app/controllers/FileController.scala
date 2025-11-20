@@ -14,12 +14,14 @@ import play.api.mvc.ControllerComponents
 import play.api.mvc.Request
 import providers.ConfigReader
 
+@deprecated
 object FileController {
   private def assetsPath = "files"
   def makeURI(folder: String, filename: String) =
     s"$assetsPath/$folder/$filename"
 }
 
+@deprecated
 @Singleton
 final class FileController @Inject() (
     cc: ControllerComponents,

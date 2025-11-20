@@ -13,6 +13,7 @@ lazy val `mocogi` = (project in file("."))
     version           := "1.0",
     scalaVersion      := "3.4.2",
     semanticdbEnabled := true,
+    semanticdbVersion := scalafixSemanticdb.revision,
     scalacOptions += "-Wunused:imports",
     resolvers += "Akka Snapshot Repository".at("https://repo.akka.io/snapshots/"),
     resolvers ++= Resolver.sonatypeOssRepos("snapshots"),

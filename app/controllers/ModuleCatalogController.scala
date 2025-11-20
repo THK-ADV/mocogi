@@ -1,6 +1,5 @@
 package controllers
 
-import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.util.UUID
@@ -8,7 +7,6 @@ import javax.inject.Inject
 import javax.inject.Named
 import javax.inject.Singleton
 
-import scala.concurrent.duration.*
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.util.control.NonFatal
@@ -16,17 +14,15 @@ import scala.util.Failure
 import scala.util.Success
 
 import auth.AuthorizationAction
-import controllers.actions.DirectorCheck
-import controllers.actions.PermissionCheck
-import controllers.actions.PersonAction
-import database.repo.core.IdentityRepository
-import database.repo.core.StudyProgramPersonRepository
+import controllers.actions.UserRequest
+import controllers.actions.UserResolveAction
 import database.repo.JSONRepository
-import database.repo.ModuleCatalogRepository
+import database.repo.PermissionRepository
 import models.FullPoId
 import models.Semester
-import models.UniversityRole
+import ops.FileOps
 import ops.FileOps.FileOps0
+import permission.ArtifactCheck
 import play.api.cache.Cached
 import play.api.libs.json.*
 import play.api.mvc.*
@@ -34,30 +30,24 @@ import play.mvc.Http.HeaderNames
 import printing.latex.TextIntroRewriter
 import printing.latex.WordTexPrinter
 import service.ModulePreviewService
+import service.StudyProgramPrivilegesService
 
 @Singleton
 final class ModuleCatalogController @Inject() (
     cc: ControllerComponents,
-    repo: ModuleCatalogRepository,
     previewService: ModulePreviewService,
     auth: AuthorizationAction,
     jsonRepo: JSONRepository,
     @Named("tmp.dir") tmpDir: String,
     @Named("cmd.word") wordCmd: String,
     @Named("path.mcIntro") mcIntroPath: String,
-    val identityRepository: IdentityRepository,
-    val studyProgramPersonRepository: StudyProgramPersonRepository,
+    val permissionRepository: PermissionRepository,
+    val studyProgramPrivilegesService: StudyProgramPrivilegesService,
     cached: Cached,
     implicit val ctx: ExecutionContext
 ) extends AbstractController(cc)
-    with DirectorCheck
-    with PermissionCheck
-    with PersonAction {
-
-  private def createFile(filename: String): Path = {
-    val newDir = Files.createDirectories(Paths.get(tmpDir).resolve(System.currentTimeMillis().toString))
-    Files.createFile(newDir.resolve(s"$filename.tex"))
-  }
+    with ArtifactCheck
+    with UserResolveAction {
 
   /**
    * Returns all active generic modules for the PO
@@ -68,19 +58,9 @@ final class ModuleCatalogController @Inject() (
    */
   def allGenericModulesForPO(studyProgram: String, po: String): Action[AnyContent] =
     auth
-      .andThen(personAction)
-      .andThen(
-        hasRoleInStudyProgram(
-          List(UniversityRole.SGL, UniversityRole.PAV),
-          studyProgram
-        )
-      )
+      .andThen(resolveUser)
+      .andThen(canPreviewArtifact(studyProgram))
       .async(_ => jsonRepo.getGenericModulesForPO(po).map(Ok(_)))
-
-  def allFromSemester(semester: String): EssentialAction =
-    cached.status(r => r.method + r.uri, 200, 1.hour) {
-      Action.async(_ => repo.allFromSemester(semester).map(xs => Ok(Json.toJson(xs))))
-    }
 
   /**
    * Generates a module catalog for the PO. A preview catalog is generated if the query parameter is set to true.
@@ -92,20 +72,15 @@ final class ModuleCatalogController @Inject() (
    */
   def generate(studyProgram: String, po: String): Action[List[UUID]] =
     auth(parse.json[List[UUID]])
-      .andThen(personAction)
-      .andThen(
-        hasRoleInStudyProgram(
-          List(UniversityRole.SGL, UniversityRole.PAV),
-          studyProgram
-        )
-      )
+      .andThen(resolveUser)
+      .andThen(canPreviewArtifact(studyProgram))
       .async { (r: Request[List[UUID]]) =>
         r.headers.get(HeaderNames.ACCEPT) match {
           case Some(MimeTypes.PDF) =>
             val isPreview            = r.getQueryString("preview").flatMap(_.toBooleanOption).getOrElse(true)
             val bannedGenericModules = r.body
             val filename             = s"module_catalog_$po"
-            val file                 = createFile(filename)
+            val file                 = FileOps.createLatexFile(filename, tmpDir)
             val path =
               if isPreview then previewService.previewCatalog(po, file, bannedGenericModules)
               else
@@ -139,14 +114,9 @@ final class ModuleCatalogController @Inject() (
   // TODO: rewrite to work with proper uploads
   def uploadIntroFile(studyProgram: String): Action[JsValue] =
     auth
-      .andThen(personAction)
-      .andThen(
-        hasRoleInStudyProgram(
-          List(UniversityRole.SGL, UniversityRole.PAV),
-          studyProgram
-        )
-      )
-      .apply(parse.json) { (r: PersonAction.PersonRequest[JsValue]) =>
+      .andThen(resolveUser)
+      .andThen(canPreviewArtifact(studyProgram))
+      .apply(parse.json) { (r: UserRequest[JsValue]) =>
         (r.body \ "po").validate[String] match
           case JsSuccess(po, _) =>
             val fullPoId = FullPoId(po)

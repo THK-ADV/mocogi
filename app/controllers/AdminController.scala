@@ -7,15 +7,15 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 import auth.AuthorizationAction
-import auth.Role.Admin
-import controllers.actions.PermissionCheck
-import controllers.actions.RoleCheck
+import controllers.actions.UserResolveAction
 import database.repo.ModuleDeletionRepository
+import database.repo.PermissionRepository
 import git.api.GitFileDownloadService
 import git.GitConfig
 import git.GitFilePath
 import models.CreatedModule
 import parsing.RawModuleParser
+import permission.AdminCheck
 import play.api.libs.json.Reads
 import play.api.mvc.AbstractController
 import play.api.mvc.ControllerComponents
@@ -30,15 +30,16 @@ final class AdminController @Inject() (
     moduleDeletionRepository: ModuleDeletionRepository,
     moduleCreationService: ModuleCreationService,
     downloadService: GitFileDownloadService,
+    val permissionRepository: PermissionRepository,
     implicit val gitConfig: GitConfig,
     implicit val ctx: ExecutionContext
 ) extends AbstractController(cc)
-    with RoleCheck
-    with PermissionCheck
+    with AdminCheck
+    with UserResolveAction
     with Logging {
 
   def invalidModuleExams() =
-    auth.andThen(hasRole(Admin)).async { _ =>
+    auth.andThen(resolveUser).andThen(isAdmin).async { _ =>
       moduleExaminationValidator.getAllInvalidModuleExams.map { xs =>
         xs.sortBy(_._1.id)
           .foreach(a => println(s"${a._1};${a._2.mkString("[", ",", s"];${a._3.mkString("{", ",", "}")}")}"))
@@ -47,13 +48,13 @@ final class AdminController @Inject() (
     }
 
   def deleteModule(module: UUID) =
-    auth.andThen(hasRole(Admin)).async { _ =>
+    auth.andThen(resolveUser).andThen(isAdmin).async { _ =>
       logger.info(s"deleting module $module ...")
       moduleDeletionRepository.delete(module).map(_ => NoContent)
     }
 
   def createNewModulesFromDraftBranch() =
-    auth.andThen(hasRole(Admin)).async(parse.json[List[String]]) { r =>
+    auth.andThen(resolveUser).andThen(isAdmin).async(parse.json[List[String]]) { r =>
       val moduleIds = r.body
       for
         modulesToCreate <- Future.sequence(

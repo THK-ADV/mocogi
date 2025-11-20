@@ -1,8 +1,6 @@
 package controllers
 
 import java.nio.file.Files
-import java.nio.file.Path
-import java.nio.file.Paths
 import javax.inject.Inject
 import javax.inject.Named
 import javax.inject.Singleton
@@ -12,55 +10,49 @@ import scala.concurrent.Future
 import scala.util.control.NonFatal
 
 import auth.AuthorizationAction
-import controllers.actions.DirectorCheck
-import controllers.actions.PermissionCheck
-import controllers.actions.PersonAction
-import database.repo.core.IdentityRepository
-import database.repo.core.StudyProgramPersonRepository
-import models.UniversityRole
+import controllers.actions.UserResolveAction
+import database.repo.PermissionRepository
+import ops.FileOps
+import permission.ArtifactCheck
 import play.api.http.MimeTypes
 import play.api.mvc.AbstractController
 import play.api.mvc.Action
 import play.api.mvc.AnyContent
 import play.api.mvc.ControllerComponents
 import service.exam.ExamLoadService
+import service.StudyProgramPrivilegesService
 
 @Singleton
 final class ExamLoadController @Inject() (
     cc: ControllerComponents,
     auth: AuthorizationAction,
     examLoadService: ExamLoadService,
-    val identityRepository: IdentityRepository,
-    val studyProgramPersonRepository: StudyProgramPersonRepository,
+    val permissionRepository: PermissionRepository,
+    val studyProgramPrivilegesService: StudyProgramPrivilegesService,
     @Named("tmp.dir") tmpDir: String,
     implicit val ctx: ExecutionContext
 ) extends AbstractController(cc)
-    with DirectorCheck
-    with PermissionCheck
-    with PersonAction {
+    with ArtifactCheck
+    with UserResolveAction {
 
-  private def createCSVFile(): Path = {
-    val path = Paths.get(tmpDir).resolve(System.currentTimeMillis().toString)
-    Files.createFile(path)
-  }
-
-  def generateExamLoad(studyProgram: String, po: String): Action[AnyContent] = auth
-    .andThen(personAction)
-    .andThen(hasRoleInStudyProgram(List(UniversityRole.PAV), studyProgram))
-    .async { _ =>
-      val file = createCSVFile()
-      examLoadService
-        .createLatestExamLoad(po)
-        .map { csv =>
-          Files.writeString(file, csv)
-          Ok
-            .sendPath(file, onClose = () => Files.delete(file), fileName = _ => Some(s"$po.csv"))
-            .as(MimeTypes.TEXT)
-        }
-        .recoverWith {
-          case NonFatal(e) =>
-            Files.delete(file)
-            Future.failed(e)
-        }
-    }
+  def generateExamLoad(studyProgram: String, po: String): Action[AnyContent] =
+    auth
+      .andThen(resolveUser)
+      .andThen(canPreviewArtifact(studyProgram))
+      .async { _ =>
+        val file = FileOps.createRandomFile(tmpDir)
+        examLoadService
+          .createLatestExamLoad(po)
+          .map { csv =>
+            Files.writeString(file, csv)
+            Ok
+              .sendPath(file, onClose = () => Files.delete(file), fileName = _ => Some(s"$po.csv"))
+              .as(MimeTypes.TEXT)
+          }
+          .recoverWith {
+            case NonFatal(e) =>
+              Files.delete(file)
+              Future.failed(e)
+          }
+      }
 }

@@ -18,6 +18,7 @@ import org.apache.pekko.actor.ActorRef
 import org.apache.pekko.actor.Props
 import play.api.Logging
 
+@deprecated
 @Singleton
 final class PreviewMergeActor(actor: ActorRef) {
   def createMergeRequest(semester: Semester): Unit =

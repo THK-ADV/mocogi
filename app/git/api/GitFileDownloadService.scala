@@ -9,7 +9,6 @@ import scala.concurrent.Future
 
 import com.google.inject.Inject
 import git.*
-import models.MetadataProtocol
 import models.ModuleProtocol
 import ops.EitherOps.EThrowableOps
 import parsing.RawModuleParser
@@ -27,18 +26,6 @@ final class GitFileDownloadService @Inject() (
     private implicit val config: GitConfig,
     implicit val ctx: ExecutionContext
 ) {
-
-  def downloadModuleMetadataFromPreviewBranch(path: GitFilePath): Future[Option[(UUID, MetadataProtocol)]] =
-    downloadFileContent(path, config.draftBranch).map {
-      case Some(content) =>
-        val res = RawModuleParser.metadataParser.parse(content.value)._1.toOption
-        assert(
-          res.isDefined,
-          s"module ${path.moduleId} must be successfully parsed from ${config.draftBranch.value} branch"
-        )
-        res
-      case None => None
-    }
 
   def downloadModuleFromPreviewBranch(id: UUID): Future[Option[ModuleProtocol]] =
     for {

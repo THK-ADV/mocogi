@@ -225,12 +225,6 @@ final class ModuleCatalogLatexPrinter(
     }
   }
 
-  private def moduleType(m: MetadataProtocol) = {
-    m.po.mandatory.exists(a => a.po == currentPO.id && a.specialization.isDefined) || m.po.mandatory.exists(a =>
-      a.po == currentPO.id
-    )
-  }
-
   /*
     Modules of all kinds (parent, child, generic, …) which belong to the current PO.
     Sorted by recommended semester and module title
@@ -503,7 +497,6 @@ final class ModuleCatalogLatexPrinter(
       isChild: Boolean
   ): Unit = {
     consume(module.id.get)
-    val moduleTypes       = payload.moduleTypes
     val languages         = payload.languages
     val seasons           = payload.seasons
     val people            = payload.people
@@ -822,12 +815,16 @@ final class ModuleCatalogLatexPrinter(
                 text,
                 subsection => {
                   val key =
-                    if subsection == strings.learningOutcomeModuleCatalogLabel then ModuleProtocolDiff.learningOutcomeKey
-                    else if subsection == strings.moduleContentModuleCatalogLabel then ModuleProtocolDiff.moduleContentKey
+                    if subsection == strings.learningOutcomeModuleCatalogLabel then
+                      ModuleProtocolDiff.learningOutcomeKey
+                    else if subsection == strings.moduleContentModuleCatalogLabel then
+                      ModuleProtocolDiff.moduleContentKey
                     else if subsection == strings.teachingAndLearningMethodsModuleCatalogLabel then
                       ModuleProtocolDiff.teachingAndLearningMethodsKey
-                    else if subsection == strings.recommendedReadingModuleCatalogLabel then ModuleProtocolDiff.recommendedReadingKey
-                    else if subsection == strings.particularitiesModuleCatalogLabel then ModuleProtocolDiff.particularitiesKey
+                    else if subsection == strings.recommendedReadingModuleCatalogLabel then
+                      ModuleProtocolDiff.recommendedReadingKey
+                    else if subsection == strings.particularitiesModuleCatalogLabel then
+                      ModuleProtocolDiff.particularitiesKey
                     else ""
                   contentDiffs.contains(key)
                 },

@@ -37,9 +37,7 @@ final class ModuleDraftRepository @Inject() (
 
   protected val tableQuery = TableQuery[ModuleDraftTable]
 
-  protected override def retrieve(
-      query: Query[ModuleDraftTable, ModuleDraft, Seq]
-  ) =
+  protected override def retrieve(query: Query[ModuleDraftTable, ModuleDraft, Seq]): Future[Seq[ModuleDraft]] =
     db.run(query.result)
 
   def getModuleTitle(module: UUID): Future[String] =
@@ -54,22 +52,10 @@ final class ModuleDraftRepository @Inject() (
   def hasModuleDraft(moduleId: UUID) =
     db.run(tableQuery.filter(_.module === moduleId).exists.result)
 
-  def updateMergeRequestStatus(
-      moduleId: UUID,
-      status: MergeRequestStatus
-  ) =
-    db.run(
-      tableQuery
-        .filter(_.module === moduleId)
-        .map(_.mergeRequestStatus)
-        .update(Some(status))
-        .map(_ => ())
-    )
+  def updateMergeRequestStatus(moduleId: UUID, status: MergeRequestStatus) =
+    db.run(tableQuery.filter(_.module === moduleId).map(_.mergeRequestStatus).update(Some(status)).map(_ => ()))
 
-  def updateMergeRequest(
-      moduleId: UUID,
-      mergeRequest: Option[(MergeRequestId, MergeRequestStatus)]
-  ): Future[Unit] =
+  def updateMergeRequest(moduleId: UUID, mergeRequest: Option[(MergeRequestId, MergeRequestStatus)]): Future[Unit] =
     db.run(
       tableQuery
         .filter(_.module === moduleId)
@@ -139,12 +125,4 @@ final class ModuleDraftRepository @Inject() (
 
   def getByModuleOpt(moduleId: UUID) =
     db.run(tableQuery.filter(_.module === moduleId).result.map(_.headOption))
-
-  def isAuthorOf(moduleId: UUID, personId: String) =
-    db.run(
-      tableQuery
-        .filter(a => a.module === moduleId && a.author === personId)
-        .exists
-        .result
-    )
 }

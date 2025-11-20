@@ -19,6 +19,8 @@ final class StudyProgramPersonTable(tag: Tag) extends Table[StudyProgramPersonDb
 
   def role = column[UniversityRole]("role", O.PrimaryKey)
 
+  def isPAV: Rep[Boolean] = role === UniversityRole.PAV
+
   def personFk =
     foreignKey("person", person, TableQuery[IdentityTable])(_.id)
 

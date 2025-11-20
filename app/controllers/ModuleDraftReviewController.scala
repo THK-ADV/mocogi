@@ -7,61 +7,85 @@ import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
 
 import auth.AuthorizationAction
-import controllers.actions.ModuleDraftCheck
-import controllers.actions.PermissionCheck
-import controllers.actions.PersonAction
-import database.repo.core.IdentityRepository
+import controllers.actions.UserRequest
+import controllers.actions.UserResolveAction
+import database.repo.PermissionRepository
 import models.ModuleKeysToReview
+import permission.ModuleDraftCheck
+import permission.ModuleReviewCheck
+import play.api.libs.json.JsError
+import play.api.libs.json.JsSuccess
 import play.api.libs.json.Json
+import play.api.libs.json.Reads
 import play.api.mvc.AbstractController
+import play.api.mvc.AnyContent
 import play.api.mvc.ControllerComponents
 import play.api.Logging
-import service.ModuleDraftService
 import service.ModuleReviewService
 import service.ModuleUpdatePermissionService
+
+case class ModuleReviewRequest(approved: Boolean, comment: Option[String], reviews: List[UUID])
 
 @Singleton
 final class ModuleDraftReviewController @Inject() (
     cc: ControllerComponents,
     val auth: AuthorizationAction,
-    val service: ModuleReviewService,
+    val moduleReviewService: ModuleReviewService,
     val moduleUpdatePermissionService: ModuleUpdatePermissionService,
-    val moduleDraftService: ModuleDraftService,
-    val identityRepository: IdentityRepository,
+    val permissionRepository: PermissionRepository,
     private val keysToReview: ModuleKeysToReview,
     implicit val ctx: ExecutionContext
 ) extends AbstractController(cc)
     with ModuleDraftCheck
-    with PermissionCheck
-    with PersonAction
-    with Logging {
+    with ModuleReviewCheck
+    with UserResolveAction
+    with Logging
+    with JsonNullWritable {
 
-  /**
-   * Creates a full review.
-   * @param moduleId
-   *   ID of the module draft
-   * @return
-   *   201 Created
-   */
-  def create(moduleId: UUID) =
-    auth.andThen(personAction).andThen(hasPermissionToEditDraft(moduleId)).async { r =>
-      moduleInReaccreditation(moduleId, r)
-        .flatMap(fastForward =>
-          if fastForward then service.createAutoAccepted(moduleId, r.person) else service.create(moduleId, r.person)
-        )
-        .map(_ => Created)
+  given Reads[ModuleReviewRequest] =
+    js =>
+      for {
+        approved <- js.\("action").validate[String].flatMap {
+          case "approve" => JsSuccess(true)
+          case "reject"  => JsSuccess(false)
+          case other     => JsError(s"expected action to be 'approve' or 'reject', but was $other")
+        }
+        comment   <- js.\("comment").validateOpt[String]
+        reviewIds <- js.\("reviews").validate[List[UUID]]
+      } yield ModuleReviewRequest(approved, comment, reviewIds)
+
+  // Returns module reviews of the user
+  def moduleReviews() =
+    auth.andThen(resolveUser).async { (r: UserRequest[AnyContent]) =>
+      moduleReviewService.moduleReviews(r.person, r.permissions).map(xs => Ok(Json.toJson(xs)))
     }
 
-  /**
-   * Deletes a full review.
-   * @param moduleId
-   *   ID of the module draft
-   * @return
-   *   204 NoContent
-   */
+  // Creates a full review for the module draft
+  def create(moduleId: UUID) =
+    auth.andThen(resolveUser).andThen(canEditModule(moduleId)).async { (r: UserRequest[AnyContent]) =>
+      moduleReviewService.create(moduleId, r.person, r.permissions).map(_ => Created)
+    }
+
+  // Deletes a full review for the module draft
   def delete(moduleId: UUID) =
-    auth.andThen(personAction).andThen(hasPermissionToEditDraft(moduleId)).async { _ =>
-      service.delete(moduleId).map(_ => NoContent)
+    auth.andThen(resolveUser).andThen(canEditModule(moduleId)).async { _ =>
+      moduleReviewService.delete(moduleId).map(_ => NoContent)
+    }
+
+  // Returns reviews for a module
+  def getForModule(moduleId: UUID) =
+    auth.andThen(resolveUser).andThen(canEditModule(moduleId)).async { _ =>
+      moduleReviewService.allByModule(moduleId).map(xs => Ok(Json.toJson(xs)))
+    }
+
+  // Perform a module review
+  def update() =
+    auth(parse.json[ModuleReviewRequest]).andThen(resolveUser).andThen(canReviewModule).async {
+      (r: UserRequest[ModuleReviewRequest]) =>
+        val moduleReview = r.request.body
+        moduleReviewService
+          .update(moduleReview.reviews, r.person, moduleReview.approved, moduleReview.comment)
+          .map(_ => NoContent)
     }
 
   def keys() =

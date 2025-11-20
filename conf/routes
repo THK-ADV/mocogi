@@ -9,14 +9,8 @@ GET           /admin/invalidModuleExams                               controller
 DELETE        /admin/modules/:id                                      controllers.AdminController.deleteModule(id: java.util.UUID)
 POST          /admin/modules                                          controllers.AdminController.createNewModulesFromDraftBranch()
 
-GET           /me                                                     controllers.MeController.me()
-
-GET           /bootstrap/createViews                                  controllers.BootstrapController.createViews()
-
-# Big Bang
-
-# GET           /bigbang                                            controllers.BigBangController.go()
-# GET           /bigbangCatalogs                                    controllers.BigBangController.goCatalogs()
+GET           /user                                                   controllers.UserController.userInfo()
+GET           /user-privileges                                        controllers.UserController.studyProgramPrivileges()
 
 # Git Webhooks
 
@@ -35,7 +29,6 @@ GET           /locations                                              controller
 GET           /languages                                              controllers.LanguageController.all()
 GET           /status                                                 controllers.StatusController.all()
 GET           /assessmentMethods                                      controllers.AssessmentMethodController.all()
-POST          /assessmentMethods                                      controllers.AssessmentMethodController.createPermittedEntries()
 GET           /moduleTypes                                            controllers.ModuleTypeController.all()
 GET           /seasons                                                controllers.SeasonController.all()
 GET           /identities                                             controllers.IdentityController.all()
@@ -48,7 +41,6 @@ GET           /examPhases                                             controller
 # Module
 
 GET           /modules                                                controllers.ModuleController.all()
-GET           /modules/preview                                        controllers.ModuleController.allFromPreview()
 GET           /modules/:id                                            controllers.ModuleController.get(id: java.util.UUID)
 GET           /modules/:id/preview                                    controllers.ModuleController.getPreview(id: java.util.UUID)
 GET           /modules/:id/latest                                     controllers.ModuleController.getLatest(id: java.util.UUID)
@@ -56,18 +48,14 @@ GET           /modules/:id/file                                       controller
 GET           /modules/:id/preview/file                               controllers.ModuleController.getPreviewFile(id: java.util.UUID)
 GET           /modules/:id/latest/file                                controllers.ModuleController.getLatestFile(id: java.util.UUID)
 GET           /modules/:id/options                                    controllers.ModuleController.allGenericOptions(id: java.util.UUID)
-PUT           /modules/parse/:id                                      controllers.ModuleController.parseValidate(id: java.util.UUID)
+
+PUT           /parse                                                  controllers.ModuleController.parseValidate()
 
 # Module Catalog
 
-GET           /moduleCatalogs/:semester                               controllers.ModuleCatalogController.allFromSemester(semester: java.lang.String)
 GET           /moduleCatalogs/:studyProgram/:po/genericModules        controllers.ModuleCatalogController.allGenericModulesForPO(studyProgram: java.lang.String, po: java.lang.String)
 POST          /moduleCatalogs/:studyProgram/:po                       controllers.ModuleCatalogController.generate(studyProgram: java.lang.String, po: java.lang.String)
 POST          /moduleCatalogs/preview/:studyProgram/upload            controllers.ModuleCatalogController.uploadIntroFile(studyProgram: java.lang.String)
-
-# Electives Catalog
-
-# GET           /electivesCatalogs/:semester                        controllers.ElectiveCatalogueController.allFromSemester(semester: java.lang.String)
 
 # Exam Lists
 
@@ -83,27 +71,23 @@ GET           /examLoad/:studyProgram/:po                             controller
 
 # Module Draft
 
-GET           /moduleDrafts/own                                       controllers.ModuleDraftController.moduleDrafts()
-GET           /moduleDrafts/:id/keys                                  controllers.ModuleDraftController.keys(id: java.util.UUID)
-GET           /moduleDrafts/:id/mrurl                                 controllers.ModuleDraftController.mergeRequestUrl(id: java.util.UUID)
-POST          /moduleDrafts                                           controllers.ModuleDraftController.createNewModuleDraft()
+GET           /moduleDrafts                                           controllers.ModuleDraftController.moduleDrafts()
+GET           /moduleDrafts/:id                                       controllers.ModuleDraftController.getModuleDraft(id: java.util.UUID)
 PUT           /moduleDrafts/:id                                       controllers.ModuleDraftController.createOrUpdateModuleDraft(id: java.util.UUID)
 DELETE        /moduleDrafts/:id                                       controllers.ModuleDraftController.deleteModuleDraft(id: java.util.UUID)
-GET           /moduleDrafts/:id                                       controllers.ModuleDraftController.getModuleDraft(id: java.util.UUID)
+GET           /moduleDrafts/:id/keys                                  controllers.ModuleDraftController.keys(id: java.util.UUID)
+GET           /moduleDrafts/:id/mrurl                                 controllers.ModuleDraftController.mergeRequestUrl(id: java.util.UUID)
 
 # Review
+GET           /moduleReviews                                          controllers.ModuleDraftReviewController.moduleReviews()
+GET           /moduleReviews/:moduleId                                controllers.ModuleDraftReviewController.getForModule(moduleId: java.util.UUID)
 POST          /moduleReviews/:id                                      controllers.ModuleDraftReviewController.create(id: java.util.UUID)
 DELETE        /moduleReviews/:id                                      controllers.ModuleDraftReviewController.delete(id: java.util.UUID)
+PUT           /moduleReviews                                          controllers.ModuleDraftReviewController.update()
 GET           /moduleReviewKeys                                       controllers.ModuleDraftReviewController.keys()
-
-# Approval
-GET           /moduleApprovals/own                                    controllers.ModuleDraftApprovalController.getOwn()
-GET           /moduleApprovals/:moduleId                              controllers.ModuleDraftApprovalController.getByModule(moduleId: java.util.UUID)
-PUT           /moduleApprovals                                        controllers.ModuleDraftApprovalController.update()
 
 # Module Update Permissions
 
-GET           /moduleUpdatePermissions/own                            controllers.ModuleUpdatePermissionController.getOwn()
 GET           /moduleUpdatePermissions/:moduleId                      controllers.ModuleUpdatePermissionController.allByModule(moduleId: java.util.UUID)
 POST          /moduleUpdatePermissions/:moduleId                      controllers.ModuleUpdatePermissionController.replace(moduleId: java.util.UUID)
 

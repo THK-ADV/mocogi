@@ -14,28 +14,23 @@ import scala.concurrent.Future
 import scala.util.control.NonFatal
 
 import auth.AuthorizationAction
-import controllers.actions.DirectorCheck
-import controllers.actions.PermissionCheck
-import controllers.actions.PersonAction
-import controllers.actions.PersonAction.PersonRequest
-import database.repo.core.IdentityRepository
-import database.repo.core.StudyProgramPersonRepository
+import controllers.actions.UserRequest
+import controllers.actions.UserResolveAction
 import database.repo.ExamListRepository
+import database.repo.PermissionRepository
 import database.table.ExamListDbEntry
 import models.ExamList
 import models.Semester
-import models.UniversityRole
 import ops.EitherOps.EStringThrowOps
+import ops.FileOps
 import ops.FileOps.FileOps0
+import permission.ArtifactCheck
 import play.api.libs.json.Json
 import play.api.libs.json.Reads
-import play.api.mvc.AbstractController
-import play.api.mvc.Action
-import play.api.mvc.AnyContent
-import play.api.mvc.ControllerComponents
-import play.api.mvc.Request
+import play.api.mvc.*
 import play.mvc.Http.HeaderNames
 import service.ExamListService
+import service.StudyProgramPrivilegesService
 
 @Singleton
 final class ExamListsController @Inject() (
@@ -44,32 +39,26 @@ final class ExamListsController @Inject() (
     service: ExamListService,
     @Named("tmp.dir") tmpDir: String,
     @Named("examListFolder") examListFolder: String,
-    val identityRepository: IdentityRepository,
-    val studyProgramPersonRepository: StudyProgramPersonRepository,
+    val permissionRepository: PermissionRepository,
+    val studyProgramPrivilegesService: StudyProgramPrivilegesService,
     val examListRepo: ExamListRepository,
     implicit val ctx: ExecutionContext
 ) extends AbstractController(cc)
-    with DirectorCheck
-    with PermissionCheck
-    with PersonAction {
-
-  private def createExamListFile(filename: String): Path = {
-    val newDir = Files.createDirectories(Paths.get(tmpDir).resolve(System.currentTimeMillis().toString))
-    Files.createFile(newDir.resolve(s"$filename.tex"))
-  }
+    with ArtifactCheck
+    with UserResolveAction {
 
   def currentSemesters(): Action[AnyContent] =
     Action((r: Request[AnyContent]) => Ok(Json.toJson(Semester.currentAndNext())))
 
   def getPreview(studyProgram: String, po: String): Action[AnyContent] =
     auth
-      .andThen(personAction)
-      .andThen(hasRoleInStudyProgram(List(UniversityRole.PAV), studyProgram))
+      .andThen(resolveUser)
+      .andThen(canPreviewArtifact(studyProgram))
       .async { r =>
         r.headers.get(HeaderNames.ACCEPT) match {
           case Some(MimeTypes.PDF) =>
             val filename = s"exam_lists_$po"
-            val file     = createExamListFile(filename)
+            val file     = FileOps.createLatexFile(filename, tmpDir)
             service
               .previewExamList(po, file)
               .map(path =>
@@ -108,12 +97,12 @@ final class ExamListsController @Inject() (
 
   def replace(studyProgram: String, po: String): Action[(String, LocalDate)] =
     auth(parse.json(createExamListReads))
-      .andThen(personAction)
-      .andThen(hasRoleInStudyProgram(List(UniversityRole.PAV), studyProgram))
-      .async { (r: PersonRequest[(String, LocalDate)]) =>
+      .andThen(resolveUser)
+      .andThen(canCreateArtifact(studyProgram))
+      .async { (r: UserRequest[(String, LocalDate)]) =>
         val (semester, date) = r.body
         val filename         = s"exam_lists_${semester}_$po"
-        val file             = createExamListFile(filename)
+        val file             = FileOps.createLatexFile(filename, tmpDir)
         val semesterObj      = Semester(semester)
         for {
           path <- service.createExamList(po, file, semesterObj, date).recoverWith {

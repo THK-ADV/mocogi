@@ -12,10 +12,10 @@ import auth.CampusId
 import cats.data.NonEmptyList
 import database.repo.ModuleUpdatePermissionRepository
 import models.core.Identity
-import models.ModuleUpdatePermission
 import models.ModuleUpdatePermissionType
 import models.ModuleUpdatePermissionType.Inherited
-import play.api.libs.json.JsValue
+import permission.Permissions
+import play.api.libs.json.JsObject
 import play.api.libs.json.Json
 
 @Singleton
@@ -46,49 +46,36 @@ final class ModuleUpdatePermissionService @Inject() (
       _ <- repo.createMany(campusIds.distinct.map(c => (module, c, kind)))
     } yield ()
 
-  def hasPermission(campusId: CampusId, module: UUID) =
+  def hasPermissionFor(module: UUID, campusId: CampusId) =
     repo.hasPermission(campusId, module)
 
-  def allFromUser(campusId: CampusId): Future[Seq[ModuleUpdatePermission]] =
-    repo.allFromUser(campusId)
+  def isAuthorOf(moduleId: UUID, personId: String) =
+    repo.isAuthorOf(moduleId, personId)
 
   def allGrantedFromModule(moduleId: UUID): Future[String] =
     repo.allGrantedFromModule(moduleId)
 
-  private def parsePOs(roles: Set[String]) = {
-    def parseAccreditationPOs(role: String): Option[List[String]] = {
-      if (!role.startsWith("[") || !role.endsWith("]")) return None
+  /**
+   * Fetch all modules that can be edited by the user through inherited (MV) or granted permission.
+   * Then fetch all modules that can be edited by a role.
+   * @return The combination of the two module-lists as a JSON object
+   */
+  def allModulesForUser(cid: CampusId, permissions: Permissions): Future[JsObject] = {
+    val forUser = repo.allForUser(cid).map(s => Json.obj("direct" -> Json.parse(s)))
 
-      val content = role.drop(1).dropRight(1)
-      if (content.isEmpty) return None
-
-      val pos = content.split(",").map(_.trim).filter(_.nonEmpty).toList
-      Option.when(pos.nonEmpty)(pos)
-    }
-
-    val prefix = "accreditation-member_"
-    roles.find(_.startsWith(prefix)).flatMap(a => parseAccreditationPOs(a.drop(prefix.length)))
-  }
-
-  def allForUser(cid: CampusId, roles: Set[String]): Future[JsValue] = {
-    val forUser = repo.allForUser(cid)
-
-    parsePOs(roles) match {
-      case Some(pos) =>
+    permissions.modulePermissions match {
+      case Some(pos) if pos.nonEmpty =>
         for {
           forUser <- forUser
           forPo   <- repo.allForPos(pos)
         } yield {
-          if forPo == "[]" then Json.obj("default" -> Json.parse(forUser))
-          else Json.obj("default"                  -> Json.parse(forUser), "accreditation" -> Json.parse(forPo))
+          if forPo == "[]" then forUser
+          else forUser + ("indirect" -> Json.parse(forPo))
         }
-      case None => forUser.map(s => Json.obj("default" -> Json.parse(s)))
+      case _ => forUser
     }
   }
 
-  def isModuleInPO(module: UUID, roles: Set[String]): Future[Boolean] =
-    parsePOs(roles) match {
-      case Some(pos) => repo.isModuleInPO(module, pos)
-      case None      => Future.successful(false)
-    }
+  def isModulePartOfPO(module: UUID, pos: Set[String]): Future[Boolean] =
+    repo.isModulePartOfPO(module, pos)
 }

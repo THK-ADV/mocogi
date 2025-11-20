@@ -182,7 +182,11 @@ final class ModuleMarkdownPrinter @Inject() (
     contentBlock(strings.recommendedReadingMarkdownLabel, de.recommendedReading, en.recommendedReading)
 
   private def teachingAndLearningMethods(de: ModuleContent, en: ModuleContent) =
-    contentBlock(strings.teachingAndLearningMethodsMarkdownLabel, de.teachingAndLearningMethods, en.teachingAndLearningMethods)
+    contentBlock(
+      strings.teachingAndLearningMethodsMarkdownLabel,
+      de.teachingAndLearningMethods,
+      en.teachingAndLearningMethods
+    )
 
   private def moduleContent(de: ModuleContent, en: ModuleContent) =
     contentBlock(strings.moduleContentMarkdownLabel, de.content, en.content)

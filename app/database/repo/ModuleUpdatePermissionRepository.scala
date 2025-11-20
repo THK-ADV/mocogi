@@ -9,7 +9,7 @@ import scala.concurrent.Future
 
 import auth.CampusId
 import database.table.core.IdentityTable
-import database.table.ModuleTable
+import database.table.ModuleDraftTable
 import database.table.ModuleUpdatePermissionTable
 import models.*
 import models.core.Identity
@@ -84,21 +84,6 @@ final class ModuleUpdatePermissionRepository @Inject() (
         .map(_.map { case (id, perm) => (Identity.toPersonUnsafe(id), perm) })
     )
 
-  def allFromUser(campusId: CampusId) =
-    db.run(
-      tableQuery
-        .filter(_.campusId === campusId)
-        .join(
-          TableQuery[ModuleTable].map(a => (a.id, a.title, a.abbrev))
-        )
-        .on(_.module === _._1)
-        .result
-        .map(_.map {
-          case ((id, campusId, kind), (_, title, abbrev)) =>
-            ModuleUpdatePermission(id, title, abbrev, campusId, kind)
-        })
-    )
-
   def allGrantedFromModule(module: UUID) = {
     val query = sql"select get_users_with_granted_permissions_from_module(${module.toString}::uuid)".as[String].head
     db.run(query)
@@ -112,10 +97,18 @@ final class ModuleUpdatePermissionRepository @Inject() (
         .result
     )
 
+  def isAuthorOf(moduleId: UUID, personId: String) =
+    db.run(
+      TableQuery[ModuleDraftTable]
+        .filter(a => a.module === moduleId && a.author === personId)
+        .exists
+        .result
+    )
+
   private given GetResult[String] =
     GetResult(_.nextString())
 
-  private def arrayLiteral(pos: List[String]) =
+  private def arrayLiteral(pos: Iterable[String]) =
     "'{" + pos.mkString(",") + "}'"
 
   def allForUser(cid: CampusId): Future[String] = {
@@ -124,12 +117,13 @@ final class ModuleUpdatePermissionRepository @Inject() (
   }
 
   // This function is only used for accreditation members which can access all the modules for a given PO
-  def allForPos(pos: List[String]): Future[String] = {
+  def allForPos(pos: Set[String]): Future[String] = {
     val query = sql"select get_modules_for_po(#${arrayLiteral(pos)}::text[])".as[String].head
     db.run(query)
   }
 
-  def isModuleInPO(module: UUID, pos: List[String]): Future[Boolean] = {
+  // Checks if the module has a PO relationship with any of the passed POs. Both live and draft modules are considered
+  def isModulePartOfPO(module: UUID, pos: Set[String]): Future[Boolean] = {
     val query = sql"select module_of_po(${module.toString}::uuid, #${arrayLiteral(pos)}::text[])".as[Boolean].head
     db.run(query)
   }

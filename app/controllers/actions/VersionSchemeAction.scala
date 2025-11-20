@@ -3,7 +3,6 @@ package controllers.actions
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-import controllers.actions.PersonAction.PersonRequest
 import parser.ParsingError
 import parsing.metadata.VersionSchemeParser
 import play.api.libs.json.Json
@@ -14,9 +13,9 @@ import play.api.mvc.Results.BadRequest
 final class VersionSchemeAction(key: String)(
     implicit val executionContext: ExecutionContext,
     writes: Writes[ParsingError]
-) extends ActionRefiner[PersonRequest, VersionSchemeRequest] {
+) extends ActionRefiner[UserRequest, VersionSchemeRequest] {
 
-  def refine[A](input: PersonRequest[A]) = Future.successful {
+  def refine[A](input: UserRequest[A]) = Future.successful {
     input.headers.get(key) match {
       case Some(str) =>
         VersionSchemeParser.parser.parse(str)._1 match {

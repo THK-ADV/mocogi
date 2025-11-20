@@ -40,7 +40,7 @@ final class ModuleDeletionRepository @Inject() (
    * - the associated merge request is closed
    */
   def delete(module: UUID): Future[Unit] = {
-    def deleteFileInDir(path: Path, module: UUID) =
+    def deleteFileInDir(path: Path, module: UUID): Unit =
       path.foreachFileOfDirectory { p =>
         if p.getFileName.toString.startsWith(module.toString) then {
           Files.delete(p)

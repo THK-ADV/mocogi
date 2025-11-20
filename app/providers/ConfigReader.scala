@@ -45,6 +45,7 @@ final class ConfigReader @Inject() (val config: Configuration) {
     "pandoc.moduleCatalogOutputFolderPath"
   )
 
+  @deprecated
   def electivesCatalogOutputFolderPath: String = config.nonEmptyString(
     "pandoc.electivesCatalogOutputFolderPath"
   )

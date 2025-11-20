@@ -41,6 +41,7 @@ import service.LatexCompiler
 import service.ModuleService
 
 // TODO: merge this call with ModuleCatalogPreviewService somehow
+@deprecated
 @Singleton
 final class ModuleCatalogService @Inject() (
     private val apiAvailableService: GitAvailabilityChecker,
