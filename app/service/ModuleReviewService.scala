@@ -23,6 +23,7 @@ import models.ModuleReviewStatus.Rejected
 import models.ModuleReviewSummaryStatus.WaitingForChanges
 import models.ModuleReviewSummaryStatus.WaitingForReview
 import ops.FutureOps.Ops
+import permission.PermissionType.ApprovalFastForward
 import permission.Permissions
 import play.api.Logging
 
@@ -66,7 +67,7 @@ final class ModuleReviewService @Inject() (
    * @return
    */
   def create(moduleId: UUID, author: Identity.Person, permissions: Permissions): Future[Unit] = {
-    val approvalFastForward = permissions.approvalFastForwardPermissions match {
+    val approvalFastForward = permissions.get(ApprovalFastForward) match {
       case Some(pos) if pos.nonEmpty => moduleUpdatePermissionService.isModulePartOfPO(moduleId, pos)
       case _                         => Future.successful(false)
     }

@@ -1,7 +1,6 @@
 package permission
 
 import permission.PermissionType.Admin
-import permission.PermissionType.ApprovalFastForward
 import permission.PermissionType.ArtifactsCreate
 import permission.PermissionType.ArtifactsPreview
 
@@ -37,9 +36,6 @@ case class Permissions(private val permissions: Map[PermissionType, Set[String]]
 
   def modulePermissions: Option[Set[String]] =
     request(PermissionType.Module)
-
-  def approvalFastForwardPermissions: Option[Set[String]] =
-    request(ApprovalFastForward)
 
   def hasAnyPermission(perms: PermissionType*): Boolean =
     permissions.contains(Admin) || perms.exists(permissions.contains)
