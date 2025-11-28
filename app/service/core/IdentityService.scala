@@ -13,6 +13,7 @@ import models.core.Identity.toDbEntry
 import models.core.Identity.Person
 import models.UserInfo
 import parsing.core.IdentityFileParser
+import permission.PermissionType.ApprovalFastForward
 import permission.PermissionType.ArtifactsCreate
 import permission.PermissionType.ArtifactsPreview
 import permission.PermissionType.Module
@@ -58,10 +59,13 @@ final class IdentityService @Inject() (
       val hasModuleReviewPrivileges = userInfo.hasModuleReviewPrivileges || permissions.isAdmin
       // Has direct grant, or Module permission
       val hasModulesToEdit = userInfo.hasModulesToEdit || permissions.hasAnyPermission(Module)
+      // Get directly from permissions because they are already resolved
+      val fastForwardApprovalPOs = permissions.request(ApprovalFastForward)
       userInfo.copy(
         hasDirectorPrivileges = hasDirectorPrivileges,
         hasModuleReviewPrivileges = hasModuleReviewPrivileges,
-        hasModulesToEdit = hasModulesToEdit
+        hasModulesToEdit = hasModulesToEdit,
+        fastForwardApprovalPOs = fastForwardApprovalPOs
       )
     }
 }

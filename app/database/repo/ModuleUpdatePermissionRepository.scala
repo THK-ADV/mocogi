@@ -116,7 +116,6 @@ final class ModuleUpdatePermissionRepository @Inject() (
     db.run(query)
   }
 
-  // This function is only used for accreditation members which can access all the modules for a given PO
   def allForPos(pos: Set[String]): Future[String] = {
     val query = sql"select get_modules_for_po(#${arrayLiteral(pos)}::text[])".as[String].head
     db.run(query)

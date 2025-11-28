@@ -23,6 +23,7 @@ final class GitConfigProvider @Inject() (config: ConfigReader) extends Provider[
       config.gitModuleCompanionFolder,
       config.autoApprovedLabel,
       config.reviewRequiredLabel,
+      config.fastForwardLabel,
       config.defaultEmail,
       config.defaultUser
     )

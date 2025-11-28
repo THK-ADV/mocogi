@@ -294,7 +294,7 @@ final class ModuleCatalogService @Inject() (
         s"Module Catalog for ${semester.deLabel} ${semester.year}",
         "",
         needsApproval = false,
-        config.moduleCatalogLabel
+        List(config.moduleCatalogLabel)
       )
       .map { res =>
         logger.info(

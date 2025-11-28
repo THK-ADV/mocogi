@@ -79,8 +79,9 @@ final class ConfigReader @Inject() (val config: Configuration) {
 
   def autoApprovedLabel: String = config.nonEmptyString("git.autoApprovedLabel")
 
-  def reviewRequiredLabel: String =
-    config.nonEmptyString("git.reviewRequiredLabel")
+  def reviewRequiredLabel: String = config.nonEmptyString("git.reviewRequiredLabel")
+
+  def fastForwardLabel: String = config.nonEmptyString("git.fastForwardLabel")
 
   def bigBangLabel = config.nonEmptyString("git.bigBangLabel")
 

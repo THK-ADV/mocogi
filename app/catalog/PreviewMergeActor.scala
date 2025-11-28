@@ -74,7 +74,7 @@ object PreviewMergeActor {
           s"Big Bang for ${semester.deLabel} ${semester.year}",
           "",
           needsApproval = false,
-          gitLabel
+          List(gitLabel)
         )
         _ = logger.info(
           s"successfully created merge request with id ${mrId.value} and status ${mrStatus.id}"

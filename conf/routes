@@ -82,6 +82,7 @@ GET           /moduleDrafts/:id/mrurl                                 controller
 GET           /moduleReviews                                          controllers.ModuleDraftReviewController.moduleReviews()
 GET           /moduleReviews/:moduleId                                controllers.ModuleDraftReviewController.getForModule(moduleId: java.util.UUID)
 POST          /moduleReviews/:id                                      controllers.ModuleDraftReviewController.create(id: java.util.UUID)
+POST          /moduleReviews/:id/ff                                   controllers.ModuleDraftReviewController.fastForward(id: java.util.UUID)
 DELETE        /moduleReviews/:id                                      controllers.ModuleDraftReviewController.delete(id: java.util.UUID)
 PUT           /moduleReviews                                          controllers.ModuleDraftReviewController.update()
 GET           /moduleReviewKeys                                       controllers.ModuleDraftReviewController.keys()
