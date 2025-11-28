@@ -32,7 +32,7 @@ final class GitMergeRequestApiService @Inject() (
       title: String,
       description: String,
       needsApproval: Boolean,
-      label: String
+      labels: List[String]
   ): Future[(MergeRequestId, MergeRequestStatus)] =
     ws
       .url(mergeRequestUrl)
@@ -46,7 +46,7 @@ final class GitMergeRequestApiService @Inject() (
         "squash_on_merge"        -> true.toString,
         "squash"                 -> true.toString,
         "approvals_before_merge" -> (if (needsApproval) 1 else 0).toString,
-        "labels"                 -> label
+        "labels"                 -> labels.mkString(",")
       )
       .post(EmptyBody)
       .flatMap { res =>

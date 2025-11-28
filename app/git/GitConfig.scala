@@ -15,6 +15,7 @@ case class GitConfig(
     moduleCompanionFolder: String,
     autoApprovedLabel: String,
     reviewRequiredLabel: String,
+    fastForwardLabel: String,
     defaultEmail: String,
     defaultUser: String
 )

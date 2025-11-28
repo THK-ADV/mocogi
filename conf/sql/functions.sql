@@ -18,7 +18,7 @@ DROP FUNCTION IF EXISTS get_module_details (uuid) CASCADE;
 
 DROP FUNCTION IF EXISTS calculate_module_draft_state (module_draft) CASCADE;
 
-DROP FUNCTION IF EXISTS build_module_info_json (bool, module, created_module_in_draft, module_draft) CASCADE;
+DROP FUNCTION IF EXISTS build_module_info_json (bool, module, created_module_in_draft, module_draft, text[], text[]) CASCADE;
 
 DROP FUNCTION IF EXISTS get_modules_for_user (text) CASCADE;
 
@@ -271,14 +271,14 @@ CREATE OR REPLACE FUNCTION calculate_module_draft_state (md module_draft)
         END
 $$;
 
-CREATE OR REPLACE FUNCTION build_module_info_json (inherited_perm bool, m module, cm created_module_in_draft, md module_draft)
+CREATE OR REPLACE FUNCTION build_module_info_json (inherited_perm bool, m module, cm created_module_in_draft, md module_draft, po_mandatory text[], po_optional text[])
     RETURNS jsonb
     LANGUAGE sql
     IMMUTABLE
     AS $$
     SELECT
         -- coalesce with module drafts first (md), because they represent the latest data
-        json_build_object('isModuleManager', inherited_perm, 'isNewModule', cm.module IS NOT NULL, 'module', json_build_object('id', coalesce(md.module, cm.module, m.id), 'title', coalesce(md.module_title, cm.module_title, m.title), 'abbreviation', coalesce(md.module_abbrev, cm.module_abbrev, m.abbrev)), 'ects', coalesce((md.module_json -> 'metadata' -> 'ects')::numeric, cm.module_ects, m.ects), 'mandatoryPOs', cm.module_mandatory_pos, 'moduleDraftState', calculate_module_draft_state (md), 'moduleDraft', CASE WHEN md.module IS NOT NULL THEN
+        json_build_object('isModuleManager', inherited_perm, 'isNewModule', cm.module IS NOT NULL, 'module', json_build_object('id', coalesce(md.module, cm.module, m.id), 'title', coalesce(md.module_title, cm.module_title, m.title), 'abbreviation', coalesce(md.module_abbrev, cm.module_abbrev, m.abbrev)), 'ects', coalesce((md.module_json -> 'metadata' -> 'ects')::numeric, cm.module_ects, m.ects), 'mandatoryPOs', po_mandatory, 'optionalPOs', po_optional, 'moduleDraftState', calculate_module_draft_state (md), 'moduleDraft', CASE WHEN md.module IS NOT NULL THEN
             json_build_object('id', md.module, 'title', md.module_title, 'abbreviation', md.module_abbrev, 'modifiedKeys', md.modified_keys, 'keysToBeReviewed', md.keys_to_be_reviewed)
         END)::jsonb
 $$;
@@ -292,14 +292,36 @@ CREATE OR REPLACE FUNCTION get_modules_for_user (campus_id_param text)
     STABLE
     AS $$
     SELECT
-        coalesce(json_agg(build_module_info_json (kind = 'inherited', m, cm, md))::jsonb, '[]'::jsonb)
+        coalesce(json_agg(build_module_info_json (kind = 'inherited', m, cm, md, po_mandatory, po_optional))::jsonb, '[]'::jsonb)
     FROM (
         -- p.module has always a valid module id which is either linked to m, cm or md
         SELECT DISTINCT ON (p.module)
             p.kind,
             m,
             cm,
-            md
+            md,
+            CASE WHEN cm IS NOT NULL THEN
+                cm.module_mandatory_pos
+            ELSE
+                (
+                    SELECT
+                        array_agg(DISTINCT mpm.po)
+                    FROM
+                        module_po_mandatory mpm
+                    WHERE
+                        mpm.module = m.id)
+            END AS po_mandatory,
+            CASE WHEN cm IS NOT NULL THEN
+                cm.module_optional_pos
+            ELSE
+                (
+                    SELECT
+                        array_agg(DISTINCT mpo.po)
+                    FROM
+                        module_po_optional mpo
+                    WHERE
+                        mpo.module = m.id)
+            END AS po_optional
         FROM
             module_update_permission p
         LEFT JOIN module m ON p.module = m.id
@@ -322,14 +344,16 @@ CREATE OR REPLACE FUNCTION get_modules_for_po (pos_param text[])
             OR array_length(pos_param, 1) IS NULL THEN
             '[]'::jsonb
         ELSE
-            coalesce(json_agg(build_module_info_json (FALSE, m, cm, md))::jsonb, '[]'::jsonb)
+            coalesce(json_agg(build_module_info_json (FALSE, m, cm, md, po_mandatory, po_optional))::jsonb, '[]'::jsonb)
         END
     FROM (
         -- Get created_module_in_draft entries that match POs with their drafts
         SELECT DISTINCT ON (cm.module)
             NULL::module AS m,
             cm,
-            md
+            md,
+            cm.module_mandatory_pos AS po_mandatory,
+            cm.module_optional_pos AS po_optional
         FROM
             unnest(pos_param) AS po_id -- full po id
             JOIN created_module_in_draft cm ON (EXISTS (
@@ -353,10 +377,26 @@ CREATE OR REPLACE FUNCTION get_modules_for_po (pos_param text[])
             SELECT DISTINCT ON (m.id)
                 m,
                 NULL::created_module_in_draft AS cm,
-                md
+                md,
+                mpm_agg.po_mandatory AS po_mandatory,
+                mpo_agg.po_optional AS po_optional
             FROM
                 module m
             LEFT JOIN module_draft md ON md.module = m.id
+            LEFT JOIN LATERAL (
+                SELECT
+                    array_agg(DISTINCT mpm.po) AS po_mandatory
+                FROM
+                    module_po_mandatory mpm
+                WHERE
+                    mpm.module = m.id) mpm_agg ON TRUE
+            LEFT JOIN LATERAL (
+                SELECT
+                    array_agg(DISTINCT mpo.po) AS po_optional
+                FROM
+                    module_po_optional mpo
+                WHERE
+                    mpo.module = m.id) mpo_agg ON TRUE
             CROSS JOIN unnest(pos_param) AS po_id -- full po id
         WHERE
             NOT EXISTS ( -- ensure that a module is fetched either from module or created_module_in_draft

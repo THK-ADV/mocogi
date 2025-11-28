@@ -63,7 +63,13 @@ final class ModuleDraftReviewController @Inject() (
   // Creates a full review for the module draft
   def create(moduleId: UUID) =
     auth.andThen(resolveUser).andThen(canEditModule(moduleId)).async { (r: UserRequest[AnyContent]) =>
-      moduleReviewService.create(moduleId, r.person, r.permissions).map(_ => Created)
+      moduleReviewService.create(moduleId, r.person).map(_ => Created)
+    }
+
+  // fast-forwards the review if the user is permitted
+  def fastForward(moduleId: UUID) =
+    auth.andThen(resolveUser).andThen(canEditModule(moduleId)).andThen(canFastForwardReview(moduleId)).async {
+      (r: UserRequest[AnyContent]) => moduleReviewService.fastForward(moduleId, r.person).map(_ => Created)
     }
 
   // Deletes a full review for the module draft

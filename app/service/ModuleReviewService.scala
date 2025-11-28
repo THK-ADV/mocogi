@@ -23,7 +23,6 @@ import models.ModuleReviewStatus.Rejected
 import models.ModuleReviewSummaryStatus.WaitingForChanges
 import models.ModuleReviewSummaryStatus.WaitingForReview
 import ops.FutureOps.Ops
-import permission.PermissionType.ApprovalFastForward
 import permission.Permissions
 import play.api.Logging
 
@@ -34,7 +33,6 @@ final class ModuleReviewService @Inject() (
     private val directorsRepository: StudyProgramDirectorsRepository,
     private val api: GitMergeRequestApiService,
     private val keysToReview: ModuleKeysToReview,
-    private val moduleUpdatePermissionService: ModuleUpdatePermissionService,
     private implicit val ctx: ExecutionContext
 ) extends Logging {
 
@@ -54,10 +52,9 @@ final class ModuleReviewService @Inject() (
     if permissions.isAdmin then Future.successful(true) else reviewRepo.canApproveModule(moduleId, person)
 
   /**
-   * The creation process is three-stage:
-   * - 1. If the user has special permissions to fast-forward the review, the merge request is instantly accepted and merged
-   * - 2. If the draft contains changes which need to be reviewed, a merge request is created along with reviews
-   * - 3. Otherwise, an instantly accepted and merged request is created
+   * The creation process is two-stage:
+   * - 1. If the draft contains changes which need to be reviewed, a merge request is created along with reviews
+   * - 2. Otherwise, an instantly accepted and merged request is created.
    * The module draft is updated with the merge request ID afterward.
    *
    * @param moduleId
@@ -66,29 +63,41 @@ final class ModuleReviewService @Inject() (
    *   Author of the merge request
    * @return
    */
-  def create(moduleId: UUID, author: Identity.Person, permissions: Permissions): Future[Unit] = {
-    val approvalFastForward = permissions.get(ApprovalFastForward) match {
-      case Some(pos) if pos.nonEmpty => moduleUpdatePermissionService.isModulePartOfPO(moduleId, pos)
-      case _                         => Future.successful(false)
-    }
-
+  def create(moduleId: UUID, author: Identity.Person): Future[Unit] = {
     val draft = draftRepo.getByModule(moduleId).continueIf(_.state().canRequestReview, "can't request a review")
-
     for {
-      draft               <- draft
-      approvalFastForward <- approvalFastForward
+      draft <- draft
       mergeRequest <-
-        if draft.keysToBeReviewed.isEmpty || approvalFastForward then createAutoAcceptedReview(draft, author)
+        if draft.keysToBeReviewed.isEmpty then createAutoAcceptedReview(draft, author)
         else createApproveReview(draft, author)
       _ <- draftRepo.updateMergeRequest(draft.module, Some(mergeRequest))
     } yield {
-      val autoApproved = draft.keysToBeReviewed.isEmpty
-      val sb           = new StringBuilder(s"Successfully created merge request by ${author.id} and id ${mergeRequest._1.value}.")
-      if approvalFastForward then sb.append(" Approval fast-forward.")
-      else if autoApproved then sb.append(" Auto approved.")
-      else sb.append(" Needs review.")
-      logger.info(sb.toString())
+      val approvalLabel = if draft.keysToBeReviewed.isEmpty then "is auto approved" else "needs review"
+      logger.info(
+        s"Successfully created merge request by ${author.id} and id ${mergeRequest._1.value} which $approvalLabel"
+      )
     }
+  }
+
+  /**
+   * The merge request is instantly accepted and merged.
+   * Ensure that permissions are checked before the function is called.
+   *
+   * @param moduleId
+   * ID of the module draft
+   * @param author
+   * Author of the merge request
+   * @return
+   */
+  def fastForward(moduleId: UUID, author: Identity.Person): Future[Unit] = {
+    val draft = draftRepo.getByModule(moduleId).continueIf(_.state().canRequestReview, "can't request a review")
+    for {
+      draft        <- draft
+      mergeRequest <- createFastForwardReview(draft, author)
+      _            <- draftRepo.updateMergeRequest(draft.module, Some(mergeRequest))
+    } yield logger.info(
+      s"Successfully created merge request by ${author.id} and id ${mergeRequest._1.value} which was instantly approved"
+    )
   }
 
   /**
@@ -290,7 +299,8 @@ final class ModuleReviewService @Inject() (
         draft,
         mrTitle(author, protocol.metadata),
         mrDesc(draft.modifiedKeys, draft.keysToBeReviewed, reviewer(directors)),
-        needsApproval = true
+        needsApproval = true,
+        List(api.config.reviewRequiredLabel)
       )
     } yield mergeRequest
   }
@@ -301,7 +311,19 @@ final class ModuleReviewService @Inject() (
         draft,
         mrTitle(author, draft.protocol().metadata),
         mrDescAutoAccepted(draft.modifiedKeys),
-        needsApproval = false
+        needsApproval = false,
+        List(api.config.autoApprovedLabel)
+      )
+    } yield (mergeRequestId, status)
+
+  private def createFastForwardReview(draft: ModuleDraft, author: Identity.Person): Future[MergeRequest] =
+    for {
+      (mergeRequestId, status) <- createMergeRequest(
+        draft,
+        mrTitle(author, draft.protocol().metadata),
+        mrDescAutoAccepted(draft.modifiedKeys),
+        needsApproval = false,
+        List(api.config.autoApprovedLabel, api.config.fastForwardLabel)
       )
     } yield (mergeRequestId, status)
 
@@ -309,7 +331,8 @@ final class ModuleReviewService @Inject() (
       draft: ModuleDraft,
       title: String,
       description: String,
-      needsApproval: Boolean
+      needsApproval: Boolean,
+      labels: List[String]
   ): Future[MergeRequest] =
     api.create(
       draft.branch,
@@ -317,8 +340,7 @@ final class ModuleReviewService @Inject() (
       title,
       description,
       needsApproval,
-      if (needsApproval) api.config.reviewRequiredLabel
-      else api.config.autoApprovedLabel
+      labels
     )
 
   private def mrTitle(author: Identity.Person, metadata: MetadataProtocol) =

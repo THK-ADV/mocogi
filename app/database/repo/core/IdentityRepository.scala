@@ -48,7 +48,7 @@ class IdentityRepository @Inject() (
     db.run(tableQuery.filter(_.id.inSet(ids)).delete)
 
   private given GetResult[UserInfo] =
-    GetResult(r => UserInfo(r.nextBoolean(), r.nextBoolean(), r.nextBoolean(), r.nextInt(), r.nextInt()))
+    GetResult(r => UserInfo(r.nextBoolean(), r.nextBoolean(), r.nextBoolean(), r.nextInt(), r.nextInt(), None))
 
   def getUserInfo(id: String, campusId: String): Future[UserInfo] = {
     val query = sql"select * from get_user_info($id::text, $campusId::text)".as[UserInfo].head
