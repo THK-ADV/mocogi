@@ -1,8 +1,5 @@
 package database.repo
 
-import java.nio.file.Files
-import java.nio.file.Path
-import java.nio.file.Paths
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -17,7 +14,6 @@ import database.table.ModuleReviewTable
 import database.table.ModuleUpdatePermissionTable
 import database.table.PermittedAssessmentMethodForModuleTable
 import database.view.ModuleViewRepository
-import ops.FileOps.FileOps0
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.db.slick.HasDatabaseConfigProvider
 import providers.ConfigReader
@@ -40,12 +36,6 @@ final class ModuleDeletionRepository @Inject() (
    * - the associated merge request is closed
    */
   def delete(module: UUID): Future[Unit] = {
-    def deleteFileInDir(path: Path, module: UUID): Unit =
-      path.foreachFileOfDirectory { p =>
-        if p.getFileName.toString.startsWith(module.toString) then {
-          Files.delete(p)
-        }
-      }
     val action = for
       _ <- moduleRepository.deleteDependencies(module)
       _ <- moduleRepository.tableQuery.filter(_.id === module).delete
@@ -60,11 +50,6 @@ final class ModuleDeletionRepository @Inject() (
     for
       _ <- db.run(action.transactionally)
       _ <- moduleViewRepository.refreshView()
-    yield {
-      val dePath = Paths.get(configReader.deOutputFolderPath)
-      val enPath = Paths.get(configReader.enOutputFolderPath)
-      deleteFileInDir(dePath, module)
-      deleteFileInDir(enPath, module)
-    }
+    yield ()
   }
 }

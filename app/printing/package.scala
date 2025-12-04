@@ -2,7 +2,6 @@ import java.time.format.DateTimeFormatter
 
 import models.core.*
 
-// TODO: remove if needed
 package object printing {
   def localDatePattern = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm")
 

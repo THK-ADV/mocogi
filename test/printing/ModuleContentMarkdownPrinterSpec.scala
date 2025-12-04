@@ -12,18 +12,18 @@ final class ModuleContentMarkdownPrinterSpec extends AnyWordSpec with PrinterSpe
     new DefaultMessagesApi(
       Map(
         "de" -> Map(
-          "latex.module_catalog.content.learning_outcome" -> "Angestrebte Lernergebnisse",
-          "latex.module_catalog.content.module"           -> "Modulinhalte",
-          "latex.module_catalog.content.teaching_methods" -> "Lehr- und Lernmethoden (Medienformen)",
-          "latex.module_catalog.content.reading"          -> "Empfohlene Literatur",
-          "latex.module_catalog.content.particularities"  -> "Besonderheiten",
+          "markdown.content.learning_outcome" -> "Angestrebte Lernergebnisse",
+          "markdown.content.module"           -> "Modulinhalte",
+          "markdown.content.teaching_methods" -> "Lehr- und Lernmethoden (Medienformen)",
+          "markdown.content.reading"          -> "Empfohlene Literatur",
+          "markdown.content.particularities"  -> "Besonderheiten",
         ),
         "en" -> Map(
-          "latex.module_catalog.content.learning_outcome" -> "Learning Outcome",
-          "latex.module_catalog.content.module"           -> "Module Content",
-          "latex.module_catalog.content.teaching_methods" -> "Teaching and Learning Methods",
-          "latex.module_catalog.content.reading"          -> "Recommended Reading",
-          "latex.module_catalog.content.particularities"  -> "Particularities",
+          "markdown.content.learning_outcome" -> "Learning Outcome",
+          "markdown.content.module"           -> "Module Content",
+          "markdown.content.teaching_methods" -> "Teaching and Learning Methods",
+          "markdown.content.reading"          -> "Recommended Reading",
+          "markdown.content.particularities"  -> "Particularities",
         ),
       )
     )

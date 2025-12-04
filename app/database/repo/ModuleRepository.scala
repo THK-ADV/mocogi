@@ -128,21 +128,6 @@ final class ModuleRepository @Inject() (
     )
 
   // TODO this should be used to fetch modules for po
-  def allActiveFromMandatoryPO(po: String | Specialization): Future[Seq[(ModuleProtocol, LocalDateTime)]] = {
-    val poFilter: ModuleTable => Rep[Boolean] = po match
-      case po: String =>
-        t => modulePOMandatoryTable.filter(a => t.id === a.module && a.po === po && t.isActive()).exists
-      case Specialization(id, _, _, po) =>
-        t =>
-          modulePOMandatoryTable
-            .filter(a =>
-              t.id === a.module && a.po === po && t.isActive() && a.specialization.map(_ === id).getOrElse(true)
-            )
-            .exists
-    retrieve(tableQuery.filter(poFilter))
-  }
-
-  // TODO this should be used to fetch modules for po
   def allFromPO(po: String | Specialization, activeOnly: Boolean): Future[Seq[(ModuleProtocol, LocalDateTime)]] = {
     val poFilter: ModuleTable => Rep[Boolean] = po match
       case po: String =>

@@ -9,7 +9,5 @@ import models.ModuleKeysToReview
 @Singleton()
 final class ModuleKeysToReviewProvider @Inject() (config: ConfigReader) extends Provider[ModuleKeysToReview] {
   override def get(): ModuleKeysToReview =
-    ModuleKeysToReview(
-      config.moduleKeysToReviewFromPav.toSet
-    )
+    ModuleKeysToReview(config.moduleKeysToReviewFromPav.toSet)
 }

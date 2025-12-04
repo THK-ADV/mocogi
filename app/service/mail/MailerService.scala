@@ -15,9 +15,10 @@ import play.api.libs.mailer.MailerClient
 import play.api.Logging
 import service.mail.MailerService.SendMail
 
-class MailerService(private val actor: ActorRef):
+class MailerService(private val actor: ActorRef) {
   def sendMail(subject: String, bodyText: String, receiver: NonEmptyList[String], cc: List[String] = Nil): Unit =
     actor ! SendMail(subject, bodyText, receiver, cc)
+}
 
 object MailerService {
   private case class SendMail(subject: String, bodyText: String, receiver: NonEmptyList[String], cc: List[String])

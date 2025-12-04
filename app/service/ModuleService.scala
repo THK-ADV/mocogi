@@ -51,9 +51,6 @@ final class ModuleService @Inject() (
       b <- moduleCreationService.allGeneric()
     yield a.concat(b).distinctBy(_.id)
 
-  def allFromMandatoryPO(po: String | Specialization): Future[Seq[(ModuleProtocol, LocalDateTime)]] =
-    repo.allActiveFromMandatoryPO(po)
-
   def allFromPO(po: String | Specialization, activeOnly: Boolean): Future[Seq[(ModuleProtocol, LocalDateTime)]] =
     repo.allFromPO(po, activeOnly)
 

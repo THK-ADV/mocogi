@@ -12,17 +12,14 @@ import git.*
 import models.ModuleProtocol
 import ops.EitherOps.EThrowableOps
 import parsing.RawModuleParser
-import printing.html.ModuleHTMLPrinter
-import printing.pandoc.PrinterOutput
-import printing.pandoc.PrinterOutputType
 import service.*
 
+@deprecated("replace with Git CLI call")
 @Singleton
 final class GitFileDownloadService @Inject() (
     private val api: GitFileApiService,
     private val commitApiService: GitCommitApiService,
     private val pipeline: MetadataPipeline,
-    private val printer: ModuleHTMLPrinter,
     private implicit val config: GitConfig,
     implicit val ctx: ExecutionContext
 ) {
@@ -74,29 +71,4 @@ final class GitFileDownloadService @Inject() (
       case None =>
         Future.successful(None)
     }
-
-  def downloadModuleFromPreviewBranchAsHTML(module: UUID): Future[Option[String]] =
-    for {
-      content <- downloadFileContentWithLastModified(GitFilePath(module), config.draftBranch)
-      res <- content match {
-        case Some((content, lastModified)) =>
-          for {
-            module <- pipeline.parseValidate(Print(content.value))
-            output <- printer
-              .print(
-                module,
-                lastModified.getOrElse(LocalDateTime.now),
-                PrinterOutputType.HTMLStandalone
-              )
-            res <- output match {
-              case Left(err)                          => Future.failed(err)
-              case Right(PrinterOutput.Text(c, _, _)) => Future.successful(c)
-              case Right(PrinterOutput.File(_, _)) =>
-                Future.failed(new Exception("expected standalone HTML, but was a file"))
-            }
-          } yield Some(res)
-        case None =>
-          Future.successful(None)
-      }
-    } yield res
 }

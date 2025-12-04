@@ -1,4 +1,4 @@
-package printing.latex
+package printing.pandoc
 
 import java.nio.file.Files
 import java.nio.file.Path
@@ -11,9 +11,9 @@ import models.FullPoId
 import ops.FileOps.FileOps0
 import play.api.Logging
 
-final class WordTexPrinter(cmd: String, outputFolder: String) extends Logging {
+final class WordLatexPrinter(cmd: String, outputFolder: String) extends Logging {
 
-  def toTex(wordPath: Path, fullPoId: FullPoId): Try[Path] =
+  def toLatex(wordPath: Path, fullPoId: FullPoId): Try[Path] =
     Try {
       isWordFile(wordPath)
       val dir              = createFolder(fullPoId.id)

@@ -11,7 +11,6 @@ import scala.util.Success
 import database.view.ModuleViewRepository
 import database.view.StudyProgramViewRepository
 import git.publisher.CoreDataPublisher.Handle
-import git.subscriber.CoreDataPublishActor
 import git.GitFile
 import git.GitFileContent
 import models.core.*
@@ -38,7 +37,6 @@ object CoreDataPublisher {
       specializationService: SpecializationService,
       studyProgramViewRepository: StudyProgramViewRepository,
       moduleViewRepository: ModuleViewRepository,
-      publishActor: CoreDataPublishActor,
       ctx: ExecutionContext
   ) =
     Props(
@@ -55,7 +53,6 @@ object CoreDataPublisher {
         specializationService,
         studyProgramViewRepository,
         moduleViewRepository,
-        publishActor,
         ctx
       )
     )
@@ -145,7 +142,6 @@ object CoreDataPublisher {
       private val specializationService: SpecializationService,
       private val studyProgramViewRepository: StudyProgramViewRepository,
       private val moduleViewRepository: ModuleViewRepository,
-      private val publishActor: CoreDataPublishActor,
       private implicit val ctx: ExecutionContext
   ) extends Actor
       with Logging {
@@ -200,23 +196,15 @@ object CoreDataPublisher {
           yamlService: YamlService[A],
           getId: Lens[A, String],
           deleteMany: Seq[String] => Future[Int],
-          publish: (Seq[A], Seq[A], Seq[String]) => Unit
       ) =
         for {
           parser       <- yamlService.parser
           parsedValues <- parser.parse(content.value)._1.toFuture
           existing     <- ids
-          (toCreate, toUpdate, toDelete) = split[A](
-            existing,
-            parsedValues,
-            getId
-          )
+          (toCreate, toUpdate, toDelete) = split[A](existing, parsedValues, getId)
           _ <- yamlService.createOrUpdateMany(toCreate.appendedAll(toUpdate))
           _ <- deleteMany(toDelete)
-        } yield {
-          logSuccess(filename, toCreate, toUpdate, toDelete)
-          publish(toCreate, toUpdate, toDelete)
-        }
+        } yield logSuccess(filename, toCreate, toUpdate, toDelete)
 
       filename match {
         case Filenames.location =>
@@ -225,7 +213,6 @@ object CoreDataPublisher {
             locationService,
             GenLens[ModuleLocation](_.id),
             locationService.repo.deleteMany,
-            publishActor.publishLocations
           )
         case Filenames.lang =>
           go(
@@ -233,7 +220,6 @@ object CoreDataPublisher {
             languageService,
             GenLens[ModuleLanguage](_.id),
             languageService.repo.deleteMany,
-            publishActor.publishLanguages
           )
         case Filenames.status =>
           go(
@@ -241,7 +227,6 @@ object CoreDataPublisher {
             statusService,
             GenLens[ModuleStatus](_.id),
             statusService.repo.deleteMany,
-            publishActor.publishModuleStatus
           )
         case Filenames.module_type =>
           go(
@@ -249,7 +234,6 @@ object CoreDataPublisher {
             moduleTypeService,
             GenLens[ModuleType](_.id),
             moduleTypeService.repo.deleteMany,
-            publishActor.publishModuleTypes
           )
         case Filenames.season =>
           go(
@@ -257,7 +241,6 @@ object CoreDataPublisher {
             seasonService,
             GenLens[Season](_.id),
             seasonService.repo.deleteMany,
-            publishActor.publishSeasons
           )
         case Filenames.person =>
           go(
@@ -265,7 +248,6 @@ object CoreDataPublisher {
             identityService,
             Identity.idLens,
             identityService.repo.deleteMany,
-            publishActor.publishIdentities
           )
         case Filenames.po =>
           go(
@@ -273,7 +255,6 @@ object CoreDataPublisher {
             poService,
             GenLens[PO](_.id),
             poService.repo.deleteMany,
-            publishActor.publishPOs
           )
         case Filenames.grade =>
           go(
@@ -281,7 +262,6 @@ object CoreDataPublisher {
             degreeService,
             GenLens[Degree](_.id),
             degreeService.repo.deleteMany,
-            publishActor.publishDegrees
           )
         case Filenames.program =>
           go(
@@ -289,7 +269,6 @@ object CoreDataPublisher {
             studyProgramService,
             GenLens[StudyProgram](_.id),
             studyProgramService.deleteMany,
-            publishActor.publishStudyPrograms
           )
         case Filenames.specialization =>
           go(
@@ -297,7 +276,6 @@ object CoreDataPublisher {
             specializationService,
             GenLens[Specialization](_.id),
             specializationService.repo.deleteMany,
-            publishActor.publishSpecializations
           )
         case _ =>
           logUnknownFile(filename)
