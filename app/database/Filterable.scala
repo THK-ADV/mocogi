@@ -1,8 +1,5 @@
 package database
 
-import scala.annotation.unused
-import scala.concurrent.Future
-
 import play.api.db.slick.HasDatabaseConfigProvider
 import slick.jdbc.JdbcProfile
 
@@ -32,12 +29,4 @@ trait Filterable[Input, T <: slick.jdbc.PostgresProfile.api.Table[Input]] {
 
   final def allWithFilter(filter: Filter): Query[T, Input, Seq] =
     tableQuery.filter(combinePreds(parseFilter(filter)))
-
-  @unused
-  final def getAllWithFilter(filter: Filter): Future[Seq[Input]] =
-    db.run(allWithFilter(filter).result)
-
-  @unused
-  def asBoolean(value: String, p: Boolean => Rep[Boolean]): Rep[Boolean] =
-    value.toBooleanOption.map(p).getOrElse(false)
 }

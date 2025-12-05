@@ -28,7 +28,7 @@ import play.api.libs.json.*
 import play.api.mvc.*
 import play.mvc.Http.HeaderNames
 import printing.latex.TextIntroRewriter
-import printing.latex.WordTexPrinter
+import printing.pandoc.WordLatexPrinter
 import service.ModulePreviewService
 import service.StudyProgramPrivilegesService
 
@@ -122,9 +122,9 @@ final class ModuleCatalogController @Inject() (
             val fullPoId = FullPoId(po)
             // assumes intro is a .docx file
             val wordPath = Paths.get(tmpDir, s"$po.docx")
-            val printer  = WordTexPrinter(wordCmd, mcIntroPath)
+            val printer  = WordLatexPrinter(wordCmd, mcIntroPath)
             val rewriter = TextIntroRewriter()
-            printer.toTex(wordPath, fullPoId).flatMap(rewriter.rewrite) match
+            printer.toLatex(wordPath, fullPoId).flatMap(rewriter.rewrite) match
               case Failure(e) =>
                 ErrorHandler.badRequest(r.toString, e)
               case Success(_) =>

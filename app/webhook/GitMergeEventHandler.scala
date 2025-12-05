@@ -1,34 +1,27 @@
 package webhook
 
-import java.nio.file.Paths
 import java.util.Locale
 import java.util.UUID
 import javax.inject.Singleton
 
 import scala.collection.IndexedSeq
+import scala.concurrent.duration.DurationDouble
 import scala.concurrent.duration.DurationInt
-import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
-import scala.sys.process.Process
-import scala.sys.process.ProcessLogger
 import scala.util.control.NonFatal
 import scala.util.Failure
 import scala.util.Success
 
-import catalog.ModuleCatalogService
 import cats.data.NonEmptyList
-import database.repo.ModuleCatalogGenerationRequestRepository
 import database.repo.ModuleDraftRepository
 import database.repo.ModuleReviewRepository
 import database.repo.ModuleUpdatePermissionRepository
 import git.*
-import git.api.GitBranchService
 import git.api.GitCommitService
 import git.api.GitMergeRequestApiService
 import io.circe.ParsingFailure
 import models.*
-import ops.LoggerOps
 import org.apache.pekko.actor.Actor
 import org.apache.pekko.actor.ActorRef
 import org.apache.pekko.actor.Props
@@ -58,21 +51,15 @@ object GitMergeEventHandler {
       moduleReviewRepository: ModuleReviewRepository,
       moduleDraftRepository: ModuleDraftRepository,
       moduleCreationService: ModuleCreationService,
-      moduleCatalogGenerationRepo: ModuleCatalogGenerationRequestRepository,
       mergeRequestApiService: GitMergeRequestApiService,
-      branchService: GitBranchService,
       gitCommitService: GitCommitService,
-      moduleCatalogService: ModuleCatalogService,
       moduleUpdatePermissionRepository: ModuleUpdatePermissionRepository,
       mailerService: MailerService,
       messages: MessagesApi,
-      bigBangLabel: String,
-      moduleCatalogLabel: String,
       autoApprovedLabel: String,
       reviewRequiredLabel: String,
-      moduleCatalogGenerationDelay: FiniteDuration,
-      maxMergeRetries: Int,
       moduleEditUrl: String,
+      maxMergeRetries: Int,
       ctx: ExecutionContext
   ) = Props(
     new Impl(
@@ -80,21 +67,15 @@ object GitMergeEventHandler {
       moduleReviewRepository,
       moduleDraftRepository,
       moduleCreationService,
-      moduleCatalogGenerationRepo,
       mergeRequestApiService,
-      branchService,
       gitCommitService,
-      moduleCatalogService,
       moduleUpdatePermissionRepository,
       mailerService,
       messages,
-      bigBangLabel,
-      moduleCatalogLabel,
       autoApprovedLabel,
       reviewRequiredLabel,
-      moduleCatalogGenerationDelay,
-      maxMergeRetries,
       moduleEditUrl,
+      maxMergeRetries,
       ctx
     )
   )
@@ -104,25 +85,18 @@ object GitMergeEventHandler {
       moduleReviewRepository: ModuleReviewRepository,
       moduleDraftRepository: ModuleDraftRepository,
       moduleCreationService: ModuleCreationService,
-      moduleCatalogGenerationRepo: ModuleCatalogGenerationRequestRepository,
       mergeRequestApiService: GitMergeRequestApiService,
-      branchService: GitBranchService,
       gitCommitService: GitCommitService,
-      moduleCatalogService: ModuleCatalogService,
       moduleUpdatePermissionRepository: ModuleUpdatePermissionRepository,
       mailerService: MailerService,
       messages: MessagesApi,
-      bigBangLabel: String,
-      moduleCatalogLabel: String,
       autoApprovedLabel: String,
       reviewRequiredLabel: String,
-      moduleCatalogGenerationDelay: FiniteDuration,
-      maxMergeRetries: Int,
       moduleEditUrl: String,
+      maxMergeRetries: Int,
       implicit val ctx: ExecutionContext
   ) extends Actor
-      with Logging
-      with LoggerOps {
+      with Logging {
 
     given Lang(Locale.GERMANY)
 
@@ -138,14 +112,8 @@ object GitMergeEventHandler {
             val targetBranch                  = result._4
             val labels                        = result._5
             (sourceBranch, targetBranch, action) match {
-              case (gitConfig.draftBranch, gitConfig.mainBranch, "open") if labels.contains(bigBangLabel) =>
-                scheduleBigBangMerge
-              case (gitConfig.draftBranch, gitConfig.mainBranch, "merge") if labels.contains(bigBangLabel) =>
-                scheduleModuleCatalogCreation
-              case (_, gitConfig.mainBranch, "open") if labels.contains(moduleCatalogLabel) =>
-                scheduleModuleCatalogMerge
-              case (semesterBranch, gitConfig.mainBranch, "merge") if labels.contains(moduleCatalogLabel) =>
-                resetBigBang(Semester(semesterBranch.value))
+              // Case 1: opened MR from $module_branch into draft branch [AUTO APPROVED]
+              // => schedule merge
               case (moduleBranch, gitConfig.draftBranch, "open") if labels.contains(autoApprovedLabel) =>
                 withUUID(moduleBranch) { moduleId =>
                   scheduleMerge(
@@ -153,16 +121,26 @@ object GitMergeEventHandler {
                     () => self ! MergeModule(id, mrId, moduleId)
                   )
                 }
+
+              // Case 2: merged MR from $module_branch into draft branch [AUTO APPROVED or REVIEW REQUIRED]
+              // => delete module draft, update permissions and create module if it's new
               case (moduleBranch, gitConfig.draftBranch, "merge")
-                  if labels.contains(autoApprovedLabel) ||
-                    labels.contains(reviewRequiredLabel) =>
-                val sha = json.\("object_attributes").\("merge_commit_sha").validate[String].get
+                  if labels.contains(autoApprovedLabel) || labels.contains(reviewRequiredLabel) =>
+                val sha = parseMergeCommitSha(json)
                 withUUID(moduleBranch)(moduleId => handleModuleCreated(id, moduleId, sha))
+
+              // Case 3: merged MR from any branch into draft branch
+              // => for each module, update permissions and create module if it's new
               case (_, gitConfig.draftBranch, "merge") =>
-                val sha = json.\("object_attributes").\("merge_commit_sha").validate[Action].get
+                val sha = parseMergeCommitSha(json)
                 handleModuleBulkUpdate(id, sha)
+
+              // Case 4: closed MR from $module_branch into draft branch [REVIEW REQUIRED]
+              // => handle review reject
               case (moduleBranch, gitConfig.draftBranch, "close") if labels.contains(reviewRequiredLabel) =>
                 withUUID(moduleBranch)(moduleId => handleReviewReject(moduleId))
+
+              // Case 5: unknown action => abort
               case _ =>
                 abort(id, result)
             }
@@ -170,53 +148,32 @@ object GitMergeEventHandler {
             logUnhandedEvent(logger, errors)
             self ! Finished(id)
         }
+
+      // Merge module MR and update merge request status of the module. This will eventually trigger case 2
       case MergeModule(id, mrID, moduleId) =>
-        mergeModuleBranch(id, mrID, moduleId).onComplete {
-          case Success(_) =>
-            self ! Finished(id)
-          case Failure(e) =>
-            logFailure(e)
-            self ! Finished(id)
-        }
-      case MergePreview(id, mrId, r) =>
-        mergePreviewBranch(id, mrId, r).onComplete {
-          case Success(_) =>
-            self ! Finished(id)
-          case Failure(e) =>
-            logFailure(e)
-            self ! Finished(id)
-        }
-      case MergeModuleCatalog(id, mrId) =>
-        mergeModuleCatalogBranch(id, mrId).onComplete {
-          case Success(_) =>
-            self ! Finished(id)
-          case Failure(e) =>
-            logFailure(e)
-            self ! Finished(id)
-        }
-      case CreateModuleCatalogs(id, semesterId) =>
-        logger.info(
-          s"[$id][${Thread.currentThread().getName.last}] starting with module catalog generation..."
+        logger.info(s"[$id][${Thread.currentThread().getName.last}] merging...")
+        val f = for {
+          mrStatus <- mergeRequestApiService.merge(mrID)
+          _        <- moduleDraftRepository.updateMergeRequestStatus(moduleId, mrStatus)
+        } yield logger.info(
+          s"[$id][${Thread.currentThread().getName.last}] successfully merged request with id ${mrID.value}"
         )
-        moduleCatalogService
-          .createAndOpenMergeRequest(semesterId)
-          .onComplete {
-            case Success(_) =>
-              self ! Finished(id)
-            case Failure(e) =>
-              logFailure(e)
-              self ! Finished(id)
-          }
+        f.onComplete {
+          case Success(_) =>
+            self ! Finished(id)
+          case Failure(e) =>
+            logger.error(s"[$id][${Thread.currentThread().getName.last}] failed to merge module", e)
+            self ! Finished(id)
+        }
+
+      // Check if the merge request is mergeable. If so, merge the module (case 2). Otherwise, schedule a new attempt with logarithmic backoff
       case CheckMrStatus(id, mrId, attempt, max, merge) =>
         if (attempt < max) {
-          logger.info(
-            s"[$id][${Thread.currentThread().getName.last}] attempt $attempt"
-          )
+          logger.info(s"[$id][${Thread.currentThread().getName.last}] attempt $attempt")
           mergeRequestApiService.get(mrId).onComplete {
             case Success((_, json)) =>
-              val detailedMergeStatus =
-                json.\("detailed_merge_status").validate[String].get
-              val mergeStatus = json.\("merge_status").validate[String].get
+              val detailedMergeStatus = json.\("detailed_merge_status").validate[String].get
+              val mergeStatus         = json.\("merge_status").validate[String].get
               logger.info(
                 s"[$id][${Thread.currentThread().getName.last}] mergeStatus: $mergeStatus, detailedMergeStatus: $detailedMergeStatus"
               )
@@ -226,148 +183,31 @@ object GitMergeEventHandler {
                 scheduleMerge(attempt + 1, merge)(id, mrId)
               }
             case Failure(e) =>
-              logFailure(e)
+              logger.error(s"[$id][${Thread.currentThread().getName.last}] failed to check merge request status", e)
               self ! Finished(id)
           }
         } else {
-          logger.info(
-            s"[$id][${Thread.currentThread().getName.last}] no attempts left ($attempt / $max)"
-          )
+          logger.info(s"[$id][${Thread.currentThread().getName.last}] no attempts left ($attempt / $max)")
           self ! Finished(id)
         }
-      case MakeChange(id) =>
-        val builder = new StringBuilder()
-        val pLogger =
-          ProcessLogger(
-            a => builder.append(s"$a\n"),
-            a => builder.append(s"${Console.RED}$a${Console.RESET}\n")
-          )
-        val process = Process(
-          command = Seq(
-            "/bin/bash",
-            "../../bigbang_test.sh"
-          ),
-          cwd = Paths.get("gitlab/modulhandbuecher_test").toAbsolutePath.toFile
-        )
-        val res = process ! pLogger
-        if (res == 0) {
-          logger.info(
-            s"[$id][${Thread.currentThread().getName.last}] successfully executed bigbang script"
-          )
-          self ! Finished(id)
-        } else {
-          logger.error(
-            s"[$id][${Thread.currentThread().getName.last}] err executing bigbang script: ${builder.toString()}"
-          )
-          self ! Finished(id)
-        }
+
       case Finished(id) =>
         logger.info(s"[$id][${Thread.currentThread().getName.last}] finished!")
     }
 
-    private case class MergeModule(
-        id: UUID,
-        mrId: MergeRequestId,
-        moduleId: UUID
-    )
-
-    private case class MergeModuleCatalog(
-        id: UUID,
-        mrId: MergeRequestId
-    )
-
-    private case class MergePreview(
-        id: UUID,
-        mrId: MergeRequestId,
-        request: ModuleCatalogGenerationRequest
-    )
+    private case class MergeModule(id: UUID, mrId: MergeRequestId, moduleId: UUID)
 
     private case class Finished(id: UUID)
 
-    private case class MakeChange(id: UUID)
+    private case class CheckMrStatus(id: UUID, mrId: MergeRequestId, attempt: Int, max: Int, merge: () => Unit)
 
-    private case class CreateModuleCatalogs(
-        id: UUID,
-        semesterId: String
-    )
-
-    private case class CheckMrStatus(
-        id: UUID,
-        mrId: MergeRequestId,
-        attempt: Int,
-        max: Int,
-        merge: () => Unit
-    )
-
-    private def scheduleModuleCatalogMerge(implicit id: UUID, mrId: MergeRequestId): Unit = {
-      scheduleMerge(
-        0,
-        () => self ! MergeModuleCatalog(id, mrId)
-      )
-      self ! Finished(id)
+    private def scheduleMerge(attempt: Int, merge: () => Unit)(implicit id: UUID, mrId: MergeRequestId) = {
+      val delay = Math.pow(2, attempt).seconds + 3.seconds
+      logger.info(s"[$id][${Thread.currentThread().getName.last}] retrying in $delay")
+      context.system.scheduler.scheduleOnce(delay, self, CheckMrStatus(id, mrId, attempt, maxMergeRetries, merge))
     }
 
-    private def scheduleModuleCatalogCreation(implicit id: UUID, mrId: MergeRequestId): Unit =
-      moduleCatalogGenerationRepo.get(mrId).onComplete {
-        case Success(r) =>
-          logger.info(
-            s"[$id][${Thread.currentThread().getName.last}] scheduling module catalog generating in $moduleCatalogGenerationDelay"
-          )
-          context.system.scheduler.scheduleOnce(
-            moduleCatalogGenerationDelay,
-            self,
-            CreateModuleCatalogs(id, r.semesterId)
-          )
-          self ! Finished(id)
-        case Failure(e) =>
-          logFailure(e)
-          self ! Finished(id)
-      }
-
-    private def scheduleMerge(
-        attempt: Int,
-        merge: () => Unit
-    )(implicit id: UUID, mrId: MergeRequestId) =
-      context.system.scheduler.scheduleOnce(
-        3.seconds,
-        self,
-        CheckMrStatus(id, mrId, attempt, maxMergeRetries, merge)
-      )
-
-    private def scheduleBigBangMerge(implicit id: UUID, mrId: MergeRequestId): Unit =
-      moduleCatalogGenerationRepo.get(mrId).onComplete {
-        case Success(r) =>
-          scheduleMerge(0, () => self ! MergePreview(id, mrId, r))
-        case Failure(e) =>
-          logFailure(e)
-          self ! Finished(id)
-      }
-
-    private def resetBigBang(semester: Semester)(implicit id: UUID, mrId: MergeRequestId): Unit = {
-      val f = for {
-        _ <- moduleCatalogGenerationRepo.delete(mrId, semester.id)
-        _ <- branchService.createPreviewBranch()
-      } yield {
-        logger.info(
-          s"[$id][${Thread.currentThread().getName.last}] successfully deleted module generation request with mr id $mrId and semester ${semester.id}"
-        )
-        logger.info(
-          s"[$id][${Thread.currentThread().getName.last}] successfully created a new ${gitConfig.draftBranch.value} branch"
-        )
-      }
-
-      f.onComplete {
-        case Success(_) =>
-          self ! Finished(id)
-        case Failure(e) =>
-          logFailure(e)
-          self ! Finished(id)
-      }
-    }
-
-    private def withUUID(
-        branch: Branch
-    )(k: UUID => Unit)(implicit id: UUID, result: ParseResult): Unit =
+    private def withUUID(branch: Branch)(k: UUID => Unit)(implicit id: UUID, result: ParseResult): Unit =
       try {
         val moduleId = UUID.fromString(branch.value)
         k(moduleId)
@@ -380,50 +220,8 @@ object GitMergeEventHandler {
           self ! Finished(id)
       }
 
-    private def mergeModuleBranch(
-        id: UUID,
-        mrId: MergeRequestId,
-        moduleId: UUID
-    ): Future[Unit] = {
-      logger.info(s"[$id][${Thread.currentThread().getName.last}] merging...")
-      for {
-        mrStatus <- mergeRequestApiService.merge(mrId)
-        _ <- moduleDraftRepository.updateMergeRequestStatus(
-          moduleId,
-          mrStatus
-        )
-      } yield logger.info(
-        s"[$id][${Thread.currentThread().getName.last}] successfully merged request with id ${mrId.value}"
-      )
-    }
-
-    private def mergePreviewBranch(
-        id: UUID,
-        mrId: MergeRequestId,
-        request: ModuleCatalogGenerationRequest
-    ) = {
-      logger.info(s"[$id][${Thread.currentThread().getName.last}] merging...")
-      for {
-        mrStatus <- mergeRequestApiService.merge(mrId)
-        _        <- moduleCatalogGenerationRepo.update(mrStatus, request)
-      } yield logger.info(
-        s"[$id][${Thread.currentThread().getName.last}] successfully merged request with id ${mrId.value}"
-      )
-    }
-
-    private def mergeModuleCatalogBranch(
-        id: UUID,
-        mrId: MergeRequestId
-    ) = {
-      logger.info(s"[$id][${Thread.currentThread().getName.last}] merging...")
-      mergeRequestApiService
-        .merge(mrId)
-        .map(_ =>
-          logger.info(
-            s"[$id][${Thread.currentThread().getName.last}] successfully merged request with id ${mrId.value}"
-          )
-        )
-    }
+    private def parseMergeCommitSha(json: JsValue): String =
+      json.\("object_attributes").\("merge_commit_sha").validate[String].get
 
     private def parse(json: JsValue): JsResult[ParseResult] = {
       val attrs = json.\("object_attributes")
@@ -512,6 +310,7 @@ object GitMergeEventHandler {
       }
     }
 
+    // TODO: class MailComposer?
     private def handleReviewReject(module: UUID)(using id: UUID): Unit = {
       def sendMail(rejectedReview: ModuleReview.Atomic) = {
         for

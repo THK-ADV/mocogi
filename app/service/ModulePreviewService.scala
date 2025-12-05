@@ -35,7 +35,7 @@ import printing.latex.snippet.LatexContentSnippet
 import printing.latex.snippet.LayoutContentSnippet
 import printing.latex.ModuleCatalogLatexPrinter
 import printing.latex.Payload
-import printing.pandoc.PandocApi
+import printing.pandoc.MarkdownLatexPrinter
 import service.core.IdentityService
 import service.modulediff.ModuleProtocolDiff
 import service.LatexCompiler.compile
@@ -55,10 +55,10 @@ final class ModulePreviewService @Inject() (
     assessmentMethodService: AssessmentMethodService,
     specializationRepository: SpecializationRepository,
     poRepository: PORepository,
-    pandocApi: PandocApi,
     messagesApi: MessagesApi,
     @Named("path.mcIntro") mcIntroPath: String,
     @Named("path.mcAssets") mcAssetsPath: String,
+    @Named("cmd.tex") texCommand: String,
     implicit val ctx: ExecutionContext
 ) extends Logging {
 
@@ -166,10 +166,11 @@ final class ModulePreviewService @Inject() (
         studyPrograms,
         liveModules ++ createdModules
       )
+      val markdownLatexPrinter = new MarkdownLatexPrinter(texCommand)
       val printer = semester match {
         case Some(value) =>
           ModuleCatalogLatexPrinter.default(
-            pandocApi,
+            markdownLatexPrinter,
             messagesApi,
             value,
             latexSnippets,
@@ -181,7 +182,7 @@ final class ModulePreviewService @Inject() (
           )
         case None =>
           ModuleCatalogLatexPrinter.preview(
-            pandocApi,
+            markdownLatexPrinter,
             messagesApi,
             id => diffs.find(_._1.id == id).map(_._2),
             latexSnippets,

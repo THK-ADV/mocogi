@@ -22,7 +22,7 @@ import printing.fmtCommaSeparated
 import printing.fmtDouble
 import printing.fmtIdentity
 import printing.latex.snippet.LatexContentSnippet
-import printing.pandoc.PandocApi
+import printing.pandoc.MarkdownLatexPrinter
 import printing.LocalizedStrings
 import service.modulediff.ModuleProtocolDiff
 
@@ -44,7 +44,7 @@ object ModuleCatalogLatexPrinter {
     s"\\nameref{sec:${module.toString}}"
 
   def preview(
-      pandocApi: PandocApi,
+      printer: MarkdownLatexPrinter,
       messagesApi: MessagesApi,
       diffsForModule: UUID => Option[Set[String]],
       latexSnippets: List[LatexContentSnippet],
@@ -55,7 +55,7 @@ object ModuleCatalogLatexPrinter {
       lang: Lang,
   ) = {
     new ModuleCatalogLatexPrinter(
-      pandocApi,
+      printer,
       messagesApi,
       None,
       pos,
@@ -68,7 +68,7 @@ object ModuleCatalogLatexPrinter {
   }
 
   def default(
-      pandocApi: PandocApi,
+      printer: MarkdownLatexPrinter,
       messagesApi: MessagesApi,
       semester: Semester,
       latexSnippets: List[LatexContentSnippet],
@@ -79,7 +79,7 @@ object ModuleCatalogLatexPrinter {
       lang: Lang
   ) =
     new ModuleCatalogLatexPrinter(
-      pandocApi,
+      printer,
       messagesApi,
       Some(semester),
       pos,
@@ -95,7 +95,7 @@ object ModuleCatalogLatexPrinter {
  * Style from: https://www.overleaf.com/learn/latex/Page_size_and_margins
  */
 final class ModuleCatalogLatexPrinter(
-    pandocApi: PandocApi,
+    printer: MarkdownLatexPrinter,
     messages: MessagesApi,
     semester: Option[Semester],
     pos: Seq[StudyProgramView],
@@ -763,7 +763,7 @@ final class ModuleCatalogLatexPrinter(
   private def particularitiesToLatex(id: UUID, deContent: ModuleContent, enContent: ModuleContent): String = {
     val content = if strings.isGerman then deContent.particularities else enContent.particularities
     if content.nonEmpty && !content.forall(_.isWhitespace) then {
-      pandocApi.toLatex(content) match {
+      printer.toLatex(content) match {
         case Left((e, stdErr)) =>
           logger.error(
             s"""content conversation from markdown to latex failed on $id:
@@ -796,7 +796,7 @@ final class ModuleCatalogLatexPrinter(
           markdownContent.append("\n\n")
         }
     }
-    pandocApi.toLatex(markdownContent.toString()).map(rewriteSubsections) match {
+    printer.toLatex(markdownContent.toString()).map(rewriteSubsections) match {
       case Left((e, stdErr)) =>
         logger.error(
           s"""content conversation from markdown to latex failed on $id:

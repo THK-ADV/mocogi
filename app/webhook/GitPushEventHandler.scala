@@ -14,7 +14,6 @@ import git.api.GitCommitApiService
 import git.api.GitFileDownloadService
 import git.publisher.CoreDataPublisher
 import git.publisher.ModulePublisher
-import ops.LoggerOps
 import org.apache.pekko.actor.Actor
 import org.apache.pekko.actor.ActorRef
 import org.apache.pekko.actor.Props
@@ -144,8 +143,7 @@ object GitPushEventHandler {
       implicit val gitConfig: GitConfig,
       implicit val ctx: ExecutionContext
   ) extends Actor
-      with Logging
-      with LoggerOps {
+      with Logging {
 
     override def receive: Receive = {
       case HandleEvent(json) =>
@@ -165,7 +163,7 @@ object GitPushEventHandler {
                     coreDataPublisher.notifySubscribers(coreFiles)
                     logger.info("finished!")
                   case Failure(e) =>
-                    logFailure(e)
+                    logger.error("failed to download git files", e)
                 }
               }
             }

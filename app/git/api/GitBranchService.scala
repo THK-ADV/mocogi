@@ -15,12 +15,6 @@ final class GitBranchService @Inject() (
     implicit val ctx: ExecutionContext
 ) {
 
-  def createPreviewBranch(): Future[Unit] =
-    apiService.createBranch(
-      apiService.config.draftBranch,
-      apiService.config.mainBranch
-    )
-
   def createModuleBranch(moduleId: UUID): Future[Branch] = {
     val branch = this.branch(moduleId)
     apiService

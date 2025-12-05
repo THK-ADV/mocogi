@@ -4,7 +4,6 @@ import models.core.Identity
 import models.EmploymentType
 import slick.jdbc.PostgresProfile.api.*
 
-// TODO reorder
 case class IdentityDbEntry(
     id: String,
     lastname: Option[String],

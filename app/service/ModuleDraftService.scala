@@ -49,7 +49,7 @@ final class ModuleDraftService @Inject() (
   def getByModuleOpt(moduleId: UUID): Future[Option[ModuleDraft]] =
     repo.getByModuleOpt(moduleId)
 
-  @deprecated
+  @deprecated("we deliberately don't expose an API to create new modules")
   def createNew(
       protocol: ModuleProtocol,
       person: Identity.Person,

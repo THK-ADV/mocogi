@@ -44,12 +44,8 @@ GET           /modules                                                controller
 GET           /modules/:id                                            controllers.ModuleController.get(id: java.util.UUID)
 GET           /modules/:id/preview                                    controllers.ModuleController.getPreview(id: java.util.UUID)
 GET           /modules/:id/latest                                     controllers.ModuleController.getLatest(id: java.util.UUID)
-GET           /modules/:id/file                                       controllers.ModuleController.getFile(id: java.util.UUID)
-GET           /modules/:id/preview/file                               controllers.ModuleController.getPreviewFile(id: java.util.UUID)
-GET           /modules/:id/latest/file                                controllers.ModuleController.getLatestFile(id: java.util.UUID)
 GET           /modules/:id/options                                    controllers.ModuleController.allGenericOptions(id: java.util.UUID)
-
-PUT           /parse                                                  controllers.ModuleController.parseValidate()
+PUT           /modules/parse                                                  controllers.ModuleController.parseValidate()
 
 # Module Catalog
 
@@ -98,4 +94,3 @@ POST          /identities/updateImages                                controller
 
 # Map static resources from the /public folder to the /assets URL path
 GET           /assets/*file                                           controllers.Assets.versioned(path="/public", file: Asset)
-GET           /files/*file                                            controllers.FileController.get(file: Asset)

@@ -13,7 +13,6 @@ lazy val `mocogi` = (project in file("."))
     version           := "1.0",
     scalaVersion      := "3.4.2",
     semanticdbEnabled := true,
-    semanticdbVersion := scalafixSemanticdb.revision,
     scalacOptions += "-Wunused:imports",
     resolvers += "Akka Snapshot Repository".at("https://repo.akka.io/snapshots/"),
     resolvers ++= Resolver.sonatypeOssRepos("snapshots"),
@@ -22,7 +21,6 @@ lazy val `mocogi` = (project in file("."))
     libraryDependencies ++= test,
     libraryDependencies ++= database,
     libraryDependencies += parser,
-    libraryDependencies += kafka,
     libraryDependencies ++= keycloak,
     libraryDependencies ++= optics,
     libraryDependencies += parallelCollections,
@@ -65,8 +63,6 @@ lazy val database = Seq(
   "com.github.tminglei" %% "slick-pg"              % "0.22.2",
   "com.github.tminglei" %% "slick-pg_play-json"    % "0.22.2",
 )
-
-lazy val kafka = "org.apache.kafka" % "kafka-clients" % "3.8.0"
 
 lazy val circle = "io.circe" %% "circe-yaml" % "0.16.0"
 
