@@ -5,6 +5,8 @@
 
 GET           /                                                       controllers.HomeController.index
 
+GET           /service/notifyReviewer                                 controllers.ServiceController.notifyReviewer()
+
 GET           /admin/invalidModuleExams                               controllers.AdminController.invalidModuleExams()
 DELETE        /admin/modules/:id                                      controllers.AdminController.deleteModule(id: java.util.UUID)
 POST          /admin/modules                                          controllers.AdminController.createNewModulesFromDraftBranch()
@@ -45,7 +47,7 @@ GET           /modules/:id                                            controller
 GET           /modules/:id/preview                                    controllers.ModuleController.getPreview(id: java.util.UUID)
 GET           /modules/:id/latest                                     controllers.ModuleController.getLatest(id: java.util.UUID)
 GET           /modules/:id/options                                    controllers.ModuleController.allGenericOptions(id: java.util.UUID)
-PUT           /modules/parse                                                  controllers.ModuleController.parseValidate()
+PUT           /modules/parse                                          controllers.ModuleController.parseValidate()
 
 # Module Catalog
 

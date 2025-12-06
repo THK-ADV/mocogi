@@ -23,9 +23,7 @@ case class AuthorizationAction @Inject() (
       request: Request[A],
       block: TokenRequest[A] => Future[Result]
   ): Future[Result] = {
-    auth.authorize(
-      request.headers.get(Authorization.AuthorizationHeader)
-    ) match {
+    auth.authorize(request.headers.get(Authorization.AuthorizationHeader)) match {
       case Success(token) => block(TokenRequest(request, token))
       case Failure(e) =>
         Future.successful(
