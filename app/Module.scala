@@ -18,7 +18,8 @@ import play.api.Environment
 import printing.yaml.MetadataYamlPrinter
 import providers.*
 import service.exam.ExamLoadService
-import service.mail.MailerService
+import service.mail.MailActor
+import service.mail.MailConfig
 import service.notification.ReviewNotificationActor
 import webhook.GitMergeEventHandler
 import webhook.GitPushEventHandler
@@ -51,9 +52,6 @@ class Module(@unused environment: Environment, configuration: Configuration)
     bind(classOf[GitMergeEventHandler])
       .toProvider(classOf[GitMergeEventHandlerProvider])
       .asEagerSingleton()
-    bind(classOf[MailerService])
-      .toProvider(classOf[MailerServiceProvider])
-      .asEagerSingleton()
     bind(classOf[ExamLoadService])
       .toProvider(classOf[ExamLoadServiceProvider])
       .asEagerSingleton()
@@ -64,9 +62,9 @@ class Module(@unused environment: Environment, configuration: Configuration)
       .toProvider(classOf[AuthorizationProvider])
       .asEagerSingleton()
 
-    bind(classOf[MetadataYamlPrinter]).toInstance(
-      new MetadataYamlPrinter(2)
-    )
+    bind(classOf[MetadataYamlPrinter]).toInstance(new MetadataYamlPrinter(2))
+
+    bind(classOf[MailConfig]).toInstance(MailConfig(configuration.nonEmptyString("mail.sender"), 5))
 
     bind(classOf[String])
       .annotatedWith(Names.named("git.repoUrl"))
@@ -106,5 +104,6 @@ class Module(@unused environment: Environment, configuration: Configuration)
 
     // TODO: apply this to all actors
     bindActor[ReviewNotificationActor]("ReviewNotificationActor")
+    bindActor[MailActor]("MailActor")
   }
 }

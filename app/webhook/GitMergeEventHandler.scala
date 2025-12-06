@@ -32,7 +32,8 @@ import play.api.i18n.Lang
 import play.api.i18n.MessagesApi
 import play.api.libs.json.*
 import play.api.Logging
-import service.mail.MailerService
+import service.mail.MailActor
+import service.mail.MailActor.SendMail
 import service.ModuleCreationService
 
 @Singleton
@@ -54,7 +55,7 @@ object GitMergeEventHandler {
       mergeRequestApiService: GitMergeRequestApiService,
       gitCommitService: GitCommitService,
       moduleUpdatePermissionRepository: ModuleUpdatePermissionRepository,
-      mailerService: MailerService,
+      mailActor: ActorRef,
       messages: MessagesApi,
       autoApprovedLabel: String,
       reviewRequiredLabel: String,
@@ -70,7 +71,7 @@ object GitMergeEventHandler {
       mergeRequestApiService,
       gitCommitService,
       moduleUpdatePermissionRepository,
-      mailerService,
+      mailActor,
       messages,
       autoApprovedLabel,
       reviewRequiredLabel,
@@ -88,7 +89,7 @@ object GitMergeEventHandler {
       mergeRequestApiService: GitMergeRequestApiService,
       gitCommitService: GitCommitService,
       moduleUpdatePermissionRepository: ModuleUpdatePermissionRepository,
-      mailerService: MailerService,
+      mailActor: ActorRef,
       messages: MessagesApi,
       autoApprovedLabel: String,
       reviewRequiredLabel: String,
@@ -340,7 +341,7 @@ object GitMergeEventHandler {
 
           NonEmptyList.fromList(to.toList) match
             case Some(to) =>
-              mailerService.sendMail(
+              mailActor ! SendMail(
                 messages("module_review.rejection.notification.subject", moduleTitle),
                 sb.toString(),
                 to,

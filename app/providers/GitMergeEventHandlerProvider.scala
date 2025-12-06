@@ -1,6 +1,7 @@
 package providers
 
 import javax.inject.Inject
+import javax.inject.Named
 import javax.inject.Provider
 import javax.inject.Singleton
 
@@ -12,9 +13,9 @@ import database.repo.ModuleUpdatePermissionRepository
 import git.api.GitCommitService
 import git.api.GitMergeRequestApiService
 import git.GitConfig
+import org.apache.pekko.actor.ActorRef
 import org.apache.pekko.actor.ActorSystem
 import play.api.i18n.MessagesApi
-import service.mail.MailerService
 import service.ModuleCreationService
 import webhook.GitMergeEventHandler
 
@@ -29,7 +30,7 @@ final class GitMergeEventHandlerProvider @Inject() (
     gitCommitService: GitCommitService,
     moduleCreationService: ModuleCreationService,
     moduleUpdatePermissionRepository: ModuleUpdatePermissionRepository,
-    mailerService: MailerService,
+    @Named("MailActor") mailActor: ActorRef,
     messages: MessagesApi,
     ctx: ExecutionContext
 ) extends Provider[GitMergeEventHandler] {
@@ -43,7 +44,7 @@ final class GitMergeEventHandlerProvider @Inject() (
         mergeRequestApiService,
         gitCommitService,
         moduleUpdatePermissionRepository,
-        mailerService,
+        mailActor,
         messages,
         configReader.autoApprovedLabel,
         configReader.reviewRequiredLabel,

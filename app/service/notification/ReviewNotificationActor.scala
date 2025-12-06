@@ -1,7 +1,6 @@
 package service.notification
 
 import java.util.Locale
-import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Named
 
@@ -13,10 +12,12 @@ import auth.CampusId
 import cats.data.NonEmptyList
 import database.repo.ModuleReviewRepository
 import org.apache.pekko.actor.Actor
+import org.apache.pekko.actor.ActorRef
 import play.api.i18n.Lang
 import play.api.i18n.MessagesApi
 import play.api.Logging
-import service.mail.MailerService
+import service.mail.MailActor
+import service.mail.MailActor.SendMail
 import service.notification.ReviewNotificationActor.DryRun
 import service.notification.ReviewNotificationActor.NotifyAllPendingReviews
 
@@ -26,43 +27,36 @@ object ReviewNotificationActor {
 }
 
 final class ReviewNotificationActor @Inject() (
-    private val repo: ModuleReviewRepository,
-    private val messages: MessagesApi,
-    @Named("reviewNotificationUrl") private val reviewNotificationUrl: String,
-    private val mailerService: MailerService,
+    repo: ModuleReviewRepository,
+    messages: MessagesApi,
+    @Named("MailActor") mailActor: ActorRef,
+    @Named("reviewNotificationUrl") moduleReviewUrl: String,
     private implicit val ctx: ExecutionContext
 ) extends Actor
     with Logging {
   given Lang(Locale.GERMANY)
 
   override def receive = {
-    case NotifyAllPendingReviews =>
-      repo.getAllPending().onComplete {
-        case Success(xs) =>
-          logger.info("Sending emails to all recipients of pending reviews...")
-        // sendMail(xs)
-        case Failure(e) =>
-          logger.error("Failed to retrieve all pending review from db", e)
-      }
-    case DryRun =>
-      repo.getAllPending().onComplete {
-        case Success(xs) =>
-          logger.info("Sending emails to all recipients of pending reviews...")
-          sendMail(xs, dryRun = true)
-        case Failure(e) =>
-          logger.error("Failed to retrieve all pending review from db", e)
-      }
+    case NotifyAllPendingReviews => go(dryRun = false)
+    case DryRun                  => go(dryRun = true)
   }
 
-  private def buildUrl(module: UUID): String =
-    reviewNotificationUrl.replace("$moduleid", module.toString)
+  private def go(dryRun: Boolean): Unit = {
+    repo.getAllPending().onComplete {
+      case Success(xs) =>
+        val prefix = if dryRun then "[DRY] " else ""
+        logger.info(s"${prefix}Sending emails to all recipients of pending reviews...")
+        sendMail(xs, dryRun)
+      case Failure(e) =>
+        logger.error("Failed to retrieve all pending review from db", e)
+    }
+  }
 
   private def sendMail(reviews: Seq[ModuleReviewRepository.PendingModuleReview], dryRun: Boolean = false): Unit = {
     reviews
       .groupBy(_.director)
       .foreach {
         case (dir, xs) if dir.campusId.nonEmpty && xs.nonEmpty =>
-          val receiver = CampusId(dir.campusId.get).toMailAddress
           val subject  = messages("module_review.notification.subject")
           val body     = StringBuilder()
           body.append(messages("module_review.notification.opening"))
@@ -75,8 +69,6 @@ final class ReviewNotificationActor @Inject() (
                 case (Some(firstname), Some(lastname)) => s"$firstname $lastname"
                 case _                                 => entry.moduleAuthor.id
               }
-              val roles = xs.map(_.reviewRole.id.toUpperCase).toSet.mkString(" & ")
-              val url   = buildUrl(module.id)
               body.append("\n- ")
               body.append(
                 messages(
@@ -84,19 +76,21 @@ final class ReviewNotificationActor @Inject() (
                   s"${module.title} (${module.abbrev})",
                   author,
                   s"${entry.reviewStudyProgramLabel} (${entry.reviewDegreeLabel})",
-                  roles,
-                  url
                 )
               )
-              body.append('\n')
           }
-          body.append("\n")
+          body.append("\n\n")
+          body.append(messages("module_review.notification.action", moduleReviewUrl))
+          body.append("\n\n")
           body.append(messages("module_review.notification.closing"))
 
           if dryRun then {
-            logger.info(s"An: $receiver")
-            logger.info(body.toString())
-          } else mailerService.sendMail(subject, body.toString(), NonEmptyList.one(receiver))
+            val receiver = "alexander.dobrynin@th-koeln.de"
+            mailActor ! SendMail(subject, body.toString(), NonEmptyList.one(receiver), Nil)
+          } else {
+            val receiver = CampusId(dir.campusId.get).toMailAddress
+            mailActor ! SendMail(subject, body.toString(), NonEmptyList.one(receiver), Nil)
+          }
         case (dir, _) =>
           logger.info(s"no mail address found for user ${dir.id}")
       }
