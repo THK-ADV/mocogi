@@ -17,11 +17,15 @@ object MergeRequestStatus {
   case object Merged extends MergeRequestStatus {
     override def id: String = "merged"
   }
+  case object Approved extends MergeRequestStatus {
+    override def id: String = "approved"
+  }
 
   def apply(id: String) =
     id match {
-      case "open"   => Open
-      case "closed" => Closed
-      case "merged" => Merged
+      case "open"     => Open
+      case "closed"   => Closed
+      case "merged"   => Merged
+      case "approved" => Approved
     }
 }

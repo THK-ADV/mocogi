@@ -125,11 +125,10 @@ final class ModuleReviewService @Inject() (
    * sets the comment if defined. Updates the merge request associated with
    * the underlying module with status updates. Performs the following actions
    * based on the value of approval:
-   *   - If true, checks if all approvals are set. If so, the merge request
-   *     will be approved and merged right after. The module draft's status is
-   *     updated to "merged" respectively.
-   *   - If false, the merge request will be closed and the module draft's
-   *     status is updated respectively.
+   *   - If true, checks if all approvals are set. If so, the merge request will
+   *     be approved. The module draft's status is updated to "approved" respectively.
+   *   - If false, the merge request will be closed and the module draft's status
+   *     is updated respectively.
    *
    * @param ids
    *   IDs of the reviews which will be updated
@@ -177,8 +176,7 @@ final class ModuleReviewService @Inject() (
             _ <-
               if (reviews.forall(_ == Approved)) {
                 for {
-                  _      <- api.approve(mergeRequestId)
-                  status <- api.merge(mergeRequestId)
+                  status <- api.approve(mergeRequestId)
                   _      <- draftRepo.updateMergeRequestStatus(draft.module, status)
                 } yield ()
               } else {

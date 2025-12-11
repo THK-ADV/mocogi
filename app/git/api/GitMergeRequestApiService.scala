@@ -84,13 +84,13 @@ final class GitMergeRequestApiService @Inject() (
         else Future.failed(parseErrorMessage(res))
       }
 
-  def approve(id: MergeRequestId): Future[Unit] =
+  def approve(id: MergeRequestId): Future[MergeRequestStatus] =
     ws
       .url(s"$mergeRequestUrl/${id.value}/approve")
       .withHttpHeaders(tokenHeader())
       .post(EmptyBody)
       .flatMap { res =>
-        if (res.status == Status.CREATED) Future.unit
+        if (res.status == Status.CREATED) Future.successful(MergeRequestStatus.Approved)
         else Future.failed(parseErrorMessage(res))
       }
 

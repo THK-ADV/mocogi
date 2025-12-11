@@ -116,12 +116,7 @@ object GitMergeEventHandler {
               // Case 1: opened MR from $module_branch into draft branch [AUTO APPROVED]
               // => schedule merge
               case (moduleBranch, gitConfig.draftBranch, "open") if labels.contains(autoApprovedLabel) =>
-                withUUID(moduleBranch) { moduleId =>
-                  scheduleMerge(
-                    0,
-                    () => self ! MergeModule(id, mrId, moduleId)
-                  )
-                }
+                scheduleFreshMerge(moduleBranch)
 
               // Case 2: merged MR from $module_branch into draft branch [AUTO APPROVED or REVIEW REQUIRED]
               // => delete module draft, update permissions and create module if it's new
@@ -141,7 +136,12 @@ object GitMergeEventHandler {
               case (moduleBranch, gitConfig.draftBranch, "close") if labels.contains(reviewRequiredLabel) =>
                 withUUID(moduleBranch)(moduleId => handleReviewReject(moduleId))
 
-              // Case 5: unknown action => abort
+              // Case 5: approved MR from $module_branch into draft branch [REVIEW REQUIRED]
+              // => schedule merge
+              case (moduleBranch, gitConfig.draftBranch, "approved") if labels.contains(reviewRequiredLabel) =>
+                scheduleFreshMerge(moduleBranch)
+
+              // unknown action => abort
               case _ =>
                 abort(id, result)
             }
@@ -195,6 +195,11 @@ object GitMergeEventHandler {
       case Finished(id) =>
         logger.info(s"[$id][${Thread.currentThread().getName.last}] finished!")
     }
+
+    private def scheduleFreshMerge(
+        moduleBranch: Branch
+    )(implicit id: UUID, mrId: MergeRequestId, result: ParseResult): Unit =
+      withUUID(moduleBranch)(moduleId => scheduleMerge(0, () => self ! MergeModule(id, mrId, moduleId)))
 
     private case class MergeModule(id: UUID, mrId: MergeRequestId, moduleId: UUID)
 
