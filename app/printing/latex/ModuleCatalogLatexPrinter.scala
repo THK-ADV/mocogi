@@ -699,6 +699,7 @@ final class ModuleCatalogLatexPrinter(
     // continue with text
     moduleContent(
       module.id,
+      module.metadata.language,
       module.deContent,
       module.enContent,
       List(
@@ -741,7 +742,12 @@ final class ModuleCatalogLatexPrinter(
         printTableRow(highlightIf(strings.poLabelShort, ModuleProtocolDiff.isPOMandatory), poRow)
         printTableRow(
           strings.particularitiesModuleCatalogLabel,
-          particularitiesToLatex(module.id.get, module.deContent, module.enContent)
+          particularitiesToLatex(
+            module.id.get,
+            module.metadata.language,
+            module.deContent.particularities,
+            module.enContent.particularities
+          )
         )
         printTableRow(
           strings.lastModifiedLabel,
@@ -759,9 +765,19 @@ final class ModuleCatalogLatexPrinter(
     )
   }
 
+  private def contentForLanguage(language: String, deContent: => String, enContent: => String) =
+    if ModuleLanguage.isGerman(language) then deContent
+    else if ModuleLanguage.isEnglish(language) then enContent
+    else deContent // fallback to German if both are supported
+
   // does not support highlighting
-  private def particularitiesToLatex(id: UUID, deContent: ModuleContent, enContent: ModuleContent): String = {
-    val content = if strings.isGerman then deContent.particularities else enContent.particularities
+  private def particularitiesToLatex(
+      id: UUID,
+      language: String,
+      deContent: => String,
+      enContent: => String
+  ): String = {
+    val content = contentForLanguage(language, deContent, enContent)
     if content.nonEmpty && !content.forall(_.isWhitespace) then {
       printer.toLatex(content) match {
         case Left((e, stdErr)) =>
@@ -781,6 +797,7 @@ final class ModuleCatalogLatexPrinter(
 
   private def moduleContent(
       id: Option[UUID],
+      language: String,
       deContent: ModuleContent,
       enContent: ModuleContent,
       entries: List[(String, Lens[ModuleContent, String])],
@@ -789,7 +806,7 @@ final class ModuleCatalogLatexPrinter(
     val markdownContent = new StringBuilder()
     entries.foreach {
       case (headline, lens) =>
-        val content = if strings.isGerman then lens.get(deContent) else lens.get(enContent)
+        val content = contentForLanguage(language, lens.get(deContent), lens.get(enContent))
         if content.nonEmpty && !content.forall(_.isWhitespace) then {
           markdownContent.append(s"## $headline\n")
           markdownContent.append(content)

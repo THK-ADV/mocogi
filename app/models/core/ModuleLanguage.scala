@@ -7,4 +7,10 @@ case class ModuleLanguage(id: String, deLabel: String, enLabel: String) extends 
 
 object ModuleLanguage {
   implicit def writes: Writes[ModuleLanguage] = Json.writes
+
+  def isGerman(id: String): Boolean =
+    id == "de"
+
+  def isEnglish(id: String): Boolean =
+    id == "en"
 }
