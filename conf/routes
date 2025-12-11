@@ -16,8 +16,9 @@ GET           /user-privileges                                        controller
 
 # Git Webhooks
 
-POST          /webhook/onPushEvent                                    controllers.GitWebhookController.onPushEvent()
-POST          /webhook/onMergeEvent                                   controllers.GitWebhookController.onMergeEvent()
+POST          /webhook/push/main                                      controllers.GitWebhookController.onPushMain()
+POST          /webhook/push/preview                                   controllers.GitWebhookController.onPushPreview()
+POST          /webhook/merge                                          controllers.GitWebhookController.onMerge()
 
 # Git
 

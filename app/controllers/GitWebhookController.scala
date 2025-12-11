@@ -2,6 +2,7 @@ package controllers
 
 import java.util.UUID
 import javax.inject.Inject
+import javax.inject.Named
 import javax.inject.Singleton
 
 import scala.concurrent.ExecutionContext
@@ -10,10 +11,11 @@ import scala.util.Failure
 import scala.util.Success
 import scala.util.Try
 
-import _root_.webhook.GitMergeEventHandler
-import _root_.webhook.GitPushEventHandler
+import _root_.webhook.HandleEvent
+import _root_.webhook.MergeEventHandler
 import controllers.GitWebhookController.GitlabTokenHeader
 import git.*
+import org.apache.pekko.actor.ActorRef
 import play.api.libs.json.*
 import play.api.mvc.*
 
@@ -25,23 +27,32 @@ object GitWebhookController {
 class GitWebhookController @Inject() (
     cc: ControllerComponents,
     gitConfig: GitConfig,
-    gitPushEventHandler: GitPushEventHandler,
-    gitMergeEventHandler: GitMergeEventHandler,
+    mergeHandler: MergeEventHandler,
+    @Named("PreviewPushEventHandler") previewPushHandler: ActorRef,
+    @Named("MainPushEventHandler") mainPushHandler: ActorRef,
     implicit val ctx: ExecutionContext
 ) extends AbstractController(cc) {
 
-  def onPushEvent() =
+  def onPushMain() =
     isAuthenticated(
       Action(parse.json) { implicit r =>
-        gitPushEventHandler.handle(r.body)
+        mainPushHandler ! HandleEvent(r.body)
         NoContent
       }
     )
 
-  def onMergeEvent() =
+  def onPushPreview() =
     isAuthenticated(
       Action(parse.json) { implicit r =>
-        gitMergeEventHandler.handle(r.body)
+        previewPushHandler ! HandleEvent(r.body)
+        NoContent
+      }
+    )
+
+  def onMerge() =
+    isAuthenticated(
+      Action(parse.json) { implicit r =>
+        mergeHandler.handle(r.body)
         NoContent
       }
     )

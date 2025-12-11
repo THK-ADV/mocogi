@@ -1,3 +1,6 @@
+import java.nio.file.Path
+import java.nio.file.Paths
+
 import scala.annotation.unused
 
 import auth.Authorization
@@ -17,12 +20,12 @@ import play.api.Configuration
 import play.api.Environment
 import printing.yaml.MetadataYamlPrinter
 import providers.*
-import service.exam.ExamLoadService
 import service.mail.MailActor
 import service.mail.MailConfig
 import service.notification.ReviewNotificationActor
-import webhook.GitMergeEventHandler
-import webhook.GitPushEventHandler
+import webhook.MainPushEventHandler
+import webhook.MergeEventHandler
+import webhook.PreviewPushEventHandler
 
 class Module(@unused environment: Environment, configuration: Configuration)
     extends AbstractModule
@@ -31,36 +34,13 @@ class Module(@unused environment: Environment, configuration: Configuration)
   override def configure(): Unit = {
     super.configure()
 
-    bind(classOf[GitConfig])
-      .toProvider(classOf[GitConfigProvider])
-      .asEagerSingleton()
-    bind(classOf[ModuleSubscribers])
-      .toProvider(classOf[ModuleSubscribersProvider])
-      .asEagerSingleton()
-    bind(classOf[GitPushEventHandler])
-      .toProvider(classOf[GitMergeEventHandlingActorProvider])
-      .asEagerSingleton()
-    bind(classOf[CoreDataPublisher])
-      .toProvider(classOf[CoreDataPublisherProvider])
-      .asEagerSingleton()
-    bind(classOf[ModulePublisher])
-      .toProvider(classOf[ModulePublisherProvider])
-      .asEagerSingleton()
-    bind(classOf[ModuleKeysToReview])
-      .toProvider(classOf[ModuleKeysToReviewProvider])
-      .asEagerSingleton()
-    bind(classOf[GitMergeEventHandler])
-      .toProvider(classOf[GitMergeEventHandlerProvider])
-      .asEagerSingleton()
-    bind(classOf[ExamLoadService])
-      .toProvider(classOf[ExamLoadServiceProvider])
-      .asEagerSingleton()
-    bind(new TypeLiteral[Set[MetadataParser]] {})
-      .toProvider(classOf[MetadataParserProvider])
-      .asEagerSingleton()
-    bind(new TypeLiteral[Authorization[Token]] {})
-      .toProvider(classOf[AuthorizationProvider])
-      .asEagerSingleton()
+    bind(classOf[String])
+      .annotatedWith(Names.named("draftBranch"))
+      .toInstance(configuration.nonEmptyString("git.draftBranch"))
+
+    bind(classOf[Path])
+      .annotatedWith(Names.named("gitFolder"))
+      .toInstance(Paths.get(configuration.nonEmptyString("git.localGitFolderPath")))
 
     bind(classOf[MetadataYamlPrinter]).toInstance(new MetadataYamlPrinter(2))
 
@@ -102,8 +82,35 @@ class Module(@unused environment: Environment, configuration: Configuration)
       .annotatedWith(Names.named("examListFolder"))
       .toInstance(configuration.nonEmptyString("pandoc.examListOutputFolderPath"))
 
+    bind(classOf[GitConfig])
+      .toProvider(classOf[GitConfigProvider])
+      .asEagerSingleton()
+    bind(classOf[ModuleSubscribers])
+      .toProvider(classOf[ModuleSubscribersProvider])
+      .asEagerSingleton()
+    bind(classOf[CoreDataPublisher])
+      .toProvider(classOf[CoreDataPublisherProvider])
+      .asEagerSingleton()
+    bind(classOf[ModulePublisher])
+      .toProvider(classOf[ModulePublisherProvider])
+      .asEagerSingleton()
+    bind(classOf[ModuleKeysToReview])
+      .toProvider(classOf[ModuleKeysToReviewProvider])
+      .asEagerSingleton()
+    bind(classOf[MergeEventHandler])
+      .toProvider(classOf[GitMergeEventHandlerProvider])
+      .asEagerSingleton()
+    bind(new TypeLiteral[Set[MetadataParser]] {})
+      .toProvider(classOf[MetadataParserProvider])
+      .asEagerSingleton()
+    bind(new TypeLiteral[Authorization[Token]] {})
+      .toProvider(classOf[AuthorizationProvider])
+      .asEagerSingleton()
+
     // TODO: apply this to all actors
     bindActor[ReviewNotificationActor]("ReviewNotificationActor")
     bindActor[MailActor]("MailActor")
+    bindActor[PreviewPushEventHandler]("PreviewPushEventHandler")
+    bindActor[MainPushEventHandler]("MainPushEventHandler")
   }
 }

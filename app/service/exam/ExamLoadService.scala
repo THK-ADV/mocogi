@@ -1,62 +1,23 @@
 package service.exam
 
-import java.nio.file.Files
 import java.nio.file.Path
 import java.util.UUID
 import javax.inject.Inject
+import javax.inject.Named
 
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
-import scala.sys.process.*
 
-import git.Branch
+import git.cli.ModuleGitCLI
+import models.*
 import models.core.AssessmentMethod
-import models.AssessmentPrerequisite
-import models.AttendanceRequirement
-import models.MetadataProtocol
-import models.ModuleAssessmentMethodEntryProtocol
-import models.ModulePOProtocol
-import models.ModuleProtocol
-import models.ModuleRelationProtocol
-import ops.FileOps.FileOps0
-import parser.ParsingError
-import parsing.RawModuleParser
 import play.api.Logging
 import service.AssessmentMethodService
 
 /*
   This feature is currently experimental. Feedback is expected for further development.
  */
-
-final class ModuleGitCLI(draftBranch: Branch, repoPath: Path) {
-  def allFromPreview(): (Vector[ParsingError], Vector[ModuleProtocol]) = {
-    val branch  = draftBranch.value
-    val context = repoPath.toFile
-
-    val fetchLatestChanges =
-      Process(Seq("git", "fetch", "origin", branch), context)
-    val switchToBranch =
-      Process(Seq("git", "switch", branch), context)
-    val resetToRemote =
-      Process(Seq("git", "reset", "--hard", s"origin/$branch"), context)
-    val logger = ProcessLogger(_ => ())
-
-    val exitCode = (fetchLatestChanges #&& switchToBranch #&& resetToRemote).!(logger)
-
-    if exitCode == 0 then {
-      repoPath
-        .getFilesOfDirectory(_.getFileName.toString.endsWith(".md")) { f =>
-          val content = Files.readString(f)
-          RawModuleParser.parser.parse(content)._1
-        }
-        .partitionMap(identity)
-    } else {
-      // proper error handling
-      (Vector.empty, Vector.empty)
-    }
-  }
-}
 
 case class Module(id: UUID, metadata: MetadataProtocol, semester: List[Int])
 
@@ -315,8 +276,8 @@ final class ExamLoadCSVPrinter(
 
 final class ExamLoadService @Inject() (
     assessmentMethodService: AssessmentMethodService,
-    draftBranch: Branch,
-    repoPath: Path,
+    @Named("draftBranch") draftBranch: String,
+    @Named("gitFolder") repoPath: Path,
     implicit val ctx: ExecutionContext
 ) extends Logging {
 
@@ -325,7 +286,7 @@ final class ExamLoadService @Inject() (
    */
   private def getModulesFromPreview(po: String): (List[ModuleProtocol], List[ModuleProtocol]) = {
     val cli                = new ModuleGitCLI(draftBranch, repoPath)
-    val (errs, allModules) = cli.allFromPreview()
+    val (errs, allModules) = cli.getAllModulesFromPreview()
     if (errs.nonEmpty) {
       logger.error(s"Failed to parse some modules from preview branch. Errors: ${errs.mkString("\n")}")
     }
