@@ -57,8 +57,8 @@ final class ReviewNotificationActor @Inject() (
       .groupBy(_.director)
       .foreach {
         case (dir, xs) if dir.campusId.nonEmpty && xs.nonEmpty =>
-          val subject  = messages("module_review.notification.subject")
-          val body     = StringBuilder()
+          val subject = messages("module_review.notification.subject")
+          val body    = StringBuilder()
           body.append(messages("module_review.notification.opening"))
           body.append('\n')
 
