@@ -1,7 +1,7 @@
 package printing.latex
 
 import java.time.format.DateTimeFormatter
-import java.time.LocalDateTime
+import java.time.LocalDate
 import java.util.UUID
 
 import scala.collection.mutable.ListBuffer
@@ -50,7 +50,7 @@ object ModuleCatalogLatexPrinter {
       latexSnippets: List[LatexContentSnippet],
       pos: Seq[StudyProgramView],
       currentPO: PO,
-      modules: Seq[(ModuleProtocol, Option[LocalDateTime])],
+      modules: Vector[(ModuleProtocol, LocalDate)],
       payload: Payload,
       lang: Lang,
   ) = {
@@ -74,7 +74,7 @@ object ModuleCatalogLatexPrinter {
       latexSnippets: List[LatexContentSnippet],
       pos: Seq[StudyProgramView],
       currentPO: PO,
-      modules: Seq[(ModuleProtocol, LocalDateTime | Option[LocalDateTime])],
+      modules: Vector[(ModuleProtocol, LocalDate)],
       payload: Payload,
       lang: Lang
   ) =
@@ -100,7 +100,7 @@ final class ModuleCatalogLatexPrinter(
     semester: Option[Semester],
     pos: Seq[StudyProgramView],
     currentPO: PO,
-    modulesInPO: Seq[(ModuleProtocol, LocalDateTime | Option[LocalDateTime])],
+    modulesInPO: Vector[(ModuleProtocol, LocalDate)],
     payload: Payload,
     latexSnippets: List[LatexContentSnippet],
     diffsForModule: Option[UUID => Option[Set[String]]]
@@ -214,7 +214,7 @@ final class ModuleCatalogLatexPrinter(
 
   private def assumeConsumption(): Unit = {
     val errs = ListBuffer[UUID]()
-    modulesInPO.foreach { module =>
+    for (module <- modulesInPO) {
       val moduleId = module._1.id.get
       if !consumedModules.contains(moduleId) then {
         errs += moduleId
@@ -278,7 +278,7 @@ final class ModuleCatalogLatexPrinter(
         if recommendedSemester.isEmpty then (Int.MaxValue, title) else (recommendedSemester.min, title)
       }
 
-  private def printModules(chapterTitle: String, mods: Seq[(ModuleProtocol, LocalDateTime | Option[LocalDateTime])]) = {
+  private def printModules(chapterTitle: String, mods: Vector[(ModuleProtocol, LocalDate)]) = {
     chapter(chapterTitle)
     newPage
     if (mods.isEmpty) newPage
@@ -491,11 +491,7 @@ final class ModuleCatalogLatexPrinter(
     builder.append(s"\\$botRule\n\\end{tabularx}\n")
   }
 
-  private def printModule(
-      module: ModuleProtocol,
-      lastModified: LocalDateTime | Option[LocalDateTime],
-      isChild: Boolean
-  ): Unit = {
+  private def printModule(module: ModuleProtocol, lastModified: LocalDate, isChild: Boolean): Unit = {
     consume(module.id.get)
     val languages         = payload.languages
     val seasons           = payload.seasons
@@ -751,11 +747,7 @@ final class ModuleCatalogLatexPrinter(
         )
         printTableRow(
           strings.lastModifiedLabel,
-          lastModified match {
-            case lm: LocalDateTime => lm.format(localDatePattern)
-            case Some(lm)          => lm.format(localDatePattern)
-            case None              => strings.unknownLabel
-          },
+          lastModified.format(localDatePattern),
           isLast = !isPreview
         )
         if isPreview then {

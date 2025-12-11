@@ -17,7 +17,7 @@ import org.apache.pekko.actor.ActorRef
 import org.apache.pekko.actor.ActorSystem
 import play.api.i18n.MessagesApi
 import service.ModuleCreationService
-import webhook.GitMergeEventHandler
+import webhook.MergeEventHandler
 
 @Singleton
 final class GitMergeEventHandlerProvider @Inject() (
@@ -33,10 +33,10 @@ final class GitMergeEventHandlerProvider @Inject() (
     @Named("MailActor") mailActor: ActorRef,
     messages: MessagesApi,
     ctx: ExecutionContext
-) extends Provider[GitMergeEventHandler] {
-  override def get() = GitMergeEventHandler(
+) extends Provider[MergeEventHandler] {
+  override def get() = MergeEventHandler(
     system.actorOf(
-      GitMergeEventHandler.props(
+      MergeEventHandler.props(
         gitConfig,
         moduleReviewRepository,
         moduleDraftRepository,

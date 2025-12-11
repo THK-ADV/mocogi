@@ -7,7 +7,6 @@ GET           /                                                       controller
 
 GET           /service/notifyReviewer                                 controllers.ServiceController.notifyReviewer()
 
-GET           /admin/invalidModuleExams                               controllers.AdminController.invalidModuleExams()
 DELETE        /admin/modules/:id                                      controllers.AdminController.deleteModule(id: java.util.UUID)
 POST          /admin/modules                                          controllers.AdminController.createNewModulesFromDraftBranch()
 
@@ -16,8 +15,9 @@ GET           /user-privileges                                        controller
 
 # Git Webhooks
 
-POST          /webhook/onPushEvent                                    controllers.GitWebhookController.onPushEvent()
-POST          /webhook/onMergeEvent                                   controllers.GitWebhookController.onMergeEvent()
+POST          /webhook/push/main                                      controllers.GitWebhookController.onPushMain()
+POST          /webhook/push/preview                                   controllers.GitWebhookController.onPushPreview()
+POST          /webhook/merge                                          controllers.GitWebhookController.onMerge()
 
 # Git
 

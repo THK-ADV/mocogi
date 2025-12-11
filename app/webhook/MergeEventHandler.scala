@@ -37,12 +37,12 @@ import service.mail.MailActor.SendMail
 import service.ModuleCreationService
 
 @Singleton
-case class GitMergeEventHandler(private val value: ActorRef) {
+case class MergeEventHandler(private val value: ActorRef) {
   def handle(json: JsValue): Unit =
     value ! HandleEvent(json)
 }
 
-object GitMergeEventHandler {
+object MergeEventHandler {
   private type Action      = String
   private type Labels      = IndexedSeq[String]
   private type ParseResult = (MergeRequestId, Action, Branch, Branch, Labels)
