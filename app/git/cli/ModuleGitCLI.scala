@@ -2,10 +2,13 @@ package git.cli
 
 import java.nio.file.Files
 import java.nio.file.Path
+import java.time.LocalDate
+import javax.inject.Inject
 
 import scala.sys.process.Process
 import scala.sys.process.ProcessLogger
 
+import git.Branch
 import models.ModuleProtocol
 import ops.FileOps.FileOps0
 import parser.ParsingError
@@ -19,7 +22,8 @@ import play.api.Logging
  * @param draftBranch The name of the draft branch in the Git repository to be used for operations.
  * @param gitFolder   The local path of the Git repository folder where operations will be performed.
  */
-final class ModuleGitCLI(draftBranch: String, gitFolder: Path) extends Logging {
+final class ModuleGitCLI @Inject() (val draftBranch: Branch, gitFolder: Path) extends Logging {
+
   /**
    * Retrieves all modules from the preview branch of the Git repository.
    *
@@ -27,16 +31,21 @@ final class ModuleGitCLI(draftBranch: String, gitFolder: Path) extends Logging {
    * state and parses all `.md` files in the Git folder as module descriptions.
    *
    * @return A tuple where the first element is a vector of parsing errors, and
-   *         the second element is a vector of successfully parsed modules.
+   *         the second element is a vector of successfully parsed and their last modified time.
    */
-  def getAllModulesFromPreview(): (Vector[ParsingError], Vector[ModuleProtocol]) = {
+  def getAllModulesFromPreview(): (Vector[ParsingError], Vector[(ModuleProtocol, LocalDate)]) = {
     val exitCode = updatePreviewBranch()
 
     if exitCode == 0 then {
       gitFolder
         .getFilesOfDirectory(_.getFileName.toString.endsWith(".md")) { f =>
+          val lastModified = Files
+            .getLastModifiedTime(f)
+            .toInstant
+            .atZone(java.time.ZoneId.systemDefault())
+            .toLocalDate
           val content = Files.readString(f)
-          RawModuleParser.parser.parse(content)._1
+          RawModuleParser.parser.parse(content)._1.map(_ -> lastModified)
         }
         .partitionMap(identity)
     } else {
@@ -55,11 +64,11 @@ final class ModuleGitCLI(draftBranch: String, gitFolder: Path) extends Logging {
     val context = gitFolder.toFile
 
     val fetchLatestChanges =
-      Process(Seq("git", "fetch", "origin", draftBranch), context)
+      Process(Seq("git", "fetch", "origin", draftBranch.value), context)
     val switchToBranch =
-      Process(Seq("git", "switch", draftBranch), context)
+      Process(Seq("git", "switch", draftBranch.value), context)
     val resetToRemote =
-      Process(Seq("git", "reset", "--hard", s"origin/$draftBranch"), context)
+      Process(Seq("git", "reset", "--hard", s"origin/${draftBranch.value}"), context)
     val log = ProcessLogger(logger.debug(_))
 
     (fetchLatestChanges #&& switchToBranch #&& resetToRemote).!(log)

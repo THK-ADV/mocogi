@@ -12,9 +12,7 @@ import scala.concurrent.Future
 
 import database.repo.core.SpecializationRepository
 import database.view.StudyProgramViewRepository
-import git.api.GitDiffApiService
-import git.api.GitFileDownloadService
-import git.GitConfig
+import git.cli.ModuleGitCLI
 import models.FullPoId
 import models.ModuleProtocol
 import models.Semester
@@ -30,18 +28,15 @@ import service.LatexCompiler.getPdf
 
 @Singleton
 final class ExamListService @Inject() (
-    diffApiService: GitDiffApiService,
-    downloadService: GitFileDownloadService,
     moduleService: ModuleService,
     studyProgramViewRepo: StudyProgramViewRepository,
     specializationRepository: SpecializationRepository,
     assessmentMethodService: AssessmentMethodService,
     identityService: IdentityService,
     messagesApi: MessagesApi,
+    gitCli: ModuleGitCLI,
     implicit val ctx: ExecutionContext
 ) extends Logging {
-
-  private given gitConfig: GitConfig = diffApiService.config
 
   def createExamList(po: String, latexFile: Path, semester: Semester, date: LocalDate): Future[Path] =
     generateExamList(po, latexFile, Some((semester, date)))
@@ -49,13 +44,9 @@ final class ExamListService @Inject() (
   def previewExamList(po: String, latexFile: Path): Future[Path] =
     generateExamList(po, latexFile, None)
 
-  private def getModules(po: String): Future[Seq[ModuleProtocol]] = {
-    val previewService = new ModulePreview(diffApiService, downloadService, ctx)
-    val liveModules    = moduleService.allFromPO(po, activeOnly = true).map(_.map(_._1))
-    for
-      liveModules <- liveModules
-      modules     <- previewService.mergeWithChangedModulesFromPreview(po, liveModules)
-    yield modules
+  private def getModulesFromPreview(po: String): Vector[ModuleProtocol] = {
+    val previewService = new ModulePreview(gitCli)
+    previewService.getAllFromPreviewByPO(po)
   }
 
   private def generateExamList(po: String, latexFile: Path, semester: Option[(Semester, LocalDate)]) =
@@ -68,14 +59,13 @@ final class ExamListService @Inject() (
         val assessmentMethods = assessmentMethodService.all()
         val people            = identityService.all()
         val specializations   = specializationRepository.allByPO(po)
-        val modules           = getModules(po)
+        val modules           = getModulesFromPreview(po)
         val lang              = Lang(Locale.GERMANY)
 
         for
           assessmentMethods <- assessmentMethods
           specializations   <- specializations
           people            <- people
-          modules           <- modules
           genericModules    <- if specializations.nonEmpty then moduleService.allGeneric() else Future.successful(Nil)
           printer = semester match {
             case Some((s, d)) =>

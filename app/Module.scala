@@ -1,4 +1,3 @@
-import java.nio.file.Path
 import java.nio.file.Paths
 
 import scala.annotation.unused
@@ -8,9 +7,11 @@ import auth.Token
 import com.google.inject.name.Names
 import com.google.inject.AbstractModule
 import com.google.inject.TypeLiteral
+import git.cli.ModuleGitCLI
 import git.publisher.CoreDataPublisher
 import git.publisher.ModulePublisher
 import git.subscriber.ModuleSubscribers
+import git.Branch
 import git.GitConfig
 import models.ModuleKeysToReview
 import ops.ConfigurationOps.Ops
@@ -34,13 +35,13 @@ class Module(@unused environment: Environment, configuration: Configuration)
   override def configure(): Unit = {
     super.configure()
 
-    bind(classOf[String])
-      .annotatedWith(Names.named("draftBranch"))
-      .toInstance(configuration.nonEmptyString("git.draftBranch"))
-
-    bind(classOf[Path])
-      .annotatedWith(Names.named("gitFolder"))
-      .toInstance(Paths.get(configuration.nonEmptyString("git.localGitFolderPath")))
+    bind(classOf[ModuleGitCLI])
+      .toInstance(
+        new ModuleGitCLI(
+          Branch(configuration.nonEmptyString("git.draftBranch")),
+          Paths.get(configuration.nonEmptyString("git.localGitFolderPath"))
+        )
+      )
 
     bind(classOf[MetadataYamlPrinter]).toInstance(new MetadataYamlPrinter(2))
 

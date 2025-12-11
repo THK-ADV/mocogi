@@ -55,7 +55,6 @@ final class GitController @Inject() (
       )
     }
 
-  // TODO: update to ModuleGitCLI
   def updateCoreFiles() =
     auth.andThen(resolveUser).andThen(isAdmin).async { _ =>
       for {
@@ -73,7 +72,6 @@ final class GitController @Inject() (
       }
     }
 
-  // TODO: update to ModuleGitCLI
   def updateModuleFiles() =
     auth.andThen(resolveUser).andThen(isAdmin).async { _ =>
       for {

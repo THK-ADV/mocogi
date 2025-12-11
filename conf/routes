@@ -7,7 +7,6 @@ GET           /                                                       controller
 
 GET           /service/notifyReviewer                                 controllers.ServiceController.notifyReviewer()
 
-GET           /admin/invalidModuleExams                               controllers.AdminController.invalidModuleExams()
 DELETE        /admin/modules/:id                                      controllers.AdminController.deleteModule(id: java.util.UUID)
 POST          /admin/modules                                          controllers.AdminController.createNewModulesFromDraftBranch()
 

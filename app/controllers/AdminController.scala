@@ -21,12 +21,10 @@ import play.api.mvc.AbstractController
 import play.api.mvc.ControllerComponents
 import play.api.Logging
 import service.ModuleCreationService
-import validation.ModuleExaminationValidator
 
 final class AdminController @Inject() (
     cc: ControllerComponents,
     auth: AuthorizationAction,
-    moduleExaminationValidator: ModuleExaminationValidator,
     moduleDeletionRepository: ModuleDeletionRepository,
     moduleCreationService: ModuleCreationService,
     downloadService: GitFileDownloadService,
@@ -37,15 +35,6 @@ final class AdminController @Inject() (
     with AdminCheck
     with UserResolveAction
     with Logging {
-
-  def invalidModuleExams() =
-    auth.andThen(resolveUser).andThen(isAdmin).async { _ =>
-      moduleExaminationValidator.getAllInvalidModuleExams.map { xs =>
-        xs.sortBy(_._1.id)
-          .foreach(a => println(s"${a._1};${a._2.mkString("[", ",", s"];${a._3.mkString("{", ",", "}")}")}"))
-        NoContent
-      }
-    }
 
   def deleteModule(module: UUID) =
     auth.andThen(resolveUser).andThen(isAdmin).async { _ =>

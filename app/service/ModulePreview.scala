@@ -1,133 +1,36 @@
 package service
 
-import java.time.LocalDateTime
-import java.util.UUID
+import java.time.LocalDate
 
-import scala.annotation.targetName
-import scala.collection.mutable.ListBuffer
-import scala.collection.parallel.CollectionConverters.seqIsParallelizable
-import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
-
-import git.api.GitDiffApiService
-import git.api.GitFileDownloadService
-import git.GitConfig
+import git.cli.ModuleGitCLI
 import models.ModuleProtocol
 import play.api.Logging
 
-final class ModulePreview(
-    diffApiService: GitDiffApiService,
-    downloadService: GitFileDownloadService,
-    implicit val ctx: ExecutionContext
-) extends Logging {
+/**
+ * Provides functionality to retrieve active modules from a Git repository's preview branch
+ * based on their relation to a specified PO.
+ */
+final class ModulePreview(gitCli: ModuleGitCLI) extends Logging {
 
-  private implicit def config: GitConfig = diffApiService.config
-
-  def mergeWithChangedModulesFromPreview(po: String, liveModules: Seq[ModuleProtocol]): Future[Seq[ModuleProtocol]] =
-    diffApiService
-      .compare(config.mainBranch, config.draftBranch)
-      .flatMap { diffs =>
-        val downloads = diffs.par.map(d => downloadService.downloadModuleFromPreviewBranch(d.path.moduleId.get))
-        Future.sequence(downloads.seq)
-      }
-      .map { preview =>
-        val modules         = new ListBuffer[ModuleProtocol]()
-        val inactiveModules = new ListBuffer[UUID]()
-        preview.foreach {
-          case Some(m) if m.metadata.po.hasPORelation(po) =>
-            if liveModules.exists(_.id.get == m.id.get) && !m.metadata.isActive then {
-              // Ignore modules switch went inactive from live to preview
-              inactiveModules += m.id.get
-            } else if m.metadata.isActive then {
-              // only consider active modules
-              modules += m
-            }
-          case _ =>
-        }
-        val activeLiveModules = liveModules.filterNot(m => inactiveModules.contains(m.id.get))
-        mergeModules(activeLiveModules, modules.toSeq)
-      }
-
-  def changedActiveModulesFromPreviewWithLastModified(
-      po: String,
-      liveModules: Seq[(ModuleProtocol, LocalDateTime)]
-  ): Future[(Seq[(ModuleProtocol, LocalDateTime)], Seq[(ModuleProtocol, Option[LocalDateTime])])] =
-    diffApiService
-      .compare(config.mainBranch, config.draftBranch)
-      .flatMap { diffs =>
-        val downloads =
-          diffs.par.map(d => downloadService.downloadModuleFromPreviewBranchWithLastModified(d.path.moduleId.get))
-        Future.sequence(downloads.seq)
-      }
-      .map { preview =>
-        val modules         = new ListBuffer[(ModuleProtocol, Option[LocalDateTime])]()
-        val inactiveModules = new ListBuffer[UUID]()
-        preview.foreach {
-          case Some((m, ld)) if m.metadata.po.hasPORelation(po) =>
-            if liveModules.exists(_._1.id.get == m.id.get) && !m.metadata.isActive then {
-              // Ignore modules switch went inactive from live to preview
-              inactiveModules += m.id.get
-            } else if m.metadata.isActive then {
-              // only consider active modules
-              modules += (m -> ld)
-            }
-          case _ =>
-        }
-        val activeLiveModules = liveModules.filterNot(m => inactiveModules.contains(m._1.id.get))
-        val previewModules    = modules.toSeq
-        (activeLiveModules, previewModules)
-      }
-
-  @targetName("mergeModulesWithLastModified")
-  def mergeModules(
-      liveModules: Seq[(ModuleProtocol, LocalDateTime)],
-      changedModules: Seq[(ModuleProtocol, Option[LocalDateTime])],
-      bannedGenericModules: List[UUID]
-  ): Seq[(ModuleProtocol, Option[LocalDateTime])] = {
-    val builder = ListBuffer[(ModuleProtocol, Option[LocalDateTime])](changedModules*)
-    liveModules.foreach {
-      case (liveModule, lastModified) =>
-        if !builder.exists(_._1.id.get == liveModule.id.get) then {
-          builder.append((liveModule, Some(lastModified)))
-        }
+  /**
+   * Retrieves all active modules from the preview branch of the Git repository that are related to the given PO.
+   */
+  def getAllFromPreviewByPO(po: String): Vector[ModuleProtocol] = {
+    val (errs, previewModules) = gitCli.getAllModulesFromPreview()
+    if errs.nonEmpty then {
+      logger.error(s"Failed to parse some modules from preview branch. Errors: ${errs.mkString("\n")}")
     }
-    val nonActiveModules = builder.filterNot(_._1.metadata.isActive)
-    if nonActiveModules.nonEmpty then {
-      logger.error(
-        s"expected active modules, but found: ${nonActiveModules.map(a => (a._1.id.get, a._1.metadata.title))}"
-      )
-    }
-    assume(
-      builder.size == builder.distinctBy(_._1.id.get).size,
-      s"""expected modules to be unique
-         |liveModules: ${liveModules.map(_._1.id.get)}
-         |changedModules: ${changedModules.map(_._1.id.get)}
-         |builder: ${builder.map(_._1.id.get)}""".stripMargin
-    )
-    builder.toList.filterNot((m, _) => bannedGenericModules.contains(m.id.get))
+    previewModules.collect { case (m, _) if m.metadata.isActive && m.metadata.po.hasPORelation(po) => m }
   }
 
-  private def mergeModules(
-      liveModules: Seq[ModuleProtocol],
-      changedModules: Seq[ModuleProtocol]
-  ): Seq[ModuleProtocol] = {
-    val builder = ListBuffer[ModuleProtocol](changedModules*)
-    liveModules.foreach { liveModule =>
-      if !builder.exists(_.id.get == liveModule.id.get) then {
-        builder.append(liveModule)
-      }
+  /**
+   * Retrieves all active modules from the preview branch of the Git repository that are related to the given PO.
+   */
+  def getAllFromPreviewByPOWithLastModified(po: String): Vector[(ModuleProtocol, LocalDate)] = {
+    val (errs, previewModules) = gitCli.getAllModulesFromPreview()
+    if errs.nonEmpty then {
+      logger.error(s"Failed to parse some modules from preview branch. Errors: ${errs.mkString("\n")}")
     }
-    val nonActiveModules = builder.filterNot(_.metadata.isActive)
-    if nonActiveModules.nonEmpty then {
-      logger.error(s"expected active modules, but found: ${nonActiveModules.map(a => (a.id.get, a.metadata.title))}")
-    }
-    assume(
-      builder.size == builder.distinctBy(_.id.get).size,
-      s"""expected modules to be unique
-         |liveModules: ${liveModules.map(_.id.get)}
-         |changedModules: ${changedModules.map(_.id.get)}
-         |builder: ${builder.map(_.id.get)}""".stripMargin
-    )
-    builder.toList
+    previewModules.filter((m, _) => m.metadata.isActive && m.metadata.po.hasPORelation(po))
   }
 }

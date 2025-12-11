@@ -3,6 +3,7 @@ package service
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
+import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.Locale
 import java.util.UUID
@@ -17,9 +18,7 @@ import scala.util.control.NonFatal
 import cats.data.NonEmptyList
 import database.repo.core.*
 import database.view.StudyProgramViewRepository
-import git.api.GitDiffApiService
-import git.api.GitFileDownloadService
-import git.GitConfig
+import git.cli.ModuleGitCLI
 import models.ModuleCore
 import models.ModuleProtocol
 import models.Semester
@@ -41,11 +40,8 @@ import service.modulediff.ModuleProtocolDiff
 import service.LatexCompiler.compile
 import service.LatexCompiler.getPdf
 
-// TODO: rename this class. it isn't a preview service anymore
 @Singleton
-final class ModulePreviewService @Inject() (
-    diffApiService: GitDiffApiService,
-    downloadService: GitFileDownloadService,
+final class ModuleCatalogService @Inject() (
     moduleService: ModuleService,
     studyProgramViewRepo: StudyProgramViewRepository,
     moduleTypeRepository: ModuleTypeRepository,
@@ -53,23 +49,21 @@ final class ModulePreviewService @Inject() (
     seasonRepository: SeasonRepository,
     identityService: IdentityService,
     assessmentMethodService: AssessmentMethodService,
-    specializationRepository: SpecializationRepository,
     poRepository: PORepository,
     messagesApi: MessagesApi,
+    gitCLI: ModuleGitCLI,
     @Named("path.mcIntro") mcIntroPath: String,
     @Named("path.mcAssets") mcAssetsPath: String,
     @Named("cmd.tex") texCommand: String,
     implicit val ctx: ExecutionContext
 ) extends Logging {
 
-  implicit def gitConfig: GitConfig = diffApiService.config
-
   private type ModuleDiffs = List[(ModuleCore, Set[String])]
 
-  def createCatalog(po: String, latexFile: Path, semester: Semester, bannedGenericModules: List[UUID]): Future[Path] =
+  def create(po: String, latexFile: Path, semester: Semester, bannedGenericModules: List[UUID]): Future[Path] =
     generateCatalog(po, latexFile, Some(semester), bannedGenericModules)
 
-  def previewCatalog(po: String, latexFile: Path, bannedGenericModules: List[UUID]): Future[Path] =
+  def preview(po: String, latexFile: Path, bannedGenericModules: List[UUID]): Future[Path] =
     generateCatalog(po, latexFile, None, bannedGenericModules)
 
   private def generateCatalog(
@@ -78,24 +72,24 @@ final class ModulePreviewService @Inject() (
       semester: Option[Semester],
       bannedGenericModules: List[UUID]
   ) = {
-    val previewService = new ModulePreview(diffApiService, downloadService, ctx)
-    val isPreview      = semester.isEmpty
+    val isPreview = semester.isEmpty
+
     logger.info(s"generating module catalog preview for po $po (preview = $isPreview)")
 
+    val modulePreview = new ModulePreview(gitCLI)
+    val modules = modulePreview
+      .getAllFromPreviewByPOWithLastModified(po)
+      .filterNot((m, _) => bannedGenericModules.contains(m.id.get))
+    val lang                     = Lang(Locale.GERMANY)
+    val moduleDiffs: ModuleDiffs = List.empty // TODO: reimplement
     val studyPrograms = studyProgramViewRepo.notExpired().map { all =>
       val poOnly = all.filter(_.po.id == po)
       assume(poOnly.nonEmpty, s"expected study programs for po $po")
       (all, poOnly)
     }
 
-    val lang = Lang(Locale.GERMANY)
-
     for {
-      (all, poOnly)                 <- studyPrograms
-      liveModules                   <- moduleService.allFromPO(po, activeOnly = true)
-      (liveModules, changedModules) <- previewService.changedActiveModulesFromPreviewWithLastModified(po, liveModules)
-      modules       = previewService.mergeModules(liveModules, changedModules, bannedGenericModules)
-      moduleDiffs   = if isPreview then diffs(liveModules, changedModules, bannedGenericModules) else Nil
+      (all, poOnly) <- studyPrograms
       latexSnippets = getLatexSnippets(latexFile.getParent, po, moduleDiffs, isPreview)
       _             = copyAssets(latexFile.getParent)
       content <- print(poOnly, modules, all, lang, moduleDiffs, latexSnippets, semester)
@@ -131,7 +125,7 @@ final class ModulePreviewService @Inject() (
 
   private def print(
       poOnly: Seq[StudyProgramView],
-      modules: Seq[(ModuleProtocol, Option[LocalDateTime])],
+      modules: Vector[(ModuleProtocol, LocalDate)],
       studyPrograms: Seq[StudyProgramView],
       lang: Lang,
       diffs: ModuleDiffs,

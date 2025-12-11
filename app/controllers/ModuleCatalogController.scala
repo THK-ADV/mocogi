@@ -29,13 +29,13 @@ import play.api.mvc.*
 import play.mvc.Http.HeaderNames
 import printing.latex.TextIntroRewriter
 import printing.pandoc.WordLatexPrinter
-import service.ModulePreviewService
+import service.ModuleCatalogService
 import service.StudyProgramPrivilegesService
 
 @Singleton
 final class ModuleCatalogController @Inject() (
     cc: ControllerComponents,
-    previewService: ModulePreviewService,
+    catalogService: ModuleCatalogService,
     auth: AuthorizationAction,
     jsonRepo: JSONRepository,
     @Named("tmp.dir") tmpDir: String,
@@ -82,9 +82,9 @@ final class ModuleCatalogController @Inject() (
             val filename             = s"module_catalog_$po"
             val file                 = FileOps.createLatexFile(filename, tmpDir)
             val path =
-              if isPreview then previewService.previewCatalog(po, file, bannedGenericModules)
+              if isPreview then catalogService.preview(po, file, bannedGenericModules)
               else
-                previewService.createCatalog(
+                catalogService.create(
                   po,
                   file,
                   Semester.current(), // assumes current semester

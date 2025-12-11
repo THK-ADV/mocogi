@@ -1,9 +1,7 @@
 package service.exam
 
-import java.nio.file.Path
 import java.util.UUID
 import javax.inject.Inject
-import javax.inject.Named
 
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.ExecutionContext
@@ -14,6 +12,7 @@ import models.*
 import models.core.AssessmentMethod
 import play.api.Logging
 import service.AssessmentMethodService
+import service.ModulePreview
 
 /*
   This feature is currently experimental. Feedback is expected for further development.
@@ -59,8 +58,8 @@ case class Row(
 }
 
 final class ExamLoadCSVPrinter(
-    modules: List[Module],
-    children: List[ModuleProtocol],
+    modules: Vector[Module],
+    children: Vector[ModuleProtocol],
     po: String,
     assessmentMethods: Seq[AssessmentMethod]
 ) extends Logging {
@@ -72,7 +71,7 @@ final class ExamLoadCSVPrinter(
   }
 
   private def instanceModulesOf(module: UUID): List[Module] =
-    this.modules.filter(m => m.metadata.po.optional.exists(_.instanceOf == module))
+    this.modules.filter(m => m.metadata.po.optional.exists(_.instanceOf == module)).toList
 
   private def printHeader(sb: StringBuilder) = {
     val header = List(
@@ -119,7 +118,7 @@ final class ExamLoadCSVPrinter(
     }
 
     def double(value: Double) = {
-      val strValue             = value.toString()
+      val strValue             = value.toString
       val Array(int, decimals) = strValue.split('.')
       if decimals == "0" then int
       else s"$int,$decimals"
@@ -262,13 +261,15 @@ final class ExamLoadCSVPrinter(
     }
   }
 
-  private def printModule(sb: StringBuilder, module: Module) =
-    for row <- createRows(module) yield sb.append(s"\n${row.toList.mkString(";")}")
+  private def printModule(sb: StringBuilder, module: Module): Unit =
+    for (row <- createRows(module)) do sb.append(s"\n${row.toList.mkString(";")}")
 
   def print(): String = {
     val sb = new StringBuilder()
     printHeader(sb)
-    for module <- modules yield printModule(sb, module)
+    for (module <- modules) {
+      printModule(sb, module)
+    }
     assumeConsumption()
     sb.toString()
   }
@@ -276,43 +277,31 @@ final class ExamLoadCSVPrinter(
 
 final class ExamLoadService @Inject() (
     assessmentMethodService: AssessmentMethodService,
-    @Named("draftBranch") draftBranch: String,
-    @Named("gitFolder") repoPath: Path,
+    gitCli: ModuleGitCLI,
     implicit val ctx: ExecutionContext
 ) extends Logging {
 
   /**
    * Returns all modules from preview (first arg) and all children (second arg)
    */
-  private def getModulesFromPreview(po: String): (List[ModuleProtocol], List[ModuleProtocol]) = {
-    val cli                = new ModuleGitCLI(draftBranch, repoPath)
-    val (errs, allModules) = cli.getAllModulesFromPreview()
-    if (errs.nonEmpty) {
-      logger.error(s"Failed to parse some modules from preview branch. Errors: ${errs.mkString("\n")}")
-    }
-    val modulesInPO     = ListBuffer[ModuleProtocol]()
+  private def getModulesFromPreview(po: String): (Vector[ModuleProtocol], Vector[ModuleProtocol]) = {
+    val preview         = new ModulePreview(gitCli)
+    val modulesInPO     = preview.getAllFromPreviewByPO(po)
     val childrenModules = ListBuffer[ModuleProtocol]()
-
-    for (module <- allModules) {
-      if module.metadata.isActive && module.metadata.po.hasPORelation(po) then {
-        modulesInPO += module
-
-        module.metadata.moduleRelation.collect {
-          case ModuleRelationProtocol.Parent(children) =>
-            childrenModules ++= allModules.filter(m => children.exists(_ == m.id.get))
-        }
+    for (module <- modulesInPO) {
+      module.metadata.moduleRelation.collect {
+        case ModuleRelationProtocol.Parent(children) =>
+          childrenModules ++= modulesInPO.filter(m => children.exists(_ == m.id.get))
       }
     }
-
-    (modulesInPO.toList, childrenModules.toList.distinctBy(_.id.get))
+    (modulesInPO, childrenModules.toVector.distinctBy(_.id.get))
   }
 
   /**
    * Returns all modules from the PO sorted by recommended semester
    */
-  private def prepareModules(modules: List[ModuleProtocol], po: String): List[Module] = {
+  private def prepareModules(modules: Vector[ModuleProtocol], po: String): Vector[Module] = {
     modules
-      .filter(_.metadata.po.hasPORelation(po))
       .map(m =>
         Module(
           m.id.get,
@@ -331,7 +320,7 @@ final class ExamLoadService @Inject() (
   /**
    * Returns all modules from the PO sorted by recommended semester
    */
-  private def prepareChildren(children: List[ModuleProtocol], modules: List[Module]): List[ModuleProtocol] =
+  private def prepareChildren(children: Vector[ModuleProtocol], modules: Vector[Module]): Vector[ModuleProtocol] =
     children.filter(child => modules.exists(m => child.metadata.moduleRelation.exists(_.parentID.contains(m.id))))
 
   /**
