@@ -116,29 +116,34 @@ object MergeEventHandler {
               // Case 1: opened MR from $module_branch into draft branch [AUTO APPROVED]
               // => schedule merge
               case (moduleBranch, gitConfig.draftBranch, "open") if labels.contains(autoApprovedLabel) =>
+                logEvent(action, sourceBranch, targetBranch, labels)
                 scheduleFreshMerge(moduleBranch)
 
               // Case 2: merged MR from $module_branch into draft branch [AUTO APPROVED or REVIEW REQUIRED]
               // => delete module draft, update permissions and create module if it's new
               case (moduleBranch, gitConfig.draftBranch, "merge")
                   if labels.contains(autoApprovedLabel) || labels.contains(reviewRequiredLabel) =>
+                logEvent(action, sourceBranch, targetBranch, labels)
                 val sha = parseMergeCommitSha(json)
                 withUUID(moduleBranch)(moduleId => handleModuleCreated(id, moduleId, sha))
 
               // Case 3: merged MR from any branch into draft branch
               // => for each module, update permissions and create module if it's new
               case (_, gitConfig.draftBranch, "merge") =>
+                logEvent(action, sourceBranch, targetBranch, labels)
                 val sha = parseMergeCommitSha(json)
                 handleModuleBulkUpdate(id, sha)
 
               // Case 4: closed MR from $module_branch into draft branch [REVIEW REQUIRED]
               // => handle review reject
               case (moduleBranch, gitConfig.draftBranch, "close") if labels.contains(reviewRequiredLabel) =>
+                logEvent(action, sourceBranch, targetBranch, labels)
                 withUUID(moduleBranch)(moduleId => handleReviewReject(moduleId))
 
               // Case 5: approved MR from $module_branch into draft branch [REVIEW REQUIRED]
               // => schedule merge
               case (moduleBranch, gitConfig.draftBranch, "approved") if labels.contains(reviewRequiredLabel) =>
+                logEvent(action, sourceBranch, targetBranch, labels)
                 scheduleFreshMerge(moduleBranch)
 
               // unknown action => abort
@@ -196,6 +201,11 @@ object MergeEventHandler {
         logger.info(s"[$id][${Thread.currentThread().getName.last}] finished!")
     }
 
+    private def logEvent(action: Action, source: Branch, target: Branch, labels: Labels)(implicit id: UUID): Unit =
+      logger.info(
+        s"[$id][${Thread.currentThread().getName.last}] $action $source -> $target [${labels.mkString(", ")}]"
+      )
+
     private def scheduleFreshMerge(
         moduleBranch: Branch
     )(implicit id: UUID, mrId: MergeRequestId, result: ParseResult): Unit =
@@ -209,7 +219,7 @@ object MergeEventHandler {
 
     private def scheduleMerge(attempt: Int, merge: () => Unit)(implicit id: UUID, mrId: MergeRequestId) = {
       val delay = Math.pow(2, attempt).seconds + 3.seconds
-      logger.info(s"[$id][${Thread.currentThread().getName.last}] retrying in $delay")
+      if attempt > 0 then logger.info(s"[$id][${Thread.currentThread().getName.last}] retrying in $delay")
       context.system.scheduler.scheduleOnce(delay, self, CheckMrStatus(id, mrId, attempt, maxMergeRetries, merge))
     }
 
