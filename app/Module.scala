@@ -21,6 +21,7 @@ import play.api.Configuration
 import play.api.Environment
 import printing.yaml.MetadataYamlPrinter
 import providers.*
+import service.image.PeopleImageUpdateActor
 import service.mail.MailActor
 import service.mail.MailConfig
 import service.notification.ReviewNotificationActor
@@ -108,10 +109,10 @@ class Module(@unused environment: Environment, configuration: Configuration)
       .toProvider(classOf[AuthorizationProvider])
       .asEagerSingleton()
 
-    // TODO: apply this to all actors
     bindActor[ReviewNotificationActor]("ReviewNotificationActor")
     bindActor[MailActor]("MailActor")
     bindActor[PreviewPushEventHandler]("PreviewPushEventHandler")
     bindActor[MainPushEventHandler]("MainPushEventHandler")
+    bindActor[PeopleImageUpdateActor]("PeopleImageUpdateActor")
   }
 }

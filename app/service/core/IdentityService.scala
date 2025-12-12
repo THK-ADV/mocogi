@@ -10,7 +10,6 @@ import auth.CampusId
 import database.repo.core.IdentityRepository
 import models.core.Identity
 import models.core.Identity.toDbEntry
-import models.core.Identity.Person
 import models.UserInfo
 import parsing.core.IdentityFileParser
 import permission.PermissionType.ApprovalFastForward
@@ -34,9 +33,6 @@ final class IdentityService @Inject() (
 
   override def all(): Future[Seq[Identity]] =
     repo.all().map(_.map(Identity.fromDbEntry))
-
-  def allPeople(): Future[Seq[Person]] =
-    repo.allPeople()
 
   def allWithImages(): Future[JsValue] =
     repo

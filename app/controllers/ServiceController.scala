@@ -13,13 +13,15 @@ import permission.ServiceAccountCheck
 import play.api.mvc.AbstractController
 import play.api.mvc.AnyContent
 import play.api.mvc.ControllerComponents
+import service.image.PeopleImageUpdateActor
 import service.notification.ReviewNotificationActor.DryRun
 import service.notification.ReviewNotificationActor.NotifyAllPendingReviews
 
 final class ServiceController @Inject() (
     cc: ControllerComponents,
     auth: AuthorizationAction,
-    @Named("ReviewNotificationActor") actor: ActorRef,
+    @Named("ReviewNotificationActor") reviewNotifier: ActorRef,
+    @Named("PeopleImageUpdateActor") imageUpdater: ActorRef,
     implicit val ctx: ExecutionContext
 ) extends AbstractController(cc)
     with ServiceAccountCheck {
@@ -28,7 +30,13 @@ final class ServiceController @Inject() (
     auth.andThen(hasRole(Role.NotifyReviewer)).apply { (r: TokenRequest[AnyContent]) =>
       val dryRun  = r.getQueryString("dryRun").flatMap(_.toBooleanOption).getOrElse(true)
       val message = if dryRun then DryRun else NotifyAllPendingReviews
-      actor ! message
+      reviewNotifier ! message
+      NoContent
+    }
+
+  def updateImages() =
+    auth.andThen(hasRole(Role.UpdateImages)).apply { (r: TokenRequest[AnyContent]) =>
+      imageUpdater ! PeopleImageUpdateActor.Update
       NoContent
     }
 }

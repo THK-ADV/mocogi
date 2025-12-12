@@ -69,4 +69,14 @@ class IdentityRepository @Inject() (
 
   def allWithImages(): Future[Seq[(IdentityDbEntry, Option[PeopleImage])]] =
     db.run(tableQuery.joinLeft(TableQuery[PeopleImagesTable]).on(_.id === _.person).result)
+
+  def replaceImages(entries: Seq[PeopleImage]): Future[Option[Int]] = {
+    val tq = TableQuery[PeopleImagesTable]
+    db.run(
+      for {
+        _           <- tq.delete
+        updateCount <- tq ++= entries
+      } yield updateCount
+    )
+  }
 }
