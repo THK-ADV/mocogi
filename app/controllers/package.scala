@@ -21,12 +21,6 @@ package object controllers {
     )
 
   extension (self: RequestHeader) {
-    def isNewApi: Boolean =
-      self
-        .getQueryString("newApi")
-        .flatMap(_.toBooleanOption)
-        .getOrElse(false)
-
     def isExtended: Boolean =
       self
         .getQueryString("extend")
@@ -35,7 +29,7 @@ package object controllers {
   }
 
   object MimeTypes {
-    val JSON = "application/json"
     val PDF  = "application/pdf"
+    val WORD = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
   }
 }
