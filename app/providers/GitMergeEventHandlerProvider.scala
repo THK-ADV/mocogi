@@ -11,11 +11,13 @@ import database.repo.ModuleDraftRepository
 import database.repo.ModuleReviewRepository
 import database.repo.ModuleUpdatePermissionRepository
 import git.api.GitCommitService
+import git.api.GitFileApiService
 import git.api.GitMergeRequestApiService
 import git.GitConfig
 import org.apache.pekko.actor.ActorRef
 import org.apache.pekko.actor.ActorSystem
 import play.api.i18n.MessagesApi
+import service.MetadataPipeline
 import service.ModuleCreationService
 import webhook.MergeEventHandler
 
@@ -32,6 +34,8 @@ final class GitMergeEventHandlerProvider @Inject() (
     moduleUpdatePermissionRepository: ModuleUpdatePermissionRepository,
     @Named("MailActor") mailActor: ActorRef,
     messages: MessagesApi,
+    modulePipeline: MetadataPipeline,
+    gitFileApiService: GitFileApiService,
     ctx: ExecutionContext
 ) extends Provider[MergeEventHandler] {
   override def get() = MergeEventHandler(
@@ -50,6 +54,8 @@ final class GitMergeEventHandlerProvider @Inject() (
         configReader.reviewRequiredLabel,
         configReader.moduleEditUrl,
         10,
+        modulePipeline,
+        gitFileApiService,
         ctx
       )
     )

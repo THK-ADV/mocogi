@@ -8,10 +8,7 @@ import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-import git.Branch
-import git.GitConfig
-import git.MergeRequestId
-import git.MergeRequestStatus
+import git.*
 import play.api.libs.json.JsArray
 import play.api.libs.json.JsValue
 import play.api.libs.ws.writeableOf_WsBody
@@ -166,6 +163,16 @@ final class GitMergeRequestApiService @Inject() (
         else Future.failed(parseErrorMessage(resp))
       }
   }
+
+  def getChanges(mergeRequestId: MergeRequestId) =
+    ws
+      .url(s"${this.mergeRequestUrl}/${mergeRequestId.value}/changes")
+      .withHttpHeaders(tokenHeader())
+      .get()
+      .flatMap { res =>
+        if (res.status == Status.OK) Future.successful(res.json.\("changes").validate[List[Diff]].getOrElse(Nil))
+        else Future.failed(parseErrorMessage(res))
+      }
 
   private def mergeRequestUrl =
     s"${projectsUrl()}/merge_requests"

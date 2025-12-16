@@ -19,6 +19,7 @@ import database.repo.ModuleReviewRepository
 import database.repo.ModuleUpdatePermissionRepository
 import git.*
 import git.api.GitCommitService
+import git.api.GitFileApiService
 import git.api.GitMergeRequestApiService
 import io.circe.ParsingFailure
 import models.*
@@ -34,7 +35,9 @@ import play.api.libs.json.*
 import play.api.Logging
 import service.mail.MailActor
 import service.mail.MailActor.SendMail
+import service.MetadataPipeline
 import service.ModuleCreationService
+import service.Print
 
 @Singleton
 case class MergeEventHandler(private val value: ActorRef) {
@@ -61,6 +64,8 @@ object MergeEventHandler {
       reviewRequiredLabel: String,
       moduleEditUrl: String,
       maxMergeRetries: Int,
+      modulePipeline: MetadataPipeline,
+      gitFileApiService: GitFileApiService,
       ctx: ExecutionContext
   ) = Props(
     new Impl(
@@ -77,6 +82,8 @@ object MergeEventHandler {
       reviewRequiredLabel,
       moduleEditUrl,
       maxMergeRetries,
+      modulePipeline,
+      gitFileApiService,
       ctx
     )
   )
@@ -95,6 +102,8 @@ object MergeEventHandler {
       reviewRequiredLabel: String,
       moduleEditUrl: String,
       maxMergeRetries: Int,
+      modulePipeline: MetadataPipeline,
+      gitFileApiService: GitFileApiService,
       implicit val ctx: ExecutionContext
   ) extends Actor
       with Logging {
@@ -145,6 +154,12 @@ object MergeEventHandler {
               case (moduleBranch, gitConfig.draftBranch, "approved") if labels.contains(reviewRequiredLabel) =>
                 logEvent(action, sourceBranch, targetBranch, labels)
                 scheduleFreshMerge(moduleBranch)
+
+              // Case 6: opened MR from any branch into any branch without labels
+              // => type-check all modules in this MR and comment with its results
+              case (_, _, "open") if labels.isEmpty =>
+                logEvent(action, sourceBranch, targetBranch, labels)
+                typeCheckModules(sourceBranch)
 
               // unknown action => abort
               case _ =>
@@ -315,6 +330,48 @@ object MergeEventHandler {
           val module = parseCreatedModuleInformation(content, diff.newPath.moduleId(gitConfig).get)
           createNewModuleWithPermissions(id, module, diff)
         })
+      yield ()
+
+      f.onComplete {
+        case Success(_) =>
+          self ! Finished(id)
+        case Failure(e) =>
+          logger.error(s"[$id][${Thread.currentThread().getName.last}]", e)
+          self ! Finished(id)
+      }
+    }
+
+    private def typeCheckModules(branch: Branch)(implicit id: UUID, mrId: MergeRequestId): Unit = {
+      logger.info(s"[$id][${Thread.currentThread().getName.last}] type checking modules of MR ${mrId.value}…")
+      val f = for
+        changes <- mergeRequestApiService.getChanges(mrId)
+        downloads <- Future.sequence(changes.collect {
+          case d if d.path.isModule(gitConfig) => gitFileApiService.download(d.path, branch)
+        })
+        _ <-
+          if downloads.isEmpty then
+            Future.successful(logger.info(s"[$id][${Thread.currentThread().getName.last}] no module files to check"))
+          else {
+            for {
+              parseRes <- modulePipeline.parseValidateMany(downloads.collect { case Some(f) => Print(f._1.value) })
+              _ <- parseRes match {
+                case Left(errs) =>
+                  logger.error(
+                    s"[$id][${Thread.currentThread().getName.last}] type checking revealed ${errs.size} errors"
+                  )
+                  val comments = errs.map { err =>
+                    val body =
+                      s"❌ failed to type check module ${err.metadata.fold("???")(_.toString)}.\n\nreason:${err.getMessage}"
+                    mergeRequestApiService.comment(mrId, body)
+                  }
+                  Future.sequence(comments)
+                case Right(_) =>
+                  mergeRequestApiService
+                    .comment(mrId, "✅ successfully type checked all modules")
+                    .map(_ => logger.info(s"[$id][${Thread.currentThread().getName.last}] all modules are sound"))
+              }
+            } yield ()
+          }
       yield ()
 
       f.onComplete {
