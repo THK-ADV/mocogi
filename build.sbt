@@ -14,7 +14,7 @@ lazy val `mocogi` = (project in file("."))
     libraryDependencies ++= test,
     libraryDependencies ++= database,
     libraryDependencies += parser,
-    libraryDependencies ++= keycloak,
+    libraryDependencies ++= authorization,
     libraryDependencies ++= optics,
     libraryDependencies += parallelCollections,
     libraryDependencies += circle,
@@ -68,10 +68,8 @@ lazy val guiceDeps = Seq(
   "com.google.inject.extensions" % "guice-assistedinject" % "6.0.0"
 )
 
-val keycloak = Seq(
-  "org.keycloak"      % "keycloak-core"         % "25.0.3",
-  "org.keycloak"      % "keycloak-adapter-core" % "25.0.3",
-  "org.jboss.logging" % "jboss-logging"         % "3.5.3.Final"
+val authorization = Seq(
+  "com.github.jwt-scala" %% "jwt-play-json" % "11.0.3"
 )
 
 val optics = Seq(
