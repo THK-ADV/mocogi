@@ -298,7 +298,7 @@ final class ExamListsLatexPrinter(
       .sortBy(_.metadata.title)
       .foreach { m =>
         m.metadata.moduleRelation match {
-          case Some(ModuleRelationProtocol.Child(_)) => // child modules are rendered below their parent module
+          case Some(ModuleRelationProtocol.Child(_))         => // child modules are rendered below their parent module
           case Some(ModuleRelationProtocol.Parent(children)) =>
             parentModuleRow(row, m.metadata.title)
             row += 1
@@ -335,7 +335,7 @@ final class ExamListsLatexPrinter(
   }
 
   private def moduleMatrix(titleLabel: String) = {
-    val remainingWidth = 0.9 - moduleTitleWidthValue
+    val remainingWidth     = 0.9 - moduleTitleWidthValue
     val cols: Seq[POShort] = specializations
       .map(s => (s.id, s.label, s.abbreviation))
       .prepended((studyProgram.po.id, strings.label(studyProgram), studyProgram.abbreviation))
@@ -364,7 +364,7 @@ final class ExamListsLatexPrinter(
       .sortBy(_.metadata.title)
       .foreach { m =>
         m.metadata.moduleRelation match {
-          case Some(ModuleRelationProtocol.Child(_)) => // child modules are rendered below their parent module
+          case Some(ModuleRelationProtocol.Child(_))         => // child modules are rendered below their parent module
           case Some(ModuleRelationProtocol.Parent(children)) =>
             children.toList
               .map { id =>
@@ -491,8 +491,8 @@ final class ExamListsLatexPrinter(
           .fold(true)(a => a._1 == a._2.id)
       }
       (mandatory, elective) match {
-        case (true, false) => true
-        case (false, true) => false
+        case (true, false)  => true
+        case (false, true)  => false
         case (false, false) =>
           assert(false, s"module ${m.id.fold(m.metadata.title)(_.toString)} needs to be either mandatory or elective")
         case (true, true) =>

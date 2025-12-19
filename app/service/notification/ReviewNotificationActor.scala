@@ -64,7 +64,7 @@ final class ReviewNotificationActor @Inject() (
 
           xs.groupBy(_.module).foreach {
             case (module, xs) =>
-              val entry = xs.head
+              val entry  = xs.head
               val author = (entry.moduleAuthor.firstname, entry.moduleAuthor.lastname) match {
                 case (Some(firstname), Some(lastname)) => s"$firstname $lastname"
                 case _                                 => entry.moduleAuthor.id

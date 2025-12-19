@@ -35,7 +35,7 @@ class ModuleWorkloadParserSpec extends AnyWordSpec with ParserSpecHelper with Ei
       val (res, rest) = parser.parse(input)
       res match {
         case Right(_) => fail()
-        case Left(e) =>
+        case Left(e)  =>
           assert(e.expected == "practical:")
           assert(
             e.found ==

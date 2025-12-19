@@ -14,8 +14,8 @@ class ModuleRelationParserSpec extends AnyWordSpec with ParserSpecHelper with Ei
 
   "A Module Relation Parser" should {
     "parse a super module with its children" in {
-      val m1 = UUID.randomUUID
-      val m2 = UUID.randomUUID
+      val m1     = UUID.randomUUID
+      val m2     = UUID.randomUUID
       val input1 =
         s"""relation:
            | children:
@@ -48,7 +48,7 @@ class ModuleRelationParserSpec extends AnyWordSpec with ParserSpecHelper with Ei
     }
 
     "parse a sub module with its parent" in {
-      val m1 = UUID.randomUUID
+      val m1    = UUID.randomUUID
       val input =
         s"""relation:
            | parent: module.$m1""".stripMargin

@@ -61,7 +61,7 @@ object PrettyPrinter {
       case p: Product =>
         val prefix = p.productPrefix
         // We'll use reflection to get the constructor arg names and values.
-        val cls = p.getClass
+        val cls    = p.getClass
         val fields =
           cls.getDeclaredFields.filterNot(_.isSynthetic).map(_.getName)
         val values = p.productIterator.toSeq

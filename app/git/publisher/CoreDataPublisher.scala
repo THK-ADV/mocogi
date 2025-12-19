@@ -41,7 +41,7 @@ final class CoreDataPublisher @Inject() (
 
   override def receive = {
     case Handle(coreFiles) =>
-      val order = topologicalSort(coreFiles)
+      val order   = topologicalSort(coreFiles)
       val updates = order.foldLeft(Future.unit) {
         case (acc, (filename, _, content)) =>
           acc.flatMap(_ => createOrUpdate(filename, content))
@@ -62,7 +62,7 @@ final class CoreDataPublisher @Inject() (
   ): Seq[(String, GitFile.CoreFile, GitFileContent)] = {
     val deps     = coreFileDependencies
     val vertices = coreFiles.map(_._1.path.fileName)
-    val edges = vertices.flatMap { f =>
+    val edges    = vertices.flatMap { f =>
       deps.get(f) match {
         case Some(value) =>
           val self = vertices.indexOf(f)
@@ -229,7 +229,7 @@ object CoreDataPublisher {
 
   private class Graph[A](vertices: List[A], edges: List[(Int, Int)]) {
     private val numVertices = vertices.size
-    private val adjacency =
+    private val adjacency   =
       Array.fill(numVertices)(Array.fill(numVertices)(false))
 
     edges.foreach { case (a, b) => adjacency(a)(b) = true }
@@ -273,7 +273,7 @@ object CoreDataPublisher {
       locations: List[A],
       id: Lens[A, String]
   ): (Seq[A], Seq[A], Seq[String]) = {
-    val vIds = locations.map(id.get)
+    val vIds     = locations.map(id.get)
     val toCreate =
       this
         .toCreate(allIds, vIds)

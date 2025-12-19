@@ -1,21 +1,12 @@
-import javax.inject.Inject
-import javax.inject.Singleton
-
 import scala.concurrent.*
-import scala.util.Failure
-import scala.util.Success
 
-import auth.Authorization
-import auth.Token
 import controllers.ErrorHandler
 import play.api.http.HttpErrorHandler
 import play.api.libs.json.Json
 import play.api.mvc.*
 import play.api.mvc.Results.*
-import play.api.Logging
 
-@Singleton
-class ErrorHandler @Inject() (auth: Authorization[Token]) extends HttpErrorHandler with Logging {
+class ErrorHandler extends HttpErrorHandler {
 
   def onClientError(request: RequestHeader, statusCode: Int, message: String): Future[Result] =
     Future.successful(
@@ -28,24 +19,11 @@ class ErrorHandler @Inject() (auth: Authorization[Token]) extends HttpErrorHandl
       )
     )
 
-  def onServerError(request: RequestHeader, exception: Throwable): Future[Result] = {
-    auth.authorize(request.headers.get(Authorization.AuthorizationHeader)) match {
-      case Success(token) =>
-        logger.error(
-          s"server error occurred from ${token.username} on ${request.method} ${request.uri}",
-          exception
-        )
-      case Failure(_) =>
-        logger.error(
-          s"server error occurred on ${request.method} ${request.uri}",
-          exception
-        )
-    }
+  def onServerError(request: RequestHeader, exception: Throwable): Future[Result] =
     Future.successful(
       ErrorHandler.internalServerError(
         request.toString(),
         exception
       )
     )
-  }
 }

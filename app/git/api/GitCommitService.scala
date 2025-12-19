@@ -39,7 +39,7 @@ final class GitCommitService @Inject() (
       print: Print
   ): Future[CommitId] = {
     val filePath = GitFilePath(moduleId)(config)
-    val action = fileService
+    val action   = fileService
       .fileExists(filePath, branch)
       .map(exists =>
         GitCommitAction(
@@ -51,7 +51,7 @@ final class GitCommitService @Inject() (
       )
     for {
       action <- action
-      res <- commit(
+      res    <- commit(
         branch,
         author.email.getOrElse(config.defaultEmail),
         author.fullName,
@@ -81,7 +81,7 @@ final class GitCommitService @Inject() (
    */
   def getAllModulesFromCommit(sha: String, branch: Branch): Future[List[(GitFileContent, CommitDiff)]] =
     for
-      commits <- getCommitDiff(sha)
+      commits   <- getCommitDiff(sha)
       downloads <- Future.sequence(commits.collect {
         case cd if cd.newPath.isModule && !cd.isDeleted =>
           fileService.download(cd.newPath, branch).collect { case Some((c, _)) => (c, cd) }
@@ -139,7 +139,7 @@ final class GitCommitService @Inject() (
         "commit_message" -> message,
         "author_email"   -> authorEmail,
         "author_name"    -> authorName,
-        "actions" -> actions.map { a =>
+        "actions"        -> actions.map { a =>
           a.action match {
             case GitCommitActionType.Create =>
               Json.obj(

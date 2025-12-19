@@ -47,7 +47,7 @@ final class MainPushEventHandler @Inject() (
 
   private def parseFilesOfLastCommit(json: JsValue, lastCommit: CommitId) =
     for {
-      commits <- json.\("commits").validate[JsArray]
+      commits     <- json.\("commits").validate[JsArray]
       mergeCommit <- commits.value.find(_.\("id").validate[String].map(_ == lastCommit.value).getOrElse(false)) match {
         case Some(commit) =>
           for {

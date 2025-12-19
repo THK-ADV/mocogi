@@ -67,7 +67,7 @@ final class ModuleReviewService @Inject() (
   def create(moduleId: UUID, author: Identity.Person): Future[Unit] = {
     val draft = draftRepo.getByModule(moduleId).continueIf(_.state().canRequestReview, "can't request a review")
     for {
-      draft <- draft
+      draft        <- draft
       mergeRequest <-
         if draft.keysToBeReviewed.isEmpty then createAutoAcceptedReview(draft, author)
         else createApproveReview(draft, author)
@@ -156,7 +156,7 @@ final class ModuleReviewService @Inject() (
 
     for {
       moduleId <- reviewRepo.moduleId(ids)
-      draft <- draftRepo
+      draft    <- draftRepo
         .getByModuleOpt(moduleId)
         .abortIf(
           _.forall(d =>
@@ -170,11 +170,11 @@ final class ModuleReviewService @Inject() (
       _      <- reviewRepo.update(ids, newStatus, comment, reviewer.id)
       status <- moduleReviewSummaryStatus(draft.module)
       _      <- api.comment(mergeRequestId, commentBody(status.get))
-      _ <-
+      _      <-
         if (approve) {
           for {
             reviews <- reviewRepo.getStatusByModule(draft.module)
-            _ <-
+            _       <-
               if (reviews.forall(_ == Approved)) {
                 for {
                   status <- api.approve(mergeRequestId)
@@ -226,7 +226,7 @@ final class ModuleReviewService @Inject() (
             val studyProgram  = (sp.get._1, sp.get._2, sp.get._3)
             val degree        = sp.get._4
             val summaryStatus = ModuleReviewSummaryStatus(entries.map(_._7)).get
-            val canReview = summaryStatus match {
+            val canReview     = summaryStatus match {
               case WaitingForChanges      => false
               case WaitingForReview(_, _) => status == Pending
             }
@@ -291,9 +291,9 @@ final class ModuleReviewService @Inject() (
       }
 
     for {
-      directors <- studyProgramDirectors(protocol.metadata.po, roles)
-      _         <- reviewRepo.delete(draft.module)
-      _         <- reviewRepo.createMany(reviews(directors))
+      directors    <- studyProgramDirectors(protocol.metadata.po, roles)
+      _            <- reviewRepo.delete(draft.module)
+      _            <- reviewRepo.createMany(reviews(directors))
       mergeRequest <- createMergeRequest(
         draft,
         mrTitle(author, protocol.metadata),

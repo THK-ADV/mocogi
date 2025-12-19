@@ -29,7 +29,7 @@ final class MailActor @Inject() (
 
   override def receive = {
     case SendMail(subject, bodyText, receiver, cc) =>
-      val id = UUID.randomUUID()
+      val id   = UUID.randomUUID()
       val mail = Email(
         from = config.sender,
         to = receiver.toList,

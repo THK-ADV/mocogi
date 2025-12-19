@@ -3,8 +3,7 @@ import java.util.UUID
 
 import scala.annotation.unused
 
-import auth.Authorization
-import auth.Token
+import auth.KeycloakConfig
 import cli.GitCLI
 import com.google.inject.name.Names
 import com.google.inject.AbstractModule
@@ -95,6 +94,10 @@ class Module(@unused environment: Environment, configuration: Configuration)
       .annotatedWith(Names.named("webhookToken"))
       .toInstance(UUID.fromString(configuration.nonEmptyString("git.token")))
 
+    bind(classOf[KeycloakConfig]).toInstance(
+      KeycloakConfig(configuration.nonEmptyString("keycloak.jwksUrl"), configuration.nonEmptyString("keycloak.issuer"))
+    )
+
     bind(classOf[GitConfig])
       .toProvider(classOf[GitConfigProvider])
       .asEagerSingleton()
@@ -105,9 +108,6 @@ class Module(@unused environment: Environment, configuration: Configuration)
       .toProvider(classOf[ModuleKeysToReviewProvider])
       .asEagerSingleton()
     bind(new TypeLiteral[Set[MetadataParser]] {}).toInstance(Set(new THKV1Parser()))
-    bind(new TypeLiteral[Authorization[Token]] {})
-      .toProvider(classOf[AuthorizationProvider])
-      .asEagerSingleton()
 
     bindActor[ReviewNotificationActor]("ReviewNotificationActor")
     bindActor[MailActor]("MailActor")

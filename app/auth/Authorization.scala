@@ -1,9 +1,12 @@
 package auth
 
-import scala.util.Try
+import scala.concurrent.Future
 
-trait Authorization[Token] {
-  def authorize(authorizationHeaderValue: Option[String]): Try[Token]
+import com.google.inject.ImplementedBy
+
+@ImplementedBy(classOf[JwtAuthorization])
+trait Authorization {
+  def authorize(headerValue: Option[String]): Future[Token]
 }
 
 object Authorization {

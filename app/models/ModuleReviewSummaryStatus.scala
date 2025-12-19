@@ -12,7 +12,7 @@ sealed trait ModuleReviewSummaryStatus extends IDLabel
 
 object ModuleReviewSummaryStatus {
   given Writes[ModuleReviewSummaryStatus] = {
-    case s @ WaitingForChanges => IDLabel.writes.writes(s)
+    case s @ WaitingForChanges                  => IDLabel.writes.writes(s)
     case s @ WaitingForReview(approved, needed) =>
       IDLabel.writes
         .writes(s)

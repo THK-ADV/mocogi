@@ -19,8 +19,8 @@ final class ModuleTaughtWithParserSpec extends AnyWordSpec with ParserSpecHelper
     }
 
     "parse multiple modules which are taught with" in {
-      val m1 = UUID.randomUUID
-      val m2 = UUID.randomUUID
+      val m1    = UUID.randomUUID
+      val m2    = UUID.randomUUID
       val input =
         s"""taught_with:
            |  - module.$m1

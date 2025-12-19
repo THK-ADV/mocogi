@@ -17,7 +17,7 @@ final class PipelineErrorFormatSpec extends AnyWordSpec with OptionValues {
     "serialize a parsing error" in {
       val medata       = UUID.randomUUID
       val parsingError = ParsingError("exp", "fo")
-      val res =
+      val res          =
         PipelineError.writes.writes(
           PipelineError.Parser(parsingError, Some(medata))
         )
@@ -30,7 +30,7 @@ final class PipelineErrorFormatSpec extends AnyWordSpec with OptionValues {
     "serialize a printing error" in {
       val medata        = UUID.randomUUID
       val printingError = PrintingError("exp", "fo")
-      val res =
+      val res           =
         PipelineError.writes.writes(
           PipelineError.Printer(printingError, Some(medata))
         )
@@ -43,7 +43,7 @@ final class PipelineErrorFormatSpec extends AnyWordSpec with OptionValues {
     "serialize a validation error" in {
       val metadata        = UUID.randomUUID()
       val validationError = ValidationError(List("abc", "def"))
-      val res =
+      val res             =
         PipelineError.writes.writes(
           PipelineError.Validator(validationError, Some(metadata))
         )

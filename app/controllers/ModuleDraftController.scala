@@ -65,7 +65,7 @@ final class ModuleDraftController @Inject() (
       moduleDraftService
         .getByModuleOpt(moduleId)
         .map { draft =>
-          val messages = request.messages
+          val messages             = request.messages
           val (reviewed, modified) = draft
             .map(d =>
               (

@@ -53,7 +53,7 @@ final class ModuleViewRepository @Inject() (
       tableQuery.result.map(_.groupBy(_.id).map {
         case (_, deps) =>
           val moduleManagement = mutable.Set[ModuleManagement]()
-          val studyPrograms =
+          val studyPrograms    =
             mutable.Set[StudyProgramModuleAssociation[Iterable[Int]]]()
           deps.foreach { dep =>
             moduleManagement.add(dep.moduleManagement)

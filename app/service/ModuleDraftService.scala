@@ -122,7 +122,7 @@ final class ModuleDraftService @Inject() (
         .getByModule(request.moduleId)
         .continueIf(_.state().canEdit(request.canApproveModule), "can't edit module")
       origin <- getFromStaging(draft.module)
-      existing = draft.protocol()
+      existing                = draft.protocol()
       (updated, modifiedKeys) = diff(
         existing.normalize(),
         request.protocol.normalize(),
@@ -135,7 +135,7 @@ final class ModuleDraftService @Inject() (
           for {
             res <- pipeline.printParseValidate(updated, request.versionScheme, request.moduleId)
             res <- res match {
-              case Left(err) => Future.successful(Left(err))
+              case Left(err)              => Future.successful(Left(err))
               case Right((module, print)) =>
                 for {
                   commitId <- gitCommitService.commit(
@@ -157,7 +157,7 @@ final class ModuleDraftService @Inject() (
                     commitId
                   )
                   updatedDraft <- repo.getByModule(request.moduleId)
-                  _ <-
+                  _            <-
                     if updatedDraft.state() == ModuleDraftState.WaitingForChanges then
                       repo.updateMergeRequest(request.moduleId, None)
                     else Future.unit
@@ -184,13 +184,13 @@ final class ModuleDraftService @Inject() (
       updatedKeys: Set[String]
   ) =
     pipeline.printParseValidate(protocol, versionScheme, moduleId).flatMap {
-      case Left(err) => Future.successful(Left(err))
+      case Left(err)              => Future.successful(Left(err))
       case Right((module, print)) =>
         val commitMsg =
           if (status.isAdded) "new module"
           else commitMessage(updatedKeys)
         for {
-          branch <- gitBranchService.createModuleBranch(moduleId)
+          branch   <- gitBranchService.createModuleBranch(moduleId)
           commitId <- gitCommitService.commit(
             branch,
             person,

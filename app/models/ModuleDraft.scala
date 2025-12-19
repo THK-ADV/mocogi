@@ -41,7 +41,7 @@ case class ModuleDraft(
   def protocol(): ModuleProtocol =
     ModuleJson.reads.reads(this.moduleJson) match {
       case JsSuccess(value, _) => value.toProtocol
-      case JsError(_) =>
+      case JsError(_)          =>
         throw new Exception(
           s"Unable to parse module draft with ID ${this.module} to JSON"
         )

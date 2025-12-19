@@ -74,7 +74,7 @@ final class ModuleRepository @Inject() (
         val db = toDbEntry(module, lastModified)
         for {
           exists <- existsAction(module)
-          _ <-
+          _      <-
             if exists then tableQuery.filter(_.id === module.metadata.id).update(db) else tableQuery += db
         } yield ()
     }

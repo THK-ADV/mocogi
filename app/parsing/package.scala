@@ -96,7 +96,7 @@ package object parsing {
 
     xs.size match {
       case 0 | 1 => xs
-      case 2 =>
+      case 2     =>
         val (l, r) = go(xs.head, xs.last)
         List(l, r)
       case _ =>
@@ -109,7 +109,7 @@ package object parsing {
     val strategy = t._1
     val values   = shiftSpaces(t._2)
     var pointer  = 1
-    val str = values.foldLeft("") {
+    val str      = values.foldLeft("") {
       case (acc, str) =>
         val str0 = strategy match {
           case > if !str.endsWith("\n") && pointer != values.size =>

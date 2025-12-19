@@ -1,10 +1,3 @@
-val playSlickVersion = "6.1.1"
-val guiceVersion     = "5.1.0"
-val scalaTestVersion = "3.2.19"
-val keycloakVersion  = "24.0.3"
-val monocle          = "3.3.0"
-val playMailVersion  = "10.0.0"
-
 lazy val `mocogi` = (project in file("."))
   .enablePlugins(PlayScala)
   .settings(
@@ -21,7 +14,7 @@ lazy val `mocogi` = (project in file("."))
     libraryDependencies ++= test,
     libraryDependencies ++= database,
     libraryDependencies += parser,
-    libraryDependencies ++= keycloak,
+    libraryDependencies ++= authorization,
     libraryDependencies ++= optics,
     libraryDependencies += parallelCollections,
     libraryDependencies += circle,
@@ -45,50 +38,48 @@ lazy val play = Seq(
   specs2 % Test,
   ws,
   ehcache,
-  "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.17.2" // jackson-databind 2.15.2
+  "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.17.2"
 )
 
 lazy val test = Seq(
-  "org.scalactic"          %% "scalactic"          % scalaTestVersion,
-  "org.scalatest"          %% "scalatest"          % scalaTestVersion % "test",
-  "org.scalatestplus.play" %% "scalatestplus-play" % "7.0.1"          % "test"
+  "org.scalactic"          %% "scalactic"          % "3.2.19",
+  "org.scalatest"          %% "scalatest"          % "3.2.19" % "test",
+  "org.scalatestplus.play" %% "scalatestplus-play" % "7.0.2"  % "test"
 )
 
 lazy val parser = "de.th-koeln.inf.adv" %% "nebulak" % "0.13"
 
 lazy val database = Seq(
-  "org.playframework"   %% "play-slick"            % playSlickVersion,
-  "org.playframework"   %% "play-slick-evolutions" % playSlickVersion,
-  "org.postgresql"       % "postgresql"            % "42.7.3",
-  "com.github.tminglei" %% "slick-pg"              % "0.22.2",
-  "com.github.tminglei" %% "slick-pg_play-json"    % "0.22.2",
+  "org.playframework"   %% "play-slick"            % "6.2.0",
+  "org.playframework"   %% "play-slick-evolutions" % "6.2.0",
+  "org.postgresql"       % "postgresql"            % "42.7.8",
+  "com.github.tminglei" %% "slick-pg"              % "0.23.1",
+  "com.github.tminglei" %% "slick-pg_play-json"    % "0.23.1",
 )
 
 lazy val circle = "io.circe" %% "circe-yaml" % "0.16.0"
 
 lazy val parallelCollections =
-  "org.scala-lang.modules" %% "scala-parallel-collections" % "1.0.4"
+  "org.scala-lang.modules" %% "scala-parallel-collections" % "1.2.0"
 
 lazy val guiceDeps = Seq(
   guice,
-  "com.google.inject"            % "guice"                % guiceVersion,
-  "com.google.inject.extensions" % "guice-assistedinject" % guiceVersion
+  "com.google.inject"            % "guice"                % "6.0.0",
+  "com.google.inject.extensions" % "guice-assistedinject" % "6.0.0"
 )
 
-val keycloak = Seq(
-  "org.keycloak"      % "keycloak-core"         % keycloakVersion,
-  "org.keycloak"      % "keycloak-adapter-core" % keycloakVersion,
-  "org.jboss.logging" % "jboss-logging"         % "3.5.3.Final"
+val authorization = Seq(
+  "com.github.jwt-scala" %% "jwt-play-json" % "11.0.3"
 )
 
 val optics = Seq(
-  "dev.optics" %% "monocle-core"  % monocle,
-  "dev.optics" %% "monocle-macro" % monocle
+  "dev.optics" %% "monocle-core"  % "3.3.0",
+  "dev.optics" %% "monocle-macro" % "3.3.0"
 )
 
 val mail = Seq(
-  "org.playframework" %% "play-mailer"       % playMailVersion,
-  "org.playframework" %% "play-mailer-guice" % playMailVersion
+  "org.playframework" %% "play-mailer"       % "10.1.0",
+  "org.playframework" %% "play-mailer-guice" % "10.1.0"
 )
 
 val scalaScraper = "net.ruippeixotog" %% "scala-scraper" % "3.2.0"

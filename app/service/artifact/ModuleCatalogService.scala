@@ -80,12 +80,12 @@ final class ModuleCatalogService @Inject() (
     logger.info(s"generating module catalog preview for po $po (preview = $isPreview)")
 
     val modulePreview = new ModulePreview(gitCLI)
-    val modules = modulePreview
+    val modules       = modulePreview
       .getAllFromPreviewByPOWithLastModified(po)
       .filterNot((m, _) => bannedGenericModules.contains(m.id.get))
     val lang                     = Lang(Locale.GERMANY)
     val moduleDiffs: ModuleDiffs = List.empty // TODO: reimplement
-    val studyPrograms = studyProgramViewRepo.notExpired().map { all =>
+    val studyPrograms            = studyProgramViewRepo.notExpired().map { all =>
       val poOnly = all.filter(_.po.id == po)
       assume(poOnly.nonEmpty, s"expected study programs for po $po")
       (all, poOnly)
@@ -164,7 +164,7 @@ final class ModuleCatalogService @Inject() (
         liveModules ++ createdModules
       )
       val markdownLatexPrinter = new MarkdownLatexPrinter(texCommand)
-      val printer = semester match {
+      val printer              = semester match {
         case Some(value) =>
           ModuleCatalogLatexPrinter.default(
             markdownLatexPrinter,

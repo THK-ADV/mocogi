@@ -44,7 +44,7 @@ class THKV1ParserSpec
   "A Metadata Parser" when {
     "parse module code" should {
       "return a valid uuid" in {
-        val id = UUID.fromString("00895144-30e4-4bd2-b800-bb706686d950")
+        val id          = UUID.fromString("00895144-30e4-4bd2-b800-bb706686d950")
         val (res, rest) = moduleCodeParser.parse(
           "id: 00895144-30e4-4bd2-b800-bb706686d950\n"
         )
