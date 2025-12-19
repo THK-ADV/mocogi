@@ -8,7 +8,7 @@ import scala.util.Failure
 import scala.util.Success
 
 import database.repo.core.IdentityRepository
-import database.table.PeopleImage
+import models.PeopleImage
 import net.ruippeixotog.scalascraper.browser.JsoupBrowser
 import net.ruippeixotog.scalascraper.dsl.DSL.*
 import net.ruippeixotog.scalascraper.dsl.DSL.Extract.*

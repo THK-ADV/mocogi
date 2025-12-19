@@ -11,7 +11,7 @@ import database.repo.core.StudyProgramDirectorsRepository
 import database.repo.core.StudyProgramDirectorsRepository.StudyProgramDirector
 import database.repo.ModuleDraftRepository
 import database.repo.ModuleReviewRepository
-import git.api.GitMergeRequestApiService
+import git.api.GitMergeRequestService
 import git.MergeRequestId
 import git.MergeRequestStatus
 import models.*
@@ -22,7 +22,8 @@ import models.ModuleReviewStatus.Pending
 import models.ModuleReviewStatus.Rejected
 import models.ModuleReviewSummaryStatus.WaitingForChanges
 import models.ModuleReviewSummaryStatus.WaitingForReview
-import ops.FutureOps.Ops
+import ops.abortIf
+import ops.continueIf
 import permission.Permissions
 import play.api.Logging
 
@@ -31,7 +32,7 @@ final class ModuleReviewService @Inject() (
     private val draftRepo: ModuleDraftRepository,   // READ UPDATE ONLY
     private val reviewRepo: ModuleReviewRepository, // CREATE READ UPDATE DELETE
     private val directorsRepository: StudyProgramDirectorsRepository,
-    private val api: GitMergeRequestApiService,
+    private val api: GitMergeRequestService,
     private val keysToReview: ModuleKeysToReview,
     private implicit val ctx: ExecutionContext
 ) extends Logging {

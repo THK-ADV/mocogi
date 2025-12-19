@@ -14,9 +14,7 @@ trait Repository[Input, Output, T <: slick.jdbc.PostgresProfile.api.Table[Input]
 
   protected val tableQuery: TableQuery[T]
 
-  protected def retrieve(
-      query: Query[T, Input, Seq]
-  ): Future[Seq[Output]]
+  protected def retrieve(query: Query[T, Input, Seq]): Future[Seq[Output]]
 
   def all(): Future[Seq[Output]] =
     retrieve(tableQuery)

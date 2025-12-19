@@ -2,7 +2,7 @@ package parsing.validator
 
 import cats.data.NonEmptyList
 
-final class CombineValidators[A](
+private[parsing] final class CombineValidators[A](
     validators: NonEmptyList[YamlFileParserValidator[A]]
 ) extends YamlFileParserValidator[A] {
 

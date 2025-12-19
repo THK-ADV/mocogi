@@ -4,7 +4,9 @@ import database.table.IDLabelColumn
 import models.core.ModuleStatus
 import slick.jdbc.PostgresProfile.api._
 
-final class StatusTable(tag: Tag) extends Table[ModuleStatus](tag, "status") with IDLabelColumn[ModuleStatus] {
+private[database] final class StatusTable(tag: Tag)
+    extends Table[ModuleStatus](tag, "status")
+    with IDLabelColumn[ModuleStatus] {
   override def * = (
     id,
     deLabel,

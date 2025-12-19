@@ -1,6 +1,6 @@
 package models
 
-import controllers.JsonNullWritable
+import controllers.json.JsonNullWritable
 import play.api.libs.json.Format
 import play.api.libs.json.Json
 

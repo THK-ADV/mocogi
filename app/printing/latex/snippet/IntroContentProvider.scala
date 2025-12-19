@@ -8,7 +8,7 @@ import java.util.stream.Collectors
 
 import scala.util.control.NonFatal
 
-import ops.FileOps.FileOps0
+import ops.FileOps.deleteDirectory
 import play.api.Logging
 
 final class IntroContentProvider(dir: Path, po: String, mcIntroPath: String) extends Logging {

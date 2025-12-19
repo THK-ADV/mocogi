@@ -8,7 +8,7 @@ import parser.ParsingError
 import play.api.libs.json.JsArray
 import play.api.libs.json.JsString
 import printer.PrintingError
-import service.PipelineError
+import service.pipeline.PipelineError
 import validation.ValidationError
 
 final class PipelineErrorFormatSpec extends AnyWordSpec with OptionValues {

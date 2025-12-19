@@ -13,7 +13,7 @@ import models.ModuleRelationProtocol.Child
 import models.ModuleRelationProtocol.Parent
 import monocle.macros.GenLens
 import monocle.Lens
-import ops.StringBuilderOps.SBOps
+import ops.appendOpt
 import parsing.types.ModuleContent
 import play.api.i18n.Lang
 import play.api.i18n.MessagesApi
@@ -22,7 +22,6 @@ import printing.fmtCommaSeparated
 import printing.fmtDouble
 import printing.fmtIdentity
 import printing.latex.snippet.LatexContentSnippet
-import printing.pandoc.MarkdownLatexPrinter
 import printing.LocalizedStrings
 import service.modulediff.ModuleProtocolDiff
 

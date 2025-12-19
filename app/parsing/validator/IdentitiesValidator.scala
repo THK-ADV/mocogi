@@ -3,7 +3,7 @@ package parsing.validator
 import cats.data.NonEmptyList
 import monocle.Lens
 
-final class IdentitiesValidator[A](
+private[parsing] final class IdentitiesValidator[A](
     identities: Seq[String],
     identity: Lens[A, NonEmptyList[String]]
 ) extends YamlFileParserValidator[A] {

@@ -11,93 +11,90 @@ case class Module(
     metadata: Metadata,
     deContent: ModuleContent,
     enContent: ModuleContent
-)
+) {
+  private def string = Traversal
+    .applyN(
+      GenLens[Module](_.metadata.title),
+      GenLens[Module](_.metadata.abbrev)
+    )
+    .modify(_.trim)
 
-object Module {
-
-  implicit def writes: Writes[Module] = Json.writes
-
-  final implicit class Ops(private val self: Module) extends AnyVal {
-    private def string = Traversal
-      .applyN(
-        GenLens[Module](_.metadata.title),
-        GenLens[Module](_.metadata.abbrev)
+  private def prerequisites = Traversal
+    .applyN(
+      GenLens[Module](
+        _.metadata.prerequisites.recommended
+      ),
+      GenLens[Module](
+        _.metadata.prerequisites.required
       )
-      .modify(_.trim)
-
-    private def prerequisites = Traversal
-      .applyN(
-        GenLens[Module](
-          _.metadata.prerequisites.recommended
-        ),
-        GenLens[Module](
-          _.metadata.prerequisites.required
-        )
+    )
+    .modify(
+      _.map(
+        _.focus(_.text)
+          .modify(_.trim)
+          .focus(_.modules)
+          .modify(_.sortBy(_.id))
       )
+    )
+
+  private def assessmentMethods = Traversal
+    .applyN(
+      GenLens[Module](
+        _.metadata.assessmentMethods.mandatory
+      )
+    )
+    .modify(
+      _.map(_.focus(_.precondition).modify(_.sortBy(_.id)))
+        .sortBy(_.method.id)
+    )
+
+  private def poMandatory =
+    GenLens[Module](_.metadata.pos.mandatory)
       .modify(
         _.map(
-          _.focus(_.text)
-            .modify(_.trim)
-            .focus(_.modules)
-            .modify(_.sortBy(_.id))
-        )
+          _.focus(_.recommendedSemester)
+            .modify(_.sorted)
+        ).sortBy(_.po.id)
       )
 
-    private def assessmentMethods = Traversal
-      .applyN(
-        GenLens[Module](
-          _.metadata.assessmentMethods.mandatory
-        )
-      )
+  private def poOptional =
+    GenLens[Module](_.metadata.pos.optional)
       .modify(
-        _.map(_.focus(_.precondition).modify(_.sortBy(_.id)))
-          .sortBy(_.method.id)
+        _.map(
+          _.focus(_.recommendedSemester)
+            .modify(_.sorted)
+        ).sortBy(_.po.id)
       )
 
-    private def poMandatory =
-      GenLens[Module](_.metadata.pos.mandatory)
-        .modify(
-          _.map(
-            _.focus(_.recommendedSemester)
-              .modify(_.sorted)
-          ).sortBy(_.po.id)
-        )
+  private def identities = Traversal
+    .applyN(
+      GenLens[Module](_.metadata.responsibilities.moduleManagement),
+      GenLens[Module](_.metadata.responsibilities.lecturers)
+    )
+    .modify(_.sortBy(_.id))
 
-    private def poOptional =
-      GenLens[Module](_.metadata.pos.optional)
-        .modify(
-          _.map(
-            _.focus(_.recommendedSemester)
-              .modify(_.sorted)
-          ).sortBy(_.po.id)
-        )
+  private def taughtWith =
+    GenLens[Module](_.metadata.taughtWith).modify(_.sortBy(_.id))
 
-    private def identities = Traversal
-      .applyN(
-        GenLens[Module](_.metadata.responsibilities.moduleManagement),
-        GenLens[Module](_.metadata.responsibilities.lecturers)
-      )
-      .modify(_.sortBy(_.id))
+  private def content = Traversal
+    .applyN(
+      GenLens[Module](_.deContent),
+      GenLens[Module](_.enContent)
+    )
+    .modify(_.normalized())
 
-    private def taughtWith =
-      GenLens[Module](_.metadata.taughtWith).modify(_.sortBy(_.id))
+  def normalized(): Module =
+    string
+      .andThen(prerequisites)
+      .andThen(assessmentMethods)
+      .andThen(poMandatory)
+      .andThen(poOptional)
+      .andThen(identities)
+      .andThen(taughtWith)
+      .andThen(content)
+      .apply(this)
+}
 
-    private def content = Traversal
-      .applyN(
-        GenLens[Module](_.deContent),
-        GenLens[Module](_.enContent)
-      )
-      .modify(_.normalize())
-
-    def normalize(): Module =
-      string
-        .andThen(prerequisites)
-        .andThen(assessmentMethods)
-        .andThen(poMandatory)
-        .andThen(poOptional)
-        .andThen(identities)
-        .andThen(taughtWith)
-        .andThen(content)
-        .apply(self)
-  }
+object Module {
+  given Writes[Module] = Json.writes
 }

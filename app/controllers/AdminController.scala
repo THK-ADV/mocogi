@@ -10,7 +10,7 @@ import auth.AuthorizationAction
 import controllers.actions.UserResolveAction
 import database.repo.ModuleDeletionRepository
 import database.repo.PermissionRepository
-import git.api.GitFileDownloadService
+import git.api.GitFileService
 import git.GitConfig
 import git.GitFilePath
 import models.CreatedModule
@@ -27,7 +27,7 @@ final class AdminController @Inject() (
     auth: AuthorizationAction,
     moduleDeletionRepository: ModuleDeletionRepository,
     moduleCreationService: ModuleCreationService,
-    downloadService: GitFileDownloadService,
+    downloadService: GitFileService,
     val permissionRepository: PermissionRepository,
     implicit val gitConfig: GitConfig,
     implicit val ctx: ExecutionContext

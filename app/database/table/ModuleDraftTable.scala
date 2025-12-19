@@ -10,7 +10,7 @@ import git.MergeRequestId
 import git.MergeRequestStatus
 import models.*
 import play.api.libs.json.JsValue
-import service.Print
+import service.pipeline.Print
 import slick.jdbc.PostgresProfile.api.*
 
 object ModuleDraftTable {
@@ -29,7 +29,7 @@ object ModuleDraftTable {
       )
 }
 
-final class ModuleDraftTable(tag: Tag) extends Table[ModuleDraft](tag, "module_draft") {
+private[database] final class ModuleDraftTable(tag: Tag) extends Table[ModuleDraft](tag, "module_draft") {
 
   import database.MyPostgresProfile.MyAPI.playJsonTypeMapper
   import ModuleDraftTable.given_BaseColumnType_Set

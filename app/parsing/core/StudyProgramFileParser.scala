@@ -6,10 +6,10 @@ import io.circe.HCursor
 import models.core._
 import monocle.macros.GenLens
 import parser.Parser
+import parsing.getNonEmptyList
 import parsing.validator.CombineValidators
 import parsing.validator.DegreeValidator
 import parsing.validator.IdentitiesValidator
-import parsing.CursorOps
 
 object StudyProgramFileParser extends YamlFileParser[StudyProgram] {
 

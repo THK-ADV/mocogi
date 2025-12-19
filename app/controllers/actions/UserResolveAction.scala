@@ -37,7 +37,7 @@ case class UserRequest[A](
   }
 }
 
-trait UserResolveAction {
+private[controllers] trait UserResolveAction {
   implicit def ctx: ExecutionContext
   implicit def permissionRepository: PermissionRepository
 

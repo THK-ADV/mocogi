@@ -13,7 +13,7 @@ object AssessmentPrerequisiteParser {
   def modulesKey = "modules"
   def reasonKey  = "reason"
 
-  def parser: Parser[AssessmentPrerequisite] =
+  private[parsing] def parser: Parser[AssessmentPrerequisite] =
     skipFirst(prefixTo(s"$key:").skip(zeroOrMoreSpaces))
       .take(singleLineStringForKey(modulesKey))
       .skip(zeroOrMoreSpaces)

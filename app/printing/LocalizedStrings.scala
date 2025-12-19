@@ -7,7 +7,6 @@ import models.ModuleWorkload
 import play.api.i18n.Lang
 import play.api.i18n.MessagesApi
 
-// TODO rename labels if needed
 final class LocalizedStrings(messages: MessagesApi)(using lang: Lang) {
 
   val isGerman = lang.code.startsWith("de")

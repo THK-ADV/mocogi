@@ -5,7 +5,7 @@ import scala.concurrent.Future
 import play.api.db.slick.HasDatabaseConfigProvider
 import slick.jdbc.JdbcProfile
 
-trait MaterializedView { self: HasDatabaseConfigProvider[JdbcProfile] =>
+private[view] trait MaterializedView { self: HasDatabaseConfigProvider[JdbcProfile] =>
   import profile.api._
 
   def name: String

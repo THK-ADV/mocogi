@@ -13,7 +13,7 @@ import printer.Printer.prefix
 import printing.LocalizedStrings
 
 @Singleton
-final class ContentMarkdownPrinter @Inject() (messages: MessagesApi) {
+private[printing] final class ContentMarkdownPrinter @Inject() (messages: MessagesApi) {
 
   private def abbrev(string: LocalizedStrings) =
     if string.isGerman then "de" else "en"

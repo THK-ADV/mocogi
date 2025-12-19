@@ -12,9 +12,7 @@ import scala.util.Success
 import scala.util.Try
 
 import _root_.webhook.HandleEvent
-import _root_.webhook.MergeEventHandler
 import controllers.GitWebhookController.GitlabTokenHeader
-import git.*
 import org.apache.pekko.actor.ActorRef
 import play.api.libs.json.*
 import play.api.mvc.*
@@ -26,8 +24,8 @@ object GitWebhookController {
 @Singleton
 class GitWebhookController @Inject() (
     cc: ControllerComponents,
-    gitConfig: GitConfig,
-    mergeHandler: MergeEventHandler,
+    @Named("webhookToken") token: UUID,
+    @Named("MergeEventHandler") mergeHandler: ActorRef,
     @Named("PreviewPushEventHandler") previewPushHandler: ActorRef,
     @Named("MainPushEventHandler") mainPushHandler: ActorRef,
     implicit val ctx: ExecutionContext
@@ -52,7 +50,7 @@ class GitWebhookController @Inject() (
   def onMerge() =
     isAuthenticated(
       Action(parse.json) { implicit r =>
-        mergeHandler.handle(r.body)
+        mergeHandler ! HandleEvent(r.body)
         NoContent
       }
     )
@@ -67,7 +65,7 @@ class GitWebhookController @Inject() (
     Action.async(action.parser) { r =>
       parseGitToken(r) match {
         case Success(t) =>
-          if (gitConfig.gitToken.fold(true)(_ == t)) action(r)
+          if token == t then action(r)
           else Future.successful(Unauthorized(Json.toJson(new Exception(s"invalid $GitlabTokenHeader"))))
         case Failure(e) => Future.successful(BadRequest(Json.toJson(e)))
       }

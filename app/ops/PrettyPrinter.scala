@@ -3,9 +3,11 @@ package ops
 import scala.annotation.unused
 
 /**
- * https://gist.github.com/carymrobbins/7b8ed52cd6ea186dbdf8
+ * Provides utility functions for pretty-printing Scala values in a format
+ * similar to their source representation.
+ *
+ * Source: https://gist.github.com/carymrobbins/7b8ed52cd6ea186dbdf8
  */
-@unused
 object PrettyPrinter {
 
   /**

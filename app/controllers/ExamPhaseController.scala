@@ -5,6 +5,7 @@ import javax.inject.Inject
 import scala.concurrent.duration.*
 import scala.concurrent.ExecutionContext
 
+import controllers.json.NelWrites
 import models.core.ExamPhases.ExamPhase
 import play.api.cache.Cached
 import play.api.i18n.I18nSupport

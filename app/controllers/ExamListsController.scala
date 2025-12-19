@@ -18,18 +18,18 @@ import controllers.actions.UserRequest
 import controllers.actions.UserResolveAction
 import database.repo.ExamListRepository
 import database.repo.PermissionRepository
-import database.table.ExamListDbEntry
 import models.ExamList
 import models.Semester
-import ops.EitherOps.EStringThrowOps
+import ops.toFuture
 import ops.FileOps
-import ops.FileOps.FileOps0
+import ops.FileOps.deleteDirectory
+import ops.FileOps.move
 import permission.ArtifactCheck
 import play.api.libs.json.Json
 import play.api.libs.json.Reads
 import play.api.mvc.*
 import play.mvc.Http.HeaderNames
-import service.ExamListService
+import service.artifact.ExamListService
 import service.StudyProgramPrivilegesService
 
 @Singleton
@@ -112,7 +112,7 @@ final class ExamListsController @Inject() (
           }
           newPath <- path.move(Paths.get(examListFolder)).toFuture
           _ = file.getParent.deleteDirectory()
-          _ <- examListRepo.createOrUpdate(ExamListDbEntry(po, semesterObj.id, date, newPath.getFileName.toString))
+          _ <- examListRepo.createOrUpdate(po, semesterObj.id, date, newPath.getFileName.toString)
         } yield NoContent
       }
 

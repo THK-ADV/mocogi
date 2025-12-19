@@ -3,8 +3,6 @@ package controllers.json
 import java.util.UUID
 
 import cats.data.NonEmptyList
-import controllers.JsonNullWritable
-import controllers.NelWrites
 import models.*
 import models.core.ExamPhases.ExamPhase
 import parsing.types.ModuleContent

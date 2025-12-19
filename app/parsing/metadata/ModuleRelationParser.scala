@@ -7,9 +7,9 @@ import parser.Parser
 import parser.Parser._
 import parser.ParserOps.P0
 import parsing.multipleValueParser
+import parsing.nel
 import parsing.types.ParsedModuleRelation
 import parsing.uuidParser
-import parsing.ParserListOps
 
 object ModuleRelationParser {
 

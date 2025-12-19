@@ -12,22 +12,20 @@ object ExaminerParser extends SingleValueParser[Identity] {
   def secondKey = "second_examiner"
   def prefix    = "person."
 
-  private def examinerParser(
-      key: String
-  )(implicit identities: Seq[Identity]): Parser[Identity] =
+  private def examinerParser(key: String)(using identities: Seq[Identity]): Parser[Identity] =
     itemParser(
       key,
       identities.sortBy(_.id).reverse,
       x => s"$prefix${x.id}"
     )
 
-  def parser(implicit identities: Seq[Identity]): Parser[Examiner.Default] =
+  private[parsing] def parser(using Seq[Identity]): Parser[Examiner.Default] =
     examinerParser(firstKey).option
       .skip(zeroOrMoreSpaces)
       .zip(examinerParser(secondKey).option)
       .map(a => Examiner(a._1.getOrElse(Identity.NN), a._2.getOrElse(Identity.NN)))
 
-  def raw: Parser[Examiner.ID] =
+  private[parsing] def raw: Parser[Examiner.ID] =
     singleValueRawParser(firstKey, prefix).option
       .skip(zeroOrMoreSpaces)
       .zip(singleValueRawParser(secondKey, prefix).option)

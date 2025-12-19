@@ -6,7 +6,7 @@ import java.util.stream.Collectors
 
 import scala.util.Try
 
-import ops.FileOps.FileOps0
+import ops.FileOps.rename
 
 final class TextIntroRewriter {
 

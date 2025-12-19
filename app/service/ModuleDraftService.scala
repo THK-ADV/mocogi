@@ -12,17 +12,19 @@ import scala.util.Success
 import database.repo.ModuleDraftRepository
 import git.api.GitBranchService
 import git.api.GitCommitService
-import git.api.GitFileDownloadService
+import git.api.GitFileService
 import git.MergeRequestId
 import models.*
 import models.core.Identity
-import ops.FutureOps.Ops
+import ops.continueIf
 import parsing.metadata.VersionScheme
 import parsing.types.*
 import play.api.libs.json.*
 import play.api.Logging
 import service.modulediff.ModuleProtocolDiff.diff
 import service.modulediff.ModuleProtocolDiff.nonEmptyKeys
+import service.pipeline.MetadataPipeline
+import service.pipeline.PipelineError
 
 case class ModuleUpdateRequest(
     moduleId: UUID,
@@ -38,7 +40,7 @@ final class ModuleDraftService @Inject() (
     private val gitBranchService: GitBranchService,
     private val gitCommitService: GitCommitService,
     private val keysToReview: ModuleKeysToReview,
-    private val gitFileDownloadService: GitFileDownloadService,
+    private val gitFileDownloadService: GitFileService,
     private val pipeline: MetadataPipeline,
     private implicit val ctx: ExecutionContext
 ) extends Logging {
@@ -168,7 +170,7 @@ final class ModuleDraftService @Inject() (
     s"updated keys: ${updatedKeys.mkString(", ")}"
 
   private def toJson(module: Module) =
-    Json.toJson(module.normalize())
+    Json.toJson(module.normalized())
 
   private def toJson(protocol: ModuleProtocol) =
     Json.toJson(protocol.normalize())

@@ -1,7 +1,7 @@
 package parsing.types
 
 import cats.data.NonEmptyList
-import controllers.NelWrites
+import controllers.json.NelWrites
 import models.core.Identity
 import play.api.libs.json.Json
 import play.api.libs.json.Writes
@@ -12,5 +12,5 @@ case class ModuleResponsibilities(
 )
 
 object ModuleResponsibilities extends NelWrites {
-  implicit def writes: Writes[ModuleResponsibilities] = Json.writes
+  given Writes[ModuleResponsibilities] = Json.writes
 }

@@ -27,5 +27,5 @@ case class ModulePOMandatory(
 )
 
 object ModulePOMandatory {
-  implicit def writes: Writes[ModulePOMandatory] = Json.writes
+  given Writes[ModulePOMandatory] = Json.writes
 }

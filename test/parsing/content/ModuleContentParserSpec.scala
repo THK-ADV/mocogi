@@ -2,7 +2,7 @@ package parsing.content
 
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatest.EitherValues
-import parsing.content.ModuleContentParser.contentParser
+import parsing.content.ModuleContentParser.parser
 import parsing.withFile0
 import parsing.ParserSpecHelper
 
@@ -12,7 +12,7 @@ class ModuleContentParserSpec extends AnyWordSpec with ParserSpecHelper with Eit
 
     "parse content2.md" in {
       val (res, rest) =
-        withFile0("test/parsing/res/content2.md")(contentParser.parse)
+        withFile0("test/parsing/res/content2.md")(parser.parse)
       val (de, en) = res.value
 
       assert(rest.isEmpty)
@@ -31,7 +31,7 @@ class ModuleContentParserSpec extends AnyWordSpec with ParserSpecHelper with Eit
 
     "parse content1.md" in {
       val (res, rest) =
-        withFile0("test/parsing/res/content1.md")(contentParser.parse)
+        withFile0("test/parsing/res/content1.md")(parser.parse)
       val (de, en) = res.value
 
       assert(rest.isEmpty)

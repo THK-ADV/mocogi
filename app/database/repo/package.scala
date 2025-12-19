@@ -6,7 +6,7 @@ import slick.dbio.DBIO
 
 package object repo {
   extension [A](self: DBIO[Seq[A]]) {
-    def single(implicit ctx: ExecutionContext): DBIO[A] =
+    def single(using ExecutionContext): DBIO[A] =
       self.flatMap(xs =>
         xs.size match {
           case 1 =>
@@ -18,7 +18,7 @@ package object repo {
         }
       )
 
-    def singleOpt(implicit ctx: ExecutionContext): DBIO[Option[A]] =
+    def singleOpt(using ExecutionContext): DBIO[Option[A]] =
       self.flatMap(xs =>
         xs.size match {
           case 1 => DBIO.successful(Some(xs.head))

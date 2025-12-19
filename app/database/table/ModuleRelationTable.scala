@@ -5,13 +5,13 @@ import java.util.UUID
 import models.ModuleRelationType
 import slick.jdbc.PostgresProfile.api._
 
-case class ModuleRelationDbEntry(
+private[database] case class ModuleRelationDbEntry(
     module: UUID,
     relationType: ModuleRelationType,
     relationModule: UUID
 )
 
-final class ModuleRelationTable(tag: Tag)
+private[database] final class ModuleRelationTable(tag: Tag)
     extends Table[ModuleRelationDbEntry](
       tag,
       "module_relation"

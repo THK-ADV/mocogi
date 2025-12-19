@@ -14,7 +14,7 @@ import play.api.libs.json.JsValue
 import play.api.libs.json.Json
 import slick.jdbc.PostgresProfile.api.*
 
-case class ModuleDbEntry(
+private[database] case class ModuleDbEntry(
     id: UUID,
     lastModified: LocalDateTime,
     title: String,
@@ -38,7 +38,7 @@ case class ModuleDbEntry(
     enContent: ModuleContent
 )
 
-final class ModuleTable(tag: Tag) extends Table[ModuleDbEntry](tag, "module") {
+private[database] final class ModuleTable(tag: Tag) extends Table[ModuleDbEntry](tag, "module") {
 
   import database.MyPostgresProfile.MyAPI.playJsonTypeMapper
   import database.MyPostgresProfile.MyAPI.simpleStrListTypeMapper

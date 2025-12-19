@@ -14,7 +14,7 @@ object ModuleTaughtWithParser {
   def key          = "taught_with"
   def modulePrefix = "module."
 
-  def parser: Parser[List[UUID]] =
+  private[parsing] def parser: Parser[List[UUID]] =
     multipleValueParser(
       key,
       prefix(modulePrefix)

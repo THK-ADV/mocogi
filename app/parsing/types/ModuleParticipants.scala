@@ -6,5 +6,5 @@ import play.api.libs.json.Json
 case class ModuleParticipants(min: Int, max: Int)
 
 object ModuleParticipants {
-  implicit def format: Format[ModuleParticipants] = Json.format
+  given Format[ModuleParticipants] = Json.format
 }

@@ -6,7 +6,7 @@ import git.CommitId
 import git.MergeRequestId
 import git.MergeRequestStatus
 import models.*
-import service.Print
+import service.pipeline.Print
 import slick.jdbc.PostgresProfile.api.*
 
 package object table {
@@ -17,13 +17,6 @@ package object table {
   implicit val responsibilityTypeColumnType: BaseColumnType[ResponsibilityType] =
     MappedColumnType
       .base[ResponsibilityType, String](_.id, ResponsibilityType.apply)
-
-  implicit val assessmentMethodTypeColumnType: BaseColumnType[AssessmentMethodType] =
-    MappedColumnType
-      .base[AssessmentMethodType, String](
-        _.id,
-        AssessmentMethodType.apply
-      )
 
   implicit val prerequisiteTypeColumnType: BaseColumnType[PrerequisiteType] =
     MappedColumnType

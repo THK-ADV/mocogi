@@ -2,6 +2,7 @@ package webhook
 
 import java.time.LocalDateTime
 import javax.inject.Inject
+import javax.inject.Named
 
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.ExecutionContext
@@ -10,19 +11,20 @@ import scala.util.Failure
 import scala.util.Success
 
 import git.*
-import git.api.GitCommitApiService
-import git.api.GitFileDownloadService
+import git.api.GitCommitService
+import git.api.GitFileService
 import git.publisher.CoreDataPublisher
 import git.publisher.ModulePublisher
 import org.apache.pekko.actor.Actor
+import org.apache.pekko.actor.ActorRef
 import play.api.libs.json.*
 import play.api.Logging
 
 final class MainPushEventHandler @Inject() (
-    downloadService: GitFileDownloadService,
-    commitApiService: GitCommitApiService,
-    modulePublisher: ModulePublisher,
-    coreDataPublisher: CoreDataPublisher,
+    downloadService: GitFileService,
+    commitService: GitCommitService,
+    @Named("ModulePublisher") modulePublisher: ActorRef,
+    @Named("CoreDataPublisher") coreDataPublisher: ActorRef,
     implicit val gitConfig: GitConfig,
     implicit val ctx: ExecutionContext
 ) extends Actor
@@ -135,7 +137,7 @@ final class MainPushEventHandler @Inject() (
       moduleFiles.map { file =>
         val f = for
           content      <- downloadService.downloadFileContent(file.path, branch)
-          lastModified <- commitApiService.getCommitDate(file.path, gitConfig.draftBranch)
+          lastModified <- commitService.getCommitDate(file.path, gitConfig.draftBranch)
         yield (content, lastModified)
         f.collect {
           case (Some(content), Some(lastModified)) => (file.copy(lastModified = lastModified), content)
@@ -170,8 +172,8 @@ final class MainPushEventHandler @Inject() (
             } else {
               downloadGitFiles(branch, moduleFiles, coreFiles).onComplete {
                 case Success((moduleFiles, coreFiles)) =>
-                  modulePublisher.notifySubscribers(moduleFiles)
-                  coreDataPublisher.notifySubscribers(coreFiles)
+                  modulePublisher ! ModulePublisher.NotifySubscribers(moduleFiles)
+                  coreDataPublisher ! CoreDataPublisher.Handle(coreFiles)
                   logger.info("finished!")
                 case Failure(e) =>
                   logger.error("failed to download git files", e)

@@ -8,7 +8,7 @@ import git.GitFilePath
 import parser.ParserOps.P0
 import play.api.libs.ws.WSResponse
 
-trait GitService {
+private[api] trait GitService {
   import GitService.nextLinkParser
 
   def config: GitConfig

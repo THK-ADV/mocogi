@@ -1,16 +1,10 @@
 package helper
 
-import database.table.ModuleDraftTable
 import org.apache.pekko.stream.Materializer
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
-import play.api.db.slick.DatabaseConfigProvider
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.inject.guice.GuiceableModule
 import play.api.Configuration
-import slick.dbio.DBIOAction
-import slick.dbio.Effect
-import slick.dbio.NoStream
-import slick.lifted.TableQuery
 
 trait FakeApplication {
   self: GuiceOneAppPerSuite =>
@@ -46,20 +40,4 @@ trait FakeApplication {
     .configure(fakeConfig)
     .overrides(bindings*)
     .build()
-
-  def withFreshDb(actions: DBIOAction[?, NoStream, Effect.All]*) = {
-    import slick.jdbc.PostgresProfile.api._
-    val db = app.injector.instanceOf(classOf[DatabaseConfigProvider]).get.db
-
-    db.run(
-      DBIO.seq(
-        sqlu"drop schema public cascade",
-        sqlu"create schema public",
-        moduleDraftTable.schema.create,
-        DBIO.seq(actions*)
-      )
-    )
-  }
-
-  val moduleDraftTable = TableQuery[ModuleDraftTable]
 }

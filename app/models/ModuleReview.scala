@@ -3,7 +3,7 @@ package models
 import java.time.LocalDateTime
 import java.util.UUID
 
-import controllers.JsonNullWritable
+import controllers.json.JsonNullWritable
 import models.core.IDLabel
 import models.core.Identity
 import play.api.libs.json.Json
@@ -16,7 +16,7 @@ case class ModuleReview[StudyProgram, Person](
     status: ModuleReviewStatus,
     studyProgram: StudyProgram,
     comment: Option[String],
-    respondedBy: Option[Person], // TODO is PersonCore sufficient?
+    respondedBy: Option[Person],
     respondedAt: Option[LocalDateTime]
 )
 

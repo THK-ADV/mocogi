@@ -4,9 +4,9 @@ import java.time.LocalDate
 
 import slick.jdbc.PostgresProfile.api.*
 
-case class ExamListDbEntry(po: String, semester: String, date: LocalDate, url: String)
+private[database] case class ExamListDbEntry(po: String, semester: String, date: LocalDate, url: String)
 
-final class ExamListTable(tag: Tag) extends Table[ExamListDbEntry](tag, "exam_list") {
+private[database] final class ExamListTable(tag: Tag) extends Table[ExamListDbEntry](tag, "exam_list") {
 
   def po = column[String]("po", O.PrimaryKey)
 

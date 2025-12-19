@@ -9,29 +9,31 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 import auth.AuthorizationAction
+import database.repo.JSONRepository
 import database.view.ModuleViewRepository
-import git.api.GitFileDownloadService
+import git.api.GitFileService
 import models.ModuleManagement
 import models.StudyProgramModuleAssociation
-import ops.FutureOps.OptionOps
+import ops.or
 import play.api.cache.Cached
 import play.api.i18n.I18nSupport
 import play.api.libs.json.*
 import play.api.mvc.AbstractController
 import play.api.mvc.ControllerComponents
-import service.MetadataPipeline
+import service.pipeline.MetadataPipeline
+import service.pipeline.Print
 import service.ModuleDraftService
 import service.ModuleService
-import service.Print
 
 @Singleton
 final class ModuleController @Inject() (
     cc: ControllerComponents,
     service: ModuleService,
     moduleViewRepository: ModuleViewRepository,
-    gitFileDownloadService: GitFileDownloadService,
+    gitFileDownloadService: GitFileService,
     draftService: ModuleDraftService,
     pipeline: MetadataPipeline,
+    jsonRepository: JSONRepository,
     cached: Cached,
     val auth: AuthorizationAction,
     implicit val ctx: ExecutionContext
@@ -92,7 +94,7 @@ final class ModuleController @Inject() (
           case (false, false, false, false, None, ds) =>
             ds match
               case DataSource.Live => service.allModuleCore().map(xs => Ok(Json.toJson(xs)))
-              case DataSource.All  => moduleViewRepository.allModuleCore().map(Ok(_))
+              case DataSource.All  => jsonRepository.allModuleCore().map(Ok(_))
           case (true, false, false, true, Some(po), DataSource.Live) =>
             service
               .allFromPOWithCompanion(po, activeOnly = true)
@@ -108,13 +110,13 @@ final class ModuleController @Inject() (
     }
 
   def allGenericOptions(id: UUID) =
-    Action.async(_ => moduleViewRepository.allGenericModuleOptions(id).map(Ok(_)))
+    Action.async(_ => jsonRepository.allGenericModuleOptions(id).map(Ok(_)))
 
   // GET by ID
 
   def get(id: UUID) =
     Action.async { r =>
-      if (r.isExtended) moduleViewRepository.get(id).map(_.fold(NotFound)(Ok(_)))
+      if (r.isExtended) jsonRepository.get(id).map(_.fold(NotFound)(Ok(_)))
       else service.get(id).map(x => Ok(Json.toJson(x)))
     }
 
@@ -127,9 +129,6 @@ final class ModuleController @Inject() (
     auth.async { _ =>
       draftService
         .getByModuleOpt(id)
-        /* instead of accessing .data we first parse it to ModuleJSON to consider nullable values,
-        then parse it to ModuleProtocol and serialize to JSON
-         */
         .map(_.map(d => Json.toJson(d.protocol())))
         .or(getFromPreview(id).map(_.map(module => Json.toJson(module))))
         .map {

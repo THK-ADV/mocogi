@@ -22,13 +22,13 @@ import parser.ParserOps.P7
 import parser.ParserOps.P8
 import parser.ParserOps.P9
 import parser.ParsingError
+import parsing.content.ModuleContentParser
 import parsing.metadata.*
 import parsing.metadata.THKV1Parser.abbreviationParser
 import parsing.metadata.THKV1Parser.durationParser
 import parsing.metadata.THKV1Parser.idParser
 import parsing.metadata.THKV1Parser.titleParser
 import parsing.types.ParsedModuleRelation
-import service.ContentParsingService
 
 object RawModuleParser {
 
@@ -140,7 +140,7 @@ object RawModuleParser {
 
   def parser: Parser[ModuleProtocol] =
     metadataParser
-      .zip(ContentParsingService.parser)
+      .zip(ModuleContentParser.parser)
       .map {
         case ((id, metadata), (deContent, enContent)) =>
           ModuleProtocol(
@@ -151,9 +151,7 @@ object RawModuleParser {
           )
       }
 
-  private def toModuleRelation(
-      mr: ParsedModuleRelation
-  ): ModuleRelationProtocol =
+  private def toModuleRelation(mr: ParsedModuleRelation): ModuleRelationProtocol =
     mr match {
       case ParsedModuleRelation.Parent(children) =>
         ModuleRelationProtocol.Parent(children)

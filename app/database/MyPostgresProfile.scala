@@ -4,7 +4,7 @@ import com.github.tminglei.slickpg.*
 import play.api.libs.json.JsValue
 import play.api.libs.json.Json
 
-trait MyPostgresProfile extends ExPostgresProfile, PgArraySupport, PgPlayJsonSupport {
+private[database] trait MyPostgresProfile extends ExPostgresProfile, PgArraySupport, PgPlayJsonSupport {
   def pgjson = "jsonb" // jsonb support is in postgres 9.4.0 onward; for 9.3.x use "json"
 
   // Add back `capabilities.insertOrUpdate` to enable native `upsert` support; for postgres 9.5+
@@ -23,4 +23,4 @@ trait MyPostgresProfile extends ExPostgresProfile, PgArraySupport, PgPlayJsonSup
   }
 }
 
-object MyPostgresProfile extends MyPostgresProfile
+private[database] object MyPostgresProfile extends MyPostgresProfile

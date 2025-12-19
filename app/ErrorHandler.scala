@@ -1,7 +1,6 @@
 import javax.inject.Inject
 import javax.inject.Singleton
 
-import scala.annotation.unused
 import scala.concurrent.*
 import scala.util.Failure
 import scala.util.Success
@@ -15,15 +14,10 @@ import play.api.mvc.*
 import play.api.mvc.Results.*
 import play.api.Logging
 
-@unused
 @Singleton
 class ErrorHandler @Inject() (auth: Authorization[Token]) extends HttpErrorHandler with Logging {
 
-  def onClientError(
-      request: RequestHeader,
-      statusCode: Int,
-      message: String
-  ): Future[Result] =
+  def onClientError(request: RequestHeader, statusCode: Int, message: String): Future[Result] =
     Future.successful(
       Status(statusCode)(
         Json.obj(
@@ -34,13 +28,8 @@ class ErrorHandler @Inject() (auth: Authorization[Token]) extends HttpErrorHandl
       )
     )
 
-  def onServerError(
-      request: RequestHeader,
-      exception: Throwable
-  ): Future[Result] = {
-    auth.authorize(
-      request.headers.get(Authorization.AuthorizationHeader)
-    ) match {
+  def onServerError(request: RequestHeader, exception: Throwable): Future[Result] = {
+    auth.authorize(request.headers.get(Authorization.AuthorizationHeader)) match {
       case Success(token) =>
         logger.error(
           s"server error occurred from ${token.username} on ${request.method} ${request.uri}",

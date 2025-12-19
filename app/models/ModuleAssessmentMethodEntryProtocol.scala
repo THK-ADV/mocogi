@@ -1,10 +1,9 @@
 package models
 
-import controllers.JsonNullWritable
+import controllers.json.JsonNullWritable
 import play.api.libs.json.Format
 import play.api.libs.json.Json
 
-// TODO use ModuleAssessmentMethodEntry with type arguments
 case class ModuleAssessmentMethodEntryProtocol(
     method: String,
     percentage: Option[Double],

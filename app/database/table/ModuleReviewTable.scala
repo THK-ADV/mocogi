@@ -8,7 +8,7 @@ import models.ModuleReviewStatus
 import models.UniversityRole
 import slick.jdbc.PostgresProfile.api.*
 
-final class ModuleReviewTable(tag: Tag)
+private[database] final class ModuleReviewTable(tag: Tag)
     extends Table[ModuleReview.DB](
       tag,
       "module_review"

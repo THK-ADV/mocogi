@@ -4,7 +4,7 @@ import io.circe.Decoder
 import io.circe.HCursor
 import models.core.IDLabelDesc
 
-trait LabelDescFileParser[A <: IDLabelDesc] extends YamlFileParser[A] {
+private[core] trait LabelDescFileParser[A <: IDLabelDesc] extends YamlFileParser[A] {
 
   protected def makeType: ((String, String, String, String, String)) => A
 

@@ -7,7 +7,7 @@ import play.api.libs.json.Writes
 case class ModuleAssessmentMethods(mandatory: List[ModuleAssessmentMethodEntry])
 
 object ModuleAssessmentMethods {
-  implicit def writes: Writes[ModuleAssessmentMethods] = Json.writes
+  given Writes[ModuleAssessmentMethods] = Json.writes
 }
 
 case class ModuleAssessmentMethodEntry(
@@ -17,5 +17,5 @@ case class ModuleAssessmentMethodEntry(
 )
 
 object ModuleAssessmentMethodEntry {
-  implicit def writes: Writes[ModuleAssessmentMethodEntry] = Json.writes
+  given Writes[ModuleAssessmentMethodEntry] = Json.writes
 }

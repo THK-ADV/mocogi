@@ -25,9 +25,7 @@ final class StudyProgramService @Inject() (
       people  <- personService.all()
     } yield StudyProgramFileParser.fileParser(degrees, people)
 
-  override def createOrUpdateMany(
-      xs: Seq[StudyProgram]
-  ): Future[Seq[StudyProgram]] =
+  override def createOrUpdateMany(xs: Seq[StudyProgram]): Future[Seq[StudyProgram]] =
     repo.createOrUpdateMany(xs)
 
   def all(): Future[Seq[StudyProgram]] =

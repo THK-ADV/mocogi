@@ -3,6 +3,8 @@ import scala.concurrent.Future
 
 import parsing.types.ModuleContent
 import parsing.types.ParsedMetadata
+import service.pipeline.PipelineError
+import service.pipeline.Print
 
 package object service {
   type Result[A] = Future[Either[Seq[PipelineError], Seq[A]]]

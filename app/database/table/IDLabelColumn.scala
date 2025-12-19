@@ -2,7 +2,7 @@ package database.table
 
 import slick.jdbc.PostgresProfile.api._
 
-trait IDLabelColumn[A] {
+private[table] trait IDLabelColumn[A] {
   self: Table[?] =>
 
   def id = column[String]("id", O.PrimaryKey)

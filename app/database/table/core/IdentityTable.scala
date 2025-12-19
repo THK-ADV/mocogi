@@ -20,7 +20,7 @@ case class IdentityDbEntry(
   def isPerson = this.kind == Identity.PersonKind
 }
 
-final class IdentityTable(tag: Tag) extends Table[IdentityDbEntry](tag, "identity") {
+private[database] final class IdentityTable(tag: Tag) extends Table[IdentityDbEntry](tag, "identity") {
 
   import database.MyPostgresProfile.MyAPI.simpleStrListTypeMapper
 

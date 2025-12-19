@@ -6,7 +6,7 @@ import io.circe.Decoder
 import io.circe.HCursor
 import models.core.PO
 import monocle.macros.GenLens
-import parsing.*
+import parsing.localDateDecoder
 import parsing.validator.StudyProgramValidator
 
 object POFileParser extends YamlFileParser[PO] {

@@ -27,7 +27,10 @@ final class ExamListRepository @Inject() (
 
   private val tableQuery = TableQuery[ExamListTable]
 
-  // TODO: this implementation is very inefficient, because the filtering happens in scala
+  /**
+   * TODO: this implementation is very inefficient, because the filtering happens in scala.
+   * TODO: A native psql function should be better
+   */
   def eachLatest(): Future[Seq[ExamList]] = {
     val studyProgramView = studyProgramViewRepository.tableQuery.filter(_.specializationId.isEmpty)
     val now              = LocalDate.now
@@ -48,5 +51,6 @@ final class ExamListRepository @Inject() (
     db.run(query)
   }
 
-  def createOrUpdate(e: ExamListDbEntry) = db.run(tableQuery.insertOrUpdate(e))
+  def createOrUpdate(po: String, semester: String, date: LocalDate, url: String) =
+    db.run(tableQuery.insertOrUpdate(ExamListDbEntry(po, semester, date, url)))
 }

@@ -6,8 +6,8 @@ import models.ModulePOMandatoryProtocol
 import models.ModulePOOptionalProtocol
 import models.ModulePOProtocol
 import parser.Parser
-import parser.Parser._
-import parser.ParserOps._
+import parser.Parser.*
+import parser.ParserOps.*
 import parsing.multipleValueParser
 import parsing.types.ModulePOMandatory
 import parsing.types.ParsedPOOptional
@@ -25,8 +25,8 @@ object ModulePOParser {
   def partOfCatalogKey       = "part_of_catalog"
   def recommendedSemesterKey = "recommended_semester"
 
-  def studyProgramParser(
-      implicit pos: Seq[PO],
+  private[parsing] def studyProgramParser(
+      using pos: Seq[PO],
       specializations: Seq[Specialization]
   ): Parser[(PO, Option[Specialization])] = {
     val pos0             = pos.sortBy(_.program).reverse
@@ -50,7 +50,7 @@ object ModulePOParser {
       .zip(specializationsParser)
   }
 
-  def studyProgramParserRaw: Parser[(String, Option[String])] = {
+  private[parsing] def studyProgramParserRaw: Parser[(String, Option[String])] = {
     val poParser = skipFirst(prefix(studyProgramPrefix))
       .take(prefixTo("\n").or(rest))
       .map(_.trim)
@@ -88,7 +88,10 @@ object ModulePOParser {
       .skip(zeroOrMoreSpaces)
       .take(boolean)
 
-  def mandatoryParser(implicit pos: Seq[PO], specializations: Seq[Specialization]): Parser[List[ModulePOMandatory]] =
+  private[parsing] def mandatoryParser(
+      implicit pos: Seq[PO],
+      specializations: Seq[Specialization]
+  ): Parser[List[ModulePOMandatory]] =
     prefix(modulePOMandatoryKey)
       .skip(zeroOrMoreSpaces)
       .take(
@@ -104,7 +107,10 @@ object ModulePOParser {
           })
       )
 
-  def electiveParser(implicit pos: Seq[PO], specializations: Seq[Specialization]): Parser[List[ParsedPOOptional]] =
+  private[parsing] def electiveParser(
+      implicit pos: Seq[PO],
+      specializations: Seq[Specialization]
+  ): Parser[List[ParsedPOOptional]] =
     prefix(modulePOElectiveKey)
       .skip(zeroOrMoreSpaces)
       .take(
@@ -122,13 +128,13 @@ object ModulePOParser {
           })
       )
 
-  def parser(implicit pos: Seq[PO], specializations: Seq[Specialization]) =
+  private[parsing] def parser(implicit pos: Seq[PO], specializations: Seq[Specialization]) =
     mandatoryParser.option
       .map(_.getOrElse(Nil))
       .zip(electiveParser.option.map(_.getOrElse(Nil)))
       .map(ParsedPOs.apply)
 
-  def mandatoryParserRaw: Parser[List[ModulePOMandatoryProtocol]] =
+  private[parsing] def mandatoryParserRaw: Parser[List[ModulePOMandatoryProtocol]] =
     prefix(modulePOMandatoryKey)
       .skip(zeroOrMoreSpaces)
       .take(
@@ -144,7 +150,7 @@ object ModulePOParser {
           })
       )
 
-  def electiveParserRaw: Parser[List[ModulePOOptionalProtocol]] =
+  private[parsing] def electiveParserRaw: Parser[List[ModulePOOptionalProtocol]] =
     prefix(modulePOElectiveKey)
       .skip(zeroOrMoreSpaces)
       .take(
@@ -162,7 +168,7 @@ object ModulePOParser {
           })
       )
 
-  def raw =
+  private[parsing] def raw =
     mandatoryParserRaw.option
       .map(_.getOrElse(Nil))
       .zip(electiveParserRaw.option.map(_.getOrElse(Nil)))

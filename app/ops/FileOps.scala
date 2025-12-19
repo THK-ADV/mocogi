@@ -27,7 +27,7 @@ object FileOps {
     Files.createFile(path)
   }
 
-  implicit class FileOps0(private val self: Path) extends AnyVal {
+  extension (self: Path) {
     def rename(newName: String) =
       Files.move(
         self,

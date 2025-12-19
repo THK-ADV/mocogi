@@ -3,7 +3,7 @@ package models
 import java.util.UUID
 
 import cats.data.NonEmptyList
-import controllers.NelWrites
+import controllers.json.NelWrites
 import play.api.libs.json.*
 
 sealed trait ModuleRelationProtocol {
@@ -40,18 +40,17 @@ object ModuleRelationProtocol extends NelWrites {
             case other =>
               JsError(s"expected kind to be parent or child, but was $other")
           },
-      (p: ModuleRelationProtocol) =>
-        p match {
-          case ModuleRelationProtocol.Parent(children) =>
-            Json.obj(
-              "kind"     -> "parent",
-              "children" -> Json.toJson(children)
-            )
-          case ModuleRelationProtocol.Child(parent) =>
-            Json.obj(
-              "kind"   -> "child",
-              "parent" -> Json.toJson(parent)
-            )
-        }
+      {
+        case ModuleRelationProtocol.Parent(children) =>
+          Json.obj(
+            "kind"     -> "parent",
+            "children" -> Json.toJson(children)
+          )
+        case ModuleRelationProtocol.Child(parent) =>
+          Json.obj(
+            "kind"   -> "child",
+            "parent" -> Json.toJson(parent)
+          )
+      }
     )
 }

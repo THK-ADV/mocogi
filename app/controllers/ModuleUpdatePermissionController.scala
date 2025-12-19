@@ -7,6 +7,7 @@ import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
 
 import auth.AuthorizationAction
+import controllers.actions.UserRequest
 import controllers.actions.UserResolveAction
 import database.repo.core.IdentityRepository
 import database.repo.PermissionRepository
@@ -34,10 +35,11 @@ final class ModuleUpdatePermissionController @Inject() (
     }
 
   def replace(moduleId: UUID) =
-    auth(parse.json[List[String]]).andThen(resolveUser).andThen(canEditModule(moduleId)).async { r =>
-      for {
-        ids <- identityRepository.allByIds(r.body)
-        _   <- moduleUpdatePermissionService.replace(moduleId, ids, ModuleUpdatePermissionType.Granted)
-      } yield NoContent
+    auth(parse.json[List[String]]).andThen(resolveUser).andThen(canEditModule(moduleId)).async {
+      (r: UserRequest[List[String]]) =>
+        for {
+          ids <- identityRepository.allByIds(r.body)
+          _   <- moduleUpdatePermissionService.replace(moduleId, ids, ModuleUpdatePermissionType.Granted)
+        } yield NoContent
     }
 }
