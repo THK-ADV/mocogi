@@ -26,7 +26,7 @@ final class GitFileService @Inject() (
   def downloadModuleFromPreviewBranch(id: UUID): Future[Option[ModuleProtocol]] =
     for {
       content <- downloadFileContent(GitFilePath(id), config.draftBranch)
-      res <- content match {
+      res     <- content match {
         case Some(content) => RawModuleParser.parser.parse(content.value)._1.map(Some.apply).toFuture
         case None          => Future.successful(None)
       }

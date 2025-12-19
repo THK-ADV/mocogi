@@ -108,7 +108,7 @@ final class ModuleDraftReviewController @Inject() (
           case "metadata.examPhases"                  => "Prüfungsphasen"
           case "metadata.attendanceRequirement"       => "Anwesenheitspflicht"
           case "metadata.assessmentPrerequisite"      => "Prüfungsvorleistung"
-          case other =>
+          case other                                  =>
             logger.error(s"missing label for key: $other")
             "???"
         }

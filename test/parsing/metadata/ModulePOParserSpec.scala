@@ -243,7 +243,7 @@ class ModulePOParserSpec
     }
 
     "parse a single optional po with no specialization" in {
-      val m1 = UUID.randomUUID
+      val m1    = UUID.randomUUID
       val input =
         s"""po_optional:
            |  - study_program: study_program.wi1
@@ -260,7 +260,7 @@ class ModulePOParserSpec
     }
 
     "parse a single optional po with no specialization raw" in {
-      val m1 = UUID.randomUUID
+      val m1    = UUID.randomUUID
       val input =
         s"""po_optional:
            |  - study_program: study_program.wi1
@@ -283,7 +283,7 @@ class ModulePOParserSpec
     }
 
     "parse a single optional po with specialization" in {
-      val m1 = UUID.randomUUID
+      val m1    = UUID.randomUUID
       val input =
         s"""po_optional:
            |  - study_program: study_program.wi1.wi1_vi
@@ -300,7 +300,7 @@ class ModulePOParserSpec
     }
 
     "parse a single optional po with specialization raw" in {
-      val m1 = UUID.randomUUID
+      val m1    = UUID.randomUUID
       val input =
         s"""po_optional:
            |  - study_program: study_program.wi1.wi1_vi
@@ -323,7 +323,7 @@ class ModulePOParserSpec
     }
 
     "parse a single optional po where recommended semester is missing" in {
-      val m1 = UUID.randomUUID
+      val m1    = UUID.randomUUID
       val input =
         s"""po_optional:
            |  - study_program: study_program.wi1
@@ -339,7 +339,7 @@ class ModulePOParserSpec
     }
 
     "parse a single optional po where recommended semester is missing raw" in {
-      val m1 = UUID.randomUUID
+      val m1    = UUID.randomUUID
       val input =
         s"""po_optional:
            |  - study_program: study_program.wi1
@@ -355,8 +355,8 @@ class ModulePOParserSpec
     }
 
     "parse many optional pos" in {
-      val m1 = UUID.randomUUID
-      val m2 = UUID.randomUUID
+      val m1    = UUID.randomUUID
+      val m2    = UUID.randomUUID
       val input =
         s"""po_optional:
            |  - study_program: study_program.wi1
@@ -380,8 +380,8 @@ class ModulePOParserSpec
     }
 
     "parse many optional pos raw" in {
-      val m1 = UUID.randomUUID
-      val m2 = UUID.randomUUID
+      val m1    = UUID.randomUUID
+      val m2    = UUID.randomUUID
       val input =
         s"""po_optional:
            |  - study_program: study_program.wi1

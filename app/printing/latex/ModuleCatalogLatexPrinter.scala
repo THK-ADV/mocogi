@@ -134,7 +134,7 @@ final class ModuleCatalogLatexPrinter(
           case None => "Pflichtmodul"
         }
       case RenderingContext.Elective =>
-        val baseStr = "Wahlmodul"
+        val baseStr        = "Wahlmodul"
         val genericModules = m.po.optional
           .filter(_.po == currentPO.id)
           .map(_.instanceOf)
@@ -253,7 +253,7 @@ final class ModuleCatalogLatexPrinter(
         po.mandatory.exists(a => a.po == currentPO.id && a.specialization.contains(specialization))
       }
       .sortBy { module =>
-        val po = module._1.metadata.po.mandatory
+        val po                  = module._1.metadata.po.mandatory
         val recommendedSemester =
           po.filter(_.specialization.contains(specialization)).flatMap(_.recommendedSemester).distinct
         val title = module._1.metadata.title
@@ -305,7 +305,7 @@ final class ModuleCatalogLatexPrinter(
                   }
                   .collect { case Some(m) => m }
                   .sortBy { m =>
-                    val metadata = m._1.metadata
+                    val metadata            = m._1.metadata
                     val recommendedSemester =
                       metadata.po.mandatory
                         .flatMap(_.recommendedSemester)

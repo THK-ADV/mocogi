@@ -43,7 +43,7 @@ final class MetadataYamlPrinterSpec extends AnyWordSpec with PrinterSpec {
       val res0    = s"relation:\n  children: module.$m1\n"
       assert(run(printer.moduleRelation(parent0)) === res0)
       val parent1 = ModuleRelationProtocol.Parent(NonEmptyList.of(m1, m2))
-      val res1 =
+      val res1    =
         s"""relation:
            |  children:
            |    - module.$m1
@@ -73,7 +73,7 @@ final class MetadataYamlPrinterSpec extends AnyWordSpec with PrinterSpec {
     "print responsibilities" in {
       val moduleManagement1 = NonEmptyList.one("ald")
       val lecturers1        = NonEmptyList.of("ald", "abe")
-      val res1 =
+      val res1              =
         s"""responsibilities:
            |  module_management: person.ald
            |  lecturers:
@@ -83,7 +83,7 @@ final class MetadataYamlPrinterSpec extends AnyWordSpec with PrinterSpec {
         run(printer.responsibilities(moduleManagement1, lecturers1)) === res1
       )
       val moduleManagement2 = NonEmptyList.of("ald", "abe")
-      val res2 =
+      val res2              =
         s"""responsibilities:
            |  module_management:
            |    - person.abe
@@ -137,7 +137,7 @@ final class MetadataYamlPrinterSpec extends AnyWordSpec with PrinterSpec {
 
     "print workload" in {
       val workload = ModuleWorkload(1, 2, 3, 4, 5, 6)
-      val res =
+      val res      =
         s"""workload:
            |  lecture: 1
            |  seminar: 2
@@ -154,13 +154,13 @@ final class MetadataYamlPrinterSpec extends AnyWordSpec with PrinterSpec {
       assert(run(printer.recommendedPrerequisites(entry0)) == res0)
 
       val entry1 = ModulePrerequisiteEntryProtocol("abc", Nil)
-      val res1 =
+      val res1   =
         s"""recommended_prerequisites:
            |  text: abc\n""".stripMargin
       assert(run(printer.recommendedPrerequisites(entry1)) == res1)
 
       val entry2 = ModulePrerequisiteEntryProtocol("abc", List(m2, m1))
-      val res2 =
+      val res2   =
         s"""recommended_prerequisites:
            |  text: abc
            |  modules:
@@ -179,7 +179,7 @@ final class MetadataYamlPrinterSpec extends AnyWordSpec with PrinterSpec {
 
     "print participants" in {
       val participants = ModuleParticipants(0, 10)
-      val res =
+      val res          =
         s"""participants:
            |  min: 0
            |  max: 10\n""".stripMargin
@@ -188,7 +188,7 @@ final class MetadataYamlPrinterSpec extends AnyWordSpec with PrinterSpec {
 
     "print taught with" in {
       val taughtWith = NonEmptyList.of(m1, m2)
-      val res =
+      val res        =
         s"""taught_with:
            |  - module.$m1
            |  - module.$m2\n""".stripMargin
@@ -265,8 +265,8 @@ final class MetadataYamlPrinterSpec extends AnyWordSpec with PrinterSpec {
     }
 
     "print attendance requirement" in {
-      val att   = AttendanceRequirement("min", "reason", "absence")
-      val input = printer.attendanceRequirement(att)
+      val att    = AttendanceRequirement("min", "reason", "absence")
+      val input  = printer.attendanceRequirement(att)
       val output =
         """attendance_requirement:
           |  min: min
@@ -277,8 +277,8 @@ final class MetadataYamlPrinterSpec extends AnyWordSpec with PrinterSpec {
     }
 
     "print assessment prerequisite" in {
-      val ass   = AssessmentPrerequisite("modules", "reason")
-      val input = printer.assessmentPrerequisite(ass)
+      val ass    = AssessmentPrerequisite("modules", "reason")
+      val input  = printer.assessmentPrerequisite(ass)
       val output =
         """assessment_prerequisite:
           |  modules: modules
@@ -349,7 +349,7 @@ final class MetadataYamlPrinterSpec extends AnyWordSpec with PrinterSpec {
       )
       val id                     = UUID.randomUUID
       val version: VersionScheme = VersionScheme(1, "s")
-      val print = printer
+      val print                  = printer
         .printer(version)
         .print((id, metadata), new StringBuilder())
         .value

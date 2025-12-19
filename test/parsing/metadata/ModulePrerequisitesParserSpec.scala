@@ -15,8 +15,8 @@ class ModulePrerequisitesParserSpec extends AnyWordSpec with ParserSpecHelper wi
 
   "A Module Prerequisites Parser" should {
     "parse prerequisites" in {
-      val m1 = UUID.randomUUID
-      val m2 = UUID.randomUUID
+      val m1    = UUID.randomUUID
+      val m2    = UUID.randomUUID
       val input =
         s"""recommended_prerequisites:
            |  text: benötigt werden kenntnisse in algebra und java und ein pc.
@@ -34,8 +34,8 @@ class ModulePrerequisitesParserSpec extends AnyWordSpec with ParserSpecHelper wi
     }
 
     "parse prerequisites raw" in {
-      val m1 = UUID.randomUUID
-      val m2 = UUID.randomUUID
+      val m1    = UUID.randomUUID
+      val m2    = UUID.randomUUID
       val input =
         s"""recommended_prerequisites:
            |  text: benötigt werden kenntnisse in algebra und java und ein pc.
@@ -53,8 +53,8 @@ class ModulePrerequisitesParserSpec extends AnyWordSpec with ParserSpecHelper wi
     }
 
     "parse prerequisites with not text" in {
-      val m1 = UUID.randomUUID
-      val m2 = UUID.randomUUID
+      val m1    = UUID.randomUUID
+      val m2    = UUID.randomUUID
       val input =
         s"""recommended_prerequisites:
            |  modules:
@@ -71,8 +71,8 @@ class ModulePrerequisitesParserSpec extends AnyWordSpec with ParserSpecHelper wi
     }
 
     "parse prerequisites with not text raw" in {
-      val m1 = UUID.randomUUID
-      val m2 = UUID.randomUUID
+      val m1    = UUID.randomUUID
+      val m2    = UUID.randomUUID
       val input =
         s"""recommended_prerequisites:
            |  modules:

@@ -188,7 +188,7 @@ final class ExamLoadCSVPrinter(
     } else {
       m.moduleRelation.match {
         case Some(ModuleRelationProtocol.Parent(childrenIds)) =>
-          val parent = createParentRow(module)
+          val parent   = createParentRow(module)
           val children = childrenIds
             .map(id => this.children.find(_.id.get == id).get)
             .sortBy(_.metadata.title)

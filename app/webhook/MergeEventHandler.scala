@@ -211,8 +211,8 @@ final class MergeEventHandler @Inject() (
   private def parse(json: JsValue): JsResult[ParseResult] = {
     val attrs = json.\("object_attributes")
     for {
-      mrId   <- attrs.\("iid").validate[Int].map(MergeRequestId.apply)
-      action <- attrs.\("action").validate[String]
+      mrId         <- attrs.\("iid").validate[Int].map(MergeRequestId.apply)
+      action       <- attrs.\("action").validate[String]
       sourceBranch <- attrs
         .\("source_branch")
         .validate[String]
@@ -280,7 +280,7 @@ final class MergeEventHandler @Inject() (
   private def handleModuleBulkUpdate(id: UUID, sha: String): Unit = {
     val f = for
       downloads <- gitCommitService.getAllModulesFromCommit(sha, gitConfig.draftBranch)
-      _ <- Future.sequence(downloads.map { (content, diff) =>
+      _         <- Future.sequence(downloads.map { (content, diff) =>
         val module = parseCreatedModuleInformation(content, diff.newPath.moduleId(gitConfig).get)
         createNewModuleWithPermissions(id, module, diff)
       })
@@ -298,7 +298,7 @@ final class MergeEventHandler @Inject() (
   private def typeCheckModules(branch: Branch)(implicit id: UUID, mrId: MergeRequestId): Unit = {
     logger.info(s"[$id][${Thread.currentThread().getName.last}] type checking modules of MR ${mrId.value}…")
     val f = for
-      changes <- mergeRequestApiService.getChanges(mrId)
+      changes   <- mergeRequestApiService.getChanges(mrId)
       downloads <- Future.sequence(changes.collect {
         case d if d.path.isModule(gitConfig) => fileService.download(d.path, branch)
       })
@@ -308,7 +308,7 @@ final class MergeEventHandler @Inject() (
         else {
           for {
             parseRes <- modulePipeline.parseValidateMany(downloads.collect { case Some(f) => Print(f._1.value) })
-            _ <- parseRes match {
+            _        <- parseRes match {
               case Left(errs) =>
                 logger.error(
                   s"[$id][${Thread.currentThread().getName.last}] type checking revealed ${errs.size} errors"
@@ -381,7 +381,7 @@ final class MergeEventHandler @Inject() (
     }
     val f = for
       reviews <- moduleReviewRepository.getAtomicByModule(module)
-      _ <- {
+      _       <- {
         val rejected = reviews.filter(_.status.isRejected)
         if rejected.size == 1 then sendMail(rejected.head) else Future.unit
       }

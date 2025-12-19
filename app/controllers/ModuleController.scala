@@ -62,7 +62,7 @@ final class ModuleController @Inject() (
         val showGenericModules: Boolean  = request.getQueryString("type").contains("generic")
         val showActive: Boolean          = request.getQueryString("active").fold(false)(_ == "true")
         val filteredPO: Option[String]   = request.getQueryString("po")
-        val dataSource: DataSource = request.getQueryString("source").fold(DataSource.Live) {
+        val dataSource: DataSource       = request.getQueryString("source").fold(DataSource.Live) {
           case "all"  => DataSource.All
           case "live" => DataSource.Live
           case _      => DataSource.Live
@@ -80,7 +80,7 @@ final class ModuleController @Inject() (
           case (false, false, true, false, None, ds) =>
             val modules = ds.match
               case DataSource.Live => service.allGenericModulesWithPOs()
-              case DataSource.All =>
+              case DataSource.All  =>
                 for
                   live    <- service.allGenericModulesWithPOs()
                   created <- service.allNewlyCreatedGenericModulesWithPOs()

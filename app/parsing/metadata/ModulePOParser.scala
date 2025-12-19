@@ -31,7 +31,7 @@ object ModulePOParser {
   ): Parser[(PO, Option[Specialization])] = {
     val pos0             = pos.sortBy(_.program).reverse
     val specializations0 = specializations.sortBy(_.id).reverse
-    val poParser = oneOf(
+    val poParser         = oneOf(
       pos0.map(s => prefix(s"$studyProgramPrefix${s.id}").map(_ => s))*
     )
     val specializationsParser: Parser[Option[Specialization]] =

@@ -35,7 +35,7 @@ final class ExamListRepository @Inject() (
     val studyProgramView = studyProgramViewRepository.tableQuery.filter(_.specializationId.isEmpty)
     val now              = LocalDate.now
     val current          = Semester.current(now).id
-    val query = tableQuery
+    val query            = tableQuery
       .join(studyProgramView)
       .on(_.po === _.poId)
       .result

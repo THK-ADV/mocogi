@@ -34,7 +34,7 @@ final class MetadataPipeline @Inject() (
     for {
       (metadata, de, en) <- parse
       existing           <- existing
-      metadata <- MetadataValidationService
+      metadata           <- MetadataValidationService
         .validate(existing, metadata)
         .mapErr(errs =>
           PipelineError
@@ -54,7 +54,7 @@ final class MetadataPipeline @Inject() (
       parsed   <- parse
       existing <- existing
     } yield parsed match {
-      case Left(value) => Left(value)
+      case Left(value)   => Left(value)
       case Right(parsed) =>
         MetadataValidationService.validateMany(existing, parsed)
     }

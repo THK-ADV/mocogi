@@ -36,7 +36,7 @@ final class ModuleCompanionService @Inject() (
     }
     val config = fileService.config
     for
-      companions <- repo.allFromModules(modules)
+      companions     <- repo.allFromModules(modules)
       companionFiles <- Future.sequence(
         companions.map(companion =>
           fileService

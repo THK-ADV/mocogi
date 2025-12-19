@@ -19,7 +19,7 @@ final class AuthorizationProvider @Inject() (env: Environment) extends Provider[
 
       for
         username <- get("username")
-        token <-
+        token    <-
           if username.contains("service-account") then Right(Token.ServiceToken(username, roles))
           else
             for

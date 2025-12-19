@@ -18,7 +18,7 @@ private[pipeline] object MetadataValidationService {
   ): Either[Seq[PipelineError], Seq[(Print, Module)]] = {
     val parsedModules =
       parsed.map(a => ModuleCore(a._2.id, a._2.title, a._2.abbrev))
-    val modules = existing ++ parsedModules
+    val modules   = existing ++ parsedModules
     val validator =
       MetadataValidator.validate(id => modules.find(_.id == id))
     val (errs, validated) =

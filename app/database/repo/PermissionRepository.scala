@@ -103,7 +103,7 @@ final class PermissionRepository @Inject() (
   private def getAllPermissions(person: String): Future[Seq[Permission] | Permission] =
     for {
       dbPerms: Seq[database.table.Permission] <- db.run(tableQuery.filter(_.person === person).result)
-      perms <- dbPerms.find(_.permType.isAdmin) match {
+      perms                                   <- dbPerms.find(_.permType.isAdmin) match {
         case Some(Permission(_, permType, _, _)) =>
           // an admin role is combined into one which can perform all actions on all non-expired POs
           db.run(poTableQuery.map(_.id).result.map(pos => (permType, Set(pos*))))
@@ -147,8 +147,8 @@ final class PermissionRepository @Inject() (
               pavModulePerms <- getPAVModulePermissions(p.id)
               artifactPerms  <- getArtifactPermissions(p.id)
             } yield {
-              val merge1 = pavModulePerms.fold(perms)(perms.prepended)
-              val merge2 = artifactPerms.fold(merge1)(merge1.prependedAll)
+              val merge1      = pavModulePerms.fold(perms)(perms.prepended)
+              val merge2      = artifactPerms.fold(merge1)(merge1.prependedAll)
               val permissions =
                 Permissions(merge2.groupBy(_._1).map { case (permType, pos) => (permType, pos.flatMap(_._2).toSet) })
               Some((p, permissions))

@@ -527,7 +527,7 @@ final class MetadataValidatorSpec extends AnyWordSpec with EitherValues with Opt
       }
 
       "fail if something is invalid" in {
-        val random = UUID.randomUUID
+        val random               = UUID.randomUUID
         val ivm1: ParsedMetadata = ParsedMetadata(
           UUID.randomUUID(),
           "",

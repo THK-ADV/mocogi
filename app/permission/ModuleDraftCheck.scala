@@ -34,7 +34,7 @@ trait ModuleDraftCheck {
             .getOrElse(Future.successful(false))
 
         hasPermission.map {
-          case true => None
+          case true  => None
           case false =>
             Some(
               Forbidden(

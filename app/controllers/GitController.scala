@@ -60,7 +60,7 @@ final class GitController @Inject() (
   def updateCoreFiles() =
     auth.andThen(resolveUser).andThen(isAdmin).async { _ =>
       for {
-        paths <- gitRepositoryApiService.listCoreFiles(gitConfig.mainBranch)
+        paths    <- gitRepositoryApiService.listCoreFiles(gitConfig.mainBranch)
         contents <- Future.sequence(
           paths.map(path =>
             downloadService
@@ -77,7 +77,7 @@ final class GitController @Inject() (
   def updateModuleFiles() =
     auth.andThen(resolveUser).andThen(isAdmin).async { _ =>
       for {
-        paths <- gitRepositoryApiService.listModuleFiles(gitConfig.mainBranch)
+        paths   <- gitRepositoryApiService.listModuleFiles(gitConfig.mainBranch)
         modules <- Future.sequence(
           paths.par.collect {
             case path if path.isModule(gitConfig) =>

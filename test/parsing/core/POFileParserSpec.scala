@@ -98,7 +98,7 @@ class POFileParserSpec
 
     "parse all in po.yaml" in {
       val (res, rest) = withFile0("test/parsing/res/po.yaml")(fileParser.parse)
-      val ids = List(
+      val ids         = List(
         "ing_gme1",
         "ing_gme3",
         "ing_gme4",

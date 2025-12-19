@@ -83,7 +83,7 @@ final class ModuleCatalogController @Inject() (
             val bannedGenericModules = r.body
             val filename             = s"module_catalog_$po"
             val file                 = FileOps.createLatexFile(filename, tmpDir)
-            val path =
+            val path                 =
               if isPreview then catalogService.preview(po, file, bannedGenericModules)
               else
                 catalogService.create(

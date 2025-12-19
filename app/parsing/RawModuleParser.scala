@@ -35,7 +35,7 @@ object RawModuleParser {
   def parseCreatedModuleInformation(input: String): CreatedModule = {
     val res = metadataParser.parse(input)._1
     res match {
-      case Left(err) => throw err
+      case Left(err)      => throw err
       case Right((id, p)) =>
         CreatedModule(
           id,

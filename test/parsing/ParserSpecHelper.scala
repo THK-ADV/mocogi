@@ -15,7 +15,7 @@ trait ParserSpecHelper { self: AnyWordSpec =>
     assert(rest == input)
     res match {
       case Right(_) => fail()
-      case Left(e) =>
+      case Left(e)  =>
         assert(e.expected == expected)
         assert(e.found == remainingInput.getOrElse(input))
     }

@@ -35,7 +35,7 @@ trait ModuleReviewCheck {
           request.body match {
             case moduleReviewRequest: ModuleReviewRequest =>
               moduleReviewService.hasPendingReview(moduleReviewRequest.reviews, request.person.id).map {
-                case true => None
+                case true  => None
                 case false =>
                   Some(
                     Forbidden(
@@ -70,7 +70,7 @@ trait ModuleReviewCheck {
           }
         }
         hasPermission.map {
-          case true => None
+          case true  => None
           case false =>
             Some(
               Forbidden(

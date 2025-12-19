@@ -191,7 +191,7 @@ final class ModuleReviewRepository @Inject() (
   def hasPendingReview(reviewIds: List[UUID], person: String): Future[Boolean] =
     if reviewIds.isEmpty then Future.successful(true)
     else {
-      val spp = studyProgramPersonRepository.directorsQuery(person).map(_._1)
+      val spp   = studyProgramPersonRepository.directorsQuery(person).map(_._1)
       val query = tableQuery
         .join(spp)
         .on((r, spp) =>
@@ -204,7 +204,7 @@ final class ModuleReviewRepository @Inject() (
     }
 
   def canApproveModule(moduleId: UUID, person: String): Future[Boolean] = {
-    val spp = studyProgramPersonRepository.directorsQuery(person).map(_._1)
+    val spp   = studyProgramPersonRepository.directorsQuery(person).map(_._1)
     val query = tableQuery
       .join(spp)
       .on((r, spp) => r.studyProgram === spp.studyProgram && r.role === spp.role && r.moduleDraft === moduleId)

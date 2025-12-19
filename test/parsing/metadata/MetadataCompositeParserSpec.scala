@@ -7,7 +7,7 @@ import parsing.ParserSpecHelper
 
 final class MetadataCompositeParserSpec extends AnyWordSpec with ParserSpecHelper with EitherValues {
 
-  val parser = new MetadataCompositeParser(Set(new FakeMetadataParser()))
+  val parser         = new MetadataCompositeParser(Set(new FakeMetadataParser()))
   val metadataParser =
     parser.parser(Nil, Nil, Nil, Nil, Nil, Nil, Nil, Nil, Nil)
 
