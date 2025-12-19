@@ -6,7 +6,7 @@ import javax.inject.Singleton
 
 import models.ModuleKeysToReview
 
-@Singleton()
+@Singleton
 final class ModuleKeysToReviewProvider @Inject() (config: ConfigReader) extends Provider[ModuleKeysToReview] {
   override def get(): ModuleKeysToReview =
     ModuleKeysToReview(config.moduleKeysToReviewFromPav.toSet)

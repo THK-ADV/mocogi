@@ -9,7 +9,7 @@ object ModuleStatusParser extends SingleValueParser[ModuleStatus] {
   def key    = "status"
   def prefix = "status."
 
-  def parser(implicit status: Seq[ModuleStatus]): Parser[ModuleStatus] = {
+  private[parsing] def parser(implicit status: Seq[ModuleStatus]): Parser[ModuleStatus] = {
     itemParser(
       key,
       status.sortBy(_.id).reverse,
@@ -17,6 +17,6 @@ object ModuleStatusParser extends SingleValueParser[ModuleStatus] {
     )
   }
 
-  def raw: Parser[String] =
+  private[parsing] def raw: Parser[String] =
     singleValueRawParser(key, prefix)
 }

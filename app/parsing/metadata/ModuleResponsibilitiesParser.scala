@@ -35,10 +35,10 @@ object ModuleResponsibilitiesParser {
       .zip(identityParser)
   }
 
-  def parser(implicit identities: Seq[Identity]): Parser[ModuleResponsibilities] =
-    inner(IdentityParser.parser(identities))
+  private[parsing] def parser(implicit identities: Seq[Identity]): Parser[ModuleResponsibilities] =
+    inner(IdentityParser.parser)
       .map(ModuleResponsibilities.apply.tupled)
 
-  def raw: Parser[(NonEmptyList[String], NonEmptyList[String])] =
+  private[parsing] def raw: Parser[(NonEmptyList[String], NonEmptyList[String])] =
     inner(IdentityParser.raw)
 }

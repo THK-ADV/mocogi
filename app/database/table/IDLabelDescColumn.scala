@@ -3,7 +3,7 @@ package database.table
 import models.core.IDLabelDesc
 import slick.jdbc.PostgresProfile.api._
 
-trait IDLabelDescColumn[A <: IDLabelDesc] extends IDLabelColumn[A] {
+private[table] trait IDLabelDescColumn[A <: IDLabelDesc] extends IDLabelColumn[A] {
   self: Table[?] =>
 
   def deDesc = column[String]("de_desc")

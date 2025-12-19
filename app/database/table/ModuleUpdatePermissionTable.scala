@@ -8,7 +8,7 @@ import models.ModuleUpdatePermissionType.Granted
 import models.ModuleUpdatePermissionType.Inherited
 import slick.jdbc.PostgresProfile.api._
 
-final class ModuleUpdatePermissionTable(tag: Tag)
+private[database] final class ModuleUpdatePermissionTable(tag: Tag)
     extends Table[(UUID, CampusId, ModuleUpdatePermissionType)](
       tag,
       "module_update_permission"

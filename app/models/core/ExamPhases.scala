@@ -1,7 +1,7 @@
 package models.core
 
 import cats.data.NonEmptyList
-import controllers.NelWrites
+import controllers.json.NelWrites
 import play.api.libs.json.JsString
 import play.api.libs.json.Writes
 

@@ -133,6 +133,9 @@ final class PermissionRepository @Inject() (
       }
     } yield perms
 
+  /**
+   * Retrieves all permissions for the given campus ID, along with the associated person if available.
+   */
   def all(campusId: CampusId): Future[Option[(Identity.Person, Permissions)]] =
     getPerson(campusId).flatMap {
       case Some(p) =>

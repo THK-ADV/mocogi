@@ -5,17 +5,18 @@ import scala.concurrent.Future
 
 import play.api.Logging
 
-/*
-https://chaitanyawaikar1993.medium.com/tracking-time-of-futures-in-scala-b64c71b965db
+/**
+ * A utility class to track the time taken to complete a Future operation.
+ * Source: https://chaitanyawaikar1993.medium.com/tracking-time-of-futures-in-scala-b64c71b965db
  */
-class FutureTimeTracker[T](body: => Future[T])(implicit executionContext: ExecutionContext) extends Logging {
+private[ops] final class FutureTimeTracker[T](body: => Future[T])(implicit executionContext: ExecutionContext)
+    extends Logging {
   private val start = System.currentTimeMillis()
 
-  def track(tag: String): Future[T] = {
+  def track(tag: String): Future[T] =
     body.andThen {
       case _ =>
         val end = System.currentTimeMillis()
         logger.info(s"Time Consumed by $tag is: ${end - start} millis")
     }
-  }
 }

@@ -6,7 +6,8 @@ import database.MyPostgresProfile.api.*
 import models.CreatedModule
 import slick.lifted.ProvenShape
 
-final class CreatedModuleTable(tag: Tag) extends Table[CreatedModule](tag, "created_module_in_draft") {
+private[database] final class CreatedModuleTable(tag: Tag)
+    extends Table[CreatedModule](tag, "created_module_in_draft") {
 
   import database.MyPostgresProfile.MyAPI.simpleStrListTypeMapper
 

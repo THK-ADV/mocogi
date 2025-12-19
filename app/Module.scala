@@ -1,21 +1,24 @@
 import java.nio.file.Paths
+import java.util.UUID
 
 import scala.annotation.unused
 
 import auth.Authorization
 import auth.Token
+import cli.GitCLI
 import com.google.inject.name.Names
 import com.google.inject.AbstractModule
 import com.google.inject.TypeLiteral
-import git.cli.ModuleGitCLI
 import git.publisher.CoreDataPublisher
 import git.publisher.ModulePublisher
+import git.subscriber.ModuleDatabaseActor
 import git.subscriber.ModuleSubscribers
 import git.Branch
 import git.GitConfig
 import models.ModuleKeysToReview
-import ops.ConfigurationOps.Ops
+import ops.nonEmptyString
 import parsing.metadata.MetadataParser
+import parsing.metadata.THKV1Parser
 import play.api.libs.concurrent.PekkoGuiceSupport
 import play.api.Configuration
 import play.api.Environment
@@ -36,9 +39,9 @@ class Module(@unused environment: Environment, configuration: Configuration)
   override def configure(): Unit = {
     super.configure()
 
-    bind(classOf[ModuleGitCLI])
+    bind(classOf[GitCLI])
       .toInstance(
-        new ModuleGitCLI(
+        new GitCLI(
           Branch(configuration.nonEmptyString("git.draftBranch")),
           Paths.get(configuration.nonEmptyString("git.localGitFolderPath"))
         )
@@ -84,27 +87,24 @@ class Module(@unused environment: Environment, configuration: Configuration)
       .annotatedWith(Names.named("examListFolder"))
       .toInstance(configuration.nonEmptyString("pandoc.examListOutputFolderPath"))
 
+    bind(classOf[String])
+      .annotatedWith(Names.named("moduleEditUrl"))
+      .toInstance(configuration.nonEmptyString("mail.editUrl"))
+
+    bind(classOf[UUID])
+      .annotatedWith(Names.named("webhookToken"))
+      .toInstance(UUID.fromString(configuration.nonEmptyString("git.token")))
+
     bind(classOf[GitConfig])
       .toProvider(classOf[GitConfigProvider])
       .asEagerSingleton()
     bind(classOf[ModuleSubscribers])
       .toProvider(classOf[ModuleSubscribersProvider])
       .asEagerSingleton()
-    bind(classOf[CoreDataPublisher])
-      .toProvider(classOf[CoreDataPublisherProvider])
-      .asEagerSingleton()
-    bind(classOf[ModulePublisher])
-      .toProvider(classOf[ModulePublisherProvider])
-      .asEagerSingleton()
     bind(classOf[ModuleKeysToReview])
       .toProvider(classOf[ModuleKeysToReviewProvider])
       .asEagerSingleton()
-    bind(classOf[MergeEventHandler])
-      .toProvider(classOf[GitMergeEventHandlerProvider])
-      .asEagerSingleton()
-    bind(new TypeLiteral[Set[MetadataParser]] {})
-      .toProvider(classOf[MetadataParserProvider])
-      .asEagerSingleton()
+    bind(new TypeLiteral[Set[MetadataParser]] {}).toInstance(Set(new THKV1Parser()))
     bind(new TypeLiteral[Authorization[Token]] {})
       .toProvider(classOf[AuthorizationProvider])
       .asEagerSingleton()
@@ -114,5 +114,9 @@ class Module(@unused environment: Environment, configuration: Configuration)
     bindActor[PreviewPushEventHandler]("PreviewPushEventHandler")
     bindActor[MainPushEventHandler]("MainPushEventHandler")
     bindActor[PeopleImageUpdateActor]("PeopleImageUpdateActor")
+    bindActor[CoreDataPublisher]("CoreDataPublisher")
+    bindActor[ModulePublisher]("ModulePublisher")
+    bindActor[ModuleDatabaseActor]("ModuleDatabaseActor")
+    bindActor[MergeEventHandler]("MergeEventHandler")
   }
 }

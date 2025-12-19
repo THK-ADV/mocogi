@@ -22,7 +22,7 @@ import database.repo.JSONRepository
 import database.repo.PermissionRepository
 import models.Semester
 import ops.FileOps
-import ops.FileOps.FileOps0
+import ops.FileOps.deleteDirectory
 import permission.ArtifactCheck
 import play.api.cache.Cached
 import play.api.libs.json.*
@@ -30,8 +30,8 @@ import play.api.libs.Files.TemporaryFile
 import play.api.mvc.*
 import play.mvc.Http.HeaderNames
 import printing.latex.TextIntroRewriter
-import printing.pandoc.WordLatexPrinter
-import service.ModuleCatalogService
+import printing.latex.WordLatexPrinter
+import service.artifact.ModuleCatalogService
 import service.StudyProgramPrivilegesService
 
 @Singleton

@@ -2,7 +2,7 @@ package webhook
 
 import javax.inject.Inject
 
-import git.cli.ModuleGitCLI
+import cli.GitCLI
 import git.Branch
 import org.apache.pekko.actor.Actor
 import play.api.libs.json.JsError
@@ -12,7 +12,7 @@ import play.api.Logging
 /**
  * This class keeps the local preview branch in sync with the remote branch.
  */
-final class PreviewPushEventHandler @Inject() (cli: ModuleGitCLI) extends Actor with Logging {
+final class PreviewPushEventHandler @Inject() (cli: GitCLI) extends Actor with Logging {
   override def receive = {
     case HandleEvent(json) =>
       logger.info("start handling git push event on preview branch")

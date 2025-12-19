@@ -4,7 +4,7 @@ import java.util.UUID
 
 import slick.jdbc.PostgresProfile.api.*
 
-case class ModuleAssessmentMethodDbEntry(
+private[database] case class ModuleAssessmentMethodDbEntry(
     id: UUID,
     module: UUID,
     assessmentMethod: String,
@@ -12,7 +12,7 @@ case class ModuleAssessmentMethodDbEntry(
     precondition: Option[List[String]]
 )
 
-final class ModuleAssessmentMethodTable(tag: Tag)
+private[database] final class ModuleAssessmentMethodTable(tag: Tag)
     extends Table[ModuleAssessmentMethodDbEntry](tag, "module_assessment_method") {
 
   import database.MyPostgresProfile.MyAPI.simpleStrListTypeMapper

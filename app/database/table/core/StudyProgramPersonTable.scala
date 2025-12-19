@@ -3,13 +3,14 @@ package database.table.core
 import models.UniversityRole
 import slick.jdbc.PostgresProfile.api._
 
-case class StudyProgramPersonDbEntry(
+private[database] case class StudyProgramPersonDbEntry(
     person: String,
     studyProgram: String,
     role: UniversityRole
 )
 
-final class StudyProgramPersonTable(tag: Tag) extends Table[StudyProgramPersonDbEntry](tag, "study_program_person") {
+private[database] final class StudyProgramPersonTable(tag: Tag)
+    extends Table[StudyProgramPersonDbEntry](tag, "study_program_person") {
 
   import database.table.universityRoleColumnType
 

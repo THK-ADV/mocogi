@@ -1,6 +1,6 @@
 package models
 
-import controllers.JsonNullWritable
+import controllers.json.JsonNullWritable
 import models.core.Degree
 import models.core.IDLabel
 import play.api.libs.json.Json

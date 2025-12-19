@@ -6,8 +6,8 @@ import models.core.Identity
 import models.EmploymentType
 import parser.Parser
 import parser.Parser.*
+import parsing.getList
 import parsing.validator.FacultyValidator
-import parsing.CursorOps
 
 object IdentityFileParser extends YamlFileParser[Identity] {
 

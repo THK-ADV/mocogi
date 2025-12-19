@@ -26,7 +26,7 @@ object ModuleWorkloadParser {
 
   def key = "workload"
 
-  def parser: Parser[ModuleWorkload] =
+  private[parsing] def parser: Parser[ModuleWorkload] =
     prefix(key + ":")
       .skip(zeroOrMoreSpaces)
       .take(posIntForKey(lectureKey))

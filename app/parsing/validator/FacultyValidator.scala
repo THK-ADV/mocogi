@@ -2,7 +2,7 @@ package parsing.validator
 
 import models.core.Identity
 
-final class FacultyValidator extends YamlFileParserValidator[Identity] {
+private[parsing] final class FacultyValidator extends YamlFileParserValidator[Identity] {
   private val prefix = "faculty."
 
   override def expected(): String = s"prefix '$prefix'"

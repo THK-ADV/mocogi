@@ -12,7 +12,7 @@ import database.repo.ModuleRepository
 import models.core.Specialization
 import models.ModuleCore
 import models.ModuleProtocol
-import ops.FutureOps.SeqOps
+import ops.single
 import parsing.types.Module
 import play.api.libs.json.JsValue
 

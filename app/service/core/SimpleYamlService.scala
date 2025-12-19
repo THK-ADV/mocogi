@@ -5,7 +5,7 @@ import scala.concurrent.Future
 import database.repo.Repository
 import parser.Parser
 
-trait SimpleYamlService[A] extends YamlService[A] {
+private[core] trait SimpleYamlService[A] extends YamlService[A] {
   def fileParser: Parser[List[A]]
   def repo: Repository[A, A, ?]
 

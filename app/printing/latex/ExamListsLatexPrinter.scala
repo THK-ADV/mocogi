@@ -13,7 +13,7 @@ import models.core.ExamPhases
 import models.core.ExamPhases.ExamPhase
 import models.core.Identity
 import models.core.Specialization
-import ops.StringBuilderOps.SBOps
+import ops.appendOpt
 import play.api.i18n.Lang
 import play.api.i18n.MessagesApi
 import play.api.Logging

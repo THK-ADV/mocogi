@@ -17,7 +17,7 @@ object ModuleAssessmentMethodParser {
   def preconditionKey  = "precondition"
   def mandatoryKey     = "assessment_methods_mandatory"
 
-  private def assessmentMethodParser(implicit assessmentMethods: Seq[AssessmentMethod]): Parser[AssessmentMethod] =
+  private def assessmentMethodParser(using assessmentMethods: Seq[AssessmentMethod]): Parser[AssessmentMethod] =
     oneOf(
       assessmentMethods
         .map(a => prefix(s"$assessmentPrefix${a.id}").map(_ => a))*
@@ -28,7 +28,7 @@ object ModuleAssessmentMethodParser {
       .take(prefixTo("\n").or(rest))
       .map(_.trim)
 
-  private def methodParser(implicit assessmentMethods: Seq[AssessmentMethod]): Parser[AssessmentMethod] =
+  private def methodParser(using Seq[AssessmentMethod]): Parser[AssessmentMethod] =
     prefix("- method:")
       .skip(zeroOrMoreSpaces)
       .take(assessmentMethodParser)
@@ -78,9 +78,7 @@ object ModuleAssessmentMethodParser {
           .map(_.map(ModuleAssessmentMethodEntry.apply.tupled))
       )
 
-  private def raw(
-      key: String
-  ): Parser[List[ModuleAssessmentMethodEntryProtocol]] =
+  private def raw(key: String): Parser[List[ModuleAssessmentMethodEntryProtocol]] =
     prefix(s"$key:")
       .skip(zeroOrMoreSpaces)
       .take(
@@ -93,15 +91,15 @@ object ModuleAssessmentMethodParser {
           .map(_.map(ModuleAssessmentMethodEntryProtocol.apply.tupled))
       )
 
-  def mandatoryParser(implicit xs: Seq[AssessmentMethod]): Parser[List[ModuleAssessmentMethodEntry]] =
+  private[parsing] def mandatoryParser(implicit xs: Seq[AssessmentMethod]): Parser[List[ModuleAssessmentMethodEntry]] =
     parser(mandatoryKey)(xs.sortBy(_.id).reverse).option.map(_.getOrElse(Nil))
 
-  def parser(implicit xs: Seq[AssessmentMethod]): Parser[ModuleAssessmentMethods] =
+  private[parsing] def parser(implicit xs: Seq[AssessmentMethod]): Parser[ModuleAssessmentMethods] =
     mandatoryParser.map(ModuleAssessmentMethods.apply)
 
-  def mandatoryParserRaw: Parser[List[ModuleAssessmentMethodEntryProtocol]] =
+  private[parsing] def mandatoryParserRaw: Parser[List[ModuleAssessmentMethodEntryProtocol]] =
     raw(mandatoryKey).option.map(_.getOrElse(Nil))
 
-  def raw: Parser[ModuleAssessmentMethodsProtocol] =
+  private[parsing] def raw: Parser[ModuleAssessmentMethodsProtocol] =
     mandatoryParserRaw.map(ModuleAssessmentMethodsProtocol.apply)
 }

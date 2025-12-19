@@ -19,7 +19,7 @@ import play.api.mvc.AbstractController
 import play.api.mvc.Action
 import play.api.mvc.AnyContent
 import play.api.mvc.ControllerComponents
-import service.exam.ExamLoadService
+import service.artifact.ExamLoadService
 import service.StudyProgramPrivilegesService
 
 @Singleton

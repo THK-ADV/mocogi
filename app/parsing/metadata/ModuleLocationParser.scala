@@ -9,13 +9,13 @@ object ModuleLocationParser extends SingleValueParser[ModuleLocation] {
   def key    = "location"
   def prefix = "location."
 
-  def parser(implicit locations: Seq[ModuleLocation]): Parser[ModuleLocation] =
+  private[parsing] def parser(using locations: Seq[ModuleLocation]): Parser[ModuleLocation] =
     itemParser(
       key,
       locations.sortBy(_.id).reverse,
       m => s"$prefix${m.id}"
     )
 
-  def raw: Parser[String] =
+  private[parsing] def raw: Parser[String] =
     singleValueRawParser(key, prefix)
 }

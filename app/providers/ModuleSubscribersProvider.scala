@@ -1,40 +1,16 @@
 package providers
 
 import javax.inject.Inject
+import javax.inject.Named
 import javax.inject.Provider
 import javax.inject.Singleton
 
-import scala.concurrent.ExecutionContext
-
-import database.view.ModuleViewRepository
 import git.subscriber.*
-import org.apache.pekko.actor.ActorSystem
-import service.ModuleCreationService
-import service.ModuleService
-import service.ModuleUpdatePermissionService
+import org.apache.pekko.actor.ActorRef
 
 @Singleton
 final class ModuleSubscribersProvider @Inject() (
-    system: ActorSystem,
-    metadataService: ModuleService,
-    moduleViewRepository: ModuleViewRepository,
-    moduleUpdatePermissionService: ModuleUpdatePermissionService,
-    ctx: ExecutionContext,
-    moduleCreationService: ModuleCreationService,
+    @Named("ModuleDatabaseActor") moduleDatabaseActor: ActorRef,
 ) extends Provider[ModuleSubscribers] {
-  override def get(): ModuleSubscribers =
-    ModuleSubscribers(
-      List(
-        system.actorOf(
-          ModuleDatabaseActor
-            .props(
-              metadataService,
-              moduleViewRepository,
-              moduleUpdatePermissionService,
-              moduleCreationService,
-              ctx
-            )
-        )
-      )
-    )
+  override def get(): ModuleSubscribers = ModuleSubscribers(List(moduleDatabaseActor))
 }

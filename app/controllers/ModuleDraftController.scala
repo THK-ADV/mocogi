@@ -9,6 +9,7 @@ import scala.concurrent.ExecutionContext
 
 import auth.AuthorizationAction
 import controllers.actions.*
+import controllers.json.JsonNullWritable
 import controllers.json.ModuleJson
 import controllers.ModuleDraftController.VersionSchemeHeader
 import database.repo.PermissionRepository
@@ -22,7 +23,7 @@ import play.api.mvc.AnyContent
 import play.api.mvc.ControllerComponents
 import play.api.Logging
 import service.*
-import service.PipelineError.parsingErrorWrites
+import service.pipeline.PipelineError.parsingErrorWrites
 
 @Singleton
 final class ModuleDraftController @Inject() (

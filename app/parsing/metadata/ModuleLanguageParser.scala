@@ -9,13 +9,13 @@ object ModuleLanguageParser extends SingleValueParser[ModuleLanguage] {
   def key    = "language"
   def prefix = "lang."
 
-  def parser(implicit languages: Seq[ModuleLanguage]): Parser[ModuleLanguage] =
+  private[parsing] def parser(using languages: Seq[ModuleLanguage]): Parser[ModuleLanguage] =
     itemParser(
       key,
       languages.sortBy(_.id).reverse,
       x => s"$prefix${x.id}"
     )
 
-  def raw: Parser[String] =
+  private[parsing] def raw: Parser[String] =
     singleValueRawParser(key, prefix)
 }

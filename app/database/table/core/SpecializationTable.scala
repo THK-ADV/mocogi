@@ -3,7 +3,7 @@ package database.table.core
 import models.core.Specialization
 import slick.jdbc.PostgresProfile.api._
 
-final class SpecializationTable(tag: Tag) extends Table[Specialization](tag, "specialization") {
+private[database] final class SpecializationTable(tag: Tag) extends Table[Specialization](tag, "specialization") {
 
   def id = column[String]("id", O.PrimaryKey)
 

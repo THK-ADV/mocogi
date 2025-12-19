@@ -9,13 +9,13 @@ object ModuleTypeParser extends SingleValueParser[ModuleType] {
   def key    = "type"
   def prefix = "type."
 
-  def parser(implicit moduleTypes: Seq[ModuleType]): Parser[ModuleType] =
+  private[parsing] def parser(implicit moduleTypes: Seq[ModuleType]): Parser[ModuleType] =
     itemParser(
       key,
       moduleTypes.sortBy(_.id).reverse,
       x => s"$prefix${x.id}"
     )
 
-  def raw: Parser[String] =
+  private[parsing] def raw: Parser[String] =
     singleValueRawParser(key, prefix)
 }

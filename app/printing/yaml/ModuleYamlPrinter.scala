@@ -16,18 +16,12 @@ final class ModuleYamlPrinter @Inject() (
     private val contentPrinter: ContentMarkdownPrinter
 ) {
 
-  def print(
-      version: VersionScheme,
-      moduleId: UUID,
-      protocol: ModuleProtocol
-  ): Either[PrintingError, String] =
+  def print(version: VersionScheme, moduleId: UUID, protocol: ModuleProtocol): Either[PrintingError, String] =
     printer(version)
       .print((moduleId, protocol), new StringBuilder())
       .map(_.toString())
 
-  private def printer(
-      version: VersionScheme
-  ): Printer[(UUID, ModuleProtocol)] =
+  private def printer(version: VersionScheme): Printer[(UUID, ModuleProtocol)] =
     metadataProtocolPrinter
       .printer(version)
       .skip(newline)

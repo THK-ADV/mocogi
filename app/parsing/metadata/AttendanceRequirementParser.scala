@@ -15,7 +15,7 @@ object AttendanceRequirementParser {
   def reasonKey  = "reason"
   def absenceKey = "absence"
 
-  def parser: Parser[AttendanceRequirement] =
+  private[parsing] def parser: Parser[AttendanceRequirement] =
     skipFirst(prefixTo(s"$key:").skip(zeroOrMoreSpaces))
       .take(singleLineStringForKey(minKey))
       .skip(zeroOrMoreSpaces)

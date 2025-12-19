@@ -3,7 +3,7 @@ package database.table.core
 import database.table.IDLabelColumn
 import slick.jdbc.PostgresProfile.api._
 
-case class StudyProgramDbEntry(
+private[database] case class StudyProgramDbEntry(
     id: String,
     deLabel: String,
     enLabel: String,
@@ -11,7 +11,7 @@ case class StudyProgramDbEntry(
     degree: String
 )
 
-final class StudyProgramTable(tag: Tag)
+private[database] final class StudyProgramTable(tag: Tag)
     extends Table[StudyProgramDbEntry](tag, "study_program")
     with IDLabelColumn[StudyProgramDbEntry] {
 

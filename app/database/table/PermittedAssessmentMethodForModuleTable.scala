@@ -6,7 +6,7 @@ import database.MyPostgresProfile.api.*
 import models.PermittedAssessmentMethodForModule
 import slick.lifted.ProvenShape
 
-final class PermittedAssessmentMethodForModuleTable(tag: Tag)
+private[database] final class PermittedAssessmentMethodForModuleTable(tag: Tag)
     extends Table[PermittedAssessmentMethodForModule](tag, "permitted_assessment_method_for_module") {
 
   import database.MyPostgresProfile.MyAPI.simpleArrayColumnExtensionMethods

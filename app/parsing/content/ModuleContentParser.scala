@@ -1,12 +1,22 @@
 package parsing.content
 
-import parser.Parser._
-import parser.ParserOps._
+import parser.Parser
+import parser.Parser.*
+import parser.ParserOps.*
+import parser.ParsingError
 import parsing.types.ModuleContent
+import parsing.types.Rest
 
 object ModuleContentParser {
-  def contentParser =
-    prefix("## (de)")
+
+  def parse(input: String): (Either[ParsingError, (ModuleContent, ModuleContent)], Rest) = {
+    val (res, rest) = parser.parse(input)
+    (res, Rest(rest))
+  }
+
+  def parser: Parser[(ModuleContent, ModuleContent)] =
+    skipFirst(zeroOrMoreSpaces)
+      .take(prefix("## (de)"))
       .take(
         zeroOrMoreSpaces
           .skip(prefix("Angestrebte Lernergebnisse"))
@@ -84,14 +94,14 @@ object ModuleContentParser {
               deC2,
               deC3,
               deC4
-            ).normalize(),
+            ).normalized(),
             ModuleContent(
               enC0,
               enC1,
               enC2,
               enC3,
               enC4
-            ).normalize()
+            ).normalized()
           )
       }
 }

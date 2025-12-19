@@ -5,13 +5,13 @@ import java.util.UUID
 import models.ResponsibilityType
 import slick.jdbc.PostgresProfile.api._
 
-case class ModuleResponsibilityDbEntry(
+private[database] case class ModuleResponsibilityDbEntry(
     module: UUID,
     identity: String,
     responsibilityType: ResponsibilityType
 )
 
-final class ModuleResponsibilityTable(tag: Tag)
+private[database] final class ModuleResponsibilityTable(tag: Tag)
     extends Table[ModuleResponsibilityDbEntry](tag, "module_responsibility") {
 
   def module = column[UUID]("module", O.PrimaryKey)

@@ -31,7 +31,7 @@ final class ModuleDeletionRepository @Inject() (
 
   /**
    * Caution: This function assumes the following state
-   * - module file is deleted in the git repo
+   * - the module file is deleted in the git repo
    * - the associated module branch is deleted
    * - the associated merge request is closed
    */

@@ -4,9 +4,14 @@ import database.table.IDLabelColumn
 import models.AssessmentMethodSource
 import slick.jdbc.PostgresProfile.api.*
 
-case class AssessmentMethodDbEntry(id: String, deLabel: String, enLabel: String, source: AssessmentMethodSource)
+private[database] case class AssessmentMethodDbEntry(
+    id: String,
+    deLabel: String,
+    enLabel: String,
+    source: AssessmentMethodSource
+)
 
-final class AssessmentMethodTable(tag: Tag)
+private[database] final class AssessmentMethodTable(tag: Tag)
     extends Table[AssessmentMethodDbEntry](tag, "assessment_method")
     with IDLabelColumn[AssessmentMethodDbEntry] {
 

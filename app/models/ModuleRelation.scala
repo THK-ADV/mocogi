@@ -3,7 +3,7 @@ package models
 sealed trait ModuleRelation
 
 import cats.data.NonEmptyList
-import controllers.NelWrites
+import controllers.json.NelWrites
 import play.api.libs.json.Json
 import play.api.libs.json.Writes
 

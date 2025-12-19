@@ -4,13 +4,20 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 import parser.ParsingError
+import parsing.metadata.VersionScheme
 import parsing.metadata.VersionSchemeParser
 import play.api.libs.json.Json
 import play.api.libs.json.Writes
 import play.api.mvc.ActionRefiner
 import play.api.mvc.Results.BadRequest
+import play.api.mvc.WrappedRequest
 
-final class VersionSchemeAction(key: String)(
+case class VersionSchemeRequest[A](
+    versionScheme: VersionScheme,
+    request: UserRequest[A]
+) extends WrappedRequest[A](request)
+
+private[controllers] final class VersionSchemeAction(key: String)(
     implicit val executionContext: ExecutionContext,
     writes: Writes[ParsingError]
 ) extends ActionRefiner[UserRequest, VersionSchemeRequest] {

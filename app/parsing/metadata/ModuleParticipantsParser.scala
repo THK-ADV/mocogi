@@ -14,7 +14,7 @@ object ModuleParticipantsParser {
 
   def maxKey = "max"
 
-  def parser: Parser[ModuleParticipants] =
+  private[parsing] def parser: Parser[ModuleParticipants] =
     skipFirst(prefix(s"$key:"))
       .skip(zeroOrMoreSpaces)
       .take(intForKey(minKey))

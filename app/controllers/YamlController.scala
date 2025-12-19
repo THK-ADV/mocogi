@@ -9,7 +9,7 @@ import play.api.libs.json.Writes
 import play.api.mvc.AbstractController
 import service.core.YamlService
 
-trait YamlController[A] { self: AbstractController =>
+private[controllers] trait YamlController[A] { self: AbstractController =>
 
   implicit val writes: Writes[A]
 

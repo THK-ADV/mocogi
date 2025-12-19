@@ -85,52 +85,6 @@ final class YamlParserSpec extends AnyWordSpec with ParserSpecHelper with Either
       assert(res4.value.isEmpty)
     }
 
-    "remove indentations" in {
-      val input0 =
-        """foo: okay
-          |  bar:
-          |    paragraph1
-          |    paragraph2
-          |    paragraph3
-          |  baz: ok
-          |boom: ko""".stripMargin
-      val output0 =
-        """foo: okay
-          |bar:
-          |  paragraph1
-          |  paragraph2
-          |  paragraph3
-          |baz: ok
-          |boom: ko""".stripMargin
-      val (res0, rest0) = removeIndentation().parse(input0)
-      assert(res0.isRight)
-      assert(rest0 == output0)
-
-      val output1 =
-        """foo: okay
-          |bar:
-          |paragraph1
-          |paragraph2
-          |paragraph3
-          |baz: ok
-          |boom: ko""".stripMargin
-      val (res1, rest1) = removeIndentation(2).parse(input0)
-      assert(res1.isRight)
-      assert(rest1 == output1)
-
-      val output2 =
-        """foo: okay
-          |bar:
-          |paragraph1
-          |paragraph2
-          |paragraph3
-          |baz: ok
-          |boom: ko""".stripMargin
-      val (res2, rest2) = removeIndentation(3).parse(input0)
-      assert(res2.isRight)
-      assert(rest2 == output2)
-    }
-
     "parse a multiline string value" in {
       val input0 =
         """foo:

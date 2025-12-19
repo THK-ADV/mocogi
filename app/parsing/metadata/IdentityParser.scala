@@ -5,12 +5,12 @@ import models.core.Identity
 import parser.Parser
 import parser.Parser._
 import parser.ParserOps._
-import parsing.ParserListOps
+import parsing.nel
 
-object IdentityParser {
+private[parsing] object IdentityParser {
   def prefix = "person."
 
-  def parser(implicit identities: Seq[Identity]): Parser[NonEmptyList[Identity]] = {
+  def parser(using identities: Seq[Identity]): Parser[NonEmptyList[Identity]] = {
     val single =
       oneOf(
         identities

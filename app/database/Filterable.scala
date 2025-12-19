@@ -3,12 +3,12 @@ package database
 import play.api.db.slick.HasDatabaseConfigProvider
 import slick.jdbc.JdbcProfile
 
-trait Filterable[Input, T <: slick.jdbc.PostgresProfile.api.Table[Input]] {
+private[database] trait Filterable[Input, T <: slick.jdbc.PostgresProfile.api.Table[Input]] {
   self: HasDatabaseConfigProvider[JdbcProfile] =>
   import profile.api.*
 
-  type Filter = Map[String, Seq[String]]
-  type Pred   = T => Rep[Boolean]
+  private type Filter = Map[String, Seq[String]]
+  private type Pred   = T => Rep[Boolean]
 
   protected val tableQuery: TableQuery[T]
 

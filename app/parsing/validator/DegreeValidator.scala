@@ -2,7 +2,7 @@ package parsing.validator
 
 import monocle.Lens
 
-final class DegreeValidator[A](
+private[parsing] final class DegreeValidator[A](
     degrees: Seq[String],
     degree: Lens[A, String]
 ) extends YamlFileParserValidator[A] {

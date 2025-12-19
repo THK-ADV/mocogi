@@ -1,15 +1,11 @@
 package parsing.helper
 
 import parser.Parser
-import parser.Parser._
+import parser.Parser.*
 import parser.ParserOps.P0
 
-trait SingleValueParser[A] {
-  def itemParser(
-      key: String,
-      types: Seq[A],
-      lit: A => String
-  ): Parser[A] =
+private[parsing] trait SingleValueParser[A] {
+  def itemParser(key: String, types: Seq[A], lit: A => String): Parser[A] =
     prefix(s"$key:")
       .skip(zeroOrMoreSpaces)
       .take(

@@ -9,10 +9,10 @@ import scala.concurrent.Future
 import auth.CampusId
 import database.repo.Repository
 import database.table.core.*
-import database.table.PeopleImage
 import database.table.PeopleImagesTable
 import models.core.Identity
 import models.core.Identity.Person
+import models.PeopleImage
 import models.UserInfo
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.db.slick.HasDatabaseConfigProvider

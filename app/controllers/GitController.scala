@@ -2,6 +2,7 @@ package controllers
 
 import java.time.LocalDateTime
 import javax.inject.Inject
+import javax.inject.Named
 import javax.inject.Singleton
 
 import scala.collection.parallel.CollectionConverters.seqIsParallelizable
@@ -14,13 +15,14 @@ import auth.AuthorizationAction
 import controllers.actions.UserResolveAction
 import database.repo.PermissionRepository
 import git.api.GitCommitService
-import git.api.GitFileDownloadService
-import git.api.GitRepositoryApiService
+import git.api.GitFileService
+import git.api.GitRepositoryService
 import git.publisher.CoreDataPublisher
 import git.publisher.ModulePublisher
 import git.GitConfig
 import git.GitFile
 import git.GitFileStatus
+import org.apache.pekko.actor.ActorRef
 import permission.AdminCheck
 import play.api.cache.Cached
 import play.api.libs.json.JsNull
@@ -31,11 +33,11 @@ import play.api.mvc.ControllerComponents
 @Singleton
 final class GitController @Inject() (
     cc: ControllerComponents,
-    downloadService: GitFileDownloadService,
-    gitRepositoryApiService: GitRepositoryApiService,
+    downloadService: GitFileService,
+    gitRepositoryApiService: GitRepositoryService,
     gitCommitService: GitCommitService,
-    modulePublisher: ModulePublisher,
-    coreDataPublisher: CoreDataPublisher,
+    @Named("ModulePublisher") modulePublisher: ActorRef,
+    @Named("CoreDataPublisher") coreDataPublisher: ActorRef,
     auth: AuthorizationAction,
     gitConfig: GitConfig,
     cached: Cached,
@@ -67,7 +69,7 @@ final class GitController @Inject() (
           )
         )
       } yield {
-        coreDataPublisher.notifySubscribers(contents)
+        coreDataPublisher ! CoreDataPublisher.Handle(contents)
         NoContent
       }
     }
@@ -80,9 +82,14 @@ final class GitController @Inject() (
           paths.par.collect {
             case path if path.isModule(gitConfig) =>
               downloadService
-                .downloadFileContentWithLastModified(path, gitConfig.mainBranch)
+                .download(path, gitConfig.mainBranch)
+                .flatMap {
+                  case Some((content, Some(commit))) =>
+                    gitCommitService.getCommitDate(commit.value).map(d => Some(content, d))
+                  case _ => Future.successful(None)
+                }
                 .collect {
-                  case Some((content, Some(lastModified))) =>
+                  case Some((content, lastModified)) =>
                     val moduleId = path.moduleId(gitConfig)
                     assume(moduleId.isDefined, s"expected module id for ${path.value}")
                     (
@@ -98,7 +105,7 @@ final class GitController @Inject() (
           }.toList
         )
       } yield {
-        modulePublisher.notifySubscribers(modules)
+        modulePublisher ! ModulePublisher.NotifySubscribers(modules)
         NoContent
       }
     }

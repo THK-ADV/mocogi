@@ -3,7 +3,6 @@ import java.time.format.DateTimeFormatter
 import java.time.LocalDate
 import java.util.UUID
 
-import scala.annotation.tailrec
 import scala.io.Source
 import scala.util.Try
 
@@ -18,15 +17,15 @@ package object parsing {
   import parser.Parser.*
   import parser.ParserOps.*
 
-  implicit class ParserListOps[A](private val parser: Parser[List[A]]) {
+  extension [A](self: Parser[List[A]]) {
     def nel(): Parser[NonEmptyList[A]] =
-      parser.flatMap(xs =>
+      self.flatMap(xs =>
         if (xs.isEmpty) never("one entry")
         else always(NonEmptyList.fromListUnsafe(xs))
       )
   }
 
-  implicit class CursorOps(private val self: ACursor) extends AnyVal {
+  extension (self: ACursor) {
     def getNonEmptyList(key: String): Decoder.Result[NonEmptyList[String]] = {
       val field = self.downField(key)
       if (field.downArray.succeeded) {
@@ -45,24 +44,6 @@ package object parsing {
         field.as[String].map(List(_))
       }
     }
-  }
-
-  def removeIndentation(level: Int = 1): Parser[Unit] = Parser { input =>
-    val indentations = level * 2
-
-    @tailrec
-    def go(str: String, soFar: String): String = {
-      val currentLine   = str.takeWhile(_ != '\n')
-      val leadingSpaces = currentLine.takeWhile(_ == ' ')
-      val newLine =
-        if (leadingSpaces.isEmpty) currentLine
-        else currentLine.drop(indentations.min(leadingSpaces.length))
-      val nextStr = str.drop(currentLine.length + 1)
-      if (nextStr.isEmpty) soFar + newLine
-      else go(nextStr, soFar + newLine + "\n")
-    }
-
-    Right(()) -> go(input, "")
   }
 
   def keyParser(key: String): Parser[Unit] =
@@ -124,9 +105,7 @@ package object parsing {
     }
   }
 
-  private def mergeMultilineString(
-      t: (MultilineStringStrategy, List[String])
-  ): String = {
+  private def mergeMultilineString(t: (MultilineStringStrategy, List[String])): String = {
     val strategy = t._1
     val values   = shiftSpaces(t._2)
     var pointer  = 1
@@ -170,7 +149,7 @@ package object parsing {
       singleLineStringForKey(key)
     )
 
-  implicit def decoderList[A](implicit decoder: Decoder[A]): Decoder[List[A]] =
+  given decoderList[A](using Decoder[A]): Decoder[List[A]] =
     (c: HCursor) => {
       c.keys match {
         case Some(keys) =>
@@ -187,10 +166,7 @@ package object parsing {
     res
   }
 
-  def multipleValueParser[A](
-      key: String,
-      singleParser: Parser[A]
-  ): Parser[List[A]] = {
+  def multipleValueParser[A](key: String, singleParser: Parser[A]): Parser[List[A]] = {
     val dashes =
       zeroOrMoreSpaces
         .skip(prefix("-"))
@@ -204,18 +180,16 @@ package object parsing {
       .take(singleParser.map(a => List(a)).or(dashes))
   }
 
-  def multipleValueParser[A](
-      key: String,
-      optionPrefix: A => String
-  )(implicit options: Seq[A]): Parser[List[A]] = multipleValueParser(
-    key,
-    oneOf(
-      options.map(o =>
-        prefix(optionPrefix(o))
-          .map(_ => o)
-      )*
+  def multipleValueParser[A](key: String, optionPrefix: A => String)(implicit options: Seq[A]): Parser[List[A]] =
+    multipleValueParser(
+      key,
+      oneOf(
+        options.map(o =>
+          prefix(optionPrefix(o))
+            .map(_ => o)
+        )*
+      )
     )
-  )
 
   def singleValueRawParser(key: String, prefix: String): Parser[String] =
     keyParser(key)
@@ -223,10 +197,7 @@ package object parsing {
       .take(prefixTo("\n").or(rest))
       .map(_.trim)
 
-  def multipleValueRawParser(
-      key: String,
-      prefix: String
-  ): Parser[List[String]] = {
+  def multipleValueRawParser(key: String, prefix: String): Parser[List[String]] = {
     val single =
       skipFirst(Parser.prefix(prefix))
         .take(prefixTo("\n").or(rest))
@@ -243,12 +214,10 @@ package object parsing {
       .take(single.map(a => List(a)).or(dashes))
   }
 
-  private val localDatePattern = DateTimeFormatter.ofPattern("dd.MM.yyyy")
-
-  implicit def localDateDecoder: Decoder[LocalDate] =
+  given localDateDecoder: Decoder[LocalDate] =
     Decoder.decodeString.emap { str =>
       Either
-        .catchNonFatal(LocalDate.parse(str, localDatePattern))
+        .catchNonFatal(LocalDate.parse(str, DateTimeFormatter.ofPattern("dd.MM.yyyy")))
         .left
         .map(_.getMessage)
     }

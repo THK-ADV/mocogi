@@ -9,7 +9,7 @@ object ModuleSeasonParser extends SingleValueParser[Season] {
   def key    = "frequency"
   def prefix = "season."
 
-  def parser(implicit seasons: Seq[Season]): Parser[Season] = {
+  private[parsing] def parser(implicit seasons: Seq[Season]): Parser[Season] = {
     itemParser(
       key,
       seasons.sortBy(_.id).reverse,
@@ -17,6 +17,6 @@ object ModuleSeasonParser extends SingleValueParser[Season] {
     )
   }
 
-  def raw: Parser[String] =
+  private[parsing] def raw: Parser[String] =
     singleValueRawParser(key, prefix)
 }

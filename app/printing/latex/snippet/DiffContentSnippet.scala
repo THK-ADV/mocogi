@@ -7,8 +7,10 @@ import play.api.i18n.Lang
 import play.api.i18n.MessagesApi
 import printing.latex.ModuleCatalogLatexPrinter
 
-final class DiffContentSnippet(diffs: NonEmptyList[(ModuleCore, Set[String])], messagesApi: MessagesApi)
-    extends LatexContentSnippet {
+final class DiffContentSnippet(
+    diffs: NonEmptyList[(ModuleCore, Set[String])],
+    messagesApi: MessagesApi
+) extends LatexContentSnippet {
 
   import ModuleCatalogLatexPrinter.chapter
   import ModuleCatalogLatexPrinter.nameRef

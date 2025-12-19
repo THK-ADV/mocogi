@@ -20,7 +20,7 @@ import models.ModuleDraftState.WaitingForReview
 import play.api.libs.json.JsError
 import play.api.libs.json.JsSuccess
 import play.api.libs.json.JsValue
-import service.Print
+import service.pipeline.Print
 
 case class ModuleDraft(
     module: UUID,
@@ -37,59 +37,55 @@ case class ModuleDraft(
     lastCommit: Option[CommitId],
     mergeRequest: Option[(MergeRequestId, MergeRequestStatus)],
     lastModified: LocalDateTime
-)
+) {
+  def protocol(): ModuleProtocol =
+    ModuleJson.reads.reads(this.moduleJson) match {
+      case JsSuccess(value, _) => value.toProtocol
+      case JsError(_) =>
+        throw new Exception(
+          s"Unable to parse module draft with ID ${this.module} to JSON"
+        )
+    }
 
-object ModuleDraft {
-  final implicit class Ops(private val self: ModuleDraft) extends AnyVal {
-    def protocol(): ModuleProtocol =
-      ModuleJson.reads.reads(self.moduleJson) match {
-        case JsSuccess(value, _) => value.toProtocol
-        case JsError(_) =>
-          throw new Exception(
-            s"Unable to parse module draft with ID ${self.module} to JSON"
-          )
-      }
+  def mergeRequestId: Option[MergeRequestId] =
+    this.mergeRequest.map(_._1)
 
-    def mergeRequestId: Option[MergeRequestId] =
-      self.mergeRequest.map(_._1)
+  def mergeRequestStatus: Option[MergeRequestStatus] =
+    this.mergeRequest.map(_._2)
 
-    def mergeRequestStatus: Option[MergeRequestStatus] =
-      self.mergeRequest.map(_._2)
+  // changes to the module draft state calculation have to be synchronized with the "get_modules_for_user" function in functions.sql
 
-    // changes to the module draft state calculation have to be synchronized with the "get_modules_for_user" function in functions.sql
+  def state(): ModuleDraftState =
+    if (
+      this.lastCommit.isDefined &&
+      this.mergeRequest.isEmpty &&
+      this.modifiedKeys.nonEmpty &&
+      this.keysToBeReviewed.isEmpty
+    ) ValidForPublication
+    else if (
+      this.lastCommit.isDefined &&
+      this.mergeRequest.isEmpty &&
+      this.modifiedKeys.nonEmpty &&
+      this.keysToBeReviewed.nonEmpty
+    ) ValidForReview
+    else if (
+      this.lastCommit.isDefined &&
+      this.keysToBeReviewed.nonEmpty &&
+      this.mergeRequestStatus.contains(Open)
+    ) WaitingForReview
+    else if (
+      this.lastCommit.isDefined &&
+      this.keysToBeReviewed.isEmpty &&
+      this.mergeRequestStatus.contains(Open)
+    ) WaitingForPublication
+    else if (
+      this.lastCommit.isDefined &&
+      this.mergeRequestStatus.contains(Closed)
+    ) WaitingForChanges
+    else Unknown
+}
 
-    def state(): ModuleDraftState =
-      if (
-        self.lastCommit.isDefined &&
-        self.mergeRequest.isEmpty &&
-        self.modifiedKeys.nonEmpty &&
-        self.keysToBeReviewed.isEmpty
-      ) ValidForPublication
-      else if (
-        self.lastCommit.isDefined &&
-        self.mergeRequest.isEmpty &&
-        self.modifiedKeys.nonEmpty &&
-        self.keysToBeReviewed.nonEmpty
-      ) ValidForReview
-      else if (
-        self.lastCommit.isDefined &&
-        self.keysToBeReviewed.nonEmpty &&
-        self.mergeRequestStatus.contains(Open)
-      ) WaitingForReview
-      else if (
-        self.lastCommit.isDefined &&
-        self.keysToBeReviewed.isEmpty &&
-        self.mergeRequestStatus.contains(Open)
-      ) WaitingForPublication
-      else if (
-        self.lastCommit.isDefined &&
-        self.mergeRequestStatus.contains(Closed)
-      ) WaitingForChanges
-      else Unknown
-  }
-
-  final implicit class OptionOps(private val self: Option[ModuleDraft]) extends AnyVal {
-    def state() =
-      self.fold[ModuleDraftState](Published)(_.state())
-  }
+extension (self: Option[ModuleDraft]) {
+  def state() =
+    self.fold[ModuleDraftState](Published)(_.state())
 }

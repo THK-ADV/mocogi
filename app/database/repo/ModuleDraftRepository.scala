@@ -17,7 +17,7 @@ import models.*
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.db.slick.HasDatabaseConfigProvider
 import play.api.libs.json.JsValue
-import service.Print
+import service.pipeline.Print
 import slick.dbio.DBIOAction
 import slick.jdbc.JdbcProfile
 

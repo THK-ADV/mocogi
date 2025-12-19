@@ -11,7 +11,6 @@ import git.GitConfig
 final class GitConfigProvider @Inject() (config: ConfigReader) extends Provider[GitConfig] {
   override def get(): GitConfig =
     GitConfig(
-      config.gitToken,
       config.accessToken,
       config.baseUrl,
       config.projectId,

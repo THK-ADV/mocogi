@@ -9,6 +9,7 @@ import scala.concurrent.ExecutionContext
 import auth.AuthorizationAction
 import controllers.actions.UserRequest
 import controllers.actions.UserResolveAction
+import controllers.json.JsonNullWritable
 import database.repo.PermissionRepository
 import models.ModuleKeysToReview
 import permission.ModuleDraftCheck

@@ -3,8 +3,8 @@ package models
 import java.util.UUID
 
 import cats.data.NonEmptyList
-import controllers.JsonNullWritable
-import controllers.NelWrites
+import controllers.json.JsonNullWritable
+import controllers.json.NelWrites
 import models.core.ModuleStatus
 import models.core.ModuleType
 import parsing.types.ModuleParticipants

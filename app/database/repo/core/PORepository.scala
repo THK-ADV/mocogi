@@ -10,7 +10,7 @@ import scala.concurrent.Future
 import database.repo.Repository
 import database.table.core.POTable
 import models.core.PO
-import ops.FutureOps.SeqOps
+import ops.single
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.db.slick.HasDatabaseConfigProvider
 import slick.jdbc.JdbcProfile
@@ -40,9 +40,7 @@ final class PORepository @Inject() (
   def get(id: String): Future[PO] =
     retrieve(tableQuery.filter(_.id === id)).single
 
-  protected override def retrieve(
-      query: Query[POTable, PO, Seq]
-  ): Future[Seq[PO]] =
+  protected override def retrieve(query: Query[POTable, PO, Seq]): Future[Seq[PO]] =
     db.run(query.result)
 
   def deleteMany(ids: Seq[String]) =

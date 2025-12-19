@@ -1,12 +1,11 @@
 package providers
 
-import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
 
-import scala.util.Try
-
-import ops.ConfigurationOps.Ops
+import ops.int
+import ops.list
+import ops.nonEmptyString
 import play.api.Configuration
 
 @Singleton
@@ -17,11 +16,6 @@ final class ConfigReader @Inject() (val config: Configuration) {
 
   def moduleCatalogOutputFolderPath: String =
     config.nonEmptyString("pandoc.moduleCatalogOutputFolderPath")
-
-  def gitToken: Option[UUID] =
-    config
-      .getOptional[String]("git.token")
-      .flatMap(s => Try(UUID.fromString(s)).toOption)
 
   def accessToken: String =
     config.nonEmptyString("git.accessToken")
@@ -60,9 +54,6 @@ final class ConfigReader @Inject() (val config: Configuration) {
 
   def fastForwardLabel: String =
     config.nonEmptyString("git.fastForwardLabel")
-
-  def moduleEditUrl: String =
-    config.nonEmptyString("mail.editUrl")
 
   def bigBangLabel =
     config.nonEmptyString("git.bigBangLabel")

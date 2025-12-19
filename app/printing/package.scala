@@ -1,10 +1,6 @@
-import java.time.format.DateTimeFormatter
-
 import models.core.*
 
 package object printing {
-  def localDatePattern = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm")
-
   def fmtDouble(d: Double): String =
     if (d % 1 == 0) d.toInt.toString
     else d.toString.replace('.', ',')

@@ -2,7 +2,7 @@ package models.core
 
 import java.time.LocalDate
 
-import controllers.JsonNullWritable
+import controllers.json.JsonNullWritable
 import play.api.libs.json.Json
 import play.api.libs.json.Writes
 

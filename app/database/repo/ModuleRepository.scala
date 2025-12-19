@@ -127,7 +127,6 @@ final class ModuleRepository @Inject() (
         )
     )
 
-  // TODO this should be used to fetch modules for po
   def allFromPO(po: String | Specialization, activeOnly: Boolean): Future[Seq[(ModuleProtocol, LocalDateTime)]] = {
     val poFilter: ModuleTable => Rep[Boolean] = po match
       case po: String =>
