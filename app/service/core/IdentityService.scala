@@ -61,7 +61,8 @@ final class IdentityService @Inject() (
         hasDirectorPrivileges = hasDirectorPrivileges,
         hasModuleReviewPrivileges = hasModuleReviewPrivileges,
         hasModulesToEdit = hasModulesToEdit,
-        fastForwardApprovalPOs = fastForwardApprovalPOs
+        fastForwardApprovalPOs = fastForwardApprovalPOs,
+        hasExtendedModuleEditPermissions = permissions.isAdmin
       )
     }
 }
