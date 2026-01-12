@@ -10,7 +10,8 @@ case class UserInfo(
     hasModulesToEdit: Boolean,
     rejectedReviews: Int,
     reviewsToApprove: Int,
-    fastForwardApprovalPOs: Option[Set[String]]
+    fastForwardApprovalPOs: Option[Set[String]],
+    hasExtendedModuleEditPermissions: Boolean
 )
 
 object UserInfo {
