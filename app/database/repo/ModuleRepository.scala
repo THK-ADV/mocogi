@@ -73,7 +73,7 @@ final class ModuleRepository @Inject() (
       case (module, lastModified) =>
         val db = toDbEntry(module, lastModified)
         for {
-          exists <- existsAction(module)
+          exists <- existsAction(module.metadata.id)
           _      <-
             if exists then tableQuery.filter(_.id === module.metadata.id).update(db) else tableQuery += db
         } yield ()
@@ -167,6 +167,9 @@ final class ModuleRepository @Inject() (
       _ <- moduleTaughtWithTable ++= metadataTaughtWith(metadata)
     } yield ()
   }
+
+  def exists(module: UUID): Future[Boolean] =
+    db.run(existsAction(module))
 
   private def toDbEntry(module: Module, timestamp: LocalDateTime) =
     ModuleDbEntry(
@@ -284,8 +287,8 @@ final class ModuleRepository @Inject() (
     metadataAssessmentMethods.toList
   }
 
-  private def existsAction(module: Module) =
-    tableQuery.filter(_.id === module.metadata.id).exists.result
+  private def existsAction(module: UUID) =
+    tableQuery.filter(_.id === module).exists.result
 
   private def retrieve(query: Query[ModuleTable, ModuleDbEntry, Seq]): Future[Seq[(ModuleProtocol, LocalDateTime)]] = {
     val action = query

@@ -16,6 +16,7 @@ import scala.util.Success
 
 import cats.data.NonEmptyList
 import database.repo.ModuleDraftRepository
+import database.repo.ModuleRepository
 import database.repo.ModuleReviewRepository
 import database.repo.ModuleUpdatePermissionRepository
 import git.*
@@ -45,6 +46,7 @@ final class MergeEventHandler @Inject() (
     moduleDraftRepository: ModuleDraftRepository,
     moduleCreationService: ModuleCreationService,
     mergeRequestApiService: GitMergeRequestService,
+    moduleRepository: ModuleRepository,
     gitCommitService: GitCommitService,
     moduleUpdatePermissionRepository: ModuleUpdatePermissionRepository,
     messages: MessagesApi,
@@ -250,7 +252,7 @@ final class MergeEventHandler @Inject() (
       (module, diff) <- gitCommitService.getLatestModuleFromCommit(sha, gitConfig.draftBranch, moduleId).collect {
         case Some((content, diff)) => (parseCreatedModuleInformation(content, moduleId), diff)
       }
-      _ <- createNewModuleWithPermissions(id, module, diff)
+      _ <- createNewModuleWithPermissionsIfNeeded(id, module, diff)
       _ <- deleteModuleDraft(id, moduleId)
     } yield ()
     f.onComplete {
@@ -262,13 +264,19 @@ final class MergeEventHandler @Inject() (
     }
   }
 
-  private def createNewModuleWithPermissions(id: UUID, module: CreatedModule, diff: CommitDiff) =
-    moduleCreationService.createOrUpdateWithPermissions(module).map { _ =>
-      val prefixStr = if diff.isNewFile then "created new module" else "updated module"
-      logger.info(
-        s"[$id][${Thread.currentThread().getName.last}] $prefixStr ${module.module} with ${module.moduleManagement.size} permissions"
-      )
-    }
+  private def createNewModuleWithPermissionsIfNeeded(id: UUID, module: CreatedModule, diff: CommitDiff) =
+    for {
+      exists <- moduleRepository.exists(id)
+      res    <-
+        if exists then Future.unit // it's not a new module if it already exists
+        else
+          moduleCreationService.createOrUpdateWithPermissions(module).map { _ =>
+            val prefixStr = if diff.isNewFile then "created new module" else "updated module"
+            logger.info(
+              s"[$id][${Thread.currentThread().getName.last}] $prefixStr ${module.module} with ${module.moduleManagement.size} permissions"
+            )
+          }
+    } yield res
 
   private def parseCreatedModuleInformation(content: GitFileContent, module: => UUID) =
     try RawModuleParser.parseCreatedModuleInformation(content.value)
@@ -282,7 +290,7 @@ final class MergeEventHandler @Inject() (
       downloads <- gitCommitService.getAllModulesFromCommit(sha, gitConfig.draftBranch)
       _         <- Future.sequence(downloads.map { (content, diff) =>
         val module = parseCreatedModuleInformation(content, diff.newPath.moduleId(gitConfig).get)
-        createNewModuleWithPermissions(id, module, diff)
+        createNewModuleWithPermissionsIfNeeded(id, module, diff)
       })
     yield ()
 
