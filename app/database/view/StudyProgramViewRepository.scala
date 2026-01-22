@@ -7,6 +7,7 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 import database.repo.single
+import database.Schema
 import models.core.Degree
 import models.core.IDLabel
 import models.FullPoId
@@ -26,11 +27,15 @@ final class StudyProgramViewRepository @Inject() (
 
   override def name: String = "study_program_view"
 
+  override def schema = Schema.Core.name
+
   private val notExpiredTableQuery =
-    TableQuery[StudyProgramViewTable]((tag: Tag) => new StudyProgramViewTable(tag, "study_program_view_not_expired"))
+    TableQuery[StudyProgramViewTable]((tag: Tag) =>
+      new StudyProgramViewTable(tag, schema, "study_program_view_not_expired")
+    )
 
   private val currentlyActiveTableQuery = TableQuery[StudyProgramViewTable]((tag: Tag) =>
-    new StudyProgramViewTable(tag, "study_program_view_currently_active")
+    new StudyProgramViewTable(tag, schema, "study_program_view_currently_active")
   )
 
   val tableQuery = notExpiredTableQuery
@@ -56,7 +61,8 @@ final class StudyProgramViewRepository @Inject() (
   def getByPo(fullPoId: FullPoId): Future[StudyProgramView] =
     db.run(notExpiredTableQuery.filter(_.fullPo === fullPoId.id).result.single)
 
-  final class StudyProgramViewTable(tag: Tag, tableName: String) extends Table[StudyProgramView](tag, tableName) {
+  final class StudyProgramViewTable(tag: Tag, schema: String, tableName: String)
+      extends Table[StudyProgramView](tag, Some(schema), tableName) {
 
     def fullPo = specializationId.fold(poId)(identity)
 

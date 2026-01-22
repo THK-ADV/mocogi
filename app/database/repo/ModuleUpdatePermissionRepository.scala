@@ -85,7 +85,8 @@ final class ModuleUpdatePermissionRepository @Inject() (
     )
 
   def allGrantedFromModule(module: UUID) = {
-    val query = sql"select get_users_with_granted_permissions_from_module(${module.toString}::uuid)".as[String].head
+    val query =
+      sql"select modules.get_users_with_granted_permissions_from_module(${module.toString}::uuid)".as[String].head
     db.run(query)
   }
 
@@ -112,18 +113,19 @@ final class ModuleUpdatePermissionRepository @Inject() (
     "'{" + pos.mkString(",") + "}'"
 
   def allForUser(cid: CampusId): Future[String] = {
-    val query = sql"select get_modules_for_user(${cid.value}::text)".as[String].head
+    val query = sql"select modules.get_modules_for_user(${cid.value}::text)".as[String].head
     db.run(query)
   }
 
   def allForPos(pos: Set[String]): Future[String] = {
-    val query = sql"select get_modules_for_po(#${arrayLiteral(pos)}::text[])".as[String].head
+    val query = sql"select modules.get_modules_for_po(#${arrayLiteral(pos)}::text[])".as[String].head
     db.run(query)
   }
 
   // Checks if the module has a PO relationship with any of the passed POs. Both live and draft modules are considered
   def isModulePartOfPO(module: UUID, pos: Set[String]): Future[Boolean] = {
-    val query = sql"select module_of_po(${module.toString}::uuid, #${arrayLiteral(pos)}::text[])".as[Boolean].head
+    val query =
+      sql"select modules.module_of_po(${module.toString}::uuid, #${arrayLiteral(pos)}::text[])".as[Boolean].head
     db.run(query)
   }
 }

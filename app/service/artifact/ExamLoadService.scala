@@ -12,7 +12,7 @@ import models.ModuleRelationProtocol
 import play.api.Logging
 import printing.csv.ExamLoadCSVPrinter
 import printing.csv.Module
-import service.AssessmentMethodService
+import service.core.AssessmentMethodService
 
 final class ExamLoadService @Inject() (
     assessmentMethodService: AssessmentMethodService,

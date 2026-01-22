@@ -1,5 +1,6 @@
 package database.table
 
+import database.Schema
 import permission.PermissionType
 import slick.jdbc.PostgresProfile.api.*
 
@@ -10,7 +11,8 @@ private[database] case class Permission(
     context: Option[List[String]]
 )
 
-private[database] final class PermissionTable(tag: Tag) extends Table[Permission](tag, "permission") {
+private[database] final class PermissionTable(tag: Tag)
+    extends Table[Permission](tag, Some(Schema.Modules.name), "permission") {
 
   import database.MyPostgresProfile.MyAPI.simpleStrListTypeMapper
 

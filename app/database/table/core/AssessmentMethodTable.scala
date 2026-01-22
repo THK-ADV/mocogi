@@ -1,6 +1,7 @@
 package database.table.core
 
 import database.table.IDLabelColumn
+import database.Schema
 import models.AssessmentMethodSource
 import slick.jdbc.PostgresProfile.api.*
 
@@ -12,7 +13,7 @@ private[database] case class AssessmentMethodDbEntry(
 )
 
 private[database] final class AssessmentMethodTable(tag: Tag)
-    extends Table[AssessmentMethodDbEntry](tag, "assessment_method")
+    extends Table[AssessmentMethodDbEntry](tag, Some(Schema.Core.name), "assessment_method")
     with IDLabelColumn[AssessmentMethodDbEntry] {
 
   import database.table.given_BaseColumnType_AssessmentMethodSource

@@ -8,6 +8,7 @@ import scala.collection.mutable
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
+import database.Schema
 import models.*
 import models.core.Degree
 import models.core.IDLabel
@@ -34,6 +35,8 @@ final class ModuleViewRepository @Inject() (
   ]
 
   override def name: String = "module_view"
+
+  override def schema = Schema.Modules.name
 
   private val tableQuery = TableQuery[ModuleViewTable]
 
@@ -68,7 +71,7 @@ final class ModuleViewRepository @Inject() (
       })
     )
 
-  private final class ModuleViewTable(tag: Tag) extends Table[DbEntry](tag, name) {
+  private final class ModuleViewTable(tag: Tag) extends Table[DbEntry](tag, Some(schema), name) {
 
     import database.MyPostgresProfile.MyAPI.simpleIntListTypeMapper
 

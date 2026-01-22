@@ -15,7 +15,6 @@ import parsing.types.ParsedMetadata
 import parsing.types.Rest
 import play.api.Logging
 import service.core.*
-import service.AssessmentMethodService
 import service.ParsingResult
 
 @Singleton

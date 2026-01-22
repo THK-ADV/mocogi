@@ -1,5 +1,6 @@
 package database.table.core
 
+import database.Schema
 import models.core.Identity
 import models.EmploymentType
 import slick.jdbc.PostgresProfile.api.*
@@ -20,7 +21,8 @@ case class IdentityDbEntry(
   def isPerson = this.kind == Identity.PersonKind
 }
 
-private[database] final class IdentityTable(tag: Tag) extends Table[IdentityDbEntry](tag, "identity") {
+private[database] final class IdentityTable(tag: Tag)
+    extends Table[IdentityDbEntry](tag, Some(Schema.Core.name), "identity") {
 
   import database.MyPostgresProfile.MyAPI.simpleStrListTypeMapper
 

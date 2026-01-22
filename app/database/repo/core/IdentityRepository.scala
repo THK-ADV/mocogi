@@ -9,14 +9,11 @@ import scala.concurrent.Future
 import auth.CampusId
 import database.repo.Repository
 import database.table.core.*
-import database.table.PeopleImagesTable
 import models.core.Identity
 import models.core.Identity.Person
 import models.PeopleImage
-import models.UserInfo
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.db.slick.HasDatabaseConfigProvider
-import slick.jdbc.GetResult
 import slick.jdbc.JdbcProfile
 
 @Singleton
@@ -46,14 +43,6 @@ class IdentityRepository @Inject() (
 
   def deleteMany(ids: Seq[String]) =
     db.run(tableQuery.filter(_.id.inSet(ids)).delete)
-
-  private given GetResult[UserInfo] =
-    GetResult(r => UserInfo(r.nextBoolean(), r.nextBoolean(), r.nextBoolean(), r.nextInt(), r.nextInt(), None, false))
-
-  def getUserInfo(id: String, campusId: String): Future[UserInfo] = {
-    val query = sql"select * from get_user_info($id::text, $campusId::text)".as[UserInfo].head
-    db.run(query)
-  }
 
   def allByIds(ids: List[String]): Future[List[CampusId]] =
     db.run(

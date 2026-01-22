@@ -2,6 +2,7 @@ package database.table
 
 import java.util.UUID
 
+import database.Schema
 import slick.jdbc.PostgresProfile.api.*
 
 private[database] case class ModulePOMandatoryDbEntry(
@@ -13,7 +14,7 @@ private[database] case class ModulePOMandatoryDbEntry(
 )
 
 private[database] final class ModulePOMandatoryTable(tag: Tag)
-    extends Table[ModulePOMandatoryDbEntry](tag, "module_po_mandatory") {
+    extends Table[ModulePOMandatoryDbEntry](tag, Some(Schema.Modules.name), "module_po_mandatory") {
 
   import database.MyPostgresProfile.MyAPI.simpleIntListTypeMapper
 

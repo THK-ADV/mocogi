@@ -3,6 +3,7 @@ package database.table
 import java.time.LocalDateTime
 import java.util.UUID
 
+import database.Schema
 import models.ModuleReview
 import models.ModuleReviewStatus
 import models.UniversityRole
@@ -11,6 +12,7 @@ import slick.jdbc.PostgresProfile.api.*
 private[database] final class ModuleReviewTable(tag: Tag)
     extends Table[ModuleReview.DB](
       tag,
+      Some(Schema.Modules.name),
       "module_review"
     ) {
 

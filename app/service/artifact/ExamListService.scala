@@ -24,8 +24,8 @@ import play.api.i18n.MessagesApi
 import play.api.Logging
 import printing.latex
 import printing.latex.ExamListsLatexPrinter
+import service.core.AssessmentMethodService
 import service.core.IdentityService
-import service.AssessmentMethodService
 import service.ModuleService
 
 @Singleton

@@ -4,6 +4,7 @@ import java.time.LocalDateTime
 import java.util.UUID
 
 import cats.data.NonEmptyList
+import database.Schema
 import models.*
 import models.core.ModuleStatus
 import models.core.ModuleType
@@ -38,7 +39,8 @@ private[database] case class ModuleDbEntry(
     enContent: ModuleContent
 )
 
-private[database] final class ModuleTable(tag: Tag) extends Table[ModuleDbEntry](tag, "module") {
+private[database] final class ModuleTable(tag: Tag)
+    extends Table[ModuleDbEntry](tag, Some(Schema.Modules.name), "module") {
 
   import database.MyPostgresProfile.MyAPI.playJsonTypeMapper
   import database.MyPostgresProfile.MyAPI.simpleStrListTypeMapper

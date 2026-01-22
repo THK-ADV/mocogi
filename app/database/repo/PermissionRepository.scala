@@ -14,10 +14,16 @@ import database.table.Permission
 import database.table.PermissionTable
 import models.core.Identity
 import models.UniversityRole
+import models.UserInfo
 import permission.PermissionType
+import permission.PermissionType.ApprovalFastForward
+import permission.PermissionType.ArtifactsCreate
+import permission.PermissionType.ArtifactsPreview
+import permission.PermissionType.Module
 import permission.Permissions
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.db.slick.HasDatabaseConfigProvider
+import slick.jdbc.GetResult
 import slick.jdbc.JdbcProfile
 
 @Singleton
@@ -36,6 +42,9 @@ final class PermissionRepository @Inject() (
   private def studyProgramPersonQuery = TableQuery[StudyProgramPersonTable]
 
   private def poTableQuery = TableQuery[POTable].filter(p => !p.isExpired())
+
+  private given GetResult[UserInfo] =
+    GetResult(r => UserInfo(r.nextBoolean(), r.nextBoolean(), r.nextBoolean(), r.nextInt(), r.nextInt(), None, false))
 
   // Returns active person for the ID
   private def getPerson(campusId: CampusId): Future[Option[Identity.Person]] =
@@ -156,4 +165,26 @@ final class PermissionRepository @Inject() (
         }
       case None => Future.successful(None)
     }
+
+  def getUserInfo(userId: String, campusId: CampusId, permissions: Permissions): Future[UserInfo] = {
+    val query = sql"select * from modules.get_user_info($userId::text, ${campusId.value}::text)".as[UserInfo].head
+    db.run(query).map { userInfo =>
+      // PAV or SGL grant, or ArtifactsPreview, ArtifactsCreate, Admin permission
+      val hasDirectorPrivileges =
+        userInfo.hasDirectorPrivileges || permissions.hasAnyPermission(ArtifactsPreview, ArtifactsCreate)
+      // PAV grant, or Admin permission
+      val hasModuleReviewPrivileges = userInfo.hasModuleReviewPrivileges || permissions.isAdmin
+      // Has direct grant, or Module permission
+      val hasModulesToEdit = userInfo.hasModulesToEdit || permissions.hasAnyPermission(Module)
+      // Get directly from permissions because they are already resolved
+      val fastForwardApprovalPOs = permissions.request(ApprovalFastForward)
+      userInfo.copy(
+        hasDirectorPrivileges = hasDirectorPrivileges,
+        hasModuleReviewPrivileges = hasModuleReviewPrivileges,
+        hasModulesToEdit = hasModulesToEdit,
+        fastForwardApprovalPOs = fastForwardApprovalPOs,
+        hasExtendedModuleEditPermissions = permissions.isAdmin
+      )
+    }
+  }
 }
