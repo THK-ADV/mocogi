@@ -2,10 +2,11 @@ package database.table.core
 
 import java.time.LocalDate
 
+import database.Schema
 import models.core.PO
 import slick.jdbc.PostgresProfile.api.*
 
-private[database] final class POTable(tag: Tag) extends Table[PO](tag, "po") {
+private[database] final class POTable(tag: Tag) extends Table[PO](tag, Some(Schema.Core.name), "po") {
 
   def id = column[String]("id", O.PrimaryKey)
 

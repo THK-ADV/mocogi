@@ -4,6 +4,7 @@ import java.time.LocalDateTime
 import java.util.UUID
 
 import database.table.core.IdentityTable
+import database.Schema
 import git.Branch
 import git.CommitId
 import git.MergeRequestId
@@ -29,7 +30,8 @@ object ModuleDraftTable {
       )
 }
 
-private[database] final class ModuleDraftTable(tag: Tag) extends Table[ModuleDraft](tag, "module_draft") {
+private[database] final class ModuleDraftTable(tag: Tag)
+    extends Table[ModuleDraft](tag, Some(Schema.Modules.name), "module_draft") {
 
   import database.MyPostgresProfile.MyAPI.playJsonTypeMapper
   import ModuleDraftTable.given_BaseColumnType_Set

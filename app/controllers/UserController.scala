@@ -13,7 +13,6 @@ import play.api.libs.json.Json
 import play.api.mvc.AbstractController
 import play.api.mvc.AnyContent
 import play.api.mvc.ControllerComponents
-import service.core.IdentityService
 import service.StudyProgramPrivilegesService
 
 @Singleton
@@ -21,7 +20,6 @@ final class UserController @Inject() (
     cc: ControllerComponents,
     auth: AuthorizationAction,
     val permissionRepository: PermissionRepository,
-    identityService: IdentityService,
     studyProgramPrivilegesService: StudyProgramPrivilegesService,
     implicit val ctx: ExecutionContext
 ) extends AbstractController(cc)
@@ -29,7 +27,7 @@ final class UserController @Inject() (
 
   def userInfo() =
     auth.andThen(resolveUser).async { (r: UserRequest[AnyContent]) =>
-      identityService.getUserInfo(r.person.id, r.request.campusId, r.permissions).map { js =>
+      permissionRepository.getUserInfo(r.person.id, r.request.campusId, r.permissions).map { js =>
         Ok(Json.toJsObject(js).+(("person", Json.toJson(r.person))))
       }
     }

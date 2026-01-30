@@ -3,11 +3,16 @@ package database.table
 import java.util.UUID
 
 import database.MyPostgresProfile.api.*
+import database.Schema
 import models.PermittedAssessmentMethodForModule
 import slick.lifted.ProvenShape
 
 private[database] final class PermittedAssessmentMethodForModuleTable(tag: Tag)
-    extends Table[PermittedAssessmentMethodForModule](tag, "permitted_assessment_method_for_module") {
+    extends Table[PermittedAssessmentMethodForModule](
+      tag,
+      Some(Schema.Modules.name),
+      "permitted_assessment_method_for_module"
+    ) {
 
   import database.MyPostgresProfile.MyAPI.simpleArrayColumnExtensionMethods
   import database.MyPostgresProfile.MyAPI.simpleStrListTypeMapper

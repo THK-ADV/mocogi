@@ -1,7 +1,8 @@
 package database.table.core
 
+import database.Schema
 import models.UniversityRole
-import slick.jdbc.PostgresProfile.api._
+import slick.jdbc.PostgresProfile.api.*
 
 private[database] case class StudyProgramPersonDbEntry(
     person: String,
@@ -10,7 +11,7 @@ private[database] case class StudyProgramPersonDbEntry(
 )
 
 private[database] final class StudyProgramPersonTable(tag: Tag)
-    extends Table[StudyProgramPersonDbEntry](tag, "study_program_person") {
+    extends Table[StudyProgramPersonDbEntry](tag, Some(Schema.Core.name), "study_program_person") {
 
   import database.table.universityRoleColumnType
 

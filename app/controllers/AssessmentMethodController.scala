@@ -15,7 +15,7 @@ import play.api.libs.json.Json
 import play.api.libs.json.Writes
 import play.api.mvc.AbstractController
 import play.api.mvc.ControllerComponents
-import service.AssessmentMethodService
+import service.core.AssessmentMethodService
 
 @Singleton
 final class AssessmentMethodController @Inject() (

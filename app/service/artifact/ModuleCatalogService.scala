@@ -38,9 +38,9 @@ import printing.latex.snippet.LayoutContentSnippet
 import printing.latex.MarkdownLatexPrinter
 import printing.latex.ModuleCatalogLatexPrinter
 import printing.latex.Payload
+import service.core.AssessmentMethodService
 import service.core.IdentityService
 import service.modulediff.ModuleProtocolDiff
-import service.AssessmentMethodService
 import service.ModuleService
 
 @Singleton

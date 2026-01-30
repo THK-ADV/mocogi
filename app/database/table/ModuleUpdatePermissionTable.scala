@@ -3,14 +3,16 @@ package database.table
 import java.util.UUID
 
 import auth.CampusId
+import database.Schema
 import models.ModuleUpdatePermissionType
 import models.ModuleUpdatePermissionType.Granted
 import models.ModuleUpdatePermissionType.Inherited
-import slick.jdbc.PostgresProfile.api._
+import slick.jdbc.PostgresProfile.api.*
 
 private[database] final class ModuleUpdatePermissionTable(tag: Tag)
     extends Table[(UUID, CampusId, ModuleUpdatePermissionType)](
       tag,
+      Some(Schema.Modules.name),
       "module_update_permission"
     ) {
 

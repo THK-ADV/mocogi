@@ -3,11 +3,12 @@ package database.table
 import java.util.UUID
 
 import database.MyPostgresProfile.api.*
+import database.Schema
 import models.CreatedModule
 import slick.lifted.ProvenShape
 
 private[database] final class CreatedModuleTable(tag: Tag)
-    extends Table[CreatedModule](tag, "created_module_in_draft") {
+    extends Table[CreatedModule](tag, Some(Schema.Modules.name), "created_module_in_draft") {
 
   import database.MyPostgresProfile.MyAPI.simpleStrListTypeMapper
 

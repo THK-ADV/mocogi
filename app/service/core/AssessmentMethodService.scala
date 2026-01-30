@@ -1,4 +1,4 @@
-package service
+package service.core
 
 import java.util.UUID
 import javax.inject.Singleton
