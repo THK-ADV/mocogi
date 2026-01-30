@@ -3,10 +3,12 @@ package git.subscriber
 import java.time.LocalDateTime
 import javax.inject.Inject
 
+import scala.collection.mutable
 import scala.concurrent.ExecutionContext
 import scala.util.Failure
 import scala.util.Success
 
+import database.repo.schedule.ModuleTeachingUnitRepository
 import database.view.ModuleViewRepository
 import git.subscriber.ModuleSubscribers.Handle
 import org.apache.pekko.actor.Actor
@@ -21,6 +23,7 @@ final class ModuleDatabaseActor @Inject() (
     moduleViewRepository: ModuleViewRepository,
     moduleUpdatePermissionService: ModuleUpdatePermissionService,
     moduleCreationService: ModuleCreationService,
+    moduleTeachingUnitRepository: ModuleTeachingUnitRepository,
     implicit val ctx: ExecutionContext
 ) extends Actor
     with Logging {
@@ -56,5 +59,11 @@ final class ModuleDatabaseActor @Inject() (
         }
       )
       _ <- moduleCreationService.deleteMany(modules.map(_._1.metadata.id))
+      _ <- moduleTeachingUnitRepository.recreate(modules.map { (m, _) =>
+        val pos = mutable.Set[String]()
+        m.metadata.pos.mandatory.foreach(po => pos.add(po.po.id))
+        m.metadata.pos.optional.foreach(po => pos.add(po.po.id))
+        (m.metadata.id, pos.toList)
+      })
     } yield ()
 }

@@ -34,6 +34,10 @@ DROP FUNCTION IF EXISTS get_generic_module_options;
 
 DROP FUNCTION IF EXISTS generic_modules_for_po;
 
+DROP FUNCTION IF EXISTS schedule.semester_plan_by_now;
+
+DROP VIEW IF EXISTS modules.module_core_raw;
+
 CREATE OR REPLACE FUNCTION modules.identity_to_json(i core.identity)
   RETURNS jsonb
   LANGUAGE sql
@@ -631,5 +635,99 @@ CREATE OR REPLACE FUNCTION modules.generic_modules_for_po(po_id text)
       WHERE
         cm.module_type = 'generic_module'
         AND po_id = ANY(module_mandatory_pos))) AS m;
+$$;
+
+CREATE OR REPLACE FUNCTION schedule.semester_plan_by_now(p_month integer, p_year integer)
+  RETURNS jsonb
+  LANGUAGE plpgsql
+  STABLE
+  AS $$
+DECLARE
+  v_start date;
+  v_end date;
+BEGIN
+  IF p_month >= 3 AND p_month <= 8 THEN
+    v_start := make_date(p_year, 3, 1);
+    v_end := make_date(p_year + 1, 2, 28);
+  ELSIF p_month >= 9 THEN
+    v_start := make_date(p_year, 9, 1);
+    v_end := make_date(p_year + 1, 8, 31);
+  ELSE
+    v_start := make_date(p_year - 1, 9, 1);
+    v_end := make_date(p_year, 8, 31);
+  END IF;
+  RETURN (
+    SELECT
+      coalesce(jsonb_agg(row_to_json(t)::jsonb), '[]'::jsonb)
+    FROM (
+      SELECT
+        sp.id,
+        sp."start",
+        sp."end",
+        sp.type,
+        tu.id AS "teachingUnit",
+        tu.label AS "teachingUnitLabel",
+        sp.semester_index AS "semesterIndex",
+        sp.phase
+      FROM
+        schedule.semester_plan sp
+      LEFT JOIN core.teaching_unit tu ON tu.id = sp.teaching_unit
+    WHERE
+      sp."start" BETWEEN v_start AND v_end) t);
+END;
+$$;
+
+CREATE OR REPLACE VIEW modules.module_core_raw AS SELECT DISTINCT ON (id)
+  id,
+  title,
+  abbrev,
+  is_live,
+  module_management
+FROM (
+  SELECT
+    m.id,
+    m.title,
+    m.abbrev,
+    TRUE AS is_live,
+    COALESCE(jsonb_agg(jsonb_build_object('id', i.id, 'kind', i.kind, 'lastname', i.lastname, 'firstname', i.firstname)) FILTER (WHERE i.id IS NOT NULL), '[]'::jsonb) AS module_management
+  FROM
+    modules.module m
+  LEFT JOIN modules.module_responsibility mr ON m.id = mr.module
+    AND mr.responsibility_type = 'module_management'
+  LEFT JOIN core.identity i ON mr.identity = i.id
+GROUP BY
+  m.id
+UNION ALL
+SELECT
+  cmd.module AS id,
+  cmd.module_title AS title,
+  cmd.module_abbrev AS abbrev,
+  FALSE AS is_live,
+  COALESCE(jsonb_agg(jsonb_build_object('id', i.id, 'kind', i.kind, 'lastname', i.lastname, 'firstname', i.firstname)) FILTER (WHERE i.id IS NOT NULL), '[]'::jsonb) AS module_management
+FROM
+  modules.created_module_in_draft cmd
+  LEFT JOIN LATERAL unnest(cmd.module_management) AS mgmt_id(mgmt_id) ON TRUE
+  LEFT JOIN core.identity i ON i.id = mgmt_id.mgmt_id
+GROUP BY
+  cmd.module,
+  cmd.module_title,
+  cmd.module_abbrev) combined;
+
+CREATE OR REPLACE FUNCTION schedule.get_schedule_entries(p_start timestamp, p_end timestamp)
+  RETURNS jsonb
+  LANGUAGE sql
+  STABLE
+  AS $$
+  SELECT
+    coalesce(jsonb_agg(jsonb_build_object('id', s.id, 'start', s."start", 'end', s."end", 'courseType', c.type, 'room', r.id, 'roomAbbrev', r.abbrev, 'module', mc.id, 'moduleTitle', mc.title, 'moduleAbbrev', mc.abbrev, 'moduleManagement', mc.module_management, 'teachingUnits', mtu.teaching_units, 'props', s.props)), '[]'::jsonb)
+  FROM
+    schedule.schedule_entry s
+    JOIN schedule.course c ON c.id = s.course
+    JOIN schedule.room r ON r.id = s.room
+    JOIN modules.module_core_raw mc ON mc.id = c.module
+    JOIN schedule.module_teaching_unit mtu ON mtu.module = mc.id
+  WHERE
+    s."start" >= p_start
+    AND s."end" <= p_end;
 $$;
 
