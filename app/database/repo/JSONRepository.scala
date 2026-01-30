@@ -1,5 +1,6 @@
 package database.repo
 
+import java.time.LocalDate
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -19,9 +20,6 @@ final class JSONRepository @Inject() (
 ) extends HasDatabaseConfigProvider[JdbcProfile] {
   import profile.api.*
 
-  private given GetResult[String] =
-    GetResult(_.nextString())
-
   def getGenericModulesForPO(po: String): Future[String] = {
     val query = sql"select modules.generic_modules_for_po($po::text)".as[String].head
     db.run(query)
@@ -39,6 +37,29 @@ final class JSONRepository @Inject() (
 
   def allGenericModuleOptions(id: UUID): Future[String] = {
     val query = sql"select modules.get_generic_module_options(${id.toString}::uuid)".as[String].head
+    db.run(query)
+  }
+
+  def allByNow(now: LocalDate = LocalDate.now): Future[String] = {
+    val month = now.getMonthValue
+    val year  = now.getYear
+    val query = sql"select schedule.semester_plan_by_now($month, $year)".as[String].head
+    db.run(query)
+  }
+
+  def allTeachingUnits(): Future[String] = {
+    val query =
+      sql"select coalesce(jsonb_agg(jsonb_build_object('id', tu.id, 'label', tu.label)), '[]'::jsonb) from core.teaching_unit tu"
+        .as[String]
+        .head
+    db.run(query)
+  }
+
+  def allRooms(): Future[String] = {
+    val query =
+      sql"select coalesce(jsonb_agg(jsonb_build_object('id', r.id, 'label', r.label, 'abbrev', r.abbrev) order by r.abbrev), '[]'::jsonb) from schedule.room r"
+        .as[String]
+        .head
     db.run(query)
   }
 }

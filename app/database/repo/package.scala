@@ -3,8 +3,12 @@ package database
 import scala.concurrent.ExecutionContext
 
 import slick.dbio.DBIO
+import slick.jdbc.GetResult
 
 package object repo {
+  given GetResult[String] =
+    GetResult(_.nextString())
+
   extension [A](self: DBIO[Seq[A]]) {
     def single(using ExecutionContext): DBIO[A] =
       self.flatMap(xs =>

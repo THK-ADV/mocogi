@@ -106,9 +106,6 @@ final class ModuleUpdatePermissionRepository @Inject() (
         .result
     )
 
-  private given GetResult[String] =
-    GetResult(_.nextString())
-
   private def arrayLiteral(pos: Iterable[String]) =
     "'{" + pos.mkString(",") + "}'"
 
