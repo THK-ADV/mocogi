@@ -33,4 +33,7 @@ final class AssessmentMethodService @Inject() (
 
   def create(xs: List[PermittedAssessmentMethodForModule]): Future[Option[Int]] =
     moduleAssessmentMethodRepo.insert(xs)
+
+  def countByMethod(): Future[Map[String, Int]] =
+    repo.countByMethod()
 }

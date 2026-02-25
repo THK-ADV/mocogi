@@ -4,6 +4,7 @@ import java.util.UUID
 
 import database.Schema
 import slick.jdbc.PostgresProfile.api.*
+import database.table.core.AssessmentMethodTable
 
 private[database] case class ModuleAssessmentMethodDbEntry(
     id: UUID,
@@ -27,6 +28,8 @@ private[database] final class ModuleAssessmentMethodTable(tag: Tag)
   def percentage = column[Option[Double]]("percentage")
 
   def precondition = column[Option[List[String]]]("precondition")
+
+  def assessmentMethodFk = foreignKey("foreignKey", assessmentMethod, TableQuery[AssessmentMethodTable])(_.id)
 
   override def * = (
     id,

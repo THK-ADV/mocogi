@@ -32,6 +32,7 @@ GET           /locations                                              controller
 GET           /languages                                              controllers.LanguageController.all()
 GET           /status                                                 controllers.StatusController.all()
 GET           /assessmentMethods                                      controllers.AssessmentMethodController.all()
+GET           /assessmentMethods/counts                               controllers.AssessmentMethodController.counts()
 GET           /moduleTypes                                            controllers.ModuleTypeController.all()
 GET           /seasons                                                controllers.SeasonController.all()
 GET           /identities                                             controllers.IdentityController.all()

@@ -44,4 +44,9 @@ final class AssessmentMethodController @Inject() (
             )
       }
     }
+
+  def counts() =
+    cached.status(r => r.method + r.uri, 200, 1.hour) {
+      Action.async { r => service.countByMethod().map(xs => Ok(Json.toJson(xs))) }
+    }
 }

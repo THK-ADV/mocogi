@@ -9,6 +9,7 @@ import scala.concurrent.Future
 import database.repo.Repository
 import database.table.core.AssessmentMethodDbEntry
 import database.table.core.AssessmentMethodTable
+import database.table.ModuleAssessmentMethodTable
 import models.core.AssessmentMethod
 import models.AssessmentMethodSource
 import play.api.db.slick.DatabaseConfigProvider
@@ -39,4 +40,14 @@ class AssessmentMethodRepository @Inject() (
       query: Query[AssessmentMethodTable, AssessmentMethodDbEntry, Seq]
   ): Future[Seq[AssessmentMethod]] =
     db.run(query.result.map(_.map(a => AssessmentMethod(a.id, a.deLabel, a.enLabel))))
+
+  def countByMethod(): Future[Map[String, Int]] = {
+    val query = (for {
+      q  <- TableQuery[ModuleAssessmentMethodTable]
+      am <- q.assessmentMethodFk if am.source === AssessmentMethodSource.RPO
+    } yield (q.assessmentMethod, q.module))
+      .groupBy(_._1)
+      .map { case (method, grp) => method -> grp.map(_._2).countDistinct }
+    db.run(query.result).map(_.toMap)
+  }
 }
