@@ -102,7 +102,7 @@ CREATE OR REPLACE FUNCTION modules.resolve_assessment_methods(module_id uuid)
   STABLE
   AS $$
   SELECT
-    coalesce(jsonb_agg(jsonb_build_object('label', am.de_label, 'source', am.source, 'percentage', mam.percentage, 'preconditions', coalesce((
+    coalesce(jsonb_agg(jsonb_build_object('id', am.id, 'label', am.de_label, 'source', am.source, 'percentage', mam.percentage, 'preconditions', coalesce((
             SELECT
               jsonb_agg(pre_am.de_label)
             FROM unnest(mam.precondition) AS pre_id(id)
