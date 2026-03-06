@@ -1,9 +1,9 @@
 package database.table.schedule
 
-import database.Schema
-
 import java.time.LocalDate
 import java.util.UUID
+
+import database.Schema
 import models.schedule.SemesterPlan
 import models.schedule.SemesterPlanType
 import slick.jdbc.PostgresProfile.api.*

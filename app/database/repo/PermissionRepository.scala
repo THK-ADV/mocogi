@@ -20,6 +20,7 @@ import permission.PermissionType.ApprovalFastForward
 import permission.PermissionType.ArtifactsCreate
 import permission.PermissionType.ArtifactsPreview
 import permission.PermissionType.Module
+import permission.PermissionType.SchedulePlanning
 import permission.Permissions
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.db.slick.HasDatabaseConfigProvider
@@ -44,7 +45,9 @@ final class PermissionRepository @Inject() (
   private def poTableQuery = TableQuery[POTable].filter(p => !p.isExpired())
 
   private given GetResult[UserInfo] =
-    GetResult(r => UserInfo(r.nextBoolean(), r.nextBoolean(), r.nextBoolean(), r.nextInt(), r.nextInt(), None, false))
+    GetResult(r =>
+      UserInfo(r.nextBoolean(), r.nextBoolean(), r.nextBoolean(), r.nextInt(), r.nextInt(), None, false, false)
+    )
 
   // Returns active person for the ID
   private def getPerson(campusId: CampusId): Future[Option[Identity.Person]] =
@@ -178,12 +181,15 @@ final class PermissionRepository @Inject() (
       val hasModulesToEdit = userInfo.hasModulesToEdit || permissions.hasAnyPermission(Module)
       // Get directly from permissions because they are already resolved
       val fastForwardApprovalPOs = permissions.request(ApprovalFastForward)
+      // Has direct grant, or Admin permission
+      val hasSchedulePlanningPrivileges = permissions.hasAnyPermission(SchedulePlanning)
       userInfo.copy(
         hasDirectorPrivileges = hasDirectorPrivileges,
         hasModuleReviewPrivileges = hasModuleReviewPrivileges,
         hasModulesToEdit = hasModulesToEdit,
         fastForwardApprovalPOs = fastForwardApprovalPOs,
-        hasExtendedModuleEditPermissions = permissions.isAdmin
+        hasExtendedModuleEditPermissions = permissions.isAdmin,
+        hasSchedulePlanningPrivileges = hasSchedulePlanningPrivileges
       )
     }
   }

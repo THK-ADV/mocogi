@@ -10,6 +10,7 @@ enum PermissionType(val label: String) {
   case Admin               extends PermissionType("admin")
   case ArtifactsPreview    extends PermissionType("artifacts-preview")
   case ArtifactsCreate     extends PermissionType("artifacts-create")
+  case SchedulePlanning    extends PermissionType("schedule-planning")
 
   def isAdmin: Boolean = this == Admin
 }
@@ -22,6 +23,7 @@ object PermissionType {
       case "admin"                 => Admin
       case "artifacts-preview"     => ArtifactsPreview
       case "artifacts-create"      => ArtifactsCreate
+      case "schedule-planning"     => SchedulePlanning
     }
 }
 

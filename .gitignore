@@ -56,3 +56,6 @@ public/
 gitlab/
 mc
 app/controllers/DevController.scala
+app/worksheets/
+conf/sql/inserts.sql
+conf/sql/updates.sql

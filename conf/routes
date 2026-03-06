@@ -10,6 +10,8 @@ GET           /service/updateImages                                   controller
 
 DELETE        /admin/modules/:id                                      controllers.AdminController.deleteModule(id: java.util.UUID)
 POST          /admin/modules                                          controllers.AdminController.createNewModulesFromDraftBranch()
+POST          /admin/bootstrapScheduleEntries                         controllers.AdminController.bootstrapScheduleEntries()
+POST          /admin/recreateModuleTeachingUnits                      controllers.AdminController.recreateModuleTeachingUnits()
 
 GET           /user                                                   controllers.UserController.userInfo()
 GET           /user-privileges                                        controllers.UserController.studyProgramPrivileges()
@@ -101,9 +103,16 @@ POST          /moduleUpdatePermissions/:moduleId                      controller
 GET           /semesterPlan                                           controllers.schedule.SemesterPlanController.allByNow()
 GET           /holidays                                               controllers.schedule.SemesterPlanController.holidays()
 
+# Semester
+
+GET           /semesters                                              controllers.schedule.ScheduleEntryController.semesters()
+
+# Schedule
+
 GET           /scheduleEntries                                        controllers.schedule.ScheduleEntryController.all()
 POST          /scheduleEntries                                        controllers.schedule.ScheduleEntryController.create()
-POST          /moduleTeachingUnits                                    controllers.schedule.ScheduleEntryController.recreateModuleTeachingUnitAssociation()
+PUT           /scheduleEntries/:id                                    controllers.schedule.ScheduleEntryController.update(id: java.util.UUID)
+DELETE        /scheduleEntries/:id                                    controllers.schedule.ScheduleEntryController.delete(id: java.util.UUID)
 
 # Map static resources from the /public folder to the /assets URL path
 GET           /assets/*file                                           controllers.Assets.versioned(path="/public", file: Asset)

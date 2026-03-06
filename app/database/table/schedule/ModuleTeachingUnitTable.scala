@@ -1,13 +1,13 @@
 package database.table.schedule
 
+import java.util.UUID
+
 import database.Schema
 import models.schedule.ModuleTeachingUnit
 import slick.jdbc.PostgresProfile.api.*
 
-import java.util.UUID
-
 private[database] final class ModuleTeachingUnitTable(tag: Tag)
-  extends Table[ModuleTeachingUnit](tag, Some(Schema.Schedule.name), "module_teaching_unit") {
+    extends Table[ModuleTeachingUnit](tag, Some(Schema.Schedule.name), "module_teaching_unit") {
 
   import database.MyPostgresProfile.MyAPI.simpleUUIDListTypeMapper
 

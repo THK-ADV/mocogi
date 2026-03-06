@@ -13,7 +13,7 @@ trait MyPostgresProfile extends ExPostgresProfile, PgArraySupport, PgPlayJsonSup
 
   override val api = MyAPI
 
-  object MyAPI extends ExtPostgresAPI with ArrayImplicits with JsonImplicits {
+  object MyAPI extends ExtPostgresAPI with ArrayImplicits with SimpleArrayPlainImplicits with JsonImplicits {
     implicit val playJsonArrayTypeMapper: DriverJdbcType[List[JsValue]] =
       new AdvancedArrayJdbcType[JsValue](
         pgjson,
