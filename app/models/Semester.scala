@@ -1,6 +1,7 @@
 package models
 
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.Month
 
 import models.core.Label
@@ -14,6 +15,9 @@ trait Semester extends Label {
 }
 
 object Semester {
+
+  private val wiseId = "wise"
+  private val soseId = "sose"
 
   given Ordering[Semester] = (lhs, rhs) => {
     val yearRes = lhs.year.compareTo(rhs.year)
@@ -30,7 +34,7 @@ object Semester {
   def winter(_year: Int): Semester = new Semester {
     override def year: Int = _year
 
-    def abbrev: String = "wise"
+    def abbrev: String = wiseId
 
     def deLabel: String = "Wintersemester"
 
@@ -40,7 +44,7 @@ object Semester {
   def summer(_year: Int): Semester = new Semester {
     override def year: Int = _year
 
-    def abbrev: String = "sose"
+    def abbrev: String = soseId
 
     def deLabel: String = "Sommersemester"
 
@@ -53,8 +57,19 @@ object Semester {
   def apply(id: String): Semester = {
     val Array(abbrev, year) = id.split("_")
     abbrev match {
-      case "wise" => winter(year.toInt)
-      case "sose" => summer(year.toInt)
+      case `wiseId` => winter(year.toInt)
+      case `soseId` => summer(year.toInt)
+    }
+  }
+
+  def dateRange(id: String): (LocalDateTime, LocalDateTime) = {
+    val Array(abbrev, yearStr) = id.split("_")
+    val year                   = yearStr.toInt
+    abbrev match {
+      case `wiseId` =>
+        (LocalDate.of(year, Month.SEPTEMBER, 1).atStartOfDay, LocalDate.of(year + 1, Month.MARCH, 1).atStartOfDay())
+      case `soseId` =>
+        (LocalDate.of(year, Month.MARCH, 1).atStartOfDay, LocalDate.of(year, Month.SEPTEMBER, 1).atStartOfDay())
     }
   }
 
@@ -64,16 +79,19 @@ object Semester {
     else Semester.winter(date.getYear)
   }
 
-  def currentAndNext(date: LocalDate = LocalDate.now): List[Semester] = {
+  def next(date: LocalDate = LocalDate.now): Semester = {
     val month = date.getMonth.getValue
     // 03. - 08.
     if month >= soSeStart && month <= soSeEnd
-    then List(summer(date.getYear), winter(date.getYear))
+    then winter(date.getYear)
     // 08. - 12.
-    else if month >= soSeEnd && month <= 12 then List(winter(date.getYear), summer(date.getYear + 1))
+    else if month >= soSeEnd && month <= 12 then summer(date.getYear + 1)
     // 01. - 03.
-    else List(winter(date.getYear - 1), summer(date.getYear))
+    else summer(date.getYear)
   }
+
+  def currentAndNext(date: LocalDate = LocalDate.now): List[Semester] =
+    List(current(date), next(date))
 
   implicit def writes: Writes[Semester] =
     s =>

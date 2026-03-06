@@ -1,199 +1,120 @@
 package database.repo.schedule
 
-import models.MetadataProtocol
-import models.schedule.CourseType
-import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfigProvider}
-import play.api.libs.json.{JsArray, JsBoolean, JsValue, Json}
-import service.ModuleService
-import slick.jdbc.JdbcProfile
-
 import java.sql.Timestamp
-import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.ZoneId
 import java.util.UUID
-import javax.inject.{Inject, Singleton}
-import scala.collection.mutable
-import scala.collection.mutable.ListBuffer
-import scala.concurrent.{ExecutionContext, Future}
+import javax.inject.Inject
+import javax.inject.Singleton
+
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+
+import database.table.schedule.ScheduleEntryTable
+import models.schedule.ScheduleEntry
+import play.api.db.slick.DatabaseConfigProvider
+import play.api.db.slick.HasDatabaseConfigProvider
+import slick.jdbc.JdbcProfile
+import models.Semester
+import database.Schema
 
 @Singleton
 final class ScheduleEntryRepository @Inject() (
-    moduleService: ModuleService,                               // TODO: remove after bootstrapping
-    moduleTeachingUnitRepository: ModuleTeachingUnitRepository, // TODO: remove after bootstrapping
     val dbConfigProvider: DatabaseConfigProvider,
     implicit val ctx: ExecutionContext
 ) extends HasDatabaseConfigProvider[JdbcProfile] {
   import profile.api.*
 
+  private val tableQuery = TableQuery[ScheduleEntryTable]
+
+  /**
+   * Retrieves all schedule entries within the given time range as a JSON string.
+   *
+   * @param from start of the range (inclusive)
+   * @param to end of the range (exclusive)
+   * @return JSON string of matching schedule entries
+   */
   def scheduleEntriesByRange(from: Timestamp, to: Timestamp) = {
     val query = sql"select schedule.get_schedule_entries($from, $to)".as[String].head
     db.run(query)
   }
 
-  // TODO: This is only used to bootstrap module teaching units associations
-  def bootstrapModuleTeachingUnit() =
-    for {
-      modules <- moduleService.allMetadata()
-      entries = modules.map {
-        case (id, m) =>
-          val pos = mutable.Set[String]()
-          m.po.mandatory.foreach(po => pos.add(po.po))
-          m.po.optional.foreach(po => pos.add(po.po))
-          (id.get, pos.toList)
-      }
-      _ <- moduleTeachingUnitRepository.recreate(entries)
-    } yield ()
+  /**
+   * Inserts the given schedule entries and returns them as a JSON string.
+   *
+   * @param entries list of schedule entries to insert
+   * @return JSON string of the created schedule entries
+   */
+  def create(entries: List[ScheduleEntry.DB]): Future[String] = {
+    import database.MyPostgresProfile.MyAPI.setUUIDArray
 
-  // TODO: This is only used to bootstrap schedule entries
-  def createFromJson(json: Vector[JsValue]): Future[Unit] = {
-    def parse(js: JsValue) =
-      for {
-        module     <- js.\("uuid").validate[UUID]
-        room       <- js.\("raum_kz").validate[String]
-        weekday    <- js.\("wochentag").validate[Int]
-        time       <- js.\("zeit").validate[Int]
-        courseType <- js.\("veranstaltungstyp").validate[String]
-      } yield (module, room, weekday, time, courseType)
+    val query = for {
+      _  <- tableQuery ++= entries
+      xs <- sql"select schedule.get_schedule_entries(${entries.map(_.id)})".as[String].head
+    } yield xs
+    db.run(query.transactionally)
+  }
 
-    def roomQuery(xs: Vector[String]) = {
-      val entries = mutable.Map[UUID, String]()
-      var sb      = new StringBuilder("insert into schedule.room values ")
-      for (x <- xs) {
-        val id = UUID.randomUUID()
-        assume(entries.put(id, x).isEmpty)
-        sb.append(s"('$id','','$x','',0),")
-      }
-      sb = sb.dropRight(1)
-      sb.append(";")
-      (entries.toMap, sb.toString())
-    }
+  /**
+   * Updates an existing schedule entry and returns it as a JSON string.
+   *
+   * @param s the schedule entry with updated values
+   * @return JSON string of the updated schedule entry
+   */
+  def update(s: ScheduleEntry.DB): Future[String] = {
+    import database.MyPostgresProfile.MyAPI.setUUIDArray
 
-    def resolveCourseType(str: String): CourseType =
-      str match {
-        case "V"   => CourseType.Lecture
-        case "P"   => CourseType.Lab
-        case "UE"  => CourseType.Exercise
-        case "S"   => CourseType.Seminar
-        case "T"   => CourseType.Tutorial
-        case other => throw new Exception(s"unknown course type $other")
-      }
+    val query = for {
+      _  <- tableQuery.filter(_.id === s.id).update(s)
+      xs <- sql"select schedule.get_schedule_entries(${Seq(s.id)})".as[String].head
+    } yield xs
+    db.run(query.transactionally)
+  }
 
-    def courseQuery(xs: Vector[(UUID, String)]) = {
-      val entries = mutable.Map[UUID, (UUID, CourseType)]()
-      var sb      = new StringBuilder("insert into schedule.course values ")
-      for ((module, courseType) <- xs) {
-        val id = UUID.randomUUID()
-        val ct = resolveCourseType(courseType)
-        assume(entries.put(id, (module, ct)).isEmpty)
-        sb.append(s"('$id','$module','${ct.id}'),")
-      }
-      sb = sb.dropRight(1)
-      sb.append(";")
-      (entries.toMap, sb.toString())
-    }
+  /**
+   * Deletes the schedule entry with the given ID.
+   *
+   * @param id the ID of the schedule entry to delete
+   */
+  def delete(id: UUID): Future[Unit] =
+    db.run(tableQuery.filter(_.id === id).delete).map(_ => ())
 
-    def scheduleQuery(
-        xs: Vector[(UUID, String, Int, Int, String)],
-        rooms: Map[UUID, String],
-        courses: Map[UUID, (UUID, CourseType)],
-        modules: Seq[(Option[UUID], MetadataProtocol)]
-    ) = {
-      var sb  = new StringBuilder("insert into schedule.schedule_entry values ")
-      val ref = LocalDateTime.of(2025, 10, 5, 7, 0, 0)
-      val df  = DateTimeFormatter.ISO_LOCAL_DATE_TIME
+  /**
+   * Creates the next semester's partition if it does not already exist.
+   *
+   * @return true if the partition was created, false if it already existed
+   */
+  def createNextPartitionIfNotExists(): Future[Boolean] = {
+    val semesterId    = Semester.next(LocalDate.now()).id
+    val (start, end)  = Semester.dateRange(semesterId)
+    val partitionName = s"schedule_entry_${semesterId}"
+    val schema        = Schema.Schedule.name
 
-      def add(course: UUID, room: UUID, start: LocalDateTime, end: LocalDateTime, id: UUID, props: String) =
-        sb.append(s"('$id','$course','${start.format(df)}','${end.format(df)}','$room','$props'::jsonb),")
-
-      for ((m, xs) <- xs.filter(a => modules.exists(_._1.get == a._1)).groupBy(_._1)) {
-        for ((courseType, xs) <- xs.groupBy(_._5)) {
-          val course = courses.filter(a => a._2._1 == m && a._2._2.id == resolveCourseType(courseType).id)
-          assume(course.size == 1, course.toString())
-          for ((weekday, xs) <- xs.groupBy(_._3)) {
-            for ((roomAbbrev, xs) <- xs.groupBy(_._2)) {
-              val times = xs.distinctBy(a => (a._2, a._4)).map(_._4).sorted
-              val slots = new ListBuffer[ListBuffer[Int]]()
-              slots.append(new ListBuffer[Int]())
-              slots.head.append(times.head)
-
-              for (time <- times.drop(1)) {
-                if (time - 1) == slots.last.last then {
-                  slots.last.append(time)
-                } else {
-                  slots.append(new ListBuffer[Int]())
-                  slots.last.append(time)
-                }
-              }
-
-              println(s"$roomAbbrev $slots")
-              val room = rooms.filter(_._2 == roomAbbrev)
-              assume(room.size == 1, room.toString())
-              val day = ref.plusDays(weekday)
-
-              val courseId = course.head._1
-              val roomId   = room.head._1
-              val id       = UUID.randomUUID()
-              val module   = modules.filter(_._1.get == m)
-              assume(module.size == 1, s"$m $module")
-              val pos = ListBuffer[JsValue]()
-              for (a <- module.head._2.po.mandatory) {
-                pos.append(
-                  Json.obj(
-                    "po"                  -> a.po,
-                    "specialization"      -> a.specialization,
-                    "recommendedSemester" -> a.recommendedSemester,
-                    "mandatory"           -> JsBoolean(true)
-                  )
-                )
-              }
-              for (a <- module.head._2.po.optional) {
-                pos.append(
-                  Json.obj(
-                    "po"                  -> a.po,
-                    "specialization"      -> a.specialization,
-                    "recommendedSemester" -> a.recommendedSemester,
-                    "mandatory"           -> JsBoolean(false)
-                  )
-                )
-              }
-              val props = Json.obj("po" -> JsArray.apply(pos.toList)).toString
-              for (slot <- slots) {
-                if slot.size > 1 then {
-                  val start = day.plusHours(slot.min)
-                  val end   = day.plusHours(slot.max + 1)
-                  add(courseId, roomId, start, end, id, props)
-                } else {
-                  val time  = slot.head
-                  val start = day.plusHours(time)
-                  val end   = start.plusHours(1)
-                  add(courseId, roomId, start, end, id, props)
-                }
-              }
-            }
-          }
-        }
-      }
-      sb = sb.dropRight(1)
-      sb.append(";")
-      sb.toString()
-    }
-
-    val res                     = json.map(parse(_).get)
-    val (rooms, roomsQuery)     = roomQuery(res.map(_._2).distinct)
-    val (courses, coursesQuery) = courseQuery(res.map(a => (a._1, a._5)).distinct)
-    for {
-      modules <- moduleService.allMetadata()
-      q = scheduleQuery(res, rooms, courses, modules)
-      _ <- db.run(
-        DBIO.seq(
-          sqlu"delete from schedule.schedule_entry",
-          sqlu"delete from schedule.room",
-          sqlu"delete from schedule.course",
-          sqlu"#$roomsQuery",
-          sqlu"#$coursesQuery",
-          sqlu"#$q",
+    val query = for {
+      exists <- sql"""
+        SELECT EXISTS (
+          SELECT 1 FROM pg_class c
+          JOIN pg_namespace n ON n.oid = c.relnamespace
+          WHERE n.nspname = $schema AND c.relname = $partitionName
         )
-      )
-    } yield ()
+        """.as[Boolean].head
+      res <-
+        if exists then DBIO.successful(false)
+        else {
+          val zone     = ZoneId.of("Europe/Berlin")
+          val pattern  = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ssxx")
+          val startStr = start.atZone(zone).format(pattern)
+          val endStr   = end.atZone(zone).format(pattern)
+          sqlu"""
+          CREATE TABLE IF NOT EXISTS #$schema.#$partitionName
+            PARTITION OF #$schema.schedule_entry
+            FOR VALUES FROM ('#$startStr') TO ('#$endStr')
+        """.map(_ => true)
+        }
+    } yield res
+
+    db.run(query)
   }
 }

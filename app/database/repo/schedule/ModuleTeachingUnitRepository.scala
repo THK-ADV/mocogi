@@ -1,20 +1,24 @@
 package database.repo.schedule
 
+import java.util.UUID
+import javax.inject.Inject
+import javax.inject.Singleton
+
+import scala.collection.mutable
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+
 import database.table.core.TeachingUnitTable
 import database.table.schedule.ModuleTeachingUnitTable
 import models.schedule.ModuleTeachingUnit
-import play.api.db.slick.{DatabaseConfigProvider, HasDatabaseConfigProvider}
+import play.api.db.slick.DatabaseConfigProvider
+import play.api.db.slick.HasDatabaseConfigProvider
 import slick.jdbc.JdbcProfile
 
-import java.util.UUID
-import javax.inject.{Inject, Singleton}
-import scala.collection.mutable
-import scala.concurrent.{ExecutionContext, Future}
-
 @Singleton
-final class ModuleTeachingUnitRepository @Inject()(
-  val dbConfigProvider: DatabaseConfigProvider,
-  implicit val ctx: ExecutionContext
+final class ModuleTeachingUnitRepository @Inject() (
+    val dbConfigProvider: DatabaseConfigProvider,
+    implicit val ctx: ExecutionContext
 ) extends HasDatabaseConfigProvider[JdbcProfile] {
 
   import profile.api.*
@@ -39,10 +43,12 @@ final class ModuleTeachingUnitRepository @Inject()(
         }
       }
       recreate <- db.run(
-        DBIO.seq(
-          TableQuery[ModuleTeachingUnitTable].delete,
-          TableQuery[ModuleTeachingUnitTable].insertAll(entries),
-        ).transactionally
+        DBIO
+          .seq(
+            TableQuery[ModuleTeachingUnitTable].delete,
+            TableQuery[ModuleTeachingUnitTable].insertAll(entries),
+          )
+          .transactionally
       )
     } yield ()
 }

@@ -1,13 +1,13 @@
 package database.table.core
 
+import java.util.UUID
+
 import database.Schema
 import models.core.TeachingUnit
 import slick.jdbc.PostgresProfile.api.*
 
-import java.util.UUID
-
 private[database] final class TeachingUnitTable(tag: Tag)
-  extends Table[TeachingUnit](tag, Some(Schema.Core.name), "teaching_unit") {
+    extends Table[TeachingUnit](tag, Some(Schema.Core.name), "teaching_unit") {
 
   def id = column[UUID]("id", O.PrimaryKey)
 

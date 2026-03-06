@@ -12,11 +12,11 @@ enum SemesterPlanType(val id: String) {
 object SemesterPlanType {
   def apply(id: String) =
     id.toLowerCase match {
-      case "exam" => Exam
-      case "lecture" => Lecture
-      case "block" => Block
-      case "project" => Project
+      case "exam"            => Exam
+      case "lecture"         => Lecture
+      case "block"           => Block
+      case "project"         => Project
       case "closed_building" => ClosedBuilding
-      case "self_study" => SelfStudy
+      case "self_study"      => SelfStudy
     }
 }
