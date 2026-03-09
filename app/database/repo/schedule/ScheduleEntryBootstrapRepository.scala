@@ -104,7 +104,7 @@ final class ScheduleEntryBootstrapRepository @Inject() (
       var sb      = new StringBuilder("insert into schedule.schedule_entry values ")
       val entries = new ListBuffer[ScheduleEntry.DB]()
       val ref     = LocalDateTime.of(2026, 4, 19, 7, 0, 0)
-      val df      = DateTimeFormatter.ISO_LOCAL_DATE_TIME
+      val df      = DateTimeFormatter.ISO_DATE_TIME
 
       def add(p: ScheduleEntry.DB) =
         sb.append(
