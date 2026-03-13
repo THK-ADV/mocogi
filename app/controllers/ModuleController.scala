@@ -117,6 +117,7 @@ final class ModuleController @Inject() (
   def get(id: UUID) =
     Action.async { r =>
       if (r.isExtended) jsonRepository.get(id).map(_.fold(NotFound)(Ok(_)))
+      else if (r.getQueryString("select").contains("lecturers")) service.getLecturers(id).map(x => Ok(Json.toJson(x)))
       else service.get(id).map(x => Ok(Json.toJson(x)))
     }
 
