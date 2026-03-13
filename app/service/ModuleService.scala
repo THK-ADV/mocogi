@@ -30,6 +30,9 @@ final class ModuleService @Inject() (
   def get(id: UUID) =
     repo.all(Map("id" -> Seq(id.toString))).single.map(_._1)
 
+  def getLecturers(id: UUID) =
+    repo.getLecturers(id)
+
   def allModuleCore(): Future[Seq[ModuleCore]] =
     repo.allModuleCore()
 

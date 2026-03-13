@@ -707,30 +707,52 @@ CREATE OR REPLACE FUNCTION schedule.get_schedule_entries(p_ids uuid[])
   LANGUAGE sql
   STABLE
   AS $$
-  SELECT
-    coalesce(jsonb_agg(jsonb_build_object('id', s.id, 'start', s."start", 'end', s."end", 'courseType', s.course_type, 'rooms', s.room_agg, 'module', mc.id, 'moduleTitle', mc.title, 'moduleAbbrev', mc.abbrev, 'moduleManagement', mc.module_management, 'teachingUnits', mtu.teaching_units, 'props', s.props)), '[]'::jsonb)
-  FROM(
+  WITH lecturer_data AS(
     SELECT
-      se.id,
-      se."start",
-      se."end",
-      se.course_type,
-      se.module,
-      se.props,
-      jsonb_agg(jsonb_build_object('id', r.id, 'abbrev', r.abbrev)) AS room_agg
+      se.id AS entry_id,
+      coalesce(jsonb_agg(jsonb_build_object('id', i.id, 'kind', i.kind, 'label', CASE WHEN i.kind = 'person' THEN
+              i.lastname
+            ELSE
+              i.title
+            END, 'abbreviation', CASE WHEN i.kind = 'person' THEN
+              i.abbreviation
+            ELSE
+              i.id
+            END)), '[]'::jsonb) AS lecturer_agg
     FROM
       schedule.schedule_entry se
-    CROSS JOIN LATERAL unnest(se.rooms) AS room_id
-    JOIN schedule.room r ON r.id = room_id
+    CROSS JOIN LATERAL jsonb_array_elements_text(se.props -> 'lecturer') AS lec_id
+    JOIN core.identity i ON i.id = lec_id
   WHERE
     se.id = ANY(p_ids)
   GROUP BY
+    se.id
+)
+SELECT
+  coalesce(jsonb_agg(jsonb_build_object('id', s.id, 'start', s."start", 'end', s."end", 'courseType', s.course_type, 'rooms', s.room_agg, 'module', mc.id, 'moduleTitle', mc.title, 'moduleAbbrev', mc.abbrev, 'moduleManagement', mc.module_management, 'lecturer', coalesce(ld.lecturer_agg, '[]'::jsonb), 'teachingUnits', mtu.teaching_units, 'props', s.props)), '[]'::jsonb)
+FROM(
+  SELECT
     se.id,
     se."start",
     se."end",
     se.course_type,
     se.module,
-    se.props) s
+    se.props,
+    jsonb_agg(jsonb_build_object('id', r.id, 'abbrev', r.abbrev)) AS room_agg
+  FROM
+    schedule.schedule_entry se
+  CROSS JOIN LATERAL unnest(se.rooms) AS room_id
+  JOIN schedule.room r ON r.id = room_id
+WHERE
+  se.id = ANY(p_ids)
+GROUP BY
+  se.id,
+  se."start",
+  se."end",
+  se.course_type,
+  se.module,
+  se.props) s
+  LEFT JOIN lecturer_data ld ON ld.entry_id = s.id
   JOIN modules.module_core_raw mc ON mc.id = s.module
   JOIN schedule.module_teaching_unit mtu ON mtu.module = mc.id;
 $$;
@@ -740,32 +762,56 @@ CREATE OR REPLACE FUNCTION schedule.get_schedule_entries(p_start timestamp, p_en
   LANGUAGE sql
   STABLE
   AS $$
-  SELECT
-    coalesce(jsonb_agg(jsonb_build_object('id', s.id, 'start', s."start", 'end', s."end", 'courseType', s.course_type, 'rooms', s.room_agg, 'module', mc.id, 'moduleTitle', mc.title, 'moduleAbbrev', mc.abbrev, 'moduleManagement', mc.module_management, 'teachingUnits', mtu.teaching_units, 'props', s.props)), '[]'::jsonb)
-  FROM(
+  WITH lecturer_data AS(
     SELECT
-      se.id,
-      se."start",
-      se."end",
-      se.course_type,
-      se.module,
-      se.props,
-      jsonb_agg(jsonb_build_object('id', r.id, 'abbrev', r.abbrev)) AS room_agg
+      se.id AS entry_id,
+      coalesce(jsonb_agg(jsonb_build_object('id', i.id, 'kind', i.kind, 'label', CASE WHEN i.kind = 'person' THEN
+              i.lastname
+            ELSE
+              i.title
+            END, 'abbreviation', CASE WHEN i.kind = 'person' THEN
+              i.abbreviation
+            ELSE
+              i.id
+            END)), '[]'::jsonb) AS lecturer_agg
     FROM
       schedule.schedule_entry se
-    CROSS JOIN LATERAL unnest(se.rooms) AS room_id
-    JOIN schedule.room r ON r.id = room_id
+    CROSS JOIN LATERAL jsonb_array_elements_text(se.props -> 'lecturer') AS lec_id
+    JOIN core.identity i ON i.id = lec_id
   WHERE
     se."start" >= p_start
     AND se."start" < p_end
     AND se."end" < p_end
   GROUP BY
+    se.id
+)
+SELECT
+  coalesce(jsonb_agg(jsonb_build_object('id', s.id, 'start', s."start", 'end', s."end", 'courseType', s.course_type, 'rooms', s.room_agg, 'module', mc.id, 'moduleTitle', mc.title, 'moduleAbbrev', mc.abbrev, 'moduleManagement', mc.module_management, 'lecturer', coalesce(ld.lecturer_agg, '[]'::jsonb), 'teachingUnits', mtu.teaching_units, 'props', s.props)), '[]'::jsonb)
+FROM(
+  SELECT
     se.id,
     se."start",
     se."end",
     se.course_type,
     se.module,
-    se.props) s
+    se.props,
+    jsonb_agg(jsonb_build_object('id', r.id, 'abbrev', r.abbrev)) AS room_agg
+  FROM
+    schedule.schedule_entry se
+  CROSS JOIN LATERAL unnest(se.rooms) AS room_id
+  JOIN schedule.room r ON r.id = room_id
+WHERE
+  se."start" >= p_start
+  AND se."start" < p_end
+  AND se."end" < p_end
+GROUP BY
+  se.id,
+  se."start",
+  se."end",
+  se.course_type,
+  se.module,
+  se.props) s
+  LEFT JOIN lecturer_data ld ON ld.entry_id = s.id
   JOIN modules.module_core_raw mc ON mc.id = s.module
   JOIN schedule.module_teaching_unit mtu ON mtu.module = mc.id;
 $$;

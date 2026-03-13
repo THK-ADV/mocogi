@@ -1,8 +1,13 @@
 package database.repo.schedule
 
+import java.time.format.DateTimeFormatter
+import java.time.LocalDateTime
+import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
 
+import scala.collection.mutable
+import scala.collection.mutable.ListBuffer
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
@@ -10,29 +15,22 @@ import play.api.db.slick.DatabaseConfigProvider
 import play.api.db.slick.HasDatabaseConfigProvider
 import slick.jdbc.JdbcProfile
 import service.ModuleService
-import scala.collection.mutable
-import play.api.libs.json.JsValue
-import play.api.libs.json.JsBoolean
 import play.api.libs.json.JsArray
+import play.api.libs.json.JsBoolean
+import play.api.libs.json.JsValue
 import play.api.libs.json.Json
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
 import models.schedule.CourseType
 import models.schedule.ScheduleEntry
 import models.MetadataProtocol
-import java.util.UUID
-import scala.collection.mutable.ListBuffer
 
 @Singleton
 final class ScheduleEntryBootstrapRepository @Inject() (
-    moduleService: ModuleService,                               
-    moduleTeachingUnitRepository: ModuleTeachingUnitRepository, 
+    moduleService: ModuleService,
+    moduleTeachingUnitRepository: ModuleTeachingUnitRepository,
     val dbConfigProvider: DatabaseConfigProvider,
     implicit val ctx: ExecutionContext
 ) extends HasDatabaseConfigProvider[JdbcProfile] {
   import profile.api.*
-
-
 
   // TODO: This is only used to bootstrap module teaching units associations
   def bootstrapModuleTeachingUnit() =

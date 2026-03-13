@@ -27,6 +27,11 @@ private[database] final class ModuleResponsibilityTable(tag: Tag)
     this.responsibilityType === moduleManger
   }
 
+  def isLecturer = {
+    val lecturer: ResponsibilityType = ResponsibilityType.Lecturer
+    this.responsibilityType === lecturer
+  }
+
   def isIdentity(identity: String) =
     this.identity.toLowerCase === identity.toLowerCase
 

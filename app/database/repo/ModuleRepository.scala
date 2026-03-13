@@ -98,6 +98,9 @@ final class ModuleRepository @Inject() (
   def all(filter: Map[String, Seq[String]]) =
     retrieve(allWithFilter(filter))
 
+  def getLecturers(id: UUID) =
+    db.run(moduleResponsibilityTable.filter(a => a.module === id && a.isLecturer).map(_.identity).result)
+
   def allModuleCore() =
     db.run(
       tableQuery
