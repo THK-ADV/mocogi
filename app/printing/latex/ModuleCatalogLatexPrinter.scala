@@ -378,7 +378,9 @@ final class ModuleCatalogLatexPrinter(
                 |\usepackage{xurl} % line breaking in urls
                 |\usepackage{titlesec}
                 |\usepackage{fancyhdr} % customize the page header
-                |\usepackage{parskip} % customize paragraph style""".stripMargin)
+                |\usepackage{parskip} % customize paragraph style
+                |\usepackage{calc} % for calculating the width of the table
+                |\usepackage{float} % for the H option of the figure environment""".stripMargin)
       .appendOpt(
         Option.when(isPreview)(
           s"""
