@@ -70,7 +70,7 @@ final class ExamListsController @Inject() (
               .recoverWith {
                 case NonFatal(e) =>
                   file.getParent.deleteDirectory()
-                  Future.failed(e)
+                  Future.successful(ErrorHandler.internalServerError(r.toString, e))
               }
           case _ =>
             Future.successful(
