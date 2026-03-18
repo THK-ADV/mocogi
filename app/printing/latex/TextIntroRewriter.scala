@@ -36,7 +36,10 @@ final class TextIntroRewriter {
   /** Remove redundant "Abbildung"/"Tabelle" prefix from captions */
   private def stripCaptionPrefix: PartialFunction[String, String] = {
     case line if line.startsWith("\\caption{") =>
-      line.replaceFirst("""\\caption\{(Abbildung|Tabelle)\s*:?\s*""", "\\\\caption{")
+      line.replaceFirst(
+        """\\caption\{(Abbildung|Tabelle)\s*:?\s*\d+(?:\.\d+)*\s*:?\s*""",
+        "\\\\caption{"
+      )
   }
 
   /** Pass through unmatched lines unchanged */
