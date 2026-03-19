@@ -49,4 +49,13 @@ trait ModuleDraftCheck {
 
       protected override def executionContext: ExecutionContext = ctx
     }
+
+  def canCreateModule =
+    new ActionFilter[UserRequest] {
+      protected override def filter[A](request: UserRequest[A]): Future[Option[Result]] =
+        if request.permissions.isAdmin then Future.successful(None)
+        else Future.successful(Some(Forbidden(Json.obj("message" -> "insufficient permissions to create a module"))))
+
+      protected override def executionContext: ExecutionContext = ctx
+    }
 }
