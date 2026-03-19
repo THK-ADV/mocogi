@@ -80,6 +80,7 @@ GET           /examLoad/:studyProgram/:po                             controller
 GET           /moduleDrafts                                           controllers.ModuleDraftController.moduleDrafts()
 GET           /moduleDrafts/:id                                       controllers.ModuleDraftController.getModuleDraft(id: java.util.UUID)
 PUT           /moduleDrafts/:id                                       controllers.ModuleDraftController.createOrUpdateModuleDraft(id: java.util.UUID)
+POST          /moduleDrafts                                           controllers.ModuleDraftController.create()
 DELETE        /moduleDrafts/:id                                       controllers.ModuleDraftController.deleteModuleDraft(id: java.util.UUID)
 GET           /moduleDrafts/:id/keys                                  controllers.ModuleDraftController.keys(id: java.util.UUID)
 GET           /moduleDrafts/:id/mrurl                                 controllers.ModuleDraftController.mergeRequestUrl(id: java.util.UUID)

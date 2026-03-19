@@ -6,6 +6,7 @@ import javax.inject.Named
 import javax.inject.Singleton
 
 import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 
 import auth.AuthorizationAction
 import controllers.actions.*
@@ -30,6 +31,7 @@ final class ModuleDraftController @Inject() (
     cc: ControllerComponents,
     val moduleDraftService: ModuleDraftService,
     val moduleDraftReviewService: ModuleReviewService,
+    val moduleCreationService: ModuleCreationService,
     val auth: AuthorizationAction,
     val moduleUpdatePermissionService: ModuleUpdatePermissionService,
     val permissionRepository: PermissionRepository,
@@ -92,6 +94,34 @@ final class ModuleDraftController @Inject() (
           case None     => NotFound
         }
     }
+
+  // Create new Module
+  def create() =
+    auth(parse.json[ModuleJson])
+      .andThen(resolveUser)
+      .andThen(canCreateModule)
+      .andThen(new VersionSchemeAction(VersionSchemeHeader))
+      .async { (r: VersionSchemeRequest[ModuleJson]) =>
+        val protocol = r.body.toProtocol
+        for {
+          moduleDraft <- moduleDraftService.createNew(protocol, r.request.person, r.versionScheme)
+          result      <- moduleDraft match {
+            case Left(err)          => Future.successful(BadRequest(Json.toJson(err)))
+            case Right(moduleDraft) =>
+              val module = CreatedModule(
+                moduleDraft.module,
+                moduleDraft.moduleTitle,
+                moduleDraft.moduleAbbrev,
+                protocol.metadata.moduleManagement.toList,
+                protocol.metadata.ects,
+                protocol.metadata.moduleType,
+                protocol.metadata.po.mandatory.map(_.fullPo).toList,
+                protocol.metadata.po.optional.map(_.fullPo).toList,
+              )
+              moduleCreationService.createOrUpdateWithPermissions(module).map(_ => NoContent)
+          }
+        } yield result
+      }
 
   // Update the module
   def createOrUpdateModuleDraft(moduleId: UUID) =
