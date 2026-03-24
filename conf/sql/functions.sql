@@ -494,30 +494,51 @@ CREATE OR REPLACE FUNCTION modules.module_of_po(module_param uuid, pos_param tex
                   module = module_param
                   AND po = po_id)
                 OR
-                -- Check draft modules
+                -- Check module_draft
                 EXISTS(
                   SELECT
                     1
                   FROM
-                    modules.created_module_in_draft
+                    modules.module_draft
                   WHERE
                     module = module_param
                     AND(EXISTS(
                         SELECT
                           1
                         FROM
-                          unnest(module_mandatory_pos) AS full_po_id
-                          -- the po_id can either match directly or be a suffix
-                        WHERE
-                          full_po_id LIKE po_id || '%')
-                        OR EXISTS(
+                          jsonb_array_elements(module_json -> 'metadata' -> 'po' -> 'mandatory') AS elem
+                        WHERE(elem ->> 'po')
+                        LIKE po_id || '%')
+                      OR EXISTS(
+                        SELECT
+                          1
+                        FROM
+                          jsonb_array_elements(module_json -> 'metadata' -> 'po' -> 'optional') AS elem
+                        WHERE(elem ->> 'po')
+                        LIKE po_id || '%')))
+                  OR
+                  -- Check created module in draft
+                  EXISTS(
+                    SELECT
+                      1
+                    FROM
+                      modules.created_module_in_draft
+                    WHERE
+                      module = module_param
+                      AND(EXISTS(
                           SELECT
                             1
                           FROM
-                            unnest(module_optional_pos) AS full_po_id
-                            -- the po_id can either match directly or be a suffix
+                            unnest(module_mandatory_pos) AS full_po_id
                           WHERE
-                            full_po_id LIKE po_id || '%')))))
+                            full_po_id LIKE po_id || '%')
+                          OR EXISTS(
+                            SELECT
+                              1
+                            FROM
+                              unnest(module_optional_pos) AS full_po_id
+                            WHERE
+                              full_po_id LIKE po_id || '%')))))
     END;
 $$;
 
