@@ -76,6 +76,7 @@ object Semester {
   def current(date: LocalDate = LocalDate.now): Semester = {
     val month = date.getMonth.getValue
     if month >= soSeStart && month <= soSeEnd then Semester.summer(date.getYear)
+    else if month < soSeStart then Semester.winter(date.getYear - 1)
     else Semester.winter(date.getYear)
   }
 
