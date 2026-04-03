@@ -3,8 +3,7 @@ package database.table
 import slick.jdbc.PostgresProfile.api.*
 import play.api.libs.json.JsValue
 
-private[database] final class UserSettingsTable(tag: Tag)
-    extends Table[(String, JsValue)](tag, None, "user_settings") {
+private[database] final class UserSettingsTable(tag: Tag) extends Table[(String, JsValue)](tag, None, "user_settings") {
 
   import database.MyPostgresProfile.MyAPI.playJsonTypeMapper
 
