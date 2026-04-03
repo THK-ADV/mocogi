@@ -1,5 +1,6 @@
 lazy val `mocogi` = (project in file("."))
   .enablePlugins(PlayScala)
+  .configs(IntegrationTest)
   .settings(
     name              := "mocogi",
     maintainer        := "Alexander Dobrynin <alexander.dobrynin@th-koeln.de>",
@@ -31,7 +32,20 @@ lazy val `mocogi` = (project in file("."))
     ),
     (Universal / javaOptions) ++= Seq(
       "-Dpidfile.path=/dev/null"
-    )
+    ),
+    // Postgres snapshot suites under test/database — local/CI step: `it:test` (not `test`).
+    Defaults.itSettings,
+    Test / unmanagedSources / excludeFilter ~= { excl =>
+      excl || new sbt.io.SimpleFileFilter(f =>
+        f.getCanonicalPath.replace('\\', '/').contains("/test/database/") &&
+          f.getName.endsWith(".scala")
+      )
+    },
+    IntegrationTest / scalaSource       := (Test / scalaSource).value,
+    IntegrationTest / unmanagedSources := {
+      val dir = baseDirectory.value / "test" / "database"
+      (dir ** "*.scala").get.filter(_.isFile).toSeq.sortBy(_.getAbsolutePath)
+    }
   )
 
 lazy val play = Seq(
@@ -42,9 +56,9 @@ lazy val play = Seq(
 )
 
 lazy val test = Seq(
-  "org.scalactic"          %% "scalactic"          % "3.2.19",
-  "org.scalatest"          %% "scalatest"          % "3.2.19" % "test",
-  "org.scalatestplus.play" %% "scalatestplus-play" % "7.0.2"  % "test"
+  "org.scalactic"          %% "scalactic"          % "3.2.19" % "test,it",
+  "org.scalatest"          %% "scalatest"          % "3.2.19" % "test,it",
+  "org.scalatestplus.play" %% "scalatestplus-play" % "7.0.2"  % "test,it"
 )
 
 lazy val parser = "de.th-koeln.inf.adv" %% "nebulak" % "0.14"

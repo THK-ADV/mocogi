@@ -59,3 +59,6 @@ app/controllers/DevController.scala
 app/worksheets/
 conf/sql/inserts.sql
 conf/sql/updates.sql
+
+# DB snapshot goldens (regenerate locally; see scripts/sync-test-db-from-prod.sh)
+test/resources/database/expected/
