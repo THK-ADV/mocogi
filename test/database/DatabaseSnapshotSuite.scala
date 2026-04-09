@@ -23,6 +23,8 @@ import database.MyPostgresProfile.api.*
  */
 abstract class DatabaseSnapshotSuite extends AnyFunSuite, Matchers, BeforeAndAfterAll {
 
+  def fakeUUID = "00000000-0000-0000-0000-000000000001"
+
   override def beforeAll(): Unit =
     TestDb.start()
 

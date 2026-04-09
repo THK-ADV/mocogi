@@ -208,6 +208,7 @@ CREATE OR REPLACE FUNCTION modules.resolve_module_relation(module_id uuid)
     END;
 $$;
 
+-- Returns all module details for the given module to be displayed in the module details page
 CREATE OR REPLACE FUNCTION modules.get_module_details(module_id uuid)
   RETURNS jsonb
   LANGUAGE sql
@@ -337,8 +338,16 @@ CREATE OR REPLACE FUNCTION modules.get_modules_for_user(campus_id_param text)
     md)
 $$;
 
--- the POs passed are base POs, not full POs! We must use string contains to
--- match them with specializations
+-- Returns a JSON array of module data for the given PO ids.
+-- If pos_param is null or empty, the result is an empty array.
+--
+-- The function unions two kinds of modules. First, preview-only rows from
+-- created_module_in_draft that match a requested PO (via their mandatory or optional
+-- PO lists). Second, published rows from modules.module that match a requested PO and
+-- have no created_module_in_draft row for the same module id, so nothing is listed twice.
+-- For those published rows, if a module_draft exists, PO membership is taken from its
+-- JSON metadata (prefix match on the stored PO strings). If not, module_po_mandatory and
+-- module_po_optional are used, matching exact po or specialization.
 CREATE OR REPLACE FUNCTION modules.get_modules_for_po(pos_param text[])
   RETURNS jsonb STABLE
   LANGUAGE sql
@@ -366,14 +375,14 @@ CREATE OR REPLACE FUNCTION modules.get_modules_for_po(pos_param text[])
           FROM
             unnest(cm.module_mandatory_pos) AS e(el)
           WHERE
-            el LIKE po_id || '%') -- the po_id can either match directly or be a suffix
+            el LIKE po_id || '%') -- stored PO may be longer than the requested id (prefix match)
           OR EXISTS(
             SELECT
               1
             FROM
               unnest(cm.module_optional_pos) AS e(el)
             WHERE
-              el LIKE po_id || '%') -- the po_id can either match directly or be a suffix
+              el LIKE po_id || '%') -- stored PO may be longer than the requested id (prefix match)
 )
           LEFT JOIN modules.module_draft md ON md.module = cm.module
       UNION
@@ -420,7 +429,7 @@ CREATE OR REPLACE FUNCTION modules.get_modules_for_po(pos_param text[])
                 FROM
                   jsonb_array_elements(md.module_json -> 'metadata' -> 'po' -> 'mandatory') AS mandatory_po
                 WHERE
-                  mandatory_po ->> 'po' LIKE po_id || '%' -- the po_id can either match directly or be a suffix
+                  mandatory_po ->> 'po' LIKE po_id || '%' -- prefix match, same idea as above
 )
                 OR EXISTS(
                   SELECT
@@ -428,7 +437,7 @@ CREATE OR REPLACE FUNCTION modules.get_modules_for_po(pos_param text[])
                   FROM
                     jsonb_array_elements(md.module_json -> 'metadata' -> 'po' -> 'optional') AS optional_po
                   WHERE
-                    optional_po ->> 'po' LIKE po_id || '%' -- the po_id can either match directly or be a suffix
+                    optional_po ->> 'po' LIKE po_id || '%' -- prefix match, same idea as above
 )))
               OR
               -- If module has no draft, use module_po tables
@@ -611,6 +620,7 @@ CREATE OR REPLACE FUNCTION modules.get_users_with_granted_permissions_from_modul
     AND mup.kind = 'granted'
 $$;
 
+-- Returns all published modules (active and inactive) which are an instance of the given generic module
 CREATE OR REPLACE FUNCTION modules.get_generic_module_options(module_id uuid)
   RETURNS jsonb
   LANGUAGE sql
@@ -627,8 +637,8 @@ CREATE OR REPLACE FUNCTION modules.get_generic_module_options(module_id uuid)
       instance_of = module_id) AS m;
 $$;
 
--- Returns all active generic modules from live and preview for po
--- The query does only consider mandatory POs
+-- Returns all active generic modules (published and preview) for the given po
+-- The query considers only mandatory POs
 CREATE OR REPLACE FUNCTION modules.generic_modules_for_po(po_id text)
   RETURNS jsonb
   LANGUAGE sql

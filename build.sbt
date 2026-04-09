@@ -1,3 +1,5 @@
+addCommandAlias("format", "scalafixAll; scalafmtAll")
+
 lazy val `mocogi` = (project in file("."))
   .enablePlugins(PlayScala)
   .configs(IntegrationTest)
