@@ -4,13 +4,12 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 import controllers.actions.UserRequest
-import play.api.libs.json.Json
+import controllers.UsesClientErrors
 import play.api.mvc.ActionFilter
 import play.api.mvc.Result
-import play.api.mvc.Results.Forbidden
 import service.StudyProgramPrivilegesService
 
-trait ArtifactCheck {
+trait ArtifactCheck extends UsesClientErrors {
   protected def studyProgramPrivilegesService: StudyProgramPrivilegesService
   protected implicit def ctx: ExecutionContext
 
@@ -28,11 +27,9 @@ trait ArtifactCheck {
               if studyPrograms.contains(studyProgram) then None
               else
                 Some(
-                  Forbidden(
-                    Json.obj(
-                      "request" -> request.toString(),
-                      "message" -> s"user ${request.request.token.username} has insufficient permissions to create artifacts for $studyProgram"
-                    )
+                  clientErrors.forbidden(
+                    request,
+                    s"user ${request.request.token.username} has insufficient permissions to create artifacts for $studyProgram"
                   )
                 )
             }
@@ -56,11 +53,9 @@ trait ArtifactCheck {
               if studyPrograms.contains(studyProgram) then None
               else
                 Some(
-                  Forbidden(
-                    Json.obj(
-                      "request" -> request.toString(),
-                      "message" -> s"user ${request.request.token.username} has insufficient permissions to preview artifacts for $studyProgram"
-                    )
+                  clientErrors.forbidden(
+                    request,
+                    s"user ${request.request.token.username} has insufficient permissions to preview artifacts for $studyProgram"
                   )
                 )
             }

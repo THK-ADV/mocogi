@@ -107,7 +107,7 @@ final class JwtAuthorization @Inject() (
       roles    <- claims.\("realm_access").\("roles").validate[Set[String]]
       username <- claims.\("username").validate[String]
       token    <-
-        if username.contains("service-account") then JsSuccess(Token.ServiceToken(username, roles))
+        if username.startsWith("service-account-") then JsSuccess(Token.ServiceToken(username, roles))
         else
           for {
             firstname <- claims.\("firstname").validate[String]

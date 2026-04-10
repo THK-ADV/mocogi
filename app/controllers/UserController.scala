@@ -13,6 +13,7 @@ import play.api.libs.json.Json
 import play.api.mvc.AbstractController
 import play.api.mvc.AnyContent
 import play.api.mvc.ControllerComponents
+import security.ClientErrorResponse
 import service.StudyProgramPrivilegesService
 
 @Singleton
@@ -21,6 +22,7 @@ final class UserController @Inject() (
     auth: AuthorizationAction,
     val permissionRepository: PermissionRepository,
     studyProgramPrivilegesService: StudyProgramPrivilegesService,
+    val clientErrors: ClientErrorResponse,
     implicit val ctx: ExecutionContext
 ) extends AbstractController(cc)
     with UserResolveAction {

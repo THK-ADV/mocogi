@@ -4,15 +4,14 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 import auth.*
+import controllers.UsesClientErrors
 import database.repo.PermissionRepository
 import models.core.Identity
 import models.EmploymentType.Unknown
 import permission.PermissionType
 import permission.Permissions
-import play.api.libs.json.Json
 import play.api.mvc.ActionRefiner
 import play.api.mvc.Result
-import play.api.mvc.Results.BadRequest
 import play.api.mvc.WrappedRequest
 
 case class UserRequest[A](
@@ -37,7 +36,7 @@ case class UserRequest[A](
   }
 }
 
-private[controllers] trait UserResolveAction {
+private[controllers] trait UserResolveAction extends UsesClientErrors {
   implicit def ctx: ExecutionContext
   implicit def permissionRepository: PermissionRepository
 
@@ -48,15 +47,18 @@ private[controllers] trait UserResolveAction {
       protected override def refine[A](request: TokenRequest[A]): Future[Either[Result, UserRequest[A]]] =
         request.token match {
           case _: Token.UserToken    => getByUsername(request)
-          case _: Token.ServiceToken => adminUser(request)
+          case s: Token.ServiceToken => serviceTokenUser(request, s)
         }
 
-      // TODO: maybe we should drop this
-      private def adminUser[A](request: TokenRequest[A]) = {
-        val adminUser = Identity.Person("", "", "", "", Nil, "", None, isActive = true, Unknown, None)
-        val adminPerm = Permissions(Map((PermissionType.Admin, Set.empty)))
-        Future.successful(Right(UserRequest(adminUser, adminPerm, request)))
+      private def serviceTokenUser[A](request: TokenRequest[A], token: Token.ServiceToken) = {
+        val person = Identity.Person("", "", "", "", Nil, "", None, isActive = true, Unknown, None)
+        val perms  = permissionsFromKeycloakServiceRoles(token.roles)
+        Future.successful(Right(UserRequest(person, perms, request)))
       }
+
+      private def permissionsFromKeycloakServiceRoles(roles: Set[String]): Permissions =
+        if roles.contains(PermissionType.Admin.label) then Permissions(Map(PermissionType.Admin -> Set.empty))
+        else Permissions(Map.empty)
 
       private def getByUsername[A](request: TokenRequest[A]) =
         permissionRepository
@@ -64,9 +66,20 @@ private[controllers] trait UserResolveAction {
           .map {
             case Some((p, perms)) =>
               if p.isActive then Right(UserRequest(p, perms, request))
-              else Left(BadRequest(Json.obj("message" -> s"user with campusId ${request.campusId.value} is inactive")))
+              else
+                Left(
+                  clientErrors.badRequest(
+                    request,
+                    s"user with campusId ${request.campusId.value} is inactive"
+                  )
+                )
             case None =>
-              Left(BadRequest(Json.obj("message" -> s"no user found for campusId ${request.campusId.value}")))
+              Left(
+                clientErrors.badRequest(
+                  request,
+                  s"no user found for campusId ${request.campusId.value}"
+                )
+              )
           }
     }
 }

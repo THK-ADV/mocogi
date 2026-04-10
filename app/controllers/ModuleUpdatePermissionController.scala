@@ -15,6 +15,7 @@ import models.ModuleUpdatePermissionType
 import permission.ModuleDraftCheck
 import play.api.mvc.AbstractController
 import play.api.mvc.ControllerComponents
+import security.ClientErrorResponse
 import service.ModuleUpdatePermissionService
 
 @Singleton
@@ -24,6 +25,7 @@ final class ModuleUpdatePermissionController @Inject() (
     val permissionRepository: PermissionRepository,
     identityRepository: IdentityRepository,
     auth: AuthorizationAction,
+    val clientErrors: ClientErrorResponse,
     implicit val ctx: ExecutionContext
 ) extends AbstractController(cc)
     with ModuleDraftCheck

@@ -1,29 +1,18 @@
+import javax.inject.Inject
+import javax.inject.Singleton
+
 import scala.concurrent.*
 
-import controllers.ErrorHandler
 import play.api.http.HttpErrorHandler
-import play.api.libs.json.Json
 import play.api.mvc.*
-import play.api.mvc.Results.*
+import security.ClientErrorResponse
 
-class ErrorHandler extends HttpErrorHandler {
+@Singleton
+class ErrorHandler @Inject() (clientErrors: ClientErrorResponse) extends HttpErrorHandler {
 
   def onClientError(request: RequestHeader, statusCode: Int, message: String): Future[Result] =
-    Future.successful(
-      Status(statusCode)(
-        Json.obj(
-          "type"    -> "client error",
-          "request" -> request.toString(),
-          "message" -> message
-        )
-      )
-    )
+    Future.successful(clientErrors.clientStatusError(request, statusCode, message))
 
   def onServerError(request: RequestHeader, exception: Throwable): Future[Result] =
-    Future.successful(
-      ErrorHandler.internalServerError(
-        request.toString(),
-        exception
-      )
-    )
+    Future.successful(clientErrors.internalServerError(request, exception))
 }

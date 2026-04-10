@@ -22,6 +22,7 @@ import play.api.mvc.AbstractController
 import play.api.mvc.AnyContent
 import play.api.mvc.ControllerComponents
 import play.api.Logging
+import security.ClientErrorResponse
 import service.ModuleReviewService
 import service.ModuleUpdatePermissionService
 
@@ -35,6 +36,7 @@ final class ModuleDraftReviewController @Inject() (
     val moduleUpdatePermissionService: ModuleUpdatePermissionService,
     val permissionRepository: PermissionRepository,
     private val keysToReview: ModuleKeysToReview,
+    val clientErrors: ClientErrorResponse,
     implicit val ctx: ExecutionContext
 ) extends AbstractController(cc)
     with ModuleDraftCheck

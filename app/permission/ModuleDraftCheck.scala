@@ -6,15 +6,13 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 import controllers.actions.UserRequest
+import controllers.UsesClientErrors
 import ops.||
-import play.api.libs.json.Json
 import play.api.mvc.ActionFilter
 import play.api.mvc.Result
-import play.api.mvc.Results
-import play.api.mvc.Results.Forbidden
 import service.ModuleUpdatePermissionService
 
-trait ModuleDraftCheck {
+trait ModuleDraftCheck extends UsesClientErrors {
   protected def moduleUpdatePermissionService: ModuleUpdatePermissionService
   protected implicit def ctx: ExecutionContext
 
@@ -37,11 +35,9 @@ trait ModuleDraftCheck {
           case true  => None
           case false =>
             Some(
-              Forbidden(
-                Json.obj(
-                  "request" -> request.toString(),
-                  "message" -> s"user ${request.request.token.username} has insufficient permissions to edit the module"
-                )
+              clientErrors.forbidden(
+                request,
+                s"user ${request.request.token.username} has insufficient permissions to edit the module"
               )
             )
         }
@@ -54,7 +50,12 @@ trait ModuleDraftCheck {
     new ActionFilter[UserRequest] {
       protected override def filter[A](request: UserRequest[A]): Future[Option[Result]] =
         if request.permissions.isAdmin then Future.successful(None)
-        else Future.successful(Some(Forbidden(Json.obj("message" -> "insufficient permissions to create a module"))))
+        else
+          Future.successful(
+            Some(
+              clientErrors.forbidden(request, "insufficient permissions to create a module")
+            )
+          )
 
       protected override def executionContext: ExecutionContext = ctx
     }

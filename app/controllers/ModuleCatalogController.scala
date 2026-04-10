@@ -31,6 +31,7 @@ import play.api.mvc.*
 import play.mvc.Http.HeaderNames
 import printing.latex.TextIntroRewriter
 import printing.latex.WordLatexPrinter
+import security.ClientErrorResponse
 import service.artifact.ModuleCatalogService
 import service.StudyProgramPrivilegesService
 
@@ -45,6 +46,7 @@ final class ModuleCatalogController @Inject() (
     @Named("path.mcIntro") mcIntroPath: String,
     val permissionRepository: PermissionRepository,
     val studyProgramPrivilegesService: StudyProgramPrivilegesService,
+    val clientErrors: ClientErrorResponse,
     cached: Cached,
     implicit val ctx: ExecutionContext
 ) extends AbstractController(cc)
@@ -102,7 +104,7 @@ final class ModuleCatalogController @Inject() (
               .recoverWith {
                 case NonFatal(e) =>
                   file.getParent.deleteDirectory()
-                  Future.successful(ErrorHandler.internalServerError(r.toString, e))
+                  Future.successful(clientErrors.internalServerError(r, e))
               }
           case _ =>
             Future.successful(
@@ -162,13 +164,16 @@ final class ModuleCatalogController @Inject() (
             printer.toLatex(r.body.path, po).flatMap(rewriter.rewrite) match {
               case Failure(e) =>
                 r.body.delete()
-                ErrorHandler.badRequest(r.toString, e)
+                clientErrors.badRequest(r, e)
               case Success(_) =>
                 r.body.delete()
                 NoContent
             }
           case other =>
-            ErrorHandler.badRequest(r.toString, s"expected content-type to be ${MimeTypes.WORD}, but was $other")
+            clientErrors.badRequest(
+              r,
+              s"expected content-type to be ${MimeTypes.WORD}, but was $other"
+            )
         }
       }
 }
