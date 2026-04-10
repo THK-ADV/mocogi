@@ -59,7 +59,7 @@ final class ModuleDatabaseActor @Inject() (
         }
       )
       _ <- moduleCreationService.deleteMany(modules.map(_._1.metadata.id))
-      _ <- moduleTeachingUnitRepository.recreate(modules.map { (m, _) =>
+      _ <- moduleTeachingUnitRepository.update(modules.map { (m, _) =>
         val pos = mutable.Set[String]()
         m.metadata.pos.mandatory.foreach(po => pos.add(po.po.id))
         m.metadata.pos.optional.foreach(po => pos.add(po.po.id))

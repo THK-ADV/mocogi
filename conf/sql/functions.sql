@@ -38,6 +38,9 @@ DROP FUNCTION IF EXISTS schedule.semester_plan_by_now;
 
 DROP VIEW IF EXISTS modules.module_core_raw;
 
+-- Serializes a core identity into the JSON shape expected by module- and
+-- schedule-related APIs. Person identities include the richer person fields,
+-- while other identity kinds stay compact.
 CREATE OR REPLACE FUNCTION modules.identity_to_json(i core.identity)
   RETURNS jsonb
   LANGUAGE sql
@@ -52,6 +55,7 @@ CREATE OR REPLACE FUNCTION modules.identity_to_json(i core.identity)
     END;
 $$;
 
+-- Builds the minimal module reference payload used inside larger JSON responses.
 CREATE OR REPLACE FUNCTION modules.module_to_json_short(m modules.module)
   RETURNS jsonb
   LANGUAGE sql
@@ -61,6 +65,8 @@ CREATE OR REPLACE FUNCTION modules.module_to_json_short(m modules.module)
     jsonb_build_object('id', m.id, 'title', m.title, 'abbreviation', m.abbrev);
 $$;
 
+-- Expands prerequisite metadata by replacing referenced module ids with compact
+-- module objects. This keeps prerequisite payloads readable for detail endpoints.
 CREATE OR REPLACE FUNCTION modules.resolve_prereqs(prerequisites jsonb)
   RETURNS jsonb
   LANGUAGE sql
@@ -78,6 +84,8 @@ CREATE OR REPLACE FUNCTION modules.resolve_prereqs(prerequisites jsonb)
     END;
 $$;
 
+-- Aggregates module managers and lecturers for a module, including profile image
+-- URLs when available. The result is already shaped for direct JSON embedding.
 CREATE OR REPLACE FUNCTION modules.resolve_responsibilities(module_id uuid)
   RETURNS TABLE(
     module_management jsonb,
@@ -96,6 +104,8 @@ CREATE OR REPLACE FUNCTION modules.resolve_responsibilities(module_id uuid)
     mr.module = module_id;
 $$;
 
+-- Aggregates assessment methods for a module together with percentages and
+-- human-readable precondition labels.
 CREATE OR REPLACE FUNCTION modules.resolve_assessment_methods(module_id uuid)
   RETURNS jsonb
   LANGUAGE sql
@@ -114,6 +124,8 @@ CREATE OR REPLACE FUNCTION modules.resolve_assessment_methods(module_id uuid)
     mam.module = module_id;
 $$;
 
+-- Collects the mandatory and optional PO relationships of a module in the JSON
+-- format used by the module detail API.
 CREATE OR REPLACE FUNCTION modules.resolve_po_relationships(module_id uuid)
   RETURNS TABLE(
     po_mandatory jsonb,
@@ -147,6 +159,8 @@ CREATE OR REPLACE FUNCTION modules.resolve_po_relationships(module_id uuid)
         mpo.module = module_id), '[]'::jsonb) AS po_optional;
 $$;
 
+-- Returns the modules that are taught together with the given module as compact
+-- module references.
 CREATE OR REPLACE FUNCTION modules.resolve_taught_with(module_id uuid)
   RETURNS jsonb
   LANGUAGE sql
@@ -161,6 +175,8 @@ CREATE OR REPLACE FUNCTION modules.resolve_taught_with(module_id uuid)
     mtw.module = module_id;
 $$;
 
+-- Resolves the parent/child relationship metadata for a module into the small
+-- relation payload consumed by the frontend.
 CREATE OR REPLACE FUNCTION modules.resolve_module_relation(module_id uuid)
   RETURNS jsonb
   LANGUAGE sql
@@ -208,6 +224,8 @@ CREATE OR REPLACE FUNCTION modules.resolve_module_relation(module_id uuid)
     END;
 $$;
 
+-- Builds the full module details payload, combining the base module row with all
+-- resolved nested metadata needed by the module details page.
 CREATE OR REPLACE FUNCTION modules.get_module_details(module_id uuid)
   RETURNS jsonb
   LANGUAGE sql
@@ -240,6 +258,8 @@ CREATE OR REPLACE FUNCTION modules.get_module_details(module_id uuid)
   LEFT JOIN LATERAL modules.resolve_po_relationships(b.id) AS po ON TRUE;
 $$;
 
+-- Derives the public workflow state of a module draft from its git and review
+-- metadata. This keeps state classification centralized in SQL.
 CREATE OR REPLACE FUNCTION modules.calculate_module_draft_state(md modules.module_draft)
   RETURNS text
   LANGUAGE sql
@@ -273,6 +293,8 @@ CREATE OR REPLACE FUNCTION modules.calculate_module_draft_state(md modules.modul
     END
 $$;
 
+-- Normalizes live modules, created-in-draft modules, and module drafts into one
+-- shared JSON payload used by module list endpoints.
 CREATE OR REPLACE FUNCTION modules.build_module_info_json(inherited_perm bool, m modules.module, cm modules.created_module_in_draft, md modules.module_draft, po_mandatory text[], po_optional text[])
   RETURNS jsonb
   LANGUAGE sql
@@ -285,10 +307,8 @@ CREATE OR REPLACE FUNCTION modules.build_module_info_json(inherited_perm bool, m
     END)::jsonb
 $$;
 
--- Returns modules for a given campus with their draft states and permissions
--- @param campus_id_param: The campus ID to filter modules for
--- @returns: JSON array of modules with their metadata, draft state, and
--- permissions
+-- Returns the modules visible to a campus user together with permission context,
+-- PO coverage, and draft workflow state.
 CREATE OR REPLACE FUNCTION modules.get_modules_for_user(campus_id_param text)
   RETURNS jsonb
   LANGUAGE sql
@@ -337,12 +357,131 @@ CREATE OR REPLACE FUNCTION modules.get_modules_for_user(campus_id_param text)
     md)
 $$;
 
--- the POs passed are base POs, not full POs! We must use string contains to
--- match them with specializations
+-- Returns the modules relevant to the requested POs across preview-only drafts,
+-- published modules, and published modules with draft metadata. The query
+-- precomputes PO matches so callers do not rescan every module per request.
 CREATE OR REPLACE FUNCTION modules.get_modules_for_po(pos_param text[])
   RETURNS jsonb STABLE
   LANGUAGE sql
   AS $$
+  WITH requested_pos AS(
+    SELECT
+      po_id
+    FROM
+      unnest(pos_param) AS po_id
+    WHERE
+      po_id IS NOT NULL
+),
+created_modules AS(
+  SELECT DISTINCT ON(cm.module)
+    NULL::modules.module AS m,
+    cm,
+    md,
+    cm.module_mandatory_pos AS po_mandatory,
+    cm.module_optional_pos AS po_optional
+  FROM
+    requested_pos
+    JOIN modules.created_module_in_draft cm ON(EXISTS(
+        SELECT
+          1
+        FROM
+          unnest(cm.module_mandatory_pos) AS e(el)
+        WHERE
+          el LIKE po_id || '%')
+        OR EXISTS(
+          SELECT
+            1
+          FROM
+            unnest(cm.module_optional_pos) AS e(el)
+          WHERE
+            el LIKE po_id || '%'))
+        LEFT JOIN modules.module_draft md ON md.module = cm.module
+),
+draft_matching_modules AS(
+  SELECT DISTINCT
+    md.module
+  FROM
+    requested_pos
+    JOIN modules.module_draft md ON(EXISTS(
+        SELECT
+          1
+        FROM
+          jsonb_array_elements(md.module_json -> 'metadata' -> 'po' -> 'mandatory') AS mandatory_po
+        WHERE
+          mandatory_po ->> 'po' LIKE po_id || '%')
+        OR EXISTS(
+          SELECT
+            1
+          FROM
+            jsonb_array_elements(md.module_json -> 'metadata' -> 'po' -> 'optional') AS optional_po
+          WHERE
+            optional_po ->> 'po' LIKE po_id || '%'))
+),
+live_matching_modules AS(
+  SELECT DISTINCT
+    mpm.module
+  FROM
+    requested_pos
+    JOIN modules.module_po_mandatory mpm ON mpm.specialization = po_id
+      OR mpm.po = po_id
+    UNION
+    SELECT DISTINCT
+      mpo.module
+    FROM
+      requested_pos
+    JOIN modules.module_po_optional mpo ON mpo.specialization = po_id
+      OR mpo.po = po_id
+),
+published_candidate_modules AS(
+  SELECT
+    module
+  FROM
+    draft_matching_modules
+  UNION
+  SELECT
+    module
+  FROM
+    live_matching_modules
+),
+published_modules AS(
+  SELECT DISTINCT ON(m.id)
+    m,
+    NULL::modules.created_module_in_draft AS cm,
+    md,
+    mpm_agg.po_mandatory AS po_mandatory,
+    mpo_agg.po_optional AS po_optional
+  FROM
+    published_candidate_modules pcm
+  JOIN modules.module m ON m.id = pcm.module
+    LEFT JOIN modules.module_draft md ON md.module = m.id
+    LEFT JOIN draft_matching_modules dmm ON dmm.module = m.id
+    LEFT JOIN live_matching_modules lmm ON lmm.module = m.id
+    LEFT JOIN LATERAL(
+      SELECT
+        array_agg(DISTINCT mpm.po) AS po_mandatory
+      FROM
+        modules.module_po_mandatory mpm
+      WHERE
+        mpm.module = m.id) mpm_agg ON TRUE
+    LEFT JOIN LATERAL(
+      SELECT
+        array_agg(DISTINCT mpo.po) AS po_optional
+      FROM
+        modules.module_po_optional mpo
+      WHERE
+        mpo.module = m.id) mpo_agg ON TRUE
+    WHERE
+      NOT EXISTS(
+        SELECT
+          1
+        FROM
+          modules.created_module_in_draft cm
+        WHERE
+          cm.module = m.id)
+        AND(md.module IS NOT NULL
+          AND dmm.module IS NOT NULL
+          OR md.module IS NULL
+          AND lmm.module IS NOT NULL))
   SELECT
     CASE WHEN pos_param IS NULL
       OR array_length(pos_param, 1) IS NULL THEN
@@ -351,110 +490,20 @@ CREATE OR REPLACE FUNCTION modules.get_modules_for_po(pos_param text[])
       coalesce(json_agg(modules.build_module_info_json(FALSE, m, cm, md, po_mandatory, po_optional))::jsonb, '[]'::jsonb)
     END
   FROM(
-    -- Get created_module_in_draft entries that match POs with their drafts
-    SELECT DISTINCT ON(cm.module)
-      NULL::modules.module AS m,
-      cm,
-      md,
-      cm.module_mandatory_pos AS po_mandatory,
-      cm.module_optional_pos AS po_optional
+    SELECT
+      *
     FROM
-      unnest(pos_param) AS po_id -- full po id
-      JOIN modules.created_module_in_draft cm ON(EXISTS(
-          SELECT
-            1
-          FROM
-            unnest(cm.module_mandatory_pos) AS e(el)
-          WHERE
-            el LIKE po_id || '%') -- the po_id can either match directly or be a suffix
-          OR EXISTS(
-            SELECT
-              1
-            FROM
-              unnest(cm.module_optional_pos) AS e(el)
-            WHERE
-              el LIKE po_id || '%') -- the po_id can either match directly or be a suffix
-)
-          LEFT JOIN modules.module_draft md ON md.module = cm.module
-      UNION
-      -- Get module entries with their drafts that match POs, but don't have
-      -- created_module_in_draft
-      SELECT DISTINCT ON(m.id)
-        m,
-        NULL::modules.created_module_in_draft AS cm,
-        md,
-        mpm_agg.po_mandatory AS po_mandatory,
-        mpo_agg.po_optional AS po_optional
-      FROM
-        modules.module m
-      LEFT JOIN modules.module_draft md ON md.module = m.id
-      LEFT JOIN LATERAL(
-        SELECT
-          array_agg(DISTINCT mpm.po) AS po_mandatory
-        FROM
-          modules.module_po_mandatory mpm
-        WHERE
-          mpm.module = m.id) mpm_agg ON TRUE
-      LEFT JOIN LATERAL(
-        SELECT
-          array_agg(DISTINCT mpo.po) AS po_optional
-        FROM
-          modules.module_po_optional mpo
-        WHERE
-          mpo.module = m.id) mpo_agg ON TRUE
-      CROSS JOIN unnest(pos_param) AS po_id -- full po id
-    WHERE
-      NOT EXISTS( -- ensure that a module is fetched either from module or created_module_in_draft
-        SELECT
-          1
-        FROM
-          modules.created_module_in_draft cm
-        WHERE
-          cm.module = m.id)
-        AND(
-          -- If module has a draft, use draft POs (preferred)
-(md.module IS NOT NULL
-            AND(EXISTS(
-                SELECT
-                  1
-                FROM
-                  jsonb_array_elements(md.module_json -> 'metadata' -> 'po' -> 'mandatory') AS mandatory_po
-                WHERE
-                  mandatory_po ->> 'po' LIKE po_id || '%' -- the po_id can either match directly or be a suffix
-)
-                OR EXISTS(
-                  SELECT
-                    1
-                  FROM
-                    jsonb_array_elements(md.module_json -> 'metadata' -> 'po' -> 'optional') AS optional_po
-                  WHERE
-                    optional_po ->> 'po' LIKE po_id || '%' -- the po_id can either match directly or be a suffix
-)))
-              OR
-              -- If module has no draft, use module_po tables
-(md.module IS NULL
-                AND(EXISTS(
-                    SELECT
-                      1
-                    FROM
-                      modules.module_po_mandatory mpm
-                    WHERE
-                      mpm.module = m.id
-                      AND(mpm.specialization = po_id
-                        OR mpm.po = po_id))
-                    OR EXISTS(
-                      SELECT
-                        1
-                      FROM
-                        modules.module_po_optional mpo
-                      WHERE
-                        mpo.module = m.id
-                        AND(mpo.specialization = po_id
-                          OR mpo.po = po_id)))))) AS distinct_modules;
+      created_modules
+    UNION
+    SELECT
+      *
+    FROM
+      published_modules) AS distinct_modules;
 $$;
 
--- the POs passed are base POs, not full POs! We must use string contains to
--- match them with specializations
+-- Answers whether a module belongs to any of the requested base POs across live,
+-- draft, and preview-only sources. Base PO ids are matched against
+-- specialization-aware values when needed.
 CREATE OR REPLACE FUNCTION modules.module_of_po(module_param uuid, pos_param text[])
   RETURNS bool
   LANGUAGE sql
@@ -542,6 +591,8 @@ CREATE OR REPLACE FUNCTION modules.module_of_po(module_param uuid, pos_param tex
     END;
 $$;
 
+-- Summarizes dashboard-level privilege and review counters for a user/campus
+-- pair in one round trip.
 CREATE OR REPLACE FUNCTION modules.get_user_info(uid text, cid text)
   RETURNS TABLE(
     has_director_privileges boolean,
@@ -596,6 +647,8 @@ CREATE OR REPLACE FUNCTION modules.get_user_info(uid text, cid text)
         sp.person = uid) AS reviews_to_approve;
 $$;
 
+-- Returns the identities that hold explicitly granted edit permissions for the
+-- given module.
 CREATE OR REPLACE FUNCTION modules.get_users_with_granted_permissions_from_module(module_id uuid)
   RETURNS jsonb
   LANGUAGE sql
@@ -611,6 +664,8 @@ CREATE OR REPLACE FUNCTION modules.get_users_with_granted_permissions_from_modul
     AND mup.kind = 'granted'
 $$;
 
+-- Lists the published concrete module options that instantiate a given generic
+-- module.
 CREATE OR REPLACE FUNCTION modules.get_generic_module_options(module_id uuid)
   RETURNS jsonb
   LANGUAGE sql
@@ -627,8 +682,8 @@ CREATE OR REPLACE FUNCTION modules.get_generic_module_options(module_id uuid)
       instance_of = module_id) AS m;
 $$;
 
--- Returns all active generic modules from live and preview for po
--- The query does only consider mandatory POs
+-- Returns active generic modules for a PO, combining published rows with
+-- preview-only created modules. Only mandatory PO assignments are considered.
 CREATE OR REPLACE FUNCTION modules.generic_modules_for_po(po_id text)
   RETURNS jsonb
   LANGUAGE sql
@@ -658,6 +713,8 @@ CREATE OR REPLACE FUNCTION modules.generic_modules_for_po(po_id text)
         AND po_id = ANY(module_mandatory_pos))) AS m;
 $$;
 
+-- Maps a month/year pair to the surrounding academic year window and returns
+-- the semester plan entries that fall into that range.
 CREATE OR REPLACE FUNCTION schedule.semester_plan_by_now(p_month integer, p_year integer)
   RETURNS jsonb
   LANGUAGE plpgsql
@@ -698,6 +755,8 @@ BEGIN
 END;
 $$;
 
+-- Pre-aggregates the core module management metadata used by schedule queries so
+-- the overloaded schedule entry functions can stay single-pass.
 CREATE OR REPLACE VIEW modules.module_core_raw AS
 SELECT
   m.id,
@@ -720,6 +779,9 @@ FROM
 GROUP BY
   m.id;
 
+-- Returns enriched schedule entries for an explicit list of schedule entry ids.
+-- The payload joins rooms, lecturers, module metadata, and teaching units into
+-- the JSON shape consumed by the schedule APIs.
 -- NOTE: The two overloads below are intentionally duplicated to keep each one a
 -- single-pass query. Any change to the SELECT/JOIN/aggregation body must be
 -- applied to BOTH functions.
@@ -728,7 +790,31 @@ CREATE OR REPLACE FUNCTION schedule.get_schedule_entries(p_ids uuid[])
   LANGUAGE sql
   STABLE
   AS $$
-  WITH lecturer_data AS(
+  SELECT
+    coalesce(jsonb_agg(jsonb_build_object('id', s.id, 'start', s."start", 'end', s."end", 'courseType', s.course_type, 'rooms', s.room_agg, 'module', mc.id, 'moduleTitle', mc.title, 'moduleAbbrev', mc.abbrev, 'moduleManagement', mc.module_management, 'lecturer', coalesce(ld.lecturer_agg, '[]'::jsonb), 'teachingUnits', mtu.teaching_units, 'props', s.props)), '[]'::jsonb)
+  FROM(
+    SELECT
+      se.id,
+      se."start",
+      se."end",
+      se.course_type,
+      se.module,
+      se.props,
+      jsonb_agg(jsonb_build_object('id', r.id, 'abbrev', r.abbrev)) AS room_agg
+    FROM
+      schedule.schedule_entry se
+    CROSS JOIN LATERAL unnest(se.rooms) AS room_id
+    JOIN schedule.room r ON r.id = room_id
+  WHERE
+    se.id = ANY(p_ids)
+  GROUP BY
+    se.id,
+    se."start",
+    se."end",
+    se.course_type,
+    se.module,
+    se.props) s
+  LEFT JOIN(
     SELECT
       se.id AS entry_id,
       coalesce(jsonb_agg(jsonb_build_object('id', i.id, 'kind', i.kind, 'label', CASE WHEN i.kind = 'person' THEN
@@ -742,48 +828,51 @@ CREATE OR REPLACE FUNCTION schedule.get_schedule_entries(p_ids uuid[])
             END)), '[]'::jsonb) AS lecturer_agg
     FROM
       schedule.schedule_entry se
-    CROSS JOIN LATERAL jsonb_array_elements_text(se.props -> 'lecturer') AS lec_id
-    JOIN core.identity i ON i.id = lec_id
-  WHERE
-    se.id = ANY(p_ids)
-  GROUP BY
-    se.id
-)
-SELECT
-  coalesce(jsonb_agg(jsonb_build_object('id', s.id, 'start', s."start", 'end', s."end", 'courseType', s.course_type, 'rooms', s.room_agg, 'module', mc.id, 'moduleTitle', mc.title, 'moduleAbbrev', mc.abbrev, 'moduleManagement', mc.module_management, 'lecturer', coalesce(ld.lecturer_agg, '[]'::jsonb), 'teachingUnits', mtu.teaching_units, 'props', s.props)), '[]'::jsonb)
-FROM(
-  SELECT
-    se.id,
-    se."start",
-    se."end",
-    se.course_type,
-    se.module,
-    se.props,
-    jsonb_agg(jsonb_build_object('id', r.id, 'abbrev', r.abbrev)) AS room_agg
-  FROM
-    schedule.schedule_entry se
-  CROSS JOIN LATERAL unnest(se.rooms) AS room_id
-  JOIN schedule.room r ON r.id = room_id
-WHERE
-  se.id = ANY(p_ids)
-GROUP BY
-  se.id,
-  se."start",
-  se."end",
-  se.course_type,
-  se.module,
-  se.props) s
-  LEFT JOIN lecturer_data ld ON ld.entry_id = s.id
+      CROSS JOIN LATERAL jsonb_array_elements_text(se.props -> 'lecturer') AS lec_id
+      JOIN core.identity i ON i.id = lec_id
+    WHERE
+      se.id = ANY(p_ids)
+    GROUP BY
+      se.id) ld ON ld.entry_id = s.id
   JOIN modules.module_core_raw mc ON mc.id = s.module
   JOIN schedule.module_teaching_unit mtu ON mtu.module = mc.id;
 $$;
 
+-- Returns enriched schedule entries that fall fully inside the requested time
+-- window. The JSON shape matches the id-based overload so callers can switch
+-- filters without reshaping the response.
 CREATE OR REPLACE FUNCTION schedule.get_schedule_entries(p_start timestamp, p_end timestamp)
   RETURNS jsonb
   LANGUAGE sql
   STABLE
   AS $$
-  WITH lecturer_data AS(
+  SELECT
+    coalesce(jsonb_agg(jsonb_build_object('id', s.id, 'start', s."start", 'end', s."end", 'courseType', s.course_type, 'rooms', s.room_agg, 'module', mc.id, 'moduleTitle', mc.title, 'moduleAbbrev', mc.abbrev, 'moduleManagement', mc.module_management, 'lecturer', coalesce(ld.lecturer_agg, '[]'::jsonb), 'teachingUnits', mtu.teaching_units, 'props', s.props)), '[]'::jsonb)
+  FROM(
+    SELECT
+      se.id,
+      se."start",
+      se."end",
+      se.course_type,
+      se.module,
+      se.props,
+      jsonb_agg(jsonb_build_object('id', r.id, 'abbrev', r.abbrev)) AS room_agg
+    FROM
+      schedule.schedule_entry se
+    CROSS JOIN LATERAL unnest(se.rooms) AS room_id
+    JOIN schedule.room r ON r.id = room_id
+  WHERE
+    se."start" >= p_start
+    AND se."start" < p_end
+    AND se."end" < p_end
+  GROUP BY
+    se.id,
+    se."start",
+    se."end",
+    se.course_type,
+    se.module,
+    se.props) s
+  LEFT JOIN(
     SELECT
       se.id AS entry_id,
       coalesce(jsonb_agg(jsonb_build_object('id', i.id, 'kind', i.kind, 'label', CASE WHEN i.kind = 'person' THEN
@@ -797,42 +886,14 @@ CREATE OR REPLACE FUNCTION schedule.get_schedule_entries(p_start timestamp, p_en
             END)), '[]'::jsonb) AS lecturer_agg
     FROM
       schedule.schedule_entry se
-    CROSS JOIN LATERAL jsonb_array_elements_text(se.props -> 'lecturer') AS lec_id
-    JOIN core.identity i ON i.id = lec_id
-  WHERE
-    se."start" >= p_start
-    AND se."start" < p_end
-    AND se."end" < p_end
-  GROUP BY
-    se.id
-)
-SELECT
-  coalesce(jsonb_agg(jsonb_build_object('id', s.id, 'start', s."start", 'end', s."end", 'courseType', s.course_type, 'rooms', s.room_agg, 'module', mc.id, 'moduleTitle', mc.title, 'moduleAbbrev', mc.abbrev, 'moduleManagement', mc.module_management, 'lecturer', coalesce(ld.lecturer_agg, '[]'::jsonb), 'teachingUnits', mtu.teaching_units, 'props', s.props)), '[]'::jsonb)
-FROM(
-  SELECT
-    se.id,
-    se."start",
-    se."end",
-    se.course_type,
-    se.module,
-    se.props,
-    jsonb_agg(jsonb_build_object('id', r.id, 'abbrev', r.abbrev)) AS room_agg
-  FROM
-    schedule.schedule_entry se
-  CROSS JOIN LATERAL unnest(se.rooms) AS room_id
-  JOIN schedule.room r ON r.id = room_id
-WHERE
-  se."start" >= p_start
-  AND se."start" < p_end
-  AND se."end" < p_end
-GROUP BY
-  se.id,
-  se."start",
-  se."end",
-  se.course_type,
-  se.module,
-  se.props) s
-  LEFT JOIN lecturer_data ld ON ld.entry_id = s.id
+      CROSS JOIN LATERAL jsonb_array_elements_text(se.props -> 'lecturer') AS lec_id
+      JOIN core.identity i ON i.id = lec_id
+    WHERE
+      se."start" >= p_start
+      AND se."start" < p_end
+      AND se."end" < p_end
+    GROUP BY
+      se.id) ld ON ld.entry_id = s.id
   JOIN modules.module_core_raw mc ON mc.id = s.module
   JOIN schedule.module_teaching_unit mtu ON mtu.module = mc.id;
 $$;

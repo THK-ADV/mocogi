@@ -10,7 +10,6 @@ import scala.concurrent.Future
 
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.db.slick.HasDatabaseConfigProvider
-import slick.jdbc.GetResult
 import slick.jdbc.JdbcProfile
 
 @Singleton
@@ -25,7 +24,7 @@ final class JSONRepository @Inject() (
     db.run(query)
   }
 
-  def get(id: UUID): Future[Option[String]] = {
+  def getModuleDetails(id: UUID): Future[Option[String]] = {
     val query = sql"select modules.get_module_details(${id.toString}::uuid)".as[Option[String]].head
     db.run(query)
   }
