@@ -43,7 +43,7 @@ final class ScheduleEntryBootstrapRepository @Inject() (
           m.po.optional.foreach(po => pos.add(po.po))
           (id.get, pos.toList)
       }
-      _ <- moduleTeachingUnitRepository.recreate(entries)
+      _ <- moduleTeachingUnitRepository.update(entries)
     } yield ()
 
   // TODO: This is only used to bootstrap schedule entries

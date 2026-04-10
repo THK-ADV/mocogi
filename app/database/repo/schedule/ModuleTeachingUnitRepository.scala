@@ -24,10 +24,10 @@ final class ModuleTeachingUnitRepository @Inject() (
   import profile.api.*
 
   /**
-   * Recreates the mapping between modules and teaching units in the database.
+   * Updates the mapping between modules and teaching units in the database.
    * UUID is the module ID. List[String] is the PO-ID.
    */
-  def recreate(modules: Seq[(UUID, List[String])]): Future[Unit] =
+  def update(modules: Seq[(UUID, List[String])]): Future[Unit] =
     for {
       teachingUnits <- db.run(TableQuery[TeachingUnitTable].result)
       entries = {
@@ -42,10 +42,10 @@ final class ModuleTeachingUnitRepository @Inject() (
           ModuleTeachingUnit(module, tus.toList)
         }
       }
-      recreate <- db.run(
+      _ <- db.run(
         DBIO
           .seq(
-            TableQuery[ModuleTeachingUnitTable].delete,
+            TableQuery[ModuleTeachingUnitTable].filter(_.module.inSet(modules.map(_._1))).delete,
             TableQuery[ModuleTeachingUnitTable].insertAll(entries),
           )
           .transactionally
