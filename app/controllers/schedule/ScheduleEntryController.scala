@@ -21,6 +21,7 @@ import permission.SchedulePlanningCheck
 import play.api.cache.Cached
 import play.api.libs.json.Json
 import play.api.mvc.*
+import security.ClientErrorResponse
 
 @Singleton
 final class ScheduleEntryController @Inject() (
@@ -29,6 +30,7 @@ final class ScheduleEntryController @Inject() (
     cached: Cached,
     auth: AuthorizationAction,
     val permissionRepository: PermissionRepository,
+    val clientErrors: ClientErrorResponse,
     implicit val ctx: ExecutionContext
 ) extends AbstractController(cc)
     with UserResolveAction

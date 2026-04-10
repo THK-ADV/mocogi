@@ -29,6 +29,7 @@ import play.api.libs.json.JsNull
 import play.api.libs.json.Json
 import play.api.mvc.AbstractController
 import play.api.mvc.ControllerComponents
+import security.ClientErrorResponse
 
 @Singleton
 final class GitController @Inject() (
@@ -42,6 +43,7 @@ final class GitController @Inject() (
     gitConfig: GitConfig,
     cached: Cached,
     val permissionRepository: PermissionRepository,
+    val clientErrors: ClientErrorResponse,
     implicit val ctx: ExecutionContext
 ) extends AbstractController(cc)
     with AdminCheck

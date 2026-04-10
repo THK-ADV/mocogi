@@ -25,6 +25,7 @@ import database.repo.schedule.ScheduleEntryBootstrapRepository
 import controllers.actions.UserRequest
 import play.api.libs.json.JsArray
 import play.api.libs.json.JsValue
+import security.ClientErrorResponse
 
 final class AdminController @Inject() (
     cc: ControllerComponents,
@@ -34,6 +35,7 @@ final class AdminController @Inject() (
     downloadService: GitFileService,
     val permissionRepository: PermissionRepository,
     val scheduleEntryBootstrapRepo: ScheduleEntryBootstrapRepository,
+    val clientErrors: ClientErrorResponse,
     implicit val gitConfig: GitConfig,
     implicit val ctx: ExecutionContext
 ) extends AbstractController(cc)

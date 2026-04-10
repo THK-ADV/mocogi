@@ -15,6 +15,7 @@ import play.api.libs.json.Json
 import play.api.libs.json.Writes
 import play.api.mvc.AbstractController
 import play.api.mvc.ControllerComponents
+import security.ClientErrorResponse
 import service.core.AssessmentMethodService
 
 @Singleton
@@ -22,8 +23,10 @@ final class AssessmentMethodController @Inject() (
     cc: ControllerComponents,
     service: AssessmentMethodService,
     cached: Cached,
+    val clientErrors: ClientErrorResponse,
     implicit val ctx: ExecutionContext
-) extends AbstractController(cc) {
+) extends AbstractController(cc)
+    with UsesClientErrors {
 
   def all() =
     cached.status(r => r.method + r.uri, 200, 1.hour) {
@@ -37,7 +40,7 @@ final class AssessmentMethodController @Inject() (
             service.all().map(xs => Ok(Json.toJson(xs)))
           case _ =>
             Future.successful(
-              ErrorHandler.badRequest(
+              clientErrors.badRequest(
                 r,
                 s"unable to handle query parameter ${r.queryString}"
               )

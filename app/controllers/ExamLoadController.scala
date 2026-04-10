@@ -19,6 +19,7 @@ import play.api.mvc.AbstractController
 import play.api.mvc.Action
 import play.api.mvc.AnyContent
 import play.api.mvc.ControllerComponents
+import security.ClientErrorResponse
 import service.artifact.ExamLoadService
 import service.StudyProgramPrivilegesService
 
@@ -30,6 +31,7 @@ final class ExamLoadController @Inject() (
     val permissionRepository: PermissionRepository,
     val studyProgramPrivilegesService: StudyProgramPrivilegesService,
     @Named("tmp.dir") tmpDir: String,
+    val clientErrors: ClientErrorResponse,
     implicit val ctx: ExecutionContext
 ) extends AbstractController(cc)
     with ArtifactCheck

@@ -23,6 +23,7 @@ import play.api.mvc.AbstractController
 import play.api.mvc.AnyContent
 import play.api.mvc.ControllerComponents
 import play.api.Logging
+import security.ClientErrorResponse
 import service.*
 import service.pipeline.PipelineError.parsingErrorWrites
 
@@ -36,6 +37,7 @@ final class ModuleDraftController @Inject() (
     val moduleUpdatePermissionService: ModuleUpdatePermissionService,
     val permissionRepository: PermissionRepository,
     @Named("git.repoUrl") val repoUrl: String,
+    val clientErrors: ClientErrorResponse,
     implicit val ctx: ExecutionContext
 ) extends AbstractController(cc)
     with ModuleDraftCheck

@@ -13,6 +13,7 @@ import permission.ServiceAccountCheck
 import play.api.mvc.AbstractController
 import play.api.mvc.AnyContent
 import play.api.mvc.ControllerComponents
+import security.ClientErrorResponse
 import service.image.PeopleImageUpdateActor
 import service.notification.ReviewNotificationActor.DryRun
 import service.notification.ReviewNotificationActor.NotifyAllPendingReviews
@@ -22,6 +23,7 @@ final class ServiceController @Inject() (
     auth: AuthorizationAction,
     @Named("ReviewNotificationActor") reviewNotifier: ActorRef,
     @Named("PeopleImageUpdateActor") imageUpdater: ActorRef,
+    val clientErrors: ClientErrorResponse,
     implicit val ctx: ExecutionContext
 ) extends AbstractController(cc)
     with ServiceAccountCheck {

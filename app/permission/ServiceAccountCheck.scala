@@ -4,12 +4,11 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 import auth.TokenRequest
-import play.api.libs.json.Json
+import controllers.UsesClientErrors
 import play.api.mvc.ActionFilter
 import play.api.mvc.Result
-import play.api.mvc.Results.Forbidden
 
-trait ServiceAccountCheck {
+trait ServiceAccountCheck extends UsesClientErrors {
   protected implicit def ctx: ExecutionContext
 
   def hasRole(role: Role) =
@@ -18,7 +17,7 @@ trait ServiceAccountCheck {
         if request.token.roles.contains(role.id) then Future.successful(None)
         else
           Future.successful(
-            Some(Forbidden(Json.obj("request" -> request.toString(), "message" -> "insufficient permissions")))
+            Some(clientErrors.forbidden(request, "insufficient permissions"))
           )
 
       protected override def executionContext: ExecutionContext = ctx

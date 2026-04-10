@@ -17,7 +17,6 @@ import play.api.db.slick.DatabaseConfigProvider
 import play.api.db.slick.HasDatabaseConfigProvider
 import slick.jdbc.GetResult
 import slick.jdbc.JdbcProfile
-import slick.jdbc.TypedParameter
 
 @Singleton
 final class ModuleUpdatePermissionRepository @Inject() (
@@ -106,23 +105,21 @@ final class ModuleUpdatePermissionRepository @Inject() (
         .result
     )
 
-  private def arrayLiteral(pos: Iterable[String]) =
-    "'{" + pos.mkString(",") + "}'"
-
   def allForUser(cid: CampusId): Future[String] = {
     val query = sql"select modules.get_modules_for_user(${cid.value}::text)".as[String].head
     db.run(query)
   }
 
   def allForPos(pos: Set[String]): Future[String] = {
-    val query = sql"select modules.get_modules_for_po(#${arrayLiteral(pos)}::text[])".as[String].head
+    import database.MyPostgresProfile.MyAPI.setStringArray
+    val query = sql"select modules.get_modules_for_po(${pos.toList})".as[String].head
     db.run(query)
   }
 
   // Checks if the module has a PO relationship with any of the passed POs. Both live and draft modules are considered
   def isModulePartOfPO(module: UUID, pos: Set[String]): Future[Boolean] = {
-    val query =
-      sql"select modules.module_of_po(${module.toString}::uuid, #${arrayLiteral(pos)}::text[])".as[Boolean].head
+    import database.MyPostgresProfile.MyAPI.setStringArray
+    val query = sql"select modules.module_of_po(${module.toString}::uuid, ${pos.toList})".as[Boolean].head
     db.run(query)
   }
 }

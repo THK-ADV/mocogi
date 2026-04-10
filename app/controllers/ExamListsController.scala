@@ -29,6 +29,7 @@ import play.api.libs.json.Json
 import play.api.libs.json.Reads
 import play.api.mvc.*
 import play.mvc.Http.HeaderNames
+import security.ClientErrorResponse
 import service.artifact.ExamListService
 import service.StudyProgramPrivilegesService
 
@@ -42,6 +43,7 @@ final class ExamListsController @Inject() (
     val permissionRepository: PermissionRepository,
     val studyProgramPrivilegesService: StudyProgramPrivilegesService,
     val examListRepo: ExamListRepository,
+    val clientErrors: ClientErrorResponse,
     implicit val ctx: ExecutionContext
 ) extends AbstractController(cc)
     with ArtifactCheck
@@ -70,7 +72,7 @@ final class ExamListsController @Inject() (
               .recoverWith {
                 case NonFatal(e) =>
                   file.getParent.deleteDirectory()
-                  Future.successful(ErrorHandler.internalServerError(r.toString, e))
+                  Future.successful(clientErrors.internalServerError(r, e))
               }
           case _ =>
             Future.successful(
@@ -82,10 +84,21 @@ final class ExamListsController @Inject() (
       }
 
   def getFile(filename: String): Action[AnyContent] =
-    Action { (r: Request[AnyContent]) =>
-      val p = Paths.get(examListFolder).resolve(filename)
-      if Files.exists(p) then Ok.sendFile(content = p.toFile, fileName = f => Some(f.getName))
-      else NotFound
+    Action { (_: Request[AnyContent]) =>
+      resolveExamListFile(filename) match
+        case Some(p) if Files.isRegularFile(p) =>
+          Ok.sendFile(content = p.toFile, fileName = f => Some(f.getName))
+        case _ => NotFound
+    }
+
+  /** Only serves files that lie inside [[examListFolder]] after normalization (path traversal safe). */
+  private def resolveExamListFile(filename: String): Option[Path] =
+    val trimmed = filename.trim
+    if trimmed.isEmpty || trimmed != filename || trimmed.indexOf('\u0000') >= 0 then None
+    else {
+      val base     = Paths.get(examListFolder).toAbsolutePath.normalize()
+      val resolved = base.resolve(trimmed).normalize()
+      Option.when(resolved.startsWith(base))(resolved)
     }
 
   def getAll(): Action[AnyContent] =

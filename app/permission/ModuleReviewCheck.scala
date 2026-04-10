@@ -7,17 +7,15 @@ import scala.concurrent.Future
 
 import controllers.actions.UserRequest
 import controllers.ModuleReviewRequest
+import controllers.UsesClientErrors
 import ops.||
 import permission.PermissionType.ApprovalFastForward
-import play.api.libs.json.Json
 import play.api.mvc.ActionFilter
 import play.api.mvc.Result
-import play.api.mvc.Results
-import play.api.mvc.Results.Forbidden
 import service.ModuleReviewService
 import service.ModuleUpdatePermissionService
 
-trait ModuleReviewCheck {
+trait ModuleReviewCheck extends UsesClientErrors {
   protected def moduleReviewService: ModuleReviewService
   protected def moduleUpdatePermissionService: ModuleUpdatePermissionService
   protected implicit def ctx: ExecutionContext
@@ -38,16 +36,14 @@ trait ModuleReviewCheck {
                 case true  => None
                 case false =>
                   Some(
-                    Forbidden(
-                      Json.obj(
-                        "request" -> request.toString(),
-                        "message" -> s"user ${request.request.token.username} has insufficient permissions to review the module"
-                      )
+                    clientErrors.forbidden(
+                      request,
+                      s"user ${request.request.token.username} has insufficient permissions to review the module"
                     )
                   )
               }
             case _ =>
-              Future.successful(Some(Results.BadRequest(Json.obj("message" -> "Invalid request body"))))
+              Future.successful(Some(clientErrors.badRequest(request, "Invalid request body")))
           }
         }
       }
@@ -73,11 +69,9 @@ trait ModuleReviewCheck {
           case true  => None
           case false =>
             Some(
-              Forbidden(
-                Json.obj(
-                  "request" -> request.toString(),
-                  "message" -> s"user ${request.request.token.username} has insufficient permissions to fast-forward review for the module"
-                )
+              clientErrors.forbidden(
+                request,
+                s"user ${request.request.token.username} has insufficient permissions to fast-forward review for the module"
               )
             )
         }
