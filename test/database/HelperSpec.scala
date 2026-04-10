@@ -20,7 +20,7 @@ final class HelperSpec extends DatabaseSnapshotSuite {
     }
   }
 
-    test("resolve assessment methods for pp") {
+  test("resolve assessment methods for pp") {
     assertSnapshot("database/expected/helper/resolve_assessment_methods_pp.txt") {
       sql"""SELECT jsonb_pretty(modules.resolve_assessment_methods('e37c5af9-6076-4f15-8c8b-d206b7091bc0'::uuid)::jsonb)::text"""
         .as[String]
@@ -43,7 +43,7 @@ final class HelperSpec extends DatabaseSnapshotSuite {
         .head
     }
   }
-  
+
   test("resolve po relationships for fsios") {
     assertSnapshot("database/expected/helper/resolve_po_relationships_fsios.txt") {
       sql"""SELECT jsonb_pretty(to_jsonb(t.*))::text FROM modules.resolve_po_relationships('6d7e31f7-0b9e-4162-be4e-89a977c0a9ed'::uuid) t"""

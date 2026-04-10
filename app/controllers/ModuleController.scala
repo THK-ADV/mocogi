@@ -12,8 +12,6 @@ import auth.AuthorizationAction
 import database.repo.JSONRepository
 import database.view.ModuleViewRepository
 import git.api.GitFileService
-import models.ModuleManagement
-import models.StudyProgramModuleAssociation
 import ops.or
 import play.api.cache.Cached
 import play.api.i18n.I18nSupport
@@ -44,15 +42,7 @@ final class ModuleController @Inject() (
     case Live
     case All
 
-  implicit def moduleManagementWrites: Writes[ModuleManagement] = Json.writes
-
-  implicit def studyProgramAssocWrites: Writes[StudyProgramModuleAssociation[Iterable[Int]]] =
-    Json.writes
-
-  implicit def moduleViewWrites: Writes[ModuleViewRepository#Entry] =
-    Json.writes[ModuleViewRepository#Entry]
-
-  private def caching = cached.status(r => r.method + r.uri, 200, 1.hour)
+  private def caching = cached.status(r => r.method + r.uri, 200, 10.minutes)
 
   def all() =
     caching {
@@ -76,7 +66,7 @@ final class ModuleController @Inject() (
           case (false, true, false, false, None, DataSource.Live) =>
             moduleViewRepository
               .all()
-              .map(xs => Ok(Json.toJson(xs)))
+              .map(Ok(_))
           case (false, false, true, false, None, ds) =>
             val modules = ds.match
               case DataSource.Live => service.allGenericModulesWithPOs()
