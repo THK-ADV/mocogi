@@ -13,9 +13,7 @@ import parsing.metadata.MetadataCompositeParser
 import parsing.types.ModuleContent
 import parsing.types.ParsedMetadata
 import parsing.types.Rest
-import play.api.Logging
 import service.core.*
-import service.ParsingResult
 
 @Singleton
 private[pipeline] final class MetadataParsingService @Inject() (
@@ -30,7 +28,9 @@ private[pipeline] final class MetadataParsingService @Inject() (
     private val poService: POService,
     private val specializationService: SpecializationService,
     private implicit val ctx: ExecutionContext
-) extends Logging {
+) {
+  private type ParsingResult =
+    Future[Either[Seq[PipelineError], Seq[(Print, ParsedMetadata, ModuleContent, ModuleContent)]]]
 
   private def parser = {
     val locations         = locationService.all()
@@ -74,11 +74,11 @@ private[pipeline] final class MetadataParsingService @Inject() (
         val rest     = Rest(parseRes._2)
         res match {
           case Left(err) =>
-            Left(PipelineError.Parser(err, None))
+            Left(PipelineError.parser(err, None))
           case Right((print, parsedMetadata)) =>
             ModuleContentParser.parse(rest.value)._1 match {
               case Left(err) =>
-                Left(PipelineError.Parser(err, Some(parsedMetadata.id)))
+                Left(PipelineError.parser(err, Some(parsedMetadata.id)))
               case Right((de, en)) =>
                 Right((print, parsedMetadata, de, en))
             }
@@ -89,12 +89,7 @@ private[pipeline] final class MetadataParsingService @Inject() (
 
   def parse(print: Print): Future[Either[ParsingError, (ParsedMetadata, ModuleContent, ModuleContent)]] =
     parser.map { p =>
-      val (res, rest) = p.zip(ModuleContentParser.parser).parse(print.value)
-      if rest.nonEmpty then {
-        logger.error(
-          s"failed to parse ${print.value.take(20)} …. expected file to be fully parsed, but the remaining string is: $rest"
-        )
-      }
+      val (res, _) = p.zip(ModuleContentParser.parser).parse(print.value)
       res.map { case (m, (de, en)) => (m, de, en) }
     }
 }

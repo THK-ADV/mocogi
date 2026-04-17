@@ -8,7 +8,6 @@ import parsing.types.ModuleContent
 import parsing.types.ParsedMetadata
 import validation.MetadataValidator
 import validation.Validation
-import validation.ValidationError
 
 private[pipeline] object MetadataValidationService {
 
@@ -25,11 +24,7 @@ private[pipeline] object MetadataValidationService {
       parsed.partitionMap {
         case (print, parsedMetadata, de, en) =>
           validator(parsedMetadata).bimap(
-            errs =>
-              PipelineError.Validator(
-                ValidationError(errs),
-                Some(parsedMetadata.id)
-              ),
+            errs => PipelineError.validator(errs, Some(parsedMetadata.id)),
             metadata => (print, Module(metadata, de, en))
           )
       }

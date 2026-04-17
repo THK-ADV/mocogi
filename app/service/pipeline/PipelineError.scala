@@ -26,6 +26,18 @@ object PipelineError {
   case class Printer(error: PrintingError, metadata: Option[UUID])     extends PipelineError
   case class Validator(error: ValidationError, metadata: Option[UUID]) extends PipelineError
 
+  def parser(error: ParsingError, metadata: Option[UUID]): PipelineError =
+    Parser(error, metadata)
+
+  def printer(error: PrintingError, metadata: Option[UUID]): PipelineError =
+    Printer(error, metadata)
+
+  def validator(error: ValidationError, metadata: Option[UUID]): PipelineError =
+    Validator(error, metadata)
+
+  def validator(errs: Seq[String], metadata: Option[UUID]): PipelineError =
+    Validator(ValidationError(errs.toList), metadata)
+
   implicit def parsingErrorWrites: Writes[ParsingError] = Json.writes
 
   implicit def printingErrorWrites: Writes[PrintingError] = Json.writes
