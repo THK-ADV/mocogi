@@ -26,6 +26,9 @@ import security.ClientErrorResponse
 import settings.AppSettings
 import service.*
 import service.pipeline.PipelineError.parsingErrorWrites
+import service.ModuleDraftService
+import service.ModuleReviewService
+import service.ModuleUpdateRequest
 
 @Singleton
 final class ModuleDraftController @Inject() (

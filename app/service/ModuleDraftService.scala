@@ -119,7 +119,7 @@ final class ModuleDraftService @Inject() (
     for {
       draft <- repo
         .getByModule(request.moduleId)
-        .continueIf(_.state().canEdit(request.canApproveModule), "can't edit module")
+        .continueIf(draft => canEdit(draft.state(), request.canApproveModule), "can't edit module")
       origin <- getFromStaging(draft.module)
       existing                = draft.protocol()
       (updated, modifiedKeys) = diff(
@@ -157,7 +157,7 @@ final class ModuleDraftService @Inject() (
                   )
                   updatedDraft <- repo.getByModule(request.moduleId)
                   _            <-
-                    if updatedDraft.state() == ModuleDraftState.WaitingForChanges then
+                    if shouldClearMergeRequest(updatedDraft.state()) then
                       repo.updateMergeRequest(request.moduleId, None)
                     else Future.unit
                 } yield Right(())
@@ -219,4 +219,18 @@ final class ModuleDraftService @Inject() (
 
   private def keysToBeReviewed(updatedKeys: Set[String]): Set[String] =
     updatedKeys.filter(keysToReview.contains)
+
+  private def canEdit(state: ModuleDraftState, canApproveModule: Boolean): Boolean = {
+    val canEditByState = state match {
+      case ModuleDraftState.Published | ModuleDraftState.ValidForReview | ModuleDraftState.ValidForPublication |
+          ModuleDraftState.WaitingForChanges =>
+        true
+      case ModuleDraftState.WaitingForReview | ModuleDraftState.Unknown | ModuleDraftState.WaitingForPublication =>
+        false
+    }
+    canEditByState || (state == ModuleDraftState.WaitingForReview && canApproveModule)
+  }
+
+  private def shouldClearMergeRequest(state: ModuleDraftState): Boolean =
+    state == ModuleDraftState.WaitingForChanges
 }

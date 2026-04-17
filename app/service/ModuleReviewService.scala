@@ -65,7 +65,9 @@ final class ModuleReviewService @Inject() (
    * @return
    */
   def create(moduleId: UUID, author: Identity.Person): Future[Unit] = {
-    val draft = draftRepo.getByModule(moduleId).continueIf(_.state().canRequestReview, "can't request a review")
+    val draft = draftRepo
+      .getByModule(moduleId)
+      .continueIf(d => canRequestReview(d.state()), "can't request a review")
     for {
       draft        <- draft
       mergeRequest <-
@@ -91,7 +93,9 @@ final class ModuleReviewService @Inject() (
    * @return
    */
   def fastForward(moduleId: UUID, author: Identity.Person): Future[Unit] = {
-    val draft = draftRepo.getByModule(moduleId).continueIf(_.state().canRequestReview, "can't request a review")
+    val draft = draftRepo
+      .getByModule(moduleId)
+      .continueIf(d => canRequestReview(d.state()), "can't request a review")
     for {
       draft        <- draft
       mergeRequest <- createFastForwardReview(draft, author)
@@ -154,15 +158,32 @@ final class ModuleReviewService @Inject() (
       comment.fold(body)(c => s"$body\n\nComment: $c")
     }
 
+    def handleApprove(moduleId: UUID, mergeRequestId: MergeRequestId) =
+      for {
+        reviews <- reviewRepo.getStatusByModule(moduleId)
+        _       <-
+          if (reviews.forall(_ == Approved)) {
+            for {
+              status <- api.approve(mergeRequestId)
+              _      <- draftRepo.updateMergeRequestStatus(moduleId, status)
+            } yield ()
+          } else {
+            Future.unit
+          }
+      } yield ()
+
+    def handleReject(moduleId: UUID, mergeRequestId: MergeRequestId) =
+      for {
+        status <- api.close(mergeRequestId)
+        _      <- draftRepo.updateMergeRequestStatus(moduleId, status)
+      } yield ()
+
     for {
       moduleId <- reviewRepo.moduleId(ids)
       draft    <- draftRepo
         .getByModuleOpt(moduleId)
         .abortIf(
-          _.forall(d =>
-            d.mergeRequestId.isEmpty || d
-              .state() != ModuleDraftState.WaitingForReview
-          ),
+          _.forall(draft => !canPerformReview(draft)),
           "one of the following errors occurred: no module draft found. no merge request id found. status is not waiting for review"
         )
         .map(_.get)
@@ -170,26 +191,7 @@ final class ModuleReviewService @Inject() (
       _      <- reviewRepo.update(ids, newStatus, comment, reviewer.id)
       status <- moduleReviewSummaryStatus(draft.module)
       _      <- api.comment(mergeRequestId, commentBody(status.get))
-      _      <-
-        if (approve) {
-          for {
-            reviews <- reviewRepo.getStatusByModule(draft.module)
-            _       <-
-              if (reviews.forall(_ == Approved)) {
-                for {
-                  status <- api.approve(mergeRequestId)
-                  _      <- draftRepo.updateMergeRequestStatus(draft.module, status)
-                } yield ()
-              } else {
-                Future.unit
-              }
-          } yield ()
-        } else {
-          for {
-            status <- api.close(mergeRequestId)
-            _      <- draftRepo.updateMergeRequestStatus(draft.module, status)
-          } yield ()
-        }
+      _      <- if approve then handleApprove(draft.module, mergeRequestId) else handleReject(draft.module, mergeRequestId)
     } yield ()
   }
 
@@ -391,4 +393,10 @@ final class ModuleReviewService @Inject() (
       }
     directorsRepository.all(affectedPos(), roles)
   }
+
+  private def canRequestReview(state: ModuleDraftState): Boolean =
+    state == ModuleDraftState.ValidForReview || state == ModuleDraftState.ValidForPublication
+
+  private def canPerformReview(draft: ModuleDraft): Boolean =
+    draft.mergeRequestId.nonEmpty && draft.state() == ModuleDraftState.WaitingForReview
 }
