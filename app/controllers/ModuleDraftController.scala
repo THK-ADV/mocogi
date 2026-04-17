@@ -2,7 +2,6 @@ package controllers
 
 import java.util.UUID
 import javax.inject.Inject
-import javax.inject.Named
 import javax.inject.Singleton
 
 import scala.concurrent.ExecutionContext
@@ -24,6 +23,7 @@ import play.api.mvc.AnyContent
 import play.api.mvc.ControllerComponents
 import play.api.Logging
 import security.ClientErrorResponse
+import settings.AppSettings
 import service.*
 import service.pipeline.PipelineError.parsingErrorWrites
 
@@ -36,7 +36,7 @@ final class ModuleDraftController @Inject() (
     val auth: AuthorizationAction,
     val moduleUpdatePermissionService: ModuleUpdatePermissionService,
     val permissionRepository: PermissionRepository,
-    @Named("git.repoUrl") val repoUrl: String,
+    appSettings: AppSettings,
     val clientErrors: ClientErrorResponse,
     implicit val ctx: ExecutionContext
 ) extends AbstractController(cc)
@@ -45,6 +45,8 @@ final class ModuleDraftController @Inject() (
     with JsonNullWritable
     with I18nSupport
     with Logging {
+
+  def repoUrl: String = appSettings.git.repoUrl
 
   // /my-modules
   def moduleDrafts() =

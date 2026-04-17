@@ -8,7 +8,6 @@ import java.time.LocalDateTime
 import java.util.Locale
 import java.util.UUID
 import javax.inject.Inject
-import javax.inject.Named
 import javax.inject.Singleton
 
 import scala.concurrent.ExecutionContext
@@ -42,6 +41,7 @@ import service.core.AssessmentMethodService
 import service.core.IdentityService
 import service.modulediff.ModuleProtocolDiff
 import service.ModuleService
+import settings.AppSettings
 
 @Singleton
 final class ModuleCatalogService @Inject() (
@@ -55,11 +55,12 @@ final class ModuleCatalogService @Inject() (
     poRepository: PORepository,
     messagesApi: MessagesApi,
     gitCLI: GitCLI,
-    @Named("path.mcIntro") mcIntroPath: String,
-    @Named("path.mcAssets") mcAssetsPath: String,
-    @Named("cmd.tex") texCommand: String,
+    appSettings: AppSettings,
     implicit val ctx: ExecutionContext
 ) extends Logging {
+  private def mcIntroPath: String  = appSettings.pandoc.mcIntroPath
+  private def mcAssetsPath: String = appSettings.pandoc.mcAssetsPath
+  private def texCommand: String   = appSettings.pandoc.texCmd
 
   private type ModuleDiffs = List[(ModuleCore, Set[String])]
 

@@ -2,7 +2,6 @@ package controllers
 
 import java.nio.file.Files
 import javax.inject.Inject
-import javax.inject.Named
 import javax.inject.Singleton
 
 import scala.concurrent.ExecutionContext
@@ -20,6 +19,7 @@ import play.api.mvc.Action
 import play.api.mvc.AnyContent
 import play.api.mvc.ControllerComponents
 import security.ClientErrorResponse
+import settings.AppSettings
 import service.artifact.ExamLoadService
 import service.StudyProgramPrivilegesService
 
@@ -30,12 +30,14 @@ final class ExamLoadController @Inject() (
     examLoadService: ExamLoadService,
     val permissionRepository: PermissionRepository,
     val studyProgramPrivilegesService: StudyProgramPrivilegesService,
-    @Named("tmp.dir") tmpDir: String,
+    appSettings: AppSettings,
     val clientErrors: ClientErrorResponse,
     implicit val ctx: ExecutionContext
 ) extends AbstractController(cc)
     with ArtifactCheck
     with UserResolveAction {
+
+  private def tmpDir: String = appSettings.play.tmpDir
 
   def generateExamLoad(studyProgram: String, po: String): Action[AnyContent] =
     auth

@@ -37,6 +37,7 @@ import play.api.Logging
 import service.mail.MailActor
 import service.mail.MailActor.SendMail
 import service.pipeline.MetadataPipeline
+import settings.AppSettings
 import service.pipeline.Print
 import service.ModuleCreationService
 
@@ -52,11 +53,13 @@ final class MergeEventHandler @Inject() (
     messages: MessagesApi,
     fileService: GitFileService,
     @Named("MailActor") mailActor: ActorRef,
-    @Named("moduleEditUrl") moduleEditUrl: String,
+    appSettings: AppSettings,
     modulePipeline: MetadataPipeline,
     implicit val ctx: ExecutionContext
 ) extends Actor
     with Logging {
+
+  private def moduleEditUrl: String = appSettings.mail.editUrl
 
   private type Action      = String
   private type Labels      = IndexedSeq[String]

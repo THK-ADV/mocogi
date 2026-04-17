@@ -16,6 +16,7 @@ import controllers.GitWebhookController.GitlabTokenHeader
 import org.apache.pekko.actor.ActorRef
 import play.api.libs.json.*
 import play.api.mvc.*
+import settings.AppSettings
 
 object GitWebhookController {
   val GitlabTokenHeader = "X-Gitlab-Token"
@@ -24,12 +25,13 @@ object GitWebhookController {
 @Singleton
 class GitWebhookController @Inject() (
     cc: ControllerComponents,
-    @Named("webhookToken") token: UUID,
+    appSettings: AppSettings,
     @Named("MergeEventHandler") mergeHandler: ActorRef,
     @Named("PreviewPushEventHandler") previewPushHandler: ActorRef,
     @Named("MainPushEventHandler") mainPushHandler: ActorRef,
     implicit val ctx: ExecutionContext
 ) extends AbstractController(cc) {
+  private def token: UUID = appSettings.git.webhookToken
 
   def onPushMain() =
     isAuthenticated(
