@@ -30,4 +30,3 @@ This repository prefers straightforward, maintainable code over clever abstracti
   - `sbt scalafixAll`
   - `sbt scalafmtAll`
 - This is required to keep formatting and rewrites consistent across the codebase.
-
