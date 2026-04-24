@@ -46,7 +46,7 @@ package object parsing {
     }
   }
 
-  def keyParser(key: String): Parser[Unit] =
+  private def keyParser(key: String): Parser[Unit] =
     skipFirst(prefix(s"$key:"))
       .skip(zeroOrMoreSpaces)
 
@@ -86,62 +86,95 @@ package object parsing {
         }
       }
 
-  def shiftSpaces(xs: List[String]): List[String] = {
-    def go(left: String, right: String): (String, String) = {
-      val leadingSpaces            = right.takeWhile(_ == ' ')
-      val rightWithoutSpaces       = right.stripPrefix(leadingSpaces)
-      val leftWithTrailingNewlines = left + ("\n" * leadingSpaces.length)
-      (leftWithTrailingNewlines, rightWithoutSpaces)
-    }
+  private def normalizeMultilineLines(lines: List[String]): List[String] =
+    lines
+      .dropWhile(_.trim.isEmpty)
+      .reverse
+      .dropWhile(_.trim.isEmpty)
+      .reverse
+      .map(_.trim)
 
-    xs.size match {
-      case 0 | 1 => xs
-      case 2     =>
-        val (l, r) = go(xs.head, xs.last)
-        List(l, r)
-      case _ =>
-        val (l, r) = go(xs.head, xs(1))
-        l :: shiftSpaces(r :: xs.drop(2))
-    }
+  private def foldMultilineParagraphs(lines: List[String]): String = {
+    val (paragraphs, currentParagraph) =
+      lines.foldLeft((List.empty[String], List.empty[String])) {
+        case ((paragraphs, currentParagraph), line) if line.nonEmpty =>
+          (paragraphs, currentParagraph :+ line)
+        case ((paragraphs, currentParagraph), _) if currentParagraph.nonEmpty =>
+          (paragraphs :+ currentParagraph.mkString(" "), Nil)
+        case (state, _) =>
+          state
+      }
+
+    val allParagraphs =
+      if (currentParagraph.nonEmpty) paragraphs :+ currentParagraph.mkString(" ")
+      else paragraphs
+
+    allParagraphs.mkString("\n")
   }
 
   private def mergeMultilineString(t: (MultilineStringStrategy, List[String])): String = {
     val strategy = t._1
-    val values   = shiftSpaces(t._2)
-    var pointer  = 1
-    val str      = values.foldLeft("") {
-      case (acc, str) =>
-        val str0 = strategy match {
-          case > if !str.endsWith("\n") && pointer != values.size =>
-            str + " "
-          case Plain if !str.endsWith("\n") && pointer != values.size =>
-            str + " "
-          case | if pointer != values.size => str + '\n'
-          case _                           => str
-        }
-        pointer += 1
-        acc + str0
+    val lines    = normalizeMultilineLines(t._2)
+    val merged   = strategy match {
+      case |     => lines.mkString("\n")
+      case >     => foldMultilineParagraphs(lines)
+      case Plain => foldMultilineParagraphs(lines)
     }
 
     strategy match {
-      case >     => str + '\n'
-      case |     => str + '\n'
-      case Plain => str
+      case > if merged.nonEmpty => merged + '\n'
+      case | if merged.nonEmpty => merged + '\n'
+      case _                    => merged
+    }
+  }
+
+  @annotation.tailrec
+  private def collectMultilineLines(
+      input: String,
+      blockIndent: Option[Int] = None,
+      acc: List[String] = Nil
+  ): (List[String], String) = {
+    if (input.isEmpty) {
+      (acc.reverse, "")
+    } else {
+      val newLineIndex = input.indexOf('\n')
+      val (line, rest) =
+        if (newLineIndex == -1) (input, "")
+        else (input.take(newLineIndex), input.drop(newLineIndex + 1))
+
+      if (line.trim.isEmpty) {
+        collectMultilineLines(rest, blockIndent, "" :: acc)
+      } else {
+        val lineIndent = line.takeWhile(_.isWhitespace).length
+
+        blockIndent match {
+          case None if lineIndent > 0 =>
+            collectMultilineLines(rest, Some(lineIndent), line.drop(lineIndent) :: acc)
+          case Some(requiredIndent) if lineIndent >= requiredIndent =>
+            collectMultilineLines(rest, blockIndent, line.drop(requiredIndent) :: acc)
+          case _ =>
+            (acc.reverse, input)
+        }
+      }
     }
   }
 
   def multilineStringForKey(key: String): Parser[String] =
-    skipFirst(prefix(s"$key:"))
-      .take(multilineStringStrategy)
-      .skip(newline)
-      .zip(
-        whitespace
-          .skip(whitespace)
-          .take(prefix(_ != '\n'))
-          .many(newline)
-      )
-      .map(mergeMultilineString)
-      .map(_.stripLeading())
+    Parser { input =>
+      val headerParser =
+        skipFirst(prefix(s"$key:"))
+          .take(multilineStringStrategy)
+          .skip(newline)
+
+      val (header, afterHeader) = headerParser.parse(input)
+      header match {
+        case Left(err) =>
+          (Left(err), input)
+        case Right(strategy) =>
+          val (lines, rest) = collectMultilineLines(afterHeader)
+          (Right(mergeMultilineString(strategy -> lines)), rest)
+      }
+    }
 
   def stringForKey(key: String): Parser[String] =
     oneOf(
