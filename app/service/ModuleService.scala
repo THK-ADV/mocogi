@@ -40,7 +40,7 @@ final class ModuleService @Inject() (
     moduleCreationService.allAsModuleCore()
 
   def allMetadata() =
-    repo.all(Map.empty).map(_.map(a => (a._1.id, a._1.metadata)))
+    repo.all(Map.empty).map(_.map { case (module, _) => (module.id, module.metadata) })
 
   def allGenericModulesWithPOs(): Future[Seq[(ModuleCore, Seq[String])]] =
     repo.allGenericModulesWithPOs()
@@ -61,11 +61,16 @@ final class ModuleService @Inject() (
     for
       modules          <- allFromPO(po, activeOnly)
       companionContent <- moduleCompanionService.allFromModules(modules.map(_._1.id.get))
-    yield modules.map {
-      case (module, _) =>
-        val companion = companionContent.collect {
-          case (companion, Some(c)) if companion.module == module.id.get => (companion.po, c)
+    yield {
+      val companionsByModule = companionContent
+        .collect {
+          case (companion, Some(content)) => companion.module -> (companion.po, content)
         }
-        (module, companion)
+        .groupMap(_._1)(_._2)
+
+      modules.map {
+        case (module, _) =>
+          module -> companionsByModule.getOrElse(module.id.get, Seq.empty)
+      }
     }
 }
