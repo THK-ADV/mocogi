@@ -1,5 +1,6 @@
 package git.api
 
+import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.UUID
 import javax.inject.Inject
@@ -19,6 +20,7 @@ import play.api.libs.ws.WSResponse
 import play.mvc.Http.HeaderNames
 import play.mvc.Http.Status
 import service.pipeline.Print
+import play.api.libs.ws.WSRequest
 
 @Singleton
 final class GitCommitService @Inject() (
@@ -125,6 +127,53 @@ final class GitCommitService @Inject() (
           .fold(a => Future.failed(JsonParseException(a)), Future.successful)
       else Future.failed(parseErrorMessage(resp))
     }
+
+  /**
+   * Returns all versions of a file on a given branch since the passed cut-off date,
+   * along with their commit id and commit date. The content is None if the file could not be
+   * downloaded for that revision (e.g. deleted).
+   */
+  def getAllVersionsOfFile(path: GitFilePath, branch: Branch, since: LocalDate): Future[List[FileVersion]] = {
+    def parseCommit(js: JsValue): JsResult[(CommitId, LocalDateTime)] =
+      for {
+        id         <- js.\("id").validate[String]
+        commitDate <- js.\("committed_date").validate[LocalDateTime]
+      } yield (CommitId(id), commitDate)
+
+    def downloadFiles(commits: List[(CommitId, LocalDateTime)]): Future[List[FileVersion]] =
+      Future.sequence(commits.map {
+        case (commitId, commitDate) =>
+          fileService.download(path, commitId).map(content => FileVersion(commitId, commitDate, content.map(_._1)))
+      })
+
+    def go(req: WSRequest): Future[List[(CommitId, LocalDateTime)]] =
+      req
+        .withHttpHeaders(tokenHeader(), contentTypeJson())
+        .get()
+        .flatMap { resp =>
+          if resp.status != Status.OK then Future.failed(parseErrorMessage(resp))
+          else {
+            val commits = resp.json
+              .validate[JsArray]
+              .map(_.value.map(parseCommit).collect { case JsSuccess(c, _) => c }.toList)
+              .getOrElse(List.empty)
+            parseNextPaginationUrl(resp) match
+              case Some(nextUrl) => go(ws.url(nextUrl)).map(_ ::: commits)
+              case None          => Future.successful(commits)
+          }
+        }
+
+    val initial = ws
+      .url(this.commitUrl())
+      .withQueryStringParameters(
+        "path"     -> path.value,
+        "ref_name" -> branch.value,
+        "since"    -> since.toString,
+        "per_page" -> "100"
+      )
+
+    go(initial).flatMap(downloadFiles)
+  }
 
   private def commit(
       branch: Branch,

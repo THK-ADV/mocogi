@@ -34,7 +34,7 @@ final class ExamListRepository @Inject() (
   def eachLatest(): Future[Seq[ExamList]] = {
     val studyProgramView = studyProgramViewRepository.tableQuery.filter(_.specializationId.isEmpty)
     val now              = LocalDate.now
-    val current          = Semester.current(now).id
+    val current          = Semester.of(now).id
     val query            = tableQuery
       .join(studyProgramView)
       .on(_.po === _.poId)

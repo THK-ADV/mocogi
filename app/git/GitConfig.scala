@@ -1,5 +1,7 @@
 package git
 
+import java.time.LocalDate
+
 case class GitConfig(
     accessToken: String,
     baseUrl: String,
@@ -14,5 +16,6 @@ case class GitConfig(
     reviewRequiredLabel: String,
     fastForwardLabel: String,
     defaultEmail: String,
-    defaultUser: String
+    defaultUser: String,
+    historySince: LocalDate
 )

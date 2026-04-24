@@ -55,6 +55,10 @@ GET           /modules/:id/latest                                     controller
 GET           /modules/:id/options                                    controllers.ModuleController.allGenericOptions(id: java.util.UUID)
 PUT           /modules/parse                                          controllers.ModuleController.parseValidate()
 
+# Module History
+
+GET           /modules/:id/history                                     controllers.ModuleHistoryController.getModuleHistory(id: java.util.UUID)
+
 # Module Catalog
 
 GET           /moduleCatalogs/:studyProgram/:po/genericModules        controllers.ModuleCatalogController.allGenericModulesForPO(studyProgram: java.lang.String, po: java.lang.String)

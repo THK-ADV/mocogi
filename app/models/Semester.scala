@@ -12,6 +12,8 @@ trait Semester extends Label {
   def id: String = s"${abbrev}_$year"
   def year: Int
   def abbrev: String
+  def start: LocalDate
+  def end: LocalDate
 }
 
 object Semester {
@@ -39,6 +41,10 @@ object Semester {
     def deLabel: String = "Wintersemester"
 
     def enLabel: String = "Winter semester"
+
+    def start: LocalDate = LocalDate.of(year, Month.SEPTEMBER, 1)
+
+    def end: LocalDate = LocalDate.of(year + 1, Month.MARCH, 1)
   }
 
   def summer(_year: Int): Semester = new Semester {
@@ -49,6 +55,10 @@ object Semester {
     def deLabel: String = "Sommersemester"
 
     def enLabel: String = "Summer semester"
+
+    def start: LocalDate = LocalDate.of(year, Month.MARCH, 1)
+
+    def end: LocalDate = LocalDate.of(year, Month.SEPTEMBER, 1)
   }
 
   private def soSeStart = Month.MARCH.getValue
@@ -73,7 +83,7 @@ object Semester {
     }
   }
 
-  def current(date: LocalDate = LocalDate.now): Semester = {
+  def of(date: LocalDate = LocalDate.now): Semester = {
     val month = date.getMonth.getValue
     if month >= soSeStart && month <= soSeEnd then Semester.summer(date.getYear)
     else if month < soSeStart then Semester.winter(date.getYear - 1)
@@ -92,7 +102,7 @@ object Semester {
   }
 
   def currentAndNext(date: LocalDate = LocalDate.now): List[Semester] =
-    List(current(date), next(date))
+    List(of(date), next(date))
 
   implicit def writes: Writes[Semester] =
     s =>
@@ -101,6 +111,8 @@ object Semester {
         "abbrev"  -> s.abbrev,
         "year"    -> s.year,
         "deLabel" -> s.deLabel,
-        "enLabel" -> s.enLabel
+        "enLabel" -> s.enLabel,
+        "start"   -> s.start,
+        "end"     -> s.end
       )
 }

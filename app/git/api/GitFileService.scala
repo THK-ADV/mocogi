@@ -39,11 +39,11 @@ final class GitFileService @Inject() (
     download(path, branch).map(_.map(_._1))
 
   /**
-   * Downloads the content of a file from a Git repository branch with its last commit ID.
+   * Downloads the content of a file from a Git repository using a branch or commit ID.
    */
-  def download(path: GitFilePath, branch: Branch): Future[Option[(GitFileContent, Option[CommitId])]] =
+  def download(path: GitFilePath, ref: Branch | CommitId): Future[Option[(GitFileContent, Option[CommitId])]] =
     ws
-      .url(fileUrlRaw(path, branch))
+      .url(fileUrlRaw(path, ref))
       .addHttpHeaders(tokenHeader())
       .get()
       .flatMap { r =>
@@ -82,6 +82,11 @@ final class GitFileService @Inject() (
         }
       }
 
-  private def fileUrlRaw(path: GitFilePath, branch: Branch) =
-    s"${config.baseUrl}/projects/${config.projectId}/repository/files/${urlEncoded(path)}/raw?ref=${branch.value}"
+  private def fileUrlRaw(path: GitFilePath, ref: Branch | CommitId) = {
+    val refValue = ref match {
+      case branch: Branch     => branch.value
+      case commitId: CommitId => commitId.value
+    }
+    s"${config.baseUrl}/projects/${config.projectId}/repository/files/${urlEncoded(path)}/raw?ref=${refValue}"
+  }
 }
