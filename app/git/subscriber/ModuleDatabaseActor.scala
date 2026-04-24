@@ -11,6 +11,10 @@ import scala.util.Success
 import database.repo.schedule.ModuleTeachingUnitRepository
 import database.view.ModuleViewRepository
 import git.subscriber.ModuleSubscribers.Handle
+import logging.AppEventLogger
+import logging.CorrelationId
+import logging.LogEvent
+import logging.LogResult
 import org.apache.pekko.actor.Actor
 import parsing.types.Module
 import play.api.Logging
@@ -29,18 +33,34 @@ final class ModuleDatabaseActor @Inject() (
     with Logging {
 
   override def receive = {
-    case Handle(modules) if modules.nonEmpty =>
+    case Handle(modules, correlationId) if modules.nonEmpty =>
+      val event   = "module.subscriber.database_sync"
       val entries = modules.map(m => (m._1, m._2.lastModified))
+      infoEvent(
+        event = event,
+        result = LogResult.Started,
+        correlationId = correlationId,
+        details = Map("moduleCount" -> entries.size.toString)
+      )
       update(entries).onComplete {
         case Success(_) =>
-          logger.info(s"successfully created or updated ${entries.size} modules")
+          infoEvent(
+            event = event,
+            result = LogResult.Succeeded,
+            correlationId = correlationId,
+            details = Map("moduleCount" -> entries.size.toString)
+          )
         case Failure(e) =>
-          logger.error(
-            s"""failed to create or update metadata
-               |  - message: ${e.getMessage}
-               |  - trace: ${e.getStackTrace.mkString(
-                "\n           "
-              )}""".stripMargin
+          AppEventLogger.error(
+            logger,
+            LogEvent(
+              event = event,
+              result = LogResult.Failed,
+              correlationId = correlationId,
+              errorCode = Some("module_database_sync_failed"),
+              details = Map("moduleCount" -> entries.size.toString)
+            ),
+            e
           )
       }
   }
@@ -66,4 +86,20 @@ final class ModuleDatabaseActor @Inject() (
         (m.metadata.id, pos.toList)
       })
     } yield ()
+
+  private def infoEvent(
+      event: String,
+      result: LogResult,
+      correlationId: CorrelationId,
+      details: Map[String, String] = Map.empty
+  ): Unit =
+    AppEventLogger.info(
+      logger,
+      LogEvent(
+        event = event,
+        result = result,
+        correlationId = correlationId,
+        details = details
+      )
+    )
 }

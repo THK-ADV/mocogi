@@ -1,102 +1,50 @@
-import java.nio.file.Paths
-import java.util.UUID
-
 import scala.annotation.unused
 
-import auth.KeycloakConfig
-import cli.GitCLI
-import com.google.inject.name.Names
 import com.google.inject.AbstractModule
 import com.google.inject.TypeLiteral
 import git.publisher.CoreDataPublisher
 import git.publisher.ModulePublisher
 import git.subscriber.ModuleDatabaseActor
 import git.subscriber.ModuleSubscribers
-import git.Branch
 import git.GitConfig
 import models.ModuleKeysToReview
-import ops.nonEmptyString
 import parsing.metadata.MetadataParser
 import parsing.metadata.THKV1Parser
 import play.api.libs.concurrent.PekkoGuiceSupport
 import play.api.Configuration
 import play.api.Environment
 import printing.yaml.MetadataYamlPrinter
-import providers.*
+import providers.ModuleSubscribersProvider
 import service.image.PeopleImageUpdateActor
 import service.mail.MailActor
 import service.mail.MailConfig
 import service.notification.ReviewNotificationActor
+import settings.AppSettings
+import settings.GitCliGuiceProvider
+import settings.GitConfigProvider
+import settings.KeycloakConfigGuiceProvider
+import settings.MailConfigGuiceProvider
+import settings.ModuleKeysToReviewProvider
 import webhook.MainPushEventHandler
 import webhook.MergeEventHandler
 import webhook.PreviewPushEventHandler
+import auth.KeycloakConfig
+import cli.GitCLI
 
-class Module(@unused environment: Environment, configuration: Configuration)
+class Module(@unused environment: Environment, @unused configuration: Configuration)
     extends AbstractModule
     with PekkoGuiceSupport {
 
   override def configure(): Unit = {
     super.configure()
 
-    bind(classOf[GitCLI])
-      .toInstance(
-        new GitCLI(
-          Branch(configuration.nonEmptyString("git.draftBranch")),
-          Paths.get(configuration.nonEmptyString("git.localGitFolderPath"))
-        )
-      )
+    bind(classOf[AppSettings]).toInstance(AppSettings.load(configuration))
+
+    bind(classOf[GitCLI]).toProvider(classOf[GitCliGuiceProvider])
+    bind(classOf[MailConfig]).toProvider(classOf[MailConfigGuiceProvider])
+    bind(classOf[KeycloakConfig]).toProvider(classOf[KeycloakConfigGuiceProvider])
 
     bind(classOf[MetadataYamlPrinter]).toInstance(new MetadataYamlPrinter(2))
-
-    bind(classOf[MailConfig]).toInstance(MailConfig(configuration.nonEmptyString("mail.sender"), 5))
-
-    bind(classOf[String])
-      .annotatedWith(Names.named("git.repoUrl"))
-      .toInstance(configuration.nonEmptyString("git.repoUrl"))
-
-    bind(classOf[String])
-      .annotatedWith(Names.named("tmp.dir"))
-      .toInstance(configuration.nonEmptyString("play.temporaryFile.dir"))
-
-    bind(classOf[String])
-      .annotatedWith(Names.named("cmd.word"))
-      .toInstance(configuration.nonEmptyString("pandoc.wordCmd"))
-
-    bind(classOf[String])
-      .annotatedWith(Names.named("cmd.tex"))
-      .toInstance(configuration.nonEmptyString("pandoc.texCmd"))
-
-    bind(classOf[String])
-      .annotatedWith(Names.named("path.mcIntro"))
-      .toInstance(configuration.nonEmptyString("pandoc.mcIntroPath"))
-
-    bind(classOf[String])
-      .annotatedWith(Names.named("path.mcAssets"))
-      .toInstance(configuration.nonEmptyString("pandoc.mcAssetsPath"))
-
-    bind(classOf[Boolean])
-      .annotatedWith(Names.named("substituteLocalisedContent"))
-      .toInstance(true)
-
-    bind(classOf[String])
-      .annotatedWith(Names.named("reviewNotificationUrl"))
-      .toInstance(configuration.nonEmptyString("mail.reviewUrl"))
-
-    bind(classOf[String])
-      .annotatedWith(Names.named("examListFolder"))
-      .toInstance(configuration.nonEmptyString("pandoc.examListOutputFolderPath"))
-
-    bind(classOf[String])
-      .annotatedWith(Names.named("moduleEditUrl"))
-      .toInstance(configuration.nonEmptyString("mail.editUrl"))
-
-    bind(classOf[UUID])
-      .annotatedWith(Names.named("webhookToken"))
-      .toInstance(UUID.fromString(configuration.nonEmptyString("git.token")))
-
-    bind(classOf[KeycloakConfig]).toInstance(
-      KeycloakConfig(configuration.nonEmptyString("keycloak.jwksUrl"), configuration.nonEmptyString("keycloak.issuer"))
-    )
 
     bind(classOf[GitConfig])
       .toProvider(classOf[GitConfigProvider])

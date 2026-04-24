@@ -6,7 +6,6 @@ import java.nio.file.Paths
 import java.time.LocalDate
 import java.time.LocalDateTime
 import javax.inject.Inject
-import javax.inject.Named
 import javax.inject.Singleton
 
 import scala.concurrent.ExecutionContext
@@ -30,6 +29,7 @@ import play.api.libs.json.Reads
 import play.api.mvc.*
 import play.mvc.Http.HeaderNames
 import security.ClientErrorResponse
+import settings.AppSettings
 import service.artifact.ExamListService
 import service.StudyProgramPrivilegesService
 
@@ -38,8 +38,7 @@ final class ExamListsController @Inject() (
     cc: ControllerComponents,
     auth: AuthorizationAction,
     service: ExamListService,
-    @Named("tmp.dir") tmpDir: String,
-    @Named("examListFolder") examListFolder: String,
+    appSettings: AppSettings,
     val permissionRepository: PermissionRepository,
     val studyProgramPrivilegesService: StudyProgramPrivilegesService,
     val examListRepo: ExamListRepository,
@@ -48,6 +47,9 @@ final class ExamListsController @Inject() (
 ) extends AbstractController(cc)
     with ArtifactCheck
     with UserResolveAction {
+
+  private def tmpDir: String         = appSettings.play.tmpDir
+  private def examListFolder: String = appSettings.pandoc.examListOutputFolderPath
 
   def currentSemesters(): Action[AnyContent] =
     Action((r: Request[AnyContent]) => Ok(Json.toJson(Semester.currentAndNext())))

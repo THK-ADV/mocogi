@@ -15,6 +15,10 @@ import git.api.GitCommitService
 import git.api.GitFileService
 import git.publisher.CoreDataPublisher
 import git.publisher.ModulePublisher
+import logging.AppEventLogger
+import logging.CorrelationId
+import logging.LogEvent
+import logging.LogResult
 import org.apache.pekko.actor.Actor
 import org.apache.pekko.actor.ActorRef
 import play.api.libs.json.*
@@ -131,8 +135,16 @@ final class MainPushEventHandler @Inject() (
       branch: Branch,
       moduleFiles: List[GitFile.ModuleFile],
       coreFiles: List[GitFile.CoreFile]
-  ) = {
-    logger.info(s"downloading ${moduleFiles.size + coreFiles.size} files...")
+  )(
+      implicit correlationId: CorrelationId
+  ): Future[(List[(GitFile.ModuleFile, GitFileContent)], List[(GitFile.CoreFile, GitFileContent)])] = {
+    val event = "git.push.main.download"
+    infoEvent(
+      event = event,
+      result = LogResult.Started,
+      branch = Some(branch),
+      details = Map("fileCount" -> (moduleFiles.size + coreFiles.size).toString)
+    )
     val downloadedModuleFiles = Future.sequence(
       moduleFiles.map { file =>
         val f = for
@@ -159,29 +171,117 @@ final class MainPushEventHandler @Inject() (
   }
 
   override def receive: Receive = {
-    case HandleEvent(json) =>
-      logger.info("start handling git push event on main branch")
+    case HandleEvent(json, incomingCorrelationId) =>
+      implicit val correlationId: CorrelationId = incomingCorrelationId
+      val event                                 = "git.push.main.process"
+      infoEvent(event = event, result = LogResult.Started)
       parse(json) match {
         case JsSuccess((branch, gitChanges), _) =>
           if (!branch.isMainBranch) {
-            logger.info(s"can't handle action on branch ${branch.value}")
+            infoEvent(
+              event = event,
+              result = LogResult.Skipped,
+              branch = Some(branch),
+              details = Map("reason" -> "not_main_branch")
+            )
           } else {
             val (moduleFiles, coreFiles) = filesToDownload(gitChanges.entries)
             if (moduleFiles.isEmpty && coreFiles.isEmpty) {
-              logger.info("can't handle empty changes")
+              infoEvent(
+                event = event,
+                result = LogResult.Skipped,
+                branch = Some(branch),
+                details = Map("reason" -> "empty_changes")
+              )
             } else {
-              downloadGitFiles(branch, moduleFiles, coreFiles).onComplete {
+              downloadGitFiles(branch, moduleFiles, coreFiles)(correlationId).onComplete {
                 case Success((moduleFiles, coreFiles)) =>
-                  modulePublisher ! ModulePublisher.NotifySubscribers(moduleFiles)
-                  coreDataPublisher ! CoreDataPublisher.Handle(coreFiles)
-                  logger.info("finished!")
+                  modulePublisher ! ModulePublisher.NotifySubscribers(moduleFiles, correlationId)
+                  coreDataPublisher ! CoreDataPublisher.Handle(coreFiles, correlationId)
+                  infoEvent(
+                    event = event,
+                    result = LogResult.Succeeded,
+                    branch = Some(branch),
+                    details = Map(
+                      "moduleFiles" -> moduleFiles.size.toString,
+                      "coreFiles"   -> coreFiles.size.toString
+                    )
+                  )
                 case Failure(e) =>
-                  logger.error("failed to download git files", e)
+                  errorEvent(
+                    event = event,
+                    result = LogResult.Failed,
+                    throwable = e,
+                    branch = Some(branch),
+                    errorCode = Some("git_file_download_failed")
+                  )
               }
             }
           }
         case JsError(errors) =>
+          warnEvent(
+            event = event,
+            result = LogResult.Skipped,
+            details = Map("reason" -> "invalid_event_payload")
+          )
           logUnhandedEvent(logger, errors)
       }
   }
+
+  private def infoEvent(
+      event: String,
+      result: LogResult,
+      branch: Option[Branch] = None,
+      details: Map[String, String] = Map.empty
+  )(implicit correlationId: CorrelationId): Unit =
+    AppEventLogger.info(
+      logger,
+      LogEvent(
+        event = event,
+        result = result,
+        correlationId = correlationId,
+        branch = branch.map(_.value),
+        details = details
+      )
+    )
+
+  private def warnEvent(
+      event: String,
+      result: LogResult,
+      branch: Option[Branch] = None,
+      errorCode: Option[String] = None,
+      details: Map[String, String] = Map.empty
+  )(implicit correlationId: CorrelationId): Unit =
+    AppEventLogger.warn(
+      logger,
+      LogEvent(
+        event = event,
+        result = result,
+        correlationId = correlationId,
+        branch = branch.map(_.value),
+        errorCode = errorCode,
+        details = details
+      )
+    )
+
+  private def errorEvent(
+      event: String,
+      result: LogResult,
+      throwable: Throwable,
+      branch: Option[Branch] = None,
+      errorCode: Option[String] = None,
+      details: Map[String, String] = Map.empty
+  )(implicit correlationId: CorrelationId): Unit =
+    AppEventLogger.error(
+      logger,
+      LogEvent(
+        event = event,
+        result = result,
+        correlationId = correlationId,
+        branch = branch.map(_.value),
+        errorCode = errorCode,
+        details = details
+      ),
+      throwable
+    )
 }

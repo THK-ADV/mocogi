@@ -27,9 +27,10 @@ trait ArtifactCheck extends UsesClientErrors {
               if studyPrograms.contains(studyProgram) then None
               else
                 Some(
-                  clientErrors.forbidden(
+                  forbiddenForUser(
                     request,
-                    s"user ${request.request.token.username} has insufficient permissions to create artifacts for $studyProgram"
+                    request.request.token.username,
+                    Some(s"to create artifacts for $studyProgram")
                   )
                 )
             }
@@ -53,9 +54,10 @@ trait ArtifactCheck extends UsesClientErrors {
               if studyPrograms.contains(studyProgram) then None
               else
                 Some(
-                  clientErrors.forbidden(
+                  forbiddenForUser(
                     request,
-                    s"user ${request.request.token.username} has insufficient permissions to preview artifacts for $studyProgram"
+                    request.request.token.username,
+                    Some(s"to preview artifacts for $studyProgram")
                   )
                 )
             }

@@ -22,6 +22,10 @@ import git.publisher.ModulePublisher
 import git.GitConfig
 import git.GitFile
 import git.GitFileStatus
+import logging.AppEventLogger
+import logging.CorrelationId
+import logging.LogEvent
+import logging.LogResult
 import org.apache.pekko.actor.ActorRef
 import permission.AdminCheck
 import play.api.cache.Cached
@@ -29,6 +33,7 @@ import play.api.libs.json.JsNull
 import play.api.libs.json.Json
 import play.api.mvc.AbstractController
 import play.api.mvc.ControllerComponents
+import play.api.Logging
 import security.ClientErrorResponse
 
 @Singleton
@@ -47,7 +52,8 @@ final class GitController @Inject() (
     implicit val ctx: ExecutionContext
 ) extends AbstractController(cc)
     with AdminCheck
-    with UserResolveAction {
+    with UserResolveAction
+    with Logging {
 
   def latestModuleUpdate() =
     cached.status(r => r.method + r.uri, 200, 30.minutes) {
@@ -61,7 +67,17 @@ final class GitController @Inject() (
 
   def updateCoreFiles() =
     auth.andThen(resolveUser).andThen(isAdmin).async { _ =>
-      for {
+      val correlationId = CorrelationId.random()
+      val event         = "git.admin.sync_core_files"
+      AppEventLogger.info(
+        logger,
+        LogEvent(
+          event = event,
+          result = LogResult.Started,
+          correlationId = correlationId
+        )
+      )
+      (for {
         paths    <- gitRepositoryApiService.listCoreFiles(gitConfig.mainBranch)
         contents <- Future.sequence(
           paths.map(path =>
@@ -71,14 +87,49 @@ final class GitController @Inject() (
           )
         )
       } yield {
-        coreDataPublisher ! CoreDataPublisher.Handle(contents)
+        coreDataPublisher ! CoreDataPublisher.Handle(contents, correlationId)
+        AppEventLogger.info(
+          logger,
+          LogEvent(
+            event = event,
+            result = LogResult.Succeeded,
+            correlationId = correlationId,
+            details = Map(
+              "pathCount"    -> paths.size.toString,
+              "contentCount" -> contents.size.toString
+            )
+          )
+        )
         NoContent
+      }).recoverWith {
+        case NonFatal(e) =>
+          AppEventLogger.error(
+            logger,
+            LogEvent(
+              event = event,
+              result = LogResult.Failed,
+              correlationId = correlationId,
+              errorCode = Some("git_admin_sync_core_failed")
+            ),
+            e
+          )
+          Future.failed(e)
       }
     }
 
   def updateModuleFiles() =
     auth.andThen(resolveUser).andThen(isAdmin).async { _ =>
-      for {
+      val correlationId = CorrelationId.random()
+      val event         = "git.admin.sync_module_files"
+      AppEventLogger.info(
+        logger,
+        LogEvent(
+          event = event,
+          result = LogResult.Started,
+          correlationId = correlationId
+        )
+      )
+      (for {
         paths   <- gitRepositoryApiService.listModuleFiles(gitConfig.mainBranch)
         modules <- Future.sequence(
           paths.par.collect {
@@ -107,8 +158,33 @@ final class GitController @Inject() (
           }.toList
         )
       } yield {
-        modulePublisher ! ModulePublisher.NotifySubscribers(modules)
+        modulePublisher ! ModulePublisher.NotifySubscribers(modules, correlationId)
+        AppEventLogger.info(
+          logger,
+          LogEvent(
+            event = event,
+            result = LogResult.Succeeded,
+            correlationId = correlationId,
+            details = Map(
+              "pathCount"   -> paths.size.toString,
+              "moduleCount" -> modules.size.toString
+            )
+          )
+        )
         NoContent
+      }).recoverWith {
+        case NonFatal(e) =>
+          AppEventLogger.error(
+            logger,
+            LogEvent(
+              event = event,
+              result = LogResult.Failed,
+              correlationId = correlationId,
+              errorCode = Some("git_admin_sync_modules_failed")
+            ),
+            e
+          )
+          Future.failed(e)
       }
     }
 }

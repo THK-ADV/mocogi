@@ -7,6 +7,7 @@ import javax.inject.Singleton
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
+import scala.util.Failure
 import scala.util.Success
 
 import database.repo.ModuleDraftRepository
@@ -14,6 +15,10 @@ import git.api.GitBranchService
 import git.api.GitCommitService
 import git.api.GitFileService
 import git.MergeRequestId
+import logging.AppEventLogger
+import logging.CorrelationId
+import logging.LogEvent
+import logging.LogResult
 import models.*
 import models.core.Identity
 import ops.continueIf
@@ -56,41 +61,99 @@ final class ModuleDraftService @Inject() (
       person: Identity.Person,
       versionScheme: VersionScheme
   ): Future[Either[PipelineError, ModuleDraft]] = {
-    val updatedKeys = nonEmptyKeys(protocol)
-    if (updatedKeys.isEmpty) Future.failed(new Exception("no changes to the module could be found"))
-    else
-      create(
-        protocol,
-        ModuleDraftSource.Added,
-        versionScheme,
-        UUID.randomUUID(),
-        person,
-        updatedKeys
-      ).andThen {
-        case Success(Right(d)) =>
-          logger.info(s"Successfully created module draft ${d.module} (${d.moduleTitle}) by ${person.id}")
-      }
+    val correlationId = CorrelationId.random()
+    val event         = "module.draft.created"
+    val updatedKeys   = nonEmptyKeys(protocol)
+    val action        =
+      if (updatedKeys.isEmpty) Future.failed(new Exception("no changes to the module could be found"))
+      else
+        create(
+          protocol,
+          ModuleDraftSource.Added,
+          versionScheme,
+          UUID.randomUUID(),
+          person,
+          updatedKeys
+        )
+    action.andThen {
+      case Success(Right(d)) =>
+        infoEvent(
+          event = event,
+          correlationId = correlationId,
+          moduleId = Some(d.module),
+          actor = Some(person.id),
+          details = Map("moduleTitle" -> d.moduleTitle)
+        )
+      case Failure(e) =>
+        errorEvent(
+          event = event,
+          correlationId = correlationId,
+          throwable = e,
+          actor = Some(person.id),
+          errorCode = Some("module_draft_create_failed")
+        )
+      case _ => ()
+    }
   }
 
-  def delete(moduleId: UUID): Future[Unit] =
-    for {
+  def delete(moduleId: UUID): Future[Unit] = {
+    val correlationId = CorrelationId.random()
+    val event         = "module.draft.deleted"
+    val action        = for {
       _ <- gitBranchService.deleteModuleBranch(moduleId)
       _ <- repo.delete(moduleId).map(_ => ())
-    } yield logger.info(s"Successfully deleted module draft $moduleId")
+    } yield infoEvent(
+      event = event,
+      correlationId = correlationId,
+      moduleId = Some(moduleId)
+    )
+    action.andThen {
+      case Failure(e) =>
+        errorEvent(
+          event = event,
+          correlationId = correlationId,
+          throwable = e,
+          moduleId = Some(moduleId),
+          errorCode = Some("module_draft_delete_failed")
+        )
+      case _ => ()
+    }
+  }
 
   def createOrUpdate(request: ModuleUpdateRequest): Future[Either[PipelineError, Unit]] =
     repo
       .hasModuleDraft(request.moduleId)
       .flatMap { hasDraft =>
-        val action = if hasDraft then update(request) else createFromExistingModule(request)
-        action.map(_.map { _ =>
-          val verb = if hasDraft then "updated" else "created"
-          logger.info(s"Successfully $verb module draft ${request.moduleId} (${request.protocol.metadata.title})")
-        })
+        val correlationId   = CorrelationId.random()
+        val (event, action) =
+          if hasDraft then ("module.draft.updated", update(request))
+          else ("module.draft.created_from_existing", createFromExistingModule(request))
+        action
+          .map(_.map { _ =>
+            infoEvent(
+              event = event,
+              correlationId = correlationId,
+              moduleId = Some(request.moduleId),
+              actor = Some(request.person.id),
+              details = Map("moduleTitle" -> request.protocol.metadata.title)
+            )
+          })
+          .andThen {
+            case Failure(e) =>
+              errorEvent(
+                event = event,
+                correlationId = correlationId,
+                throwable = e,
+                moduleId = Some(request.moduleId),
+                actor = Some(request.person.id),
+                errorCode = Some("module_draft_create_or_update_failed")
+              )
+            case _ => ()
+          }
       }
 
-  private def getFromStaging(uuid: UUID) =
-    gitFileDownloadService.downloadModuleFromPreviewBranch(uuid)
+  private def getFromStaging(id: UUID) =
+    gitFileDownloadService.downloadModuleFromPreviewBranch(id)
 
   private def createFromExistingModule(request: ModuleUpdateRequest): Future[Either[PipelineError, Unit]] =
     for {
@@ -119,7 +182,7 @@ final class ModuleDraftService @Inject() (
     for {
       draft <- repo
         .getByModule(request.moduleId)
-        .continueIf(_.state().canEdit(request.canApproveModule), "can't edit module")
+        .continueIf(draft => canEdit(draft.state(), request.canApproveModule), "can't edit module")
       origin <- getFromStaging(draft.module)
       existing                = draft.protocol()
       (updated, modifiedKeys) = diff(
@@ -157,7 +220,7 @@ final class ModuleDraftService @Inject() (
                   )
                   updatedDraft <- repo.getByModule(request.moduleId)
                   _            <-
-                    if updatedDraft.state() == ModuleDraftState.WaitingForChanges then
+                    if shouldClearMergeRequest(updatedDraft.state()) then
                       repo.updateMergeRequest(request.moduleId, None)
                     else Future.unit
                 } yield Right(())
@@ -219,4 +282,60 @@ final class ModuleDraftService @Inject() (
 
   private def keysToBeReviewed(updatedKeys: Set[String]): Set[String] =
     updatedKeys.filter(keysToReview.contains)
+
+  private def canEdit(state: ModuleDraftState, canApproveModule: Boolean): Boolean = {
+    val canEditByState = state match {
+      case ModuleDraftState.Published | ModuleDraftState.ValidForReview | ModuleDraftState.ValidForPublication |
+          ModuleDraftState.WaitingForChanges =>
+        true
+      case ModuleDraftState.WaitingForReview | ModuleDraftState.Unknown | ModuleDraftState.WaitingForPublication =>
+        false
+    }
+    canEditByState || (state == ModuleDraftState.WaitingForReview && canApproveModule)
+  }
+
+  private def shouldClearMergeRequest(state: ModuleDraftState): Boolean =
+    state == ModuleDraftState.WaitingForChanges
+
+  private def infoEvent(
+      event: String,
+      correlationId: CorrelationId,
+      moduleId: Option[UUID] = None,
+      actor: Option[String] = None,
+      details: Map[String, String] = Map.empty
+  ): Unit =
+    AppEventLogger.info(
+      logger,
+      LogEvent(
+        event = event,
+        result = LogResult.Succeeded,
+        correlationId = correlationId,
+        moduleId = moduleId,
+        actor = actor,
+        details = details
+      )
+    )
+
+  private def errorEvent(
+      event: String,
+      correlationId: CorrelationId,
+      throwable: Throwable,
+      moduleId: Option[UUID] = None,
+      actor: Option[String] = None,
+      errorCode: Option[String] = None,
+      details: Map[String, String] = Map.empty
+  ): Unit =
+    AppEventLogger.error(
+      logger,
+      LogEvent(
+        event = event,
+        result = LogResult.Failed,
+        correlationId = correlationId,
+        moduleId = moduleId,
+        actor = actor,
+        errorCode = errorCode,
+        details = details
+      ),
+      throwable
+    )
 }

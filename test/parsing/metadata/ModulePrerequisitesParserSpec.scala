@@ -52,6 +52,32 @@ class ModulePrerequisitesParserSpec extends AnyWordSpec with ParserSpecHelper wi
       assert(rest.isEmpty)
     }
 
+    "parse multiline prerequisite text without swallowing sibling keys" in {
+      val m1    = UUID.randomUUID
+      val m2    = UUID.randomUUID
+      val input =
+        s"""recommended_prerequisites:
+           |  text: |
+           |    benötigt werden grundlagen in algebra.
+           |
+           |    ein sicherer umgang mit java hilft ebenfalls.
+           |  modules:
+           |    - module.$m1
+           |    - module.$m2
+           |status: status.inactive""".stripMargin
+      val (res, rest) = ModulePrerequisitesParser.parser.parse(input)
+      assert(
+        res.value.recommended.contains(
+          ParsedPrerequisiteEntry(
+            "benötigt werden grundlagen in algebra.\n\nein sicherer umgang mit java hilft ebenfalls.\n",
+            List(m1, m2)
+          )
+        )
+      )
+      assert(res.value.required.isEmpty)
+      assert(rest == "status: status.inactive")
+    }
+
     "parse prerequisites with not text" in {
       val m1    = UUID.randomUUID
       val m2    = UUID.randomUUID

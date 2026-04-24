@@ -10,6 +10,7 @@ import scala.concurrent.Future
 
 import database.repo.ModuleRepository
 import models.core.Specialization
+import models.MetadataProtocol
 import models.ModuleCore
 import models.ModuleProtocol
 import ops.single
@@ -24,13 +25,13 @@ final class ModuleService @Inject() (
     private implicit val ctx: ExecutionContext
 ) {
 
-  def createOrUpdateMany(modules: Seq[(Module, LocalDateTime)]) =
+  def createOrUpdateMany(modules: Seq[(Module, LocalDateTime)]): Future[Unit] =
     repo.createOrUpdateMany(modules)
 
-  def get(id: UUID) =
+  def get(id: UUID): Future[ModuleProtocol] =
     repo.all(Map("id" -> Seq(id.toString))).single.map(_._1)
 
-  def getLecturers(id: UUID) =
+  def getLecturers(id: UUID): Future[Seq[String]] =
     repo.getLecturers(id)
 
   def allModuleCore(): Future[Seq[ModuleCore]] =
@@ -39,8 +40,8 @@ final class ModuleService @Inject() (
   def allNewlyCreated(): Future[Seq[ModuleCore]] =
     moduleCreationService.allAsModuleCore()
 
-  def allMetadata() =
-    repo.all(Map.empty).map(_.map(a => (a._1.id, a._1.metadata)))
+  def allMetadata(): Future[Seq[(Option[UUID], MetadataProtocol)]] =
+    repo.all(Map.empty).map(_.map { case (module, _) => (module.id, module.metadata) })
 
   def allGenericModulesWithPOs(): Future[Seq[(ModuleCore, Seq[String])]] =
     repo.allGenericModulesWithPOs()
@@ -61,11 +62,16 @@ final class ModuleService @Inject() (
     for
       modules          <- allFromPO(po, activeOnly)
       companionContent <- moduleCompanionService.allFromModules(modules.map(_._1.id.get))
-    yield modules.map {
-      case (module, _) =>
-        val companion = companionContent.collect {
-          case (companion, Some(c)) if companion.module == module.id.get => (companion.po, c)
+    yield {
+      val companionsByModule = companionContent
+        .collect {
+          case (companion, Some(content)) => companion.module -> (companion.po, content)
         }
-        (module, companion)
+        .groupMap(_._1)(_._2)
+
+      modules.map {
+        case (module, _) =>
+          module -> companionsByModule.getOrElse(module.id.get, Seq.empty)
+      }
     }
 }

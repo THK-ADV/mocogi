@@ -16,14 +16,12 @@ import database.table.PermittedAssessmentMethodForModuleTable
 import database.view.ModuleViewRepository
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.db.slick.HasDatabaseConfigProvider
-import providers.ConfigReader
 import slick.jdbc.JdbcProfile
 
 @Singleton
 final class ModuleDeletionRepository @Inject() (
     moduleRepository: ModuleRepository,
     moduleViewRepository: ModuleViewRepository,
-    configReader: ConfigReader,
     val dbConfigProvider: DatabaseConfigProvider,
     implicit val ctx: ExecutionContext
 ) extends HasDatabaseConfigProvider[JdbcProfile] {

@@ -4,7 +4,6 @@ import java.nio.file.Files
 import java.nio.file.Paths
 import java.util.UUID
 import javax.inject.Inject
-import javax.inject.Named
 import javax.inject.Singleton
 
 import scala.collection.mutable.ListBuffer
@@ -32,6 +31,7 @@ import play.mvc.Http.HeaderNames
 import printing.latex.TextIntroRewriter
 import printing.latex.WordLatexPrinter
 import security.ClientErrorResponse
+import settings.AppSettings
 import service.artifact.ModuleCatalogService
 import service.StudyProgramPrivilegesService
 
@@ -41,9 +41,7 @@ final class ModuleCatalogController @Inject() (
     catalogService: ModuleCatalogService,
     auth: AuthorizationAction,
     jsonRepo: JSONRepository,
-    @Named("tmp.dir") tmpDir: String,
-    @Named("cmd.word") wordCmd: String,
-    @Named("path.mcIntro") mcIntroPath: String,
+    appSettings: AppSettings,
     val permissionRepository: PermissionRepository,
     val studyProgramPrivilegesService: StudyProgramPrivilegesService,
     val clientErrors: ClientErrorResponse,
@@ -52,6 +50,10 @@ final class ModuleCatalogController @Inject() (
 ) extends AbstractController(cc)
     with ArtifactCheck
     with UserResolveAction {
+
+  private def tmpDir: String      = appSettings.play.tmpDir
+  private def wordCmd: String     = appSettings.pandoc.wordCmd
+  private def mcIntroPath: String = appSettings.pandoc.mcIntroPath
 
   /**
    * Returns all active generic modules for the PO

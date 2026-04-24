@@ -7,6 +7,7 @@ import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
+import cats.data.EitherT
 import models.*
 import ops.bimap
 import ops.mapErr
@@ -17,8 +18,7 @@ import parsing.types.Module
 import parsing.types.ModuleContent
 import parsing.types.ParsedMetadata
 import printing.yaml.ModuleYamlPrinter
-import service.*
-import validation.ValidationError
+import service.ModuleService
 
 @Singleton
 final class MetadataPipeline @Inject() (
@@ -27,36 +27,24 @@ final class MetadataPipeline @Inject() (
     private val moduleYamlPrinter: ModuleYamlPrinter,
     implicit val ctx: ExecutionContext
 ) {
-  def parseValidate(print: Print): Future[Module] = {
-    val parse    = parser.parse(print).unwrap
-    val existing = allModules()
+  private type ParsedModule = (ParsedMetadata, ModuleContent, ModuleContent)
 
+  def parseValidate(print: Print): Future[Module] =
     for {
-      (metadata, de, en) <- parse
-      existing           <- existing
-      metadata           <- MetadataValidationService
-        .validate(existing, metadata)
-        .mapErr(errs =>
-          PipelineError
-            .Validator(ValidationError(errs), Some(metadata.id))
-        )
-        .toFuture
-    } yield Module(metadata, de, en)
-  }
+      parsed   <- parser.parse(print).unwrap
+      existing <- allModules()
+      metadata <- validate(existing, parsed._1).toFuture
+    } yield Module(metadata, parsed._2, parsed._3)
 
-  def parseValidateMany(
-      prints: Seq[Print]
-  ): Future[Either[Seq[PipelineError], Seq[(Print, Module)]]] = {
+  def parseValidateMany(prints: Seq[Print]): Future[Either[Seq[PipelineError], Seq[(Print, Module)]]] = {
     val parse    = parser.parseMany(prints)
     val existing = allModules()
-
     for {
       parsed   <- parse
       existing <- existing
     } yield parsed match {
       case Left(value)   => Left(value)
-      case Right(parsed) =>
-        MetadataValidationService.validateMany(existing, parsed)
+      case Right(parsed) => MetadataValidationService.validateMany(existing, parsed)
     }
   }
 
@@ -64,47 +52,50 @@ final class MetadataPipeline @Inject() (
       protocol: ModuleProtocol,
       versionScheme: VersionScheme,
       moduleId: UUID
-  ): Future[Either[PipelineError, (Module, Print)]] = {
-    def print(): Either[PipelineError, Print] =
-      moduleYamlPrinter
-        .print(versionScheme, moduleId, protocol)
-        .bimap(
-          PipelineError.Printer(_, Some(moduleId)),
-          Print.apply
-        )
-
-    def parse(
-        print: Print
-    ): Future[
-      Either[PipelineError, (ParsedMetadata, ModuleContent, ModuleContent)]
-    ] =
-      parser
-        .parse(print)
-        .map(_.bimap(PipelineError.Parser(_, Some(moduleId)), identity))
-
-    def validate(
-        metadata: ParsedMetadata
-    ): Future[Either[PipelineError, Metadata]] =
-      allModules().map { existing =>
-        MetadataValidationService
-          .validate(existing, metadata)
-          .bimap(
-            errs =>
-              PipelineError
-                .Validator(ValidationError(errs), Some(metadata.id)),
-            identity
-          )
+  ): Future[Either[PipelineError, (Module, Print)]] =
+    EitherT
+      .fromEither[Future](print(protocol, versionScheme, moduleId))
+      .flatMap(print =>
+        EitherT(parse(print, moduleId))
+          .flatMap(parsed => EitherT(validate(parsed._1)).map(metadata => (print, parsed, metadata)))
+      )
+      .map {
+        case (print, (_, de, en), metadata) =>
+          (Module(metadata, de, en), print)
       }
-
-    for {
-      parsed    <- continueWith(print())(parse)
-      validated <- continueWith(parsed)(a => validate(a._2._1))
-    } yield validated.map(t => (Module(t._2, t._1._2._2, t._1._2._3), t._1._1))
-  }
+      .value
 
   private def allModules(): Future[Seq[ModuleCore]] =
-    for
+    for {
       allFromLive  <- moduleService.allModuleCore()
       allFromDraft <- moduleService.allNewlyCreated()
-    yield allFromLive ++ allFromDraft
+    } yield allFromLive ++ allFromDraft
+
+  private def print(
+      protocol: ModuleProtocol,
+      versionScheme: VersionScheme,
+      moduleId: UUID
+  ): Either[PipelineError, Print] =
+    moduleYamlPrinter
+      .print(versionScheme, moduleId, protocol)
+      .bimap(PipelineError.printer(_, Some(moduleId)), Print.apply)
+
+  private def parse(
+      print: Print,
+      moduleId: UUID
+  ): Future[Either[PipelineError, ParsedModule]] =
+    parser.parse(print).map(_.bimap(PipelineError.parser(_, Some(moduleId)), identity))
+
+  private def validate(
+      metadata: ParsedMetadata
+  ): Future[Either[PipelineError, Metadata]] =
+    allModules().map(validate(_, metadata))
+
+  private def validate(
+      existing: Seq[ModuleCore],
+      metadata: ParsedMetadata
+  ): Either[PipelineError, Metadata] =
+    MetadataValidationService
+      .validate(existing, metadata)
+      .mapErr(errs => PipelineError.validator(errs, Some(metadata.id)))
 }

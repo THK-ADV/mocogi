@@ -36,10 +36,7 @@ trait ModuleReviewCheck extends UsesClientErrors {
                 case true  => None
                 case false =>
                   Some(
-                    clientErrors.forbidden(
-                      request,
-                      s"user ${request.request.token.username} has insufficient permissions to review the module"
-                    )
+                    forbiddenForUser(request, request.request.token.username, Some("to review the module"))
                   )
               }
             case _ =>
@@ -69,9 +66,10 @@ trait ModuleReviewCheck extends UsesClientErrors {
           case true  => None
           case false =>
             Some(
-              clientErrors.forbidden(
+              forbiddenForUser(
                 request,
-                s"user ${request.request.token.username} has insufficient permissions to fast-forward review for the module"
+                request.request.token.username,
+                Some("to fast-forward review for the module")
               )
             )
         }

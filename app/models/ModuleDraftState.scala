@@ -5,22 +5,7 @@ import models.ModuleDraftState.ValidForPublication
 import models.ModuleDraftState.ValidForReview
 import play.api.libs.json.Writes
 
-sealed trait ModuleDraftState extends IDLabel {
-  def canRequestReview: Boolean =
-    this == ValidForReview || this == ValidForPublication
-
-  // canApproveModule is used to enable editing while the module is in review
-  def canEdit(canApproveModule: Boolean): Boolean = {
-    def go() = this match {
-      case ModuleDraftState.Published | ModuleDraftState.ValidForReview | ModuleDraftState.ValidForPublication |
-          ModuleDraftState.WaitingForChanges =>
-        true
-      case ModuleDraftState.WaitingForReview | ModuleDraftState.Unknown | ModuleDraftState.WaitingForPublication =>
-        false
-    }
-    go() || (this == ModuleDraftState.WaitingForReview && canApproveModule)
-  }
-}
+sealed trait ModuleDraftState extends IDLabel
 
 // changes to ModuleDraftStates have to be synchronized with the "get_modules_for_user" function in functions.sql
 

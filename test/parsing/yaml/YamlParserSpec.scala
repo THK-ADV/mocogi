@@ -178,6 +178,64 @@ final class YamlParserSpec extends AnyWordSpec with ParserSpecHelper with Either
       assert(res2.value == "paragraph1\n\nparagraph2\nparagraph3\n")
     }
 
+    "parse empty multiline blocks without consuming the next key" in {
+      val input1 =
+        """foo: |
+          |bar: baz""".stripMargin
+      val (res1, rest1) = multilineStringForKey("foo").parse(input1)
+      assert(rest1 == "bar: baz")
+      assert(res1.value.isEmpty)
+
+      val input2 =
+        """foo: >
+          |bar: baz""".stripMargin
+      val (res2, rest2) = multilineStringForKey("foo").parse(input2)
+      assert(rest2 == "bar: baz")
+      assert(res2.value.isEmpty)
+    }
+
+    "normalize indentation in multiline strings" in {
+      val input1 =
+        """foo: |
+          |  paragraph1
+          |    paragraph2
+          |  paragraph3""".stripMargin
+      val (res1, rest1) = multilineStringForKey("foo").parse(input1)
+      assert(rest1.isEmpty)
+      assert(res1.value == "paragraph1\nparagraph2\nparagraph3\n")
+
+      val input2 =
+        """foo: >
+          |  paragraph1
+          |    paragraph2
+          |  paragraph3""".stripMargin
+      val (res2, rest2) = multilineStringForKey("foo").parse(input2)
+      assert(rest2.isEmpty)
+      assert(res2.value == "paragraph1 paragraph2 paragraph3\n")
+    }
+
+    "preserve multiple blank lines for literal blocks and paragraphs for folded blocks" in {
+      val input1 =
+        """foo: |
+          |  paragraph1
+          |
+          |
+          |  paragraph2""".stripMargin
+      val (res1, rest1) = multilineStringForKey("foo").parse(input1)
+      assert(rest1.isEmpty)
+      assert(res1.value == "paragraph1\n\n\nparagraph2\n")
+
+      val input2 =
+        """foo: >
+          |  paragraph1
+          |
+          |
+          |  paragraph2""".stripMargin
+      val (res2, rest2) = multilineStringForKey("foo").parse(input2)
+      assert(rest2.isEmpty)
+      assert(res2.value == "paragraph1\nparagraph2\n")
+    }
+
     "parse a string value" in {
       val input1 =
         """foo: >
@@ -212,28 +270,6 @@ final class YamlParserSpec extends AnyWordSpec with ParserSpecHelper with Either
       val (res4, rest4) = stringForKey("foo").parse(input4)
       assert(rest4 == "bar: baz")
       assert(res4.value == "paragraph1\nparagraph2\nparagraph3\n")
-    }
-
-    "test shift spaces" in {
-      val input1  = List("paragraph1", " paragraph2")
-      val output1 = List("paragraph1\n", "paragraph2")
-      assert(shiftSpaces(input1) == output1)
-
-      val input2  = List("paragraph1", "paragraph2")
-      val output2 = List("paragraph1", "paragraph2")
-      assert(shiftSpaces(input2) == output2)
-
-      val input3  = List("paragraph1", " paragraph2", " paragraph3")
-      val output3 = List("paragraph1\n", "paragraph2\n", "paragraph3")
-      assert(shiftSpaces(input3) == output3)
-
-      val input4  = List("paragraph1", " paragraph2", "paragraph3")
-      val output4 = List("paragraph1\n", "paragraph2", "paragraph3")
-      assert(shiftSpaces(input4) == output4)
-
-      val input5  = List("paragraph1", "paragraph2", " paragraph3")
-      val output5 = List("paragraph1", "paragraph2\n", "paragraph3")
-      assert(shiftSpaces(input5) == output5)
     }
   }
 }

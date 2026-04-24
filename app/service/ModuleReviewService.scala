@@ -6,6 +6,8 @@ import javax.inject.Singleton
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
+import scala.util.Failure
+import scala.util.Success
 
 import database.repo.core.StudyProgramDirectorsRepository
 import database.repo.core.StudyProgramDirectorsRepository.StudyProgramDirector
@@ -14,6 +16,10 @@ import database.repo.ModuleReviewRepository
 import git.api.GitMergeRequestService
 import git.MergeRequestId
 import git.MergeRequestStatus
+import logging.AppEventLogger
+import logging.CorrelationId
+import logging.LogEvent
+import logging.LogResult
 import models.*
 import models.core.IDLabel
 import models.core.Identity
@@ -65,18 +71,39 @@ final class ModuleReviewService @Inject() (
    * @return
    */
   def create(moduleId: UUID, author: Identity.Person): Future[Unit] = {
-    val draft = draftRepo.getByModule(moduleId).continueIf(_.state().canRequestReview, "can't request a review")
-    for {
+    val event         = "module.review.created"
+    val correlationId = CorrelationId.random()
+    val draft         = draftRepo
+      .getByModule(moduleId)
+      .continueIf(d => canRequestReview(d.state()), "can't request a review")
+    val action = for {
       draft        <- draft
       mergeRequest <-
         if draft.keysToBeReviewed.isEmpty then createAutoAcceptedReview(draft, author)
         else createApproveReview(draft, author)
       _ <- draftRepo.updateMergeRequest(draft.module, Some(mergeRequest))
     } yield {
-      val approvalLabel = if draft.keysToBeReviewed.isEmpty then "is auto approved" else "needs review"
-      logger.info(
-        s"Successfully created merge request by ${author.id} and id ${mergeRequest._1.value} which $approvalLabel"
+      val approvalLabel = if draft.keysToBeReviewed.isEmpty then "auto_approved" else "review_required"
+      infoEvent(
+        event = event,
+        correlationId = correlationId,
+        moduleId = Some(moduleId),
+        mrId = Some(mergeRequest._1),
+        actor = Some(author.id),
+        details = Map("approvalMode" -> approvalLabel)
       )
+    }
+    action.andThen {
+      case Failure(e) =>
+        errorEvent(
+          event = event,
+          correlationId = correlationId,
+          throwable = e,
+          moduleId = Some(moduleId),
+          actor = Some(author.id),
+          errorCode = Some("module_review_create_failed")
+        )
+      case Success(_) => ()
     }
   }
 
@@ -91,14 +118,35 @@ final class ModuleReviewService @Inject() (
    * @return
    */
   def fastForward(moduleId: UUID, author: Identity.Person): Future[Unit] = {
-    val draft = draftRepo.getByModule(moduleId).continueIf(_.state().canRequestReview, "can't request a review")
-    for {
+    val event         = "module.review.fast_forwarded"
+    val correlationId = CorrelationId.random()
+    val draft         = draftRepo
+      .getByModule(moduleId)
+      .continueIf(d => canRequestReview(d.state()), "can't request a review")
+    val action = for {
       draft        <- draft
       mergeRequest <- createFastForwardReview(draft, author)
       _            <- draftRepo.updateMergeRequest(draft.module, Some(mergeRequest))
-    } yield logger.info(
-      s"Successfully created merge request by ${author.id} and id ${mergeRequest._1.value} which was instantly approved"
+    } yield infoEvent(
+      event = event,
+      correlationId = correlationId,
+      moduleId = Some(moduleId),
+      mrId = Some(mergeRequest._1),
+      actor = Some(author.id),
+      details = Map("approvalMode" -> "fast_forward")
     )
+    action.andThen {
+      case Failure(e) =>
+        errorEvent(
+          event = event,
+          correlationId = correlationId,
+          throwable = e,
+          moduleId = Some(moduleId),
+          actor = Some(author.id),
+          errorCode = Some("module_review_fast_forward_failed")
+        )
+      case Success(_) => ()
+    }
   }
 
   /**
@@ -109,16 +157,39 @@ final class ModuleReviewService @Inject() (
    * @return
    */
   def delete(moduleId: UUID): Future[Unit] = {
+    val event         = "module.review.deleted"
+    val correlationId = CorrelationId.random()
+
     def go(id: Option[MergeRequestId]) =
       for {
         _ <- id.fold(Future.unit)(api.delete)
         _ <- reviewRepo.delete(moduleId)
         _ <- draftRepo.updateMergeRequest(moduleId, None)
-      } yield logger.info(s"Successfully deleted reviews for module $moduleId")
-    draftRepo.getByModuleOpt(moduleId).flatMap {
-      case Some(draft) => go(draft.mergeRequestId)
-      case _           => Future.unit
-    }
+      } yield infoEvent(
+        event = event,
+        correlationId = correlationId,
+        moduleId = Some(moduleId),
+        mrId = id,
+        details = Map("mergeRequestPresent" -> id.nonEmpty.toString)
+      )
+
+    draftRepo
+      .getByModuleOpt(moduleId)
+      .flatMap {
+        case Some(draft) => go(draft.mergeRequestId)
+        case _           => Future.unit
+      }
+      .andThen {
+        case Failure(e) =>
+          errorEvent(
+            event = event,
+            correlationId = correlationId,
+            throwable = e,
+            moduleId = Some(moduleId),
+            errorCode = Some("module_review_delete_failed")
+          )
+        case Success(_) => ()
+      }
   }
 
   /**
@@ -142,7 +213,9 @@ final class ModuleReviewService @Inject() (
    * @return
    */
   def update(ids: List[UUID], reviewer: Identity.Person, approve: Boolean, comment: Option[String]): Future[Unit] = {
-    val newStatus = if (approve) Approved else Rejected
+    val event         = "module.review.updated"
+    val correlationId = CorrelationId.random()
+    val newStatus     = if (approve) Approved else Rejected
 
     def commentBody(summaryStatus: ModuleReviewSummaryStatus) = {
       val body =
@@ -154,15 +227,32 @@ final class ModuleReviewService @Inject() (
       comment.fold(body)(c => s"$body\n\nComment: $c")
     }
 
-    for {
+    def handleApprove(moduleId: UUID, mergeRequestId: MergeRequestId) =
+      for {
+        reviews <- reviewRepo.getStatusByModule(moduleId)
+        _       <-
+          if (reviews.forall(_ == Approved)) {
+            for {
+              status <- api.approve(mergeRequestId)
+              _      <- draftRepo.updateMergeRequestStatus(moduleId, status)
+            } yield ()
+          } else {
+            Future.unit
+          }
+      } yield ()
+
+    def handleReject(moduleId: UUID, mergeRequestId: MergeRequestId) =
+      for {
+        status <- api.close(mergeRequestId)
+        _      <- draftRepo.updateMergeRequestStatus(moduleId, status)
+      } yield ()
+
+    val action = for {
       moduleId <- reviewRepo.moduleId(ids)
       draft    <- draftRepo
         .getByModuleOpt(moduleId)
         .abortIf(
-          _.forall(d =>
-            d.mergeRequestId.isEmpty || d
-              .state() != ModuleDraftState.WaitingForReview
-          ),
+          _.forall(draft => !canPerformReview(draft)),
           "one of the following errors occurred: no module draft found. no merge request id found. status is not waiting for review"
         )
         .map(_.get)
@@ -170,27 +260,30 @@ final class ModuleReviewService @Inject() (
       _      <- reviewRepo.update(ids, newStatus, comment, reviewer.id)
       status <- moduleReviewSummaryStatus(draft.module)
       _      <- api.comment(mergeRequestId, commentBody(status.get))
-      _      <-
-        if (approve) {
-          for {
-            reviews <- reviewRepo.getStatusByModule(draft.module)
-            _       <-
-              if (reviews.forall(_ == Approved)) {
-                for {
-                  status <- api.approve(mergeRequestId)
-                  _      <- draftRepo.updateMergeRequestStatus(draft.module, status)
-                } yield ()
-              } else {
-                Future.unit
-              }
-          } yield ()
-        } else {
-          for {
-            status <- api.close(mergeRequestId)
-            _      <- draftRepo.updateMergeRequestStatus(draft.module, status)
-          } yield ()
-        }
-    } yield ()
+      _      <- if approve then handleApprove(draft.module, mergeRequestId) else handleReject(draft.module, mergeRequestId)
+    } yield infoEvent(
+      event = event,
+      correlationId = correlationId,
+      moduleId = Some(moduleId),
+      mrId = Some(mergeRequestId),
+      actor = Some(reviewer.id),
+      details = Map(
+        "approved"    -> approve.toString,
+        "reviewCount" -> ids.size.toString
+      )
+    )
+    action.andThen {
+      case Failure(e) =>
+        errorEvent(
+          event = event,
+          correlationId = correlationId,
+          throwable = e,
+          actor = Some(reviewer.id),
+          errorCode = Some("module_review_update_failed"),
+          details = Map("approved" -> approve.toString, "reviewCount" -> ids.size.toString)
+        )
+      case Success(_) => ()
+    }
   }
 
   def allByModule(moduleId: UUID): Future[Seq[ModuleReview.Atomic]] =
@@ -391,4 +484,56 @@ final class ModuleReviewService @Inject() (
       }
     directorsRepository.all(affectedPos(), roles)
   }
+
+  private def canRequestReview(state: ModuleDraftState): Boolean =
+    state == ModuleDraftState.ValidForReview || state == ModuleDraftState.ValidForPublication
+
+  private def canPerformReview(draft: ModuleDraft): Boolean =
+    draft.mergeRequestId.nonEmpty && draft.state() == ModuleDraftState.WaitingForReview
+
+  private def infoEvent(
+      event: String,
+      correlationId: CorrelationId,
+      moduleId: Option[UUID] = None,
+      mrId: Option[MergeRequestId] = None,
+      actor: Option[String] = None,
+      details: Map[String, String] = Map.empty
+  ): Unit =
+    AppEventLogger.info(
+      logger,
+      LogEvent(
+        event = event,
+        result = LogResult.Succeeded,
+        correlationId = correlationId,
+        moduleId = moduleId,
+        mrId = mrId.map(_.value),
+        actor = actor,
+        details = details
+      )
+    )
+
+  private def errorEvent(
+      event: String,
+      correlationId: CorrelationId,
+      throwable: Throwable,
+      moduleId: Option[UUID] = None,
+      mrId: Option[MergeRequestId] = None,
+      actor: Option[String] = None,
+      errorCode: Option[String] = None,
+      details: Map[String, String] = Map.empty
+  ): Unit =
+    AppEventLogger.error(
+      logger,
+      LogEvent(
+        event = event,
+        result = LogResult.Failed,
+        correlationId = correlationId,
+        moduleId = moduleId,
+        mrId = mrId.map(_.value),
+        actor = actor,
+        errorCode = errorCode,
+        details = details
+      ),
+      throwable
+    )
 }
