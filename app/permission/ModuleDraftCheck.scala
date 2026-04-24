@@ -35,10 +35,7 @@ trait ModuleDraftCheck extends UsesClientErrors {
           case true  => None
           case false =>
             Some(
-              clientErrors.forbidden(
-                request,
-                s"user ${request.request.token.username} has insufficient permissions to edit the module"
-              )
+              forbiddenForUser(request, request.request.token.username, Some("to edit the module"))
             )
         }
       }

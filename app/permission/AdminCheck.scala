@@ -18,10 +18,7 @@ trait AdminCheck extends UsesClientErrors {
         else
           Future.successful(
             Some(
-              clientErrors.forbidden(
-                request,
-                s"user ${request.request.token.username} has insufficient permissions"
-              )
+              forbiddenForUser(request, request.request.token.username)
             )
           )
 
