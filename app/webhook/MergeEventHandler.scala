@@ -61,25 +61,37 @@ final class MergeEventHandler @Inject() (
 
   private def moduleEditUrl: String = appSettings.mail.editUrl
 
-  private type Action      = String
-  private type Labels      = IndexedSeq[String]
-  private type ParseResult = (MergeRequestId, Action, Branch, Branch, Labels)
+  private type Action = String
+  private type Labels = IndexedSeq[String]
+
+  private final case class ParsedMergeEvent(
+      mrId: MergeRequestId,
+      action: Action,
+      sourceBranch: Branch,
+      targetBranch: Branch,
+      labels: Labels
+  )
 
   given Lang(Locale.GERMANY)
 
-  private val maxMergeRetries = 10
+  private object MergeRetryPolicy {
+    val maxAttempts: Int = 10
+
+    def delayFor(attempt: Int) =
+      Math.pow(2, attempt).seconds + 3.seconds
+  }
 
   override def receive: Receive = {
     case HandleEvent(json) =>
       implicit val id: UUID = UUID.randomUUID()
       parse(json) match {
-        case JsSuccess(jsonResult, _) =>
-          implicit val result: ParseResult  = jsonResult
-          implicit val mrId: MergeRequestId = result._1
-          val action                        = result._2
-          val sourceBranch                  = result._3
-          val targetBranch                  = result._4
-          val labels                        = result._5
+        case JsSuccess(parsedEvent, _) =>
+          implicit val result: ParsedMergeEvent = parsedEvent
+          implicit val mrId: MergeRequestId     = parsedEvent.mrId
+          val action                            = parsedEvent.action
+          val sourceBranch                      = parsedEvent.sourceBranch
+          val targetBranch                      = parsedEvent.targetBranch
+          val labels                            = parsedEvent.labels
           (sourceBranch, targetBranch, action) match {
             // Case 1: opened MR from $module_branch into draft branch [AUTO APPROVED]
             // => schedule merge
@@ -148,7 +160,7 @@ final class MergeEventHandler @Inject() (
 
     // Check if the merge request is mergeable. If so, merge the module (case 2). Otherwise, schedule a new attempt with logarithmic backoff
     case CheckMrStatus(id, mrId, attempt, merge) =>
-      if (attempt < maxMergeRetries) {
+      if (attempt < MergeRetryPolicy.maxAttempts) {
         logger.info(s"[$id][${Thread.currentThread().getName.last}] attempt $attempt")
         mergeRequestApiService.get(mrId).onComplete {
           case Success((_, json)) =>
@@ -167,7 +179,9 @@ final class MergeEventHandler @Inject() (
             self ! Finished(id)
         }
       } else {
-        logger.info(s"[$id][${Thread.currentThread().getName.last}] no attempts left ($attempt / $maxMergeRetries)")
+        logger.info(
+          s"[$id][${Thread.currentThread().getName.last}] no attempts left ($attempt / ${MergeRetryPolicy.maxAttempts})"
+        )
         self ! Finished(id)
       }
 
@@ -182,7 +196,7 @@ final class MergeEventHandler @Inject() (
 
   private def scheduleFreshMerge(
       moduleBranch: Branch
-  )(implicit id: UUID, mrId: MergeRequestId, result: ParseResult): Unit =
+  )(implicit id: UUID, mrId: MergeRequestId, result: ParsedMergeEvent): Unit =
     withUUID(moduleBranch)(moduleId => scheduleMerge(0, () => self ! MergeModule(id, mrId, moduleId)))
 
   private case class MergeModule(id: UUID, mrId: MergeRequestId, moduleId: UUID)
@@ -192,12 +206,12 @@ final class MergeEventHandler @Inject() (
   private case class CheckMrStatus(id: UUID, mrId: MergeRequestId, attempt: Int, merge: () => Unit)
 
   private def scheduleMerge(attempt: Int, merge: () => Unit)(implicit id: UUID, mrId: MergeRequestId) = {
-    val delay = Math.pow(2, attempt).seconds + 3.seconds
+    val delay = MergeRetryPolicy.delayFor(attempt)
     if attempt > 0 then logger.info(s"[$id][${Thread.currentThread().getName.last}] retrying in $delay")
     context.system.scheduler.scheduleOnce(delay, self, CheckMrStatus(id, mrId, attempt, merge))
   }
 
-  private def withUUID(branch: Branch)(k: UUID => Unit)(implicit id: UUID, result: ParseResult): Unit =
+  private def withUUID(branch: Branch)(k: UUID => Unit)(implicit id: UUID, result: ParsedMergeEvent): Unit =
     try {
       val moduleId = UUID.fromString(branch.value)
       k(moduleId)
@@ -213,7 +227,7 @@ final class MergeEventHandler @Inject() (
   private def parseMergeCommitSha(json: JsValue): String =
     json.\("object_attributes").\("merge_commit_sha").validate[String].get
 
-  private def parse(json: JsValue): JsResult[ParseResult] = {
+  private def parse(json: JsValue): JsResult[ParsedMergeEvent] = {
     val attrs = json.\("object_attributes")
     for {
       mrId         <- attrs.\("iid").validate[Int].map(MergeRequestId.apply)
@@ -233,13 +247,7 @@ final class MergeEventHandler @Inject() (
           case title if title.\("title").isDefined =>
             title.\("title").validate[String].get
         })
-    } yield (
-      mrId,
-      action,
-      sourceBranch,
-      targetBranch,
-      labels
-    )
+    } yield ParsedMergeEvent(mrId, action, sourceBranch, targetBranch, labels)
   }
 
   private def deleteModuleDraft(id: UUID, moduleId: UUID) =
@@ -407,13 +415,13 @@ final class MergeEventHandler @Inject() (
     }
   }
 
-  private def abort(id: UUID, result: ParseResult): Unit =
+  private def abort(id: UUID, result: ParsedMergeEvent): Unit =
     logger.info(
       s"""[$id][${Thread.currentThread().getName.last}] unable to handle event
-         |- merge request id: ${result._1.value}
-         |- action: ${result._2}
-         |- source: ${result._3.value}
-         |- target ${result._4.value}
-         |- labels: ${result._5}""".stripMargin
+         |- merge request id: ${result.mrId.value}
+         |- action: ${result.action}
+         |- source: ${result.sourceBranch.value}
+         |- target ${result.targetBranch.value}
+         |- labels: ${result.labels}""".stripMargin
     )
 }
