@@ -1,6 +1,7 @@
 import scala.collection.Seq
 
 import git.Branch
+import logging.CorrelationId
 import play.api.libs.json.JsPath
 import play.api.libs.json.JsResult
 import play.api.libs.json.JsValue
@@ -8,7 +9,7 @@ import play.api.libs.json.JsonValidationError
 import play.api.Logger
 
 package object webhook {
-  case class HandleEvent(json: JsValue) extends AnyVal
+  case class HandleEvent(json: JsValue, correlationId: CorrelationId)
 
   def mkString[A](xs: Seq[A]): String =
     xs.mkString("\n\t- ", "\n\t- ", "")

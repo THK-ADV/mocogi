@@ -16,6 +16,10 @@ import models.core.*
 import monocle.macros.GenLens
 import monocle.Lens
 import ops.toFuture
+import logging.AppEventLogger
+import logging.CorrelationId
+import logging.LogEvent
+import logging.LogResult
 import org.apache.pekko.actor.Actor
 import play.api.Logging
 import service.core.*
@@ -40,7 +44,18 @@ final class CoreDataPublisher @Inject() (
   import CoreDataPublisher.*
 
   override def receive = {
-    case Handle(coreFiles) =>
+    case Handle(coreFiles, correlationId) =>
+      given CorrelationId = correlationId
+      val event           = "git.core_data.sync"
+      AppEventLogger.info(
+        logger,
+        LogEvent(
+          event = event,
+          result = LogResult.Started,
+          correlationId = correlationId,
+          details = Map("fileCount" -> coreFiles.size.toString)
+        )
+      )
       val order   = topologicalSort(coreFiles)
       val updates = order.foldLeft(Future.unit) {
         case (acc, (filename, _, content)) =>
@@ -52,8 +67,17 @@ final class CoreDataPublisher @Inject() (
         _ <- moduleViewRepository.refreshView()
       } yield ()
       res.onComplete {
-        case Success(_) => logger.info("finished!")
-        case Failure(t) => logFailure(t)
+        case Success(_) =>
+          AppEventLogger.info(
+            logger,
+            LogEvent(
+              event = event,
+              result = LogResult.Succeeded,
+              correlationId = correlationId,
+              details = Map("fileCount" -> coreFiles.size.toString)
+            )
+          )
+        case Failure(t) => logFailure(event, correlationId, t)
       }
   }
 
@@ -83,7 +107,7 @@ final class CoreDataPublisher @Inject() (
   private def createOrUpdate(
       filename: String,
       content: GitFileContent
-  ): Future[Unit] = {
+  )(using correlationId: CorrelationId): Future[Unit] = {
     def go[A](
         ids: => Future[Seq[String]],
         yamlService: YamlService[A],
@@ -181,38 +205,81 @@ final class CoreDataPublisher @Inject() (
       toCreate: Seq[A],
       toUpdate: Seq[A],
       toDelete: Seq[String]
-  ): Unit = {
+  )(using correlationId: CorrelationId): Unit = {
     if (toCreate.nonEmpty) {
-      logger.info(
-        s"successfully created ${toCreate.size} $filename files"
+      AppEventLogger.info(
+        logger,
+        LogEvent(
+          event = "git.core_data.file",
+          result = LogResult.Succeeded,
+          correlationId = correlationId,
+          details = Map(
+            "filename"  -> filename,
+            "operation" -> "create",
+            "count"     -> toCreate.size.toString
+          )
+        )
       )
     }
     if (toUpdate.nonEmpty) {
-      logger.info(
-        s"successfully updated ${toUpdate.size} $filename files"
+      AppEventLogger.info(
+        logger,
+        LogEvent(
+          event = "git.core_data.file",
+          result = LogResult.Succeeded,
+          correlationId = correlationId,
+          details = Map(
+            "filename"  -> filename,
+            "operation" -> "update",
+            "count"     -> toUpdate.size.toString
+          )
+        )
       )
     }
     if (toDelete.nonEmpty) {
-      logger.info(
-        s"successfully deleted ${toDelete.size} $filename files"
+      AppEventLogger.info(
+        logger,
+        LogEvent(
+          event = "git.core_data.file",
+          result = LogResult.Succeeded,
+          correlationId = correlationId,
+          details = Map(
+            "filename"  -> filename,
+            "operation" -> "delete",
+            "count"     -> toDelete.size.toString
+          )
+        )
       )
     }
   }
 
-  private def logFailure(error: Throwable): Unit =
-    logger.error(s"""failed to create or update core data file
-                    |  - message: ${error.getMessage}
-                    |  - trace: ${error.getStackTrace.mkString(
-                     "\n           "
-                   )}""".stripMargin)
+  private def logFailure(event: String, correlationId: CorrelationId, error: Throwable): Unit =
+    AppEventLogger.error(
+      logger,
+      LogEvent(
+        event = event,
+        result = LogResult.Failed,
+        correlationId = correlationId,
+        errorCode = Some("core_data_sync_failed")
+      ),
+      error
+    )
 
-  private def logUnknownFile(filename: String): Unit =
-    logger.info(s"no handler found for file $filename")
+  private def logUnknownFile(filename: String)(using correlationId: CorrelationId): Unit =
+    AppEventLogger.info(
+      logger,
+      LogEvent(
+        event = "git.core_data.file",
+        result = LogResult.Skipped,
+        correlationId = correlationId,
+        details = Map("filename" -> filename, "reason" -> "no_handler")
+      )
+    )
 }
 
 object CoreDataPublisher {
 
-  case class Handle(coreFiles: List[(GitFile.CoreFile, GitFileContent)]) extends AnyVal
+  case class Handle(coreFiles: List[(GitFile.CoreFile, GitFileContent)], correlationId: CorrelationId)
 
   private object Filenames {
     val location       = "location"
