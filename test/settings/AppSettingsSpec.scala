@@ -1,5 +1,6 @@
 package settings
 
+import java.time.LocalDate
 import java.util.UUID
 
 import com.typesafe.config.ConfigFactory
@@ -43,6 +44,7 @@ final class AppSettingsSpec extends AnyFlatSpec with Matchers:
         |git.moduleCatalogLabel = "mc"
         |git.defaultEmail = "bot@example.com"
         |git.defaultUser = "bot"
+        |git.historySince = "1990-01-01"
         |moduleKeysToReview.pav = [ "a", "b" ]
         |""".stripMargin
     Configuration(ConfigFactory.parseString(base + extra))
@@ -55,6 +57,7 @@ final class AppSettingsSpec extends AnyFlatSpec with Matchers:
     s.git.projectId shouldBe 2124
     s.moduleKeysToReview.pavModuleKeys shouldBe Seq("a", "b")
     s.play.tmpDir shouldBe "tmp"
+    s.git.historySince shouldBe LocalDate.of(1990, 1, 1)
   }
 
   it should "accept git.projectId as a numeric string" in {

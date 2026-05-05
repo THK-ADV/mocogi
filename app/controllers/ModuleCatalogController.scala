@@ -93,7 +93,7 @@ final class ModuleCatalogController @Inject() (
                 catalogService.create(
                   po,
                   file,
-                  Semester.current(), // assumes current semester
+                  Semester.of(), // assumes current semester
                   bannedGenericModules
                 )
             path

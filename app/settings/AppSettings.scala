@@ -1,5 +1,7 @@
 package settings
 
+import java.time.format.DateTimeParseException
+import java.time.LocalDate
 import java.util.UUID
 
 import play.api.Configuration
@@ -23,7 +25,8 @@ final case class GitRepoSettings(
     bigBangLabel: String,
     moduleCatalogLabel: String,
     defaultEmail: String,
-    defaultUser: String
+    defaultUser: String,
+    historySince: LocalDate
 )
 
 final case class PandocSettings(
@@ -102,7 +105,8 @@ object AppSettings {
         bigBangLabel = nonEmptyString(configuration, "git.bigBangLabel"),
         moduleCatalogLabel = nonEmptyString(configuration, "git.moduleCatalogLabel"),
         defaultEmail = nonEmptyString(configuration, "git.defaultEmail"),
-        defaultUser = nonEmptyString(configuration, "git.defaultUser")
+        defaultUser = nonEmptyString(configuration, "git.defaultUser"),
+        historySince = parseLocalDate(configuration, "git.historySince")
       ),
       moduleKeysToReview = ModuleKeysToReviewSettings(pavModuleKeys = list(configuration, "moduleKeysToReview.pav"))
     )
@@ -140,4 +144,15 @@ object AppSettings {
           case None    => throw Exception("git.projectId must be set")
         }
     }
+
+  private def parseLocalDate(c: Configuration, key: String): LocalDate = {
+    val raw = nonEmptyString(c, key)
+    try LocalDate.parse(raw)
+    catch {
+      case _: DateTimeParseException =>
+        throw IllegalArgumentException(
+          s"key $key must be an ISO-8601 date (YYYY-MM-DD), got: $raw"
+        )
+    }
+  }
 }

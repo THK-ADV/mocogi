@@ -47,7 +47,8 @@ final class GitConfigProvider @Inject() (settings: AppSettings) extends Provider
       settings.git.reviewRequiredLabel,
       settings.git.fastForwardLabel,
       settings.git.defaultEmail,
-      settings.git.defaultUser
+      settings.git.defaultUser,
+      settings.git.historySince
     )
 }
 
