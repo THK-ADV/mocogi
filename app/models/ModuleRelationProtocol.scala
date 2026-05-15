@@ -11,6 +11,11 @@ sealed trait ModuleRelationProtocol {
     case ModuleRelationProtocol.Parent(_)     => None
     case ModuleRelationProtocol.Child(parent) => Some(parent)
   }
+
+  def isParent: Boolean = this match {
+    case ModuleRelationProtocol.Parent(_) => true
+    case ModuleRelationProtocol.Child(_)  => false
+  }
 }
 
 object ModuleRelationProtocol extends NelWrites {

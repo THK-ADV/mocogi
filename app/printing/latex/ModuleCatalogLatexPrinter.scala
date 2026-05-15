@@ -365,6 +365,9 @@ final class ModuleCatalogLatexPrinter(
                 |\usepackage[a4paper, total={16cm, 24cm}, left=2.5cm, right=2.5cm, top=2.5cm, bottom=2.5cm]{geometry}
                 |\usepackage{graphicx} % include images
                 |\usepackage{layout}
+                |\usepackage[table]{xcolor} % table colors
+                |\usepackage{colortbl} % colored table rows and columns
+                |\usepackage{array} % custom table columns
                 |\usepackage{ltablex} % tables created with tabularx automatically gains longtable’s ability to break across pages
                 |\usepackage{booktabs} % typographically correct horizontal rules for tables
                 |\renewcommand{\arraystretch}{1.2}

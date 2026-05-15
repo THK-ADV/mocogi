@@ -2,7 +2,6 @@ package controllers
 
 import java.nio.file.Files
 import java.nio.file.Paths
-import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -34,6 +33,7 @@ import security.ClientErrorResponse
 import settings.AppSettings
 import service.artifact.ModuleCatalogService
 import service.StudyProgramPrivilegesService
+import models.ModuleCatalogConfig
 
 @Singleton
 final class ModuleCatalogController @Inject() (
@@ -70,32 +70,25 @@ final class ModuleCatalogController @Inject() (
 
   /**
    * Generates a module catalog for the PO. A preview catalog is generated if the query parameter is set to true.
-   * The body contains a list of generic modules excluded from the generation.
+   * The body contains the module catalog configuration.
    *
    * @param studyProgram for which SGL or PAV permission must be granted
    * @param po           for which the module catalog is created
    * @return the PDF file
    */
-  def generate(studyProgram: String, po: String): Action[List[UUID]] =
-    auth(parse.json[List[UUID]])
+  def generate(studyProgram: String, po: String): Action[ModuleCatalogConfig] =
+    auth(parse.json[ModuleCatalogConfig])
       .andThen(resolveUser)
       .andThen(canPreviewArtifact(studyProgram))
-      .async { (r: Request[List[UUID]]) =>
+      .async { (r: Request[ModuleCatalogConfig]) =>
         r.headers.get(HeaderNames.ACCEPT) match {
           case Some(MimeTypes.PDF) =>
-            val isPreview            = r.getQueryString("preview").flatMap(_.toBooleanOption).getOrElse(true)
-            val bannedGenericModules = r.body
-            val filename             = s"module_catalog_$po"
-            val file                 = FileOps.createLatexFile(filename, tmpDir)
-            val path                 =
-              if isPreview then catalogService.preview(po, file, bannedGenericModules)
-              else
-                catalogService.create(
-                  po,
-                  file,
-                  Semester.of(), // assumes current semester
-                  bannedGenericModules
-                )
+            val isPreview = r.getQueryString("preview").flatMap(_.toBooleanOption).getOrElse(true)
+            val filename  = s"module_catalog_$po"
+            val file      = FileOps.createLatexFile(filename, tmpDir)
+            val path      =
+              if isPreview then catalogService.preview(po, file, r.body)
+              else catalogService.create(po, file, Semester.of(), r.body)
             path
               .map(path =>
                 Ok.sendPath(

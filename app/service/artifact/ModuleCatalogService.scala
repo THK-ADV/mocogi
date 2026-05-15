@@ -34,6 +34,8 @@ import printing.latex.snippet.DiffContentSnippet
 import printing.latex.snippet.IntroContentProvider
 import printing.latex.snippet.LatexContentSnippet
 import printing.latex.snippet.LayoutContentSnippet
+import printing.latex.studyplan.StudyPlanSection
+import printing.latex.studyplan.StudyPlanSnippet
 import printing.latex.MarkdownLatexPrinter
 import printing.latex.ModuleCatalogLatexPrinter
 import printing.latex.Payload
@@ -42,6 +44,7 @@ import service.core.IdentityService
 import service.modulediff.ModuleProtocolDiff
 import service.ModuleService
 import settings.AppSettings
+import models.ModuleCatalogConfig
 
 @Singleton
 final class ModuleCatalogService @Inject() (
@@ -64,17 +67,26 @@ final class ModuleCatalogService @Inject() (
 
   private type ModuleDiffs = List[(ModuleCore, Set[String])]
 
-  def create(po: String, latexFile: Path, semester: Semester, bannedGenericModules: List[UUID]): Future[Path] =
-    generateCatalog(po, latexFile, Some(semester), bannedGenericModules)
+  def create(
+      po: String,
+      latexFile: Path,
+      semester: Semester,
+      config: ModuleCatalogConfig
+  ): Future[Path] =
+    generateCatalog(po, latexFile, Some(semester), config)
 
-  def preview(po: String, latexFile: Path, bannedGenericModules: List[UUID]): Future[Path] =
-    generateCatalog(po, latexFile, None, bannedGenericModules)
+  def preview(
+      po: String,
+      latexFile: Path,
+      config: ModuleCatalogConfig
+  ): Future[Path] =
+    generateCatalog(po, latexFile, None, config)
 
   private def generateCatalog(
       po: String,
       latexFile: Path,
       semester: Option[Semester],
-      bannedGenericModules: List[UUID]
+      config: ModuleCatalogConfig
   ) = {
     val isPreview = semester.isEmpty
 
@@ -83,7 +95,7 @@ final class ModuleCatalogService @Inject() (
     val modulePreview = new ModulePreview(gitCLI)
     val modules       = modulePreview
       .getAllFromPreviewByPOWithLastModified(po)
-      .filterNot((m, _) => bannedGenericModules.contains(m.id.get))
+      .filterNot((m, _) => config.bannedGenericModules.contains(m.id.get))
     val lang                     = Lang(Locale.GERMANY)
     val moduleDiffs: ModuleDiffs = List.empty // TODO: reimplement
     val studyPrograms            = studyProgramViewRepo.notExpired().map { all =>
@@ -92,11 +104,14 @@ final class ModuleCatalogService @Inject() (
       (all, poOnly)
     }
 
+    def createLatexSnippets(): List[LatexContentSnippet] =
+      List(diffSnippet(moduleDiffs), introSnippet(latexFile.getParent, po)).flatten
+        .appended(studyPlanSnippet(po, modules, isPreview, config.sections))
+
     for {
       (all, poOnly) <- studyPrograms
-      latexSnippets = getLatexSnippets(latexFile.getParent, po, moduleDiffs, isPreview)
-      _             = copyAssets(latexFile.getParent)
-      content <- print(poOnly, modules, all, lang, moduleDiffs, latexSnippets, semester)
+      _ = copyAssets(latexFile.getParent)
+      content <- print(poOnly, modules, all, lang, moduleDiffs, createLatexSnippets(), semester)
       path = Files.writeString(latexFile, content.toString)
       pdf <- compile(path).flatMap(_ => getPdf(path)).toFuture
     } yield pdf
@@ -134,7 +149,7 @@ final class ModuleCatalogService @Inject() (
       lang: Lang,
       diffs: ModuleDiffs,
       latexSnippets: List[LatexContentSnippet],
-      semester: Option[Semester]
+      semester: Option[Semester],
   ): Future[StringBuilder] = {
     val liveModules       = moduleService.allModuleCore()
     val createdModules    = moduleService.allNewlyCreated()
@@ -208,15 +223,26 @@ final class ModuleCatalogService @Inject() (
       case NonFatal(e) => throw Exception(e)
     }
 
-  private def getLatexSnippets(
-      dir: Path,
-      po: String,
-      moduleDiffs: ModuleDiffs,
-      preview: Boolean
-  ): List[LatexContentSnippet] = {
-    val introContent = IntroContentProvider(dir, po, mcIntroPath).createIntroContent()
-    val diffContent  = NonEmptyList.fromList(moduleDiffs).map(DiffContentSnippet(_, messagesApi))
-    val layout       = Option.when(preview)(LayoutContentSnippet())
-    List(layout, diffContent, introContent).collect { case Some(snippet) => snippet }
-  }
+  private def layoutSnippet(preview: Boolean): Option[LatexContentSnippet] =
+    Option.when(preview)(LayoutContentSnippet())
+
+  private def diffSnippet(moduleDiffs: ModuleDiffs): Option[LatexContentSnippet] =
+    NonEmptyList.fromList(moduleDiffs).map(DiffContentSnippet(_, messagesApi))
+
+  private def introSnippet(dir: Path, po: String): Option[LatexContentSnippet] =
+    IntroContentProvider(dir, po, mcIntroPath).createIntroContent()
+
+  private def studyPlanSnippet(
+      currentPO: String,
+      modules: Vector[(ModuleProtocol, LocalDate)],
+      isPreview: Boolean,
+      sections: List[StudyPlanSection]
+  ): LatexContentSnippet =
+    StudyPlanSnippet(
+      currentPO,
+      modules.map(m => (m._1.id.get, m._1.metadata)),
+      NonEmptyList.fromList(sections),
+      isPreview,
+      messagesApi
+    )
 }
