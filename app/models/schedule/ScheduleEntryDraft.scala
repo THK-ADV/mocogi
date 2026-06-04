@@ -3,27 +3,28 @@ package models.schedule
 import java.time.LocalDateTime
 import java.util.UUID
 
-import controllers.json.JsonNullWritable
 import play.api.libs.json.JsValue
 import play.api.libs.json.Json
 import play.api.libs.json.Reads
+import play.api.libs.json.Writes
 
-case class ScheduleEntry[ID](
+case class ScheduleEntryDraft[ID](
     id: ID,
+    planDraft: UUID,
     seriesId: ScheduleEntrySeriesId,
     module: UUID,
     courseType: CourseType,
     rooms: List[UUID],
+    lecturer: List[String],
     start: LocalDateTime,
     end: LocalDateTime,
-    props: JsValue,
-    sourcePlanDraft: Option[UUID],
-    sourceScheduleEntryDraft: Option[UUID]
+    po: JsValue
 )
 
-object ScheduleEntry extends JsonNullWritable {
-  type JSON = ScheduleEntry[Option[UUID]]
-  type DB   = ScheduleEntry[UUID]
+object ScheduleEntryDraft {
+  type JSON = ScheduleEntryDraft[Option[UUID]]
+  type DB   = ScheduleEntryDraft[UUID]
 
   given Reads[JSON] = Json.reads
+  given Writes[DB]  = Json.writes
 }
