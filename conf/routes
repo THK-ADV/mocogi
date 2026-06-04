@@ -10,7 +10,6 @@ GET           /service/updateImages                                   controller
 
 DELETE        /admin/modules/:id                                      controllers.AdminController.deleteModule(id: java.util.UUID)
 POST          /admin/modules                                          controllers.AdminController.createNewModulesFromDraftBranch()
-POST          /admin/bootstrapScheduleEntries                         controllers.AdminController.bootstrapScheduleEntries()
 POST          /admin/recreateModuleTeachingUnits                      controllers.AdminController.recreateModuleTeachingUnits()
 
 GET           /user                                                   controllers.UserController.userInfo()
