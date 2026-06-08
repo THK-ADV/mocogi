@@ -21,6 +21,7 @@ import permission.SchedulePlanningCheck
 import play.api.libs.json.Json
 import play.api.mvc.*
 import security.ClientErrorResponse
+import org.postgresql.util.PSQLException
 
 @Singleton
 final class SchedulePlanDraftController @Inject() (
@@ -146,5 +147,6 @@ final class SchedulePlanDraftController @Inject() (
 
   private def clientError: PartialFunction[Throwable, Result] = {
     case e: IllegalArgumentException => BadRequest(Json.obj("message" -> e.getMessage))
+    case e: PSQLException => BadRequest(Json.obj("message" -> e.getMessage))
   }
 }
