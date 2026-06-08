@@ -3,9 +3,9 @@ CREATE TABLE schedule.plan_draft(
   "id" uuid PRIMARY KEY,
   "kind" text NOT NULL CHECK (kind IN ('schedule', 'exam')),
   "semester" text NOT NULL CHECK (semester ~ '^(wise|sose)_[0-9]{4}$'),
-  "created_at" timestamptz NOT NULL DEFAULT now(),
-  "updated_at" timestamptz NOT NULL DEFAULT now(),
-  "published_at" timestamptz NULL
+  "created_at" timestamp NOT NULL,
+  "updated_at" timestamp NOT NULL,
+  "published_at" timestamp NULL
 );
 
 CREATE UNIQUE INDEX idx_plan_draft_one_active ON schedule.plan_draft(kind, semester)
@@ -18,8 +18,8 @@ CREATE TABLE schedule.schedule_entry_draft(
   "series_id" uuid NOT NULL,
   "module" uuid NOT NULL REFERENCES modules.module(id),
   "course_type" text NOT NULL,
-  "start" timestamptz NOT NULL,
-  "end" timestamptz NOT NULL,
+  "start" timestamp NOT NULL,
+  "end" timestamp NOT NULL,
   "rooms" uuid[] NOT NULL,
   "lecturer" text[] NOT NULL,
   "po" jsonb NOT NULL,
