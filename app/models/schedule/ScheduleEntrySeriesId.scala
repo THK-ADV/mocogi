@@ -3,9 +3,11 @@ package models.schedule
 import java.util.UUID
 
 import play.api.libs.json.Format
+import play.api.libs.json.JsError
 import play.api.libs.json.JsResult
+import play.api.libs.json.JsString
+import play.api.libs.json.JsSuccess
 import play.api.libs.json.JsValue
-import play.api.libs.json.Json
 
 /**
  * Groups related occurrences of the same schedule entry (e.g. weekly duplicates).
@@ -25,7 +27,12 @@ object ScheduleEntrySeriesId {
   }
 
   given Format[ScheduleEntrySeriesId] = new Format[ScheduleEntrySeriesId] {
-    def reads(json: JsValue): JsResult[ScheduleEntrySeriesId] = json.validate[UUID].map(apply)
-    def writes(id: ScheduleEntrySeriesId): JsValue            = Json.toJson(id.toUUID)
+    def reads(json: JsValue): JsResult[ScheduleEntrySeriesId] =
+      json.validate[String].flatMap { value =>
+        try JsSuccess(apply(UUID.fromString(value)))
+        catch { case _: IllegalArgumentException => JsError("error.expected.uuid") }
+      }
+
+    def writes(id: ScheduleEntrySeriesId): JsValue = JsString(id.toUUID.toString)
   }
 }

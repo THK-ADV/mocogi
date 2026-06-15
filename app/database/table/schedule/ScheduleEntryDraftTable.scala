@@ -1,6 +1,6 @@
 package database.table.schedule
 
-import java.time.LocalDateTime
+import java.time.Instant
 import java.util.UUID
 
 import database.table.scheduleEntrySeriesIdColumnType
@@ -35,9 +35,9 @@ private[database] final class ScheduleEntryDraftTable(tag: Tag)
 
   def lecturer = column[List[String]]("lecturer")
 
-  def start = column[LocalDateTime]("start")
+  def start = column[Instant]("start")
 
-  def end = column[LocalDateTime]("end")
+  def end = column[Instant]("end")
 
   def po = column[JsValue]("po")
 

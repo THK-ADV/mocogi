@@ -151,7 +151,7 @@ final class SchedulePlanDraftRepository @Inject() (
         entries <- scheduleDrafts.filter(_.planDraft === planDraft).result
         _       <-
           if (entries.isEmpty) DBIO.failed(new IllegalArgumentException("cannot publish an empty schedule plan draft"))
-          else DBIO.successful(())
+          else DBIO.unit
       } yield entries
 
     val query = for {
@@ -171,7 +171,7 @@ final class SchedulePlanDraftRepository @Inject() (
     planDrafts.filter(_.id === planDraft).result.headOption.flatMap {
       case Some(draft) if draft.kind != PlanDraftKind.Schedule =>
         DBIO.failed(new IllegalArgumentException("plan draft is not a schedule draft"))
-      case Some(_) => DBIO.successful(())
+      case Some(_) => DBIO.unit
       case None    => DBIO.failed(new IllegalArgumentException("plan draft not found"))
     }
 
@@ -185,7 +185,7 @@ final class SchedulePlanDraftRepository @Inject() (
       case Some(draft) if draft.publishedAt.nonEmpty =>
         DBIO.failed(new IllegalArgumentException("plan draft is already published"))
       case Some(_) =>
-        DBIO.successful(())
+        DBIO.unit
       case None =>
         DBIO.failed(new IllegalArgumentException("plan draft not found"))
     }
@@ -197,6 +197,6 @@ final class SchedulePlanDraftRepository @Inject() (
     planDrafts.filter(_.id === planDraft).map(_.updatedAt).update(LocalDateTime.now())
 
   private def requireUpdated(count: Int, message: String): DBIO[Unit] =
-    if count == 1 then DBIO.successful(())
+    if count == 1 then DBIO.unit
     else DBIO.failed(new IllegalArgumentException(message))
 }

@@ -18,8 +18,8 @@ CREATE TABLE schedule.schedule_entry_draft(
   "series_id" uuid NOT NULL,
   "module" uuid NOT NULL REFERENCES modules.module(id),
   "course_type" text NOT NULL,
-  "start" timestamp NOT NULL,
-  "end" timestamp NOT NULL,
+  "start" timestamptz NOT NULL,
+  "end" timestamptz NOT NULL,
   "rooms" uuid[] NOT NULL,
   "lecturer" text[] NOT NULL,
   "po" jsonb NOT NULL,
@@ -33,7 +33,11 @@ ALTER TABLE schedule.schedule_entry
   ADD COLUMN "source_plan_draft" uuid NULL REFERENCES schedule.plan_draft(id) ON DELETE SET NULL,
   ADD COLUMN "source_schedule_entry_draft" uuid NULL REFERENCES schedule.schedule_entry_draft(id) ON DELETE SET NULL;
 
+CREATE INDEX idx_schedule_entry_series_id ON schedule.schedule_entry(series_id);
+
 -- !Downs
+DROP INDEX IF EXISTS schedule.idx_schedule_entry_series_id;
+
 ALTER TABLE schedule.schedule_entry
   DROP COLUMN IF EXISTS "source_schedule_entry_draft",
   DROP COLUMN IF EXISTS "source_plan_draft",
@@ -46,4 +50,3 @@ DROP TABLE IF EXISTS schedule.schedule_entry_draft;
 DROP INDEX IF EXISTS schedule.idx_plan_draft_one_active;
 
 DROP TABLE IF EXISTS schedule.plan_draft;
-

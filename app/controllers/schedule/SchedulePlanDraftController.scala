@@ -147,6 +147,6 @@ final class SchedulePlanDraftController @Inject() (
 
   private def clientError: PartialFunction[Throwable, Result] = {
     case e: IllegalArgumentException => BadRequest(Json.obj("message" -> e.getMessage))
-    case e: PSQLException => BadRequest(Json.obj("message" -> e.getMessage))
+    case e: PSQLException            => BadRequest(Json.obj("message" -> e.getMessage))
   }
 }

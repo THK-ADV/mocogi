@@ -1,6 +1,6 @@
 package models.schedule
 
-import java.time.LocalDateTime
+import java.time.Instant
 import java.util.UUID
 
 import controllers.json.JsonNullWritable
@@ -14,8 +14,8 @@ case class ScheduleEntry[ID](
     module: UUID,
     courseType: CourseType,
     rooms: List[UUID],
-    start: LocalDateTime,
-    end: LocalDateTime,
+    start: Instant,
+    end: Instant,
     props: JsValue,
     sourcePlanDraft: Option[UUID],
     sourceScheduleEntryDraft: Option[UUID]

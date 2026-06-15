@@ -8,6 +8,7 @@ import git.CommitId
 import git.MergeRequestId
 import git.MergeRequestStatus
 import models.*
+import models.schedule.CourseType
 import models.schedule.ScheduleEntrySeriesId
 import service.pipeline.Print
 import slick.jdbc.PostgresProfile.api.*
@@ -93,4 +94,7 @@ package object table {
 
   given BaseColumnType[PlanDraftKind] =
     MappedColumnType.base[PlanDraftKind, String](_.id, PlanDraftKind.apply)
+
+  given BaseColumnType[CourseType] =
+    MappedColumnType.base[CourseType, String](_.id, CourseType.apply)
 }

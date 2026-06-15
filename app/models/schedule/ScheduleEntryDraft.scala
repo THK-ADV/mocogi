@@ -1,6 +1,6 @@
 package models.schedule
 
-import java.time.LocalDateTime
+import java.time.Instant
 import java.util.UUID
 
 import play.api.libs.json.JsValue
@@ -16,8 +16,8 @@ case class ScheduleEntryDraft[ID](
     courseType: CourseType,
     rooms: List[UUID],
     lecturer: List[String],
-    start: LocalDateTime,
-    end: LocalDateTime,
+    start: Instant,
+    end: Instant,
     po: JsValue
 )
 

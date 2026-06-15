@@ -16,6 +16,7 @@ import controllers.actions.UserResolveAction
 import database.repo.schedule.ScheduleEntryRepository
 import database.repo.PermissionRepository
 import models.schedule.ScheduleEntry
+import models.schedule.ScheduleEntrySeriesId
 import models.Semester
 import permission.SchedulePlanningCheck
 import play.api.cache.Cached
@@ -89,19 +90,45 @@ final class ScheduleEntryController @Inject() (
   def create() =
     auth(parse.json[List[ScheduleEntry.JSON]]).andThen(resolveUser).andThen(hasSchedulePlanningPermission).async {
       (r: UserRequest[List[ScheduleEntry.JSON]]) =>
-        repo.create(r.body.map(_.copy(id = UUID.randomUUID()))).map(Created(_))
+        repo.create(r.body).map(Created(_))
     }
 
   /** Updates an existing schedule entry identified by `id` with the provided JSON payload. */
   def update(id: UUID) =
     auth(parse.json[ScheduleEntry.JSON]).andThen(resolveUser).andThen(hasSchedulePlanningPermission).async {
       (r: UserRequest[ScheduleEntry.JSON]) =>
-        repo.update(r.body.copy(id = id)).map(Ok(_))
+        repo.update(id, r.body).map(Ok(_))
     }
+
+  /** Updates every schedule entry in the same series as `id` with the provided JSON payload. */
+  def updateSeries(id: UUID) =
+    auth(parse.json[ScheduleEntry.JSON]).andThen(resolveUser).andThen(hasSchedulePlanningPermission).async {
+      (r: UserRequest[ScheduleEntry.JSON]) =>
+        repo.updateSeries(id, r.body).map(Ok(_)).recover(clientError)
+    }
+
+  /** Checks whether a schedule entry series exists for `seriesID` and returns the series data, or `NotFound` otherwise. */
+  def hasSeries(seriesID: UUID) = {
+    def toJson(series: Seq[(UUID, Instant, Instant)]) =
+      Json.toJson(series.map {
+        case (id, start, end) =>
+          Json.obj("id" -> Json.toJson(id), "start" -> Json.toJson(start), "end" -> Json.toJson(end))
+      })
+    auth.andThen(resolveUser).andThen(hasSchedulePlanningPermission).async { _ =>
+      repo
+        .hasSeries(ScheduleEntrySeriesId(seriesID))
+        .map(series => if series.nonEmpty then Ok(toJson(series)) else NotFound)
+    }
+  }
 
   /** Deletes the schedule entry identified by `id`. */
   def delete(id: UUID) =
     auth.andThen(resolveUser).andThen(hasSchedulePlanningPermission).async { (r: UserRequest[AnyContent]) =>
-      repo.delete(id).map(_ => NoContent)
+      repo.delete(id).map(if _ then NoContent else NotFound)
     }
+
+  private def clientError: PartialFunction[Throwable, Result] = {
+    case _: NoSuchElementException   => NotFound
+    case e: IllegalArgumentException => BadRequest(Json.obj("message" -> e.getMessage))
+  }
 }

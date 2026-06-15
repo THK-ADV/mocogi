@@ -56,7 +56,7 @@ PUT           /modules/parse                                          controller
 
 # Module History
 
-GET           /modules/:id/history                                     controllers.ModuleHistoryController.getModuleHistory(id: java.util.UUID)
+GET           /modules/:id/history                                    controllers.ModuleHistoryController.getModuleHistory(id: java.util.UUID)
 
 # Module Catalog
 
@@ -115,6 +115,8 @@ GET           /semesters                                              controller
 
 GET           /scheduleEntries                                        controllers.schedule.ScheduleEntryController.all()
 POST          /scheduleEntries                                        controllers.schedule.ScheduleEntryController.create()
+PUT           /scheduleEntries/:id/series                             controllers.schedule.ScheduleEntryController.updateSeries(id: java.util.UUID)
+GET           /scheduleEntries/series/:seriesId                       controllers.schedule.ScheduleEntryController.hasSeries(seriesId: java.util.UUID)
 PUT           /scheduleEntries/:id                                    controllers.schedule.ScheduleEntryController.update(id: java.util.UUID)
 DELETE        /scheduleEntries/:id                                    controllers.schedule.ScheduleEntryController.delete(id: java.util.UUID)
 

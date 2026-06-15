@@ -72,6 +72,14 @@ object Semester {
     }
   }
 
+  /**
+   * Returns the [start, end) range of a semester.
+   *
+   * INVARIANT: Consecutive semesters must share identical boundaries
+   * (WiSe end == following SoSe start, and vice versa), otherwise the
+   * PostgreSQL range partitions would have gaps/overlaps and inserts
+   * near the boundary would fail with "no partition found".
+   */
   def dateRange(id: String): (LocalDateTime, LocalDateTime) = {
     val Array(abbrev, yearStr) = id.split("_")
     val year                   = yearStr.toInt
