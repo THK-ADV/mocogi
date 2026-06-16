@@ -38,6 +38,8 @@ DROP FUNCTION IF EXISTS schedule.semester_plan_by_now;
 
 DROP VIEW IF EXISTS modules.module_core_raw;
 
+DROP VIEW IF EXISTS modules.module_core;
+
 -- Serializes a core identity into the JSON shape expected by module- and
 -- schedule-related APIs. Person identities include the richer person fields,
 -- while other identity kinds stay compact.
@@ -1010,5 +1012,70 @@ FROM
     FROM
       jsonb_array_elements_text(s.props -> 'lecturer') AS lec_id(id)
       JOIN core.identity i ON i.id = lec_id.id) lecturers ON TRUE
+$$;
+
+-- Produces the compact module catalog payload used by module list endpoints.
+-- When include_drafts is true, created-in-draft previews are merged with live
+-- modules; otherwise only live modules are returned. The JSON shape is identical
+-- in both cases.
+CREATE OR REPLACE FUNCTION modules.module_core(include_drafts boolean)
+  RETURNS jsonb
+  LANGUAGE sql
+  STABLE PARALLEL SAFE
+  AS $$
+  SELECT
+    coalesce(jsonb_agg(module_json ORDER BY title), '[]'::jsonb)
+  FROM( SELECT DISTINCT ON(id)
+      id,
+      title,
+      module_json
+    FROM(
+      -- Live modules (priority 0)
+      SELECT
+        m.id,
+        0 AS src_rank,
+        m.title,
+        jsonb_build_object('id', m.id, 'title', m.title, 'abbreviation', m.abbrev, 'moduleManagement', coalesce(jsonb_agg(jsonb_build_object('id', i.id, 'kind', i.kind, 'lastname', CASE WHEN i.kind = 'person' THEN
+                  i.lastname
+                ELSE
+                  i.title
+                END, 'firstname', CASE WHEN i.kind = 'person' THEN
+                  i.firstname
+                ELSE
+                  NULL
+                END)) FILTER(WHERE i.id IS NOT NULL), '[]'::jsonb), 'ects', m.ects, 'isLive', TRUE) AS module_json
+      FROM
+        modules.module m
+      LEFT JOIN modules.module_responsibility mr ON mr.module = m.id
+        AND mr.responsibility_type = 'module_management'
+    LEFT JOIN core.identity i ON i.id = mr.identity
+  GROUP BY
+    m.id
+  UNION ALL
+  -- Draft modules (priority 1, only when requested)
+  SELECT
+    cmd.module AS id,
+    1 AS src_rank,
+    cmd.module_title AS title,
+    jsonb_build_object('id', cmd.module, 'title', cmd.module_title, 'abbreviation', cmd.module_abbrev, 'moduleManagement', coalesce(jsonb_agg(jsonb_build_object('id', i.id, 'kind', i.kind, 'lastname', CASE WHEN i.kind = 'person' THEN
+              i.lastname
+            ELSE
+              i.title
+            END, 'firstname', CASE WHEN i.kind = 'person' THEN
+              i.firstname
+            ELSE
+              NULL
+            END)) FILTER(WHERE i.id IS NOT NULL), '[]'::jsonb), 'ects', cmd.module_ects, 'isLive', FALSE) AS module_json
+  FROM
+    modules.created_module_in_draft cmd
+  LEFT JOIN LATERAL unnest(cmd.module_management) AS mgmt_id ON TRUE
+  LEFT JOIN core.identity i ON i.id = mgmt_id
+WHERE
+  include_drafts
+GROUP BY
+  cmd.module) combined
+ORDER BY
+  id,
+  src_rank) sub;
 $$;
 

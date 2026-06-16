@@ -185,33 +185,3 @@ FROM
 REFRESH MATERIALIZED VIEW core.study_program_view;
 
 REFRESH MATERIALIZED VIEW modules.module_view;
-
--- Produces the compact module catalog payload used by module list endpoints,
--- merging live modules with created-in-draft previews into a single JSON array.
-CREATE OR REPLACE VIEW modules.module_core AS
-SELECT
-  jsonb_agg(module_json ORDER BY title) AS modules
-FROM (
-  -- Live modules
-  SELECT
-    m.title,
-    jsonb_build_object('id', m.id, 'title', m.title, 'abbreviation', m.abbrev, 'moduleManagement', coalesce(jsonb_agg(jsonb_build_object('id', i.id, 'kind', i.kind, 'lastname', i.lastname, 'firstname', i.firstname)) FILTER (WHERE mr.responsibility_type = 'module_management'), '[]'::jsonb), 'ects', m.ects, 'isLive', TRUE) AS module_json
-  FROM
-    modules.module m
-  LEFT JOIN modules.module_responsibility mr ON m.id = mr.module
-    AND mr.responsibility_type = 'module_management'
-  LEFT JOIN core.identity i ON mr.identity = i.id
-GROUP BY
-  m.id
-UNION ALL
--- Draft modules
-SELECT
-  cmd.module_title AS title,
-  jsonb_build_object('id', cmd.module, 'title', cmd.module_title, 'abbreviation', cmd.module_abbrev, 'moduleManagement', coalesce(jsonb_agg(jsonb_build_object('id', i.id, 'kind', i.kind, 'lastname', i.lastname, 'firstname', i.firstname)) FILTER (WHERE i.id IS NOT NULL), '[]'::jsonb), 'ects', cmd.module_ects, 'isLive', FALSE) AS module_json
-FROM
-  modules.created_module_in_draft cmd
-  LEFT JOIN LATERAL unnest(cmd.module_management) AS mgmt_id ON TRUE
-  LEFT JOIN core.identity i ON i.id = mgmt_id
-GROUP BY
-  cmd.module) subquery;
-
