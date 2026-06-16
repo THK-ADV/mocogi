@@ -12,10 +12,11 @@ import database.repo.ModuleRepository
 import models.core.Specialization
 import models.MetadataProtocol
 import models.ModuleCore
+import models.ModulePOMandatoryProtocol
 import models.ModuleProtocol
 import ops.single
 import parsing.types.Module
-import play.api.libs.json.JsValue
+import play.api.libs.json.*
 
 @Singleton
 final class ModuleService @Inject() (
@@ -33,6 +34,19 @@ final class ModuleService @Inject() (
 
   def getLecturers(id: UUID): Future[Seq[String]] =
     repo.getLecturers(id)
+
+  def getPOs(id: UUID): Future[JsValue] = {
+    def toJson(m: ModulePOMandatoryProtocol, isMandatory: Boolean) =
+      Json.obj(
+        "po"                  -> m.po,
+        "specialization"      -> m.specialization.fold(JsNull)(JsString.apply),
+        "recommendedSemester" -> m.recommendedSemester,
+        "mandatory"           -> isMandatory
+      )
+    repo
+      .getPOs(id)
+      .map((m, o) => JsArray(m.map(toJson(_, isMandatory = true)) ++ o.map(toJson(_, isMandatory = false))))
+  }
 
   def allModuleCore(): Future[Seq[ModuleCore]] =
     repo.allModuleCore()

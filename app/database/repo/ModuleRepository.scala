@@ -101,6 +101,26 @@ final class ModuleRepository @Inject() (
   def getLecturers(id: UUID) =
     db.run(moduleResponsibilityTable.filter(a => a.module === id && a.isLecturer).map(_.identity).result)
 
+  /**
+   * Returns all POs associated with the given module.
+   *
+   * @param id the module identifier
+   * @return a tuple whose first element holds the mandatory POs and whose second element holds the elective POs
+   */
+  def getPOs(id: UUID): Future[(Seq[ModulePOMandatoryProtocol], Seq[ModulePOMandatoryProtocol])] =
+    db.run(
+      modulePOMandatoryTable
+        .filter(_.module === id)
+        .result
+        .map(_.map(m => ModulePOMandatoryProtocol(m.po, m.specialization, m.recommendedSemester)))
+        .zip(
+          modulePOOptionalTable
+            .filter(_.module === id)
+            .result
+            .map(_.map(o => ModulePOMandatoryProtocol(o.po, o.specialization, o.recommendedSemester)))
+        )
+    )
+
   def allModuleCore() =
     db.run(
       tableQuery

@@ -108,6 +108,7 @@ final class ModuleController @Inject() (
     Action.async { r =>
       if (r.isExtended) jsonRepository.getModuleDetails(id).map(_.fold(NotFound)(Ok(_)))
       else if (r.getQueryString("select").contains("lecturers")) service.getLecturers(id).map(x => Ok(Json.toJson(x)))
+      else if (r.getQueryString("select").contains("pos")) service.getPOs(id).map(Ok(_))
       else service.get(id).map(x => Ok(Json.toJson(x)))
     }
 
