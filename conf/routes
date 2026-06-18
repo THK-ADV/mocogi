@@ -123,6 +123,7 @@ DELETE        /scheduleEntries/:id                                    controller
 # Schedule Plan Drafts
 
 GET           /schedulePlanDrafts                                     controllers.schedule.SchedulePlanDraftController.all()
+GET           /schedulePlanDrafts/:id                                 controllers.schedule.SchedulePlanDraftController.get(id:java.util.UUID)
 POST          /schedulePlanDrafts                                     controllers.schedule.SchedulePlanDraftController.create()
 DELETE        /schedulePlanDrafts/:id                                 controllers.schedule.SchedulePlanDraftController.delete(id: java.util.UUID)
 GET           /schedulePlanDrafts/:id/scheduleEntries                 controllers.schedule.SchedulePlanDraftController.scheduleEntriesDrafts(id: java.util.UUID)

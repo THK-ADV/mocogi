@@ -3,6 +3,7 @@ package models.schedule
 import java.time.LocalDateTime
 import java.util.UUID
 
+import controllers.json.JsonNullWritable
 import play.api.libs.json.Json
 import play.api.libs.json.Reads
 import play.api.libs.json.Writes
@@ -26,7 +27,7 @@ enum PlanDraftKind(val id: String) {
   case Exam     extends PlanDraftKind("exam")
 }
 
-object PlanDraft {
+object PlanDraft extends JsonNullWritable {
   given Writes[PlanDraft] = Json.writes
 }
 

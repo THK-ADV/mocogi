@@ -54,6 +54,17 @@ final class SchedulePlanDraftController @Inject() (
       result.fold(Future.successful, _.recover(clientError))
     }
 
+  def get(id: UUID) =
+    auth.andThen(resolveUser).andThen(hasSchedulePlanningPermission).async { r =>
+      val result = for {
+        kind <- parseKind(r.getQueryString("kind"))
+      } yield repo.get(id, kind).map {
+        case Some((d, s)) => Ok(Json.obj("planDraft" -> d, "semester" -> s))
+        case None         => NotFound
+      }
+      result.fold(Future.successful, _.recover(clientError))
+    }
+
   def create() =
     auth(parse.json[PlanDraftProtocol]).andThen(resolveUser).andThen(hasSchedulePlanningPermission).async {
       (r: UserRequest[PlanDraftProtocol]) => repo.create(r.body).map(_ => Created).recover(clientError)

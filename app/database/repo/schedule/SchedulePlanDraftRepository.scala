@@ -29,13 +29,13 @@ final class SchedulePlanDraftRepository @Inject() (
     implicit val ctx: ExecutionContext
 ) extends HasDatabaseConfigProvider[JdbcProfile] {
   import profile.api.*
+  import database.table.given_BaseColumnType_PlanDraftKind
 
   private val planDrafts         = TableQuery[PlanDraftTable]
   private val scheduleDrafts     = TableQuery[ScheduleEntryDraftTable]
   private val scheduleEntryTable = TableQuery[ScheduleEntryTable]
 
-  def all(kind: PlanDraftKind, semester: Option[String], activeOnly: Boolean): Future[Seq[PlanDraft]] = {
-    import database.table.given_BaseColumnType_PlanDraftKind
+  def all(kind: PlanDraftKind, semester: Option[String], activeOnly: Boolean): Future[Seq[PlanDraft]] =
     db.run(
       planDrafts.filter { d =>
         def semesterMatch: Rep[Boolean] = semester.map(s => d.semester === s).getOrElse(true)
@@ -43,7 +43,15 @@ final class SchedulePlanDraftRepository @Inject() (
         d.kind === kind && semesterMatch && activeMatch
       }.result
     )
-  }
+
+  def get(id: UUID, kind: PlanDraftKind): Future[Option[(PlanDraft, Semester)]] =
+    db.run(
+      planDrafts
+        .filter(d => d.id === id && d.kind === kind)
+        .result
+        .headOption
+        .map(_.map(d => (d, Semester.apply(d.semester))))
+    )
 
   def create(p: PlanDraftProtocol): Future[Unit] = {
     val semesterId =
