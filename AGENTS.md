@@ -23,10 +23,3 @@ This repository prefers straightforward, maintainable code over clever abstracti
 
 - Prefer injecting the smallest dependency needed by a component.
 - For single config values, prefer direct Guice bindings (for example `@Named` + `toInstance`) over injecting large config aggregates when practical.
-
-## Formatting workflow
-
-- Before finishing a change or feature, run:
-  - `sbt scalafixAll`
-  - `sbt scalafmtAll`
-- This is required to keep formatting and rewrites consistent across the codebase.
