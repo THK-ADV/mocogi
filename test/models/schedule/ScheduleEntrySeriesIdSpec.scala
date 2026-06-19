@@ -25,7 +25,7 @@ final class ScheduleEntrySeriesIdSpec extends AnyWordSpec {
       assert(parsed.isError)
     }
 
-    "read schedule entry payloads with a series id" in {
+    "read schedule entry payloads with a series id, lecturer and po" in {
       val seriesId = UUID.fromString("7f9ece92-15e3-44b7-99bd-c1ddb7a92942")
       val payload  = Json.obj(
         "id"         -> "f9b65d04-2b18-4728-b0f6-45ec48218262",
@@ -33,14 +33,17 @@ final class ScheduleEntrySeriesIdSpec extends AnyWordSpec {
         "module"     -> "4bb3ef97-af80-42b5-a795-3cb1429d2c4e",
         "courseType" -> "lecture",
         "rooms"      -> Json.arr("87bfcc4f-62bb-459f-a0d9-f5c2ba67f03c"),
+        "lecturer"   -> Json.arr("ado"),
         "start"      -> "2026-04-22T07:00:00.000Z",
         "end"        -> "2026-04-22T09:00:00.000Z",
-        "props"      -> Json.obj()
+        "po"         -> Json.arr()
       )
 
-      val entry = payload.validate[ScheduleEntry.JSON].get
+      val entry = payload.validate[ScheduleEntryProtocol].get
 
       assert(entry.seriesId.toUUID == seriesId)
+      assert(entry.lecturer == List("ado"))
+      assert(entry.po == Json.arr())
     }
   }
 }

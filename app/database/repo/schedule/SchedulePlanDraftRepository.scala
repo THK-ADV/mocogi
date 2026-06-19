@@ -1,5 +1,6 @@
 package database.repo.schedule
 
+import java.sql.Timestamp
 import java.time.LocalDateTime
 import java.util.UUID
 import javax.inject.Inject
@@ -9,18 +10,11 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.util.control.NonFatal
 
-import database.table.schedule.PlanDraftTable
-import database.table.schedule.ScheduleEntryDraftTable
-import database.table.schedule.ScheduleEntryTable
-import models.schedule.PlanDraft
-import models.schedule.PlanDraftKind
-import models.schedule.PlanDraftProtocol
-import models.schedule.ScheduleEntry
-import models.schedule.ScheduleEntryDraft
+import database.table.schedule.*
+import models.schedule.*
 import models.Semester
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.db.slick.HasDatabaseConfigProvider
-import play.api.libs.json.Json
 import slick.jdbc.JdbcProfile
 
 @Singleton
@@ -28,8 +22,14 @@ final class SchedulePlanDraftRepository @Inject() (
     val dbConfigProvider: DatabaseConfigProvider,
     implicit val ctx: ExecutionContext
 ) extends HasDatabaseConfigProvider[JdbcProfile] {
-  import profile.api.*
+  import database.table.given_BaseColumnType_CourseType
   import database.table.given_BaseColumnType_PlanDraftKind
+  import database.table.scheduleEntrySeriesIdColumnType
+  import database.MyPostgresProfile.MyAPI.playJsonTypeMapper
+  import database.MyPostgresProfile.MyAPI.setUUIDArray
+  import database.MyPostgresProfile.MyAPI.simpleStrListTypeMapper
+  import database.MyPostgresProfile.MyAPI.simpleUUIDListTypeMapper
+  import profile.api.*
 
   private val planDrafts         = TableQuery[PlanDraftTable]
   private val scheduleDrafts     = TableQuery[ScheduleEntryDraftTable]
@@ -66,13 +66,13 @@ final class SchedulePlanDraftRepository @Inject() (
     db.run(planDrafts.filter(d => d.id === id && d.publishedAt.isEmpty).delete.map(_ => ()))
 
   /**
-   * Returns all schedule entry drafts for the given plan draft.
+   * Returns all schedule entry drafts for the given plan draft within the given time range.
    * Throws an exception if the plan draft id is not a schedule draft.
    */
-  def scheduleEntriesDrafts(planDraft: UUID): Future[String] = {
+  def scheduleEntriesDrafts(planDraft: UUID, from: Timestamp, to: Timestamp): Future[String] = {
     val query = for {
       _  <- ensureScheduleDraft(planDraft)
-      xs <- sql"select schedule.get_schedule_entry_drafts(${planDraft.toString}::uuid)".as[String].head
+      xs <- sql"select schedule.get_schedule_entry_drafts(${planDraft.toString}::uuid, $from, $to)".as[String].head
     } yield xs
     db.run(query)
   }
@@ -80,33 +80,126 @@ final class SchedulePlanDraftRepository @Inject() (
   /**
    * Creates new schedule entry drafts for the given plan draft and updates the plan draft's updatedAt column.
    * Throws an exception if the plan draft id is not an active schedule draft.
+   *
+   * @return JSON string of the created schedule entry drafts
    */
-  def createScheduleEntriesDrafts(planDraft: UUID, entries: List[ScheduleEntryDraft.JSON]): Future[Unit] =
-    if (entries.exists(_.planDraft != planDraft)) {
-      Future.failed(new IllegalArgumentException("plan draft id does not match the plan draft id in the payload"))
-    } else {
-      val query = for {
-        _ <- ensureActiveScheduleDraft(planDraft)
-        _ <- scheduleDrafts ++= entries.map(_.copy(id = UUID.randomUUID(), planDraft = planDraft))
-        _ <- touch(planDraft)
-      } yield ()
-      db.run(query.transactionally)
-    }
+  def createScheduleEntriesDrafts(planDraft: UUID, entries: List[ScheduleEntryProtocol]): Future[String] = {
+    val dbEntries = entries.map(toDbEntry(_, planDraft))
+    val query     = for {
+      _  <- ensureActiveScheduleDraft(planDraft)
+      _  <- scheduleDrafts ++= dbEntries
+      _  <- touch(planDraft)
+      xs <- sql"select schedule.get_schedule_entry_drafts(${dbEntries.map(_.id)})".as[String].head
+    } yield xs
+    db.run(query.transactionally)
+  }
 
   /**
    * Updates an existing schedule entry draft for the given entry id and updates the plan draft's updatedAt column.
+   * All properties except seriesId and planDraftId are updatable.
    * Throws an exception if the plan draft id is not an active schedule draft.
    */
-  def updateScheduleEntryDraft(entryId: UUID, payload: ScheduleEntryDraft.JSON): Future[Unit] = {
+  def updateScheduleEntryDraft(planDraftId: UUID, entryId: UUID, p: ScheduleEntryProtocol): Future[String] = {
     val query = for {
-      _     <- ensureActiveScheduleDraft(payload.planDraft)
+      _     <- ensureActiveScheduleDraft(planDraftId)
       count <- scheduleDrafts
-        .filter(e => e.planDraft === payload.planDraft && e.id === entryId)
-        .update(payload.copy(id = entryId))
-      _ <- requireUpdated(count, "schedule entry draft not found")
-      _ <- touch(payload.planDraft)
-    } yield ()
+        .filter(e => e.planDraft === planDraftId && e.id === entryId)
+        .map(e => (e.module, e.courseType, e.rooms, e.lecturer, e.start, e.end, e.po))
+        .update((p.module, p.courseType, p.rooms, p.lecturer, p.start, p.end, p.po))
+      _  <- requireUpdated(count, "failed to update schedule entry draft")
+      _  <- touch(planDraftId)
+      xs <- sql"select schedule.get_schedule_entry_drafts(${List(entryId)})".as[String].head
+    } yield xs
     db.run(query.transactionally)
+  }
+
+  /**
+   * Updates all schedule entry drafts in the same series as `entryId` for the given plan draft.
+   * The edited anchor entry defines the local start and end times for every draft in the series.
+   * Throws an exception if the plan draft id is not an active schedule draft.
+   */
+  def updateScheduleEntryDraftSeries(planDraftId: UUID, entryId: UUID, p: ScheduleEntryProtocol): Future[String] = {
+    val query = for {
+      _      <- ensureActiveScheduleDraft(planDraftId)
+      anchor <- scheduleDrafts
+        .filter(e => e.planDraft === planDraftId && e.id === entryId)
+        .forUpdate
+        .result
+        .headOption
+        .flatMap {
+          case Some(entry) => DBIO.successful(entry)
+          case None        => DBIO.failed(new NoSuchElementException("schedule entry draft not found"))
+        }
+      _ <-
+        if anchor.seriesId == p.seriesId then DBIO.unit
+        else DBIO.failed(new IllegalArgumentException("seriesId does not match anchor entry"))
+      _ <-
+        if p.end.isAfter(p.start) then DBIO.unit
+        else DBIO.failed(new IllegalArgumentException("end must be after start"))
+      entries <- scheduleDrafts
+        .filter(e => e.planDraft === planDraftId && e.seriesId === anchor.seriesId)
+        .forUpdate
+        .result
+      setSeriesTimes = ScheduleEntryRepository.setSeriesTimes(p.start, p.end)
+      updated        = entries.map { entry =>
+        val (nextStart, nextEnd) = setSeriesTimes(entry.start, entry.end)
+        entry.copy(
+          module = p.module,
+          courseType = p.courseType,
+          rooms = p.rooms,
+          lecturer = p.lecturer,
+          start = nextStart,
+          end = nextEnd,
+          po = p.po,
+        )
+      }
+      counts <- DBIO.sequence(entries.zip(updated).map {
+        case (oldEntry, newEntry) =>
+          scheduleDrafts
+            .filter(e => e.planDraft === planDraftId && e.id === oldEntry.id)
+            .map(e => (e.module, e.courseType, e.rooms, e.lecturer, e.start, e.end, e.po))
+            .update(
+              (
+                newEntry.module,
+                newEntry.courseType,
+                newEntry.rooms,
+                newEntry.lecturer,
+                newEntry.start,
+                newEntry.end,
+                newEntry.po,
+              )
+            )
+      })
+      _ <-
+        if counts.sum == updated.size then DBIO.unit
+        else DBIO.failed(new IllegalStateException("not all schedule entry drafts in series were updated"))
+      _  <- touch(planDraftId)
+      xs <- sql"select schedule.get_schedule_entry_drafts(${updated.map(_.id).toList})".as[String].head
+    } yield xs
+
+    db.run(query.transactionally)
+  }
+
+  /**
+   * Checks whether a schedule entry draft series exists for `seriesId` in `planDraftId` and returns its entry times.
+   * A series must contain at least two entries; a single matching entry is treated as no series.
+   *
+   * @param planDraftId the schedule plan draft identifier to look up
+   * @param seriesId the series identifier to look up
+   * @return id/start/end pairs for every entry in the series, or an empty sequence if no series exists
+   */
+  def hasSeries(planDraftId: UUID, seriesId: ScheduleEntrySeriesId): Future[Seq[SeriesOccurrence]] = {
+    val query = for {
+      _      <- ensureScheduleDraft(planDraftId)
+      series <- scheduleDrafts
+        .filter(e => e.planDraft === planDraftId && e.seriesId === seriesId)
+        .map(e => (e.id, e.start, e.end))
+        .result
+    } yield series match {
+      case series if series.size <= 1 => Seq.empty
+      case series                     => series.map((i, s, e) => SeriesOccurrence(i, s, e))
+    }
+    db.run(query)
   }
 
   /**
@@ -128,17 +221,18 @@ final class SchedulePlanDraftRepository @Inject() (
    * Throws if the plan draft is missing, not a schedule draft, already published, or has no entry drafts.
    */
   def publish(planDraft: UUID): Future[Unit] = {
-    def createLiveEntries(planDraft: UUID, entries: Seq[ScheduleEntryDraft.DB]) = {
+    def createLiveEntries(planDraft: UUID, entries: Seq[ScheduleEntryDraftDbEntry]) = {
       val liveEntries = entries.toList.map(draft =>
-        ScheduleEntry(
+        ScheduleEntryDbEntry(
           UUID.randomUUID(),
           draft.seriesId,
           draft.module,
           draft.courseType,
           draft.rooms,
+          draft.lecturer,
           draft.start,
           draft.end,
-          Json.obj("po" -> draft.po, "lecturer" -> draft.lecturer),
+          draft.po,
           Some(planDraft),
           Some(draft.id),
         )
@@ -154,7 +248,7 @@ final class SchedulePlanDraftRepository @Inject() (
         .update((now, Some(now)))
     }
 
-    def getDraftEntries(planDraft: UUID): DBIO[Seq[ScheduleEntryDraft.DB]] =
+    def getDraftEntries(planDraft: UUID): DBIO[Seq[ScheduleEntryDraftDbEntry]] =
       for {
         entries <- scheduleDrafts.filter(_.planDraft === planDraft).result
         _       <-
@@ -207,4 +301,18 @@ final class SchedulePlanDraftRepository @Inject() (
   private def requireUpdated(count: Int, message: String): DBIO[Unit] =
     if count == 1 then DBIO.unit
     else DBIO.failed(new IllegalArgumentException(message))
+
+  private def toDbEntry(d: ScheduleEntryProtocol, planDraft: UUID) =
+    ScheduleEntryDraftDbEntry(
+      UUID.randomUUID(),
+      planDraft,
+      d.seriesId,
+      d.module,
+      d.courseType,
+      d.rooms,
+      d.lecturer,
+      d.start,
+      d.end,
+      d.po
+    )
 }

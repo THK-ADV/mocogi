@@ -13,10 +13,12 @@ import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
+import database.table.schedule.ScheduleEntryDbEntry
 import database.table.schedule.ScheduleEntryTable
 import database.Schema
-import models.schedule.ScheduleEntry
+import models.schedule.ScheduleEntryProtocol
 import models.schedule.ScheduleEntrySeriesId
+import models.schedule.SeriesOccurrence
 import models.Semester
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.db.slick.HasDatabaseConfigProvider
@@ -31,6 +33,7 @@ final class ScheduleEntryRepository @Inject() (
   import database.table.scheduleEntrySeriesIdColumnType
   import database.MyPostgresProfile.MyAPI.playJsonTypeMapper
   import database.MyPostgresProfile.MyAPI.setUUIDArray
+  import database.MyPostgresProfile.MyAPI.simpleStrListTypeMapper
   import database.MyPostgresProfile.MyAPI.simpleUUIDListTypeMapper
   import profile.api.*
 
@@ -55,9 +58,8 @@ final class ScheduleEntryRepository @Inject() (
    * @param entries list of schedule entries to insert
    * @return JSON string of the created schedule entries
    */
-  def create(entries: List[ScheduleEntry.JSON]): Future[String] = {
-    import database.MyPostgresProfile.MyAPI.setUUIDArray
-    val dbEntries = entries.map(_.copy(id = UUID.randomUUID(), sourcePlanDraft = None, sourceScheduleEntryDraft = None))
+  def create(entries: List[ScheduleEntryProtocol]): Future[String] = {
+    val dbEntries = entries.map(toDbEntry)
     val query     = for {
       _  <- tableQuery ++= dbEntries
       xs <- sql"select schedule.get_schedule_entries(${dbEntries.map(_.id)})".as[String].head
@@ -67,18 +69,18 @@ final class ScheduleEntryRepository @Inject() (
 
   /**
    * Updates an existing schedule entry and returns it as a JSON string.
-   * All properties except seriesId, sourcePlanDraft and sourceScheduleEntryDraft are updatable.
+   * All properties except seriesId, sourcePlanDraft, and sourceScheduleEntryDraft are updatable.
    *
    * @param id the ID of the entry to update
    * @param s the schedule entry with updated values
    * @return JSON string of the updated schedule entry
    */
-  def update(id: UUID, s: ScheduleEntry.JSON): Future[String] = {
+  def update(id: UUID, s: ScheduleEntryProtocol): Future[String] = {
     val query = for {
       _ <- tableQuery
         .filter(_.id === id)
-        .map(e => (e.module, e.courseType, e.rooms, e.start, e.end, e.props))
-        .update((s.module, s.courseType, s.rooms, s.start, s.end, s.props))
+        .map(e => (e.module, e.courseType, e.rooms, e.lecturer, e.start, e.end, e.po))
+        .update((s.module, s.courseType, s.rooms, s.lecturer, s.start, s.end, s.po))
       xs <- sql"select schedule.get_schedule_entries(${List(id)})".as[String].head
     } yield xs
     db.run(query.transactionally)
@@ -92,7 +94,7 @@ final class ScheduleEntryRepository @Inject() (
    * @param s the updated anchor entry payload
    * @return JSON string of the updated schedule entries
    */
-  def updateSeries(anchorId: UUID, s: ScheduleEntry.JSON): Future[String] = {
+  def updateSeries(anchorId: UUID, s: ScheduleEntryProtocol): Future[String] = {
     val query = for {
       anchor <- tableQuery.filter(_.id === anchorId).forUpdate.result.headOption.flatMap {
         case Some(entry) => DBIO.successful(entry)
@@ -112,24 +114,26 @@ final class ScheduleEntryRepository @Inject() (
           module = s.module,
           courseType = s.courseType,
           rooms = s.rooms,
+          lecturer = s.lecturer,
           start = nextStart,
           end = nextEnd,
-          props = s.props,
+          po = s.po,
         )
       }
       counts <- DBIO.sequence(entries.zip(updated).map {
         case (oldEntry, newEntry) =>
           tableQuery
             .filter(_.id === oldEntry.id)
-            .map(e => (e.module, e.courseType, e.rooms, e.start, e.end, e.props))
+            .map(e => (e.module, e.courseType, e.rooms, e.lecturer, e.start, e.end, e.po))
             .update(
               (
                 newEntry.module,
                 newEntry.courseType,
                 newEntry.rooms,
+                newEntry.lecturer,
                 newEntry.start,
                 newEntry.end,
-                newEntry.props,
+                newEntry.po,
               )
             )
       })
@@ -149,10 +153,10 @@ final class ScheduleEntryRepository @Inject() (
    * @param seriesId the series identifier to look up
    * @return id/start/end pairs for every entry in the series, or an empty sequence if no series exists
    */
-  def hasSeries(seriesId: ScheduleEntrySeriesId): Future[Seq[(UUID, Instant, Instant)]] =
+  def hasSeries(seriesId: ScheduleEntrySeriesId): Future[Seq[SeriesOccurrence]] =
     db.run(tableQuery.filter(_.seriesId === seriesId).map(a => (a.id, a.start, a.end)).result).map {
       case series if series.size <= 1 => Seq.empty
-      case series                     => series
+      case series                     => series.map((i, s, e) => SeriesOccurrence(i, s, e))
     }
 
   /**
@@ -199,6 +203,22 @@ final class ScheduleEntryRepository @Inject() (
 
     db.run(query.transactionally)
   }
+
+  /** Explicit creation sets sourcePlanDraft and sourceScheduleEntryDraft to None. */
+  private def toDbEntry(p: ScheduleEntryProtocol): ScheduleEntryDbEntry =
+    ScheduleEntryDbEntry(
+      UUID.randomUUID(),
+      p.seriesId,
+      p.module,
+      p.courseType,
+      p.rooms,
+      p.lecturer,
+      p.start,
+      p.end,
+      p.po,
+      None,
+      None
+    )
 }
 
 object ScheduleEntryRepository {

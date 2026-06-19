@@ -6,16 +6,30 @@ import java.util.UUID
 import database.table.scheduleEntrySeriesIdColumnType
 import database.Schema
 import models.schedule.CourseType
-import models.schedule.ScheduleEntry
 import models.schedule.ScheduleEntrySeriesId
 import play.api.libs.json.JsValue
 import slick.jdbc.PostgresProfile.api.*
 
+private[database] case class ScheduleEntryDbEntry(
+    id: UUID,
+    seriesId: ScheduleEntrySeriesId,
+    module: UUID,
+    courseType: CourseType,
+    rooms: List[UUID],
+    lecturer: List[String],
+    start: Instant,
+    end: Instant,
+    po: JsValue,
+    sourcePlanDraft: Option[UUID],
+    sourceScheduleEntryDraft: Option[UUID]
+)
+
 private[database] final class ScheduleEntryTable(tag: Tag)
-    extends Table[ScheduleEntry.DB](tag, Some(Schema.Schedule.name), "schedule_entry") {
+    extends Table[ScheduleEntryDbEntry](tag, Some(Schema.Schedule.name), "schedule_entry") {
 
   import database.table.given_BaseColumnType_CourseType
   import database.MyPostgresProfile.MyAPI.playJsonTypeMapper
+  import database.MyPostgresProfile.MyAPI.simpleStrListTypeMapper
   import database.MyPostgresProfile.MyAPI.simpleUUIDListTypeMapper
 
   def id = column[UUID]("id", O.PrimaryKey)
@@ -32,7 +46,9 @@ private[database] final class ScheduleEntryTable(tag: Tag)
 
   def rooms = column[List[UUID]]("rooms")
 
-  def props = column[JsValue]("props")
+  def lecturer = column[List[String]]("lecturer")
+
+  def po = column[JsValue]("po")
 
   def sourcePlanDraft = column[Option[UUID]]("source_plan_draft")
 
@@ -44,10 +60,11 @@ private[database] final class ScheduleEntryTable(tag: Tag)
     module,
     courseType,
     rooms,
+    lecturer,
     start,
     end,
-    props,
+    po,
     sourcePlanDraft,
     sourceScheduleEntryDraft,
-  ) <> (ScheduleEntry.apply[UUID].tupled, ScheduleEntry.unapply[UUID])
+  ) <> (ScheduleEntryDbEntry.apply.tupled, ScheduleEntryDbEntry.unapply)
 }

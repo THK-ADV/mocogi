@@ -782,7 +782,7 @@ FROM
 GROUP BY
   m.id;
 
--- Returns enriched schedule entries for an explicit list of schedule entry ids.
+-- Returns enriched schedule entries for an explicit list of ids.
 -- The payload joins rooms, lecturers, module metadata, and teaching units into
 -- the JSON shape consumed by the schedule APIs.
 -- NOTE: The two overloads below are intentionally duplicated to keep each one a
@@ -802,7 +802,8 @@ CREATE OR REPLACE FUNCTION schedule.get_schedule_entries(p_ids uuid[])
       se.course_type,
       se.module,
       se.rooms,
-      se.props
+      se.lecturer,
+      se.po
     FROM
       schedule.schedule_entry se
     WHERE
@@ -834,7 +835,7 @@ module_core AS(
     m.id
 )
 SELECT
-  coalesce(jsonb_agg(jsonb_build_object('id', s.id, 'seriesId', s.series_id, 'start', s."start", 'end', s."end", 'courseType', s.course_type, 'rooms', rooms.room_agg, 'module', mc.id, 'moduleTitle', mc.title, 'moduleAbbrev', mc.abbrev, 'moduleManagement', mc.module_management, 'lecturer', lecturers.lecturer_agg, 'teachingUnits', mtu.teaching_units, 'props', s.props)), '[]'::jsonb)
+  coalesce(jsonb_agg(jsonb_build_object('id', s.id, 'seriesId', s.series_id, 'start', s."start", 'end', s."end", 'courseType', s.course_type, 'rooms', rooms.room_agg, 'module', mc.id, 'moduleTitle', mc.title, 'moduleAbbrev', mc.abbrev, 'moduleManagement', mc.module_management, 'lecturer', lecturers.lecturer_agg, 'teachingUnits', mtu.teaching_units, 'po', s.po)), '[]'::jsonb)
 FROM
   entries s
   JOIN module_core mc ON mc.id = s.module
@@ -855,13 +856,19 @@ FROM
               i.abbreviation
             ELSE
               i.id
-            END)), '[]'::jsonb) AS lecturer_agg
+            END)) FILTER(WHERE i.id IS NOT NULL), '[]'::jsonb) AS lecturer_agg
     FROM
-      jsonb_array_elements_text(s.props -> 'lecturer') AS lec_id(id)
-      JOIN core.identity i ON i.id = lec_id.id) lecturers ON TRUE
+      unnest(s.lecturer) AS lec_id(id)
+      LEFT JOIN core.identity i ON i.id = lec_id.id) lecturers ON TRUE
 $$;
 
-CREATE OR REPLACE FUNCTION schedule.get_schedule_entry_drafts(p_plan_draft uuid)
+-- Returns enriched schedule entry drafts for an explicit list of ids.
+-- The payload joins rooms, lecturers, module metadata, and teaching units into
+-- the JSON shape consumed by the schedule APIs.
+-- NOTE: The two overloads below are intentionally duplicated to keep each one a
+-- single-pass query. Any change to the SELECT/JOIN/aggregation body must be
+-- applied to BOTH functions.
+CREATE OR REPLACE FUNCTION schedule.get_schedule_entry_drafts(p_ids uuid[])
   RETURNS jsonb
   LANGUAGE sql
   STABLE
@@ -869,7 +876,6 @@ CREATE OR REPLACE FUNCTION schedule.get_schedule_entry_drafts(p_plan_draft uuid)
   WITH entries AS(
     SELECT
       sed.id,
-      sed.plan_draft,
       sed.series_id,
       sed."start",
       sed."end",
@@ -881,7 +887,7 @@ CREATE OR REPLACE FUNCTION schedule.get_schedule_entry_drafts(p_plan_draft uuid)
     FROM
       schedule.schedule_entry_draft sed
     WHERE
-      sed.plan_draft = p_plan_draft
+      sed.id = ANY(p_ids)
 ),
 module_core AS(
   SELECT
@@ -909,7 +915,7 @@ module_core AS(
     m.id
 )
 SELECT
-  coalesce(jsonb_agg(jsonb_build_object('id', s.id, 'planDraft', s.plan_draft, 'seriesId', s.series_id, 'start', s."start", 'end', s."end", 'courseType', s.course_type, 'rooms', rooms.room_agg, 'module', mc.id, 'moduleTitle', mc.title, 'moduleAbbrev', mc.abbrev, 'moduleManagement', mc.module_management, 'lecturer', lecturers.lecturer_agg, 'teachingUnits', coalesce(mtu.teaching_units, ARRAY[]::uuid[]), 'po', s.po)), '[]'::jsonb)
+  coalesce(jsonb_agg(jsonb_build_object('id', s.id, 'seriesId', s.series_id, 'start', s."start", 'end', s."end", 'courseType', s.course_type, 'rooms', rooms.room_agg, 'module', mc.id, 'moduleTitle', mc.title, 'moduleAbbrev', mc.abbrev, 'moduleManagement', mc.module_management, 'lecturer', lecturers.lecturer_agg, 'teachingUnits', coalesce(mtu.teaching_units, ARRAY[]::uuid[]), 'po', s.po)), '[]'::jsonb)
 FROM
   entries s
   JOIN module_core mc ON mc.id = s.module
@@ -936,9 +942,87 @@ FROM
       LEFT JOIN core.identity i ON i.id = lec_id.id) lecturers ON TRUE
 $$;
 
--- Returns enriched schedule entries that fall fully inside the requested time
--- window. The JSON shape matches the id-based overload so callers can switch
--- filters without reshaping the response.
+-- overload mentioned above
+DROP FUNCTION IF EXISTS schedule.get_schedule_entry_drafts(uuid);
+
+CREATE OR REPLACE FUNCTION schedule.get_schedule_entry_drafts(p_plan_draft uuid, p_start timestamp, p_end timestamp)
+  RETURNS jsonb
+  LANGUAGE sql
+  STABLE
+  AS $$
+  WITH entries AS(
+    SELECT
+      sed.id,
+      sed.series_id,
+      sed."start",
+      sed."end",
+      sed.course_type,
+      sed.module,
+      sed.rooms,
+      sed.lecturer,
+      sed.po
+    FROM
+      schedule.schedule_entry_draft sed
+    WHERE
+      sed.plan_draft = p_plan_draft
+      AND sed."start" >= p_start
+      AND sed."start" < p_end
+      AND sed."end" < p_end
+),
+module_core AS(
+  SELECT
+    m.id,
+    m.title,
+    m.abbrev,
+    coalesce(jsonb_agg(jsonb_build_object('id', i.id, 'kind', i.kind, 'label', CASE WHEN i.kind = 'person' THEN
+            i.lastname
+          ELSE
+            i.title
+          END, 'abbreviation', CASE WHEN i.kind = 'person' THEN
+            i.abbreviation
+          ELSE
+            i.id
+          END)) FILTER(WHERE i.id IS NOT NULL), '[]'::jsonb) AS module_management
+  FROM( SELECT DISTINCT
+      module
+    FROM
+      entries) em
+    JOIN modules.module m ON m.id = em.module
+    LEFT JOIN modules.module_responsibility mr ON m.id = mr.module
+      AND mr.responsibility_type = 'module_management'
+    LEFT JOIN core.identity i ON mr.identity = i.id
+  GROUP BY
+    m.id
+)
+SELECT
+  coalesce(jsonb_agg(jsonb_build_object('id', s.id, 'seriesId', s.series_id, 'start', s."start", 'end', s."end", 'courseType', s.course_type, 'rooms', rooms.room_agg, 'module', mc.id, 'moduleTitle', mc.title, 'moduleAbbrev', mc.abbrev, 'moduleManagement', mc.module_management, 'lecturer', lecturers.lecturer_agg, 'teachingUnits', coalesce(mtu.teaching_units, ARRAY[]::uuid[]), 'po', s.po)), '[]'::jsonb)
+FROM
+  entries s
+  JOIN module_core mc ON mc.id = s.module
+  LEFT JOIN schedule.module_teaching_unit mtu ON mtu.module = mc.id
+  LEFT JOIN LATERAL(
+    SELECT
+      coalesce(jsonb_agg(jsonb_build_object('id', r.id, 'abbrev', r.abbrev)) FILTER(WHERE r.id IS NOT NULL), '[]'::jsonb) AS room_agg
+    FROM
+      unnest(s.rooms) AS room_id(id)
+      LEFT JOIN schedule.room r ON r.id = room_id.id) rooms ON TRUE
+  LEFT JOIN LATERAL(
+    SELECT
+      coalesce(jsonb_agg(jsonb_build_object('id', i.id, 'kind', i.kind, 'label', CASE WHEN i.kind = 'person' THEN
+              i.lastname
+            ELSE
+              i.title
+            END, 'abbreviation', CASE WHEN i.kind = 'person' THEN
+              i.abbreviation
+            ELSE
+              i.id
+            END)) FILTER(WHERE i.id IS NOT NULL), '[]'::jsonb) AS lecturer_agg
+    FROM
+      unnest(s.lecturer) AS lec_id(id)
+      LEFT JOIN core.identity i ON i.id = lec_id.id) lecturers ON TRUE
+$$;
+
+-- overload mentioned above
 CREATE OR REPLACE FUNCTION schedule.get_schedule_entries(p_start timestamp, p_end timestamp)
   RETURNS jsonb
   LANGUAGE sql
@@ -953,7 +1037,8 @@ CREATE OR REPLACE FUNCTION schedule.get_schedule_entries(p_start timestamp, p_en
       se.course_type,
       se.module,
       se.rooms,
-      se.props
+      se.lecturer,
+      se.po
     FROM
       schedule.schedule_entry se
     WHERE
@@ -987,7 +1072,7 @@ module_core AS(
     m.id
 )
 SELECT
-  coalesce(jsonb_agg(jsonb_build_object('id', s.id, 'seriesId', s.series_id, 'start', s."start", 'end', s."end", 'courseType', s.course_type, 'rooms', rooms.room_agg, 'module', mc.id, 'moduleTitle', mc.title, 'moduleAbbrev', mc.abbrev, 'moduleManagement', mc.module_management, 'lecturer', lecturers.lecturer_agg, 'teachingUnits', mtu.teaching_units, 'props', s.props)), '[]'::jsonb)
+  coalesce(jsonb_agg(jsonb_build_object('id', s.id, 'seriesId', s.series_id, 'start', s."start", 'end', s."end", 'courseType', s.course_type, 'rooms', rooms.room_agg, 'module', mc.id, 'moduleTitle', mc.title, 'moduleAbbrev', mc.abbrev, 'moduleManagement', mc.module_management, 'lecturer', lecturers.lecturer_agg, 'teachingUnits', mtu.teaching_units, 'po', s.po)), '[]'::jsonb)
 FROM
   entries s
   JOIN module_core mc ON mc.id = s.module
@@ -1008,10 +1093,10 @@ FROM
               i.abbreviation
             ELSE
               i.id
-            END)), '[]'::jsonb) AS lecturer_agg
+            END)) FILTER(WHERE i.id IS NOT NULL), '[]'::jsonb) AS lecturer_agg
     FROM
-      jsonb_array_elements_text(s.props -> 'lecturer') AS lec_id(id)
-      JOIN core.identity i ON i.id = lec_id.id) lecturers ON TRUE
+      unnest(s.lecturer) AS lec_id(id)
+      LEFT JOIN core.identity i ON i.id = lec_id.id) lecturers ON TRUE
 $$;
 
 -- Produces the compact module catalog payload used by module list endpoints.

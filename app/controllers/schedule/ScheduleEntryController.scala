@@ -1,7 +1,5 @@
 package controllers.schedule
 
-import java.sql.Timestamp
-import java.time.Instant
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -15,7 +13,7 @@ import controllers.actions.UserRequest
 import controllers.actions.UserResolveAction
 import database.repo.schedule.ScheduleEntryRepository
 import database.repo.PermissionRepository
-import models.schedule.ScheduleEntry
+import models.schedule.ScheduleEntryProtocol
 import models.schedule.ScheduleEntrySeriesId
 import models.Semester
 import permission.SchedulePlanningCheck
@@ -37,27 +35,9 @@ final class ScheduleEntryController @Inject() (
     with UserResolveAction
     with SchedulePlanningCheck {
 
-  private def parseDate(key: String, r: Request[AnyContent]): Option[Timestamp] =
-    r.getQueryString(key).map(a => Timestamp.from(Instant.ofEpochMilli(a.toLong)))
-
-  private def resolveDateRange(r: Request[AnyContent]): Either[Result, (Timestamp, Timestamp)] =
-    r.getQueryString("semester") match {
-      case Some(semester) =>
-        val (from, to) = Semester.dateRange(semester)
-        Right((Timestamp.valueOf(from), Timestamp.valueOf(to)))
-      case None =>
-        (parseDate("from", r), parseDate("to", r)) match {
-          case (Some(from), Some(to)) => Right((from, to))
-          case (None, None)           =>
-            Left(BadRequest("Either `semester` or both `from` and `to` query parameters must be provided."))
-          case _ =>
-            Left(BadRequest("Both `from` and `to` query parameters must be provided together."))
-        }
-    }
-
   private val allAction =
     Action.async { (r: Request[AnyContent]) =>
-      resolveDateRange(r) match {
+      ScheduleDateRange.resolve(r) match {
         case Left(result) =>
           Future.successful(result)
         case Right((from, to)) =>
@@ -88,38 +68,32 @@ final class ScheduleEntryController @Inject() (
 
   /** Creates new schedule entries from the JSON payload and returns the created entries as JSON. */
   def create() =
-    auth(parse.json[List[ScheduleEntry.JSON]]).andThen(resolveUser).andThen(hasSchedulePlanningPermission).async {
-      (r: UserRequest[List[ScheduleEntry.JSON]]) =>
+    auth(parse.json[List[ScheduleEntryProtocol]]).andThen(resolveUser).andThen(hasSchedulePlanningPermission).async {
+      (r: UserRequest[List[ScheduleEntryProtocol]]) =>
         repo.create(r.body).map(Created(_))
     }
 
   /** Updates an existing schedule entry identified by `id` with the provided JSON payload. */
   def update(id: UUID) =
-    auth(parse.json[ScheduleEntry.JSON]).andThen(resolveUser).andThen(hasSchedulePlanningPermission).async {
-      (r: UserRequest[ScheduleEntry.JSON]) =>
+    auth(parse.json[ScheduleEntryProtocol]).andThen(resolveUser).andThen(hasSchedulePlanningPermission).async {
+      (r: UserRequest[ScheduleEntryProtocol]) =>
         repo.update(id, r.body).map(Ok(_))
     }
 
   /** Updates every schedule entry in the same series as `id` with the provided JSON payload. */
   def updateSeries(id: UUID) =
-    auth(parse.json[ScheduleEntry.JSON]).andThen(resolveUser).andThen(hasSchedulePlanningPermission).async {
-      (r: UserRequest[ScheduleEntry.JSON]) =>
+    auth(parse.json[ScheduleEntryProtocol]).andThen(resolveUser).andThen(hasSchedulePlanningPermission).async {
+      (r: UserRequest[ScheduleEntryProtocol]) =>
         repo.updateSeries(id, r.body).map(Ok(_)).recover(clientError)
     }
 
-  /** Checks whether a schedule entry series exists for `seriesID` and returns the series data, or `NotFound` otherwise. */
-  def hasSeries(seriesID: UUID) = {
-    def toJson(series: Seq[(UUID, Instant, Instant)]) =
-      Json.toJson(series.map {
-        case (id, start, end) =>
-          Json.obj("id" -> Json.toJson(id), "start" -> Json.toJson(start), "end" -> Json.toJson(end))
-      })
+  /** Checks whether a schedule entry series exists for `seriesID` and returns the series data */
+  def getSeriesOccurrences(seriesID: UUID) =
     auth.andThen(resolveUser).andThen(hasSchedulePlanningPermission).async { _ =>
       repo
         .hasSeries(ScheduleEntrySeriesId(seriesID))
-        .map(series => if series.nonEmpty then Ok(toJson(series)) else NotFound)
+        .map(res => Ok(Json.toJson(res)))
     }
-  }
 
   /** Deletes the schedule entry identified by `id`. */
   def delete(id: UUID) =

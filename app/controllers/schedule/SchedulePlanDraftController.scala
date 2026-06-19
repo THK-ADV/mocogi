@@ -4,6 +4,7 @@ import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
 
+import scala.concurrent.duration.*
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.util.control.NonFatal
@@ -15,9 +16,11 @@ import database.repo.schedule.SchedulePlanDraftRepository
 import database.repo.PermissionRepository
 import models.schedule.PlanDraftKind
 import models.schedule.PlanDraftProtocol
-import models.schedule.ScheduleEntryDraft
+import models.schedule.ScheduleEntryProtocol
+import models.schedule.ScheduleEntrySeriesId
 import models.Semester
 import permission.SchedulePlanningCheck
+import play.api.cache.AsyncCacheApi
 import play.api.libs.json.Json
 import play.api.mvc.*
 import security.ClientErrorResponse
@@ -27,6 +30,7 @@ import org.postgresql.util.PSQLException
 final class SchedulePlanDraftController @Inject() (
     cc: ControllerComponents,
     repo: SchedulePlanDraftRepository,
+    cache: AsyncCacheApi,
     auth: AuthorizationAction,
     val permissionRepository: PermissionRepository,
     val clientErrors: ClientErrorResponse,
@@ -80,36 +84,55 @@ final class SchedulePlanDraftController @Inject() (
     }
 
   /**
-   * Returns all schedule entry drafts for the given plan draft.
+   * Returns schedule entry drafts for the given plan draft and date range.
    * Throws an exception if the plan draft id is not a schedule draft.
+   *
+   * Accepts the same `semester` or `from` and `to` query parameters as `ScheduleEntryController.all`.
    */
   def scheduleEntriesDrafts(planDraftId: UUID) =
-    auth.andThen(resolveUser).andThen(hasSchedulePlanningPermission).async { (_: UserRequest[AnyContent]) =>
-      repo.scheduleEntriesDrafts(planDraftId).map(Ok(_)).recover(clientError)
+    auth.andThen(resolveUser).andThen(hasSchedulePlanningPermission).async { (r: UserRequest[AnyContent]) =>
+      ScheduleDateRange.resolve(r) match {
+        case Left(result)      => Future.successful(result)
+        case Right((from, to)) =>
+          val entries =
+            if r.headers.get("Cache-Control").contains("no-cache") then
+              repo.scheduleEntriesDrafts(planDraftId, from, to)
+            else
+              cache.getOrElseUpdate(s"schedule-entry-drafts:${r.method}:${r.uri}", 15.minutes) {
+                repo.scheduleEntriesDrafts(planDraftId, from, to)
+              }
+
+          entries.map(Ok(_)).recover(clientError)
+      }
     }
 
   /**
-   * Creates new schedule entry drafts for the given plan draft.
+   * Creates new schedule entry drafts for the given plan draft and returns the created entries as JSON.
    * Throws an exception if the plan draft id is not a schedule draft.
    */
   def createScheduleEntriesDrafts(planDraftId: UUID) =
-    auth(parse.json[List[ScheduleEntryDraft.JSON]]).andThen(resolveUser).andThen(hasSchedulePlanningPermission).async {
-      (r: UserRequest[List[ScheduleEntryDraft.JSON]]) =>
-        repo.createScheduleEntriesDrafts(planDraftId, r.body).map(_ => Created).recover(clientError)
-    }
+    auth(parse.json[List[ScheduleEntryProtocol]])
+      .andThen(resolveUser)
+      .andThen(hasSchedulePlanningPermission)
+      .async { (r: UserRequest[List[ScheduleEntryProtocol]]) =>
+        repo.createScheduleEntriesDrafts(planDraftId, r.body).map(Created(_)).recover(clientError)
+      }
 
   /**
    * Updates an existing schedule entry draft for the given plan draft and entry id.
    * Throws an exception if the plan draft id is not an active schedule draft.
    */
   def updateScheduleEntryDraft(planDraftId: UUID, entryId: UUID) =
-    auth(parse.json[ScheduleEntryDraft.JSON]).andThen(resolveUser).andThen(hasSchedulePlanningPermission).async {
-      (r: UserRequest[ScheduleEntryDraft.JSON]) =>
-        if planDraftId != r.body.planDraft then
-          Future.successful(
-            BadRequest(Json.obj("message" -> "plan draft id does not match the plan draft id in the payload"))
-          )
-        else repo.updateScheduleEntryDraft(entryId, r.body).map(_ => NoContent).recover(clientError)
+    auth(parse.json[ScheduleEntryProtocol]).andThen(resolveUser).andThen(hasSchedulePlanningPermission).async {
+      (r: UserRequest[ScheduleEntryProtocol]) =>
+        repo.updateScheduleEntryDraft(planDraftId, entryId, r.body).map(Ok(_)).recover(clientError)
+    }
+
+  /** Updates every schedule entry draft in the same series as `entryId`. */
+  def updateScheduleEntryDraftSeries(planDraftId: UUID, entryId: UUID) =
+    auth(parse.json[ScheduleEntryProtocol]).andThen(resolveUser).andThen(hasSchedulePlanningPermission).async {
+      (r: UserRequest[ScheduleEntryProtocol]) =>
+        repo.updateScheduleEntryDraftSeries(planDraftId, entryId, r.body).map(Ok(_)).recover(clientError)
     }
 
   /**
@@ -131,6 +154,15 @@ final class SchedulePlanDraftController @Inject() (
   def publish(id: UUID) =
     auth.andThen(resolveUser).andThen(hasSchedulePlanningPermission).async { (_: UserRequest[AnyContent]) =>
       repo.publish(id).map(_ => Created).recover(clientError)
+    }
+
+  /** Checks whether a schedule entry draft series exists for `seriesId` and returns the series data. */
+  def getSeriesOccurrences(planDraftId: UUID, seriesId: UUID) =
+    auth.andThen(resolveUser).andThen(hasSchedulePlanningPermission).async { (_: UserRequest[AnyContent]) =>
+      repo
+        .hasSeries(planDraftId, ScheduleEntrySeriesId(seriesId))
+        .map(res => Ok(Json.toJson(res)))
+        .recover(clientError)
     }
 
   private def parseSemester(raw: Option[String]): Either[Result, Option[String]] =
@@ -157,6 +189,7 @@ final class SchedulePlanDraftController @Inject() (
     }
 
   private def clientError: PartialFunction[Throwable, Result] = {
+    case _: NoSuchElementException   => NotFound
     case e: IllegalArgumentException => BadRequest(Json.obj("message" -> e.getMessage))
     case e: PSQLException            => BadRequest(Json.obj("message" -> e.getMessage))
   }
