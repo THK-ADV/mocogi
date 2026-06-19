@@ -82,9 +82,11 @@ final class ModuleController @Inject() (
               }))
             )
           case (false, false, false, false, None, ds) =>
-            ds match
-              case DataSource.Live => service.allModuleCore().map(xs => Ok(Json.toJson(xs)))
-              case DataSource.All  => jsonRepository.allModuleCore().map(Ok(_))
+            val includeDrafts = ds match {
+              case DataSource.Live => false
+              case DataSource.All  => true
+            }
+            jsonRepository.allModuleCore(includeDrafts).map(Ok(_))
           case (true, false, false, true, Some(po), DataSource.Live) =>
             service
               .allFromPOWithCompanion(po, activeOnly = true)
@@ -108,6 +110,7 @@ final class ModuleController @Inject() (
     Action.async { r =>
       if (r.isExtended) jsonRepository.getModuleDetails(id).map(_.fold(NotFound)(Ok(_)))
       else if (r.getQueryString("select").contains("lecturers")) service.getLecturers(id).map(x => Ok(Json.toJson(x)))
+      else if (r.getQueryString("select").contains("pos")) service.getPOs(id).map(Ok(_))
       else service.get(id).map(x => Ok(Json.toJson(x)))
     }
 

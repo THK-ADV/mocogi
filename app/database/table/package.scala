@@ -1,13 +1,18 @@
 package database
 
+import java.util.UUID
+
 import auth.CampusId
 import git.Branch
 import git.CommitId
 import git.MergeRequestId
 import git.MergeRequestStatus
 import models.*
+import models.schedule.CourseType
+import models.schedule.ScheduleEntrySeriesId
 import service.pipeline.Print
 import slick.jdbc.PostgresProfile.api.*
+import models.schedule.PlanDraftKind
 
 package object table {
   implicit val moduleRelationColumnType: BaseColumnType[ModuleRelationType] =
@@ -32,6 +37,12 @@ package object table {
   implicit val printColumnType: BaseColumnType[Print] =
     MappedColumnType
       .base[Print, String](_.value, Print.apply)
+
+  implicit val scheduleEntrySeriesIdColumnType: BaseColumnType[ScheduleEntrySeriesId] =
+    MappedColumnType.base[ScheduleEntrySeriesId, UUID](
+      _.toUUID,
+      ScheduleEntrySeriesId.apply
+    )
 
   implicit val campusIdColumnType: BaseColumnType[CampusId] =
     MappedColumnType
@@ -80,4 +91,10 @@ package object table {
         case other     => AssessmentMethodSource.PO(FullPoId(other))
       }
     )
+
+  given BaseColumnType[PlanDraftKind] =
+    MappedColumnType.base[PlanDraftKind, String](_.id, PlanDraftKind.apply)
+
+  given BaseColumnType[CourseType] =
+    MappedColumnType.base[CourseType, String](_.id, CourseType.apply)
 }

@@ -1,5 +1,7 @@
 package permission
 
+import java.util.UUID
+
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
@@ -9,7 +11,6 @@ import ops.||
 import play.api.mvc.ActionFilter
 import play.api.mvc.Result
 import service.ModuleUpdatePermissionService
-import java.util.UUID
 
 trait ModuleHistoryCheck extends UsesClientErrors {
   protected def moduleUpdatePermissionService: ModuleUpdatePermissionService
