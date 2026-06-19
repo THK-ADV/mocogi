@@ -8,9 +8,7 @@ CREATE TABLE schedule.plan_draft(
   "published_at" timestamp NULL
 );
 
-CREATE UNIQUE INDEX idx_plan_draft_one_active ON schedule.plan_draft(kind, semester)
-WHERE
-  published_at IS NULL;
+CREATE UNIQUE INDEX idx_plan_draft_one_active ON schedule.plan_draft(kind, semester);
 
 CREATE TABLE schedule.schedule_entry_draft(
   "id" uuid PRIMARY KEY,

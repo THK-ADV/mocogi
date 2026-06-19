@@ -967,7 +967,7 @@ CREATE OR REPLACE FUNCTION schedule.get_schedule_entry_drafts(p_plan_draft uuid,
       sed.plan_draft = p_plan_draft
       AND sed."start" >= p_start
       AND sed."start" < p_end
-      AND sed."end" < p_end
+      AND sed."end" <= p_end
 ),
 module_core AS(
   SELECT
@@ -1044,7 +1044,7 @@ CREATE OR REPLACE FUNCTION schedule.get_schedule_entries(p_start timestamp, p_en
     WHERE
       se."start" >= p_start
       AND se."start" < p_end
-      AND se."end" < p_end
+      AND se."end" <= p_end
 ),
 module_core AS(
   SELECT
@@ -1163,4 +1163,3 @@ ORDER BY
   id,
   src_rank) sub;
 $$;
-

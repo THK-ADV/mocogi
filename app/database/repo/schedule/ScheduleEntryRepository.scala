@@ -1,10 +1,7 @@
 package database.repo.schedule
 
 import java.sql.Timestamp
-import java.time.format.DateTimeFormatter
 import java.time.Instant
-import java.time.LocalDate
-import java.time.LocalDateTime
 import java.time.ZoneId
 import java.util.UUID
 import javax.inject.Inject
@@ -15,11 +12,9 @@ import scala.concurrent.Future
 
 import database.table.schedule.ScheduleEntryDbEntry
 import database.table.schedule.ScheduleEntryTable
-import database.Schema
 import models.schedule.ScheduleEntryProtocol
 import models.schedule.ScheduleEntrySeriesId
 import models.schedule.SeriesOccurrence
-import models.Semester
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.db.slick.HasDatabaseConfigProvider
 import slick.jdbc.JdbcProfile
@@ -166,43 +161,6 @@ final class ScheduleEntryRepository @Inject() (
    */
   def delete(id: UUID): Future[Boolean] =
     db.run(tableQuery.filter(_.id === id).delete).map(_ == 1)
-
-  /**
-   * Creates the next semester's partition if it does not already exist.
-   *
-   * @return true if the partition was created, false if it already existed
-   */
-  def createNextPartitionIfNotExists(): Future[Boolean] = {
-    val semesterId    = Semester.next(LocalDate.now()).id
-    val (start, end)  = Semester.dateRange(semesterId)
-    val partitionName = s"schedule_entry_${semesterId}".toLowerCase
-    val schema        = Schema.Schedule.name
-
-    val query = for {
-      exists <- sql"""
-        SELECT EXISTS (
-          SELECT 1 FROM pg_class c
-          JOIN pg_namespace n ON n.oid = c.relnamespace
-          WHERE n.nspname = $schema AND c.relname = $partitionName
-        )
-        """.as[Boolean].head
-      res <-
-        if exists then DBIO.successful(false)
-        else {
-          val zone     = ZoneId.of("Europe/Berlin")
-          val pattern  = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ssxx")
-          val startStr = start.atZone(zone).format(pattern)
-          val endStr   = end.atZone(zone).format(pattern)
-          sqlu"""
-          CREATE TABLE IF NOT EXISTS #$schema.#$partitionName
-            PARTITION OF #$schema.schedule_entry
-            FOR VALUES FROM ('#$startStr') TO ('#$endStr')
-        """.map(_ => true)
-        }
-    } yield res
-
-    db.run(query.transactionally)
-  }
 
   /** Explicit creation sets sourcePlanDraft and sourceScheduleEntryDraft to None. */
   private def toDbEntry(p: ScheduleEntryProtocol): ScheduleEntryDbEntry =

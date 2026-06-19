@@ -1,7 +1,10 @@
 package database.repo.schedule
 
 import java.sql.Timestamp
+import java.time.format.DateTimeFormatter
+import java.time.Instant
 import java.time.LocalDateTime
+import java.time.ZoneId
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -11,6 +14,7 @@ import scala.concurrent.Future
 import scala.util.control.NonFatal
 
 import database.table.schedule.*
+import database.Schema
 import models.schedule.*
 import models.Semester
 import play.api.db.slick.DatabaseConfigProvider
@@ -54,12 +58,24 @@ final class SchedulePlanDraftRepository @Inject() (
     )
 
   def create(p: PlanDraftProtocol): Future[Unit] = {
+    def createDraft(kind: PlanDraftKind, semester: String) = {
+      val now = LocalDateTime.now()
+      PlanDraft(UUID.randomUUID(), kind, semester, now, now, None)
+    }
+
     val semesterId =
       try Semester.apply(p.semester).id
       catch case NonFatal(_) => throw new IllegalArgumentException(s"invalid semester: ${p.semester}")
-    val now   = LocalDateTime.now()
-    val draft = PlanDraft(UUID.randomUUID(), p.kind, semesterId, now, now, None)
-    db.run(planDrafts += draft).map(_ => ())
+
+    val query = for {
+      exists <- planDrafts.filter(a => a.kind === p.kind && a.semester === semesterId).exists.result
+      _      <-
+        if exists then DBIO.failed(new IllegalArgumentException("schedule plan already exists for semester"))
+        else DBIO.unit
+      _ <- planDrafts += createDraft(p.kind, semesterId)
+    } yield ()
+
+    db.run(query.transactionally)
   }
 
   def deleteActive(id: UUID): Future[Unit] =
@@ -218,6 +234,8 @@ final class SchedulePlanDraftRepository @Inject() (
   /**
    * Publishes an active schedule plan draft: copies every entry draft into a live schedule entry
    * and sets publishedAt on the plan draft. Runs in a single transaction.
+   * Validates that all entries are within the plan draft's semester boundaries and creates the corresponding partition
+   * if necessary.
    * Throws if the plan draft is missing, not a schedule draft, already published, or has no entry drafts.
    */
   def publish(planDraft: UUID): Future[Unit] = {
@@ -256,9 +274,17 @@ final class SchedulePlanDraftRepository @Inject() (
           else DBIO.unit
       } yield entries
 
+    def validateSemesterEntries(semesterId: String, entries: Seq[ScheduleEntryDraftDbEntry]): DBIO[Unit] =
+      SchedulePlanDraftRepository.validateSemesterEntries(semesterId, entries.map(e => (e.id, e.start, e.end))) match {
+        case Right(_)      => DBIO.unit
+        case Left(message) => DBIO.failed(new IllegalArgumentException(message))
+      }
+
     val query = for {
-      _       <- ensureActiveScheduleDraft(planDraft)
+      draft   <- getActiveScheduleDraft(planDraft)
       entries <- getDraftEntries(planDraft)
+      _       <- validateSemesterEntries(draft.semester, entries)
+      _       <- ensureSemesterPartition(draft.semester)
       _       <- createLiveEntries(planDraft, entries)
       count   <- archivePlanDraft(planDraft)
       _       <- requireUpdated(count, "schedule plan draft was already published")
@@ -281,16 +307,102 @@ final class SchedulePlanDraftRepository @Inject() (
    * Ensures that the plan draft is an active schedule draft.
    */
   private def ensureActiveScheduleDraft(planDraft: UUID): DBIO[Unit] =
+    getActiveScheduleDraft(planDraft).map(_ => ())
+
+  private def getActiveScheduleDraft(planDraft: UUID): DBIO[PlanDraft] =
     planDrafts.filter(_.id === planDraft).forUpdate.result.headOption.flatMap {
       case Some(draft) if draft.kind != PlanDraftKind.Schedule =>
         DBIO.failed(new IllegalArgumentException("plan draft is not a schedule draft"))
       case Some(draft) if draft.publishedAt.nonEmpty =>
         DBIO.failed(new IllegalArgumentException("plan draft is already published"))
-      case Some(_) =>
-        DBIO.unit
+      case Some(draft) =>
+        DBIO.successful(draft)
       case None =>
         DBIO.failed(new IllegalArgumentException("plan draft not found"))
     }
+
+  /**
+   * Ensures that `schedule_entry` has one partition covering exactly the given semester's `[start, end)` range.
+   *
+   * This action runs inside the transactional publish flow, so partition creation is committed or rolled back together
+   * with the live entries and plan draft state. The fast path only checks the PostgreSQL catalog for an attached
+   * partition with matching bounds. If none exists, the parent table is locked and checked again before the partition
+   * is created, serializing concurrent publishes without locking the common case.
+   *
+   * Catalog expressions are normalized to the application's time zone and date style before comparison. Identifiers
+   * and bound literals use raw Slick interpolation because PostgreSQL does not accept bound parameters in this DDL;
+   * every interpolated value is derived from the validated, canonical [[Semester.id]]. A conflicting relation with the
+   * expected name fails explicitly instead of being accepted as a valid partition.
+   */
+  private def ensureSemesterPartition(semesterId: String): DBIO[Unit] = {
+    val semester      = Semester(semesterId)
+    val schema        = Schema.Schedule.name
+    val partitionName = s"schedule_entry_${semester.id}"
+    val formatter     = DateTimeFormatter
+      .ofPattern("yyyy-MM-dd HH:mm:ssx")
+      .withZone(SchedulePlanDraftRepository.ScheduleZone)
+    val start         = semester.start.atStartOfDay(SchedulePlanDraftRepository.ScheduleZone).toInstant
+    val end           = semester.end.atStartOfDay(SchedulePlanDraftRepository.ScheduleZone).toInstant
+    val startStr      = formatter.format(start)
+    val endStr        = formatter.format(end)
+    val expectedBound = s"FOR VALUES FROM ('$startStr') TO ('$endStr')"
+
+    def matchingPartitionExists =
+      sql"""
+        SELECT EXISTS (
+          SELECT 1
+          FROM pg_class child
+          JOIN pg_namespace child_ns ON child_ns.oid = child.relnamespace
+          JOIN pg_inherits inheritance ON inheritance.inhrelid = child.oid
+          JOIN pg_class parent ON parent.oid = inheritance.inhparent
+          JOIN pg_namespace parent_ns ON parent_ns.oid = parent.relnamespace
+          WHERE parent_ns.nspname = $schema
+            AND parent.relname = 'schedule_entry'
+            AND pg_get_expr(child.relpartbound, child.oid) = $expectedBound
+        )
+      """.as[Boolean].head
+
+    def partitionNameExists =
+      sql"""
+        SELECT EXISTS (
+          SELECT 1
+          FROM pg_class relation
+          JOIN pg_namespace namespace ON namespace.oid = relation.relnamespace
+          WHERE namespace.nspname = $schema
+            AND relation.relname = $partitionName
+        )
+      """.as[Boolean].head
+
+    def createPartition =
+      sqlu"""
+        CREATE TABLE #$schema.#$partitionName
+          PARTITION OF #$schema.schedule_entry
+          FOR VALUES FROM ('#$startStr') TO ('#$endStr')
+      """.map(_ => ())
+
+    for {
+      _      <- sqlu"set local time zone 'Europe/Berlin'"
+      _      <- sqlu"set local DateStyle to ISO, YMD"
+      exists <- matchingPartitionExists
+      _      <-
+        if exists then DBIO.unit
+        else
+          for {
+            _           <- sqlu"LOCK TABLE #$schema.schedule_entry IN ACCESS EXCLUSIVE MODE"
+            existsAfter <- matchingPartitionExists
+            nameExists  <- if existsAfter then DBIO.successful(false) else partitionNameExists
+            _           <-
+              if existsAfter then DBIO.unit
+              else if nameExists then
+                DBIO.failed(
+                  new IllegalStateException(
+                    s"relation $schema.$partitionName exists but does not cover semester ${semester.id}"
+                  )
+                )
+              else createPartition
+          } yield ()
+    } yield ()
+  }
 
   /**
    * Updates the updatedAt column of the plan draft to the current time.
@@ -315,4 +427,27 @@ final class SchedulePlanDraftRepository @Inject() (
       d.end,
       d.po
     )
+}
+
+object SchedulePlanDraftRepository {
+  private val ScheduleZone = ZoneId.of("Europe/Berlin")
+
+  private[database] def validateSemesterEntries(
+      semesterId: String,
+      entries: Seq[(UUID, Instant, Instant)]
+  ): Either[String, Unit] = {
+    val semester = Semester(semesterId)
+    val start    = semester.start.atStartOfDay(ScheduleZone).toInstant
+    val end      = semester.end.atStartOfDay(ScheduleZone).toInstant
+
+    entries.find {
+      case (_, entryStart, entryEnd) =>
+        entryStart.isBefore(start) || !entryStart.isBefore(end) || !entryEnd.isAfter(entryStart) || entryEnd.isAfter(
+          end
+        )
+    } match {
+      case Some((id, _, _)) => Left(s"schedule entry draft $id is outside semester ${semester.id}")
+      case None             => Right(())
+    }
+  }
 }
