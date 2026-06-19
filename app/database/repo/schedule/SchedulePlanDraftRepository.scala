@@ -78,8 +78,8 @@ final class SchedulePlanDraftRepository @Inject() (
     db.run(query.transactionally)
   }
 
-  def deleteActive(id: UUID): Future[Unit] =
-    db.run(planDrafts.filter(d => d.id === id && d.publishedAt.isEmpty).delete.map(_ => ()))
+  def deleteActive(id: UUID): Future[Boolean] =
+    db.run(planDrafts.filter(d => d.id === id && d.publishedAt.isEmpty).delete.map(_ == 1))
 
   /**
    * Returns all schedule entry drafts for the given plan draft within the given time range.

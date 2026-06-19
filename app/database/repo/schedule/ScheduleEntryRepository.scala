@@ -72,11 +72,13 @@ final class ScheduleEntryRepository @Inject() (
    */
   def update(id: UUID, s: ScheduleEntryProtocol): Future[String] = {
     val query = for {
-      _ <- tableQuery
+      count <- tableQuery
         .filter(_.id === id)
         .map(e => (e.module, e.courseType, e.rooms, e.lecturer, e.start, e.end, e.po))
         .update((s.module, s.courseType, s.rooms, s.lecturer, s.start, s.end, s.po))
-      xs <- sql"select schedule.get_schedule_entries(${List(id)})".as[String].head
+      xs <-
+        if count == 1 then sql"select schedule.get_schedule_entries(${List(id)})".as[String].head
+        else DBIO.failed(new NoSuchElementException("no schedule entry found"))
     } yield xs
     db.run(query.transactionally)
   }

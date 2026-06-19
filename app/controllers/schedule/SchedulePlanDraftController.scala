@@ -4,7 +4,6 @@ import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
 
-import scala.concurrent.duration.*
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.util.control.NonFatal
@@ -20,17 +19,14 @@ import models.schedule.ScheduleEntryProtocol
 import models.schedule.ScheduleEntrySeriesId
 import models.Semester
 import permission.SchedulePlanningCheck
-import play.api.cache.AsyncCacheApi
 import play.api.libs.json.Json
 import play.api.mvc.*
 import security.ClientErrorResponse
-import org.postgresql.util.PSQLException
 
 @Singleton
 final class SchedulePlanDraftController @Inject() (
     cc: ControllerComponents,
     repo: SchedulePlanDraftRepository,
-    cache: AsyncCacheApi,
     auth: AuthorizationAction,
     val permissionRepository: PermissionRepository,
     val clientErrors: ClientErrorResponse,
@@ -80,7 +76,7 @@ final class SchedulePlanDraftController @Inject() (
    */
   def delete(id: UUID) =
     auth.andThen(resolveUser).andThen(hasSchedulePlanningPermission).async { (_: UserRequest[AnyContent]) =>
-      repo.deleteActive(id).map(_ => NoContent).recover(clientError)
+      repo.deleteActive(id).map(if _ then NoContent else NotFound).recover(clientError)
     }
 
   /**
@@ -93,16 +89,7 @@ final class SchedulePlanDraftController @Inject() (
     auth.andThen(resolveUser).andThen(hasSchedulePlanningPermission).async { (r: UserRequest[AnyContent]) =>
       ScheduleDateRange.resolve(r) match {
         case Left(result)      => Future.successful(result)
-        case Right((from, to)) =>
-          val entries =
-            if r.headers.get("Cache-Control").contains("no-cache") then
-              repo.scheduleEntriesDrafts(planDraftId, from, to)
-            else
-              cache.getOrElseUpdate(s"schedule-entry-drafts:${r.method}:${r.uri}", 15.minutes) {
-                repo.scheduleEntriesDrafts(planDraftId, from, to)
-              }
-
-          entries.map(Ok(_)).recover(clientError)
+        case Right((from, to)) => repo.scheduleEntriesDrafts(planDraftId, from, to).map(Ok(_)).recover(clientError)
       }
     }
 
@@ -191,6 +178,5 @@ final class SchedulePlanDraftController @Inject() (
   private def clientError: PartialFunction[Throwable, Result] = {
     case _: NoSuchElementException   => NotFound
     case e: IllegalArgumentException => BadRequest(Json.obj("message" -> e.getMessage))
-    case e: PSQLException            => BadRequest(Json.obj("message" -> e.getMessage))
   }
 }

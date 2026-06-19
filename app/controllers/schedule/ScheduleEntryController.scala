@@ -77,7 +77,7 @@ final class ScheduleEntryController @Inject() (
   def update(id: UUID) =
     auth(parse.json[ScheduleEntryProtocol]).andThen(resolveUser).andThen(hasSchedulePlanningPermission).async {
       (r: UserRequest[ScheduleEntryProtocol]) =>
-        repo.update(id, r.body).map(Ok(_))
+        repo.update(id, r.body).map(Ok(_)).recover(clientError)
     }
 
   /** Updates every schedule entry in the same series as `id` with the provided JSON payload. */
