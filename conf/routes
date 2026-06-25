@@ -102,6 +102,11 @@ GET           /moduleReviewKeys                                                 
 GET           /moduleUpdatePermissions/:moduleId                                          controllers.ModuleUpdatePermissionController.allByModule(moduleId: java.util.UUID)
 POST          /moduleUpdatePermissions/:moduleId                                          controllers.ModuleUpdatePermissionController.replace(moduleId: java.util.UUID)
 
+# Permitted assessment methods, owned by a module
+
+GET           /modules/:moduleId/assessmentMethods                                        controllers.AssessmentMethodController.allPermittedForModule(moduleId: java.util.UUID)
+PUT           /modules/:moduleId/assessmentMethods                                        controllers.AssessmentMethodController.replaceForModule(moduleId: java.util.UUID)
+
 # SemesterPlan
 
 GET           /semesterPlan                                                               controllers.schedule.SemesterPlanController.allByNow()

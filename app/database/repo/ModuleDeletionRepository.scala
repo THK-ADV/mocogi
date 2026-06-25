@@ -10,9 +10,9 @@ import scala.concurrent.Future
 import database.table.CreatedModuleTable
 import database.table.ModuleCompanionTable
 import database.table.ModuleDraftTable
+import database.table.ModulePermittedAssessmentMethodTable
 import database.table.ModuleReviewTable
 import database.table.ModuleUpdatePermissionTable
-import database.table.PermittedAssessmentMethodForModuleTable
 import database.view.ModuleViewRepository
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.db.slick.HasDatabaseConfigProvider
@@ -41,7 +41,7 @@ final class ModuleDeletionRepository @Inject() (
       _ <- TableQuery[ModuleReviewTable].filter(_.moduleDraft.in(moduleDraftQuery.map(_.module))).delete
       _ <- moduleDraftQuery.delete
       _ <- TableQuery[ModuleUpdatePermissionTable].filter(_.module === module).delete
-      _ <- TableQuery[PermittedAssessmentMethodForModuleTable].filter(_.module === module).delete
+      _ <- TableQuery[ModulePermittedAssessmentMethodTable].filter(_.module === module).delete
       _ <- TableQuery[ModuleCompanionTable].filter(_.module === module).delete
       _ <- TableQuery[CreatedModuleTable].filter(_.module === module).delete
     yield ()

@@ -6,7 +6,7 @@ import database.Schema
 import slick.jdbc.PostgresProfile.api.*
 import database.table.core.AssessmentMethodTable
 
-private[database] case class ModuleAssessmentMethodDbEntry(
+private[database] case class ModuleUsedAssessmentMethodDbEntry(
     id: UUID,
     module: UUID,
     assessmentMethod: String,
@@ -14,8 +14,8 @@ private[database] case class ModuleAssessmentMethodDbEntry(
     precondition: Option[List[String]]
 )
 
-private[database] final class ModuleAssessmentMethodTable(tag: Tag)
-    extends Table[ModuleAssessmentMethodDbEntry](tag, Some(Schema.Modules.name), "module_assessment_method") {
+private[database] final class ModuleUsedAssessmentMethodTable(tag: Tag)
+    extends Table[ModuleUsedAssessmentMethodDbEntry](tag, Some(Schema.Modules.name), "module_assessment_method") {
 
   import database.MyPostgresProfile.MyAPI.simpleStrListTypeMapper
 
@@ -37,5 +37,5 @@ private[database] final class ModuleAssessmentMethodTable(tag: Tag)
     assessmentMethod,
     percentage,
     precondition
-  ) <> (ModuleAssessmentMethodDbEntry.apply, ModuleAssessmentMethodDbEntry.unapply)
+  ) <> (ModuleUsedAssessmentMethodDbEntry.apply, ModuleUsedAssessmentMethodDbEntry.unapply)
 }
