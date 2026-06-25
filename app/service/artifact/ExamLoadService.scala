@@ -7,15 +7,15 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 import cli.GitCLI
+import database.repo.core.AssessmentMethodRepository
 import models.ModuleProtocol
 import models.ModuleRelationProtocol
 import play.api.Logging
 import printing.csv.ExamLoadCSVPrinter
 import printing.csv.Module
-import service.core.AssessmentMethodService
 
 final class ExamLoadService @Inject() (
-    assessmentMethodService: AssessmentMethodService,
+    assessmentMethodRepo: AssessmentMethodRepository,
     gitCli: GitCLI,
     implicit val ctx: ExecutionContext
 ) extends Logging {
@@ -66,7 +66,7 @@ final class ExamLoadService @Inject() (
    * Returns the latest exam load for the given PO as a CSV string using the preview branch
    */
   def createLatestExamLoad(po: String): Future[String] = {
-    val assessmentMethods               = assessmentMethodService.all()
+    val assessmentMethods               = assessmentMethodRepo.all()
     val (parsedModules, parsedChildren) = getModulesFromPreview(po)
     val modules                         = prepareModules(parsedModules, po)
     val children                        = prepareChildren(parsedChildren, modules)

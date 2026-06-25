@@ -38,7 +38,7 @@ final class ModuleRepository @Inject() (
     TableQuery[ModuleResponsibilityTable]
 
   private val moduleAssessmentMethodTable =
-    TableQuery[ModuleAssessmentMethodTable]
+    TableQuery[ModuleUsedAssessmentMethodTable]
 
   private val modulePOMandatoryTable =
     TableQuery[ModulePOMandatoryTable]
@@ -290,13 +290,13 @@ final class ModuleRepository @Inject() (
     result.toList
   }
 
-  private def metadataAssessmentMethods(metadata: Metadata): List[ModuleAssessmentMethodDbEntry] = {
-    val metadataAssessmentMethods = ListBuffer[ModuleAssessmentMethodDbEntry]()
+  private def metadataAssessmentMethods(metadata: Metadata): List[ModuleUsedAssessmentMethodDbEntry] = {
+    val metadataAssessmentMethods = ListBuffer[ModuleUsedAssessmentMethodDbEntry]()
 
     metadata.assessmentMethods.mandatory.foreach { m =>
       // this check prevents from adding duplicate values
       if !metadataAssessmentMethods.exists(_.assessmentMethod == m.method.id) then {
-        val metadataAssessmentMethod = ModuleAssessmentMethodDbEntry(
+        val metadataAssessmentMethod = ModuleUsedAssessmentMethodDbEntry(
           UUID.randomUUID,
           metadata.id,
           m.method.id,

@@ -18,14 +18,16 @@ trait ModuleDraftCheck extends UsesClientErrors {
 
   /**
    * This method checks if the user is allowed to edit the module. The verification process is three-stage:
-   * 1. Checks if the user is directly authorized (inherited or granted permission)
-   * 2. Checks if the user is the author (created the module)
-   * 3. Checks if the user is authorized through a role such as admin or PAV
+   * 1. Checks if the user is admin
+   * 2. Checks if the user is directly authorized (inherited or granted permission)
+   * 3. Checks if the user is the author (created the module)
+   * 4. Checks if the user is authorized through a role such as PAV
    */
   def canEditModule(module: UUID) =
     new ActionFilter[UserRequest] {
       protected override def filter[A](request: UserRequest[A]): Future[Option[Result]] = {
-        val hasPermission = moduleUpdatePermissionService.hasPermissionFor(module, request.request.campusId) ||
+        val hasPermission = Future.successful(request.permissions.isAdmin) ||
+          moduleUpdatePermissionService.hasPermissionFor(module, request.request.campusId) ||
           moduleUpdatePermissionService.isAuthorOf(module, request.person.id) ||
           request.permissions.modulePermissions
             .map(pos => moduleUpdatePermissionService.isModulePartOfPO(module, pos))
