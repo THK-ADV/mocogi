@@ -115,44 +115,44 @@ module_management_agg AS (
 study_program_rows AS (
   SELECT
     module_po_mandatory.module AS module_id,
-    study_program_view_not_expired.sp_id,
-    study_program_view_not_expired.po_id,
-    study_program_view_not_expired.po_version,
-    study_program_view_not_expired.spec_id,
+    study_program_view_currently_active.sp_id,
+    study_program_view_currently_active.po_id,
+    study_program_view_currently_active.po_version,
+    study_program_view_currently_active.spec_id,
     TRUE AS mandatory,
     module_po_mandatory.recommended_semester,
-    jsonb_build_object('studyProgram', jsonb_build_object('id', study_program_view_not_expired.sp_id, 'deLabel', study_program_view_not_expired.sp_de_label, 'enLabel', study_program_view_not_expired.sp_en_label, 'abbreviation', study_program_view_not_expired.sp_abbrev, 'po', jsonb_build_object('id', study_program_view_not_expired.po_id, 'version', study_program_view_not_expired.po_version), 'degree', jsonb_build_object('id', study_program_view_not_expired.degree_id, 'deLabel', study_program_view_not_expired.degree_de_label, 'deDesc', study_program_view_not_expired.degree_de_desc, 'enLabel', study_program_view_not_expired.degree_en_label, 'enDesc', study_program_view_not_expired.degree_en_desc), 'specialization', CASE WHEN study_program_view_not_expired.spec_id IS NULL THEN
+    jsonb_build_object('studyProgram', jsonb_build_object('id', study_program_view_currently_active.sp_id, 'deLabel', study_program_view_currently_active.sp_de_label, 'enLabel', study_program_view_currently_active.sp_en_label, 'abbreviation', study_program_view_currently_active.sp_abbrev, 'po', jsonb_build_object('id', study_program_view_currently_active.po_id, 'version', study_program_view_currently_active.po_version), 'degree', jsonb_build_object('id', study_program_view_currently_active.degree_id, 'deLabel', study_program_view_currently_active.degree_de_label, 'deDesc', study_program_view_currently_active.degree_de_desc, 'enLabel', study_program_view_currently_active.degree_en_label, 'enDesc', study_program_view_currently_active.degree_en_desc), 'specialization', CASE WHEN study_program_view_currently_active.spec_id IS NULL THEN
           'null'::jsonb
         ELSE
-          jsonb_build_object('id', study_program_view_not_expired.spec_id, 'deLabel', study_program_view_not_expired.spec_label, 'enLabel', study_program_view_not_expired.spec_label)
+          jsonb_build_object('id', study_program_view_currently_active.spec_id, 'deLabel', study_program_view_currently_active.spec_label, 'enLabel', study_program_view_currently_active.spec_label)
         END), 'mandatory', TRUE, 'recommendedSemester', to_jsonb(module_po_mandatory.recommended_semester)) AS study_program_json
   FROM
     modules.module_po_mandatory
-    JOIN core.study_program_view_not_expired ON core.study_program_view_not_expired.po_id = modules.module_po_mandatory.po
+    JOIN core.study_program_view_currently_active ON core.study_program_view_currently_active.po_id = modules.module_po_mandatory.po
       AND CASE WHEN module_po_mandatory.specialization IS NOT NULL THEN
-        core.study_program_view_not_expired.spec_id = modules.module_po_mandatory.specialization
+        core.study_program_view_currently_active.spec_id = modules.module_po_mandatory.specialization
       ELSE
         TRUE
       END
     UNION ALL
     SELECT
       module_po_optional.module AS module_id,
-      study_program_view_not_expired.sp_id,
-      study_program_view_not_expired.po_id,
-      study_program_view_not_expired.po_version,
-      study_program_view_not_expired.spec_id,
+      study_program_view_currently_active.sp_id,
+      study_program_view_currently_active.po_id,
+      study_program_view_currently_active.po_version,
+      study_program_view_currently_active.spec_id,
       FALSE AS mandatory,
       module_po_optional.recommended_semester,
-      jsonb_build_object('studyProgram', jsonb_build_object('id', study_program_view_not_expired.sp_id, 'deLabel', study_program_view_not_expired.sp_de_label, 'enLabel', study_program_view_not_expired.sp_en_label, 'abbreviation', study_program_view_not_expired.sp_abbrev, 'po', jsonb_build_object('id', study_program_view_not_expired.po_id, 'version', study_program_view_not_expired.po_version), 'degree', jsonb_build_object('id', study_program_view_not_expired.degree_id, 'deLabel', study_program_view_not_expired.degree_de_label, 'deDesc', study_program_view_not_expired.degree_de_desc, 'enLabel', study_program_view_not_expired.degree_en_label, 'enDesc', study_program_view_not_expired.degree_en_desc), 'specialization', CASE WHEN study_program_view_not_expired.spec_id IS NULL THEN
+      jsonb_build_object('studyProgram', jsonb_build_object('id', study_program_view_currently_active.sp_id, 'deLabel', study_program_view_currently_active.sp_de_label, 'enLabel', study_program_view_currently_active.sp_en_label, 'abbreviation', study_program_view_currently_active.sp_abbrev, 'po', jsonb_build_object('id', study_program_view_currently_active.po_id, 'version', study_program_view_currently_active.po_version), 'degree', jsonb_build_object('id', study_program_view_currently_active.degree_id, 'deLabel', study_program_view_currently_active.degree_de_label, 'deDesc', study_program_view_currently_active.degree_de_desc, 'enLabel', study_program_view_currently_active.degree_en_label, 'enDesc', study_program_view_currently_active.degree_en_desc), 'specialization', CASE WHEN study_program_view_currently_active.spec_id IS NULL THEN
             'null'::jsonb
           ELSE
-            jsonb_build_object('id', study_program_view_not_expired.spec_id, 'deLabel', study_program_view_not_expired.spec_label, 'enLabel', study_program_view_not_expired.spec_label)
+            jsonb_build_object('id', study_program_view_currently_active.spec_id, 'deLabel', study_program_view_currently_active.spec_label, 'enLabel', study_program_view_currently_active.spec_label)
           END), 'mandatory', FALSE, 'recommendedSemester', to_jsonb(module_po_optional.recommended_semester)) AS study_program_json
     FROM
       modules.module_po_optional
-    JOIN core.study_program_view_not_expired ON core.study_program_view_not_expired.po_id = modules.module_po_optional.po
+    JOIN core.study_program_view_currently_active ON core.study_program_view_currently_active.po_id = modules.module_po_optional.po
       AND CASE WHEN module_po_optional.specialization IS NOT NULL THEN
-        core.study_program_view_not_expired.spec_id = modules.module_po_optional.specialization
+        core.study_program_view_currently_active.spec_id = modules.module_po_optional.specialization
       ELSE
         TRUE
       END
@@ -185,3 +185,4 @@ FROM
 REFRESH MATERIALIZED VIEW core.study_program_view;
 
 REFRESH MATERIALIZED VIEW modules.module_view;
+
