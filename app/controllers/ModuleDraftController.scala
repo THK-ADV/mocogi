@@ -23,12 +23,9 @@ import play.api.mvc.AnyContent
 import play.api.mvc.ControllerComponents
 import play.api.Logging
 import security.ClientErrorResponse
-import settings.AppSettings
 import service.*
 import service.pipeline.PipelineError.parsingErrorWrites
-import service.ModuleDraftService
-import service.ModuleReviewService
-import service.ModuleUpdateRequest
+import settings.AppSettings
 
 @Singleton
 final class ModuleDraftController @Inject() (
@@ -122,10 +119,12 @@ final class ModuleDraftController @Inject() (
                 protocol.metadata.moduleManagement.toList,
                 protocol.metadata.ects,
                 protocol.metadata.moduleType,
-                protocol.metadata.po.mandatory.map(_.fullPo).toList,
-                protocol.metadata.po.optional.map(_.fullPo).toList,
+                protocol.metadata.po.mandatory.map(_.fullPo),
+                protocol.metadata.po.optional.map(_.fullPo),
               )
-              moduleCreationService.createOrUpdateWithPermissions(module).map(_ => NoContent)
+              moduleCreationService
+                .createOrUpdateWithPermissions(module)
+                .map(_ => Created(Json.obj("id" -> module.module)))
           }
         } yield result
       }

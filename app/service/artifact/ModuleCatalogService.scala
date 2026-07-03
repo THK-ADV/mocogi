@@ -39,7 +39,6 @@ import printing.latex.studyplan.StudyPlanSnippet
 import printing.latex.MarkdownLatexPrinter
 import printing.latex.ModuleCatalogLatexPrinter
 import printing.latex.Payload
-import service.core.AssessmentMethodService
 import service.core.IdentityService
 import service.modulediff.ModuleProtocolDiff
 import service.ModuleService
@@ -54,7 +53,7 @@ final class ModuleCatalogService @Inject() (
     languageRepository: LanguageRepository,
     seasonRepository: SeasonRepository,
     identityService: IdentityService,
-    assessmentMethodService: AssessmentMethodService,
+    assessmentMethodRepo: AssessmentMethodRepository,
     poRepository: PORepository,
     messagesApi: MessagesApi,
     gitCLI: GitCLI,
@@ -157,7 +156,7 @@ final class ModuleCatalogService @Inject() (
     val languages         = languageRepository.all()
     val seasons           = seasonRepository.all()
     val people            = identityService.all()
-    val assessmentMethods = assessmentMethodService.all()
+    val assessmentMethods = assessmentMethodRepo.all()
     val currentPO         = poRepository.get(poOnly.head.po.id)
 
     for {

@@ -7,6 +7,7 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 import cats.syntax.either.*
+import database.repo.core.AssessmentMethodRepository
 import parser.ParsingError
 import parsing.content.ModuleContentParser
 import parsing.metadata.MetadataCompositeParser
@@ -21,7 +22,7 @@ private[pipeline] final class MetadataParsingService @Inject() (
     private val locationService: LocationService,
     private val languageService: LanguageService,
     private val statusService: StatusService,
-    private val assessmentMethodService: AssessmentMethodService,
+    private val assessmentMethodRepo: AssessmentMethodRepository,
     private val moduleTypeService: ModuleTypeService,
     private val seasonService: SeasonService,
     private val personService: IdentityService,
@@ -36,7 +37,7 @@ private[pipeline] final class MetadataParsingService @Inject() (
     val locations         = locationService.all()
     val languages         = languageService.all()
     val status            = statusService.all()
-    val assessmentMethods = assessmentMethodService.all()
+    val assessmentMethods = assessmentMethodRepo.all()
     val moduleTypes       = moduleTypeService.all()
     val seasons           = seasonService.all()
     val persons           = personService.all()

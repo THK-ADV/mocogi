@@ -115,44 +115,44 @@ module_management_agg AS (
 study_program_rows AS (
   SELECT
     module_po_mandatory.module AS module_id,
-    study_program_view_not_expired.sp_id,
-    study_program_view_not_expired.po_id,
-    study_program_view_not_expired.po_version,
-    study_program_view_not_expired.spec_id,
+    study_program_view_currently_active.sp_id,
+    study_program_view_currently_active.po_id,
+    study_program_view_currently_active.po_version,
+    study_program_view_currently_active.spec_id,
     TRUE AS mandatory,
     module_po_mandatory.recommended_semester,
-    jsonb_build_object('studyProgram', jsonb_build_object('id', study_program_view_not_expired.sp_id, 'deLabel', study_program_view_not_expired.sp_de_label, 'enLabel', study_program_view_not_expired.sp_en_label, 'abbreviation', study_program_view_not_expired.sp_abbrev, 'po', jsonb_build_object('id', study_program_view_not_expired.po_id, 'version', study_program_view_not_expired.po_version), 'degree', jsonb_build_object('id', study_program_view_not_expired.degree_id, 'deLabel', study_program_view_not_expired.degree_de_label, 'deDesc', study_program_view_not_expired.degree_de_desc, 'enLabel', study_program_view_not_expired.degree_en_label, 'enDesc', study_program_view_not_expired.degree_en_desc), 'specialization', CASE WHEN study_program_view_not_expired.spec_id IS NULL THEN
+    jsonb_build_object('studyProgram', jsonb_build_object('id', study_program_view_currently_active.sp_id, 'deLabel', study_program_view_currently_active.sp_de_label, 'enLabel', study_program_view_currently_active.sp_en_label, 'abbreviation', study_program_view_currently_active.sp_abbrev, 'po', jsonb_build_object('id', study_program_view_currently_active.po_id, 'version', study_program_view_currently_active.po_version), 'degree', jsonb_build_object('id', study_program_view_currently_active.degree_id, 'deLabel', study_program_view_currently_active.degree_de_label, 'deDesc', study_program_view_currently_active.degree_de_desc, 'enLabel', study_program_view_currently_active.degree_en_label, 'enDesc', study_program_view_currently_active.degree_en_desc), 'specialization', CASE WHEN study_program_view_currently_active.spec_id IS NULL THEN
           'null'::jsonb
         ELSE
-          jsonb_build_object('id', study_program_view_not_expired.spec_id, 'deLabel', study_program_view_not_expired.spec_label, 'enLabel', study_program_view_not_expired.spec_label)
+          jsonb_build_object('id', study_program_view_currently_active.spec_id, 'deLabel', study_program_view_currently_active.spec_label, 'enLabel', study_program_view_currently_active.spec_label)
         END), 'mandatory', TRUE, 'recommendedSemester', to_jsonb(module_po_mandatory.recommended_semester)) AS study_program_json
   FROM
     modules.module_po_mandatory
-    JOIN core.study_program_view_not_expired ON core.study_program_view_not_expired.po_id = modules.module_po_mandatory.po
+    JOIN core.study_program_view_currently_active ON core.study_program_view_currently_active.po_id = modules.module_po_mandatory.po
       AND CASE WHEN module_po_mandatory.specialization IS NOT NULL THEN
-        core.study_program_view_not_expired.spec_id = modules.module_po_mandatory.specialization
+        core.study_program_view_currently_active.spec_id = modules.module_po_mandatory.specialization
       ELSE
         TRUE
       END
     UNION ALL
     SELECT
       module_po_optional.module AS module_id,
-      study_program_view_not_expired.sp_id,
-      study_program_view_not_expired.po_id,
-      study_program_view_not_expired.po_version,
-      study_program_view_not_expired.spec_id,
+      study_program_view_currently_active.sp_id,
+      study_program_view_currently_active.po_id,
+      study_program_view_currently_active.po_version,
+      study_program_view_currently_active.spec_id,
       FALSE AS mandatory,
       module_po_optional.recommended_semester,
-      jsonb_build_object('studyProgram', jsonb_build_object('id', study_program_view_not_expired.sp_id, 'deLabel', study_program_view_not_expired.sp_de_label, 'enLabel', study_program_view_not_expired.sp_en_label, 'abbreviation', study_program_view_not_expired.sp_abbrev, 'po', jsonb_build_object('id', study_program_view_not_expired.po_id, 'version', study_program_view_not_expired.po_version), 'degree', jsonb_build_object('id', study_program_view_not_expired.degree_id, 'deLabel', study_program_view_not_expired.degree_de_label, 'deDesc', study_program_view_not_expired.degree_de_desc, 'enLabel', study_program_view_not_expired.degree_en_label, 'enDesc', study_program_view_not_expired.degree_en_desc), 'specialization', CASE WHEN study_program_view_not_expired.spec_id IS NULL THEN
+      jsonb_build_object('studyProgram', jsonb_build_object('id', study_program_view_currently_active.sp_id, 'deLabel', study_program_view_currently_active.sp_de_label, 'enLabel', study_program_view_currently_active.sp_en_label, 'abbreviation', study_program_view_currently_active.sp_abbrev, 'po', jsonb_build_object('id', study_program_view_currently_active.po_id, 'version', study_program_view_currently_active.po_version), 'degree', jsonb_build_object('id', study_program_view_currently_active.degree_id, 'deLabel', study_program_view_currently_active.degree_de_label, 'deDesc', study_program_view_currently_active.degree_de_desc, 'enLabel', study_program_view_currently_active.degree_en_label, 'enDesc', study_program_view_currently_active.degree_en_desc), 'specialization', CASE WHEN study_program_view_currently_active.spec_id IS NULL THEN
             'null'::jsonb
           ELSE
-            jsonb_build_object('id', study_program_view_not_expired.spec_id, 'deLabel', study_program_view_not_expired.spec_label, 'enLabel', study_program_view_not_expired.spec_label)
+            jsonb_build_object('id', study_program_view_currently_active.spec_id, 'deLabel', study_program_view_currently_active.spec_label, 'enLabel', study_program_view_currently_active.spec_label)
           END), 'mandatory', FALSE, 'recommendedSemester', to_jsonb(module_po_optional.recommended_semester)) AS study_program_json
     FROM
       modules.module_po_optional
-    JOIN core.study_program_view_not_expired ON core.study_program_view_not_expired.po_id = modules.module_po_optional.po
+    JOIN core.study_program_view_currently_active ON core.study_program_view_currently_active.po_id = modules.module_po_optional.po
       AND CASE WHEN module_po_optional.specialization IS NOT NULL THEN
-        core.study_program_view_not_expired.spec_id = modules.module_po_optional.specialization
+        core.study_program_view_currently_active.spec_id = modules.module_po_optional.specialization
       ELSE
         TRUE
       END
@@ -185,33 +185,4 @@ FROM
 REFRESH MATERIALIZED VIEW core.study_program_view;
 
 REFRESH MATERIALIZED VIEW modules.module_view;
-
--- Produces the compact module catalog payload used by module list endpoints,
--- merging live modules with created-in-draft previews into a single JSON array.
-CREATE OR REPLACE VIEW modules.module_core AS
-SELECT
-  jsonb_agg(module_json ORDER BY title) AS modules
-FROM (
-  -- Live modules
-  SELECT
-    m.title,
-    jsonb_build_object('id', m.id, 'title', m.title, 'abbreviation', m.abbrev, 'moduleManagement', coalesce(jsonb_agg(jsonb_build_object('id', i.id, 'kind', i.kind, 'lastname', i.lastname, 'firstname', i.firstname)) FILTER (WHERE mr.responsibility_type = 'module_management'), '[]'::jsonb), 'ects', m.ects, 'isLive', TRUE) AS module_json
-  FROM
-    modules.module m
-  LEFT JOIN modules.module_responsibility mr ON m.id = mr.module
-    AND mr.responsibility_type = 'module_management'
-  LEFT JOIN core.identity i ON mr.identity = i.id
-GROUP BY
-  m.id
-UNION ALL
--- Draft modules
-SELECT
-  cmd.module_title AS title,
-  jsonb_build_object('id', cmd.module, 'title', cmd.module_title, 'abbreviation', cmd.module_abbrev, 'moduleManagement', coalesce(jsonb_agg(jsonb_build_object('id', i.id, 'kind', i.kind, 'lastname', i.lastname, 'firstname', i.firstname)) FILTER (WHERE i.id IS NOT NULL), '[]'::jsonb), 'ects', cmd.module_ects, 'isLive', FALSE) AS module_json
-FROM
-  modules.created_module_in_draft cmd
-  LEFT JOIN LATERAL unnest(cmd.module_management) AS mgmt_id ON TRUE
-  LEFT JOIN core.identity i ON i.id = mgmt_id
-GROUP BY
-  cmd.module) subquery;
 

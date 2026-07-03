@@ -12,7 +12,8 @@ case class UserInfo(
     reviewsToApprove: Int,
     fastForwardApprovalPOs: Option[Set[String]],
     hasExtendedModuleEditPermissions: Boolean,
-    hasSchedulePlanningPrivileges: Boolean
+    hasSchedulePlanningPrivileges: Boolean,
+    hasExamPlanningPrivileges: Boolean,
 )
 
 object UserInfo {

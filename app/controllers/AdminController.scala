@@ -22,9 +22,6 @@ import play.api.mvc.ControllerComponents
 import play.api.Logging
 import service.ModuleCreationService
 import database.repo.schedule.ScheduleEntryBootstrapRepository
-import controllers.actions.UserRequest
-import play.api.libs.json.JsArray
-import play.api.libs.json.JsValue
 import security.ClientErrorResponse
 
 final class AdminController @Inject() (
@@ -65,13 +62,6 @@ final class AdminController @Inject() (
         logger.info(s"created ${modulesToCreate.size} new modules")
         NoContent
       }
-    }
-
-  /** Bootstraps schedule entries from raw JSON imported from external data. */
-  def bootstrapScheduleEntries() =
-    auth(parse.json).andThen(resolveUser).andThen(isAdmin).async { (r: UserRequest[JsValue]) =>
-      val json = r.body.validate[JsArray].get.value
-      scheduleEntryBootstrapRepo.createFromJson(json.toVector).map(_ => NoContent)
     }
 
   /** Recreates module–teaching-unit associations based on the modules' PO relations. */

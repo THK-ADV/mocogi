@@ -3,126 +3,143 @@
 # This file defines all application routes (Higher priority routes first)
 # ~~~~
 
-GET           /                                                       controllers.HomeController.index
+GET           /                                                                           controllers.HomeController.index
 
-GET           /service/notifyReviewer                                 controllers.ServiceController.notifyReviewer()
-GET           /service/updateImages                                   controllers.ServiceController.updateImages()
+GET           /service/notifyReviewer                                                     controllers.ServiceController.notifyReviewer()
+GET           /service/updateImages                                                       controllers.ServiceController.updateImages()
 
-DELETE        /admin/modules/:id                                      controllers.AdminController.deleteModule(id: java.util.UUID)
-POST          /admin/modules                                          controllers.AdminController.createNewModulesFromDraftBranch()
-POST          /admin/bootstrapScheduleEntries                         controllers.AdminController.bootstrapScheduleEntries()
-POST          /admin/recreateModuleTeachingUnits                      controllers.AdminController.recreateModuleTeachingUnits()
+DELETE        /admin/modules/:id                                                          controllers.AdminController.deleteModule(id: java.util.UUID)
+POST          /admin/modules                                                              controllers.AdminController.createNewModulesFromDraftBranch()
+POST          /admin/recreateModuleTeachingUnits                                          controllers.AdminController.recreateModuleTeachingUnits()
 
-GET           /user                                                   controllers.UserController.userInfo()
-GET           /user-privileges                                        controllers.UserController.studyProgramPrivileges()
+GET           /user                                                                       controllers.UserController.userInfo()
+GET           /user-privileges                                                            controllers.UserController.studyProgramPrivileges()
 
 # Git Webhooks
 
-POST          /webhook/push/main                                      controllers.GitWebhookController.onPushMain()
-POST          /webhook/push/preview                                   controllers.GitWebhookController.onPushPreview()
-POST          /webhook/merge                                          controllers.GitWebhookController.onMerge()
+POST          /webhook/push/main                                                          controllers.GitWebhookController.onPushMain()
+POST          /webhook/push/preview                                                       controllers.GitWebhookController.onPushPreview()
+POST          /webhook/merge                                                              controllers.GitWebhookController.onMerge()
 
 # Git
 
-POST          /git/coreFiles                                          controllers.GitController.updateCoreFiles()
-POST          /git/moduleFiles                                        controllers.GitController.updateModuleFiles()
-GET           /git/latestModuleUpdate                                 controllers.GitController.latestModuleUpdate()
+POST          /git/coreFiles                                                              controllers.GitController.updateCoreFiles()
+POST          /git/moduleFiles                                                            controllers.GitController.updateModuleFiles()
+GET           /git/latestModuleUpdate                                                     controllers.GitController.latestModuleUpdate()
 
 # Core
 
-GET           /locations                                              controllers.LocationController.all()
-GET           /languages                                              controllers.LanguageController.all()
-GET           /status                                                 controllers.StatusController.all()
-GET           /assessmentMethods                                      controllers.AssessmentMethodController.all()
-GET           /assessmentMethods/counts                               controllers.AssessmentMethodController.counts()
-GET           /moduleTypes                                            controllers.ModuleTypeController.all()
-GET           /seasons                                                controllers.SeasonController.all()
-GET           /identities                                             controllers.IdentityController.all()
-GET           /pos                                                    controllers.POController.all()
-GET           /degrees                                                controllers.DegreeController.all()
-GET           /studyPrograms                                          controllers.StudyProgramController.all()
-GET           /specializations                                        controllers.SpecializationController.all()
-GET           /examPhases                                             controllers.ExamPhaseController.all()
-GET           /rooms                                                  controllers.CoreDataController.rooms()
-GET           /teachingUnits                                          controllers.CoreDataController.teachingUnits()
+GET           /locations                                                                  controllers.LocationController.all()
+GET           /languages                                                                  controllers.LanguageController.all()
+GET           /status                                                                     controllers.StatusController.all()
+GET           /assessmentMethods                                                          controllers.AssessmentMethodController.all()
+GET           /assessmentMethods/counts                                                   controllers.AssessmentMethodController.counts()
+GET           /moduleTypes                                                                controllers.ModuleTypeController.all()
+GET           /seasons                                                                    controllers.SeasonController.all()
+GET           /identities                                                                 controllers.IdentityController.all()
+GET           /pos                                                                        controllers.POController.all()
+GET           /degrees                                                                    controllers.DegreeController.all()
+GET           /studyPrograms                                                              controllers.StudyProgramController.all()
+GET           /specializations                                                            controllers.SpecializationController.all()
+GET           /examPhases                                                                 controllers.ExamPhaseController.all()
+GET           /rooms                                                                      controllers.CoreDataController.rooms()
+GET           /teachingUnits                                                              controllers.CoreDataController.teachingUnits()
 
 # Module
 
-GET           /modules                                                controllers.ModuleController.all()
-GET           /modules/:id                                            controllers.ModuleController.get(id: java.util.UUID)
-GET           /modules/:id/preview                                    controllers.ModuleController.getPreview(id: java.util.UUID)
-GET           /modules/:id/latest                                     controllers.ModuleController.getLatest(id: java.util.UUID)
-GET           /modules/:id/options                                    controllers.ModuleController.allGenericOptions(id: java.util.UUID)
-PUT           /modules/parse                                          controllers.ModuleController.parseValidate()
+GET           /modules                                                                    controllers.ModuleController.all()
+GET           /modules/:id                                                                controllers.ModuleController.get(id: java.util.UUID)
+GET           /modules/:id/preview                                                        controllers.ModuleController.getPreview(id: java.util.UUID)
+GET           /modules/:id/latest                                                         controllers.ModuleController.getLatest(id: java.util.UUID)
+GET           /modules/:id/options                                                        controllers.ModuleController.allGenericOptions(id: java.util.UUID)
+PUT           /modules/parse                                                              controllers.ModuleController.parseValidate()
 
 # Module History
 
-GET           /modules/:id/history                                     controllers.ModuleHistoryController.getModuleHistory(id: java.util.UUID)
+GET           /modules/:id/history                                                        controllers.ModuleHistoryController.getModuleHistory(id: java.util.UUID)
 
 # Module Catalog
 
-GET           /moduleCatalogs/:studyProgram/:po/genericModules        controllers.ModuleCatalogController.allGenericModulesForPO(studyProgram: java.lang.String, po: java.lang.String)
-POST          /moduleCatalogs/:studyProgram/:po                       controllers.ModuleCatalogController.generate(studyProgram: java.lang.String, po: java.lang.String)
+GET           /moduleCatalogs/:studyProgram/:po/genericModules                            controllers.ModuleCatalogController.allGenericModulesForPO(studyProgram: java.lang.String, po: java.lang.String)
+POST          /moduleCatalogs/:studyProgram/:po                                           controllers.ModuleCatalogController.generate(studyProgram: java.lang.String, po: java.lang.String)
 
-GET           /moduleCatalogIntros                                    controllers.ModuleCatalogController.getAllIntroFiles()
-POST          /moduleCatalogIntros/:studyProgram/:po                  controllers.ModuleCatalogController.uploadIntroFile(studyProgram: java.lang.String, po: java.lang.String)
+GET           /moduleCatalogIntros                                                        controllers.ModuleCatalogController.getAllIntroFiles()
+POST          /moduleCatalogIntros/:studyProgram/:po                                      controllers.ModuleCatalogController.uploadIntroFile(studyProgram: java.lang.String, po: java.lang.String)
 
 # Exam Lists
 
-GET           /examLists/preview/:studyProgram/:po                    controllers.ExamListsController.getPreview(studyProgram: java.lang.String, po: java.lang.String)
-GET           /examLists/file/:filename                               controllers.ExamListsController.getFile(filename: java.lang.String)
-GET           /examLists                                              controllers.ExamListsController.getAll()
-PUT           /examLists/:studyProgram/:po                            controllers.ExamListsController.replace(studyProgram: java.lang.String, po: java.lang.String)
-GET           /examLists/semesters                                    controllers.ExamListsController.currentSemesters()
+GET           /examLists/preview/:studyProgram/:po                                        controllers.ExamListsController.getPreview(studyProgram: java.lang.String, po: java.lang.String)
+GET           /examLists/file/:filename                                                   controllers.ExamListsController.getFile(filename: java.lang.String)
+GET           /examLists                                                                  controllers.ExamListsController.getAll()
+PUT           /examLists/:studyProgram/:po                                                controllers.ExamListsController.replace(studyProgram: java.lang.String, po: java.lang.String)
+GET           /examLists/semesters                                                        controllers.ExamListsController.currentSemesters()
 
 # Exam Load
 
-GET           /examLoad/:studyProgram/:po                             controllers.ExamLoadController.generateExamLoad(studyProgram: java.lang.String, po: java.lang.String)
+GET           /examLoad/:studyProgram/:po                                                 controllers.ExamLoadController.generateExamLoad(studyProgram: java.lang.String, po: java.lang.String)
 
 # Module Draft
 
-GET           /moduleDrafts                                           controllers.ModuleDraftController.moduleDrafts()
-GET           /moduleDrafts/:id                                       controllers.ModuleDraftController.getModuleDraft(id: java.util.UUID)
-PUT           /moduleDrafts/:id                                       controllers.ModuleDraftController.createOrUpdateModuleDraft(id: java.util.UUID)
-POST          /moduleDrafts                                           controllers.ModuleDraftController.create()
-DELETE        /moduleDrafts/:id                                       controllers.ModuleDraftController.deleteModuleDraft(id: java.util.UUID)
-GET           /moduleDrafts/:id/keys                                  controllers.ModuleDraftController.keys(id: java.util.UUID)
-GET           /moduleDrafts/:id/mrurl                                 controllers.ModuleDraftController.mergeRequestUrl(id: java.util.UUID)
+GET           /moduleDrafts                                                               controllers.ModuleDraftController.moduleDrafts()
+GET           /moduleDrafts/:id                                                           controllers.ModuleDraftController.getModuleDraft(id: java.util.UUID)
+PUT           /moduleDrafts/:id                                                           controllers.ModuleDraftController.createOrUpdateModuleDraft(id: java.util.UUID)
+POST          /moduleDrafts                                                               controllers.ModuleDraftController.create()
+DELETE        /moduleDrafts/:id                                                           controllers.ModuleDraftController.deleteModuleDraft(id: java.util.UUID)
+GET           /moduleDrafts/:id/keys                                                      controllers.ModuleDraftController.keys(id: java.util.UUID)
+GET           /moduleDrafts/:id/mrurl                                                     controllers.ModuleDraftController.mergeRequestUrl(id: java.util.UUID)
 
 # Review
-GET           /moduleReviews                                          controllers.ModuleDraftReviewController.moduleReviews()
-GET           /moduleReviews/:moduleId                                controllers.ModuleDraftReviewController.getForModule(moduleId: java.util.UUID)
-POST          /moduleReviews/:id                                      controllers.ModuleDraftReviewController.create(id: java.util.UUID)
-POST          /moduleReviews/:id/ff                                   controllers.ModuleDraftReviewController.fastForward(id: java.util.UUID)
-DELETE        /moduleReviews/:id                                      controllers.ModuleDraftReviewController.delete(id: java.util.UUID)
-PUT           /moduleReviews                                          controllers.ModuleDraftReviewController.update()
-GET           /moduleReviewKeys                                       controllers.ModuleDraftReviewController.keys()
+GET           /moduleReviews                                                              controllers.ModuleDraftReviewController.moduleReviews()
+GET           /moduleReviews/:moduleId                                                    controllers.ModuleDraftReviewController.getForModule(moduleId: java.util.UUID)
+POST          /moduleReviews/:id                                                          controllers.ModuleDraftReviewController.create(id: java.util.UUID)
+POST          /moduleReviews/:id/ff                                                       controllers.ModuleDraftReviewController.fastForward(id: java.util.UUID)
+DELETE        /moduleReviews/:id                                                          controllers.ModuleDraftReviewController.delete(id: java.util.UUID)
+PUT           /moduleReviews                                                              controllers.ModuleDraftReviewController.update()
+GET           /moduleReviewKeys                                                           controllers.ModuleDraftReviewController.keys()
 
 # Module Update Permissions
 
-GET           /moduleUpdatePermissions/:moduleId                      controllers.ModuleUpdatePermissionController.allByModule(moduleId: java.util.UUID)
-POST          /moduleUpdatePermissions/:moduleId                      controllers.ModuleUpdatePermissionController.replace(moduleId: java.util.UUID)
+GET           /moduleUpdatePermissions/:moduleId                                          controllers.ModuleUpdatePermissionController.allByModule(moduleId: java.util.UUID)
+POST          /moduleUpdatePermissions/:moduleId                                          controllers.ModuleUpdatePermissionController.replace(moduleId: java.util.UUID)
+
+# Permitted assessment methods, owned by a module
+
+GET           /modules/:moduleId/assessmentMethods                                        controllers.AssessmentMethodController.allPermittedForModule(moduleId: java.util.UUID)
+PUT           /modules/:moduleId/assessmentMethods                                        controllers.AssessmentMethodController.replaceForModule(moduleId: java.util.UUID)
 
 # SemesterPlan
 
-GET           /semesterPlan                                           controllers.schedule.SemesterPlanController.allByNow()
-GET           /holidays                                               controllers.schedule.SemesterPlanController.holidays()
+GET           /semesterPlan                                                               controllers.schedule.SemesterPlanController.allByNow()
+GET           /holidays                                                                   controllers.schedule.SemesterPlanController.holidays()
 
 # Semester
 
-GET           /semesters                                              controllers.schedule.ScheduleEntryController.semesters()
+GET           /semesters                                                                  controllers.schedule.ScheduleEntryController.semesters()
 
 # Schedule
 
-GET           /scheduleEntries                                        controllers.schedule.ScheduleEntryController.all()
-POST          /scheduleEntries                                        controllers.schedule.ScheduleEntryController.create()
-PUT           /scheduleEntries/:id                                    controllers.schedule.ScheduleEntryController.update(id: java.util.UUID)
-DELETE        /scheduleEntries/:id                                    controllers.schedule.ScheduleEntryController.delete(id: java.util.UUID)
+GET           /scheduleEntries                                                            controllers.schedule.ScheduleEntryController.all()
+POST          /scheduleEntries                                                            controllers.schedule.ScheduleEntryController.create()
+PUT           /scheduleEntries/:id/series                                                 controllers.schedule.ScheduleEntryController.updateSeries(id: java.util.UUID)
+GET           /scheduleEntries/series/:seriesId/occurrences                               controllers.schedule.ScheduleEntryController.getSeriesOccurrences(seriesId: java.util.UUID)
+PUT           /scheduleEntries/:id                                                        controllers.schedule.ScheduleEntryController.update(id: java.util.UUID)
+DELETE        /scheduleEntries/:id                                                        controllers.schedule.ScheduleEntryController.delete(id: java.util.UUID)
+
+# Schedule Plan Drafts
+
+GET           /schedulePlanDrafts                                                         controllers.schedule.SchedulePlanDraftController.all()
+GET           /schedulePlanDrafts/:id                                                     controllers.schedule.SchedulePlanDraftController.get(id:java.util.UUID)
+POST          /schedulePlanDrafts                                                         controllers.schedule.SchedulePlanDraftController.create()
+DELETE        /schedulePlanDrafts/:id                                                     controllers.schedule.SchedulePlanDraftController.delete(id: java.util.UUID)
+GET           /schedulePlanDrafts/:id/scheduleEntries                                     controllers.schedule.SchedulePlanDraftController.scheduleEntriesDrafts(id: java.util.UUID)
+GET           /schedulePlanDrafts/:id/scheduleEntries/series/:seriesId/occurrences        controllers.schedule.SchedulePlanDraftController.getSeriesOccurrences(id: java.util.UUID, seriesId: java.util.UUID)
+POST          /schedulePlanDrafts/:id/scheduleEntries                                     controllers.schedule.SchedulePlanDraftController.createScheduleEntriesDrafts(id: java.util.UUID)
+PUT           /schedulePlanDrafts/:id/scheduleEntries/:entryId                            controllers.schedule.SchedulePlanDraftController.updateScheduleEntryDraft(id: java.util.UUID, entryId: java.util.UUID)
+PUT           /schedulePlanDrafts/:id/scheduleEntries/:entryId/series                     controllers.schedule.SchedulePlanDraftController.updateScheduleEntryDraftSeries(id: java.util.UUID, entryId: java.util.UUID)
+DELETE        /schedulePlanDrafts/:id/scheduleEntries/:entryId                            controllers.schedule.SchedulePlanDraftController.deleteScheduleEntryDraft(id: java.util.UUID, entryId: java.util.UUID)
+POST          /schedulePlanDrafts/:id/publish                                             controllers.schedule.SchedulePlanDraftController.publish(id: java.util.UUID)
 
 # User Settings
 
-GET           /userSettings                                           controllers.UserSettingsController.get()
-PUT           /userSettings                                           controllers.UserSettingsController.update()
-
-# Map static resources from the /public folder to the /assets URL path
-GET           /assets/*file                                           controllers.Assets.versioned(path="/public", file: Asset)
+GET           /userSettings                                                               controllers.UserSettingsController.get()
+PUT           /userSettings                                                               controllers.UserSettingsController.update()

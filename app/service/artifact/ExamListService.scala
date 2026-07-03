@@ -13,6 +13,7 @@ import scala.concurrent.Future
 import cli.GitCLI
 import cli.LatexCompiler.compile
 import cli.LatexCompiler.getPdf
+import database.repo.core.AssessmentMethodRepository
 import database.repo.core.SpecializationRepository
 import database.view.StudyProgramViewRepository
 import models.FullPoId
@@ -24,7 +25,6 @@ import play.api.i18n.MessagesApi
 import play.api.Logging
 import printing.latex
 import printing.latex.ExamListsLatexPrinter
-import service.core.AssessmentMethodService
 import service.core.IdentityService
 import service.ModuleService
 
@@ -33,7 +33,7 @@ final class ExamListService @Inject() (
     moduleService: ModuleService,
     studyProgramViewRepo: StudyProgramViewRepository,
     specializationRepository: SpecializationRepository,
-    assessmentMethodService: AssessmentMethodService,
+    assessmentMethodRepo: AssessmentMethodRepository,
     identityService: IdentityService,
     messagesApi: MessagesApi,
     gitCli: GitCLI,
@@ -58,7 +58,7 @@ final class ExamListService @Inject() (
       if studyProgram.specialization.isDefined then
         Future.failed(new Exception("exam list generation is only supported for pos without specialization"))
       else {
-        val assessmentMethods = assessmentMethodService.all()
+        val assessmentMethods = assessmentMethodRepo.all()
         val people            = identityService.all()
         val specializations   = specializationRepository.allByPO(po)
         val modules           = getModulesFromPreview(po)
