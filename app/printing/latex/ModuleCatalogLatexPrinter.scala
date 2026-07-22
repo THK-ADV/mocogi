@@ -47,6 +47,7 @@ object ModuleCatalogLatexPrinter {
       messagesApi: MessagesApi,
       diffsForModule: UUID => Option[Set[String]],
       latexSnippets: List[LatexContentSnippet],
+      postTitleSnippets: List[LatexContentSnippet],
       pos: Seq[StudyProgramView],
       currentPO: PO,
       modules: Vector[(ModuleProtocol, LocalDate)],
@@ -62,6 +63,7 @@ object ModuleCatalogLatexPrinter {
       modules,
       payload,
       latexSnippets,
+      postTitleSnippets,
       Some(diffsForModule)
     )(using lang)
   }
@@ -71,6 +73,7 @@ object ModuleCatalogLatexPrinter {
       messagesApi: MessagesApi,
       semester: Semester,
       latexSnippets: List[LatexContentSnippet],
+      postTitleSnippets: List[LatexContentSnippet],
       pos: Seq[StudyProgramView],
       currentPO: PO,
       modules: Vector[(ModuleProtocol, LocalDate)],
@@ -86,6 +89,7 @@ object ModuleCatalogLatexPrinter {
       modules,
       payload,
       latexSnippets,
+      postTitleSnippets,
       None
     )(using lang)
 }
@@ -102,6 +106,7 @@ final class ModuleCatalogLatexPrinter(
     modulesInPO: Vector[(ModuleProtocol, LocalDate)],
     payload: Payload,
     latexSnippets: List[LatexContentSnippet],
+    postTitleSnippets: List[LatexContentSnippet],
     diffsForModule: Option[UUID => Option[Set[String]]]
 )(using lang: Lang)
     extends Logging {
@@ -176,6 +181,10 @@ final class ModuleCatalogLatexPrinter(
                       |\\begin{document}
                       |\\selectlanguage{${strings.languagePackage}}""".stripMargin)
     title()
+    if postTitleSnippets.nonEmpty then {
+      newPage
+      postTitleSnippets.foreach(_.print(using lang, builder))
+    }
     newPage
     builder.append("\\tableofcontents\n")
     newPage

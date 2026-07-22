@@ -50,9 +50,6 @@ final class StudyProgramPersonRepository @Inject() (
       g  <- sp.degreeFk
     } yield (q, sp, g)
 
-  def studyProgramIdsForPOs(pos: Set[String]): Future[Seq[String]] =
-    db.run(studyProgramViewTable.filter(_.poId.inSet(pos)).map(_.studyProgramId).distinct.result)
-
   /**
    * Retrieves all study programs that do not have a specialization
    */

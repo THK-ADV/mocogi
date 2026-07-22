@@ -31,7 +31,6 @@ import play.mvc.Http.HeaderNames
 import security.ClientErrorResponse
 import settings.AppSettings
 import service.artifact.ExamListService
-import service.StudyProgramPrivilegesService
 
 @Singleton
 final class ExamListsController @Inject() (
@@ -39,9 +38,8 @@ final class ExamListsController @Inject() (
     auth: AuthorizationAction,
     service: ExamListService,
     appSettings: AppSettings,
+    examListRepo: ExamListRepository,
     val permissionRepository: PermissionRepository,
-    val studyProgramPrivilegesService: StudyProgramPrivilegesService,
-    val examListRepo: ExamListRepository,
     val clientErrors: ClientErrorResponse,
     implicit val ctx: ExecutionContext
 ) extends AbstractController(cc)
@@ -54,10 +52,10 @@ final class ExamListsController @Inject() (
   def currentSemesters(): Action[AnyContent] =
     Action((r: Request[AnyContent]) => Ok(Json.toJson(Semester.currentAndNext())))
 
-  def getPreview(studyProgram: String, po: String): Action[AnyContent] =
+  def getPreview(po: String): Action[AnyContent] =
     auth
       .andThen(resolveUser)
-      .andThen(canPreviewArtifact(studyProgram))
+      .andThen(canPreviewArtifact(po))
       .async { r =>
         r.headers.get(HeaderNames.ACCEPT) match {
           case Some(MimeTypes.PDF) =>
@@ -110,10 +108,10 @@ final class ExamListsController @Inject() (
 
   // TODO: message that things get overridden
 
-  def replace(studyProgram: String, po: String): Action[(String, LocalDate)] =
+  def replace(po: String): Action[(String, LocalDate)] =
     auth(parse.json(createExamListReads))
       .andThen(resolveUser)
-      .andThen(canCreateArtifact(studyProgram))
+      .andThen(canCreateArtifact(po))
       .async { (r: UserRequest[(String, LocalDate)]) =>
         val (semester, date) = r.body
         val filename         = s"exam_lists_${semester}_$po"

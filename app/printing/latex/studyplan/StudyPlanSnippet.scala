@@ -2,6 +2,8 @@ package printing.latex.studyplan
 
 import java.util.UUID
 
+import cats.data.NonEmptyList
+import models.core.IDLabel
 import models.MetadataProtocol
 import models.ModulePOMandatoryProtocol
 import play.api.i18n.Lang
@@ -9,17 +11,31 @@ import play.api.i18n.MessagesApi
 import play.api.Logging
 import printing.fmtDouble
 import printing.latex.escape
-import cats.data.NonEmptyList
 import printing.latex.snippet.LatexContentSnippet
+import service.artifact.modulecatalog.ModuleCatalogGenericModuleOccurrence
+import service.artifact.modulecatalog.ModuleCatalogSemesterSelection
+import service.artifact.modulecatalog.ModuleCatalogWarning
+import service.artifact.modulecatalog.StudyPlanSection
 
 final class StudyPlanSnippet(
     currentPO: String,
     modules: Vector[(UUID, MetadataProtocol)],
     sections: Option[NonEmptyList[StudyPlanSection]],
+    semesterSelections: List[ModuleCatalogSemesterSelection],
+    genericModuleOccurrences: List[ModuleCatalogGenericModuleOccurrence],
+    specializations: List[IDLabel],
+    warningCollector: ModuleCatalogWarning => Unit,
     isPreview: Boolean,
     messages: MessagesApi,
 ) extends LatexContentSnippet
     with Logging {
+
+  private sealed trait StudyPlanTableHeadline
+
+  private object StudyPlanTableHeadline {
+    case object Base                               extends StudyPlanTableHeadline
+    final case class Specialization(label: String) extends StudyPlanTableHeadline
+  }
 
   private case class StudyPlanCandidate(
       id: UUID,
@@ -42,60 +58,182 @@ final class StudyPlanSnippet(
       credits: Double
   )
 
-  // Don't support specializations for now
-  private def singleNonSpecializedMandatoryPO(
-      pos: List[ModulePOMandatoryProtocol]
+  private case class StudyPlanEntries(
+      assigned: Vector[StudyPlanModule],
+      unassigned: Vector[UnassignedStudyPlanModule],
+      warnings: Vector[ModuleCatalogWarning]
+  )
+
+  private case class StudyPlanTable(
+      headline: Option[StudyPlanTableHeadline],
+      entries: Vector[StudyPlanModule],
+      unassignedEntries: Vector[UnassignedStudyPlanModule],
+      sections: Option[NonEmptyList[StudyPlanSection]],
+      warnings: Vector[ModuleCatalogWarning]
+  )
+
+  private val selectedSemesters: Map[UUID, Int] =
+    semesterSelections.map(s => s.moduleId -> s.selectedSemester).toMap
+
+  private val occurrencesByModule: Map[UUID, List[ModuleCatalogGenericModuleOccurrence]] =
+    genericModuleOccurrences.groupBy(_.moduleId)
+
+  private val studyPlanTables: List[StudyPlanTable] = buildStudyPlanTables()
+
+  studyPlanTables.flatMap(_.warnings).foreach(warningCollector)
+
+  private def mandatoryPO(
+      pos: List[ModulePOMandatoryProtocol],
+      specialization: Option[String]
   ): Option[ModulePOMandatoryProtocol] = {
-    val potentialPOs = pos.filter(p => p.po == currentPO && p.specialization.isEmpty)
+    val potentialPOs = pos.filter(p => p.po == currentPO && p.specialization == specialization)
     if potentialPOs.size == 1 then Some(potentialPOs.head) else None
   }
 
-  // Only support the earliest recommended semester for now.
-  // TODO: The user should pick how multiple semesters are resolved
-  // TODO: The user should also decide if one module occurs multiple times (e.g., generic elective modules)
-  private def recommendedSemester(po: ModulePOMandatoryProtocol): Int =
-    po.recommendedSemester.min
-
-  // Assume assessment prerequisites are the only preconditions for now
   private def hasPrecondition(m: MetadataProtocol): Boolean =
     m.assessmentPrerequisite.exists(_.modules.nonEmpty)
 
+  private def warning(code: String, message: String, moduleId: UUID): ModuleCatalogWarning =
+    ModuleCatalogWarning(code, message, Some(moduleId))
+
+  private def selectedOrDefaultSemester(candidate: StudyPlanCandidate): (Option[Int], Vector[ModuleCatalogWarning]) = {
+    val recommendedSemesters = candidate.mandatoryPO.recommendedSemester.distinct.sorted
+    selectedSemesters.get(candidate.id) match {
+      case Some(selected) =>
+        Some(selected) -> Vector.empty
+      case None if recommendedSemesters.nonEmpty =>
+        val selected = recommendedSemesters.min
+        val warnings =
+          if recommendedSemesters.size > 1 then
+            Vector(
+              warning(
+                "multiple_recommended_semesters",
+                s"Module has multiple recommended semesters ${recommendedSemesters.mkString(", ")}; using $selected in the study plan.",
+                candidate.id
+              )
+            )
+          else Vector.empty
+        Some(selected) -> warnings
+      case None =>
+        None -> Vector(
+          warning(
+            "missing_recommended_semester",
+            "Mandatory module has no recommended semester and is not assigned in the study plan.",
+            candidate.id
+          )
+        )
+    }
+  }
+
+  private def genericDefaultWarning(candidate: StudyPlanCandidate): Option[ModuleCatalogWarning] =
+    Option.when(candidate.metadata.isGeneric && !occurrencesByModule.contains(candidate.id))(
+      warning(
+        "generic_module_default_occurrence",
+        "Generic module uses one default study-plan occurrence; configure genericModuleOccurrences to change this.",
+        candidate.id
+      )
+    )
+
   private def studyPlanEntries(
-      modules: Vector[(UUID, MetadataProtocol)]
-  ): (Vector[StudyPlanModule], Vector[UnassignedStudyPlanModule]) = {
+      specialization: Option[String]
+  ): StudyPlanEntries = {
     val candidates = modules
       .flatMap {
         case (id, m) =>
           val isNoChild = m.moduleRelation.isEmpty || m.moduleRelation.exists(_.isParent)
-          singleNonSpecializedMandatoryPO(m.po.mandatory).filter(_ => isNoChild).map { mandatoryPO =>
+          mandatoryPO(m.po.mandatory, specialization).filter(_ => isNoChild).map { mandatoryPO =>
             StudyPlanCandidate(id, m, mandatoryPO)
           }
       }
 
-    val (studyPlanModules, unassignedStudyPlanModules) = candidates.partitionMap(candidate =>
-      if candidate.mandatoryPO.recommendedSemester.nonEmpty then
-        Left(
-          StudyPlanModule(
-            id = candidate.id,
-            title = candidate.metadata.title,
-            hasPrecondition = hasPrecondition(candidate.metadata),
-            credits = candidate.metadata.ects,
-            recommendedSemester = recommendedSemester(candidate.mandatoryPO)
-          )
-        )
-      else
-        Right(
-          UnassignedStudyPlanModule(
-            id = candidate.id,
-            title = candidate.metadata.title,
-            hasPrecondition = hasPrecondition(candidate.metadata),
-            credits = candidate.metadata.ects
-          )
-        )
-    )
+    val empty = StudyPlanEntries(Vector.empty, Vector.empty, Vector.empty)
 
-    (studyPlanModules.sortBy(m => (m.recommendedSemester, m.title)), unassignedStudyPlanModules.sortBy(_.title))
+    candidates.foldLeft(empty) { (acc, candidate) =>
+      val occurrenceOverrides =
+        if candidate.metadata.isGeneric then occurrencesByModule.getOrElse(candidate.id, Nil)
+        else Nil
+
+      if occurrenceOverrides.nonEmpty then {
+        val entries = occurrenceOverrides.toVector.flatMap { occurrence =>
+          Vector.fill(occurrence.count)(
+            StudyPlanModule(
+              id = candidate.id,
+              title = candidate.metadata.title,
+              hasPrecondition = hasPrecondition(candidate.metadata),
+              credits = candidate.metadata.ects,
+              recommendedSemester = occurrence.semester
+            )
+          )
+        }
+        acc.copy(assigned = acc.assigned.appendedAll(entries))
+      } else {
+        val (semester, semesterWarnings) = selectedOrDefaultSemester(candidate)
+        val warnings                     = semesterWarnings.appendedAll(genericDefaultWarning(candidate))
+        semester match {
+          case Some(recommendedSemester) =>
+            acc.copy(
+              assigned = acc.assigned.appended(
+                StudyPlanModule(
+                  id = candidate.id,
+                  title = candidate.metadata.title,
+                  hasPrecondition = hasPrecondition(candidate.metadata),
+                  credits = candidate.metadata.ects,
+                  recommendedSemester = recommendedSemester
+                )
+              ),
+              warnings = acc.warnings.appendedAll(warnings)
+            )
+          case None =>
+            acc.copy(
+              unassigned = acc.unassigned.appended(
+                UnassignedStudyPlanModule(
+                  id = candidate.id,
+                  title = candidate.metadata.title,
+                  hasPrecondition = hasPrecondition(candidate.metadata),
+                  credits = candidate.metadata.ects
+                )
+              ),
+              warnings = acc.warnings.appendedAll(warnings)
+            )
+        }
+      }
+    } match {
+      case StudyPlanEntries(assigned, unassigned, warnings) =>
+        StudyPlanEntries(
+          assigned.sortBy(m => (m.recommendedSemester, m.title)),
+          unassigned.sortBy(_.title),
+          warnings
+        )
+    }
   }
+
+  private def buildTable(
+      specialization: Option[String],
+      headline: Option[StudyPlanTableHeadline],
+      tableSections: Option[NonEmptyList[StudyPlanSection]]
+  ): StudyPlanTable = {
+    val entries = studyPlanEntries(specialization)
+    StudyPlanTable(
+      headline,
+      entries.assigned,
+      entries.unassigned,
+      tableSections,
+      entries.warnings
+    )
+  }
+
+  private def buildStudyPlanTables(): List[StudyPlanTable] =
+    if specializations.nonEmpty then
+      buildTable(None, Some(StudyPlanTableHeadline.Base), None) :: specializations
+        .sortBy(_.deLabel)
+        .map { specialization =>
+          buildTable(
+            Some(specialization.id),
+            Some(StudyPlanTableHeadline.Specialization(specialization.deLabel)),
+            None
+          )
+        }
+    else List(buildTable(None, None, sections))
 
   private def groupIntoSections(
       entries: Vector[StudyPlanModule],
@@ -258,12 +396,20 @@ final class StudyPlanSnippet(
     )
   }
 
+  private def headlineText(headline: StudyPlanTableHeadline)(using lang: Lang): String =
+    headline match {
+      case StudyPlanTableHeadline.Base =>
+        messages("latex.module_catalog.study_plan.base")
+      case StudyPlanTableHeadline.Specialization(label) =>
+        messages("latex.module_catalog.study_plan.specialization", label)
+    }
+
   private def printStudyPlan(
-      studyPlanEntries: Vector[StudyPlanModule],
+      table: StudyPlanTable,
       firstSemester: Int,
       lastSemester: Int
   )(using lang: Lang, builder: StringBuilder): Unit = {
-    builder.append(s"\\section{${messages("latex.module_catalog.study_plan.headline")}}\n")
+    table.headline.foreach(headline => builder.append(s"\\subsection*{${escape(headlineText(headline))}}\n"))
 
     val columns             = studyPlanColumnSpec(firstSemester, lastSemester)
     val columnCount         = semesterRange(firstSemester, lastSemester).size + 3
@@ -289,23 +435,28 @@ final class StudyPlanSnippet(
          |""".stripMargin
     )
 
-    sections match {
+    table.sections match {
       case Some(sections) =>
-        val groupedEntries = groupIntoSections(studyPlanEntries, sections)
+        val groupedEntries = groupIntoSections(table.entries, sections)
         groupedEntries.foreach {
           case (section, entries) =>
             printSectionRow(section.headline, entries, firstSemester, lastSemester)
             entries.foreach(printModuleRow(_, firstSemester, lastSemester))
         }
-        val groupedModuleIds = groupedEntries.flatMap(_._2.map(_.id)).toSet
-        val entriesWithoutSection = studyPlanEntries.filterNot(entry => groupedModuleIds.contains(entry.id))
+        val groupedEntryRows      = groupedEntries.flatMap(_._2)
+        val entriesWithoutSection = table.entries.diff(groupedEntryRows)
         if entriesWithoutSection.nonEmpty then {
-          printSectionRow(messages("latex.module_catalog.study_plan.section.unassigned"), entriesWithoutSection, firstSemester, lastSemester)
+          printSectionRow(
+            messages("latex.module_catalog.study_plan.section.unassigned"),
+            entriesWithoutSection,
+            firstSemester,
+            lastSemester
+          )
           entriesWithoutSection.foreach(printModuleRow(_, firstSemester, lastSemester))
         }
       case None =>
         var currentSemester = firstSemester
-        for (entry <- studyPlanEntries) {
+        for (entry <- table.entries) {
           if entry.recommendedSemester > currentSemester then {
             builder.append("\\hline\n")
             currentSemester = entry.recommendedSemester
@@ -314,7 +465,7 @@ final class StudyPlanSnippet(
         }
     }
 
-    printFooterRow(studyPlanEntries, firstSemester, lastSemester)
+    printFooterRow(table.entries, firstSemester, lastSemester)
 
     builder.append(
       """\end{tabularx}
@@ -324,15 +475,25 @@ final class StudyPlanSnippet(
   }
 
   override def print(using lang: Lang, builder: StringBuilder): Unit = {
-    val (entries, unassignedEntries) = studyPlanEntries(modules)
-    val firstSemester                = entries.minByOption(_.recommendedSemester).map(_.recommendedSemester)
-    val lastSemester                 = entries.maxByOption(_.recommendedSemester).map(_.recommendedSemester)
+    val nonEmptyTables = studyPlanTables.filter(table => table.entries.nonEmpty || table.unassignedEntries.nonEmpty)
 
-    if firstSemester.isDefined && lastSemester.isDefined then {
-      printStudyPlan(entries, firstSemester.get, lastSemester.get)
-      if unassignedEntries.nonEmpty then {
-        if isPreview then printUnassignedModules(unassignedEntries)
-        else logUnassignedModules(unassignedEntries)
+    if nonEmptyTables.nonEmpty then {
+      builder.append(s"\\section{${messages("latex.module_catalog.study_plan.headline")}}\n")
+
+      nonEmptyTables.foreach { table =>
+        val firstSemester = table.entries.minByOption(_.recommendedSemester).map(_.recommendedSemester)
+        val lastSemester  = table.entries.maxByOption(_.recommendedSemester).map(_.recommendedSemester)
+
+        if firstSemester.isDefined && lastSemester.isDefined then {
+          printStudyPlan(table, firstSemester.get, lastSemester.get)
+        } else {
+          table.headline.foreach(headline => builder.append(s"\\subsection*{${escape(headlineText(headline))}}\n"))
+        }
+
+        if table.unassignedEntries.nonEmpty then {
+          if isPreview then printUnassignedModules(table.unassignedEntries)
+          else logUnassignedModules(table.unassignedEntries)
+        }
       }
 
       finish

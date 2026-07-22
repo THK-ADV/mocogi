@@ -10,6 +10,7 @@ import scala.sys.process.ProcessLogger
 
 import git.Branch
 import models.ModuleProtocol
+import ops.bimap
 import ops.FileOps.getFilesOfDirectory
 import parser.ParsingError
 import parsing.RawModuleParser
@@ -33,19 +34,19 @@ final class GitCLI @Inject() (val draftBranch: Branch, gitFolder: Path) extends 
    * @return A tuple where the first element is a vector of parsing errors, and
    *         the second element is a vector of successfully parsed and their last modified time.
    */
-  def getAllModulesFromPreview(): (Vector[ParsingError], Vector[(ModuleProtocol, LocalDate)]) = {
+  def getAllModulesFromPreview(): (Vector[(ParsingError, String)], Vector[(ModuleProtocol, LocalDate)]) = {
     val exitCode = updatePreviewBranch()
 
     if exitCode == 0 then {
       gitFolder
-        .getFilesOfDirectory(_.getFileName.toString.endsWith(".md")) { f =>
+        .getFilesOfDirectory(_.getFileName.toString.endsWith(".md")) { (f: Path) =>
           val lastModified = Files
             .getLastModifiedTime(f)
             .toInstant
             .atZone(java.time.ZoneId.systemDefault())
             .toLocalDate
           val content = Files.readString(f)
-          RawModuleParser.parser.parse(content)._1.map(_ -> lastModified)
+          RawModuleParser.parser.parse(content)._1.bimap(_ -> f.getFileName.toString, _ -> lastModified)
         }
         .partitionMap(identity)
     } else {

@@ -129,6 +129,7 @@ final class ModuleDraftController @Inject() (
         } yield result
       }
 
+  // TODO: update module permission using module management information
   // Update the module
   def createOrUpdateModuleDraft(moduleId: UUID) =
     auth(parse.json[ModuleJson])
