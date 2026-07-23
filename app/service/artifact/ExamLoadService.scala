@@ -6,13 +6,14 @@ import scala.collection.mutable.ListBuffer
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
+import cats.data.NonEmptyList
 import cli.GitCLI
 import database.repo.core.AssessmentMethodRepository
 import models.ModuleProtocol
 import models.ModuleRelationProtocol
 import play.api.Logging
 import printing.csv.ExamLoadCSVPrinter
-import printing.csv.Module
+import printing.csv.MandatoryModule
 
 final class ExamLoadService @Inject() (
     assessmentMethodRepo: AssessmentMethodRepository,
@@ -37,40 +38,45 @@ final class ExamLoadService @Inject() (
   }
 
   /**
-   * Returns all modules from the PO sorted by recommended semester
+   * Returns default mandatory modules sorted by recommended semester and module title.
+   *
+   * Specialization-specific modules are excluded because exam loads do not support
+   * assigning modules to PO specializations yet.
    */
-  private def prepareModules(modules: Vector[ModuleProtocol], po: String): Vector[Module] = {
+  private def prepareModules(modules: Vector[ModuleProtocol], poId: String): Vector[MandatoryModule] =
     modules
-      .map(m =>
-        Module(
-          m.id.get,
-          m.metadata,
-          (m.metadata.po.mandatory.flatMap(_.recommendedSemester) ::: m.metadata.po.optional
-            .flatMap(_.recommendedSemester)).distinct.sorted
-        )
-      )
-      .sortBy { m =>
-        val title = m.metadata.title
-        if m.semester.isEmpty then (Int.MaxValue, title)
-        else (m.semester.head, title) // head is safe because it's sorted
+      .flatMap { module =>
+        module.metadata.po.mandatory.filter(po => po.po == poId && po.specialization.isEmpty) match {
+          case po :: Nil =>
+            Some(
+              MandatoryModule(
+                module.id.get,
+                module.metadata,
+                po.recommendedSemester.sorted
+              )
+            )
+          case _ => None
+        }
       }
-  }
+      .sortBy(module => (module.semesters.headOption.getOrElse(Int.MaxValue), module.metadata.title))
 
   /**
    * Returns all modules from the PO sorted by recommended semester
    */
-  private def prepareChildren(children: Vector[ModuleProtocol], modules: Vector[Module]): Vector[ModuleProtocol] =
+  private def prepareChildren(
+      children: Vector[ModuleProtocol],
+      modules: Vector[MandatoryModule]
+  ): Vector[ModuleProtocol] =
     children.filter(child => modules.exists(m => child.metadata.moduleRelation.exists(_.parentID.contains(m.id))))
 
   /**
    * Returns the latest exam load for the given PO as a CSV string using the preview branch
    */
   def createLatestExamLoad(po: String): Future[String] = {
-    val assessmentMethods               = assessmentMethodRepo.all()
     val (parsedModules, parsedChildren) = getModulesFromPreview(po)
     val modules                         = prepareModules(parsedModules, po)
     val children                        = prepareChildren(parsedChildren, modules)
-    for assessmentMethods <- assessmentMethods
-    yield new ExamLoadCSVPrinter(modules, children, po, assessmentMethods).print()
+    for assessmentMethods <- assessmentMethodRepo.allPermittedLabelsForModulesOrDefault(modules.map(_.id))
+    yield new ExamLoadCSVPrinter(modules, children, assessmentMethods).print()
   }
 }

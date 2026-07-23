@@ -71,6 +71,29 @@ class AssessmentMethodRepository @Inject() (
     }
 
   /**
+   * Returns each module's permitted assessment methods. Modules without an explicit subset fall back to the RPO labels.
+   */
+  def allPermittedLabelsForModulesOrDefault(modules: Seq[UUID]): Future[Map[UUID, Seq[AssessmentMethod]]] = {
+    val moduleIds = modules.toSet
+    if moduleIds.isEmpty then Future.successful(Map.empty)
+    else {
+      val query = for {
+        q <- permittedForModuleQuery if q.module.inSet(moduleIds)
+        am = q.permittedMethodIdsUnnest()
+        amQ <- tableQuery if amQ.id === am
+      } yield (q.module, amQ)
+
+      db.run(query.distinct.result).flatMap { rows =>
+        val permittedByModule     = rows.groupMap(_._1)((_, m) => AssessmentMethod(m.id, m.deLabel, m.enLabel))
+        val modulesWithoutPermits = moduleIds -- permittedByModule.keySet
+
+        if modulesWithoutPermits.isEmpty then Future.successful(permittedByModule)
+        else allRPO().map(methods => permittedByModule ++ modulesWithoutPermits.map(_ -> methods))
+      }
+    }
+  }
+
+  /**
    * Sets the permitted assessment methods for a module, replacing any existing
    * definition. An empty list deletes the module's definition entirely.
    *

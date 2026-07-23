@@ -13,10 +13,11 @@ import controllers.actions.UserResolveAction
 import database.repo.PermissionRepository
 import ops.FileOps
 import permission.ArtifactCheck
-import play.api.http.MimeTypes
+import play.api.http.ContentTypes
 import play.api.mvc.AbstractController
 import play.api.mvc.Action
 import play.api.mvc.AnyContent
+import play.api.mvc.Codec
 import play.api.mvc.ControllerComponents
 import security.ClientErrorResponse
 import settings.AppSettings
@@ -51,7 +52,7 @@ final class ExamLoadController @Inject() (
             Files.writeString(file, csv)
             Ok
               .sendPath(file, onClose = () => Files.delete(file), fileName = _ => Some(s"$po.csv"))
-              .as(MimeTypes.TEXT)
+              .as(ContentTypes.withCharset("text/csv")(Codec.utf_8))
           }
           .recoverWith {
             case NonFatal(e) =>
