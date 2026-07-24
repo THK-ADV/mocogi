@@ -79,10 +79,6 @@ final class ModuleCatalogService @Inject() (
 
     logger.info(s"generating module catalog preview for po $po (preview = $isPreview)")
 
-    val modulePreview = new ModulePreview(gitCLI)
-    val modules       = modulePreview
-      .getAllFromPreviewByPOWithLastModified(po)
-      .filterNot((m, _) => bannedGenericModules.contains(m.id.get))
     val lang                     = Lang(Locale.GERMANY)
     val moduleDiffs: ModuleDiffs = List.empty // TODO: reimplement
     val studyPrograms            = studyProgramViewRepo.notExpired().map { all =>
@@ -92,7 +88,9 @@ final class ModuleCatalogService @Inject() (
     }
 
     for {
+      poModules     <- Future.fromTry(new ModulePreview(gitCLI).getByPO(po))
       (all, poOnly) <- studyPrograms
+      modules       = poModules.all.filterNot((m, _) => bannedGenericModules.contains(m.id.get))
       latexSnippets = getLatexSnippets(latexFile.getParent, po, moduleDiffs, isPreview)
       _             = copyAssets(latexFile.getParent)
       content <- print(poOnly, modules, all, lang, moduleDiffs, latexSnippets, semester)

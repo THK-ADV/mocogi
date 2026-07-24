@@ -77,14 +77,14 @@ final class ExamLoadCSVPrinterSpec extends AnyWordSpec with Matchers {
     MandatoryModule(moduleId, moduleMetadata, semesters)
 
   private def childModule(moduleId: UUID, moduleMetadata: MetadataProtocol) =
-    ModuleProtocol(Some(moduleId), moduleMetadata, emptyContent, emptyContent)
+    moduleId -> ModuleProtocol(Some(moduleId), moduleMetadata, emptyContent, emptyContent)
 
   private def printExamLoad(
       modules: Vector[MandatoryModule],
-      children: Vector[ModuleProtocol] = Vector.empty,
+      childrenById: Map[UUID, ModuleProtocol] = Map.empty,
       assessmentMethods: Map[UUID, Seq[AssessmentMethod]] = Map.empty
   ) =
-    new ExamLoadCSVPrinter(modules, children, assessmentMethods).print()
+    new ExamLoadCSVPrinter(modules, childrenById, assessmentMethods).print()
 
   private def dataRows(csv: String) =
     csv.linesIterator.drop(1).map(_.split(";", -1).toVector).toVector
@@ -202,7 +202,7 @@ final class ExamLoadCSVPrinterSpec extends AnyWordSpec with Matchers {
       onlyDataRow(printExamLoad(Vector(module))).take(2) shouldBe Vector("", "Module without semester")
     }
 
-    "render parent and child modules once, sort children by title, and use each module's assessment methods" in {
+    "render children below their parent, sorted by title, and use each module's assessment methods" in {
       val parentId  = id(6)
       val societyId = id(7)
       val lawId     = id(8)
@@ -211,27 +211,21 @@ final class ExamLoadCSVPrinterSpec extends AnyWordSpec with Matchers {
         title = "Informatik, Recht und Gesellschaft",
         abbrev = "IRG",
         ects = 5,
-        moduleRelation = Some(ModuleRelationProtocol.Parent(NonEmptyList.of(lawId, societyId)))
+        moduleRelation = Some(ModuleRelationProtocol(NonEmptyList.of(lawId, societyId)))
       )
       val societyMetadata = metadata(
         title = "Informatik und Gesellschaft",
         abbrev = "IUG",
-        ects = 3,
-        moduleRelation = Some(ModuleRelationProtocol.Child(parentId))
+        ects = 3
       )
       val lawMetadata = metadata(
         title = "Recht",
         abbrev = "RE",
-        ects = 2,
-        moduleRelation = Some(ModuleRelationProtocol.Child(parentId))
+        ects = 2
       )
 
-      val modules = Vector(
-        mandatoryModule(parentId, parentMetadata, List(4)),
-        mandatoryModule(societyId, societyMetadata, List(4)),
-        mandatoryModule(lawId, lawMetadata, List(4))
-      )
-      val children = Vector(
+      val modules  = Vector(mandatoryModule(parentId, parentMetadata, List(4)))
+      val children = Map(
         childModule(lawId, lawMetadata),
         childModule(societyId, societyMetadata)
       )
@@ -255,6 +249,20 @@ final class ExamLoadCSVPrinterSpec extends AnyWordSpec with Matchers {
       )
       rows.map(_(13)) shouldBe Vector("Hausarbeit", "Mündliche Prüfung", "Klausurarbeit")
       rows.map(_(14)) shouldBe Vector("1", "1", "1")
+    }
+
+    "keep rendering a parent when a referenced child is unavailable" in {
+      val parentId = id(60)
+      val missing  = id(61)
+      val parent   = mandatoryModule(
+        parentId,
+        metadata(
+          title = "Parent",
+          moduleRelation = Some(ModuleRelationProtocol(NonEmptyList.one(missing)))
+        )
+      )
+
+      onlyDataRow(printExamLoad(Vector(parent))).apply(1) shouldBe "Parent"
     }
 
     "label every written exam method as Klausurarbeit" in {

@@ -7,6 +7,7 @@ import javax.inject.Inject
 
 import scala.sys.process.Process
 import scala.sys.process.ProcessLogger
+import scala.util.Try
 
 import git.Branch
 import models.ModuleProtocol
@@ -32,11 +33,13 @@ final class GitCLI @Inject() (val draftBranch: Branch, gitFolder: Path) extends 
    *
    * @return A tuple where the first element is a vector of parsing errors, and
    *         the second element is a vector of successfully parsed and their last modified time.
+   *         Fails if the preview branch cannot be updated or its files cannot be read.
    */
-  def getAllModulesFromPreview(): (Vector[ParsingError], Vector[(ModuleProtocol, LocalDate)]) = {
-    val exitCode = updatePreviewBranch()
+  def getAllModulesFromPreview(): Try[(Vector[ParsingError], Vector[(ModuleProtocol, LocalDate)])] =
+    Try {
+      if updatePreviewBranch() != 0 then
+        throw new IllegalStateException(s"Could not update Git preview branch ${draftBranch.value}")
 
-    if exitCode == 0 then {
       gitFolder
         .getFilesOfDirectory(_.getFileName.toString.endsWith(".md")) { f =>
           val lastModified = Files
@@ -48,11 +51,7 @@ final class GitCLI @Inject() (val draftBranch: Branch, gitFolder: Path) extends 
           RawModuleParser.parser.parse(content)._1.map(_ -> lastModified)
         }
         .partitionMap(identity)
-    } else {
-      // proper error handling
-      (Vector.empty, Vector.empty)
     }
-  }
 
   /**
    * Updates the local preview branch of the Git repository to match the latest state of the remote branch.

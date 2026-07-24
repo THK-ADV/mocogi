@@ -5,6 +5,7 @@ import java.util.UUID
 import cats.data.NonEmptyList
 import models.ModuleCore
 import models.ModuleRelation
+import models.ModuleRelationProtocol
 import org.scalatest.wordspec.AnyWordSpec
 import play.api.libs.json.Json
 
@@ -17,7 +18,7 @@ class ModuleRelationFormatSpec extends AnyWordSpec {
   "A Module Relation Format Spec" should {
     "convert a parent object to json" in {
       val parent: ModuleRelation =
-        ModuleRelation.Parent(NonEmptyList.of(m1, m2, m3))
+        ModuleRelation(NonEmptyList.of(m1, m2, m3))
       val json = ModuleRelation.writes.writes(parent)
       assert(
         json == Json.obj(
@@ -27,10 +28,13 @@ class ModuleRelationFormatSpec extends AnyWordSpec {
       )
     }
 
-    "convert a child object to json" in {
-      val child: ModuleRelation = ModuleRelation.Child(m1)
-      val json                  = ModuleRelation.writes.writes(child)
-      assert(json == Json.obj("kind" -> "child", "parent" -> Json.toJson(m1)))
+    "reject the removed child representation" in {
+      val json = Json.obj(
+        "kind"   -> "child",
+        "parent" -> UUID.randomUUID()
+      )
+
+      assert(json.validate[ModuleRelationProtocol].isError)
     }
   }
 }

@@ -8,41 +8,36 @@ import parser.Parser._
 import parser.ParserOps.P0
 import parsing.multipleValueParser
 import parsing.nel
-import parsing.types.ParsedModuleRelation
 import parsing.uuidParser
 
 object ModuleRelationParser {
 
-  def raw: Parser[Option[Either[UUID, NonEmptyList[UUID]]]] = {
-    def go: Parser[Either[UUID, NonEmptyList[UUID]]] = oneOf(
-      prefix("parent:")
-        .skip(zeroOrMoreSpaces)
-        .skip(prefix("module."))
-        .take(prefixTo("\n").or(rest))
-        .flatMap(uuidParser)
-        .map(Left.apply),
+  /**
+   * Parses the children of a parent module. Legacy `parent:` declarations of child modules are
+   * ignored: the relation is only stored on the parent since [[models.ModuleRelationProtocol]].
+   */
+  def parser: Parser[Option[NonEmptyList[UUID]]] = {
+    val children =
       multipleValueParser(
         "children",
         skipFirst(prefix("module.")).take(prefixTo("\n")).flatMap(uuidParser)
-      )
-        .nel()
-        .map(Right.apply)
+      ).nel()
+
+    val ignoredChildRelation =
+      prefix("parent:")
+        .take(prefixTo("\n").or(rest))
+        .map(_ => Option.empty[NonEmptyList[UUID]])
+
+    val relation = oneOf(
+      children.map(Some.apply),
+      ignoredChildRelation
     )
 
     prefix("relation:")
       .skip(newline)
       .skip(zeroOrMoreSpaces)
-      .take(go)
+      .take(relation)
       .option
+      .map(_.flatten)
   }
-
-  def parser: Parser[Option[ParsedModuleRelation]] =
-    raw.map(
-      _.map(
-        _.fold(
-          ParsedModuleRelation.Child.apply,
-          ParsedModuleRelation.Parent.apply
-        )
-      )
-    )
 }

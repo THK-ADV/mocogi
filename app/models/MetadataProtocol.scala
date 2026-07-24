@@ -39,6 +39,8 @@ case class MetadataProtocol(
   def isActive: Boolean = ModuleStatus.isActive(status)
 
   def isGeneric: Boolean = ModuleType.isGeneric(moduleType)
+
+  def childIds: List[UUID] = moduleRelation.fold(Nil)(_.children.toList)
 }
 
 object MetadataProtocol extends JsonNullWritable with NelWrites {

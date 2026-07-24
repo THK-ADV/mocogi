@@ -2,15 +2,12 @@ package service.artifact
 
 import javax.inject.Inject
 
-import scala.collection.mutable.ListBuffer
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-import cats.data.NonEmptyList
 import cli.GitCLI
 import database.repo.core.AssessmentMethodRepository
 import models.ModuleProtocol
-import models.ModuleRelationProtocol
 import play.api.Logging
 import printing.csv.ExamLoadCSVPrinter
 import printing.csv.MandatoryModule
@@ -20,22 +17,6 @@ final class ExamLoadService @Inject() (
     gitCli: GitCLI,
     implicit val ctx: ExecutionContext
 ) extends Logging {
-
-  /**
-   * Returns all modules from preview (first arg) and all children (second arg)
-   */
-  private def getModulesFromPreview(po: String): (Vector[ModuleProtocol], Vector[ModuleProtocol]) = {
-    val preview         = new ModulePreview(gitCli)
-    val modulesInPO     = preview.getAllFromPreviewByPO(po)
-    val childrenModules = ListBuffer[ModuleProtocol]()
-    for (module <- modulesInPO) {
-      module.metadata.moduleRelation.collect {
-        case ModuleRelationProtocol.Parent(children) =>
-          childrenModules ++= modulesInPO.filter(m => children.exists(_ == m.id.get))
-      }
-    }
-    (modulesInPO, childrenModules.toVector.distinctBy(_.id.get))
-  }
 
   /**
    * Returns default mandatory modules sorted by recommended semester and module title.
@@ -61,22 +42,13 @@ final class ExamLoadService @Inject() (
       .sortBy(module => (module.semesters.headOption.getOrElse(Int.MaxValue), module.metadata.title))
 
   /**
-   * Returns all modules from the PO sorted by recommended semester
-   */
-  private def prepareChildren(
-      children: Vector[ModuleProtocol],
-      modules: Vector[MandatoryModule]
-  ): Vector[ModuleProtocol] =
-    children.filter(child => modules.exists(m => child.metadata.moduleRelation.exists(_.parentID.contains(m.id))))
-
-  /**
    * Returns the latest exam load for the given PO as a CSV string using the preview branch
    */
-  def createLatestExamLoad(po: String): Future[String] = {
-    val (parsedModules, parsedChildren) = getModulesFromPreview(po)
-    val modules                         = prepareModules(parsedModules, po)
-    val children                        = prepareChildren(parsedChildren, modules)
-    for assessmentMethods <- assessmentMethodRepo.allPermittedLabelsForModulesOrDefault(modules.map(_.id))
-    yield new ExamLoadCSVPrinter(modules, children, assessmentMethods).print()
-  }
+  def createLatestExamLoad(po: String): Future[String] =
+    for {
+      poModules <- Future.fromTry(new ModulePreview(gitCli).getByPO(po))
+      modules   = prepareModules(poModules.modules.map(_._1), po)
+      moduleIds = (modules.map(_.id) ++ modules.flatMap(_.metadata.childIds)).distinct
+      assessmentMethods <- assessmentMethodRepo.allPermittedLabelsForModulesOrDefault(moduleIds)
+    } yield new ExamLoadCSVPrinter(modules, poModules.childrenById, assessmentMethods).print()
 }

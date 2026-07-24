@@ -185,45 +185,16 @@ CREATE OR REPLACE FUNCTION modules.resolve_module_relation(module_id uuid)
   STABLE
   AS $$
   SELECT
-    CASE
-    -- Check if this module is a child (has a parent)
-    WHEN EXISTS(
-      SELECT
-        1
-      FROM
-        modules.module_relation
-      WHERE
-        module = module_id
-        AND relation_type = 'child') THEN
-      jsonb_build_object('relationType', 'child', 'module',(
-          SELECT
-            modules.module_to_json_short(m)
-          FROM modules.module_relation AS mr
-          JOIN modules.module AS m ON m.id = mr.relation_module
-          WHERE
-            mr.module = module_id
-            AND mr.relation_type = 'child' LIMIT 1))
-      -- Check if this module is a parent (has children)
-    WHEN EXISTS(
-      SELECT
-        1
-      FROM
-        modules.module_relation
-      WHERE
-        module = module_id
-        AND relation_type = 'parent') THEN
-      jsonb_build_object('relationType', 'parent', 'modules', coalesce((
-          SELECT
-            jsonb_agg(modules.module_to_json_short(m))
-          FROM modules.module_relation AS mr
-          JOIN modules.module AS m ON m.id = mr.relation_module
-        WHERE
-          mr.module = module_id
-          AND mr.relation_type = 'parent'), '[]'::jsonb))
-      -- No relations found
-    ELSE
+    CASE WHEN count(*) = 0 THEN
       NULL
-    END;
+    ELSE
+      jsonb_build_object(
+        'relationType', 'parent',
+        'modules', jsonb_agg(modules.module_to_json_short(m) ORDER BY m.title, m.id))
+    END
+  FROM modules.module_relation AS mr
+  JOIN modules.module AS m ON m.id = mr.child
+  WHERE mr.parent = module_id;
 $$;
 
 -- Builds the full module details payload, combining the base module row with all

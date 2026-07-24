@@ -2,8 +2,6 @@ package printing.csv
 
 import java.util.UUID
 
-import scala.collection.mutable.ListBuffer
-
 import models.*
 import models.core.AssessmentMethod
 import play.api.Logging
@@ -13,18 +11,12 @@ import play.api.Logging
  */
 final class ExamLoadCSVPrinter(
     modules: Vector[MandatoryModule],
-    children: Vector[ModuleProtocol],
+    childrenById: Map[UUID, ModuleProtocol],
     assessmentMethods: Map[UUID, Seq[AssessmentMethod]]
 ) extends Logging {
 
   private val writtenExamAssessmentMethodIds =
     Set("e-exam", "written-exam", "written-exam-answer-choice-method")
-
-  private val modulesToConsume = ListBuffer[UUID](modules.map(_.id)*)
-
-  private def consume(module: UUID): Unit = {
-    modulesToConsume -= module
-  }
 
   private def escapeCell(value: String) =
     if value.exists(c => c == ';' || c == '"' || c == '\n' || c == '\r') then s""""${value.replace("\"", "\"\"")}""""
@@ -48,18 +40,15 @@ final class ExamLoadCSVPrinter(
       "Prüfungsformen / Gewichtung / Benotung",
       "Prüfungsleistungen pro (Teil)Modul",
     )
-    sb.append(header.map(escapeCell).mkString(";"))
+    sb.append(header.mkString(";"))
   }
 
   private def createRows(module: MandatoryModule): List[Row] = {
-    def moduleTypeLabel(p: MetadataProtocol) = if !p.isGeneric then "PF" else "WPF"
+    def moduleTypeLabel(p: MetadataProtocol) = if p.isGeneric then "WPF" else "PF"
 
-    def ectsLabel(value: Double) = {
-      val strValue             = value.toString
-      val Array(int, decimals) = strValue.split('.')
-      if decimals == "0" then int
-      else s"$int,$decimals"
-    }
+    def ectsLabel(value: Double) =
+      if value.isWhole then value.toInt.toString
+      else value.toString.replace('.', ',')
 
     def attendanceRequirementLabel(v: Option[AttendanceRequirement]) =
       v match {
@@ -73,26 +62,21 @@ final class ExamLoadCSVPrinter(
         case None      => ("nein", "-", "-")
       }
 
-    def assessmentMethodsLabel(id: UUID) =
-      assessmentMethods.get(id).filter(_.nonEmpty) match {
-        case Some(methods) =>
-          methods
-            .map { method =>
-              if writtenExamAssessmentMethodIds.contains(method.id) then "Klausurarbeit"
-              else method.deLabel
-            }
-            .distinct
-            .sorted
-            .mkString(" und/oder ")
-        case None => "-"
-      }
+    def assessmentMethodsLabel(id: UUID) = {
+      val methods = assessmentMethods.getOrElse(id, Nil)
+      if methods.isEmpty then "-"
+      else
+        methods
+          .map(method => if writtenExamAssessmentMethodIds.contains(method.id) then "Klausurarbeit" else method.deLabel)
+          .distinct
+          .sorted
+          .mkString(" und/oder ")
+    }
 
     def assessmentMethodsCountLabel(id: UUID) =
-      assessmentMethods.get(id).fold(0)(_.size).toString
+      assessmentMethods.getOrElse(id, Nil).size.toString
 
     def createRow(id: UUID, module: MetadataProtocol, semesterLabel: String): Row = {
-      consume(id)
-
       val (attReq, attReqText, attReqReason) = attendanceRequirementLabel(module.attendanceRequirement)
       val (assPre, assPreText, assPreReason) = assessmentPrerequisiteLabel(module.assessmentPrerequisite)
 
@@ -115,27 +99,25 @@ final class ExamLoadCSVPrinter(
       )
     }
 
-    module.metadata.moduleRelation.match {
-      case Some(ModuleRelationProtocol.Parent(childrenIds)) =>
-        val parent = createRow(module.id, module.metadata, module.semesters.mkString(","))
+    val semesterLabel = module.semesters.mkString(",")
+
+    module.metadata.moduleRelation match {
+      case Some(relation) =>
+        val parent = createRow(module.id, module.metadata, semesterLabel)
           .copy(submodule = "", submoduleCredits = "")
 
-        val children = childrenIds
-          .map(id => this.children.find(_.id.get == id).get)
+        val children = relation.children.toList
+          .flatMap { id =>
+            childrenById.get(id).orElse {
+              logger.error(s"Unable to render missing or inactive child module $id of parent ${module.id}")
+              None
+            }
+          }
           .sortBy(_.metadata.title)
-          .map(module => createRow(module.id.get, module.metadata, "").copy(semester = "", totalCredits = ""))
-        parent :: children.toList
-      case Some(ModuleRelationProtocol.Child(_)) =>
-        // child modules are rendered below their parent module
-        Nil
+          .map(child => createRow(child.id.get, child.metadata, semesterLabel = "").copy(totalCredits = ""))
+        parent :: children
       case None =>
-        List(createRow(module.id, module.metadata, module.semesters.mkString(",")))
-    }
-  }
-
-  private def assumeConsumption(): Unit = {
-    if modulesToConsume.nonEmpty then {
-      logger.error(s"non consumed modules: ${modulesToConsume.toList}")
+        List(createRow(module.id, module.metadata, semesterLabel))
     }
   }
 
@@ -148,7 +130,6 @@ final class ExamLoadCSVPrinter(
     for (module <- modules) {
       printModule(sb, module)
     }
-    assumeConsumption()
     sb.toString()
   }
 }

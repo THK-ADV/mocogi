@@ -23,6 +23,7 @@ import printing.LocalizedStrings
 object ExamListsLatexPrinter {
   def default(
       modules: Seq[ModuleProtocol],
+      childrenById: Map[UUID, ModuleProtocol],
       studyProgram: StudyProgramView,
       assessmentMethods: Seq[AssessmentMethod],
       people: Seq[Identity],
@@ -35,6 +36,7 @@ object ExamListsLatexPrinter {
   ): ExamListsLatexPrinter =
     new ExamListsLatexPrinter(
       modules,
+      childrenById,
       studyProgram,
       assessmentMethods,
       people,
@@ -48,6 +50,7 @@ object ExamListsLatexPrinter {
 
   def preview(
       modules: Seq[ModuleProtocol],
+      childrenById: Map[UUID, ModuleProtocol],
       studyProgram: StudyProgramView,
       assessmentMethods: Seq[AssessmentMethod],
       people: Seq[Identity],
@@ -58,6 +61,7 @@ object ExamListsLatexPrinter {
   ): ExamListsLatexPrinter =
     new ExamListsLatexPrinter(
       modules,
+      childrenById,
       studyProgram,
       assessmentMethods,
       people,
@@ -72,6 +76,7 @@ object ExamListsLatexPrinter {
 
 final class ExamListsLatexPrinter(
     modules: Seq[ModuleProtocol],
+    childrenById: Map[UUID, ModuleProtocol],
     studyProgram: StudyProgramView,
     assessmentMethods: Seq[AssessmentMethod],
     people: Seq[Identity],
@@ -298,12 +303,11 @@ final class ExamListsLatexPrinter(
       .sortBy(_.metadata.title)
       .foreach { m =>
         m.metadata.moduleRelation match {
-          case Some(ModuleRelationProtocol.Child(_))         => // child modules are rendered below their parent module
-          case Some(ModuleRelationProtocol.Parent(children)) =>
+          case Some(relation) =>
             parentModuleRow(row, m.metadata.title)
             row += 1
-            children.toList
-              .map(id => modules.find(_.id.contains(id)).toRight(id))
+            relation.children.toList
+              .map(id => childrenById.get(id).toRight(id))
               .sortBy(_.fold(_.toString, _.metadata.title))
               .foreach {
                 case Right(m) =>
@@ -364,11 +368,10 @@ final class ExamListsLatexPrinter(
       .sortBy(_.metadata.title)
       .foreach { m =>
         m.metadata.moduleRelation match {
-          case Some(ModuleRelationProtocol.Child(_))         => // child modules are rendered below their parent module
-          case Some(ModuleRelationProtocol.Parent(children)) =>
-            children.toList
+          case Some(relation) =>
+            relation.children.toList
               .map { id =>
-                val child = modules.find(_.id.contains(id))
+                val child = childrenById.get(id)
                 if child.isEmpty then
                   logger.error(s"error while printing parent module ${m.id.get}: unable to find child module $id")
                 child

@@ -35,6 +35,7 @@ final class ModuleDeletionRepository @Inject() (
    */
   def delete(module: UUID): Future[Unit] = {
     val action = for
+      _ <- moduleRepository.deleteRelations(module)
       _ <- moduleRepository.deleteDependencies(module)
       _ <- moduleRepository.tableQuery.filter(_.id === module).delete
       moduleDraftQuery = TableQuery[ModuleDraftTable].filter(_.module === module)

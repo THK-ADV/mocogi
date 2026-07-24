@@ -37,6 +37,22 @@ final class GetModuleDetailsSpec extends DatabaseSnapshotSuite {
     }
   }
 
+  test("details of irg where child modules are set") {
+    assertSnapshot("database/expected/get_module_details/irg.txt") {
+      sql"""SELECT jsonb_pretty(modules.get_module_details('e3dc0278-cf5f-4296-a577-d88ad9c3e999'::uuid)::jsonb)::text"""
+        .as[String]
+        .head
+    }
+  }
+
+  test("details of iug where parent module is not set") {
+    assertSnapshot("database/expected/get_module_details/iug.txt") {
+      sql"""SELECT jsonb_pretty(modules.get_module_details('05674322-071c-4a3a-8d8b-3c21c6bb640c'::uuid)::jsonb)::text"""
+        .as[String]
+        .head
+    }
+  }
+
   test("missing module => null") {
     TestDb.runSync(
       sql"""SELECT modules.get_module_details(${fakeUUID}::uuid)"""
