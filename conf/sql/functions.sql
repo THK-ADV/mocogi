@@ -188,13 +188,14 @@ CREATE OR REPLACE FUNCTION modules.resolve_module_relation(module_id uuid)
     CASE WHEN count(*) = 0 THEN
       NULL
     ELSE
-      jsonb_build_object(
-        'relationType', 'parent',
-        'modules', jsonb_agg(modules.module_to_json_short(m) ORDER BY m.title, m.id))
+      jsonb_build_object('relationType', 'parent', 'modules', jsonb_agg(modules.module_to_json_short(m)
+        ORDER BY m.title, m.id))
     END
-  FROM modules.module_relation AS mr
-  JOIN modules.module AS m ON m.id = mr.child
-  WHERE mr.parent = module_id;
+  FROM
+    modules.module_relation AS mr
+    JOIN modules.module AS m ON m.id = mr.child
+  WHERE
+    mr.parent = module_id;
 $$;
 
 -- Builds the full module details payload, combining the base module row with all
@@ -1134,3 +1135,4 @@ ORDER BY
   id,
   src_rank) sub;
 $$;
+

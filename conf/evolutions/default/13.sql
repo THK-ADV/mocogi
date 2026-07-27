@@ -3,11 +3,13 @@ ALTER TABLE modules.module_relation
   ADD COLUMN "parent" uuid,
   ADD COLUMN "child" uuid;
 
-UPDATE modules.module_relation
+UPDATE
+  modules.module_relation
 SET
   "parent" = "module",
   "child" = relation_module
-WHERE relation_type = 'parent';
+WHERE
+  relation_type = 'parent';
 
 -- Legacy child rows were redundant back-references and are not authoritative.
 -- A child-only declaration therefore becomes a standalone module.
@@ -30,7 +32,6 @@ ALTER TABLE modules.module_relation
 
 -- Deployment step: reapply conf/sql/functions.sql after this evolution so
 -- resolve_module_relation uses the new parent/child columns.
-
 -- !Downs
 -- Rollback step: reapply functions.sql from the previous application version.
 ALTER TABLE modules.module_relation
@@ -38,7 +39,8 @@ ALTER TABLE modules.module_relation
   ADD COLUMN relation_type text,
   ADD COLUMN relation_module uuid;
 
-UPDATE modules.module_relation
+UPDATE
+  modules.module_relation
 SET
   "module" = "parent",
   relation_type = 'parent',
@@ -53,10 +55,17 @@ ALTER TABLE modules.module_relation
   ALTER COLUMN "parent" DROP NOT NULL,
   ALTER COLUMN "child" DROP NOT NULL;
 
-INSERT INTO modules.module_relation ("parent", "child", "module", relation_type, relation_module)
-SELECT NULL, NULL, "child", 'child', "parent"
-FROM modules.module_relation
-WHERE relation_type = 'parent';
+INSERT INTO modules.module_relation("parent", "child", "module", relation_type, relation_module)
+SELECT
+  NULL,
+  NULL,
+  "child",
+  'child',
+  "parent"
+FROM
+  modules.module_relation
+WHERE
+  relation_type = 'parent';
 
 ALTER TABLE modules.module_relation
   ALTER COLUMN "module" SET NOT NULL,
@@ -68,5 +77,5 @@ ALTER TABLE modules.module_relation
 ALTER TABLE modules.module_relation
   ADD CONSTRAINT module_relation_pkey PRIMARY KEY ("module", relation_type, relation_module),
   ADD CONSTRAINT module_relation_module_fkey FOREIGN KEY ("module") REFERENCES modules.module(id),
-  ADD CONSTRAINT module_relation_relation_module_fkey
-    FOREIGN KEY (relation_module) REFERENCES modules.module(id);
+  ADD CONSTRAINT module_relation_relation_module_fkey FOREIGN KEY (relation_module) REFERENCES modules.module(id);
+
