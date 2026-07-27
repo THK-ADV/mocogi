@@ -105,13 +105,7 @@ class THKV1ParserSpec
         assert(metadata.title == "Algorithmik")
         assert(metadata.abbrev == "ALG")
         assert(metadata.kind == ModuleType("module", "Modul", "--"))
-        assert(
-          metadata.relation.contains(
-            ParsedModuleRelation.Child(
-              UUID.fromString("3bd4ee93-b921-4d52-9223-04be3bb13676")
-            )
-          )
-        )
+        assert(metadata.relation.isEmpty)
         assert(metadata.credits == 5)
         assert(metadata.language == ModuleLanguage("de", "Deutsch", "--"))
         assert(metadata.duration == 1)

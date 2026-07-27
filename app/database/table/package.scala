@@ -15,10 +15,6 @@ import slick.jdbc.PostgresProfile.api.*
 import models.schedule.PlanDraftKind
 
 package object table {
-  implicit val moduleRelationColumnType: BaseColumnType[ModuleRelationType] =
-    MappedColumnType
-      .base[ModuleRelationType, String](_.id, ModuleRelationType.apply)
-
   implicit val responsibilityTypeColumnType: BaseColumnType[ResponsibilityType] =
     MappedColumnType
       .base[ResponsibilityType, String](_.id, ResponsibilityType.apply)

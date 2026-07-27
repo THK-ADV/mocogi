@@ -28,8 +28,6 @@ import parsing.metadata.THKV1Parser.abbreviationParser
 import parsing.metadata.THKV1Parser.durationParser
 import parsing.metadata.THKV1Parser.idParser
 import parsing.metadata.THKV1Parser.titleParser
-import parsing.types.ParsedModuleRelation
-
 object RawModuleParser {
 
   def parseCreatedModuleInformation(input: String): CreatedModule = {
@@ -58,7 +56,7 @@ object RawModuleParser {
         idParser.zip(titleParser).take(abbreviationParser)
       )
       .zip(ModuleTypeParser.raw)
-      .take(ModuleRelationParser.parser.map(_.map(toModuleRelation)))
+      .take(ModuleRelationParser.parser.map(_.map(ModuleRelationProtocol.apply)))
       .take(ModuleECTSParser.raw)
       .skip(zeroOrMoreSpaces)
       .take(ModuleLanguageParser.raw)
@@ -150,12 +148,4 @@ object RawModuleParser {
             enContent
           )
       }
-
-  private def toModuleRelation(mr: ParsedModuleRelation): ModuleRelationProtocol =
-    mr match {
-      case ParsedModuleRelation.Parent(children) =>
-        ModuleRelationProtocol.Parent(children)
-      case ParsedModuleRelation.Child(parent) =>
-        ModuleRelationProtocol.Child(parent)
-    }
 }

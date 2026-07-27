@@ -17,7 +17,6 @@ import database.repo.core.AssessmentMethodRepository
 import database.repo.core.SpecializationRepository
 import database.view.StudyProgramViewRepository
 import models.FullPoId
-import models.ModuleProtocol
 import models.Semester
 import ops.toFuture
 import play.api.i18n.Lang
@@ -46,11 +45,6 @@ final class ExamListService @Inject() (
   def previewExamList(po: String, latexFile: Path): Future[Path] =
     generateExamList(po, latexFile, None)
 
-  private def getModulesFromPreview(po: String): Vector[ModuleProtocol] = {
-    val previewService = new ModulePreview(gitCli)
-    previewService.getAllFromPreviewByPO(po)
-  }
-
   private def generateExamList(po: String, latexFile: Path, semester: Option[(Semester, LocalDate)]) =
     studyProgramViewRepo.getByPo(FullPoId(po)).flatMap { studyProgram =>
       logger.info(s"generating exam list for po $po (preview = ${semester.isEmpty})")
@@ -61,19 +55,21 @@ final class ExamListService @Inject() (
         val assessmentMethods = assessmentMethodRepo.all()
         val people            = identityService.all()
         val specializations   = specializationRepository.allByPO(po)
-        val modules           = getModulesFromPreview(po)
         val lang              = Lang(Locale.GERMANY)
 
         for
+          poModules         <- Future.fromTry(new ModulePreview(gitCli).getByPO(po))
           assessmentMethods <- assessmentMethods
           specializations   <- specializations
           people            <- people
           genericModules    <- if specializations.nonEmpty then moduleService.allGeneric() else Future.successful(Nil)
+          modules = poModules.modules.map(_._1)
           printer = semester match {
             case Some((s, d)) =>
               ExamListsLatexPrinter
                 .default(
                   modules,
+                  poModules.childrenById,
                   studyProgram,
                   assessmentMethods,
                   people,
@@ -88,6 +84,7 @@ final class ExamListService @Inject() (
               ExamListsLatexPrinter
                 .preview(
                   modules,
+                  poModules.childrenById,
                   studyProgram,
                   assessmentMethods,
                   people,

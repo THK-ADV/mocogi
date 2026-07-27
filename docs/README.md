@@ -54,11 +54,9 @@ Gibt ein Array von Modulen zurück. Ein Modul besteht aus
   - `participants` (Object oder null): Teilnehmerbegrenzung, falls vorhanden
     - `min` (Int): Mindestanzahl
     - `max` (Int): Maximalanzahl
-  - `moduleRelation` (Object oder null): Ober- und Teilmodul Beziehung (wenn vorhanden)
-    - `kind` (String): Entweder `child`, wenn das Modul ein Teilmodul ist, oder `parent`, wenn das Modul ein Obermodul
-      ist
-    - `parent` (String): ID des Obermoduls, wenn `kind` = `child` ist
-    - `children` (Array<String>): ID der Teilmodule, wenn `kind` = `parent` ist
+  - `moduleRelation` (Object oder null): Teilmodule eines Obermoduls (wenn vorhanden)
+    - `kind` (String): `parent`
+    - `children` (Array<String>): IDs der Teilmodule
   - `moduleManagement` (Array<String>): ID der Modulverantwortlichen (
     siehe [Personen und Gruppen](#personen-und-gruppen))
   - `lecturers` (Array<String>): ID der Lehrenden (siehe [Personen und Gruppen](#personen-und-gruppen))

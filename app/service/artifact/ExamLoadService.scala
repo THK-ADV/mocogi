@@ -2,17 +2,15 @@ package service.artifact
 
 import javax.inject.Inject
 
-import scala.collection.mutable.ListBuffer
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 import cli.GitCLI
 import database.repo.core.AssessmentMethodRepository
 import models.ModuleProtocol
-import models.ModuleRelationProtocol
 import play.api.Logging
 import printing.csv.ExamLoadCSVPrinter
-import printing.csv.Module
+import printing.csv.MandatoryModule
 
 final class ExamLoadService @Inject() (
     assessmentMethodRepo: AssessmentMethodRepository,
@@ -21,56 +19,36 @@ final class ExamLoadService @Inject() (
 ) extends Logging {
 
   /**
-   * Returns all modules from preview (first arg) and all children (second arg)
+   * Returns default mandatory modules sorted by recommended semester and module title.
+   *
+   * Specialization-specific modules are excluded because exam loads do not support
+   * assigning modules to PO specializations yet.
    */
-  private def getModulesFromPreview(po: String): (Vector[ModuleProtocol], Vector[ModuleProtocol]) = {
-    val preview         = new ModulePreview(gitCli)
-    val modulesInPO     = preview.getAllFromPreviewByPO(po)
-    val childrenModules = ListBuffer[ModuleProtocol]()
-    for (module <- modulesInPO) {
-      module.metadata.moduleRelation.collect {
-        case ModuleRelationProtocol.Parent(children) =>
-          childrenModules ++= modulesInPO.filter(m => children.exists(_ == m.id.get))
-      }
-    }
-    (modulesInPO, childrenModules.toVector.distinctBy(_.id.get))
-  }
-
-  /**
-   * Returns all modules from the PO sorted by recommended semester
-   */
-  private def prepareModules(modules: Vector[ModuleProtocol], po: String): Vector[Module] = {
+  private def prepareModules(modules: Vector[ModuleProtocol], poId: String): Vector[MandatoryModule] =
     modules
-      .map(m =>
-        Module(
-          m.id.get,
-          m.metadata,
-          (m.metadata.po.mandatory.flatMap(_.recommendedSemester) ::: m.metadata.po.optional
-            .flatMap(_.recommendedSemester)).distinct.sorted
-        )
-      )
-      .sortBy { m =>
-        val title = m.metadata.title
-        if m.semester.isEmpty then (Int.MaxValue, title)
-        else (m.semester.head, title) // head is safe because it's sorted
+      .flatMap { module =>
+        module.metadata.po.mandatory.filter(po => po.po == poId && po.specialization.isEmpty) match {
+          case po :: Nil =>
+            Some(
+              MandatoryModule(
+                module.id.get,
+                module.metadata,
+                po.recommendedSemester.sorted
+              )
+            )
+          case _ => None
+        }
       }
-  }
-
-  /**
-   * Returns all modules from the PO sorted by recommended semester
-   */
-  private def prepareChildren(children: Vector[ModuleProtocol], modules: Vector[Module]): Vector[ModuleProtocol] =
-    children.filter(child => modules.exists(m => child.metadata.moduleRelation.exists(_.parentID.contains(m.id))))
+      .sortBy(module => (module.semesters.headOption.getOrElse(Int.MaxValue), module.metadata.title))
 
   /**
    * Returns the latest exam load for the given PO as a CSV string using the preview branch
    */
-  def createLatestExamLoad(po: String): Future[String] = {
-    val assessmentMethods               = assessmentMethodRepo.all()
-    val (parsedModules, parsedChildren) = getModulesFromPreview(po)
-    val modules                         = prepareModules(parsedModules, po)
-    val children                        = prepareChildren(parsedChildren, modules)
-    for assessmentMethods <- assessmentMethods
-    yield new ExamLoadCSVPrinter(modules, children, po, assessmentMethods).print()
-  }
+  def createLatestExamLoad(po: String): Future[String] =
+    for {
+      poModules <- Future.fromTry(new ModulePreview(gitCli).getByPO(po))
+      modules   = prepareModules(poModules.modules.map(_._1), po)
+      moduleIds = (modules.map(_.id) ++ modules.flatMap(_.metadata.childIds)).distinct
+      assessmentMethods <- assessmentMethodRepo.allPermittedLabelsForModulesOrDefault(moduleIds)
+    } yield new ExamLoadCSVPrinter(modules, poModules.childrenById, assessmentMethods).print()
 }

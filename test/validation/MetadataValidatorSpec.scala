@@ -38,6 +38,41 @@ final class MetadataValidatorSpec extends AnyWordSpec with EitherValues with Opt
   def lookup(module: UUID): Option[ModuleCore] =
     modules.find(_.id == module)
 
+  private def relationGraph(relations: (UUID, Set[UUID])*): ModuleRelationGraph =
+    ModuleRelationGraph(relations.toMap)
+
+  private def parsedModule(
+      id: UUID,
+      relation: Option[NonEmptyList[UUID]]
+  ): ParsedMetadata =
+    ParsedMetadata(
+      id,
+      "title",
+      "abbrev",
+      ModuleType("", "", ""),
+      relation,
+      1,
+      ModuleLanguage("", "", ""),
+      1,
+      Season("", "", ""),
+      ModuleResponsibilities(
+        NonEmptyList.one(Identity.Unknown("id", "label")),
+        NonEmptyList.one(Identity.Unknown("id", "label"))
+      ),
+      ModuleAssessmentMethods(List(method(Some(100)))),
+      Examiner(Identity.NN, Identity.NN),
+      ExamPhase.all,
+      ModuleWorkload(0, 0, 0, 0, 0, 0),
+      ParsedPrerequisites(None, None),
+      ModuleStatus("", "", ""),
+      ModuleLocation("", "", ""),
+      ParsedPOs(Nil, Nil),
+      None,
+      Nil,
+      None,
+      None
+    )
+
   "A Metadata Validator" when {
     "flatMap a validator" in {
       def posInt: Validator[Int, PosInt] =
@@ -397,49 +432,95 @@ final class MetadataValidatorSpec extends AnyWordSpec with EitherValues with Opt
 
     "validating module relations" should {
       "skip if there is no module relation" in {
-        assert(moduleRelationValidator(lookup).validate(None).value.isEmpty)
-      }
-
-      "pass if parent is found" in {
-        assert(
-          moduleRelationValidator(lookup)
-            .validate(Some(ParsedModuleRelation.Child(m1.id)))
-            .value
-            .value == ModuleRelation.Child(m1)
-        )
-      }
-
-      "fail if parent is not found" in {
-        val random = UUID.randomUUID
-        assert(
-          moduleRelationValidator(lookup)
-            .validate(Some(ParsedModuleRelation.Child(random)))
-            .left
-            .value == List(s"module in 'module relation' not found: $random")
-        )
+        assert(moduleRelationValidator(m3.id, lookup, ModuleRelationGraph.empty).validate(None).value.isEmpty)
       }
 
       "pass if children are found" in {
         assert(
-          moduleRelationValidator(lookup)
-            .validate(
-              Some(ParsedModuleRelation.Parent(NonEmptyList.of(m1.id, m2.id)))
-            )
+          moduleRelationValidator(m3.id, lookup, ModuleRelationGraph.empty)
+            .validate(Some(NonEmptyList.of(m1.id, m2.id)))
             .value
-            .value == ModuleRelation.Parent(NonEmptyList.of(m1, m2))
+            .value == ModuleRelation(NonEmptyList.of(m1, m2))
         )
       }
 
       "fail if one child is not found" in {
         val random = UUID.randomUUID
         assert(
-          moduleRelationValidator(lookup)
-            .validate(
-              Some(ParsedModuleRelation.Parent(NonEmptyList.of(m1.id, random)))
-            )
+          moduleRelationValidator(m3.id, lookup, ModuleRelationGraph.empty)
+            .validate(Some(NonEmptyList.of(m1.id, random)))
             .left
             .value == List(s"module in 'module relation' not found: $random")
         )
+      }
+
+      "reject self relations" in {
+        val result = moduleRelationGraphValidator(m1.id, ModuleRelationGraph.empty)
+          .validate(Some(NonEmptyList.one(m1.id)))
+
+        assert(result.left.value == List(s"module relation must not reference itself: ${m1.id}"))
+      }
+
+      "reject duplicate children" in {
+        val result = moduleRelationGraphValidator(m1.id, ModuleRelationGraph.empty)
+          .validate(Some(NonEmptyList.of(m2.id, m2.id)))
+
+        assert(result.left.value == List(s"module relation contains duplicate children: ${m2.id}"))
+      }
+
+      "reject children with multiple parents" in {
+        val result = moduleRelationGraphValidator(m2.id, relationGraph(m1.id -> Set(m3.id)))
+          .validate(Some(NonEmptyList.one(m3.id)))
+        val parents = List(m1.id, m2.id).sortBy(_.toString)
+
+        assert(
+          result.left.value == List(
+            s"module relation child ${m3.id} has multiple parents: ${parents.mkString(", ")}"
+          )
+        )
+      }
+
+      "reject modules that are both parent and child" in {
+        val result = moduleRelationGraphValidator(m2.id, relationGraph(m1.id -> Set(m2.id)))
+          .validate(Some(NonEmptyList.one(m3.id)))
+
+        assert(result.left.value == List(s"modules cannot be both parent and child: ${m2.id}"))
+      }
+
+      "reject children that are already parents" in {
+        val result = moduleRelationGraphValidator(m1.id, relationGraph(m2.id -> Set(m3.id)))
+          .validate(Some(NonEmptyList.one(m2.id)))
+
+        assert(result.left.value == List(s"modules cannot be both parent and child: ${m2.id}"))
+      }
+
+      "replace the previous relation of the validated module" in {
+        val replacement = UUID.randomUUID
+        val result      = moduleRelationGraphValidator(
+          m1.id,
+          relationGraph(m1.id -> Set(m3.id), m2.id -> Set(m3.id))
+        ).validate(Some(NonEmptyList.one(replacement)))
+
+        assert(result.value == Some(NonEmptyList.one(replacement)))
+      }
+
+      "validate the final relation graph for a batch" in {
+        val firstParent  = parsedModule(m1.id, Some(NonEmptyList.one(m3.id)))
+        val secondParent = parsedModule(m2.id, Some(NonEmptyList.one(m3.id)))
+
+        val results = validateMany(Seq(firstParent, secondParent), lookup, ModuleRelationGraph.empty)
+
+        assert(results.forall(_.left.value.exists(_.contains("has multiple parents"))))
+      }
+
+      "remove replaced relations from the final graph" in {
+        val result = validateMany(
+          Seq(parsedModule(m1.id, None)),
+          lookup,
+          relationGraph(m1.id -> Set(m3.id), m2.id -> Set(m3.id))
+        )
+
+        assert(result.head.isRight)
       }
     }
 
@@ -450,7 +531,7 @@ final class MetadataValidatorSpec extends AnyWordSpec with EitherValues with Opt
           "title",
           "abbrev",
           ModuleType("", "", ""),
-          Some(ParsedModuleRelation.Child(m1.id)),
+          Some(NonEmptyList.one(m1.id)),
           1,
           ModuleLanguage("", "", ""),
           1,
@@ -482,7 +563,7 @@ final class MetadataValidatorSpec extends AnyWordSpec with EitherValues with Opt
           ivm1.title,
           ivm1.abbrev,
           ivm1.kind,
-          Some(ModuleRelation.Child(m1)),
+          Some(ModuleRelation(NonEmptyList.one(m1))),
           ModuleECTS(1),
           ivm1.language,
           ivm1.duration,
@@ -505,7 +586,7 @@ final class MetadataValidatorSpec extends AnyWordSpec with EitherValues with Opt
           None
         )
 
-        val res = validateMany(Seq(ivm1), lookup).head.value
+        val res = validateMany(Seq(ivm1), lookup, ModuleRelationGraph.empty).head.value
         assert(res.id == vm1.id)
         assert(res.title == vm1.title)
         assert(res.abbrev == vm1.abbrev)
@@ -533,7 +614,7 @@ final class MetadataValidatorSpec extends AnyWordSpec with EitherValues with Opt
           "",
           "abbrev",
           ModuleType("", "", ""),
-          Some(ParsedModuleRelation.Child(random)),
+          Some(NonEmptyList.one(random)),
           1,
           ModuleLanguage("", "", ""),
           1,
@@ -561,13 +642,14 @@ final class MetadataValidatorSpec extends AnyWordSpec with EitherValues with Opt
           None
         )
         assert(
-          validateMany(Seq(ivm1), lookup).head.left.value == List(
+          validateMany(Seq(ivm1), lookup, ModuleRelationGraph.empty).head.left.value == List(
             "title must be set, but was empty",
             "participants min must be lower than max. min: 20, max: 15",
             s"module in 'module relation' not found: $random"
           )
         )
       }
+
     }
   }
 }

@@ -4,13 +4,10 @@ import java.time.format.DateTimeFormatter
 import java.time.LocalDate
 import java.util.UUID
 
-import scala.collection.mutable.ListBuffer
+import scala.collection.mutable
 
-import cats.data.NonEmptyList
 import models.*
 import models.core.*
-import models.ModuleRelationProtocol.Child
-import models.ModuleRelationProtocol.Parent
 import monocle.macros.GenLens
 import monocle.Lens
 import ops.appendOpt
@@ -114,24 +111,35 @@ final class ModuleCatalogLatexPrinter(
 
   private val localDatePattern = DateTimeFormatter.ofPattern("dd.MM.yyyy", lang.locale)
 
-  private val consumedModules = ListBuffer[UUID]()
+  private val consumedModules = mutable.HashSet.empty[UUID]
 
   private var renderingContext = RenderingContext.None
+
+  private val modulesInPOById = modulesInPO.flatMap { module =>
+    module._1.id.map(_ -> module)
+  }.toMap
+
+  private val groupedChildIds = modulesInPO
+    .filter((module, _) => module.metadata.po.hasPORelation(currentPO.id))
+    .flatMap((module, _) => module.metadata.childIds)
+    .toSet
 
   private def isPreview = semester.isEmpty
 
   private val strings = new LocalizedStrings(messages)
 
-  private def currentModuleType(m: MetadataProtocol) =
+  private def currentModuleType(m: MetadataProtocol, parent: Option[UUID]) =
     renderingContext match {
       case RenderingContext.Mandatory | RenderingContext.FieldOfStudy(_) =>
-        m.moduleRelation match {
-          case Some(Parent(children)) =>
-            val submodules = children.map(nameRef).toList.mkString(", ")
-            s"Obermodul von $submodules"
-          case Some(Child(parent)) =>
-            s"Teilmodul von ${nameRef(parent)}"
-          case None => "Pflichtmodul"
+        parent match {
+          case Some(parent) => s"Teilmodul von ${nameRef(parent)}"
+          case None         =>
+            m.moduleRelation match {
+              case Some(relation) =>
+                val submodules = relation.children.map(nameRef).toList.mkString(", ")
+                s"Obermodul von $submodules"
+              case None => "Pflichtmodul"
+            }
         }
       case RenderingContext.Elective =>
         val baseStr        = "Wahlmodul"
@@ -140,7 +148,7 @@ final class ModuleCatalogLatexPrinter(
           .map(_.instanceOf)
           .distinct
           .map { id =>
-            if modulesInPO.exists(_._1.id.get == id) then nameRef(id)        // show generic module ref
+            if modulesInPOById.contains(id) then nameRef(id)                 // show generic module ref
             else payload.modules.find(_.id == id).map(_.title).getOrElse("") // show module title
           }
           .filter(_.nonEmpty)
@@ -205,20 +213,11 @@ final class ModuleCatalogLatexPrinter(
       printModules(s"Module im Schwerpunkt ``${specialization.deLabel}''", specializationModules(specialization.id))
     }
 
-  private def consume(id: UUID) = {
-    if !consumedModules.contains(id) then {
-      consumedModules += id
-    }
-  }
+  private def consume(id: UUID): Unit =
+    consumedModules += id
 
   private def assumeConsumption(): Unit = {
-    val errs = ListBuffer[UUID]()
-    for (module <- modulesInPO) {
-      val moduleId = module._1.id.get
-      if !consumedModules.contains(moduleId) then {
-        errs += moduleId
-      }
-    }
+    val errs = modulesInPO.flatMap(_._1.id).filterNot(consumedModules.contains)
     if errs.nonEmpty then {
       logger.error(s"non consumed printModules: ${errs.toList}")
     }
@@ -283,22 +282,17 @@ final class ModuleCatalogLatexPrinter(
     if (mods.isEmpty) newPage
     else
       mods
+        .filterNot((module, _) => module.id.exists(groupedChildIds.contains))
         .foreach {
           case (m, lm) =>
             m.metadata.moduleRelation match {
-              case Some(Child(parent)) =>
-                val isParentPartOfPO = mods.exists(_._1.id.get == parent)
-                // child modules are rendered inside parent modules, unless their parent is NOT part of the PO
-                if !isParentPartOfPO then {
-                  printModule(m, lm, isChild = false)
-                  newPage
-                }
-              case Some(Parent(children)) =>
-                printModule(m, lm, isChild = false)
+              case Some(relation) =>
+                val parentId = m.id.get
+                printModule(m, lm, parent = None)
                 newPage
-                children.toList
+                relation.children.toList
                   .map { id =>
-                    val child = modulesInPO.find(_._1.id.contains(id))
+                    val child = modulesInPOById.get(id)
                     if child.isEmpty then
                       logger.error(s"error while printing parent module ${m.id.get}: unable to find child module $id")
                     child
@@ -319,11 +313,11 @@ final class ModuleCatalogLatexPrinter(
                   }
                   .foreach {
                     case (m, lm) =>
-                      printModule(m, lm, isChild = true)
+                      printModule(m, lm, parent = Some(parentId))
                       newPage
                   }
               case None =>
-                printModule(m, lm, isChild = false)
+                printModule(m, lm, parent = None)
                 newPage
             }
         }
@@ -492,7 +486,7 @@ final class ModuleCatalogLatexPrinter(
     builder.append(s"\\$botRule\n\\end{tabularx}\n")
   }
 
-  private def printModule(module: ModuleProtocol, lastModified: LocalDate, isChild: Boolean): Unit = {
+  private def printModule(module: ModuleProtocol, lastModified: LocalDate, parent: Option[UUID]): Unit = {
     consume(module.id.get)
     val languages         = payload.languages
     val seasons           = payload.seasons
@@ -513,10 +507,8 @@ final class ModuleCatalogLatexPrinter(
       (mandatorySize, electiveSize) match {
         case (1, 0) => strings.noneLabel
         case (0, 1) => strings.noneLabel
-        case (0, 0) =>
-          logger.error(s"expected module to be part of some po relationship of po ${currentPO.id}")
-          strings.unknownLabel
-        case _ =>
+        case (0, 0) => strings.noneLabel
+        case _      =>
           // remove ourselves for rendering
           val mandatory = module.metadata.po.mandatory.filterNot(p => p.po == currentPO.id).sortBy(_.po)
           val optional  = module.metadata.po.optional.filterNot(p => p.po == currentPO.id).sortBy(_.po)
@@ -591,7 +583,7 @@ final class ModuleCatalogLatexPrinter(
             subBuilder.append(s"$moduleLabel: ")
             p.modules.zipWithIndex.foreach {
               case (m, i) =>
-                if modulesInPO.exists(_._1.id.get == m) then subBuilder.append(nameRef(m))
+                if modulesInPOById.contains(m) then subBuilder.append(nameRef(m))
                 else {
                   payload.modules.find(_.id == m) match {
                     case Some(module) =>
@@ -648,7 +640,7 @@ final class ModuleCatalogLatexPrinter(
 
     def durationRow = s"${module.metadata.duration} ${strings.semesterLabel}"
 
-    sectionWithRef(module.metadata.title, module.id, isChild)
+    sectionWithRef(module.metadata.title, module.id, parent.nonEmpty)
 
     // print the first part of the table
     printTable(
@@ -662,7 +654,7 @@ final class ModuleCatalogLatexPrinter(
           highlightIf(strings.moduleTitleLabel, ModuleProtocolDiff.isModuleTitle),
           escape(module.metadata.title)
         )
-        printTableRow(strings.moduleTypeLabel, currentModuleType(module.metadata))
+        printTableRow(strings.moduleTypeLabel, currentModuleType(module.metadata, parent))
         printTableRow(highlightIf(strings.ectsLabel, ModuleProtocolDiff.isModuleEcts), fmtDouble(module.metadata.ects))
         printTableRow(
           highlightIf(strings.languageLabel, ModuleProtocolDiff.isModuleLanguage),

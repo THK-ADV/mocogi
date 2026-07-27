@@ -15,7 +15,7 @@ case class ParsedMetadata(
     title: String,
     abbrev: String,
     kind: ModuleType,
-    relation: Option[ParsedModuleRelation],
+    relation: Option[NonEmptyList[UUID]],
     credits: Double,
     language: ModuleLanguage,
     duration: Int,

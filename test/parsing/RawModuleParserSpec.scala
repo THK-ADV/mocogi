@@ -28,13 +28,7 @@ final class RawModuleParserSpec extends AnyWordSpec with EitherValues with Optio
       assert(metadata.title == "Algorithmik")
       assert(metadata.abbrev == "ALG")
       assert(metadata.moduleType == "module")
-      assert(
-        metadata.moduleRelation.contains(
-          ModuleRelationProtocol.Child(
-            UUID.fromString("3bd4ee93-b921-4d52-9223-04be3bb13676")
-          )
-        )
-      )
+      assert(metadata.moduleRelation.isEmpty)
       assert(metadata.ects == 5)
       assert(metadata.language == "de")
       assert(metadata.duration == 1)
@@ -191,13 +185,7 @@ final class RawModuleParserSpec extends AnyWordSpec with EitherValues with Optio
       assert(metadata.title == "Algorithmik")
       assert(metadata.abbrev == "ALG")
       assert(metadata.moduleType == "module")
-      assert(
-        metadata.moduleRelation.contains(
-          ModuleRelationProtocol.Child(
-            UUID.fromString("3bd4ee93-b921-4d52-9223-04be3bb13676")
-          )
-        )
-      )
+      assert(metadata.moduleRelation.isEmpty)
       assert(metadata.ects == 5)
       assert(metadata.language == "de")
       assert(metadata.duration == 1)

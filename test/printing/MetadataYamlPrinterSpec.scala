@@ -39,19 +39,16 @@ final class MetadataYamlPrinterSpec extends AnyWordSpec with PrinterSpec {
     }
 
     "print module relation" in {
-      val parent0 = ModuleRelationProtocol.Parent(NonEmptyList.one(m1))
+      val parent0 = ModuleRelationProtocol(NonEmptyList.one(m1))
       val res0    = s"relation:\n  children: module.$m1\n"
       assert(run(printer.moduleRelation(parent0)) === res0)
-      val parent1 = ModuleRelationProtocol.Parent(NonEmptyList.of(m1, m2))
+      val parent1 = ModuleRelationProtocol(NonEmptyList.of(m1, m2))
       val res1    =
         s"""relation:
            |  children:
            |    - module.$m1
            |    - module.$m2\n""".stripMargin
       assert(run(printer.moduleRelation(parent1)) === res1)
-      val child = ModuleRelationProtocol.Child(m1)
-      val res2  = s"relation:\n  parent: module.$m1\n"
-      assert(run(printer.moduleRelation(child)) === res2)
     }
 
     "print ects" in {
@@ -301,7 +298,7 @@ final class MetadataYamlPrinterSpec extends AnyWordSpec with PrinterSpec {
         "gm",
         Some(ModuleParticipants(0, 10)),
         Some(
-          ModuleRelationProtocol.Parent(NonEmptyList.of(m1, m2))
+          ModuleRelationProtocol(NonEmptyList.of(m1, m2))
         ),
         NonEmptyList.one("ald"),
         NonEmptyList.of("ald", "abe"),
@@ -422,6 +419,7 @@ final class MetadataYamlPrinterSpec extends AnyWordSpec with PrinterSpec {
            |  reason: reason
            |---""".stripMargin
       assert(print == res)
+
     }
   }
 }
