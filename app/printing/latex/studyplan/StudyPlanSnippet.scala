@@ -140,7 +140,8 @@ final class StudyPlanSnippet(
     val candidates = modules
       .flatMap {
         case (id, m) =>
-          val isNoChild = m.moduleRelation.isEmpty || m.moduleRelation.exists(_.isParent)
+          // TODO: adapt to new implementation of parent modules
+          val isNoChild = true // m.moduleRelation.isEmpty || m.moduleRelation.exists(_.isParent)
           mandatoryPO(m.po.mandatory, specialization).filter(_ => isNoChild).map { mandatoryPO =>
             StudyPlanCandidate(id, m, mandatoryPO)
           }

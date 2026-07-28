@@ -12,18 +12,21 @@ import validation.Validation
 private[pipeline] object MetadataValidationService {
 
   def validateMany(
-      existing: Seq[ModuleCore],
+      context: ValidationContext,
       parsed: Seq[(Print, ParsedMetadata, ModuleContent, ModuleContent)]
   ): Either[Seq[PipelineError], Seq[(Print, Module)]] = {
     val parsedModules =
-      parsed.map(a => ModuleCore(a._2.id, a._2.title, a._2.abbrev))
-    val modules   = existing ++ parsedModules
-    val validator =
-      MetadataValidator.validate(id => modules.find(_.id == id))
+      parsed.map(a => a._2.id -> ModuleCore(a._2.id, a._2.title, a._2.abbrev))
+    val modulesById = context.modulesById ++ parsedModules
+    val validations = MetadataValidator.validateMany(
+      parsed.map(_._2),
+      modulesById.get,
+      context.relations
+    )
     val (errs, validated) =
-      parsed.partitionMap {
-        case (print, parsedMetadata, de, en) =>
-          validator(parsedMetadata).bimap(
+      parsed.zip(validations).partitionMap {
+        case ((print, parsedMetadata, de, en), validation) =>
+          validation.bimap(
             errs => PipelineError.validator(errs, Some(parsedMetadata.id)),
             metadata => (print, Module(metadata, de, en))
           )
@@ -32,13 +35,13 @@ private[pipeline] object MetadataValidationService {
   }
 
   def validate(
-      existing: Seq[ModuleCore],
+      context: ValidationContext,
       metadata: ParsedMetadata
   ): Validation[Metadata] = {
     val parsedModule =
       ModuleCore(metadata.id, metadata.title, metadata.abbrev)
-    val modules   = existing.+:(parsedModule)
-    val validator = MetadataValidator.validate(id => modules.find(_.id == id))
+    val modules   = context.modulesById.updated(metadata.id, parsedModule)
+    val validator = MetadataValidator.validate(modules.get, context.relations)
     validator(metadata)
   }
 }

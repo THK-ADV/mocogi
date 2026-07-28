@@ -19,6 +19,7 @@ import parsing.types.ModuleContent
 import parsing.types.ParsedMetadata
 import printing.yaml.ModuleYamlPrinter
 import service.ModuleService
+import validation.ModuleRelationGraph
 
 @Singleton
 final class MetadataPipeline @Inject() (
@@ -32,19 +33,20 @@ final class MetadataPipeline @Inject() (
   def parseValidate(print: Print): Future[Module] =
     for {
       parsed   <- parser.parse(print).unwrap
-      existing <- allModules()
-      metadata <- validate(existing, parsed._1).toFuture
+      context  <- validationContext()
+      metadata <- validate(context, parsed._1).toFuture
     } yield Module(metadata, parsed._2, parsed._3)
 
   def parseValidateMany(prints: Seq[Print]): Future[Either[Seq[PipelineError], Seq[(Print, Module)]]] = {
-    val parse    = parser.parseMany(prints)
-    val existing = allModules()
+    val parse   = parser.parseMany(prints)
+    val context = validationContext()
     for {
-      parsed   <- parse
-      existing <- existing
+      parsed  <- parse
+      context <- context
     } yield parsed match {
-      case Left(value)   => Left(value)
-      case Right(parsed) => MetadataValidationService.validateMany(existing, parsed)
+      case Left(errors)  => Left(errors)
+      case Right(parsed) =>
+        MetadataValidationService.validateMany(context, parsed)
     }
   }
 
@@ -65,11 +67,16 @@ final class MetadataPipeline @Inject() (
       }
       .value
 
-  private def allModules(): Future[Seq[ModuleCore]] =
+  private def validationContext(): Future[ValidationContext] = {
+    val live    = moduleService.allModuleCoreWithRelations()
+    val created = moduleService.allNewlyCreated()
+
     for {
-      allFromLive  <- moduleService.allModuleCore()
-      allFromDraft <- moduleService.allNewlyCreated()
-    } yield allFromLive ++ allFromDraft
+      (liveModules, relations) <- live
+      createdModules           <- created
+      modulesById = (liveModules ++ createdModules).map(module => module.id -> module).toMap
+    } yield ValidationContext(modulesById, ModuleRelationGraph(relations))
+  }
 
   private def print(
       protocol: ModuleProtocol,
@@ -89,13 +96,13 @@ final class MetadataPipeline @Inject() (
   private def validate(
       metadata: ParsedMetadata
   ): Future[Either[PipelineError, Metadata]] =
-    allModules().map(validate(_, metadata))
+    validationContext().map(context => validate(context, metadata))
 
   private def validate(
-      existing: Seq[ModuleCore],
+      context: ValidationContext,
       metadata: ParsedMetadata
   ): Either[PipelineError, Metadata] =
     MetadataValidationService
-      .validate(existing, metadata)
+      .validate(context, metadata)
       .mapErr(errs => PipelineError.validator(errs, Some(metadata.id)))
 }

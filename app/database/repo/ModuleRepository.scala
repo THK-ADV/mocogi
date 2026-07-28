@@ -5,7 +5,6 @@ import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
 
-import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
@@ -19,14 +18,17 @@ import parsing.types.*
 import parsing.types.Module
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.db.slick.HasDatabaseConfigProvider
+import play.api.Logging
 import slick.jdbc.JdbcProfile
+import slick.jdbc.TransactionIsolation
 
 @Singleton
 final class ModuleRepository @Inject() (
     val dbConfigProvider: DatabaseConfigProvider,
     private implicit val ctx: ExecutionContext
 ) extends HasDatabaseConfigProvider[JdbcProfile]
-    with Filterable[ModuleDbEntry, ModuleTable] {
+    with Filterable[ModuleDbEntry, ModuleTable]
+    with Logging {
   import profile.api.*
 
   val tableQuery = TableQuery[ModuleTable]
@@ -69,7 +71,7 @@ final class ModuleRepository @Inject() (
   }
 
   def createOrUpdateMany(modules: Seq[(Module, LocalDateTime)]) = {
-    def createOrUpdateInstant = modules.map {
+    def upsertActions = modules.map {
       case (module, lastModified) =>
         val db = toDbEntry(module, lastModified)
         for {
@@ -78,18 +80,19 @@ final class ModuleRepository @Inject() (
             if exists then tableQuery.filter(_.id === module.metadata.id).update(db) else tableQuery += db
         } yield ()
     }
-    def dependencies = modules.map {
-      case (module, _) =>
-        for
-          _ <- deleteDependencies(module.metadata.id)
-          _ <- createDependencies(module.metadata)
-        yield ()
-    }
+    def deleteDependencyActions =
+      modules.map { case (module, _) => deleteDependencies(module.metadata.id) }
 
+    def createDependencyActions =
+      modules.map { case (module, _) => createDependencies(module.metadata) }
+
+    // all dependencies are deleted before any is created, so that a child module can move to
+    // another parent of the same batch without violating the unique constraint on module_relation
     val actions = DBIO
       .seq(
-        DBIO.sequence(createOrUpdateInstant),
-        DBIO.sequence(dependencies)
+        DBIO.sequence(upsertActions),
+        DBIO.sequence(deleteDependencyActions),
+        DBIO.sequence(createDependencyActions)
       )
       .transactionally
     db.run(actions)
@@ -129,6 +132,27 @@ final class ModuleRepository @Inject() (
         .map(_.map(ModuleCore.apply.tupled))
     )
 
+  def allModuleCoreWithRelations(): Future[(Seq[ModuleCore], Map[UUID, Set[UUID]])] = {
+    val action = for {
+      cores <- tableQuery
+        .map(module => (module.id, module.title, module.abbrev))
+        .result
+        .map(_.map(ModuleCore.apply.tupled))
+      relations <- moduleRelationTable.result
+    } yield {
+      val relationsByParent = relations
+        .groupMap(_.parent)(_.child)
+        .view
+        .mapValues(_.toSet)
+        .toMap
+
+      cores -> relationsByParent
+    }
+
+    // repeatable read so that modules and relations describe the same snapshot
+    db.run(action.transactionally.withTransactionIsolation(TransactionIsolation.RepeatableRead))
+  }
+
   def allGeneric(): Future[Seq[ModuleCore]] =
     db.run(tableQuery.filter(_.isGeneric).map(a => (a.id, a.title, a.abbrev)).result.map(_.map(ModuleCore.apply)))
 
@@ -164,7 +188,27 @@ final class ModuleRepository @Inject() (
             modulePOOptionalTable
               .filter(a => t.id === a.module && a.po === po && a.specialization.map(_ === id).getOrElse(true))
               .exists
-    retrieve(tableQuery.filter(a => if activeOnly then a.isActive() && poFilter(a) else poFilter(a)))
+
+    val parentMatchesPO = (parent: ModuleTable) =>
+      if activeOnly then parent.isActive() && poFilter(parent) else poFilter(parent)
+
+    val poOrChildOfPOParent = (module: ModuleTable) =>
+      poFilter(module) ||
+        moduleRelationTable
+          .filter(relation =>
+            relation.child === module.id &&
+              tableQuery
+                .filter(parent => parent.id === relation.parent && parentMatchesPO(parent))
+                .exists
+          )
+          .exists
+
+    val modulesForPO = tableQuery.filter(module =>
+      if activeOnly then module.isActive() && poOrChildOfPOParent(module)
+      else poOrChildOfPOParent(module)
+    )
+
+    retrieve(modulesForPO)
   }
 
   def deleteDependencies(moduleId: UUID) =
@@ -174,8 +218,13 @@ final class ModuleRepository @Inject() (
       _ <- modulePOMandatoryTable.filter(_.module === moduleId).delete
       _ <- moduleAssessmentMethodTable.filter(_.module === moduleId).delete
       _ <- moduleResponsibilityTable.filter(_.module === moduleId).delete
-      _ <- moduleRelationTable.filter(_.module === moduleId).delete
+      _ <- moduleRelationTable.filter(_.parent === moduleId).delete
     } yield ()
+
+  def deleteRelations(moduleId: UUID) =
+    moduleRelationTable
+      .filter(relation => relation.parent === moduleId || relation.child === moduleId)
+      .delete
 
   private def createDependencies(metadata: Metadata) = {
     val methods                   = metadataAssessmentMethods(metadata)
@@ -251,22 +300,8 @@ final class ModuleRepository @Inject() (
 
   private def moduleRelations(metadata: Metadata): List[ModuleRelationDbEntry] =
     metadata.relation match {
-      case Some(ModuleRelation.Parent(children)) =>
-        children.toList.map(child =>
-          ModuleRelationDbEntry(
-            metadata.id,
-            ModuleRelationType.Parent,
-            child.id
-          )
-        )
-      case Some(ModuleRelation.Child(parent)) =>
-        List(
-          ModuleRelationDbEntry(
-            metadata.id,
-            ModuleRelationType.Child,
-            parent.id
-          )
-        )
+      case Some(ModuleRelation(children)) =>
+        children.toList.map(child => ModuleRelationDbEntry(metadata.id, child.id))
       case None =>
         Nil
     }
@@ -314,77 +349,88 @@ final class ModuleRepository @Inject() (
     tableQuery.filter(_.id === module).exists.result
 
   private def retrieve(query: Query[ModuleTable, ModuleDbEntry, Seq]): Future[Seq[(ModuleProtocol, LocalDateTime)]] = {
-    val action = query
-      .joinLeft(moduleRelationTable)
-      .on(_.id === _.module)
-      .join(moduleResponsibilityTable)
-      .on(_._1.id === _.module)
-      .joinLeft(moduleAssessmentMethodTable)
-      .on(_._1._1.id === _._1.module)
-      .joinLeft(modulePOMandatoryTable)
-      .on(_._1._1._1.id === _.module)
-      .joinLeft(modulePOOptionalTable)
-      .on(_._1._1._1._1.id === _.module)
-      .joinLeft(moduleTaughtWithTable)
-      .on(_._1._1._1._1._1.id === _.module)
-      .result
-    db.run(
-      action.map(
-        _.groupBy(_._1._1._1._1._1._1.id)
-          .map {
-            case (_, deps) =>
-              val module                     = deps.head._1._1._1._1._1._1
-              val relations                  = mutable.HashSet[ModuleRelationDbEntry]()
-              val moduleManagement           = mutable.HashSet[String]()
-              val lecturer                   = mutable.HashSet[String]()
-              val mandatoryAssessmentMethods = mutable.HashSet[ModuleAssessmentMethodEntryProtocol]()
-              val poMandatory                = mutable.HashSet[ModulePOMandatoryProtocol]()
-              val poOptional                 = mutable.HashSet[ModulePOOptionalProtocol]()
-              val taughtWith                 = mutable.HashSet[UUID]()
+    val action = query.result.flatMap { modules =>
+      val moduleIds = modules.map(_.id).toSet
 
-              deps
-                .foreach {
-                  case ((((((m, mr), r), am), poM), poO), tw) =>
-                    assume(module.id == m.id) // just for the sake of safety
-                    tw.foreach(taughtWith += _.module)
-                    poM.foreach(po =>
-                      poMandatory += ModulePOMandatoryProtocol(
-                        po.po,
-                        po.specialization,
-                        po.recommendedSemester
-                      )
-                    )
-                    poO.foreach(po =>
-                      poOptional += models.ModulePOOptionalProtocol(
-                        po.po,
-                        po.specialization,
-                        po.instanceOf,
-                        po.partOfCatalog,
-                        po.recommendedSemester
-                      )
-                    )
-                    mr.foreach(relations += _)
-                    r.responsibilityType match {
-                      case ResponsibilityType.ModuleManagement => moduleManagement += r.identity
-                      case ResponsibilityType.Lecturer         => lecturer += r.identity
-                    }
-                    am.foreach { am =>
-                      mandatoryAssessmentMethods += ModuleAssessmentMethodEntryProtocol(
-                        am.assessmentMethod,
-                        am.percentage,
-                        am.precondition.getOrElse(Nil)
-                      )
-                    }
-                }
+      if modules.isEmpty then DBIO.successful(Seq.empty)
+      else
+        for {
+          relations         <- moduleRelationTable.filter(_.parent.inSetBind(moduleIds)).result
+          responsibilities  <- moduleResponsibilityTable.filter(_.module.inSetBind(moduleIds)).result
+          assessmentMethods <- moduleAssessmentMethodTable.filter(_.module.inSetBind(moduleIds)).result
+          mandatoryPOs      <- modulePOMandatoryTable.filter(_.module.inSetBind(moduleIds)).result
+          optionalPOs       <- modulePOOptionalTable.filter(_.module.inSetBind(moduleIds)).result
+          taughtWith        <- moduleTaughtWithTable.filter(_.module.inSetBind(moduleIds)).result
+        } yield {
+          val relationsByParent         = relations.groupMap(_.parent)(_.child)
+          val responsibilitiesByModule  = responsibilities.groupBy(_.module)
+          val assessmentMethodsByModule = assessmentMethods.groupBy(_.module)
+          val mandatoryPOsByModule      = mandatoryPOs.groupBy(_.module)
+          val optionalPOsByModule       = optionalPOs.groupBy(_.module)
+          val taughtWithByModule        = taughtWith.groupBy(_.module)
 
-              val relation = relations.headOption.map { r =>
-                r.relationType match {
-                  case ModuleRelationType.Parent =>
-                    ModuleRelationProtocol.Parent(NonEmptyList.fromListUnsafe(relations.map(_.relationModule).toList))
-                  case ModuleRelationType.Child =>
-                    ModuleRelationProtocol.Child(r.relationModule)
-                }
-              }
+          // a module without any responsibility is incomplete and cannot be assembled
+          val incomplete = modules.filterNot(module => responsibilitiesByModule.contains(module.id))
+          if incomplete.nonEmpty then {
+            logger.error(s"skipping modules without responsibilities: ${incomplete.map(_.id).mkString(", ")}")
+          }
+
+          modules.flatMap { module =>
+            responsibilitiesByModule.get(module.id).map { responsibilities =>
+              val moduleManagement = responsibilities.collect {
+                case responsibility if responsibility.responsibilityType == ResponsibilityType.ModuleManagement =>
+                  responsibility.identity
+              }.toSet
+              val lecturer = responsibilities.collect {
+                case responsibility if responsibility.responsibilityType == ResponsibilityType.Lecturer =>
+                  responsibility.identity
+              }.toSet
+              val mandatoryAssessmentMethods = assessmentMethodsByModule
+                .getOrElse(module.id, Seq.empty)
+                .map(method =>
+                  ModuleAssessmentMethodEntryProtocol(
+                    method.assessmentMethod,
+                    method.percentage,
+                    method.precondition.getOrElse(Nil)
+                  )
+                )
+                .toSet
+              val poMandatory = mandatoryPOsByModule
+                .getOrElse(module.id, Seq.empty)
+                .map(po =>
+                  ModulePOMandatoryProtocol(
+                    po.po,
+                    po.specialization,
+                    po.recommendedSemester
+                  )
+                )
+                .toSet
+              val poOptional = optionalPOsByModule
+                .getOrElse(module.id, Seq.empty)
+                .map(po =>
+                  models.ModulePOOptionalProtocol(
+                    po.po,
+                    po.specialization,
+                    po.instanceOf,
+                    po.partOfCatalog,
+                    po.recommendedSemester
+                  )
+                )
+                .toSet
+              val relation = NonEmptyList
+                .fromList(
+                  relationsByParent
+                    .getOrElse(module.id, Seq.empty)
+                    .distinct
+                    .sortBy(_.toString)
+                    .toList
+                )
+                .map(ModuleRelationProtocol.apply)
+              val taughtWithModules = taughtWithByModule
+                .getOrElse(module.id, Seq.empty)
+                .map(_.moduleTaught)
+                .toSet
+
               (
                 ModuleProtocol(
                   Some(module.id),
@@ -408,7 +454,7 @@ final class ModuleRepository @Inject() (
                     module.examPhases,
                     ModulePrerequisitesProtocol(module.recommendedPrerequisites, module.requiredPrerequisites),
                     ModulePOProtocol(poMandatory.toList, poOptional.toList),
-                    taughtWith.toList,
+                    taughtWithModules.toList,
                     module.attendanceRequirement,
                     module.assessmentPrerequisite
                   ),
@@ -417,9 +463,11 @@ final class ModuleRepository @Inject() (
                 ),
                 module.lastModified
               )
+            }
           }
-          .toSeq
-      )
-    )
+        }
+    }
+
+    db.run(action.transactionally.withTransactionIsolation(TransactionIsolation.RepeatableRead))
   }
 }

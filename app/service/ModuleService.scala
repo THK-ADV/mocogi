@@ -51,6 +51,9 @@ final class ModuleService @Inject() (
   def allModuleCore(): Future[Seq[ModuleCore]] =
     repo.allModuleCore()
 
+  def allModuleCoreWithRelations(): Future[(Seq[ModuleCore], Map[UUID, Set[UUID]])] =
+    repo.allModuleCoreWithRelations()
+
   def allNewlyCreated(): Future[Seq[ModuleCore]] =
     moduleCreationService.allAsModuleCore()
 

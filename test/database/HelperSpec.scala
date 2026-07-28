@@ -60,9 +60,9 @@ final class HelperSpec extends DatabaseSnapshotSuite {
     }
   }
 
-  test("resolve module relation for iug (child)") {
+  test("resolve no module relation for iug") {
     assertSnapshot("database/expected/helper/resolve_module_relation_iug.txt") {
-      sql"""SELECT jsonb_pretty(modules.resolve_module_relation('05674322-071c-4a3a-8d8b-3c21c6bb640c'::uuid)::jsonb)::text"""
+      sql"""SELECT coalesce(jsonb_pretty(modules.resolve_module_relation('05674322-071c-4a3a-8d8b-3c21c6bb640c'::uuid)::jsonb)::text, 'null')"""
         .as[String]
         .head
     }

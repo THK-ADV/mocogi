@@ -93,24 +93,18 @@ final class MetadataYamlPrinter(identLevel: Int) {
   def versionScheme(versionScheme: VersionScheme) =
     prefix(s"v${versionScheme.number}${versionScheme.label}")
 
-  def moduleRelation(r: ModuleRelationProtocol) = {
-    val relation = r match {
-      case ModuleRelationProtocol.Parent(children) =>
-        list(
-          prefix("children:"),
-          children,
-          "module",
-          identLevel
-        )
-      case ModuleRelationProtocol.Child(parent) =>
-        entry("parent", s"module.$parent")
-    }
-
+  def moduleRelation(r: ModuleRelationProtocol) =
     prefix("relation:")
       .skip(newline)
       .skip(whitespace.repeat(identLevel))
-      .skip(relation)
-  }
+      .skip(
+        list(
+          prefix("children:"),
+          r.children,
+          "module",
+          identLevel
+        )
+      )
 
   def list[A](
       key: Printer[Unit],

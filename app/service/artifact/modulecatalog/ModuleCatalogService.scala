@@ -39,6 +39,7 @@ import play.api.i18n.Lang
 import play.api.i18n.MessagesApi
 import play.api.Logging
 import service.artifact.ModulePreview
+import service.artifact.POModules
 
 final class ModuleCatalogConfigException(message: String) extends IllegalArgumentException(message)
 
@@ -293,15 +294,15 @@ final class ModuleCatalogService @Inject() (
   }
 
   /** Loads the preview-backed configuration options for a PO. */
-  def configOptions(po: String): Future[ModuleCatalogConfigOptions] = {
-    val modules = modulesFromPreview(po)
-    studyProgramsFor(po).map { case (_, poOnly) => ModuleCatalogService.configOptions(po, modules.map(_._1), poOnly) }
-  }
+  def configOptions(po: String): Future[ModuleCatalogConfigOptions] =
+    modulesFromPreview(po).flatMap(modules =>
+      studyProgramsFor(po).map {
+        case (_, poOnly) => ModuleCatalogService.configOptions(po, modules.modules.map(_._1), poOnly)
+      }
+    )
 
-  private def modulesFromPreview(po: String): Vector[(ModuleProtocol, LocalDate)] = {
-    val modulePreview = new ModulePreview(gitCLI)
-    modulePreview.getAllFromPreviewByPOWithLastModified(po)
-  }
+  private def modulesFromPreview(po: String): Future[POModules] =
+    Future.fromTry(new ModulePreview(gitCLI).getByPO(po))
 
   private def prepare(
       po: String,
@@ -338,7 +339,8 @@ final class ModuleCatalogService @Inject() (
 
     for {
       (all, poOnly) <- studyProgramsFor(po)
-      prep = prepare(po, latexFile.getParent, modulesFromPreview(po), poOnly, isPreview, config)
+      allModules    <- modulesFromPreview(po)
+      prep = prepare(po, latexFile.getParent, allModules.modules, poOnly, isPreview, config)
       _    = copyAssets(latexFile.getParent)
       content <- print(poOnly, prep.modules, all, lang, prep.latexSnippets, prep.postTitleSnippets, semester)
       path = Files.writeString(latexFile, content.toString)

@@ -119,22 +119,49 @@ object MetadataValidator {
       .map((pos, poOpt) => models.ModulePOs(pos.mandatory, poOpt))
 
   def moduleRelationValidator(
-      lookup: Lookup
-  ): Validator[Option[ParsedModuleRelation], Option[ModuleRelation]] =
-    moduleValidator("module relation", lookup)
-      .pullback[Option[ParsedModuleRelation]] {
-        case Some(ParsedModuleRelation.Parent(children)) => children.toList
-        case Some(ParsedModuleRelation.Child(parent))    => List(parent)
-        case None                                        => Nil
-      }
-      .map((r, ms) =>
-        r.map {
-          case ParsedModuleRelation.Parent(_) =>
-            ModuleRelation.Parent(NonEmptyList.fromListUnsafe(ms))
-          case ParsedModuleRelation.Child(_) =>
-            ModuleRelation.Child(ms.head)
-        }
+      moduleId: UUID,
+      lookup: Lookup,
+      graph: ModuleRelationGraph
+  ): Validator[Option[NonEmptyList[UUID]], Option[ModuleRelation]] =
+    moduleRelationGraphValidator(moduleId, graph)
+      .pullback[Option[NonEmptyList[UUID]]](identity)
+      .zip(
+        moduleValidator("module relation", lookup)
+          .pullback[Option[NonEmptyList[UUID]]](_.toList.flatMap(_.toList))
       )
+      .map((_, validated) => validated._1.map(_ => ModuleRelation(NonEmptyList.fromListUnsafe(validated._2))))
+
+  /**
+   * Ensures that the relation graph stays a forest of depth one: no module is both a parent and a
+   * child, and every child has exactly one parent.
+   */
+  def moduleRelationGraphValidator(
+      moduleId: UUID,
+      graph: ModuleRelationGraph
+  ): SimpleValidator[Option[NonEmptyList[UUID]]] =
+    SimpleValidator { relation =>
+      val children = relation.toList.flatMap(_.toList)
+      val resolved = graph.updated(moduleId, relation)
+      val errors   = ListBuffer.empty[String]
+
+      if children.contains(moduleId) then errors += s"module relation must not reference itself: $moduleId"
+
+      val duplicates = children.diff(children.distinct).distinct.sortBy(_.toString)
+      if duplicates.nonEmpty then errors += s"module relation contains duplicate children: ${duplicates.mkString(", ")}"
+
+      children.distinct.sortBy(_.toString).foreach { child =>
+        val parents = resolved.parentsOf(child)
+        if parents.size > 1 then
+          errors += s"module relation child $child has multiple parents: ${parents.toList.sortBy(_.toString).mkString(", ")}"
+        if child != moduleId && resolved.isParent(child) then
+          errors += s"modules cannot be both parent and child: $child"
+      }
+
+      if children.nonEmpty && resolved.parentsOf(moduleId).exists(_ != moduleId) then
+        errors += s"modules cannot be both parent and child: $moduleId"
+
+      Either.cond(errors.isEmpty, relation, errors.toList)
+    }
 
   def nonEmptyStringValidator(label: String): SimpleValidator[String] =
     SimpleValidator(s => Either.cond(s.nonEmpty, s, List(s"$label must be set, but was empty")))
@@ -175,11 +202,15 @@ object MetadataValidator {
     posValidator(lookup).pullback(_.pos)
 
   def moduleRelationValidatorAdapter(
-      lookup: Lookup
+      lookup: Lookup,
+      graph: ModuleRelationGraph
   ): Validator[ParsedMetadata, Option[ModuleRelation]] =
-    moduleRelationValidator(lookup).pullback(_.relation)
+    Validator(metadata => moduleRelationValidator(metadata.id, lookup, graph).validate(metadata.relation))
 
-  def validations(lookup: Lookup): Validator[ParsedMetadata, Metadata] = {
+  def validations(
+      lookup: Lookup,
+      graph: ModuleRelationGraph
+  ): Validator[ParsedMetadata, Metadata] = {
     titleValidatorAdapter()
       .zip(abbrevValidatorAdapter())
       .zip(assessmentMethodsValidatorAdapter)
@@ -189,7 +220,7 @@ object MetadataValidator {
       .zip(taughtWithValidatorAdapter(lookup))
       .zip(prerequisitesValidatorAdapter(lookup))
       .zip(posValidatorAdapter(lookup))
-      .zip(moduleRelationValidatorAdapter(lookup))
+      .zip(moduleRelationValidatorAdapter(lookup, graph))
       .map {
         case (
               m,
@@ -222,13 +253,23 @@ object MetadataValidator {
       }
   }
 
-  def validateMany(metadata: Seq[ParsedMetadata], lookup: Lookup): Seq[Validation[Metadata]] = {
-    val validator = validations(lookup)
+  /**
+   * Validates each module against the relation graph that results from applying all of their
+   * relations, so that modules of the same batch cannot claim the same child.
+   */
+  def validateMany(
+      metadata: Seq[ParsedMetadata],
+      lookup: Lookup,
+      graph: ModuleRelationGraph
+  ): Seq[Validation[Metadata]] = {
+    val resolved  = metadata.foldLeft(graph)((acc, module) => acc.updated(module.id, module.relation))
+    val validator = validations(lookup, resolved)
     metadata.map(m => validator.validate(m))
   }
 
-  def validate(lookup: Lookup)(metadata: ParsedMetadata): Validation[Metadata] = {
-    val validator = validations(lookup)
-    validator.validate(metadata)
-  }
+  def validate(
+      lookup: Lookup,
+      graph: ModuleRelationGraph
+  )(metadata: ParsedMetadata): Validation[Metadata] =
+    validations(lookup, graph).validate(metadata)
 }

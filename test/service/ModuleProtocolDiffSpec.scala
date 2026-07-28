@@ -108,6 +108,16 @@ final class ModuleProtocolDiffSpec extends AnyWordSpec {
       assert(updatedProtocol2.metadata.ects == 1.0)
     }
 
+    "keep parent relations as writable changes" in {
+      val relation = ModuleRelationProtocol(NonEmptyList.one(UUID.randomUUID()))
+      val request  = existing.copy(metadata = existing.metadata.copy(moduleRelation = Some(relation)))
+
+      val (updated, updatedKeys) = diff(existing, request, None, Set.empty)
+
+      assert(updatedKeys == Set("metadata.moduleRelation"))
+      assert(updated.metadata.moduleRelation.contains(relation))
+    }
+
     "update a module by keys" in {
       import monocle.syntax.all.*
 

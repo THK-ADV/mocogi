@@ -106,7 +106,9 @@ final class MergeEventHandler @Inject() (
             // Case 2: merged MR from $module_branch into draft branch [AUTO APPROVED or REVIEW REQUIRED]
             // => delete module draft, update permissions and create module if it's new
             case (moduleBranch, gitConfig.draftBranch, "merge")
-                if labels.contains(gitConfig.autoApprovedLabel) || labels.contains(gitConfig.reviewRequiredLabel) || labels.contains(gitConfig.fastForwardLabel) =>
+                if labels.contains(gitConfig.autoApprovedLabel) || labels.contains(
+                  gitConfig.reviewRequiredLabel
+                ) || labels.contains(gitConfig.fastForwardLabel) =>
               logEvent(action, sourceBranch, targetBranch, labels)
               val sha = parseMergeCommitSha(json)
               withUUID(moduleBranch)(moduleId => handleModuleCreated(id, moduleId, sha))
@@ -336,7 +338,7 @@ final class MergeEventHandler @Inject() (
       details = Map("deletedReviews" -> res1.toString, "deletedDrafts" -> res2.toString)
     )(id)
 
-  // TODO first, the name of the method is irritating. Second, it does not consider updating the module 
+  // TODO first, the name of the method is irritating. Second, it does not consider updating the module
   //  (e.g., updating permissions based on module management)
   private def handleModuleCreated(id: CorrelationId, moduleId: UUID, sha: String): Unit = {
     val f = for {
