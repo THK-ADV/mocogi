@@ -3,8 +3,6 @@ package printing.latex.studyplan
 import java.util.Locale
 import java.util.UUID
 
-import scala.collection.mutable.ListBuffer
-
 import cats.data.NonEmptyList
 import models.*
 import models.core.ExamPhases.ExamPhase
@@ -93,15 +91,13 @@ final class StudyPlanSnippetSpec extends AnyWordSpec with Matchers {
       specializations: List[IDLabel] = Nil,
       isPreview: Boolean = true
   ): (String, List[ModuleCatalogWarning]) = {
-    val warnings = ListBuffer.empty[ModuleCatalogWarning]
-    val snippet  = StudyPlanSnippet(
+    val snippet = StudyPlanSnippet(
       currentPO,
       modules.map(module => module.id.get -> module.metadata),
       NonEmptyList.fromList(config.sections),
       config.semesterSelections,
       config.genericModuleOccurrences,
       specializations,
-      warning => warnings += warning,
       isPreview,
       messagesApi
     )
@@ -109,7 +105,7 @@ final class StudyPlanSnippetSpec extends AnyWordSpec with Matchers {
     given lang: Lang = Lang(Locale.GERMANY)
     val builder      = new StringBuilder()
     snippet.print(using lang, builder)
-    builder.toString -> warnings.toList
+    builder.toString -> snippet.warnings
   }
 
   private def occurrencesOf(value: String, needle: String): Int =

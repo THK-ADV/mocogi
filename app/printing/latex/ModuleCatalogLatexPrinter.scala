@@ -20,7 +20,6 @@ import printing.fmtDouble
 import printing.fmtIdentity
 import printing.latex.snippet.LatexContentSnippet
 import printing.LocalizedStrings
-import service.modulediff.ModuleProtocolDiff
 
 private enum RenderingContext {
   case Mandatory
@@ -38,57 +37,6 @@ object ModuleCatalogLatexPrinter {
 
   def nameRef(module: UUID) =
     s"\\nameref{sec:${module.toString}}"
-
-  def preview(
-      printer: MarkdownLatexPrinter,
-      messagesApi: MessagesApi,
-      diffsForModule: UUID => Option[Set[String]],
-      latexSnippets: List[LatexContentSnippet],
-      postTitleSnippets: List[LatexContentSnippet],
-      pos: Seq[StudyProgramView],
-      currentPO: PO,
-      modules: Vector[(ModuleProtocol, LocalDate)],
-      payload: Payload,
-      lang: Lang,
-  ) = {
-    new ModuleCatalogLatexPrinter(
-      printer,
-      messagesApi,
-      None,
-      pos,
-      currentPO,
-      modules,
-      payload,
-      latexSnippets,
-      postTitleSnippets,
-      Some(diffsForModule)
-    )(using lang)
-  }
-
-  def default(
-      printer: MarkdownLatexPrinter,
-      messagesApi: MessagesApi,
-      semester: Semester,
-      latexSnippets: List[LatexContentSnippet],
-      postTitleSnippets: List[LatexContentSnippet],
-      pos: Seq[StudyProgramView],
-      currentPO: PO,
-      modules: Vector[(ModuleProtocol, LocalDate)],
-      payload: Payload,
-      lang: Lang
-  ) =
-    new ModuleCatalogLatexPrinter(
-      printer,
-      messagesApi,
-      Some(semester),
-      pos,
-      currentPO,
-      modules,
-      payload,
-      latexSnippets,
-      postTitleSnippets,
-      None
-    )(using lang)
 }
 
 /**
@@ -101,10 +49,10 @@ final class ModuleCatalogLatexPrinter(
     pos: Seq[StudyProgramView],
     currentPO: PO,
     modulesInPO: Vector[(ModuleProtocol, LocalDate)],
+    children: Vector[(ModuleProtocol, LocalDate)],
     payload: Payload,
     latexSnippets: List[LatexContentSnippet],
-    postTitleSnippets: List[LatexContentSnippet],
-    diffsForModule: Option[UUID => Option[Set[String]]]
+    postTitleSnippets: List[LatexContentSnippet]
 )(using lang: Lang)
     extends Logging {
 
@@ -120,14 +68,12 @@ final class ModuleCatalogLatexPrinter(
 
   private var renderingContext = RenderingContext.None
 
-  private val modulesInPOById = modulesInPO.flatMap { module =>
+  /** Every module printed by this catalog: the modules of the PO plus the children rendered inside them. */
+  private val printedModules = modulesInPO ++ children
+
+  private val printedModulesById = printedModules.flatMap { module =>
     module._1.id.map(_ -> module)
   }.toMap
-
-  private val groupedChildIds = modulesInPO
-    .filter((module, _) => module.metadata.po.hasPORelation(currentPO.id))
-    .flatMap((module, _) => module.metadata.childIds)
-    .toSet
 
   private def isPreview = semester.isEmpty
 
@@ -153,7 +99,7 @@ final class ModuleCatalogLatexPrinter(
           .map(_.instanceOf)
           .distinct
           .map { id =>
-            if modulesInPOById.contains(id) then nameRef(id)                 // show generic module ref
+            if printedModulesById.contains(id) then nameRef(id)              // show generic module ref
             else payload.modules.find(_.id == id).map(_.title).getOrElse("") // show module title
           }
           .filter(_.nonEmpty)
@@ -226,7 +172,7 @@ final class ModuleCatalogLatexPrinter(
     consumedModules += id
 
   private def assumeConsumption(): Unit = {
-    val errs = modulesInPO.flatMap(_._1.id).filterNot(consumedModules.contains)
+    val errs = printedModules.flatMap(_._1.id).filterNot(consumedModules.contains)
     if errs.nonEmpty then {
       logger.error(s"non consumed printModules: ${errs.toList}")
     }
@@ -285,52 +231,50 @@ final class ModuleCatalogLatexPrinter(
         if recommendedSemester.isEmpty then (Int.MaxValue, title) else (recommendedSemester.min, title)
       }
 
-  private def printModules(chapterTitle: String, mods: Vector[(ModuleProtocol, LocalDate)]) = {
-    chapter(chapterTitle)
-    newPage
-    if (mods.isEmpty) newPage
-    else
-      mods
-        .filterNot((module, _) => module.id.exists(groupedChildIds.contains))
-        .foreach {
-          case (m, lm) =>
-            m.metadata.moduleRelation match {
-              case Some(relation) =>
-                val parentId = m.id.get
-                printModule(m, lm, parent = None)
-                newPage
-                relation.children.toList
-                  .map { id =>
-                    val child = modulesInPOById.get(id)
-                    if child.isEmpty then
-                      logger.error(s"error while printing parent module ${m.id.get}: unable to find child module $id")
-                    child
-                  }
-                  .collect { case Some(m) => m }
-                  .sortBy { m =>
-                    val metadata            = m._1.metadata
-                    val recommendedSemester =
-                      metadata.po.mandatory
-                        .flatMap(_.recommendedSemester)
-                        .minOption
-                        .orElse(
-                          metadata.po.optional
-                            .flatMap(_.recommendedSemester)
-                            .minOption
-                        )
-                    (recommendedSemester.getOrElse(Int.MaxValue), metadata.title)
-                  }
-                  .foreach {
-                    case (m, lm) =>
-                      printModule(m, lm, parent = Some(parentId))
-                      newPage
-                  }
-              case None =>
-                printModule(m, lm, parent = None)
-                newPage
-            }
-        }
-  }
+  /** Prints the chapter only if it has modules, otherwise the catalog would contain an empty chapter. */
+  private def printModules(chapterTitle: String, mods: Vector[(ModuleProtocol, LocalDate)]) =
+    if mods.nonEmpty then {
+      chapter(chapterTitle)
+      newPage
+      mods.foreach {
+        case (m, lm) =>
+          m.metadata.moduleRelation match {
+            case Some(relation) =>
+              val parentId = m.id.get
+              printModule(m, lm, parent = None)
+              newPage
+              relation.children.toList
+                .map { id =>
+                  val child = printedModulesById.get(id)
+                  if child.isEmpty then
+                    logger.error(s"error while printing parent module ${m.id.get}: unable to find child module $id")
+                  child
+                }
+                .collect { case Some(m) => m }
+                .sortBy { m =>
+                  val metadata            = m._1.metadata
+                  val recommendedSemester =
+                    metadata.po.mandatory
+                      .flatMap(_.recommendedSemester)
+                      .minOption
+                      .orElse(
+                        metadata.po.optional
+                          .flatMap(_.recommendedSemester)
+                          .minOption
+                      )
+                  (recommendedSemester.getOrElse(Int.MaxValue), metadata.title)
+                }
+                .foreach {
+                  case (m, lm) =>
+                    printModule(m, lm, parent = Some(parentId))
+                    newPage
+                }
+            case None =>
+              printModule(m, lm, parent = None)
+              newPage
+          }
+      }
+    }
 
   private def title() = {
     val studyProgram      = pos.find(_.po.id == currentPO.id).get
@@ -457,25 +401,6 @@ final class ModuleCatalogLatexPrinter(
     result.result()
   }
 
-  private def replaceSubsection(origin: String, p: String => Boolean, replacement: String => String) = {
-    val pattern = """\\subsection*\{([^}]*)\}""".r
-    val result  = new StringBuilder()
-    var lastEnd = 0
-
-    for (m <- pattern.findAllMatchIn(origin)) {
-      val subsectionName = m.group(1)
-      result.append(origin.substring(lastEnd, m.start))
-
-      if p(subsectionName) then result.append(s"\\subsection*{${replacement(subsectionName)}}")
-      else result.append(m.matched)
-
-      lastEnd = m.end
-    }
-
-    result.append(origin.substring(lastEnd))
-    result
-  }
-
   private def printTableRow(key: String, value: String, isLast: Boolean = false): Unit = {
     if isLast then builder.append(s"$key & $value \\\\\n")
     else builder.append(s"$key & $value \\\\\\midrule\n")
@@ -506,11 +431,6 @@ final class ModuleCatalogLatexPrinter(
     val assessmentMethods = payload.assessmentMethods
     val studyPrograms     = payload.studyPrograms
 
-    val diffs = diffsForModule.flatMap(_.apply(module.id.get))
-
-    def highlightIf(str: String, p: String => Boolean) =
-      if diffs.exists(_.exists(p)) then highlight(str) else str
-
     def poRow = {
       val mandatorySize = module.metadata.po.mandatory.size
       val electiveSize  = module.metadata.po.optional.size
@@ -524,20 +444,7 @@ final class ModuleCatalogLatexPrinter(
           // remove ourselves for rendering
           val mandatory = module.metadata.po.mandatory.filterNot(p => p.po == currentPO.id).sortBy(_.po)
           val optional  = module.metadata.po.optional.filterNot(p => p.po == currentPO.id).sortBy(_.po)
-
-          // use this code if specializations of the same study program should be rendered in "In anderen Studiengängen"
-//          val (mandatory, optional) = renderingContext match {
-//            case RenderingContext.Mandatory | RenderingContext.Elective | RenderingContext.None =>
-//              val mandatory = module.metadata.po.mandatory.filterNot(p => p.po == currentPO.id).sortBy(_.po)
-//              val optional  = module.metadata.po.optional.filterNot(p => p.po == currentPO.id).sortBy(_.po)
-//              (mandatory, optional)
-//            case RenderingContext.FieldOfStudy(po) =>
-//              val mandatory = module.metadata.po.mandatory.filterNot(p => p.fullPo == po).sortBy(_.po)
-//              val optional  = module.metadata.po.optional.filterNot(p => p.fullPo == po).sortBy(_.po)
-//              (mandatory, optional)
-//          }
-
-          val builder = new StringBuilder()
+          val builder   = new StringBuilder()
 
           for (po, i) <- mandatory.zipWithIndex yield {
             val content = studyPrograms.find(_.fullPoId.id == po.fullPo) match {
@@ -595,7 +502,7 @@ final class ModuleCatalogLatexPrinter(
             subBuilder.append(s"$moduleLabel: ")
             p.modules.zipWithIndex.foreach {
               case (m, i) =>
-                if modulesInPOById.contains(m) then subBuilder.append(nameRef(m))
+                if printedModulesById.contains(m) then subBuilder.append(nameRef(m))
                 else {
                   payload.modules.find(_.id == m) match {
                     case Some(module) =>
@@ -658,38 +565,23 @@ final class ModuleCatalogLatexPrinter(
     printTable(
       "first",
       { () =>
-        printTableRow(
-          highlightIf(strings.moduleAbbrevLabel, ModuleProtocolDiff.isModuleAbbrev),
-          escape(module.metadata.abbrev)
-        )
-        printTableRow(
-          highlightIf(strings.moduleTitleLabel, ModuleProtocolDiff.isModuleTitle),
-          escape(module.metadata.title)
-        )
+        printTableRow(strings.moduleAbbrevLabel, escape(module.metadata.abbrev))
+        printTableRow(strings.moduleTitleLabel, escape(module.metadata.title))
         printTableRow(strings.moduleTypeLabel, currentModuleType(module.metadata, parent))
-        printTableRow(highlightIf(strings.ectsLabel, ModuleProtocolDiff.isModuleEcts), fmtDouble(module.metadata.ects))
-        printTableRow(
-          highlightIf(strings.languageLabel, ModuleProtocolDiff.isModuleLanguage),
-          strings.label(languages.find(_.id == module.metadata.language))
-        )
-        printTableRow(
-          highlightIf(strings.durationLabel, ModuleProtocolDiff.isModuleDuration),
-          durationRow
-        )
+        printTableRow(strings.ectsLabel, fmtDouble(module.metadata.ects))
+        printTableRow(strings.languageLabel, strings.label(languages.find(_.id == module.metadata.language)))
+        printTableRow(strings.durationLabel, durationRow)
         printTableRow(strings.recommendedSemesterLabel, recommendedSemesterRow)
+        printTableRow(strings.frequencyLabel, strings.label(seasons.find(_.id == module.metadata.season)))
         printTableRow(
-          highlightIf(strings.frequencyLabel, ModuleProtocolDiff.isModuleSeason),
-          strings.label(seasons.find(_.id == module.metadata.season))
-        )
-        printTableRow(
-          highlightIf(strings.moduleCoordinatorLabel, ModuleProtocolDiff.isModuleModuleManagement),
+          strings.moduleCoordinatorLabel,
           fmtCommaSeparated(
             people.filter(p => module.metadata.moduleManagement.exists(_ == p.id)).sorted,
             "\\newline "
           )(fmtIdentity)
         )
         printTableRow(
-          highlightIf(strings.lecturersLabel, ModuleProtocolDiff.isModuleLecturers),
+          strings.lecturersLabel,
           fmtCommaSeparated(people.filter(p => module.metadata.lecturers.exists(_ == p.id)).sorted, "\\newline ")(
             fmtIdentity
           ),
@@ -708,39 +600,35 @@ final class ModuleCatalogLatexPrinter(
         (strings.moduleContentModuleCatalogLabel, GenLens[ModuleContent](_.content)),
         (strings.teachingAndLearningMethodsModuleCatalogLabel, GenLens[ModuleContent](_.teachingAndLearningMethods)),
         (strings.recommendedReadingModuleCatalogLabel, GenLens[ModuleContent](_.recommendedReading)),
-      ),
-      diffs
+      )
     )
     // print the second part of the table
     printTable(
       "second",
       { () =>
-        printTableRow(
-          highlightIf(strings.assessmentMethodLabel, ModuleProtocolDiff.isModuleAssessmentMethodsMandatory),
-          assessmentMethodsRow
-        )
+        printTableRow(strings.assessmentMethodLabel, assessmentMethodsRow)
         val (workload, contactHour, selfStudy) =
           strings.workloadLabels(module.metadata.workload, module.metadata.ects, currentPO.ectsFactor)
-        printTableRow(highlightIf(workload._1, ModuleProtocolDiff.isModuleWorkload), workload._2)
-        printTableRow(highlightIf(contactHour._1, ModuleProtocolDiff.isModuleWorkload), contactHour._2)
-        printTableRow(highlightIf(selfStudy._1, ModuleProtocolDiff.isModuleWorkload), selfStudy._2)
+        printTableRow(workload._1, workload._2)
+        printTableRow(contactHour._1, contactHour._2)
+        printTableRow(selfStudy._1, selfStudy._2)
         printTableRow(
-          highlightIf(strings.recommendedPrerequisitesLabel, ModuleProtocolDiff.isModuleRecommendedPrerequisites),
+          strings.recommendedPrerequisitesLabel,
           prerequisitesLabelRow(module.metadata.prerequisites.recommended, module.id.get)
         )
         printTableRow(
-          highlightIf(strings.requiredPrerequisitesLabel, ModuleProtocolDiff.isModuleRequiredPrerequisites),
+          strings.requiredPrerequisitesLabel,
           prerequisitesLabelRow(module.metadata.prerequisites.required, module.id.get)
         )
         printTableRow(
-          highlightIf(strings.attendanceRequirementLabel, ModuleProtocolDiff.isModuleAttendanceRequirement),
+          strings.attendanceRequirementLabel,
           attendanceRequirementRow(module.metadata.attendanceRequirement)
         )
         printTableRow(
-          highlightIf(strings.assessmentPrerequisiteLabel, ModuleProtocolDiff.isModuleAssessmentPrerequisite),
+          strings.assessmentPrerequisiteLabel,
           assessmentPrerequisiteRow(module.metadata.assessmentPrerequisite)
         )
-        printTableRow(highlightIf(strings.poLabelShort, ModuleProtocolDiff.isPOMandatory), poRow)
+        printTableRow(strings.poLabelShort, poRow)
         printTableRow(
           strings.particularitiesModuleCatalogLabel,
           particularitiesToLatex(
@@ -797,8 +685,7 @@ final class ModuleCatalogLatexPrinter(
       language: String,
       deContent: ModuleContent,
       enContent: ModuleContent,
-      entries: List[(String, Lens[ModuleContent, String])],
-      diffs: Option[Set[String]]
+      entries: List[(String, Lens[ModuleContent, String])]
   ): Unit = {
     val markdownContent = new StringBuilder()
     entries.foreach {
@@ -819,35 +706,7 @@ final class ModuleCatalogLatexPrinter(
         )
         builder.append("ERROR\n\n")
       case Right(text) =>
-        diffs match
-          case Some(diffs) =>
-            val contentDiffs = diffs.collect { case d if ModuleProtocolDiff.isModuleContent(d) => d.split('.').last }
-            if contentDiffs.isEmpty then {
-              builder.append(text)
-            } else {
-              val replacedWithDiffs = replaceSubsection(
-                text,
-                subsection => {
-                  val key =
-                    if subsection == strings.learningOutcomeModuleCatalogLabel then
-                      ModuleProtocolDiff.learningOutcomeKey
-                    else if subsection == strings.moduleContentModuleCatalogLabel then
-                      ModuleProtocolDiff.moduleContentKey
-                    else if subsection == strings.teachingAndLearningMethodsModuleCatalogLabel then
-                      ModuleProtocolDiff.teachingAndLearningMethodsKey
-                    else if subsection == strings.recommendedReadingModuleCatalogLabel then
-                      ModuleProtocolDiff.recommendedReadingKey
-                    else if subsection == strings.particularitiesModuleCatalogLabel then
-                      ModuleProtocolDiff.particularitiesKey
-                    else ""
-                  contentDiffs.contains(key)
-                },
-                old => highlight(old)
-              )
-              builder.append(replacedWithDiffs)
-            }
-          case None =>
-            builder.append(text)
+        builder.append(text)
     }
   }
 

@@ -84,12 +84,8 @@ final class ModuleCatalogController @Inject() (
             val filename  = s"module_catalog_$po"
             val file      = FileOps.createLatexFile(filename, tmpDir)
             val path      =
-              try {
-                if isPreview then catalogService.preview(po, file, r.body)
-                else catalogService.create(po, file, Semester.of(), r.body)
-              } catch {
-                case NonFatal(e) => Future.failed(e)
-              }
+              if isPreview then catalogService.preview(po, file, r.body)
+              else catalogService.create(po, file, Semester.of(), r.body)
             path
               .map(path =>
                 Ok.sendPath(
@@ -97,13 +93,13 @@ final class ModuleCatalogController @Inject() (
                   onClose = () => file.getParent.deleteDirectory()
                 ).as(MimeTypes.PDF)
               )
-              .recoverWith {
-                case e: ModuleCatalogConfigException =>
-                  file.getParent.deleteDirectory()
-                  Future.successful(clientErrors.badRequest(r, e))
+              .recover {
                 case NonFatal(e) =>
                   file.getParent.deleteDirectory()
-                  Future.successful(clientErrors.internalServerError(r, e))
+                  e match {
+                    case e: ModuleCatalogConfigException => clientErrors.badRequest(r, e)
+                    case e                               => clientErrors.internalServerError(r, e)
+                  }
               }
           case _ =>
             Future.successful(

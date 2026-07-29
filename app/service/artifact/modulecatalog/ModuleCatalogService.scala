@@ -4,13 +4,11 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.time.LocalDate
-import java.time.LocalDateTime
 import java.util.Locale
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
 
-import scala.annotation.unused
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
@@ -28,7 +26,6 @@ import printing.latex.MarkdownLatexPrinter
 import printing.latex.ModuleCatalogLatexPrinter
 import printing.latex.Payload
 import service.core.IdentityService
-import service.modulediff.ModuleProtocolDiff
 import service.ModuleService
 import settings.AppSettings
 import cats.data.NonEmptyList
@@ -45,6 +42,7 @@ final class ModuleCatalogConfigException(message: String) extends IllegalArgumen
 
 private final case class CatalogPreparation(
     modules: Vector[(ModuleProtocol, LocalDate)],
+    children: Vector[(ModuleProtocol, LocalDate)],
     latexSnippets: List[LatexContentSnippet],
     postTitleSnippets: List[LatexContentSnippet]
 )
@@ -55,12 +53,6 @@ private[artifact] object ModuleCatalogService {
 
   private def recommendedSemestersForStudyPlan(module: ModuleProtocol, currentPO: String): List[Int] =
     mandatoryRelations(module, currentPO).flatMap(_.recommendedSemester).distinct.sorted
-
-  private def recommendedSemestersForCatalog(module: ModuleProtocol, currentPO: String): List[Int] =
-    (
-      module.metadata.po.mandatory.filter(_.po == currentPO).flatMap(_.recommendedSemester) ++
-        module.metadata.po.optional.filter(_.po == currentPO).flatMap(_.recommendedSemester)
-    ).distinct.sorted
 
   private def duplicateIds(ids: List[UUID]): List[UUID] =
     ids.groupBy(identity).collect { case (id, values) if values.size > 1 => id }.toList
@@ -201,20 +193,20 @@ private[artifact] object ModuleCatalogService {
       studyPrograms: Seq[StudyProgramView]
   ): ModuleCatalogConfigOptions = {
     def moduleOption(module: ModuleProtocol): ModuleCatalogModuleOption = {
-      val metadata = module.metadata
+      val metadata  = module.metadata
+      val mandatory = metadata.po.mandatory.filter(_.po == poId)
+      val optional  = metadata.po.optional.filter(_.po == poId)
       ModuleCatalogModuleOption(
         id = module.id.get,
         title = metadata.title,
         abbrev = metadata.abbrev,
         ects = metadata.ects,
         moduleType = metadata.moduleType,
-        recommendedSemesters = recommendedSemestersForCatalog(module, poId),
-        mandatory = metadata.po.mandatory.exists(_.po == poId),
-        optional = metadata.po.optional.exists(_.po == poId),
-        specializations = (
-          metadata.po.mandatory.filter(_.po == poId).flatMap(_.specialization) ++
-            metadata.po.optional.filter(_.po == poId).flatMap(_.specialization)
-        ).distinct,
+        recommendedSemesters =
+          (mandatory.flatMap(_.recommendedSemester) ++ optional.flatMap(_.recommendedSemester)).distinct.sorted,
+        mandatory = mandatory.nonEmpty,
+        optional = optional.nonEmpty,
+        specializations = (mandatory.flatMap(_.specialization) ++ optional.flatMap(_.specialization)).distinct,
         defaultIncluded = true
       )
     }
@@ -281,8 +273,6 @@ final class ModuleCatalogService @Inject() (
   private def mcAssetsPath: String = appSettings.pandoc.mcAssetsPath
   private def texCommand: String   = appSettings.pandoc.texCmd
 
-  private type ModuleDiffs = List[(ModuleCore, Set[String])]
-
   def create(po: String, latexFile: Path, semester: Semester, config: ModuleCatalogConfig): Future[Path] = {
     logger.info(s"creating module catalog for po $po")
     generateCatalog(po, latexFile, Some(semester), config)
@@ -307,29 +297,21 @@ final class ModuleCatalogService @Inject() (
   private def prepare(
       po: String,
       workingDir: Path,
-      rawModules: Vector[(ModuleProtocol, LocalDate)],
+      poModules: POModules,
       poOnly: Seq[StudyProgramView],
       isPreview: Boolean,
       config: ModuleCatalogConfig
   ): CatalogPreparation = {
-    ModuleCatalogService.validateConfig(po, rawModules.map(_._1), poOnly, config)
-    val modules       = ModuleCatalogService.applyModuleSelection(po, rawModules, config.moduleSelection)
-    val warnings      = ListBuffer.empty[ModuleCatalogWarning]
-    val latexSnippets = introSnippet(workingDir, po).toList.appended(
-      studyPlanSnippet(
-        po,
-        modules,
-        isPreview,
-        config.studyPlan,
-        poOnly.flatMap(_.specialization).toList,
-        warnings += _
-      )
-    )
-    if !isPreview then logWarnings(po, warnings.toList)
+    ModuleCatalogService.validateConfig(po, poModules.modules.map(_._1), poOnly, config)
+    val modules   = ModuleCatalogService.applyModuleSelection(po, poModules.modules, config.moduleSelection)
+    val studyPlan = studyPlanSnippet(po, modules, isPreview, config.studyPlan, poOnly.flatMap(_.specialization).toList)
+    if !isPreview then logWarnings(po, studyPlan.warnings)
     CatalogPreparation(
       modules,
-      latexSnippets,
-      ModuleCatalogService.diagnosticsSnippets(isPreview, warnings.toList)
+      // children follow their parent: excluding a parent excludes its children as well
+      poModules.childrenOf(modules.map(_._1)),
+      introSnippet(workingDir, po).toList.appended(studyPlan),
+      ModuleCatalogService.diagnosticsSnippets(isPreview, studyPlan.warnings)
     )
   }
 
@@ -339,10 +321,10 @@ final class ModuleCatalogService @Inject() (
 
     for {
       (all, poOnly) <- studyProgramsFor(po)
-      allModules    <- modulesFromPreview(po)
-      prep = prepare(po, latexFile.getParent, allModules.modules, poOnly, isPreview, config)
+      poModules     <- modulesFromPreview(po)
+      prep = prepare(po, latexFile.getParent, poModules, poOnly, isPreview, config)
       _    = copyAssets(latexFile.getParent)
-      content <- print(poOnly, prep.modules, all, lang, prep.latexSnippets, prep.postTitleSnippets, semester)
+      content <- print(poOnly, prep, all, lang, semester)
       path = Files.writeString(latexFile, content.toString)
       pdf <- compile(path).flatMap(_ => getPdf(path)).toFuture
     } yield pdf
@@ -360,39 +342,11 @@ final class ModuleCatalogService @Inject() (
       (all, poOnly)
     }
 
-  @unused
-  private def diffs(
-      liveModules: Seq[(ModuleProtocol, LocalDateTime)],
-      changedModules: Seq[(ModuleProtocol, Option[LocalDateTime])],
-      bannedGenericModules: List[UUID]
-  ): ModuleDiffs =
-    changedModules.foldLeft(Nil) {
-      case (acc, (p, _)) =>
-        if bannedGenericModules.contains(p.id.get) then acc
-        else {
-          val diffs = liveModules.find(_._1.id == p.id) match {
-            case Some((existing, _)) =>
-              val (_, diffs) = ModuleProtocolDiff.diff(
-                existing.normalize(),
-                p.normalize(),
-                None,
-                Set.empty
-              )
-              diffs
-            case None =>
-              Set("all")
-          }
-          acc.prepended((ModuleCore(p.id.get, p.metadata.title, p.metadata.abbrev), diffs))
-        }
-    }
-
   private def print(
       poOnly: Seq[StudyProgramView],
-      modules: Vector[(ModuleProtocol, LocalDate)],
+      prep: CatalogPreparation,
       studyPrograms: Seq[StudyProgramView],
       lang: Lang,
-      latexSnippets: List[LatexContentSnippet],
-      postTitleSnippets: List[LatexContentSnippet],
       semester: Option[Semester],
   ): Future[StringBuilder] = {
     val liveModules       = moduleService.allModuleCore()
@@ -423,38 +377,18 @@ final class ModuleCatalogService @Inject() (
         studyPrograms,
         liveModules ++ createdModules
       )
-      val markdownLatexPrinter = new MarkdownLatexPrinter(texCommand)
-      val printer              = semester match {
-        case Some(value) =>
-          ModuleCatalogLatexPrinter.default(
-            markdownLatexPrinter,
-            messagesApi,
-            value,
-            latexSnippets,
-            postTitleSnippets,
-            poOnly,
-            currentPO,
-            modules,
-            payload,
-            lang
-          )
-        case None =>
-          // Module diffs are disabled by now. Consider enabling it if needed
-          val diffs: ModuleDiffs = List.empty
-          ModuleCatalogLatexPrinter.preview(
-            markdownLatexPrinter,
-            messagesApi,
-            id => diffs.find(_._1.id == id).map(_._2),
-            latexSnippets,
-            postTitleSnippets,
-            poOnly,
-            currentPO,
-            modules,
-            payload,
-            lang,
-          )
-      }
-      printer.print()
+      new ModuleCatalogLatexPrinter(
+        new MarkdownLatexPrinter(texCommand),
+        messagesApi,
+        semester,
+        poOnly,
+        currentPO,
+        prep.modules,
+        prep.children,
+        payload,
+        prep.latexSnippets,
+        prep.postTitleSnippets
+      )(using lang).print()
     }
   }
 
@@ -471,14 +405,6 @@ final class ModuleCatalogService @Inject() (
       case NonFatal(e) => throw Exception(e)
     }
 
-  @unused
-  private def layoutSnippet(preview: Boolean): Option[LatexContentSnippet] =
-    Option.when(preview)(LayoutContentSnippet())
-
-  @unused
-  private def diffSnippet(moduleDiffs: ModuleDiffs): Option[LatexContentSnippet] =
-    NonEmptyList.fromList(moduleDiffs).map(DiffContentSnippet(_, messagesApi))
-
   private def introSnippet(dir: Path, po: String): Option[LatexContentSnippet] =
     IntroContentProvider(dir, po, mcIntroPath).createIntroContent()
 
@@ -493,9 +419,8 @@ final class ModuleCatalogService @Inject() (
       modules: Vector[(ModuleProtocol, LocalDate)],
       isPreview: Boolean,
       config: ModuleCatalogStudyPlanConfig,
-      specializations: List[models.core.IDLabel],
-      collectWarning: ModuleCatalogWarning => Unit
-  ): LatexContentSnippet =
+      specializations: List[models.core.IDLabel]
+  ): StudyPlanSnippet =
     StudyPlanSnippet(
       currentPO,
       modules.map(m => (m._1.id.get, m._1.metadata)),
@@ -503,7 +428,6 @@ final class ModuleCatalogService @Inject() (
       config.semesterSelections,
       config.genericModuleOccurrences,
       specializations,
-      collectWarning,
       isPreview,
       messagesApi
     )

@@ -111,8 +111,6 @@ markdown.content.particularities=Besonderheiten
 # Latex
 latex.lang.package_name=ngerman
 latex.module_catalog.preview_label=Vorschau
-latex.module_catalog.module_diff.section.title=Moduländerungen
-latex.module_catalog.module_diff.section.intro=Liste aller Moduländerungen in der aktuellen Bearbeitungsphase. Auf ein Modulnamen klicken, um zum Modul zu gelangen. Änderungen werden hervorgehoben.
 latex.module_catalog.module.label=Module
 latex.module_catalog.headline=Modulhandbuch
 latex.module_catalog.study_plan.headline=Studienverlaufsplan

@@ -104,8 +104,6 @@ markdown.content.particularities=Particularities
 # Latex
 latex.lang.package_name=english
 latex.module_catalog.preview_label=Preview
-latex.module_catalog.module_diff.section.title=Module Changes
-latex.module_catalog.module_diff.section.intro=List of all module changes in the current editing phase. Click on a module name to navigate to the module. Changes are highlighted.
 latex.module_catalog.module.label=Modules
 latex.module_catalog.headline=Module Catalog
 latex.module_catalog.study_plan.headline=Study Plan

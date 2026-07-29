@@ -15,38 +15,22 @@ trait ArtifactCheck extends UsesClientErrors {
    * This method checks if the user can create artifacts for the given PO.
    */
   def canCreateArtifact(po: String) =
-    new ActionFilter[UserRequest] {
-      protected override def filter[A](request: UserRequest[A]): Future[Option[Result]] = {
-        Future.successful(
-          Option.unless(request.permissions.isAdmin || request.permissions.artifactsCreatePermissions.contains(po))(
-            forbiddenForUser(
-              request,
-              request.request.token.username,
-              Some(s"to create artifacts for $po")
-            )
-          )
-        )
-      }
-
-      protected override def executionContext: ExecutionContext = ctx
-    }
+    canAccessArtifact(po, _.artifactsCreatePermissions, s"to create artifacts for $po")
 
   /**
    * This method checks if the user can preview artifacts for the given PO.
    */
   def canPreviewArtifact(po: String) =
+    canAccessArtifact(po, _.artifactsPreviewPermissions, s"to preview artifacts for $po")
+
+  private def canAccessArtifact(po: String, permissions: Permissions => Set[String], reason: => String) =
     new ActionFilter[UserRequest] {
-      protected override def filter[A](request: UserRequest[A]): Future[Option[Result]] = {
+      protected override def filter[A](request: UserRequest[A]): Future[Option[Result]] =
         Future.successful(
-          Option.unless(request.permissions.isAdmin || request.permissions.artifactsPreviewPermissions.contains(po))(
-            forbiddenForUser(
-              request,
-              request.request.token.username,
-              Some(s"to preview artifacts for $po")
-            )
+          Option.unless(request.permissions.isAdmin || permissions(request.permissions).contains(po))(
+            forbiddenForUser(request, request.request.token.username, Some(reason))
           )
         )
-      }
 
       protected override def executionContext: ExecutionContext = ctx
     }

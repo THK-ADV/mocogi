@@ -38,20 +38,20 @@ final class GitCLI @Inject() (val draftBranch: Branch, gitFolder: Path) extends 
    */
   def getAllModulesFromPreview(): Try[(Vector[(ParsingError, String)], Vector[(ModuleProtocol, LocalDate)])] =
     Try {
-      if (updatePreviewBranch() != 0)
+      if updatePreviewBranch() != 0 then
         throw new IllegalStateException(s"Could not update Git preview branch ${draftBranch.value}")
-      else
-        gitFolder
-          .getFilesOfDirectory(_.getFileName.toString.endsWith(".md")) { (f: Path) =>
-            val lastModified = Files
-              .getLastModifiedTime(f)
-              .toInstant
-              .atZone(java.time.ZoneId.systemDefault())
-              .toLocalDate
-            val content = Files.readString(f)
-            RawModuleParser.parser.parse(content)._1.bimap(_ -> f.getFileName.toString, _ -> lastModified)
-          }
-          .partitionMap(identity)
+
+      gitFolder
+        .getFilesOfDirectory(_.getFileName.toString.endsWith(".md")) { (f: Path) =>
+          val lastModified = Files
+            .getLastModifiedTime(f)
+            .toInstant
+            .atZone(java.time.ZoneId.systemDefault())
+            .toLocalDate
+          val content = Files.readString(f)
+          RawModuleParser.parser.parse(content)._1.bimap(_ -> f.getFileName.toString, _ -> lastModified)
+        }
+        .partitionMap(identity)
     }
 
   /**

@@ -11,11 +11,7 @@ import service.artifact.*
 final case class ModuleCatalogConfig(
     moduleSelection: ModuleCatalogModuleSelectionConfig,
     studyPlan: ModuleCatalogStudyPlanConfig
-) {
-  def bannedGenericModules: List[UUID] = moduleSelection.excludedModuleIds
-
-  def sections: List[StudyPlanSection] = studyPlan.sections
-}
+)
 
 final case class ModuleCatalogModuleSelectionConfig(
     excludedModuleIds: List[UUID],
@@ -50,21 +46,7 @@ object ModuleCatalogConfig {
         (JsPath \ "studyPlan")
           .readNullable[ModuleCatalogStudyPlanConfig]
           .map(_.getOrElse(ModuleCatalogStudyPlanConfig.empty))
-      )
-      .and((JsPath \ "bannedGenericModules").readNullable[List[UUID]].map(_.getOrElse(Nil)))
-      .and((JsPath \ "sections").readNullable[List[StudyPlanSection]].map(_.getOrElse(Nil))) {
-        (moduleSelection, studyPlan, bannedGenericModules, sections) =>
-          val effectiveModuleSelection =
-            if bannedGenericModules.isEmpty then moduleSelection
-            else
-              moduleSelection
-                .copy(excludedModuleIds = (moduleSelection.excludedModuleIds ++ bannedGenericModules).distinct)
-          val effectiveStudyPlan =
-            if studyPlan.sections.nonEmpty || sections.isEmpty then studyPlan
-            else studyPlan.copy(sections = sections)
-
-          ModuleCatalogConfig(effectiveModuleSelection, effectiveStudyPlan)
-      }
+      )(ModuleCatalogConfig.apply)
 }
 
 object ModuleCatalogModuleSelectionConfig {

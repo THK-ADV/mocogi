@@ -16,22 +16,6 @@ final class ModuleCatalogConfigSpec extends AnyWordSpec with Matchers {
       Json.parse("{}").as[ModuleCatalogConfig] shouldBe ModuleCatalogConfig.empty
     }
 
-    "read legacy top-level fields" in {
-      val config = Json
-        .parse(
-          s"""{
-             |  "bannedGenericModules": ["$moduleId"],
-             |  "sections": [
-             |    { "untilSemester": 3, "headline": "Grundlagen" }
-             |  ]
-             |}""".stripMargin
-        )
-        .as[ModuleCatalogConfig]
-
-      config.moduleSelection.excludedModuleIds shouldBe List(moduleId)
-      config.studyPlan.sections.map(_.headline) shouldBe List("Grundlagen")
-    }
-
     "read the nested config shape" in {
       val config = Json
         .parse(
