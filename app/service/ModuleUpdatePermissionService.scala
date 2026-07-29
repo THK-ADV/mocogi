@@ -10,6 +10,7 @@ import scala.concurrent.Future
 
 import auth.CampusId
 import cats.data.NonEmptyList
+import cli.GitCLI
 import database.repo.ModuleUpdatePermissionRepository
 import models.core.Identity
 import models.ModuleUpdatePermissionType
@@ -21,6 +22,7 @@ import play.api.libs.json.Json
 @Singleton
 final class ModuleUpdatePermissionService @Inject() (
     private val repo: ModuleUpdatePermissionRepository,
+    gitCLI: GitCLI,
     implicit val ctx: ExecutionContext
 ) {
   def overrideInherited(modules: Seq[(UUID, NonEmptyList[Identity])]) = {
@@ -76,6 +78,9 @@ final class ModuleUpdatePermissionService @Inject() (
     }
   }
 
+  // Falls back to the preview file for PO relations not yet represented in the database
   def isModulePartOfPO(module: UUID, pos: Set[String]): Future[Boolean] =
-    repo.isModulePartOfPO(module, pos)
+    repo
+      .isModulePartOfPO(module, pos)
+      .map(_ || gitCLI.getFromPreview(module).map(m => pos.exists(m.po.hasPORelation)).getOrElse(false))
 }
