@@ -19,9 +19,6 @@ final class StudyProgramPrivilegesService @Inject() (
     implicit val ctx: ExecutionContext
 ) {
 
-  def studyProgramIdsForPOs(pos: Set[String]): Future[Seq[String]] =
-    repo.studyProgramIdsForPOs(pos)
-
   /**
    * Retrieves study program privileges for a person based on their permissions:
    * - If Admin: returns all study programs with all roles

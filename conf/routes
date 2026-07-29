@@ -60,23 +60,24 @@ GET           /modules/:id/history                                              
 
 # Module Catalog
 
-GET           /moduleCatalogs/:studyProgram/:po/genericModules                            controllers.ModuleCatalogController.allGenericModulesForPO(studyProgram: java.lang.String, po: java.lang.String)
-POST          /moduleCatalogs/:studyProgram/:po                                           controllers.ModuleCatalogController.generate(studyProgram: java.lang.String, po: java.lang.String)
+GET           /moduleCatalogs/:po/genericModules                                          controllers.ModuleCatalogController.allGenericModulesForPO(po: java.lang.String)
+GET           /moduleCatalogs/:po/configOptions                                           controllers.ModuleCatalogController.configOptions(po: java.lang.String)
+POST          /moduleCatalogs/:po                                                         controllers.ModuleCatalogController.generate(po: java.lang.String)
 
 GET           /moduleCatalogIntros                                                        controllers.ModuleCatalogController.getAllIntroFiles()
-POST          /moduleCatalogIntros/:studyProgram/:po                                      controllers.ModuleCatalogController.uploadIntroFile(studyProgram: java.lang.String, po: java.lang.String)
+POST          /moduleCatalogIntros/:po                                                    controllers.ModuleCatalogController.uploadIntroFile(po: java.lang.String)
 
 # Exam Lists
 
-GET           /examLists/preview/:studyProgram/:po                                        controllers.ExamListsController.getPreview(studyProgram: java.lang.String, po: java.lang.String)
+GET           /examLists/preview/:po                                                      controllers.ExamListsController.getPreview(po: java.lang.String)
 GET           /examLists/file/:filename                                                   controllers.ExamListsController.getFile(filename: java.lang.String)
 GET           /examLists                                                                  controllers.ExamListsController.getAll()
-PUT           /examLists/:studyProgram/:po                                                controllers.ExamListsController.replace(studyProgram: java.lang.String, po: java.lang.String)
+PUT           /examLists/:po                                                              controllers.ExamListsController.replace(po: java.lang.String)
 GET           /examLists/semesters                                                        controllers.ExamListsController.currentSemesters()
 
 # Exam Load
 
-GET           /examLoad/:studyProgram/:po                                                 controllers.ExamLoadController.generateExamLoad(studyProgram: java.lang.String, po: java.lang.String)
+GET           /examLoad/:po                                                               controllers.ExamLoadController.generateExamLoad(po: java.lang.String)
 
 # Module Draft
 

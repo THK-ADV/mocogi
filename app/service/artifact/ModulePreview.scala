@@ -11,16 +11,21 @@ import play.api.Logging
 
 /**
  * All active modules of a PO, taken from the preview branch. Children are kept separate from
- * [[modules]] because they are rendered inside their parent and carry no PO assignment themselves.
+ * [[modules]] because they are rendered inside their parent and usually carry no PO assignment
+ * themselves.
  */
 private[artifact] case class POModules(
     modules: Vector[(ModuleProtocol, LocalDate)],
     children: Vector[(ModuleProtocol, LocalDate)]
 ) {
-  def all: Vector[(ModuleProtocol, LocalDate)] = modules ++ children
-
   lazy val childrenById: Map[UUID, ModuleProtocol] =
     children.flatMap((module, _) => module.id.map(_ -> module)).toMap
+
+  /** The children of the given subset of [[modules]]. */
+  def childrenOf(modules: Vector[ModuleProtocol]): Vector[(ModuleProtocol, LocalDate)] = {
+    val childIds = modules.flatMap(_.metadata.childIds).toSet
+    children.filter((child, _) => child.id.exists(childIds.contains))
+  }
 }
 
 /**

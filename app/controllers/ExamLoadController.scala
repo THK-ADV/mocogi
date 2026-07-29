@@ -22,16 +22,14 @@ import play.api.mvc.ControllerComponents
 import security.ClientErrorResponse
 import settings.AppSettings
 import service.artifact.ExamLoadService
-import service.StudyProgramPrivilegesService
 
 @Singleton
 final class ExamLoadController @Inject() (
     cc: ControllerComponents,
     auth: AuthorizationAction,
     examLoadService: ExamLoadService,
-    val permissionRepository: PermissionRepository,
-    val studyProgramPrivilegesService: StudyProgramPrivilegesService,
     appSettings: AppSettings,
+    val permissionRepository: PermissionRepository,
     val clientErrors: ClientErrorResponse,
     implicit val ctx: ExecutionContext
 ) extends AbstractController(cc)
@@ -40,10 +38,10 @@ final class ExamLoadController @Inject() (
 
   private def tmpDir: String = appSettings.play.tmpDir
 
-  def generateExamLoad(studyProgram: String, po: String): Action[AnyContent] =
+  def generateExamLoad(po: String): Action[AnyContent] =
     auth
       .andThen(resolveUser)
-      .andThen(canPreviewArtifact(studyProgram))
+      .andThen(canPreviewArtifact(po))
       .async { _ =>
         val file = FileOps.createRandomFile(tmpDir)
         examLoadService

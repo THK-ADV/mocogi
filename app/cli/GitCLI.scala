@@ -11,6 +11,7 @@ import scala.util.Try
 
 import git.Branch
 import models.ModuleProtocol
+import ops.bimap
 import ops.FileOps.getFilesOfDirectory
 import parser.ParsingError
 import parsing.RawModuleParser
@@ -35,20 +36,20 @@ final class GitCLI @Inject() (val draftBranch: Branch, gitFolder: Path) extends 
    *         the second element is a vector of successfully parsed and their last modified time.
    *         Fails if the preview branch cannot be updated or its files cannot be read.
    */
-  def getAllModulesFromPreview(): Try[(Vector[ParsingError], Vector[(ModuleProtocol, LocalDate)])] =
+  def getAllModulesFromPreview(): Try[(Vector[(ParsingError, String)], Vector[(ModuleProtocol, LocalDate)])] =
     Try {
       if updatePreviewBranch() != 0 then
         throw new IllegalStateException(s"Could not update Git preview branch ${draftBranch.value}")
 
       gitFolder
-        .getFilesOfDirectory(_.getFileName.toString.endsWith(".md")) { f =>
+        .getFilesOfDirectory(_.getFileName.toString.endsWith(".md")) { (f: Path) =>
           val lastModified = Files
             .getLastModifiedTime(f)
             .toInstant
             .atZone(java.time.ZoneId.systemDefault())
             .toLocalDate
           val content = Files.readString(f)
-          RawModuleParser.parser.parse(content)._1.map(_ -> lastModified)
+          RawModuleParser.parser.parse(content)._1.bimap(_ -> f.getFileName.toString, _ -> lastModified)
         }
         .partitionMap(identity)
     }

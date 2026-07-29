@@ -2,7 +2,6 @@ package controllers
 
 import java.nio.file.Files
 import java.nio.file.Paths
-import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -23,7 +22,6 @@ import models.Semester
 import ops.FileOps
 import ops.FileOps.deleteDirectory
 import permission.ArtifactCheck
-import play.api.cache.Cached
 import play.api.libs.json.*
 import play.api.libs.Files.TemporaryFile
 import play.api.mvc.*
@@ -32,7 +30,9 @@ import printing.latex.TextIntroRewriter
 import printing.latex.WordLatexPrinter
 import security.ClientErrorResponse
 import settings.AppSettings
-import service.artifact.ModuleCatalogService
+import service.artifact.modulecatalog.ModuleCatalogConfig
+import service.artifact.modulecatalog.ModuleCatalogConfigException
+import service.artifact.modulecatalog.ModuleCatalogService
 import service.StudyProgramPrivilegesService
 
 @Singleton
@@ -42,10 +42,9 @@ final class ModuleCatalogController @Inject() (
     auth: AuthorizationAction,
     jsonRepo: JSONRepository,
     appSettings: AppSettings,
+    studyProgramPrivilegesService: StudyProgramPrivilegesService,
     val permissionRepository: PermissionRepository,
-    val studyProgramPrivilegesService: StudyProgramPrivilegesService,
     val clientErrors: ClientErrorResponse,
-    cached: Cached,
     implicit val ctx: ExecutionContext
 ) extends AbstractController(cc)
     with ArtifactCheck
@@ -56,46 +55,37 @@ final class ModuleCatalogController @Inject() (
   private def mcIntroPath: String = appSettings.pandoc.mcIntroPath
 
   /**
-   * Returns all active generic modules for the PO
+   * Returns the generic modules available for the PO.
    *
-   * @param studyProgram for which SGL or PAV permission must be granted
-   * @param po           for which the generic modules are returned
+   * @param po for which the generic modules are returned
    * @return JSON array of generic modules
    */
-  def allGenericModulesForPO(studyProgram: String, po: String): Action[AnyContent] =
+  def allGenericModulesForPO(po: String): Action[AnyContent] =
     auth
       .andThen(resolveUser)
-      .andThen(canPreviewArtifact(studyProgram))
+      .andThen(canPreviewArtifact(po))
       .async(_ => jsonRepo.getGenericModulesForPO(po).map(Ok(_)))
 
   /**
-   * Generates a module catalog for the PO. A preview catalog is generated if the query parameter is set to true.
-   * The body contains a list of generic modules excluded from the generation.
+   * Generates a PDF module catalog for the PO using the configuration in the request body.
+   * The optional `preview` query parameter defaults to `true`; `false` generates the current semester's final catalog.
    *
-   * @param studyProgram for which SGL or PAV permission must be granted
-   * @param po           for which the module catalog is created
-   * @return the PDF file
+   * @param po for which the module catalog is created
+   * @return the generated PDF file
    */
-  def generate(studyProgram: String, po: String): Action[List[UUID]] =
-    auth(parse.json[List[UUID]])
+  def generate(po: String): Action[ModuleCatalogConfig] =
+    auth(parse.json[ModuleCatalogConfig])
       .andThen(resolveUser)
-      .andThen(canPreviewArtifact(studyProgram))
-      .async { (r: Request[List[UUID]]) =>
+      .andThen(canPreviewArtifact(po))
+      .async { (r: Request[ModuleCatalogConfig]) =>
         r.headers.get(HeaderNames.ACCEPT) match {
           case Some(MimeTypes.PDF) =>
-            val isPreview            = r.getQueryString("preview").flatMap(_.toBooleanOption).getOrElse(true)
-            val bannedGenericModules = r.body
-            val filename             = s"module_catalog_$po"
-            val file                 = FileOps.createLatexFile(filename, tmpDir)
-            val path                 =
-              if isPreview then catalogService.preview(po, file, bannedGenericModules)
-              else
-                catalogService.create(
-                  po,
-                  file,
-                  Semester.of(), // assumes current semester
-                  bannedGenericModules
-                )
+            val isPreview = r.getQueryString("preview").flatMap(_.toBooleanOption).getOrElse(true)
+            val filename  = s"module_catalog_$po"
+            val file      = FileOps.createLatexFile(filename, tmpDir)
+            val path      =
+              if isPreview then catalogService.preview(po, file, r.body)
+              else catalogService.create(po, file, Semester.of(), r.body)
             path
               .map(path =>
                 Ok.sendPath(
@@ -103,10 +93,13 @@ final class ModuleCatalogController @Inject() (
                   onClose = () => file.getParent.deleteDirectory()
                 ).as(MimeTypes.PDF)
               )
-              .recoverWith {
+              .recover {
                 case NonFatal(e) =>
                   file.getParent.deleteDirectory()
-                  Future.successful(clientErrors.internalServerError(r, e))
+                  e match {
+                    case e: ModuleCatalogConfigException => clientErrors.badRequest(r, e)
+                    case e                               => clientErrors.internalServerError(r, e)
+                  }
               }
           case _ =>
             Future.successful(
@@ -118,8 +111,23 @@ final class ModuleCatalogController @Inject() (
       }
 
   /**
-   * Returns all introductory files for study programs (POs) for which the user has privileges.
-   * The output includes the PO id and the last modified timestamp for each introductory file.
+   * Returns the available configuration options for generating a module catalog for the PO.
+   *
+   * @param po for which the module catalog configuration options are returned
+   * @return JSON object containing the available configuration options
+   */
+  def configOptions(po: String): Action[AnyContent] =
+    auth
+      .andThen(resolveUser)
+      .andThen(canPreviewArtifact(po))
+      .async { _ =>
+        catalogService.configOptions(po).map(options => Ok(Json.toJson(options)))
+      }
+
+  /**
+   * Returns metadata for introductory-file directories of POs for which the user can create artifacts.
+   *
+   * @return JSON array containing each PO ID and its directory's last-modified timestamp
    */
   def getAllIntroFiles(): Action[AnyContent] =
     auth
@@ -150,14 +158,15 @@ final class ModuleCatalogController @Inject() (
       }
 
   /**
-   * Handles the upload of an introductory file for a specific study program and PO.
-   * The method processes a Word document, converts it to LaTeX, and rewrites specific parts of the content.
-   * A user must have the required permissions to perform this action.
+   * Converts an uploaded Word introductory file to LaTeX and stores it for the PO.
+   *
+   * @param po for which the introductory file is stored
+   * @return no content on success
    */
-  def uploadIntroFile(studyProgram: String, po: String): Action[TemporaryFile] =
+  def uploadIntroFile(po: String): Action[TemporaryFile] =
     auth
       .andThen(resolveUser)
-      .andThen(canPreviewArtifact(studyProgram))
+      .andThen(canPreviewArtifact(po))
       .apply(parse.temporaryFile) { (r: Request[TemporaryFile]) =>
         r.contentType match {
           case Some(MimeTypes.WORD) =>
