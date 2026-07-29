@@ -3,6 +3,7 @@ package cli
 import java.nio.file.Files
 import java.nio.file.Path
 import java.time.LocalDate
+import java.util.UUID
 import javax.inject.Inject
 
 import scala.sys.process.Process
@@ -10,6 +11,7 @@ import scala.sys.process.ProcessLogger
 import scala.util.Try
 
 import git.Branch
+import models.MetadataProtocol
 import models.ModuleProtocol
 import ops.bimap
 import ops.FileOps.getFilesOfDirectory
@@ -53,6 +55,15 @@ final class GitCLI @Inject() (val draftBranch: Branch, gitFolder: Path) extends 
         }
         .partitionMap(identity)
     }
+
+  /**
+   * Retrieves [[MetadataProtocol]] by parsing the module from the preview branch of the Git repository.
+   */
+  def getFromPreview(module: UUID): Try[MetadataProtocol] =
+    for {
+      fileContent <- Try(Files.readString(gitFolder.resolve(s"$module.md")))
+      (_, module) <- RawModuleParser.metadataParser.parse(fileContent)._1.toTry
+    } yield module
 
   /**
    * Updates the local preview branch of the Git repository to match the latest state of the remote branch.
