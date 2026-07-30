@@ -63,19 +63,20 @@ final class ExamLoadCSVPrinter(
         case None      => ("nein", "-", "-")
       }
 
+    def assessmentMethodLabels(id: UUID) =
+      assessmentMethods
+        .getOrElse(id, Nil)
+        .map(method => if writtenExamAssessmentMethodIds.contains(method.id) then "Klausurarbeit" else method.deLabel)
+        .distinct
+        .sorted
+
     def assessmentMethodsLabel(id: UUID) = {
-      val methods = assessmentMethods.getOrElse(id, Nil)
-      if methods.isEmpty then "-"
-      else
-        methods
-          .map(method => if writtenExamAssessmentMethodIds.contains(method.id) then "Klausurarbeit" else method.deLabel)
-          .distinct
-          .sorted
-          .mkString(" und/oder ")
+      val labels = assessmentMethodLabels(id)
+      if labels.isEmpty then "-" else labels.mkString(" und/oder ")
     }
 
     def assessmentMethodsCountLabel(id: UUID) =
-      assessmentMethods.getOrElse(id, Nil).size.toString
+      assessmentMethodLabels(id).size.toString
 
     def createRow(id: UUID, module: MetadataProtocol, semesterLabel: String): Row = {
       val (attReq, attReqText, attReqReason) = attendanceRequirementLabel(module.attendanceRequirement)
