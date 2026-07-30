@@ -16,10 +16,9 @@ import models.core.*
 import monocle.macros.GenLens
 import monocle.Lens
 import ops.toFuture
-import logging.AppEventLogger
+import logging.errorC
+import logging.infoC
 import logging.CorrelationId
-import logging.LogEvent
-import logging.LogResult
 import org.apache.pekko.actor.Actor
 import play.api.Logging
 import service.core.*
@@ -46,18 +45,8 @@ final class CoreDataPublisher @Inject() (
   override def receive = {
     case Handle(coreFiles, correlationId) =>
       given CorrelationId = correlationId
-      val event           = "git.core_data.sync"
-      AppEventLogger.info(
-        logger,
-        LogEvent(
-          event = event,
-          result = LogResult.Started,
-          correlationId = correlationId,
-          details = Map("fileCount" -> coreFiles.size.toString)
-        )
-      )
-      val order   = topologicalSort(coreFiles)
-      val updates = order.foldLeft(Future.unit) {
+      val order           = topologicalSort(coreFiles)
+      val updates         = order.foldLeft(Future.unit) {
         case (acc, (filename, _, content)) =>
           acc.flatMap(_ => createOrUpdate(filename, content))
       }
@@ -68,16 +57,9 @@ final class CoreDataPublisher @Inject() (
       } yield ()
       res.onComplete {
         case Success(_) =>
-          AppEventLogger.info(
-            logger,
-            LogEvent(
-              event = event,
-              result = LogResult.Succeeded,
-              correlationId = correlationId,
-              details = Map("fileCount" -> coreFiles.size.toString)
-            )
-          )
-        case Failure(t) => logFailure(event, correlationId, t)
+          logger.infoC(s"core data sync ok files=${coreFiles.size}")
+        case Failure(t) =>
+          logger.errorC("core data sync failed", t)
       }
   }
 
@@ -205,76 +187,14 @@ final class CoreDataPublisher @Inject() (
       toCreate: Seq[A],
       toUpdate: Seq[A],
       toDelete: Seq[String]
-  )(using correlationId: CorrelationId): Unit = {
-    if (toCreate.nonEmpty) {
-      AppEventLogger.info(
-        logger,
-        LogEvent(
-          event = "git.core_data.file",
-          result = LogResult.Succeeded,
-          correlationId = correlationId,
-          details = Map(
-            "filename"  -> filename,
-            "operation" -> "create",
-            "count"     -> toCreate.size.toString
-          )
-        )
+  )(using CorrelationId): Unit =
+    if toCreate.nonEmpty || toUpdate.nonEmpty || toDelete.nonEmpty then
+      logger.infoC(
+        s"core data file=$filename create=${toCreate.size} update=${toUpdate.size} delete=${toDelete.size}"
       )
-    }
-    if (toUpdate.nonEmpty) {
-      AppEventLogger.info(
-        logger,
-        LogEvent(
-          event = "git.core_data.file",
-          result = LogResult.Succeeded,
-          correlationId = correlationId,
-          details = Map(
-            "filename"  -> filename,
-            "operation" -> "update",
-            "count"     -> toUpdate.size.toString
-          )
-        )
-      )
-    }
-    if (toDelete.nonEmpty) {
-      AppEventLogger.info(
-        logger,
-        LogEvent(
-          event = "git.core_data.file",
-          result = LogResult.Succeeded,
-          correlationId = correlationId,
-          details = Map(
-            "filename"  -> filename,
-            "operation" -> "delete",
-            "count"     -> toDelete.size.toString
-          )
-        )
-      )
-    }
-  }
 
-  private def logFailure(event: String, correlationId: CorrelationId, error: Throwable): Unit =
-    AppEventLogger.error(
-      logger,
-      LogEvent(
-        event = event,
-        result = LogResult.Failed,
-        correlationId = correlationId,
-        errorCode = Some("core_data_sync_failed")
-      ),
-      error
-    )
-
-  private def logUnknownFile(filename: String)(using correlationId: CorrelationId): Unit =
-    AppEventLogger.info(
-      logger,
-      LogEvent(
-        event = "git.core_data.file",
-        result = LogResult.Skipped,
-        correlationId = correlationId,
-        details = Map("filename" -> filename, "reason" -> "no_handler")
-      )
-    )
+  private def logUnknownFile(filename: String)(using CorrelationId): Unit =
+    logger.infoC(s"core data file=$filename skipped reason=no_handler")
 }
 
 object CoreDataPublisher {

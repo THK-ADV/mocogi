@@ -24,10 +24,10 @@ import git.api.GitCommitService
 import git.api.GitFileService
 import git.api.GitMergeRequestService
 import io.circe.ParsingFailure
-import logging.AppEventLogger
+import logging.errorC
+import logging.infoC
+import logging.warnC
 import logging.CorrelationId
-import logging.LogEvent
-import logging.LogResult
 import models.*
 import org.apache.pekko.actor.Actor
 import org.apache.pekko.actor.ActorRef
@@ -87,15 +87,15 @@ final class MergeEventHandler @Inject() (
 
   override def receive: Receive = {
     case HandleEvent(json, incomingCorrelationId) =>
-      implicit val id: CorrelationId = incomingCorrelationId
+      given CorrelationId = incomingCorrelationId
       parse(json) match {
         case JsSuccess(parsedEvent, _) =>
-          implicit val result: ParsedMergeEvent = parsedEvent
-          implicit val mrId: MergeRequestId     = parsedEvent.mrId
-          val action                            = parsedEvent.action
-          val sourceBranch                      = parsedEvent.sourceBranch
-          val targetBranch                      = parsedEvent.targetBranch
-          val labels                            = parsedEvent.labels
+          given ParsedMergeEvent = parsedEvent
+          given MergeRequestId   = parsedEvent.mrId
+          val action             = parsedEvent.action
+          val sourceBranch       = parsedEvent.sourceBranch
+          val targetBranch       = parsedEvent.targetBranch
+          val labels             = parsedEvent.labels
           (sourceBranch, targetBranch, action) match {
             // Case 1: opened MR from $module_branch into draft branch [AUTO APPROVED]
             // => schedule merge
@@ -111,14 +111,14 @@ final class MergeEventHandler @Inject() (
                 ) || labels.contains(gitConfig.fastForwardLabel) =>
               logEvent(action, sourceBranch, targetBranch, labels)
               val sha = parseMergeCommitSha(json)
-              withUUID(moduleBranch)(moduleId => handleModuleCreated(id, moduleId, sha))
+              withUUID(moduleBranch)(moduleId => handleModuleCreated(incomingCorrelationId, moduleId, sha))
 
             // Case 3: merged MR from any branch into draft branch
             // => for each module, update permissions and create module if it's new
             case (_, gitConfig.draftBranch, "merge") =>
               logEvent(action, sourceBranch, targetBranch, labels)
               val sha = parseMergeCommitSha(json)
-              handleModuleBulkUpdate(id, sha)
+              handleModuleBulkUpdate(incomingCorrelationId, sha)
 
             // Case 4: closed MR from $module_branch into draft branch [REVIEW REQUIRED]
             // => handle review reject
@@ -140,104 +140,51 @@ final class MergeEventHandler @Inject() (
 
             // unknown action => abort
             case _ =>
-              abort(id, result)
+              abort(parsedEvent)
           }
         case JsError(errors) =>
           logUnhandedEvent(logger, errors)
-          self ! Finished(id)
       }
 
     // Merge module MR and update merge request status of the module. This will eventually trigger case 2
     case MergeModule(id, mrID, moduleId) =>
-      val event = "git.merge.request"
-      infoEvent(
-        event = event,
-        result = LogResult.Started,
-        moduleId = Some(moduleId),
-        mrId = Some(mrID),
-        details = Map("action" -> "merge")
-      )(id)
-      val f = for {
+      given CorrelationId = id
+      val f               = for {
         mrStatus <- mergeRequestApiService.merge(mrID)
         _        <- moduleDraftRepository.updateMergeRequestStatus(moduleId, mrStatus)
-      } yield infoEvent(
-        event = event,
-        result = LogResult.Succeeded,
-        moduleId = Some(moduleId),
-        mrId = Some(mrID),
-        details = Map("action" -> "merge")
-      )(id)
+      } yield logger.infoC(s"merge request ok mr=${mrID.value} module=$moduleId")
       f.onComplete {
-        case Success(_) =>
-          self ! Finished(id)
         case Failure(e) =>
-          errorEvent(
-            event = event,
-            result = LogResult.Failed,
-            throwable = e,
-            moduleId = Some(moduleId),
-            mrId = Some(mrID),
-            errorCode = Some("merge_request_failed")
-          )(id)
-          self ! Finished(id)
+          logger.errorC(s"merge request failed mr=${mrID.value} module=$moduleId", e)
+        case _ => ()
       }
 
     // Check if the merge request is mergeable. If so, merge the module (case 2). Otherwise, schedule a new attempt with logarithmic backoff
     case CheckMrStatus(id, mrId, attempt, merge) =>
-      val event = "git.merge.check_status"
+      given CorrelationId = id
       if (attempt < MergeRetryPolicy.maxAttempts) {
-        infoEvent(
-          event = event,
-          result = LogResult.Started,
-          mrId = Some(mrId),
-          details = Map("attempt" -> attempt.toString)
-        )(id)
         mergeRequestApiService.get(mrId).onComplete {
           case Success((_, json)) =>
             val detailedMergeStatus = json.\("detailed_merge_status").validate[String].get
             val mergeStatus         = json.\("merge_status").validate[String].get
-            infoEvent(
-              event = event,
-              result = LogResult.Succeeded,
-              mrId = Some(mrId),
-              details = Map(
-                "attempt"             -> attempt.toString,
-                "mergeStatus"         -> mergeStatus,
-                "detailedMergeStatus" -> detailedMergeStatus
-              )
-            )(id)
             if (detailedMergeStatus == "mergeable" && mergeStatus == "can_be_merged") {
               merge()
             } else {
-              scheduleMerge(attempt + 1, merge)(id, mrId)
+              val nextAttempt = attempt + 1
+              val delay       = MergeRetryPolicy.delayFor(nextAttempt)
+              logger.infoC(
+                s"merge not ready mr=${mrId.value} attempt=$attempt status=$mergeStatus/$detailedMergeStatus retryIn=$delay"
+              )
+              scheduleMerge(nextAttempt, merge)(using id, mrId)
             }
           case Failure(e) =>
-            errorEvent(
-              event = event,
-              result = LogResult.Failed,
-              throwable = e,
-              mrId = Some(mrId),
-              errorCode = Some("merge_status_check_failed"),
-              details = Map("attempt" -> attempt.toString)
-            )(id)
-            self ! Finished(id)
+            logger.errorC(s"merge status check failed mr=${mrId.value} attempt=$attempt", e)
         }
       } else {
-        warnEvent(
-          event = event,
-          result = LogResult.Skipped,
-          mrId = Some(mrId),
-          details = Map(
-            "attempt"     -> attempt.toString,
-            "maxAttempts" -> MergeRetryPolicy.maxAttempts.toString,
-            "reason"      -> "max_attempts_reached"
-          )
-        )(id)
-        self ! Finished(id)
+        logger.warnC(
+          s"merge status check skipped mr=${mrId.value} attempt=$attempt maxAttempts=${MergeRetryPolicy.maxAttempts} reason=max_attempts_reached"
+        )
       }
-
-    case Finished(id) =>
-      infoEvent(event = "git.merge.event", result = LogResult.Succeeded)(id)
   }
 
   private def logEvent(
@@ -245,60 +192,37 @@ final class MergeEventHandler @Inject() (
       source: Branch,
       target: Branch,
       labels: Labels
-  )(implicit id: CorrelationId, mrId: MergeRequestId): Unit =
-    infoEvent(
-      event = "git.merge.event.received",
-      result = LogResult.Started,
-      mrId = Some(mrId),
-      branch = Some(target),
-      details = Map(
-        "action"       -> action,
-        "sourceBranch" -> source.value,
-        "targetBranch" -> target.value,
-        "labels"       -> labels.mkString(",")
-      )
+  )(using CorrelationId, MergeRequestId): Unit =
+    logger.infoC(
+      s"merge event mr=${summon[MergeRequestId].value} action=$action ${source.value}->${target.value} labels=${labels.mkString(",")}"
     )
 
   private def scheduleFreshMerge(
       moduleBranch: Branch
-  )(implicit id: CorrelationId, mrId: MergeRequestId, result: ParsedMergeEvent): Unit =
+  )(using id: CorrelationId, mrId: MergeRequestId, result: ParsedMergeEvent): Unit =
     withUUID(moduleBranch)(moduleId => scheduleMerge(0, () => self ! MergeModule(id, mrId, moduleId)))
 
   private case class MergeModule(id: CorrelationId, mrId: MergeRequestId, moduleId: UUID)
 
-  private case class Finished(id: CorrelationId)
-
   private case class CheckMrStatus(id: CorrelationId, mrId: MergeRequestId, attempt: Int, merge: () => Unit)
 
-  private def scheduleMerge(attempt: Int, merge: () => Unit)(implicit id: CorrelationId, mrId: MergeRequestId) = {
-    val delay = MergeRetryPolicy.delayFor(attempt)
-    if attempt > 0 then
-      infoEvent(
-        event = "git.merge.retry_scheduled",
-        result = LogResult.Started,
-        mrId = Some(mrId),
-        details = Map("attempt" -> attempt.toString, "delay" -> delay.toString)
-      )
-    context.system.scheduler.scheduleOnce(delay, self, CheckMrStatus(id, mrId, attempt, merge))
-  }
+  private def scheduleMerge(attempt: Int, merge: () => Unit)(using id: CorrelationId, mrId: MergeRequestId) =
+    context.system.scheduler.scheduleOnce(
+      MergeRetryPolicy.delayFor(attempt),
+      self,
+      CheckMrStatus(id, mrId, attempt, merge)
+    )
 
-  private def withUUID(branch: Branch)(k: UUID => Unit)(implicit id: CorrelationId, result: ParsedMergeEvent): Unit =
+  private def withUUID(branch: Branch)(k: UUID => Unit)(using CorrelationId, ParsedMergeEvent): Unit =
     try {
       val moduleId = UUID.fromString(branch.value)
       k(moduleId)
     } catch {
       case NonFatal(_) =>
-        warnEvent(
-          event = "git.merge.event.branch_parse",
-          result = LogResult.Skipped,
-          mrId = Some(result.mrId),
-          details = Map(
-            "sourceBranch" -> branch.value,
-            "reason"       -> "source_branch_not_uuid"
-          )
+        logger.warnC(
+          s"merge skipped mr=${summon[ParsedMergeEvent].mrId.value} branch=${branch.value} reason=source_branch_not_uuid"
         )
-        abort(id, result)
-        self ! Finished(id)
+        abort(summon[ParsedMergeEvent])
     }
 
   private def parseMergeCommitSha(json: JsValue): String =
@@ -327,60 +251,44 @@ final class MergeEventHandler @Inject() (
     } yield ParsedMergeEvent(mrId, action, sourceBranch, targetBranch, labels)
   }
 
-  private def deleteModuleDraft(id: CorrelationId, moduleId: UUID) =
+  private def deleteModuleDraft(moduleId: UUID)(using CorrelationId) =
     for
       res1 <- moduleReviewRepository.delete(moduleId)
       res2 <- moduleDraftRepository.delete(moduleId)
-    yield infoEvent(
-      event = "module.draft.deleted_after_merge",
-      result = LogResult.Succeeded,
-      moduleId = Some(moduleId),
-      details = Map("deletedReviews" -> res1.toString, "deletedDrafts" -> res2.toString)
-    )(id)
+    yield logger.infoC(s"module draft deleted after merge module=$moduleId reviews=$res1 drafts=$res2")
 
   private def handleModuleCreated(id: CorrelationId, moduleId: UUID, sha: String): Unit = {
-    val f = for {
+    given CorrelationId = id
+    val f               = for {
       (module, diff) <- gitCommitService.getLatestModuleFromCommit(sha, gitConfig.draftBranch, moduleId).collect {
         case Some((content, diff)) => (parseCreatedModuleInformation(content, moduleId), diff)
       }
-      _ <- syncModuleFromMerge(id, module, diff)
-      _ <- deleteModuleDraft(id, moduleId)
+      _ <- syncModuleFromMerge(module, diff)
+      _ <- deleteModuleDraft(moduleId)
     } yield ()
     f.onComplete {
-      case Success(_) =>
-        self ! Finished(id)
       case Failure(e) =>
-        errorEvent(
-          event = "module.merge.apply",
-          result = LogResult.Failed,
-          throwable = e,
-          moduleId = Some(moduleId),
-          errorCode = Some("module_merge_apply_failed")
-        )(id)
-        self ! Finished(id)
+        logger.errorC(s"module merge apply failed module=$moduleId", e)
+      case _ => ()
     }
   }
 
   // Always sync inherited permissions from git. Upsert created-module only if not yet on main.
-  private def syncModuleFromMerge(id: CorrelationId, module: CreatedModule, diff: CommitDiff) =
+  private def syncModuleFromMerge(module: CreatedModule, diff: CommitDiff)(using CorrelationId) =
     for {
       exists <- moduleRepository.exists(module.module)
       _      <-
         if exists then moduleCreationService.syncInheritedPermissions(module)
         else moduleCreationService.createOrUpdateWithPermissions(module)
-    } yield infoEvent(
-      event = "module.sync_from_merge",
-      result = LogResult.Succeeded,
-      moduleId = Some(module.module),
-      details = Map(
-        "action" -> {
-          if exists then "synced_inherited_permissions"
-          else if diff.isNewFile then "created_new_module"
-          else "updated_module"
-        },
-        "permissionsCount" -> module.moduleManagement.size.toString
+    } yield {
+      val action =
+        if exists then "synced_inherited_permissions"
+        else if diff.isNewFile then "created_new_module"
+        else "updated_module"
+      logger.infoC(
+        s"module sync from merge module=${module.module} action=$action permissions=${module.moduleManagement.size}"
       )
-    )(id)
+    }
 
   private def parseCreatedModuleInformation(content: GitFileContent, module: => UUID) =
     try RawModuleParser.parseCreatedModuleInformation(content.value)
@@ -390,36 +298,23 @@ final class MergeEventHandler @Inject() (
       case NonFatal(e)        => throw YamlParsingError(module, e)
 
   private def handleModuleBulkUpdate(id: CorrelationId, sha: String): Unit = {
-    val f = for
+    given CorrelationId = id
+    val f               = for
       downloads <- gitCommitService.getAllModulesFromCommit(sha, gitConfig.draftBranch)
       _         <- Future.sequence(downloads.map { (content, diff) =>
         val module = parseCreatedModuleInformation(content, diff.newPath.moduleId(gitConfig).get)
-        syncModuleFromMerge(id, module, diff)
+        syncModuleFromMerge(module, diff)
       })
     yield ()
 
     f.onComplete {
-      case Success(_) =>
-        self ! Finished(id)
       case Failure(e) =>
-        errorEvent(
-          event = "module.bulk_update_from_merge",
-          result = LogResult.Failed,
-          throwable = e,
-          errorCode = Some("bulk_update_failed")
-        )(id)
-        self ! Finished(id)
+        logger.errorC("module bulk update from merge failed", e)
+      case _ => ()
     }
   }
 
-  private def typeCheckModules(branch: Branch)(implicit id: CorrelationId, mrId: MergeRequestId): Unit = {
-    val event = "module.type_check"
-    infoEvent(
-      event = event,
-      result = LogResult.Started,
-      mrId = Some(mrId),
-      branch = Some(branch)
-    )
+  private def typeCheckModules(branch: Branch)(using id: CorrelationId, mrId: MergeRequestId): Unit = {
     val f = for
       changes   <- mergeRequestApiService.getChanges(mrId)
       downloads <- Future.sequence(changes.collect {
@@ -428,24 +323,14 @@ final class MergeEventHandler @Inject() (
       _ <-
         if downloads.isEmpty then
           Future.successful(
-            infoEvent(
-              event = event,
-              result = LogResult.Skipped,
-              mrId = Some(mrId),
-              details = Map("reason" -> "no_module_files")
-            )
+            logger.infoC(s"module type check skipped mr=${mrId.value} reason=no_module_files")
           )
         else {
           for {
             parseRes <- modulePipeline.parseValidateMany(downloads.collect { case Some(f) => Print(f._1.value) })
             _        <- parseRes match {
               case Left(errs) =>
-                warnEvent(
-                  event = event,
-                  result = LogResult.Failed,
-                  mrId = Some(mrId),
-                  details = Map("errorCount" -> errs.size.toString)
-                )
+                logger.warnC(s"module type check failed mr=${mrId.value} errorCount=${errs.size}")
                 val comments = errs.map { err =>
                   val body =
                     s"❌ failed to type check module ${err.metadata.fold("???")(_.toString)}.\n\nreason:${err.getMessage}"
@@ -455,47 +340,27 @@ final class MergeEventHandler @Inject() (
               case Right(_) =>
                 mergeRequestApiService
                   .comment(mrId, "✅ successfully type checked all modules")
-                  .map(_ =>
-                    infoEvent(
-                      event = event,
-                      result = LogResult.Succeeded,
-                      mrId = Some(mrId)
-                    )
-                  )
+                  .map(_ => logger.infoC(s"module type check ok mr=${mrId.value}"))
             }
           } yield ()
         }
     yield ()
 
     f.onComplete {
-      case Success(_) =>
-        self ! Finished(id)
       case Failure(e) =>
-        errorEvent(
-          event = event,
-          result = LogResult.Failed,
-          throwable = e,
-          mrId = Some(mrId),
-          errorCode = Some("module_type_check_failed")
-        )(id)
-        self ! Finished(id)
+        logger.errorC(s"module type check failed mr=${mrId.value}", e)
+      case _ => ()
     }
   }
 
   // TODO: class MailComposer?
   private def handleReviewReject(module: UUID)(using id: CorrelationId): Unit = {
-    val reviewEvent                                   = "module.review.rejected"
-    val notificationEvent                             = "module.review.rejected_notification"
     def sendMail(rejectedReview: ModuleReview.Atomic) = {
       for
         moduleTitle <- moduleDraftRepository.getModuleTitle(module)
         users       <- moduleUpdatePermissionRepository.allPeopleWithPermissionForModule(module)
       yield {
-        infoEvent(
-          event = reviewEvent,
-          result = LogResult.Succeeded,
-          moduleId = Some(module)
-        )(id)
+        logger.infoC(s"module review rejected module=$module")
         val sb = new StringBuilder()
         sb.append(
           messages(
@@ -525,11 +390,8 @@ final class MergeEventHandler @Inject() (
               cc.toList
             )
           case None =>
-            warnEvent(
-              event = notificationEvent,
-              result = LogResult.Skipped,
-              moduleId = Some(module),
-              details = Map("reason" -> "missing_inherited_permissions_recipient")
+            logger.warnC(
+              s"module review rejection notification skipped module=$module reason=missing_inherited_permissions_recipient"
             )
       }
     }
@@ -542,107 +404,14 @@ final class MergeEventHandler @Inject() (
     yield ()
 
     f.onComplete {
-      case Success(_) =>
-        self ! Finished(id)
       case Failure(e) =>
-        errorEvent(
-          event = notificationEvent,
-          result = LogResult.Failed,
-          throwable = e,
-          moduleId = Some(module),
-          errorCode = Some("review_rejection_notification_failed")
-        )(id)
-        self ! Finished(id)
+        logger.errorC(s"module review rejection notification failed module=$module", e)
+      case _ => ()
     }
   }
 
-  private def abort(id: CorrelationId, result: ParsedMergeEvent): Unit =
-    warnEvent(
-      event = "git.merge.event",
-      result = LogResult.Skipped,
-      mrId = Some(result.mrId),
-      branch = Some(result.targetBranch),
-      details = Map(
-        "action"       -> result.action,
-        "sourceBranch" -> result.sourceBranch.value,
-        "targetBranch" -> result.targetBranch.value,
-        "labels"       -> result.labels.mkString(","),
-        "reason"       -> "unsupported_event_shape"
-      )
-    )(id)
-
-  private def infoEvent(
-      event: String,
-      result: LogResult,
-      moduleId: Option[UUID] = None,
-      mrId: Option[MergeRequestId] = None,
-      branch: Option[Branch] = None,
-      actor: Option[String] = None,
-      details: Map[String, String] = Map.empty
-  )(implicit correlationId: CorrelationId): Unit =
-    AppEventLogger.info(
-      logger,
-      LogEvent(
-        event = event,
-        result = result,
-        correlationId = correlationId,
-        moduleId = moduleId,
-        mrId = mrId.map(_.value),
-        branch = branch.map(_.value),
-        actor = actor,
-        details = details
-      )
-    )
-
-  private def warnEvent(
-      event: String,
-      result: LogResult,
-      moduleId: Option[UUID] = None,
-      mrId: Option[MergeRequestId] = None,
-      branch: Option[Branch] = None,
-      actor: Option[String] = None,
-      errorCode: Option[String] = None,
-      details: Map[String, String] = Map.empty
-  )(implicit correlationId: CorrelationId): Unit =
-    AppEventLogger.warn(
-      logger,
-      LogEvent(
-        event = event,
-        result = result,
-        correlationId = correlationId,
-        moduleId = moduleId,
-        mrId = mrId.map(_.value),
-        branch = branch.map(_.value),
-        actor = actor,
-        errorCode = errorCode,
-        details = details
-      )
-    )
-
-  private def errorEvent(
-      event: String,
-      result: LogResult,
-      throwable: Throwable,
-      moduleId: Option[UUID] = None,
-      mrId: Option[MergeRequestId] = None,
-      branch: Option[Branch] = None,
-      actor: Option[String] = None,
-      errorCode: Option[String] = None,
-      details: Map[String, String] = Map.empty
-  )(implicit correlationId: CorrelationId): Unit =
-    AppEventLogger.error(
-      logger,
-      LogEvent(
-        event = event,
-        result = result,
-        correlationId = correlationId,
-        moduleId = moduleId,
-        mrId = mrId.map(_.value),
-        branch = branch.map(_.value),
-        actor = actor,
-        errorCode = errorCode,
-        details = details
-      ),
-      throwable
+  private def abort(result: ParsedMergeEvent)(using CorrelationId): Unit =
+    logger.warnC(
+      s"merge skipped mr=${result.mrId.value} action=${result.action} ${result.sourceBranch.value}->${result.targetBranch.value} labels=${result.labels.mkString(",")} reason=unsupported_event_shape"
     )
 }

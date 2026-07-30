@@ -11,10 +11,9 @@ import scala.util.Success
 import database.repo.schedule.ModuleTeachingUnitRepository
 import database.view.ModuleViewRepository
 import git.subscriber.ModuleSubscribers.Handle
-import logging.AppEventLogger
+import logging.errorC
+import logging.infoC
 import logging.CorrelationId
-import logging.LogEvent
-import logging.LogResult
 import org.apache.pekko.actor.Actor
 import parsing.types.Module
 import play.api.Logging
@@ -34,34 +33,13 @@ final class ModuleDatabaseActor @Inject() (
 
   override def receive = {
     case Handle(modules, correlationId) if modules.nonEmpty =>
-      val event   = "module.subscriber.database_sync"
-      val entries = modules.map(m => (m._1, m._2.lastModified))
-      infoEvent(
-        event = event,
-        result = LogResult.Started,
-        correlationId = correlationId,
-        details = Map("moduleCount" -> entries.size.toString)
-      )
+      given CorrelationId = correlationId
+      val entries         = modules.map(m => (m._1, m._2.lastModified))
       update(entries).onComplete {
         case Success(_) =>
-          infoEvent(
-            event = event,
-            result = LogResult.Succeeded,
-            correlationId = correlationId,
-            details = Map("moduleCount" -> entries.size.toString)
-          )
+          logger.infoC(s"module database sync ok count=${entries.size}")
         case Failure(e) =>
-          AppEventLogger.error(
-            logger,
-            LogEvent(
-              event = event,
-              result = LogResult.Failed,
-              correlationId = correlationId,
-              errorCode = Some("module_database_sync_failed"),
-              details = Map("moduleCount" -> entries.size.toString)
-            ),
-            e
-          )
+          logger.errorC(s"module database sync failed count=${entries.size}", e)
       }
   }
 
@@ -86,20 +64,4 @@ final class ModuleDatabaseActor @Inject() (
         (m.metadata.id, pos.toList)
       })
     } yield ()
-
-  private def infoEvent(
-      event: String,
-      result: LogResult,
-      correlationId: CorrelationId,
-      details: Map[String, String] = Map.empty
-  ): Unit =
-    AppEventLogger.info(
-      logger,
-      LogEvent(
-        event = event,
-        result = result,
-        correlationId = correlationId,
-        details = details
-      )
-    )
 }

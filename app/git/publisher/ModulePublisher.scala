@@ -10,15 +10,12 @@ import git.publisher.ModulePublisher.NotifySubscribers
 import git.subscriber.ModuleSubscribers
 import git.GitFile
 import git.GitFileContent
-import logging.AppEventLogger
+import logging.errorC
+import logging.infoC
 import logging.CorrelationId
-import logging.LogEvent
-import logging.LogResult
 import org.apache.pekko.actor.Actor
 import play.api.Logging
-import service.*
 import service.pipeline.MetadataPipeline
-import service.pipeline.PipelineError
 import service.pipeline.Print
 
 final class ModulePublisher @Inject() (
@@ -30,14 +27,8 @@ final class ModulePublisher @Inject() (
 
   override def receive = {
     case NotifySubscribers(changes, correlationId) =>
-      val event  = "module.publisher.notify_subscribers"
-      val prints = changes.map(a => Print(a._2.value))
-      infoEvent(
-        event = event,
-        result = LogResult.Started,
-        correlationId = correlationId,
-        details = Map("changeCount" -> changes.size.toString)
-      )
+      given CorrelationId = correlationId
+      val prints          = changes.map(a => Print(a._2.value))
       pipeline.parseValidateMany(prints).onComplete {
         case Success(validates) =>
           val modules = validates.map(_.map {
@@ -49,59 +40,16 @@ final class ModulePublisher @Inject() (
           modules match {
             case Right(modules) =>
               subscribers.handle(modules, correlationId)
-              infoEvent(
-                event = event,
-                result = LogResult.Succeeded,
-                correlationId = correlationId,
-                details = Map("moduleCount" -> modules.size.toString)
-              )
+              logger.infoC(s"module publisher ok count=${modules.size}")
             case Left(errs) =>
-              logPipelineErrors(event, correlationId, errs)
+              logger.errorC(
+                s"module publisher validation failed count=${errs.size} messages=${errs.map(_.getMessage).mkString(" | ")}"
+              )
           }
         case Failure(t) =>
-          logFutureFailure(event, correlationId, t)
+          logger.errorC("module publisher failed", t)
       }
   }
-
-  private def logPipelineErrors(event: String, correlationId: CorrelationId, errs: Seq[PipelineError]): Unit =
-    AppEventLogger.error(
-      logger,
-      LogEvent(
-        event = event,
-        result = LogResult.Failed,
-        correlationId = correlationId,
-        errorCode = Some("module_pipeline_validation_failed"),
-        details = Map("errorCount" -> errs.size.toString, "messages" -> errs.map(_.getMessage).mkString(" | "))
-      )
-    )
-
-  private def logFutureFailure(event: String, correlationId: CorrelationId, t: Throwable): Unit =
-    AppEventLogger.error(
-      logger,
-      LogEvent(
-        event = event,
-        result = LogResult.Failed,
-        correlationId = correlationId,
-        errorCode = Some("module_publisher_failed")
-      ),
-      t
-    )
-
-  private def infoEvent(
-      event: String,
-      result: LogResult,
-      correlationId: CorrelationId,
-      details: Map[String, String] = Map.empty
-  ): Unit =
-    AppEventLogger.info(
-      logger,
-      LogEvent(
-        event = event,
-        result = result,
-        correlationId = correlationId,
-        details = details
-      )
-    )
 }
 
 object ModulePublisher {
