@@ -10,41 +10,42 @@ import play.api.Logging
  *  This feature is currently experimental. Feedback is expected for further development.
  */
 final class ExamLoadCSVPrinter(
-    modules: Vector[MandatoryModule],
+    modules: Vector[ExamLoadModule],
     childrenById: Map[UUID, ModuleProtocol],
-    assessmentMethods: Map[UUID, Seq[AssessmentMethod]]
+    assessmentMethods: Map[UUID, Seq[AssessmentMethod]],
+    electiveGroups: Vector[ElectiveGroup]
 ) extends Logging {
 
   private val writtenExamAssessmentMethodIds =
     Set("e-exam", "written-exam", "written-exam-answer-choice-method")
 
+  private val header = List(
+    "Semester",
+    "Modul",
+    "Modulnummer",
+    "Teilmodule",
+    "Modulart",
+    "ECTS Teilmodul",
+    "ECTS Gesamt",
+    "Anwesenheitspflicht ja / nein",
+    "Anwesenheitspflicht wenn ja, Mindestpräsenzzeit",
+    "Anwesenheitspflicht wenn ja, Begründung",
+    "Prüfungsvorleistung ja / nein",
+    "Prüfungsvorleistung wenn ja, welche(s) (Teil)Modul(e)",
+    "Prüfungsvorleistung wenn ja, Begründung",
+    "Prüfungsformen / Gewichtung / Benotung",
+    "Prüfungsleistungen pro (Teil)Modul",
+  )
+
   private def escapeCell(value: String) =
     if value.exists(c => c == ';' || c == '"' || c == '\n' || c == '\r') then s""""${value.replace("\"", "\"\"")}""""
     else value
 
-  private def printHeader(sb: StringBuilder) = {
-    val header = List(
-      "Semester",
-      "Modul",
-      "Modulnummer",
-      "Teilmodule",
-      "Modulart",
-      "ECTS Teilmodul",
-      "ECTS Gesamt",
-      "Anwesenheitspflicht ja / nein",
-      "Anwesenheitspflicht wenn ja, Mindestpräsenzzeit",
-      "Anwesenheitspflicht wenn ja, Begründung",
-      "Prüfungsvorleistung ja / nein",
-      "Prüfungsvorleistung wenn ja, welche(s) (Teil)Modul(e)",
-      "Prüfungsvorleistung wenn ja, Begründung",
-      "Prüfungsformen / Gewichtung / Benotung",
-      "Prüfungsleistungen pro (Teil)Modul",
-    )
+  private def printHeader(sb: StringBuilder) =
     sb.append(header.mkString(";"))
-  }
 
-  private def createRows(module: MandatoryModule): List[Row] = {
-    def moduleTypeLabel(p: MetadataProtocol) = if p.isGeneric then "WPF" else "PF"
+  private def createRows(module: ExamLoadModule, isElective: Boolean): List[Row] = {
+    def moduleTypeLabel(p: MetadataProtocol) = if isElective || p.isGeneric then "WPF" else "PF"
 
     def ectsLabel(value: Double) =
       if value.isWhole then value.toInt.toString
@@ -121,14 +122,26 @@ final class ExamLoadCSVPrinter(
     }
   }
 
-  private def printModule(sb: StringBuilder, module: MandatoryModule): Unit =
-    for (row <- createRows(module)) do sb.append(s"\n${row.toList.map(escapeCell).mkString(";")}")
+  private def printRows(sb: StringBuilder, rows: List[Row]): Unit =
+    for (row <- rows) do sb.append(s"\n${row.toList.map(escapeCell).mkString(";")}")
+
+  private def printModule(sb: StringBuilder, module: ExamLoadModule, isElective: Boolean = false): Unit =
+    printRows(sb, createRows(module, isElective))
+
+  private def printGenericDelimiter(sb: StringBuilder, title: String): Unit =
+    sb.append(s"\n${List.fill(header.size)("k. A.").updated(1, title).map(escapeCell).mkString(";")}")
 
   def print(): String = {
     val sb = new StringBuilder()
     printHeader(sb)
     for (module <- modules) {
       printModule(sb, module)
+    }
+    for (group <- electiveGroups) {
+      printGenericDelimiter(sb, group.genericTitle)
+      for (module <- group.modules) {
+        printModule(sb, module, isElective = true)
+      }
     }
     sb.toString()
   }
