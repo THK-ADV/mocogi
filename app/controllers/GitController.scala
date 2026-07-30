@@ -1,6 +1,5 @@
 package controllers
 
-import java.time.LocalDateTime
 import javax.inject.Inject
 import javax.inject.Named
 import javax.inject.Singleton
@@ -22,10 +21,9 @@ import git.publisher.ModulePublisher
 import git.GitConfig
 import git.GitFile
 import git.GitFileStatus
-import logging.AppEventLogger
+import logging.errorC
+import logging.infoC
 import logging.CorrelationId
-import logging.LogEvent
-import logging.LogResult
 import org.apache.pekko.actor.ActorRef
 import permission.AdminCheck
 import play.api.cache.Cached
@@ -67,16 +65,7 @@ final class GitController @Inject() (
 
   def updateCoreFiles() =
     auth.andThen(resolveUser).andThen(isAdmin).async { _ =>
-      val correlationId = CorrelationId.random()
-      val event         = "git.admin.sync_core_files"
-      AppEventLogger.info(
-        logger,
-        LogEvent(
-          event = event,
-          result = LogResult.Started,
-          correlationId = correlationId
-        )
-      )
+      given CorrelationId = CorrelationId.random()
       (for {
         paths    <- gitRepositoryApiService.listCoreFiles(gitConfig.mainBranch)
         contents <- Future.sequence(
@@ -87,48 +76,19 @@ final class GitController @Inject() (
           )
         )
       } yield {
-        coreDataPublisher ! CoreDataPublisher.Handle(contents, correlationId)
-        AppEventLogger.info(
-          logger,
-          LogEvent(
-            event = event,
-            result = LogResult.Succeeded,
-            correlationId = correlationId,
-            details = Map(
-              "pathCount"    -> paths.size.toString,
-              "contentCount" -> contents.size.toString
-            )
-          )
-        )
+        coreDataPublisher ! CoreDataPublisher.Handle(contents, summon[CorrelationId])
+        logger.infoC(s"admin sync core files ok paths=${paths.size} contents=${contents.size}")
         NoContent
       }).recoverWith {
         case NonFatal(e) =>
-          AppEventLogger.error(
-            logger,
-            LogEvent(
-              event = event,
-              result = LogResult.Failed,
-              correlationId = correlationId,
-              errorCode = Some("git_admin_sync_core_failed")
-            ),
-            e
-          )
+          logger.errorC("admin sync core files failed", e)
           Future.failed(e)
       }
     }
 
   def updateModuleFiles() =
     auth.andThen(resolveUser).andThen(isAdmin).async { _ =>
-      val correlationId = CorrelationId.random()
-      val event         = "git.admin.sync_module_files"
-      AppEventLogger.info(
-        logger,
-        LogEvent(
-          event = event,
-          result = LogResult.Started,
-          correlationId = correlationId
-        )
-      )
+      given CorrelationId = CorrelationId.random()
       (for {
         paths   <- gitRepositoryApiService.listModuleFiles(gitConfig.mainBranch)
         modules <- Future.sequence(
@@ -158,32 +118,12 @@ final class GitController @Inject() (
           }.toList
         )
       } yield {
-        modulePublisher ! ModulePublisher.NotifySubscribers(modules, correlationId)
-        AppEventLogger.info(
-          logger,
-          LogEvent(
-            event = event,
-            result = LogResult.Succeeded,
-            correlationId = correlationId,
-            details = Map(
-              "pathCount"   -> paths.size.toString,
-              "moduleCount" -> modules.size.toString
-            )
-          )
-        )
+        modulePublisher ! ModulePublisher.NotifySubscribers(modules, summon[CorrelationId])
+        logger.infoC(s"admin sync module files ok paths=${paths.size} modules=${modules.size}")
         NoContent
       }).recoverWith {
         case NonFatal(e) =>
-          AppEventLogger.error(
-            logger,
-            LogEvent(
-              event = event,
-              result = LogResult.Failed,
-              correlationId = correlationId,
-              errorCode = Some("git_admin_sync_modules_failed")
-            ),
-            e
-          )
+          logger.errorC("admin sync module files failed", e)
           Future.failed(e)
       }
     }

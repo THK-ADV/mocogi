@@ -13,10 +13,9 @@ import scala.util.Try
 
 import _root_.webhook.HandleEvent
 import controllers.GitWebhookController.GitlabTokenHeader
-import logging.AppEventLogger
+import logging.infoC
+import logging.warnC
 import logging.CorrelationId
-import logging.LogEvent
-import logging.LogResult
 import org.apache.pekko.actor.ActorRef
 import play.api.libs.json.*
 import play.api.mvc.*
@@ -42,50 +41,27 @@ class GitWebhookController @Inject() (
     with Logging {
   private def token: UUID = appSettings.git.webhookToken
 
-  private def dispatchedEventName = "git.webhook.dispatched"
-
   def onPushMain() =
     isAuthenticated(parse.json) { r =>
+      given CorrelationId = r.correlationId
       mainPushHandler ! HandleEvent(r.body, r.correlationId)
-      AppEventLogger.info(
-        logger,
-        LogEvent(
-          event = dispatchedEventName,
-          result = LogResult.Succeeded,
-          correlationId = r.correlationId,
-          details = Map("webhookType" -> "push_main")
-        )
-      )
+      logger.infoC("webhook dispatched type=push_main")
       Future.successful(NoContent)
     }
 
   def onPushPreview() =
     isAuthenticated(parse.json) { r =>
+      given CorrelationId = r.correlationId
       previewPushHandler ! HandleEvent(r.body, r.correlationId)
-      AppEventLogger.info(
-        logger,
-        LogEvent(
-          event = dispatchedEventName,
-          result = LogResult.Succeeded,
-          correlationId = r.correlationId,
-          details = Map("webhookType" -> "push_preview")
-        )
-      )
+      logger.infoC("webhook dispatched type=push_preview")
       Future.successful(NoContent)
     }
 
   def onMerge() =
     isAuthenticated(parse.json) { r =>
+      given CorrelationId = r.correlationId
       mergeHandler ! HandleEvent(r.body, r.correlationId)
-      AppEventLogger.info(
-        logger,
-        LogEvent(
-          event = dispatchedEventName,
-          result = LogResult.Succeeded,
-          correlationId = r.correlationId,
-          details = Map("webhookType" -> "merge")
-        )
-      )
+      logger.infoC("webhook dispatched type=merge")
       Future.successful(NoContent)
     }
 
@@ -99,40 +75,16 @@ class GitWebhookController @Inject() (
       }
 
     Action.async(parser) { r =>
-      val correlationId = CorrelationId.random()
-      AppEventLogger.info(
-        logger,
-        LogEvent(
-          event = "git.webhook.received",
-          result = LogResult.Started,
-          correlationId = correlationId
-        )
-      )
+      given CorrelationId = CorrelationId.random()
       parseGitToken(r) match {
         case Success(t) =>
-          if token == t then action(GitWebhookController.CorrelatedRequest(correlationId, r))
+          if token == t then action(GitWebhookController.CorrelatedRequest(summon[CorrelationId], r))
           else {
-            AppEventLogger.warn(
-              logger,
-              LogEvent(
-                event = "git.webhook.auth_failed",
-                result = LogResult.Failed,
-                correlationId = correlationId,
-                errorCode = Some("invalid_webhook_token")
-              )
-            )
+            logger.warnC("webhook auth failed reason=invalid_token")
             Future.successful(Unauthorized(Json.toJson(new Exception(s"invalid $GitlabTokenHeader"))))
           }
         case Failure(e) =>
-          AppEventLogger.warn(
-            logger,
-            LogEvent(
-              event = "git.webhook.auth_failed",
-              result = LogResult.Failed,
-              correlationId = correlationId,
-              errorCode = Some("missing_or_invalid_webhook_header")
-            )
-          )
+          logger.warnC("webhook auth failed reason=missing_or_invalid_header")
           Future.successful(BadRequest(Json.toJson(e)))
       }
     }

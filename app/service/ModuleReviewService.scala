@@ -16,10 +16,9 @@ import database.repo.ModuleReviewRepository
 import git.api.GitMergeRequestService
 import git.MergeRequestId
 import git.MergeRequestStatus
-import logging.AppEventLogger
+import logging.errorC
+import logging.infoC
 import logging.CorrelationId
-import logging.LogEvent
-import logging.LogResult
 import models.*
 import models.core.IDLabel
 import models.core.Identity
@@ -71,9 +70,8 @@ final class ModuleReviewService @Inject() (
    * @return
    */
   def create(moduleId: UUID, author: Identity.Person): Future[Unit] = {
-    val event         = "module.review.created"
-    val correlationId = CorrelationId.random()
-    val draft         = draftRepo
+    given CorrelationId = CorrelationId.random()
+    val draft           = draftRepo
       .getByModule(moduleId)
       .continueIf(d => canRequestReview(d.state()), "can't request a review")
     val action = for {
@@ -83,26 +81,14 @@ final class ModuleReviewService @Inject() (
         else createApproveReview(draft, author)
       _ <- draftRepo.updateMergeRequest(draft.module, Some(mergeRequest))
     } yield {
-      val approvalLabel = if draft.keysToBeReviewed.isEmpty then "auto_approved" else "review_required"
-      infoEvent(
-        event = event,
-        correlationId = correlationId,
-        moduleId = Some(moduleId),
-        mrId = Some(mergeRequest._1),
-        actor = Some(author.id),
-        details = Map("approvalMode" -> approvalLabel)
+      val approvalMode = if draft.keysToBeReviewed.isEmpty then "auto_approved" else "review_required"
+      logger.infoC(
+        s"module review created module=$moduleId mr=${mergeRequest._1.value} actor=${author.id} mode=$approvalMode"
       )
     }
     action.andThen {
       case Failure(e) =>
-        errorEvent(
-          event = event,
-          correlationId = correlationId,
-          throwable = e,
-          moduleId = Some(moduleId),
-          actor = Some(author.id),
-          errorCode = Some("module_review_create_failed")
-        )
+        logger.errorC(s"module review create failed module=$moduleId actor=${author.id}", e)
       case Success(_) => ()
     }
   }
@@ -118,33 +104,20 @@ final class ModuleReviewService @Inject() (
    * @return
    */
   def fastForward(moduleId: UUID, author: Identity.Person): Future[Unit] = {
-    val event         = "module.review.fast_forwarded"
-    val correlationId = CorrelationId.random()
-    val draft         = draftRepo
+    given CorrelationId = CorrelationId.random()
+    val draft           = draftRepo
       .getByModule(moduleId)
       .continueIf(d => canRequestReview(d.state()), "can't request a review")
     val action = for {
       draft        <- draft
       mergeRequest <- createFastForwardReview(draft, author)
       _            <- draftRepo.updateMergeRequest(draft.module, Some(mergeRequest))
-    } yield infoEvent(
-      event = event,
-      correlationId = correlationId,
-      moduleId = Some(moduleId),
-      mrId = Some(mergeRequest._1),
-      actor = Some(author.id),
-      details = Map("approvalMode" -> "fast_forward")
+    } yield logger.infoC(
+      s"module review fast forwarded module=$moduleId mr=${mergeRequest._1.value} actor=${author.id}"
     )
     action.andThen {
       case Failure(e) =>
-        errorEvent(
-          event = event,
-          correlationId = correlationId,
-          throwable = e,
-          moduleId = Some(moduleId),
-          actor = Some(author.id),
-          errorCode = Some("module_review_fast_forward_failed")
-        )
+        logger.errorC(s"module review fast forward failed module=$moduleId actor=${author.id}", e)
       case Success(_) => ()
     }
   }
@@ -157,20 +130,15 @@ final class ModuleReviewService @Inject() (
    * @return
    */
   def delete(moduleId: UUID): Future[Unit] = {
-    val event         = "module.review.deleted"
-    val correlationId = CorrelationId.random()
+    given CorrelationId = CorrelationId.random()
 
     def go(id: Option[MergeRequestId]) =
       for {
         _ <- id.fold(Future.unit)(api.delete)
         _ <- reviewRepo.delete(moduleId)
         _ <- draftRepo.updateMergeRequest(moduleId, None)
-      } yield infoEvent(
-        event = event,
-        correlationId = correlationId,
-        moduleId = Some(moduleId),
-        mrId = id,
-        details = Map("mergeRequestPresent" -> id.nonEmpty.toString)
+      } yield logger.infoC(
+        s"module review deleted module=$moduleId mr=${id.map(_.value).getOrElse("none")}"
       )
 
     draftRepo
@@ -181,13 +149,7 @@ final class ModuleReviewService @Inject() (
       }
       .andThen {
         case Failure(e) =>
-          errorEvent(
-            event = event,
-            correlationId = correlationId,
-            throwable = e,
-            moduleId = Some(moduleId),
-            errorCode = Some("module_review_delete_failed")
-          )
+          logger.errorC(s"module review delete failed module=$moduleId", e)
         case Success(_) => ()
       }
   }
@@ -213,9 +175,8 @@ final class ModuleReviewService @Inject() (
    * @return
    */
   def update(ids: List[UUID], reviewer: Identity.Person, approve: Boolean, comment: Option[String]): Future[Unit] = {
-    val event         = "module.review.updated"
-    val correlationId = CorrelationId.random()
-    val newStatus     = if (approve) Approved else Rejected
+    given CorrelationId = CorrelationId.random()
+    val newStatus       = if (approve) Approved else Rejected
 
     def commentBody(summaryStatus: ModuleReviewSummaryStatus) = {
       val body =
@@ -261,26 +222,14 @@ final class ModuleReviewService @Inject() (
       status <- moduleReviewSummaryStatus(draft.module)
       _      <- api.comment(mergeRequestId, commentBody(status.get))
       _      <- if approve then handleApprove(draft.module, mergeRequestId) else handleReject(draft.module, mergeRequestId)
-    } yield infoEvent(
-      event = event,
-      correlationId = correlationId,
-      moduleId = Some(moduleId),
-      mrId = Some(mergeRequestId),
-      actor = Some(reviewer.id),
-      details = Map(
-        "approved"    -> approve.toString,
-        "reviewCount" -> ids.size.toString
-      )
+    } yield logger.infoC(
+      s"module review updated module=$moduleId mr=${mergeRequestId.value} actor=${reviewer.id} approved=$approve reviews=${ids.size}"
     )
     action.andThen {
       case Failure(e) =>
-        errorEvent(
-          event = event,
-          correlationId = correlationId,
-          throwable = e,
-          actor = Some(reviewer.id),
-          errorCode = Some("module_review_update_failed"),
-          details = Map("approved" -> approve.toString, "reviewCount" -> ids.size.toString)
+        logger.errorC(
+          s"module review update failed actor=${reviewer.id} approved=$approve reviews=${ids.size}",
+          e
         )
       case Success(_) => ()
     }
@@ -490,50 +439,4 @@ final class ModuleReviewService @Inject() (
 
   private def canPerformReview(draft: ModuleDraft): Boolean =
     draft.mergeRequestId.nonEmpty && draft.state() == ModuleDraftState.WaitingForReview
-
-  private def infoEvent(
-      event: String,
-      correlationId: CorrelationId,
-      moduleId: Option[UUID] = None,
-      mrId: Option[MergeRequestId] = None,
-      actor: Option[String] = None,
-      details: Map[String, String] = Map.empty
-  ): Unit =
-    AppEventLogger.info(
-      logger,
-      LogEvent(
-        event = event,
-        result = LogResult.Succeeded,
-        correlationId = correlationId,
-        moduleId = moduleId,
-        mrId = mrId.map(_.value),
-        actor = actor,
-        details = details
-      )
-    )
-
-  private def errorEvent(
-      event: String,
-      correlationId: CorrelationId,
-      throwable: Throwable,
-      moduleId: Option[UUID] = None,
-      mrId: Option[MergeRequestId] = None,
-      actor: Option[String] = None,
-      errorCode: Option[String] = None,
-      details: Map[String, String] = Map.empty
-  ): Unit =
-    AppEventLogger.error(
-      logger,
-      LogEvent(
-        event = event,
-        result = LogResult.Failed,
-        correlationId = correlationId,
-        moduleId = moduleId,
-        mrId = mrId.map(_.value),
-        actor = actor,
-        errorCode = errorCode,
-        details = details
-      ),
-      throwable
-    )
 }
