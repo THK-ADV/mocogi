@@ -21,12 +21,12 @@ final class ModuleCreationService @Inject() (
     private implicit val ctx: ExecutionContext,
 ) {
   def createOrUpdateWithPermissions(module: CreatedModule): Future[Unit] =
-    repo.insertOrUpdate(module).flatMap(_ => updateModuleManagement(module.module, module.moduleManagement))
+    repo.insertOrUpdate(module).flatMap(_ => syncInheritedPermissions(module))
 
-  private def updateModuleManagement(module: UUID, moduleManagement: List[String]): Future[Unit] =
+  def syncInheritedPermissions(module: CreatedModule): Future[Unit] =
     for
-      campusIds <- identityRepo.getCampusIds(moduleManagement)
-      _         <- permissionService.replace(module, campusIds, ModuleUpdatePermissionType.Inherited)
+      campusIds <- identityRepo.getCampusIds(module.moduleManagement)
+      _         <- permissionService.replace(module.module, campusIds, ModuleUpdatePermissionType.Inherited)
     yield ()
 
   def createManyWithPermissions(modules: List[CreatedModule]): Future[Unit] =

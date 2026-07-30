@@ -338,14 +338,12 @@ final class MergeEventHandler @Inject() (
       details = Map("deletedReviews" -> res1.toString, "deletedDrafts" -> res2.toString)
     )(id)
 
-  // TODO first, the name of the method is irritating. Second, it does not consider updating the module
-  //  (e.g., updating permissions based on module management)
   private def handleModuleCreated(id: CorrelationId, moduleId: UUID, sha: String): Unit = {
     val f = for {
       (module, diff) <- gitCommitService.getLatestModuleFromCommit(sha, gitConfig.draftBranch, moduleId).collect {
         case Some((content, diff)) => (parseCreatedModuleInformation(content, moduleId), diff)
       }
-      _ <- createNewModuleWithPermissionsIfNeeded(id, module, diff)
+      _ <- syncModuleFromMerge(id, module, diff)
       _ <- deleteModuleDraft(id, moduleId)
     } yield ()
     f.onComplete {
@@ -363,25 +361,26 @@ final class MergeEventHandler @Inject() (
     }
   }
 
-  private def createNewModuleWithPermissionsIfNeeded(id: CorrelationId, module: CreatedModule, diff: CommitDiff) =
+  // Always sync inherited permissions from git. Upsert created-module only if not yet on main.
+  private def syncModuleFromMerge(id: CorrelationId, module: CreatedModule, diff: CommitDiff) =
     for {
       exists <- moduleRepository.exists(module.module)
-      res    <-
-        if exists then Future.unit // it's not a new module if it already exists
-        else
-          moduleCreationService.createOrUpdateWithPermissions(module).map { _ =>
-            val prefixStr = if diff.isNewFile then "created new module" else "updated module"
-            infoEvent(
-              event = "module.sync_from_merge",
-              result = LogResult.Succeeded,
-              moduleId = Some(module.module),
-              details = Map(
-                "action"           -> prefixStr.replace(" ", "_"),
-                "permissionsCount" -> module.moduleManagement.size.toString
-              )
-            )(id)
-          }
-    } yield res
+      _      <-
+        if exists then moduleCreationService.syncInheritedPermissions(module)
+        else moduleCreationService.createOrUpdateWithPermissions(module)
+    } yield infoEvent(
+      event = "module.sync_from_merge",
+      result = LogResult.Succeeded,
+      moduleId = Some(module.module),
+      details = Map(
+        "action" -> {
+          if exists then "synced_inherited_permissions"
+          else if diff.isNewFile then "created_new_module"
+          else "updated_module"
+        },
+        "permissionsCount" -> module.moduleManagement.size.toString
+      )
+    )(id)
 
   private def parseCreatedModuleInformation(content: GitFileContent, module: => UUID) =
     try RawModuleParser.parseCreatedModuleInformation(content.value)
@@ -395,7 +394,7 @@ final class MergeEventHandler @Inject() (
       downloads <- gitCommitService.getAllModulesFromCommit(sha, gitConfig.draftBranch)
       _         <- Future.sequence(downloads.map { (content, diff) =>
         val module = parseCreatedModuleInformation(content, diff.newPath.moduleId(gitConfig).get)
-        createNewModuleWithPermissionsIfNeeded(id, module, diff)
+        syncModuleFromMerge(id, module, diff)
       })
     yield ()
 
