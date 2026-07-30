@@ -69,22 +69,23 @@ final class ExamLoadCSVPrinterSpec extends AnyWordSpec with Matchers {
       assessmentPrerequisite = assessmentPrerequisite
     )
 
-  private def mandatoryModule(
+  private def examLoadModule(
       moduleId: UUID,
       moduleMetadata: MetadataProtocol = metadata(),
       semesters: List[Int] = List(1)
   ) =
-    MandatoryModule(moduleId, moduleMetadata, semesters)
+    ExamLoadModule(moduleId, moduleMetadata, semesters)
 
   private def childModule(moduleId: UUID, moduleMetadata: MetadataProtocol) =
     moduleId -> ModuleProtocol(Some(moduleId), moduleMetadata, emptyContent, emptyContent)
 
   private def printExamLoad(
-      modules: Vector[MandatoryModule],
+      modules: Vector[ExamLoadModule],
       childrenById: Map[UUID, ModuleProtocol] = Map.empty,
-      assessmentMethods: Map[UUID, Seq[AssessmentMethod]] = Map.empty
+      assessmentMethods: Map[UUID, Seq[AssessmentMethod]] = Map.empty,
+      electiveGroups: Vector[ElectiveGroup] = Vector.empty
   ) =
-    new ExamLoadCSVPrinter(modules, childrenById, assessmentMethods).print()
+    new ExamLoadCSVPrinter(modules, childrenById, assessmentMethods, electiveGroups).print()
 
   private def dataRows(csv: String) =
     csv.linesIterator.drop(1).map(_.split(";", -1).toVector).toVector
@@ -101,7 +102,7 @@ final class ExamLoadCSVPrinterSpec extends AnyWordSpec with Matchers {
       case Some(values) => Map(moduleId -> values)
       case None         => Map.empty[UUID, Seq[AssessmentMethod]]
     }
-    onlyDataRow(printExamLoad(Vector(mandatoryModule(moduleId)), assessmentMethods = methodsByModule)).slice(13, 15)
+    onlyDataRow(printExamLoad(Vector(examLoadModule(moduleId)), assessmentMethods = methodsByModule)).slice(13, 15)
   }
 
   "ExamLoadCSVPrinter" should {
@@ -111,7 +112,7 @@ final class ExamLoadCSVPrinterSpec extends AnyWordSpec with Matchers {
 
     "render an ordinary mandatory module with the default requirement values" in {
       val moduleId = id(1)
-      val module   = mandatoryModule(
+      val module   = examLoadModule(
         moduleId,
         metadata(
           title = "Algorithmen und Programmierung 1",
@@ -141,7 +142,7 @@ final class ExamLoadCSVPrinterSpec extends AnyWordSpec with Matchers {
     }
 
     "render and trim attendance requirements and assessment prerequisites" in {
-      val module = mandatoryModule(
+      val module = examLoadModule(
         id(2),
         metadata(
           title = "Mensch-Computer-Interaktion",
@@ -174,7 +175,7 @@ final class ExamLoadCSVPrinterSpec extends AnyWordSpec with Matchers {
     }
 
     "render generic modules as WPF with multiple semesters and decimal ECTS" in {
-      val module = mandatoryModule(
+      val module = examLoadModule(
         id(3),
         metadata(
           title = "Wahlmodul (Vertiefung)",
@@ -193,7 +194,7 @@ final class ExamLoadCSVPrinterSpec extends AnyWordSpec with Matchers {
     }
 
     "render a module without semesters with an empty semester field" in {
-      val module = mandatoryModule(
+      val module = examLoadModule(
         id(4),
         metadata(title = "Module without semester"),
         Nil
@@ -224,7 +225,7 @@ final class ExamLoadCSVPrinterSpec extends AnyWordSpec with Matchers {
         ects = 2
       )
 
-      val modules  = Vector(mandatoryModule(parentId, parentMetadata, List(4)))
+      val modules  = Vector(examLoadModule(parentId, parentMetadata, List(4)))
       val children = Map(
         childModule(lawId, lawMetadata),
         childModule(societyId, societyMetadata)
@@ -254,7 +255,7 @@ final class ExamLoadCSVPrinterSpec extends AnyWordSpec with Matchers {
     "keep rendering a parent when a referenced child is unavailable" in {
       val parentId = id(60)
       val missing  = id(61)
-      val parent   = mandatoryModule(
+      val parent   = examLoadModule(
         parentId,
         metadata(
           title = "Parent",
@@ -263,6 +264,39 @@ final class ExamLoadCSVPrinterSpec extends AnyWordSpec with Matchers {
       )
 
       onlyDataRow(printExamLoad(Vector(parent))).apply(1) shouldBe "Parent"
+    }
+
+    "append elective groups after mandatory modules with generic title delimiters" in {
+      val mandatory = examLoadModule(id(10), metadata(title = "Pflichtmodul", abbrev = "PF1"))
+      val electiveA = examLoadModule(id(11), metadata(title = "Elective A", abbrev = "EA"), List(3))
+      val electiveB = examLoadModule(id(12), metadata(title = "Elective B", abbrev = "EB"), List(2))
+      val groups    = Vector(
+        ElectiveGroup("Wahlmodul B", Vector(electiveB)),
+        ElectiveGroup("Wahlmodul A", Vector(electiveA)),
+      )
+
+      val rows = dataRows(printExamLoad(Vector(mandatory), electiveGroups = groups))
+
+      rows.map(_(1)) shouldBe Vector("Pflichtmodul", "Wahlmodul B", "Elective B", "Wahlmodul A", "Elective A")
+      rows(1) shouldBe Vector(
+        "k. A.",
+        "Wahlmodul B",
+        "k. A.",
+        "k. A.",
+        "k. A.",
+        "k. A.",
+        "k. A.",
+        "k. A.",
+        "k. A.",
+        "k. A.",
+        "k. A.",
+        "k. A.",
+        "k. A.",
+        "k. A.",
+        "k. A."
+      )
+      rows(2)(4) shouldBe "WPF"
+      rows(4)(4) shouldBe "WPF"
     }
 
     "label every written exam method as Klausurarbeit" in {
@@ -295,7 +329,7 @@ final class ExamLoadCSVPrinterSpec extends AnyWordSpec with Matchers {
 
       assessmentColumns(Some(methods)) shouldBe Vector(
         "Andere schriftliche Prüfung und/oder Klausurarbeit und/oder Mündliche Prüfung",
-        "5",
+        "3",
       )
     }
 
@@ -306,7 +340,7 @@ final class ExamLoadCSVPrinterSpec extends AnyWordSpec with Matchers {
 
     "quote values containing CSV delimiters, quotes, or line breaks" in {
       val moduleId = id(9)
-      val module   = mandatoryModule(
+      val module   = examLoadModule(
         moduleId,
         metadata(
           title = "Policy; Ethics",
