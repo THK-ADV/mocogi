@@ -46,7 +46,18 @@ final class PermissionRepository @Inject() (
 
   private given GetResult[UserInfo] =
     GetResult(r =>
-      UserInfo(r.nextBoolean(), r.nextBoolean(), r.nextBoolean(), r.nextInt(), r.nextInt(), None, false, false, false)
+      UserInfo(
+        r.nextBoolean(),
+        r.nextBoolean(),
+        r.nextBoolean(),
+        r.nextInt(),
+        r.nextInt(),
+        None,
+        false,
+        false,
+        false,
+        false
+      )
     )
 
   // Returns active person for the ID
@@ -190,7 +201,8 @@ final class PermissionRepository @Inject() (
         fastForwardApprovalPOs = fastForwardApprovalPOs,
         hasExtendedModuleEditPermissions = permissions.isAdmin,
         hasSchedulePlanningPrivileges = hasSchedulePlanningPrivileges,
-        hasExamPlanningPrivileges = false
+        hasExamPlanningPrivileges = false,
+        hasSchedulePlanningViewPrivileges = hasModulesToEdit || hasSchedulePlanningPrivileges
       )
     }
   }

@@ -19,6 +19,7 @@ import models.schedule.ScheduleEntryProtocol
 import models.schedule.ScheduleEntrySeriesId
 import models.Semester
 import permission.SchedulePlanningCheck
+import permission.SchedulePlanningViewCheck
 import play.api.libs.json.Json
 import play.api.mvc.*
 import security.ClientErrorResponse
@@ -33,7 +34,8 @@ final class SchedulePlanDraftController @Inject() (
     implicit val ctx: ExecutionContext
 ) extends AbstractController(cc)
     with UserResolveAction
-    with SchedulePlanningCheck {
+    with SchedulePlanningCheck
+    with SchedulePlanningViewCheck {
 
   /**
    * Returns all plan drafts, filtered by semester, kind or active status.
@@ -44,7 +46,7 @@ final class SchedulePlanDraftController @Inject() (
    *   - `activeOnly`: whether to filter by active status only (for example `"true"`)
    */
   def all() =
-    auth.andThen(resolveUser).andThen(hasSchedulePlanningPermission).async { (r: UserRequest[AnyContent]) =>
+    auth.andThen(resolveUser).andThen(canViewPlanDraft).async { (r: UserRequest[AnyContent]) =>
       val result = for {
         semester   <- parseSemester(r.getQueryString("semester"))
         kind       <- parseKind(r.getQueryString("kind"))
@@ -55,7 +57,7 @@ final class SchedulePlanDraftController @Inject() (
     }
 
   def get(id: UUID) =
-    auth.andThen(resolveUser).andThen(hasSchedulePlanningPermission).async { r =>
+    auth.andThen(resolveUser).andThen(canViewPlanDraft).async { r =>
       val result = for {
         kind <- parseKind(r.getQueryString("kind"))
       } yield repo.get(id, kind).map {
@@ -66,7 +68,7 @@ final class SchedulePlanDraftController @Inject() (
     }
 
   def create() =
-    auth(parse.json[PlanDraftProtocol]).andThen(resolveUser).andThen(hasSchedulePlanningPermission).async {
+    auth(parse.json[PlanDraftProtocol]).andThen(resolveUser).andThen(canUpdatePlanDraft).async {
       (r: UserRequest[PlanDraftProtocol]) => repo.create(r.body).map(_ => Created).recover(clientError)
     }
 
@@ -75,7 +77,7 @@ final class SchedulePlanDraftController @Inject() (
    * Associated schedule entry drafts are also deleted.
    */
   def delete(id: UUID) =
-    auth.andThen(resolveUser).andThen(hasSchedulePlanningPermission).async { (_: UserRequest[AnyContent]) =>
+    auth.andThen(resolveUser).andThen(canUpdatePlanDraft).async { (_: UserRequest[AnyContent]) =>
       repo.deleteActive(id).map(if _ then NoContent else NotFound).recover(clientError)
     }
 
@@ -86,7 +88,7 @@ final class SchedulePlanDraftController @Inject() (
    * Accepts the same `semester` or `from` and `to` query parameters as `ScheduleEntryController.all`.
    */
   def scheduleEntriesDrafts(planDraftId: UUID) =
-    auth.andThen(resolveUser).andThen(hasSchedulePlanningPermission).async { (r: UserRequest[AnyContent]) =>
+    auth.andThen(resolveUser).andThen(canViewPlanDraft).async { (r: UserRequest[AnyContent]) =>
       ScheduleDateRange.resolve(r) match {
         case Left(result)      => Future.successful(result)
         case Right((from, to)) => repo.scheduleEntriesDrafts(planDraftId, from, to).map(Ok(_)).recover(clientError)
@@ -100,7 +102,7 @@ final class SchedulePlanDraftController @Inject() (
   def createScheduleEntriesDrafts(planDraftId: UUID) =
     auth(parse.json[List[ScheduleEntryProtocol]])
       .andThen(resolveUser)
-      .andThen(hasSchedulePlanningPermission)
+      .andThen(canUpdatePlanDraft)
       .async { (r: UserRequest[List[ScheduleEntryProtocol]]) =>
         repo.createScheduleEntriesDrafts(planDraftId, r.body).map(Created(_)).recover(clientError)
       }
@@ -110,14 +112,14 @@ final class SchedulePlanDraftController @Inject() (
    * Throws an exception if the plan draft id is not an active schedule draft.
    */
   def updateScheduleEntryDraft(planDraftId: UUID, entryId: UUID) =
-    auth(parse.json[ScheduleEntryProtocol]).andThen(resolveUser).andThen(hasSchedulePlanningPermission).async {
+    auth(parse.json[ScheduleEntryProtocol]).andThen(resolveUser).andThen(canUpdatePlanDraft).async {
       (r: UserRequest[ScheduleEntryProtocol]) =>
         repo.updateScheduleEntryDraft(planDraftId, entryId, r.body).map(Ok(_)).recover(clientError)
     }
 
   /** Updates every schedule entry draft in the same series as `entryId`. */
   def updateScheduleEntryDraftSeries(planDraftId: UUID, entryId: UUID) =
-    auth(parse.json[ScheduleEntryProtocol]).andThen(resolveUser).andThen(hasSchedulePlanningPermission).async {
+    auth(parse.json[ScheduleEntryProtocol]).andThen(resolveUser).andThen(canUpdatePlanDraft).async {
       (r: UserRequest[ScheduleEntryProtocol]) =>
         repo.updateScheduleEntryDraftSeries(planDraftId, entryId, r.body).map(Ok(_)).recover(clientError)
     }
@@ -127,7 +129,7 @@ final class SchedulePlanDraftController @Inject() (
    * Throws an exception if the plan draft id is not an active schedule draft.
    */
   def deleteScheduleEntryDraft(planDraftId: UUID, entryId: UUID) =
-    auth.andThen(resolveUser).andThen(hasSchedulePlanningPermission).async { (_: UserRequest[AnyContent]) =>
+    auth.andThen(resolveUser).andThen(canUpdatePlanDraft).async { (_: UserRequest[AnyContent]) =>
       repo
         .deleteScheduleEntryDraft(planDraftId, entryId)
         .map(if _ then NoContent else NotFound)
@@ -139,13 +141,13 @@ final class SchedulePlanDraftController @Inject() (
    * Throws if the plan draft is missing, not a schedule draft, already published, or has no entry drafts.
    */
   def publish(id: UUID) =
-    auth.andThen(resolveUser).andThen(hasSchedulePlanningPermission).async { (_: UserRequest[AnyContent]) =>
+    auth.andThen(resolveUser).andThen(canUpdatePlanDraft).async { (_: UserRequest[AnyContent]) =>
       repo.publish(id).map(_ => Created).recover(clientError)
     }
 
   /** Checks whether a schedule entry draft series exists for `seriesId` and returns the series data. */
   def getSeriesOccurrences(planDraftId: UUID, seriesId: UUID) =
-    auth.andThen(resolveUser).andThen(hasSchedulePlanningPermission).async { (_: UserRequest[AnyContent]) =>
+    auth.andThen(resolveUser).andThen(canUpdatePlanDraft).async { (_: UserRequest[AnyContent]) =>
       repo
         .hasSeries(planDraftId, ScheduleEntrySeriesId(seriesId))
         .map(res => Ok(Json.toJson(res)))
