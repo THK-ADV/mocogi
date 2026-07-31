@@ -12,7 +12,7 @@ import play.api.mvc.Results.Forbidden
 trait SchedulePlanningCheck {
   protected implicit def ctx: ExecutionContext
 
-  def hasSchedulePlanningPermission =
+  def canUpdatePlanDraft =
     new ActionFilter[UserRequest] {
       protected override def filter[A](request: UserRequest[A]): Future[Option[Result]] =
         if request.permissions.hasAnyPermission(PermissionType.SchedulePlanning) then Future.successful(None)

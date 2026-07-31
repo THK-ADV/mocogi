@@ -68,28 +68,28 @@ final class ScheduleEntryController @Inject() (
 
   /** Creates new schedule entries from the JSON payload and returns the created entries as JSON. */
   def create() =
-    auth(parse.json[List[ScheduleEntryProtocol]]).andThen(resolveUser).andThen(hasSchedulePlanningPermission).async {
+    auth(parse.json[List[ScheduleEntryProtocol]]).andThen(resolveUser).andThen(canUpdatePlanDraft).async {
       (r: UserRequest[List[ScheduleEntryProtocol]]) =>
         repo.create(r.body).map(Created(_))
     }
 
   /** Updates an existing schedule entry identified by `id` with the provided JSON payload. */
   def update(id: UUID) =
-    auth(parse.json[ScheduleEntryProtocol]).andThen(resolveUser).andThen(hasSchedulePlanningPermission).async {
+    auth(parse.json[ScheduleEntryProtocol]).andThen(resolveUser).andThen(canUpdatePlanDraft).async {
       (r: UserRequest[ScheduleEntryProtocol]) =>
         repo.update(id, r.body).map(Ok(_)).recover(clientError)
     }
 
   /** Updates every schedule entry in the same series as `id` with the provided JSON payload. */
   def updateSeries(id: UUID) =
-    auth(parse.json[ScheduleEntryProtocol]).andThen(resolveUser).andThen(hasSchedulePlanningPermission).async {
+    auth(parse.json[ScheduleEntryProtocol]).andThen(resolveUser).andThen(canUpdatePlanDraft).async {
       (r: UserRequest[ScheduleEntryProtocol]) =>
         repo.updateSeries(id, r.body).map(Ok(_)).recover(clientError)
     }
 
   /** Checks whether a schedule entry series exists for `seriesID` and returns the series data */
   def getSeriesOccurrences(seriesID: UUID) =
-    auth.andThen(resolveUser).andThen(hasSchedulePlanningPermission).async { _ =>
+    auth.andThen(resolveUser).andThen(canUpdatePlanDraft).async { _ =>
       repo
         .hasSeries(ScheduleEntrySeriesId(seriesID))
         .map(res => Ok(Json.toJson(res)))
@@ -97,7 +97,7 @@ final class ScheduleEntryController @Inject() (
 
   /** Deletes the schedule entry identified by `id`. */
   def delete(id: UUID) =
-    auth.andThen(resolveUser).andThen(hasSchedulePlanningPermission).async { (r: UserRequest[AnyContent]) =>
+    auth.andThen(resolveUser).andThen(canUpdatePlanDraft).async { (r: UserRequest[AnyContent]) =>
       repo.delete(id).map(if _ then NoContent else NotFound)
     }
 

@@ -14,6 +14,7 @@ case class UserInfo(
     hasExtendedModuleEditPermissions: Boolean,
     hasSchedulePlanningPrivileges: Boolean,
     hasExamPlanningPrivileges: Boolean,
+    hasSchedulePlanningViewPrivileges: Boolean
 )
 
 object UserInfo {
