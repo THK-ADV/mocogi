@@ -7,6 +7,9 @@ import models.*
 import models.core.ExamPhases.ExamPhase
 import parsing.types.ModuleContent
 import parsing.types.ModuleParticipants
+import play.api.libs.json.JsNull
+import play.api.libs.json.JsObject
+import play.api.libs.json.JsValue
 import play.api.libs.json.Json
 import play.api.libs.json.Reads
 
@@ -81,7 +84,22 @@ case class MetadataJson(
 )
 
 object ModuleJson {
-  implicit def reads: Reads[ModuleJson] = Json.reads
+  private val defaultReads: Reads[ModuleJson] = Json.reads
+
+  implicit def reads: Reads[ModuleJson] = Reads { json =>
+    defaultReads.reads(ignoreLegacyChildRelation(json))
+  }
+
+  private def ignoreLegacyChildRelation(json: JsValue): JsValue =
+    json match {
+      case module: JsObject =>
+        (module \ "metadata").asOpt[JsObject] match {
+          case Some(metadata) if (metadata \ "moduleRelation" \ "kind").asOpt[String].contains("child") =>
+            module + ("metadata" -> (metadata + ("moduleRelation" -> JsNull)))
+          case _ => module
+        }
+      case other => other
+    }
 }
 
 object MetadataJson extends JsonNullWritable with NelWrites {

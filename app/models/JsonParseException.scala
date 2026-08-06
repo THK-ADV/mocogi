@@ -8,7 +8,7 @@ case class JsonParseException(errors: scala.collection.Seq[(JsPath, scala.collec
       errors
         .map {
           case (path, errors) =>
-            s"$path: ${errors.map(_.message).mkString(", ")}"
+            s"JSON parse error in $path: ${errors.map(_.message).mkString(", ")}"
         }
         .mkString("; ")
     )
