@@ -24,11 +24,6 @@ final class JSONRepository @Inject() (
     db.run(query)
   }
 
-  def getModuleDetails(id: UUID): Future[Option[String]] = {
-    val query = sql"select modules.get_module_details(${id.toString}::uuid)".as[Option[String]].head
-    db.run(query)
-  }
-
   def allModuleCore(includeDraft: Boolean): Future[String] = {
     val query = sql"select modules.module_core($includeDraft::boolean)".as[String].head
     db.run(query)

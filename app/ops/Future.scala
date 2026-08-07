@@ -37,10 +37,10 @@ extension [A](self: Future[Seq[A]]) {
 }
 
 extension [A](self: Future[Option[A]]) {
-  def or(f: Future[Option[A]])(using ExecutionContext): Future[Option[A]] =
+  def or(f: => Future[Option[A]])(using ExecutionContext): Future[Option[A]] =
     self.flatMap(_.fold(f)(a => Future.successful(Some(a))))
 
-  def orElse(f: Future[A])(using ExecutionContext): Future[A] =
+  def orElse(f: => Future[A])(using ExecutionContext): Future[A] =
     self.flatMap(_.fold(f)(a => Future.successful(a)))
 }
 

@@ -1,9 +1,22 @@
 package database
 
-import database.MyPostgresProfile.api.*
+import java.util.UUID
 
-/** Snapshots for [[database.repo.JSONRepository.getModuleDetails]]. */
+import database.MyPostgresProfile.api.*
+import play.api.libs.json.Json
+import service.moduledetails.ModuleDetails
+
+/** Snapshots for [[database.repo.ModuleDetailRepository.getModuleDetails]]. */
 final class GetModuleDetailsSpec extends DatabaseSnapshotSuite {
+
+  private val moduleIds = List(
+    "e37c5af9-6076-4f15-8c8b-d206b7091bc0",
+    "8305a1c4-806b-47b9-a99f-e8cebea5211f",
+    "696858c3-ce09-4dd7-8449-09bcd8a860a2",
+    "6d7e31f7-0b9e-4162-be4e-89a977c0a9ed",
+    "e3dc0278-cf5f-4296-a577-d88ad9c3e999",
+    "05674322-071c-4a3a-8d8b-3c21c6bb640c"
+  ).map(UUID.fromString)
 
   test("module with mandatory and optional POs") {
     assertSnapshot("database/expected/get_module_details/pp.txt") {
@@ -59,5 +72,21 @@ final class GetModuleDetailsSpec extends DatabaseSnapshotSuite {
         .as[Option[String]]
         .head
     ) shouldBe None
+  }
+
+  test("payloads round-trip through the shared ModuleDetails format") {
+    moduleIds.foreach { id =>
+      val json = Json.parse(
+        TestDb.runSync(
+          sql"""SELECT modules.get_module_details(${id.toString}::uuid)::text"""
+            .as[String]
+            .head
+        )
+      )
+      val canonical = json.as[play.api.libs.json.JsObject] +
+        ("workload" -> ((json \ "workload").as[play.api.libs.json.JsObject] - "total" - "selfStudy"))
+
+      withClue(s"module $id\n")(Json.toJson(json.as[ModuleDetails]) shouldEqual canonical)
+    }
   }
 }
