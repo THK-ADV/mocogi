@@ -405,6 +405,15 @@ final class MetadataYamlPrinter(identLevel: Int) {
                   .fromList(e.recommendedSemester)
                   .map(xs => recommendedSemester(xs, deepness))
               )
+              .skipOpt(
+                e.recommendedSemesterPartTime.map(semester =>
+                  whitespace
+                    .repeat(deepness)
+                    .skip(
+                      entry(ModulePOParser.recommendedSemesterPartTimeKey, semester.toString)
+                    )
+                )
+              )
           })
           .reduceLeft(_.skip(_))
       )

@@ -24,6 +24,7 @@ final class StudyPlanSnippet(
     sections: Option[NonEmptyList[StudyPlanSection]],
     semesterSelections: List[ModuleCatalogSemesterSelection],
     genericModuleOccurrences: List[ModuleCatalogGenericModuleOccurrence],
+    alternativeGenericModuleOccurrences: List[ModuleCatalogGenericModuleOccurrence],
     specializations: List[IDLabel],
     isPreview: Boolean,
     messages: MessagesApi,
@@ -59,20 +60,45 @@ final class StudyPlanSnippet(
       warnings: Vector[ModuleCatalogWarning]
   )
 
-  private val selectedSemesters: Map[UUID, Int] =
-    semesterSelections.map(s => s.moduleId -> s.selectedSemester).toMap
+  private case class StudyPlanContext(
+      partTime: Boolean,
+      headlineKey: String,
+      continuationKey: String,
+      sections: Option[NonEmptyList[StudyPlanSection]],
+      selectedSemesters: Map[UUID, Int],
+      occurrencesByModule: Map[UUID, List[ModuleCatalogGenericModuleOccurrence]]
+  )
 
-  private val occurrencesByModule: Map[UUID, List[ModuleCatalogGenericModuleOccurrence]] =
-    genericModuleOccurrences.groupBy(_.moduleId)
+  private val defaultContext = StudyPlanContext(
+    partTime = false,
+    headlineKey = "latex.module_catalog.study_plan.headline",
+    continuationKey = "latex.module_catalog.study_plan.header.continuation",
+    sections = sections,
+    selectedSemesters = semesterSelections.map(s => s.moduleId -> s.selectedSemester).toMap,
+    occurrencesByModule = genericModuleOccurrences.groupBy(_.moduleId)
+  )
 
-  private val studyPlanTables: List[StudyPlanTable] =
+  private val alternativeContext = StudyPlanContext(
+    partTime = true,
+    headlineKey = "latex.module_catalog.study_plan.alternative.headline",
+    continuationKey = "latex.module_catalog.study_plan.alternative.header.continuation",
+    sections = None,
+    selectedSemesters = Map.empty,
+    occurrencesByModule = alternativeGenericModuleOccurrences.groupBy(_.moduleId)
+  )
+
+  private val defaultTables     = tablesOf(defaultContext)
+  private val alternativeTables = tablesOf(alternativeContext)
+
+  val warnings: List[ModuleCatalogWarning] =
+    (defaultTables ++ alternativeTables).flatMap(_.warnings)
+
+  private def tablesOf(context: StudyPlanContext): List[StudyPlanTable] =
     if specializations.nonEmpty then
-      studyPlanTable(None, None) :: specializations
+      studyPlanTable(context, None, None) :: specializations
         .sortBy(_.deLabel)
-        .map(specialization => studyPlanTable(Some(specialization), None))
-    else List(studyPlanTable(None, sections))
-
-  val warnings: List[ModuleCatalogWarning] = studyPlanTables.flatMap(_.warnings)
+        .map(specialization => studyPlanTable(context, Some(specialization), None))
+    else List(studyPlanTable(context, None, context.sections))
 
   private def mandatoryPO(
       pos: List[ModulePOMandatoryProtocol],
@@ -88,37 +114,57 @@ final class StudyPlanSnippet(
   private def warning(code: String, message: String, moduleId: UUID): ModuleCatalogWarning =
     ModuleCatalogWarning(code, message, Some(moduleId))
 
-  private def selectedOrDefaultSemester(candidate: StudyPlanCandidate): (Option[Int], Vector[ModuleCatalogWarning]) = {
-    val recommendedSemesters = candidate.mandatoryPO.recommendedSemester.distinct.sorted
-    selectedSemesters.get(candidate.id) match {
-      case Some(selected) =>
-        Some(selected) -> Vector.empty
-      case None if recommendedSemesters.nonEmpty =>
-        val selected = recommendedSemesters.min
-        val warnings =
-          if recommendedSemesters.size > 1 then
-            Vector(
-              warning(
-                "multiple_recommended_semesters",
-                s"Module has multiple recommended semesters ${recommendedSemesters.mkString(", ")}; using $selected in the study plan.",
-                candidate.id
-              )
+  private def selectedOrDefaultSemester(
+      context: StudyPlanContext,
+      candidate: StudyPlanCandidate
+  ): (Option[Int], Vector[ModuleCatalogWarning]) =
+    if context.partTime then
+      candidate.mandatoryPO.recommendedSemesterPartTime match {
+        case Some(semester) =>
+          Some(semester) -> Vector.empty
+        case None =>
+          None -> Vector(
+            warning(
+              "missing_recommended_semester_part_time",
+              "Mandatory module has no part-time recommended semester and is not assigned in the alternative study plan.",
+              candidate.id
             )
-          else Vector.empty
-        Some(selected) -> warnings
-      case None =>
-        None -> Vector(
-          warning(
-            "missing_recommended_semester",
-            "Mandatory module has no recommended semester and is not assigned in the study plan.",
-            candidate.id
           )
-        )
+      }
+    else {
+      val recommendedSemesters = candidate.mandatoryPO.recommendedSemester.distinct.sorted
+      context.selectedSemesters.get(candidate.id) match {
+        case Some(selected) =>
+          Some(selected) -> Vector.empty
+        case None if recommendedSemesters.nonEmpty =>
+          val selected = recommendedSemesters.min
+          val warnings =
+            if recommendedSemesters.size > 1 then
+              Vector(
+                warning(
+                  "multiple_recommended_semesters",
+                  s"Module has multiple recommended semesters ${recommendedSemesters.mkString(", ")}; using $selected in the study plan.",
+                  candidate.id
+                )
+              )
+            else Vector.empty
+          Some(selected) -> warnings
+        case None =>
+          None -> Vector(
+            warning(
+              "missing_recommended_semester",
+              "Mandatory module has no recommended semester and is not assigned in the study plan.",
+              candidate.id
+            )
+          )
+      }
     }
-  }
 
-  private def genericDefaultWarning(candidate: StudyPlanCandidate): Option[ModuleCatalogWarning] =
-    Option.when(candidate.metadata.isGeneric && !occurrencesByModule.contains(candidate.id))(
+  private def genericDefaultWarning(
+      context: StudyPlanContext,
+      candidate: StudyPlanCandidate
+  ): Option[ModuleCatalogWarning] =
+    Option.when(candidate.metadata.isGeneric && !context.occurrencesByModule.contains(candidate.id))(
       warning(
         "generic_module_default_occurrence",
         "Generic module uses one default study-plan occurrence; configure genericModuleOccurrences to change this.",
@@ -127,6 +173,7 @@ final class StudyPlanSnippet(
     )
 
   private def studyPlanTable(
+      context: StudyPlanContext,
       specialization: Option[IDLabel],
       tableSections: Option[NonEmptyList[StudyPlanSection]]
   ): StudyPlanTable = {
@@ -134,7 +181,7 @@ final class StudyPlanSnippet(
       case (id, m) =>
         mandatoryPO(m.po.mandatory, specialization.map(_.id)).map(StudyPlanCandidate(id, m, _))
     }
-    val (rows, rowWarnings)    = candidates.map(rowsOf).unzip
+    val (rows, rowWarnings)    = candidates.map(rowsOf(context, _)).unzip
     val (unassigned, assigned) = rows.flatten.partitionMap(identity)
 
     StudyPlanTable(
@@ -148,10 +195,11 @@ final class StudyPlanSnippet(
 
   /** One row per planned occurrence of the module, or a single unassigned row if no semester applies. */
   private def rowsOf(
+      context: StudyPlanContext,
       candidate: StudyPlanCandidate
   ): (Vector[Either[UnassignedStudyPlanModule, StudyPlanModule]], Vector[ModuleCatalogWarning]) = {
     val metadata           = candidate.metadata
-    val occurrences        = if metadata.isGeneric then occurrencesByModule.getOrElse(candidate.id, Nil) else Nil
+    val occurrences        = if metadata.isGeneric then context.occurrencesByModule.getOrElse(candidate.id, Nil) else Nil
     def row(semester: Int) =
       Right(StudyPlanModule(candidate.id, metadata.title, hasPrecondition(metadata), metadata.ects, semester))
 
@@ -159,10 +207,11 @@ final class StudyPlanSnippet(
       occurrences.toVector.flatMap(occurrence => Vector.fill(occurrence.count)(row(occurrence.semester))) ->
         Vector.empty
     else {
-      val (semester, warnings) = selectedOrDefaultSemester(candidate)
+      val (semester, warnings) = selectedOrDefaultSemester(context, candidate)
       val unassigned           =
         Left(UnassignedStudyPlanModule(candidate.id, metadata.title, hasPrecondition(metadata), metadata.ects))
-      Vector(semester.fold(unassigned)(row)) -> warnings.appendedAll(genericDefaultWarning(candidate))
+      Vector(semester.fold(unassigned)(row)) ->
+        warnings.appendedAll(semester.flatMap(_ => genericDefaultWarning(context, candidate)))
     }
   }
 
@@ -320,10 +369,10 @@ final class StudyPlanSnippet(
     )
   }
 
-  private def logUnassignedModules(modules: Vector[UnassignedStudyPlanModule]): Unit = {
+  private def logUnassignedModules(modules: Vector[UnassignedStudyPlanModule], partTime: Boolean): Unit = {
     val moduleList = modules.map(module => s"${module.title} (${module.id})").mkString(", ")
     logger.error(
-      s"mandatory modules without recommended semester in PO $currentPO are omitted from study plan: $moduleList"
+      s"mandatory modules without recommended semester${if partTime then " (part-time)" else ""} in PO $currentPO are omitted from study plan: $moduleList"
     )
   }
 
@@ -336,6 +385,7 @@ final class StudyPlanSnippet(
     )
 
   private def printStudyPlan(
+      context: StudyPlanContext,
       table: StudyPlanTable,
       firstSemester: Int,
       lastSemester: Int
@@ -345,7 +395,7 @@ final class StudyPlanSnippet(
     val columns             = studyPlanColumnSpec(firstSemester, lastSemester)
     val columnCount         = semesterRange(firstSemester, lastSemester).size + 3
     val header              = tableHeader(firstSemester, lastSemester)
-    val continuationMessage = messages("latex.module_catalog.study_plan.header.continuation")
+    val continuationMessage = messages(context.continuationKey)
 
     builder.append(
       s"""\\begingroup
@@ -405,29 +455,36 @@ final class StudyPlanSnippet(
     )
   }
 
-  override def print(using lang: Lang, builder: StringBuilder): Unit = {
-    val nonEmptyTables = studyPlanTables.filter(table => table.entries.nonEmpty || table.unassignedEntries.nonEmpty)
+  private def printStudyPlans(
+      context: StudyPlanContext,
+      tables: List[StudyPlanTable]
+  )(using lang: Lang, builder: StringBuilder): Unit = {
+    val nonEmptyTables = tables.filter(table => table.entries.nonEmpty || table.unassignedEntries.nonEmpty)
 
     if nonEmptyTables.nonEmpty then {
-      builder.append(s"\\section{${messages("latex.module_catalog.study_plan.headline")}}\n")
+      builder.append(s"\\section{${messages(context.headlineKey)}}\n")
 
       nonEmptyTables.foreach { table =>
         val firstSemester = table.entries.minByOption(_.recommendedSemester).map(_.recommendedSemester)
         val lastSemester  = table.entries.maxByOption(_.recommendedSemester).map(_.recommendedSemester)
 
         if firstSemester.isDefined && lastSemester.isDefined then {
-          printStudyPlan(table, firstSemester.get, lastSemester.get)
+          printStudyPlan(context, table, firstSemester.get, lastSemester.get)
         } else {
           headline(table).foreach(text => builder.append(s"\\subsection*{${escape(text)}}\n"))
         }
 
         if table.unassignedEntries.nonEmpty then {
           if isPreview then printUnassignedModules(table.unassignedEntries)
-          else logUnassignedModules(table.unassignedEntries)
+          else logUnassignedModules(table.unassignedEntries, context.partTime)
         }
       }
-
-      finish
     }
+  }
+
+  override def print(using lang: Lang, builder: StringBuilder): Unit = {
+    printStudyPlans(defaultContext, defaultTables)
+    printStudyPlans(alternativeContext, alternativeTables)
+    if (defaultTables ++ alternativeTables).exists(t => t.entries.nonEmpty || t.unassignedEntries.nonEmpty) then finish
   }
 }

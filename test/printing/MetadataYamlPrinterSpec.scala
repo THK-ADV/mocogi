@@ -194,9 +194,9 @@ final class MetadataYamlPrinterSpec extends AnyWordSpec with PrinterSpec {
 
     "print po mandatory" in {
       val po1 = NonEmptyList.of(
-        ModulePOMandatoryProtocol("abc", None, List(1)),
-        ModulePOMandatoryProtocol("ghi", Some("foo"), List(1, 2)),
-        ModulePOMandatoryProtocol("def", None, List(2, 1))
+        ModulePOMandatoryProtocol("abc", None, List(1), None),
+        ModulePOMandatoryProtocol("ghi", Some("foo"), List(1, 2), None),
+        ModulePOMandatoryProtocol("def", None, List(2, 1), None)
       )
       val res1 =
         s"""po_mandatory:
@@ -211,6 +211,21 @@ final class MetadataYamlPrinterSpec extends AnyWordSpec with PrinterSpec {
            |      - 1
            |      - 2\n""".stripMargin
       assert(run(printer.poMandatory(po1)) == res1)
+    }
+
+    "print po mandatory with part-time recommended semester" in {
+      val po = NonEmptyList.of(
+        ModulePOMandatoryProtocol("abc", None, List(1), Some(3)),
+        ModulePOMandatoryProtocol("def", None, List(2), None)
+      )
+      val expected =
+        s"""po_mandatory:
+           |  - study_program: study_program.abc
+           |    recommended_semester: 1
+           |    recommended_semester_part_time: 3
+           |  - study_program: study_program.def
+           |    recommended_semester: 2\n""".stripMargin
+      assert(run(printer.poMandatory(po)) == expected)
     }
 
     "print po optional" in {
@@ -319,9 +334,9 @@ final class MetadataYamlPrinterSpec extends AnyWordSpec with PrinterSpec {
         ),
         ModulePOProtocol(
           List(
-            ModulePOMandatoryProtocol("po1", None, List(1, 2)),
-            ModulePOMandatoryProtocol("po2", None, List(1)),
-            ModulePOMandatoryProtocol("po3", None, List(1))
+            ModulePOMandatoryProtocol("po1", None, List(1, 2), None),
+            ModulePOMandatoryProtocol("po2", None, List(1), None),
+            ModulePOMandatoryProtocol("po3", None, List(1), None)
           ),
           List(
             models.ModulePOOptionalProtocol(

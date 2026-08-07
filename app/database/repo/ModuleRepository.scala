@@ -115,12 +115,16 @@ final class ModuleRepository @Inject() (
       modulePOMandatoryTable
         .filter(_.module === id)
         .result
-        .map(_.map(m => ModulePOMandatoryProtocol(m.po, m.specialization, m.recommendedSemester)))
+        .map(
+          _.map(m =>
+            ModulePOMandatoryProtocol(m.po, m.specialization, m.recommendedSemester, m.recommendedSemesterPartTime)
+          )
+        )
         .zip(
           modulePOOptionalTable
             .filter(_.module === id)
             .result
-            .map(_.map(o => ModulePOMandatoryProtocol(o.po, o.specialization, o.recommendedSemester)))
+            .map(_.map(o => ModulePOMandatoryProtocol(o.po, o.specialization, o.recommendedSemester, None)))
         )
     )
 
@@ -282,7 +286,8 @@ final class ModuleRepository @Inject() (
           metadata.id,
           po.po.id,
           po.specialization.map(_.id),
-          po.recommendedSemester
+          po.recommendedSemester,
+          po.recommendedSemesterPartTime
         )
       ),
       metadata.pos.optional.map(po =>
@@ -401,7 +406,8 @@ final class ModuleRepository @Inject() (
                   ModulePOMandatoryProtocol(
                     po.po,
                     po.specialization,
-                    po.recommendedSemester
+                    po.recommendedSemester,
+                    po.recommendedSemesterPartTime
                   )
                 )
                 .toSet

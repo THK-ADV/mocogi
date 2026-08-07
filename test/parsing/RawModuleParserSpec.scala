@@ -58,8 +58,8 @@ final class RawModuleParserSpec extends AnyWordSpec with EitherValues with Optio
       assert(metadata.location == "gm")
       assert(
         metadata.po.mandatory == List(
-          ModulePOMandatoryProtocol("inf1", None, List(3)),
-          ModulePOMandatoryProtocol("inf1", Some("foo1"), List(4))
+          ModulePOMandatoryProtocol("inf1", None, List(3), None),
+          ModulePOMandatoryProtocol("inf1", Some("foo1"), List(4), None)
         )
       )
       assert(
@@ -139,9 +139,9 @@ final class RawModuleParserSpec extends AnyWordSpec with EitherValues with Optio
       assert(metadata.location == "gm")
       assert(
         metadata.po.mandatory == List(
-          ModulePOMandatoryProtocol("inf1", None, List(4)),
-          ModulePOMandatoryProtocol("mi1", None, List(4)),
-          ModulePOMandatoryProtocol("itm1", None, List(4))
+          ModulePOMandatoryProtocol("inf1", None, List(4), None),
+          ModulePOMandatoryProtocol("mi1", None, List(4), None),
+          ModulePOMandatoryProtocol("itm1", None, List(4), None)
         )
       )
       assert(metadata.po.optional.isEmpty)

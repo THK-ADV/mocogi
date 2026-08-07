@@ -23,7 +23,8 @@ case class ParsedPOOptional(
 case class ModulePOMandatory(
     po: PO,
     specialization: Option[Specialization],
-    recommendedSemester: List[Int]
+    recommendedSemester: List[Int],
+    recommendedSemesterPartTime: Option[Int]
 )
 
 object ModulePOMandatory {

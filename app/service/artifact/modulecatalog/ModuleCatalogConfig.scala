@@ -23,7 +23,8 @@ final case class ModuleCatalogExcludedElectiveOption(genericModuleId: UUID, opti
 final case class ModuleCatalogStudyPlanConfig(
     sections: List[StudyPlanSection],
     semesterSelections: List[ModuleCatalogSemesterSelection],
-    genericModuleOccurrences: List[ModuleCatalogGenericModuleOccurrence]
+    genericModuleOccurrences: List[ModuleCatalogGenericModuleOccurrence],
+    alternativeGenericModuleOccurrences: List[ModuleCatalogGenericModuleOccurrence] = Nil
 )
 
 final case class StudyPlanSection(untilSemester: Int, headline: String)
@@ -79,7 +80,12 @@ object ModuleCatalogStudyPlanConfig {
         (JsPath \ "genericModuleOccurrences")
           .readNullable[List[ModuleCatalogGenericModuleOccurrence]]
           .map(_.getOrElse(Nil))
-      )(ModuleCatalogStudyPlanConfig.apply)
+      )
+      .and(
+        (JsPath \ "alternative" \ "genericModuleOccurrences")
+          .readNullable[List[ModuleCatalogGenericModuleOccurrence]]
+          .map(_.getOrElse(Nil))
+      )(ModuleCatalogStudyPlanConfig(_, _, _, _))
 }
 
 object StudyPlanSection {

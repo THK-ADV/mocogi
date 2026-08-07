@@ -8,6 +8,7 @@ import models.ModulePOProtocol
 import parser.Parser
 import parser.Parser.*
 import parser.ParserOps.*
+import parsing.intForKey
 import parsing.multipleValueParser
 import parsing.types.ModulePOMandatory
 import parsing.types.ParsedPOOptional
@@ -16,14 +17,15 @@ import parsing.uuidParser
 
 object ModulePOParser {
 
-  def studyProgramKey        = "study_program"
-  def studyProgramPrefix     = "study_program."
-  def modulePOMandatoryKey   = "po_mandatory:"
-  def modulePOElectiveKey    = "po_optional:"
-  def instanceOfKey          = "instance_of"
-  def modulePrefix           = "module."
-  def partOfCatalogKey       = "part_of_catalog"
-  def recommendedSemesterKey = "recommended_semester"
+  def studyProgramKey                = "study_program"
+  def studyProgramPrefix             = "study_program."
+  def modulePOMandatoryKey           = "po_mandatory:"
+  def modulePOElectiveKey            = "po_optional:"
+  def instanceOfKey                  = "instance_of"
+  def modulePrefix                   = "module."
+  def partOfCatalogKey               = "part_of_catalog"
+  def recommendedSemesterKey         = "recommended_semester"
+  def recommendedSemesterPartTimeKey = "recommended_semester_part_time"
 
   private[parsing] def studyProgramParser(
       using pos: Seq[PO],
@@ -73,9 +75,7 @@ object ModulePOParser {
     )
 
   private def recommendedSemesterPartTimeParser =
-    multipleValueParser("recommended_semester_part_time", int).option.map(
-      _.getOrElse(Nil)
-    )
+    intForKey(recommendedSemesterPartTimeKey).option
 
   private def instanceOfParser =
     prefix(s"$instanceOfKey:")
@@ -99,11 +99,11 @@ object ModulePOParser {
           .skip(zeroOrMoreSpaces)
           .zip(recommendedSemesterParser)
           .skip(zeroOrMoreSpaces)
-          .skip(recommendedSemesterPartTimeParser)
+          .take(recommendedSemesterPartTimeParser)
           .many(zeroOrMoreSpaces)
           .map(_.map {
-            case ((po, spec), recSem) =>
-              ModulePOMandatory(po, spec, recSem)
+            case ((po, spec), recSem, recSemPartTime) =>
+              ModulePOMandatory(po, spec, recSem, recSemPartTime)
           })
       )
 
@@ -142,11 +142,11 @@ object ModulePOParser {
           .skip(zeroOrMoreSpaces)
           .zip(recommendedSemesterParser)
           .skip(zeroOrMoreSpaces)
-          .skip(recommendedSemesterPartTimeParser)
+          .take(recommendedSemesterPartTimeParser)
           .many(zeroOrMoreSpaces)
           .map(_.map {
-            case ((po, spec), recSem) =>
-              ModulePOMandatoryProtocol(po, spec, recSem)
+            case ((po, spec), recSem, recSemPartTime) =>
+              ModulePOMandatoryProtocol(po, spec, recSem, recSemPartTime)
           })
       )
 

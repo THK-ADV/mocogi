@@ -7,7 +7,8 @@ import play.api.libs.json.Json
 case class ModulePOMandatoryProtocol(
     po: String,
     specialization: Option[String],
-    recommendedSemester: List[Int]
+    recommendedSemester: List[Int],
+    recommendedSemesterPartTime: Option[Int]
 ) {
   def fullPo = specialization.fold(po)(identity)
 }
