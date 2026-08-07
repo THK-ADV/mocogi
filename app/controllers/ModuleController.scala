@@ -18,6 +18,8 @@ import play.api.i18n.I18nSupport
 import play.api.libs.json.*
 import play.api.mvc.AbstractController
 import play.api.mvc.ControllerComponents
+import security.ClientErrorResponse
+import service.moduledetails.ModuleDetailsService
 import service.pipeline.MetadataPipeline
 import service.pipeline.Print
 import service.ModuleDraftService
@@ -32,7 +34,9 @@ final class ModuleController @Inject() (
     draftService: ModuleDraftService,
     pipeline: MetadataPipeline,
     jsonRepository: JSONRepository,
+    moduleDetailsService: ModuleDetailsService,
     cached: Cached,
+    err: ClientErrorResponse,
     val auth: AuthorizationAction,
     implicit val ctx: ExecutionContext
 ) extends AbstractController(cc)
@@ -108,7 +112,10 @@ final class ModuleController @Inject() (
 
   def get(id: UUID) =
     Action.async { r =>
-      if (r.isExtended) jsonRepository.getModuleDetails(id).map(_.fold(NotFound)(Ok(_)))
+      if (r.isExtended)
+        moduleDetailsService
+          .published(id)
+          .map(_.fold(NotFound)(_.fold(err.internalServerError(r, _), details => Ok(Json.toJson(details)))))
       else if (r.getQueryString("select").contains("lecturers")) service.getLecturers(id).map(x => Ok(Json.toJson(x)))
       else if (r.getQueryString("select").contains("pos")) service.getPOs(id).map(Ok(_))
       else service.get(id).map(x => Ok(Json.toJson(x)))
@@ -120,15 +127,18 @@ final class ModuleController @Inject() (
     }
 
   def getLatest(id: UUID) =
-    auth.async { _ =>
-      draftService
-        .getByModuleOpt(id)
-        .map(_.map(d => Json.toJson(d.protocol())))
-        .or(getFromPreview(id).map(_.map(module => Json.toJson(module))))
-        .map {
-          case Some(js) => Ok(js)
-          case None     => NotFound
-        }
+    auth.async { request =>
+      if request.isExtended then
+        moduleDetailsService.latest(id).map(_.fold(NotFound)(details => Ok(Json.toJson(details))))
+      else
+        draftService
+          .getByModuleOpt(id)
+          .map(_.map(d => Json.toJson(d.protocol())))
+          .or(getFromPreview(id).map(_.map(module => Json.toJson(module))))
+          .map {
+            case Some(js) => Ok(js)
+            case None     => NotFound
+          }
     }
 
   def parseValidate() =

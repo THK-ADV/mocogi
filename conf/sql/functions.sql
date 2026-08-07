@@ -200,6 +200,7 @@ $$;
 
 -- Builds the full module details payload, combining the base module row with all
 -- resolved nested metadata needed by the module details page.
+-- Note(MD7F2A): Semantics must match Note(MD7F2A) in ModuleDetailRepository.assemble.
 CREATE OR REPLACE FUNCTION modules.get_module_details(module_id uuid)
   RETURNS jsonb
   LANGUAGE sql
@@ -1135,4 +1136,3 @@ ORDER BY
   id,
   src_rank) sub;
 $$;
-
