@@ -19,6 +19,7 @@ final case class ModuleCatalogModuleOption(
     ects: Double,
     moduleType: String,
     recommendedSemesters: List[Int],
+    recommendedSemestersPartTime: List[Int],
     mandatory: Boolean,
     optional: Boolean,
     specializations: List[String],

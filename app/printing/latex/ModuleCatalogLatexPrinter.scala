@@ -316,6 +316,7 @@ final class ModuleCatalogLatexPrinter(
                 |\usepackage{colortbl} % colored table rows and columns
                 |\usepackage{array} % custom table columns
                 |\usepackage{ltablex} % tables created with tabularx automatically gains longtable’s ability to break across pages
+                |\usepackage{pdflscape} % rotate landscape pages in the PDF
                 |\usepackage{booktabs} % typographically correct horizontal rules for tables
                 |\renewcommand{\arraystretch}{1.2}
                 |\keepXColumns % lock the layout of flexible X columns so that multi-page tables stay aligned

@@ -13,6 +13,7 @@ import printing.fmtDouble
 import printing.latex.escape
 import printing.latex.snippet.LatexContentSnippet
 import service.artifact.modulecatalog.ModuleCatalogGenericModuleOccurrence
+import service.artifact.modulecatalog.ModuleCatalogModuleDistribution
 import service.artifact.modulecatalog.ModuleCatalogSemesterSelection
 import service.artifact.modulecatalog.ModuleCatalogWarning
 import service.artifact.modulecatalog.StudyPlanSection
@@ -28,6 +29,7 @@ final class StudyPlanSnippet(
     specializations: List[IDLabel],
     isPreview: Boolean,
     messages: MessagesApi,
+    alternativeModuleDistributions: List[ModuleCatalogModuleDistribution] = Nil,
 ) extends LatexContentSnippet
     with Logging {
 
@@ -66,7 +68,8 @@ final class StudyPlanSnippet(
       continuationKey: String,
       sections: Option[NonEmptyList[StudyPlanSection]],
       selectedSemesters: Map[UUID, Int],
-      occurrencesByModule: Map[UUID, List[ModuleCatalogGenericModuleOccurrence]]
+      occurrencesByModule: Map[UUID, List[ModuleCatalogGenericModuleOccurrence]],
+      distributionsByModule: Map[UUID, List[Int]]
   )
 
   private val defaultContext = StudyPlanContext(
@@ -75,7 +78,8 @@ final class StudyPlanSnippet(
     continuationKey = "latex.module_catalog.study_plan.header.continuation",
     sections = sections,
     selectedSemesters = semesterSelections.map(s => s.moduleId -> s.selectedSemester).toMap,
-    occurrencesByModule = genericModuleOccurrences.groupBy(_.moduleId)
+    occurrencesByModule = genericModuleOccurrences.groupBy(_.moduleId),
+    distributionsByModule = Map.empty
   )
 
   private val alternativeContext = StudyPlanContext(
@@ -84,7 +88,8 @@ final class StudyPlanSnippet(
     continuationKey = "latex.module_catalog.study_plan.alternative.header.continuation",
     sections = None,
     selectedSemesters = Map.empty,
-    occurrencesByModule = alternativeGenericModuleOccurrences.groupBy(_.moduleId)
+    occurrencesByModule = alternativeGenericModuleOccurrences.groupBy(_.moduleId),
+    distributionsByModule = alternativeModuleDistributions.map(d => d.moduleId -> d.semesters).toMap
   )
 
   private val defaultTables     = tablesOf(defaultContext)
@@ -194,23 +199,35 @@ final class StudyPlanSnippet(
   }
 
   /** One row per planned occurrence of the module, or a single unassigned row if no semester applies. */
+  private def distributedCredits(total: Double, count: Int): Vector[Double] = {
+    val cents              = (BigDecimal(total).setScale(2, BigDecimal.RoundingMode.HALF_UP) * 100).toInt
+    val (share, remainder) = cents / count -> cents % count
+    Vector.tabulate(count)(i => (BigDecimal(share + (if i < remainder then 1 else 0)) / 100).toDouble)
+  }
+
+  private def fmtCredits(credits: Double): String =
+    fmtDouble(BigDecimal(credits).setScale(2, BigDecimal.RoundingMode.HALF_UP).toDouble)
+
   private def rowsOf(
       context: StudyPlanContext,
       candidate: StudyPlanCandidate
   ): (Vector[Either[UnassignedStudyPlanModule, StudyPlanModule]], Vector[ModuleCatalogWarning]) = {
-    val metadata           = candidate.metadata
-    val occurrences        = if metadata.isGeneric then context.occurrencesByModule.getOrElse(candidate.id, Nil) else Nil
-    def row(semester: Int) =
-      Right(StudyPlanModule(candidate.id, metadata.title, hasPrecondition(metadata), metadata.ects, semester))
+    val metadata                                            = candidate.metadata
+    val occurrences                                         = if metadata.isGeneric then context.occurrencesByModule.getOrElse(candidate.id, Nil) else Nil
+    def row(semester: Int, credits: Double = metadata.ects) =
+      Right(StudyPlanModule(candidate.id, metadata.title, hasPrecondition(metadata), credits, semester))
 
     if occurrences.nonEmpty then
       occurrences.toVector.flatMap(occurrence => Vector.fill(occurrence.count)(row(occurrence.semester))) ->
         Vector.empty
-    else {
+    else if context.distributionsByModule.contains(candidate.id) then {
+      val semesters = context.distributionsByModule(candidate.id)
+      semesters.toVector.zip(distributedCredits(metadata.ects, semesters.size)).map(row) -> Vector.empty
+    } else {
       val (semester, warnings) = selectedOrDefaultSemester(context, candidate)
       val unassigned           =
         Left(UnassignedStudyPlanModule(candidate.id, metadata.title, hasPrecondition(metadata), metadata.ects))
-      Vector(semester.fold(unassigned)(row)) ->
+      Vector(semester.fold(unassigned)(row(_))) ->
         warnings.appendedAll(semester.flatMap(_ => genericDefaultWarning(context, candidate)))
     }
   }
@@ -236,12 +253,12 @@ final class StudyPlanSnippet(
   private def semesterRange(firstSemester: Int, lastSemester: Int): Range =
     firstSemester to lastSemester
 
-  private def studyPlanColumnSpec(firstSemester: Int, lastSemester: Int): String = {
+  private def studyPlanColumnSpec(firstSemester: Int, lastSemester: Int, partTime: Boolean): String = {
     val semesterCount = semesterRange(firstSemester, lastSemester).size
     val columnCount   = semesterCount + 3
     val pvWidth       = "0.04\\linewidth"
     val cpWidth       = "0.045\\linewidth"
-    val semesterWidth = "0.055\\linewidth"
+    val semesterWidth = if partTime then "0.04\\linewidth" else "0.055\\linewidth"
     val fixedWidths   = Seq(pvWidth, cpWidth)
       .appendedAll(List.fill(semesterCount)(semesterWidth))
       .map(width => s" - $width")
@@ -289,7 +306,7 @@ final class StudyPlanSnippet(
   )(using builder: StringBuilder): Unit = {
     val emptySemesterCells = semesterRange(firstSemester, lastSemester).map(_ => "").mkString(" & ")
     builder.append(
-      s"\\rowcolor{black}\\textcolor{white}{\\textbf{${escape(headline)}}} & & \\textcolor{white}{\\textbf{${fmtDouble(entries.map(_.credits).sum)}}} & $emptySemesterCells \\\\*\n"
+      s"\\rowcolor{black}\\textcolor{white}{\\textbf{${escape(headline)}}} & & \\textcolor{white}{\\textbf{${fmtCredits(entries.map(_.credits).sum)}}} & $emptySemesterCells \\\\*\n"
     )
   }
 
@@ -301,10 +318,10 @@ final class StudyPlanSnippet(
       if module.hasPrecondition then messages("latex.module_catalog.study_plan.pv.yes")
       else messages("latex.module_catalog.study_plan.pv.no")
     val semesterCredits = semesterRange(firstSemester, lastSemester)
-      .map(semester => if semester == module.recommendedSemester then fmtDouble(module.credits) else "")
+      .map(semester => if semester == module.recommendedSemester then fmtCredits(module.credits) else "")
       .mkString(" & ")
 
-    builder.append(s"${moduleLink(module)} & $pv & ${fmtDouble(module.credits)} & $semesterCredits \\\\\n")
+    builder.append(s"${moduleLink(module)} & $pv & ${fmtCredits(module.credits)} & $semesterCredits \\\\\n")
   }
 
   private def printFooterRow(entries: Vector[StudyPlanModule], firstSemester: Int, lastSemester: Int)(
@@ -314,12 +331,12 @@ final class StudyPlanSnippet(
     val semesterTotals = semesterRange(firstSemester, lastSemester)
       .map { semester =>
         val sum = entries.filter(_.recommendedSemester == semester).map(_.credits).sum
-        if sum > 0 then fmtDouble(sum) else ""
+        if sum > 0 then fmtCredits(sum) else ""
       }
       .mkString(" & ")
 
     builder.append(
-      s"\\hline\n\\rowcolor{gray!20}\\textbf{${messages("latex.module_catalog.study_plan.footer.total")}} & & \\textbf{${fmtDouble(entries.map(_.credits).sum)}} & $semesterTotals \\\\\n"
+      s"\\hline\n\\rowcolor{gray!20}\\textbf{${messages("latex.module_catalog.study_plan.footer.total")}} & & \\textbf{${fmtCredits(entries.map(_.credits).sum)}} & $semesterTotals \\\\\n"
     )
   }
 
@@ -343,7 +360,7 @@ final class StudyPlanSnippet(
       if module.hasPrecondition then messages("latex.module_catalog.study_plan.pv.yes")
       else messages("latex.module_catalog.study_plan.pv.no")
 
-    builder.append(s"${moduleLink(module)} & $pv & ${fmtDouble(module.credits)} \\\\\n")
+    builder.append(s"${moduleLink(module)} & $pv & ${fmtCredits(module.credits)} \\\\\n")
   }
 
   private def printUnassignedModules(
@@ -353,7 +370,7 @@ final class StudyPlanSnippet(
       s"""\\vspace{1em}
          |\\begin{tabular}{${unassignedColumnSpec}}
          |\\hline
-         |\\rowcolor{black}\\textcolor{white}{\\textbf{${messages("latex.module_catalog.study_plan.unassigned")}}} & & \\textcolor{white}{\\textbf{${fmtDouble(modules.map(_.credits).sum)}}} \\\\*
+         |\\rowcolor{black}\\textcolor{white}{\\textbf{${messages("latex.module_catalog.study_plan.unassigned")}}} & & \\textcolor{white}{\\textbf{${fmtCredits(modules.map(_.credits).sum)}}} \\\\*
          |\\hline
          |\\textbf{${messages("latex.module_catalog.study_plan.column.module")}} & \\textbf{${messages("latex.module_catalog.study_plan.column.pv")}} & \\textbf{${messages("latex.module_catalog.study_plan.column.cp")}} \\\\
          |\\hline
@@ -392,7 +409,7 @@ final class StudyPlanSnippet(
   )(using lang: Lang, builder: StringBuilder): Unit = {
     headline(table).foreach(text => builder.append(s"\\subsection*{${escape(text)}}\n"))
 
-    val columns             = studyPlanColumnSpec(firstSemester, lastSemester)
+    val columns             = studyPlanColumnSpec(firstSemester, lastSemester, context.partTime)
     val columnCount         = semesterRange(firstSemester, lastSemester).size + 3
     val header              = tableHeader(firstSemester, lastSemester)
     val continuationMessage = messages(context.continuationKey)
@@ -484,7 +501,11 @@ final class StudyPlanSnippet(
 
   override def print(using lang: Lang, builder: StringBuilder): Unit = {
     printStudyPlans(defaultContext, defaultTables)
-    printStudyPlans(alternativeContext, alternativeTables)
+    if alternativeTables.exists(t => t.entries.nonEmpty || t.unassignedEntries.nonEmpty) then {
+      builder.append("\\clearpage\n\\begin{landscape}\n")
+      printStudyPlans(alternativeContext, alternativeTables)
+      builder.append("\\end{landscape}\n")
+    }
     if (defaultTables ++ alternativeTables).exists(t => t.entries.nonEmpty || t.unassignedEntries.nonEmpty) then finish
   }
 }
