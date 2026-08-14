@@ -72,13 +72,11 @@ class ModulePOParserSpec
           |    recommended_semester:
           |      - 3
           |      - 4
-          |    recommended_semester_part_time:
-          |      - 1
-          |      - 2""".stripMargin
+          |    recommended_semester_part_time: 1""".stripMargin
       val (res, rest) = mandatoryParser.parse(input)
       assert(
         res.value == List(
-          ModulePOMandatory(wi1, None, List(3, 4))
+          ModulePOMandatory(wi1, None, List(3, 4), Some(1))
         )
       )
       assert(rest.isEmpty)
@@ -91,13 +89,11 @@ class ModulePOParserSpec
           |    recommended_semester:
           |      - 3
           |      - 4
-          |    recommended_semester_part_time:
-          |      - 1
-          |      - 2""".stripMargin
+          |    recommended_semester_part_time: 1""".stripMargin
       val (res, rest) = mandatoryParserRaw.parse(input)
       assert(
         res.value == List(
-          ModulePOMandatoryProtocol("wi1", None, List(3, 4))
+          ModulePOMandatoryProtocol("wi1", None, List(3, 4), Some(1))
         )
       )
       assert(rest.isEmpty)
@@ -110,13 +106,11 @@ class ModulePOParserSpec
           |    recommended_semester:
           |      - 3
           |      - 4
-          |    recommended_semester_part_time:
-          |      - 1
-          |      - 2""".stripMargin
+          |    recommended_semester_part_time: 2""".stripMargin
       val (res, rest) = mandatoryParser.parse(input)
       assert(
         res.value == List(
-          ModulePOMandatory(wi1, Some(vi), List(3, 4))
+          ModulePOMandatory(wi1, Some(vi), List(3, 4), Some(2))
         )
       )
       assert(rest.isEmpty)
@@ -129,13 +123,11 @@ class ModulePOParserSpec
           |    recommended_semester:
           |      - 3
           |      - 4
-          |    recommended_semester_part_time:
-          |      - 1
-          |      - 2""".stripMargin
+          |    recommended_semester_part_time: 2""".stripMargin
       val (res, rest) = mandatoryParserRaw.parse(input)
       assert(
         res.value == List(
-          ModulePOMandatoryProtocol("wi1", Some("wi1_vi"), List(3, 4))
+          ModulePOMandatoryProtocol("wi1", Some("wi1_vi"), List(3, 4), Some(2))
         )
       )
       assert(rest.isEmpty)
@@ -147,7 +139,7 @@ class ModulePOParserSpec
           |  - study_program: study_program.wi1""".stripMargin
       val (res, rest) = mandatoryParser.parse(input)
       assert(
-        res.value == List(ModulePOMandatory(wi1, None, Nil))
+        res.value == List(ModulePOMandatory(wi1, None, Nil, None))
       )
       assert(rest.isEmpty)
     }
@@ -158,7 +150,7 @@ class ModulePOParserSpec
           |  - study_program: study_program.wi1""".stripMargin
       val (res, rest) = mandatoryParserRaw.parse(input)
       assert(
-        res.value == List(ModulePOMandatoryProtocol("wi1", None, Nil))
+        res.value == List(ModulePOMandatoryProtocol("wi1", None, Nil, None))
       )
       assert(rest.isEmpty)
     }
@@ -172,7 +164,7 @@ class ModulePOParserSpec
           |      - 4""".stripMargin
       val (res, rest) = mandatoryParser.parse(input)
       assert(
-        res.value == List(ModulePOMandatory(wi1, None, List(3, 4)))
+        res.value == List(ModulePOMandatory(wi1, None, List(3, 4), None))
       )
       assert(rest.isEmpty)
     }
@@ -186,7 +178,7 @@ class ModulePOParserSpec
           |      - 4""".stripMargin
       val (res, rest) = mandatoryParserRaw.parse(input)
       assert(
-        res.value == List(ModulePOMandatoryProtocol("wi1", None, List(3, 4)))
+        res.value == List(ModulePOMandatoryProtocol("wi1", None, List(3, 4), None))
       )
       assert(rest.isEmpty)
     }
@@ -198,16 +190,14 @@ class ModulePOParserSpec
           |    recommended_semester:
           |      - 3
           |      - 4
-          |    recommended_semester_part_time:
-          |      - 1
-          |      - 2
+          |    recommended_semester_part_time: 1
           |  - study_program: study_program.mi1
           |    recommended_semester: 5""".stripMargin
       val (res, rest) = mandatoryParser.parse(input)
       assert(
         res.value == List(
-          ModulePOMandatory(wi1, None, List(3, 4)),
-          ModulePOMandatory(mi1, None, List(5))
+          ModulePOMandatory(wi1, None, List(3, 4), Some(1)),
+          ModulePOMandatory(mi1, None, List(5), None)
         )
       )
       assert(rest.isEmpty)
@@ -220,16 +210,14 @@ class ModulePOParserSpec
           |    recommended_semester:
           |      - 3
           |      - 4
-          |    recommended_semester_part_time:
-          |      - 1
-          |      - 2
+          |    recommended_semester_part_time: 1
           |  - study_program: study_program.mi1
           |    recommended_semester: 5""".stripMargin
       val (res, rest) = mandatoryParserRaw.parse(input)
       assert(
         res.value == List(
-          ModulePOMandatoryProtocol("wi1", None, List(3, 4)),
-          ModulePOMandatoryProtocol("mi1", None, List(5))
+          ModulePOMandatoryProtocol("wi1", None, List(3, 4), Some(1)),
+          ModulePOMandatoryProtocol("mi1", None, List(5), None)
         )
       )
       assert(rest.isEmpty)

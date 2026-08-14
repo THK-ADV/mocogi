@@ -548,7 +548,7 @@ final class MetadataValidatorSpec extends AnyWordSpec with EitherValues with Opt
           ModuleStatus("", "", ""),
           ModuleLocation("", "", ""),
           ParsedPOs(
-            List(ModulePOMandatory(sp, None, List(1))),
+            List(ModulePOMandatory(sp, None, List(1), None)),
             List(
               ParsedPOOptional(sp, None, m2.id, partOfCatalog = false, List(2))
             )
@@ -577,7 +577,7 @@ final class MetadataValidatorSpec extends AnyWordSpec with EitherValues with Opt
           ivm1.status,
           ivm1.location,
           ModulePOs(
-            List(ModulePOMandatory(sp, None, List(1))),
+            List(ModulePOMandatory(sp, None, List(1), None)),
             List(ModulePOOptional(sp, None, m2, partOfCatalog = false, List(2)))
           ),
           Some(ModuleParticipants(10, 20)),
@@ -631,7 +631,7 @@ final class MetadataValidatorSpec extends AnyWordSpec with EitherValues with Opt
           ModuleStatus("", "", ""),
           ModuleLocation("", "", ""),
           ParsedPOs(
-            List(ModulePOMandatory(sp, None, List(1))),
+            List(ModulePOMandatory(sp, None, List(1), None)),
             List(
               ParsedPOOptional(sp, None, m1.id, partOfCatalog = false, List(2))
             )

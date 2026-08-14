@@ -51,8 +51,12 @@ private[artifact] object ModuleCatalogService {
   private def mandatoryRelations(module: ModuleProtocol, currentPO: String): List[ModulePOMandatoryProtocol] =
     module.metadata.po.mandatory.filter(_.po == currentPO)
 
-  private def recommendedSemestersForStudyPlan(module: ModuleProtocol, currentPO: String): List[Int] =
-    mandatoryRelations(module, currentPO).flatMap(_.recommendedSemester).distinct.sorted
+  private def recommendedSemestersForStudyPlan(
+      module: ModuleProtocol,
+      currentPO: String,
+      of: ModulePOMandatoryProtocol => IterableOnce[Int]
+  ): List[Int] =
+    mandatoryRelations(module, currentPO).flatMap(of).distinct.sorted
 
   private def duplicateIds(ids: List[UUID]): List[UUID] =
     ids.groupBy(identity).collect { case (id, values) if values.size > 1 => id }.toList
@@ -72,6 +76,37 @@ private[artifact] object ModuleCatalogService {
       if unknown.nonEmpty then errors += s"$label references modules outside PO $currentPO: ${unknown.mkString(", ")}"
     }
 
+    def validateOccurrences(
+        occurrences: List[ModuleCatalogGenericModuleOccurrence],
+        label: String,
+        recommendedOf: ModulePOMandatoryProtocol => IterableOnce[Int],
+        missingSemesters: String,
+        restrictToRecommended: Boolean = true
+    ): Unit =
+      occurrences.foreach { occurrence =>
+        moduleById.get(occurrence.moduleId).foreach { module =>
+          val recommendedSemesters = recommendedSemestersForStudyPlan(module, currentPO, recommendedOf)
+          if !module.metadata.isGeneric then {
+            errors += s"$label module ${occurrence.moduleId} is not a generic module"
+          }
+          if mandatoryRelations(module, currentPO).isEmpty then {
+            errors += s"$label module ${occurrence.moduleId} is not mandatory in PO $currentPO"
+          }
+          if recommendedSemesters.isEmpty then {
+            errors += s"$label module ${occurrence.moduleId} $missingSemesters"
+          } else if restrictToRecommended && !recommendedSemesters.contains(occurrence.semester) then {
+            errors +=
+              s"$label module ${occurrence.moduleId} uses semester ${occurrence.semester}, expected one of ${recommendedSemesters.mkString(", ")}"
+          }
+          if occurrence.semester <= 0 then {
+            errors += s"$label module ${occurrence.moduleId} must use a positive semester"
+          }
+          if occurrence.count <= 0 then {
+            errors += s"$label module ${occurrence.moduleId} must have a positive count"
+          }
+        }
+      }
+
     val moduleSelection = config.moduleSelection
     val studyPlan       = config.studyPlan
 
@@ -82,12 +117,19 @@ private[artifact] object ModuleCatalogService {
     )
     requireKnown(studyPlan.semesterSelections.map(_.moduleId), "semesterSelections")
     requireKnown(studyPlan.genericModuleOccurrences.map(_.moduleId), "genericModuleOccurrences")
+    requireKnown(
+      studyPlan.alternativeGenericModuleOccurrences.map(_.moduleId),
+      "alternative.genericModuleOccurrences"
+    )
+    requireKnown(studyPlan.alternativeModuleDistributions.map(_.moduleId), "alternative.moduleDistributions")
 
     val excludedModuleIds           = moduleSelection.excludedModuleIds.toSet
     val excludedStudyPlanReferences =
       (
         studyPlan.semesterSelections.map(_.moduleId) ++
-          studyPlan.genericModuleOccurrences.map(_.moduleId)
+          studyPlan.genericModuleOccurrences.map(_.moduleId) ++
+          studyPlan.alternativeGenericModuleOccurrences.map(_.moduleId) ++
+          studyPlan.alternativeModuleDistributions.map(_.moduleId)
       ).filter(excludedModuleIds.contains).distinct
     if excludedStudyPlanReferences.nonEmpty then {
       errors +=
@@ -96,6 +138,9 @@ private[artifact] object ModuleCatalogService {
 
     duplicateIds(studyPlan.semesterSelections.map(_.moduleId)).foreach { id =>
       errors += s"semesterSelections contains duplicate module id $id"
+    }
+    duplicateIds(studyPlan.alternativeModuleDistributions.map(_.moduleId)).foreach { id =>
+      errors += s"alternative.moduleDistributions contains duplicate module id $id"
     }
 
     if poOnly.exists(_.specialization.isDefined) && studyPlan.sections.nonEmpty then {
@@ -121,7 +166,7 @@ private[artifact] object ModuleCatalogService {
 
     studyPlan.semesterSelections.foreach { selection =>
       moduleById.get(selection.moduleId).foreach { module =>
-        val recommendedSemesters = recommendedSemestersForStudyPlan(module, currentPO)
+        val recommendedSemesters = recommendedSemestersForStudyPlan(module, currentPO, _.recommendedSemester)
         if mandatoryRelations(module, currentPO).isEmpty then {
           errors += s"semesterSelections module ${selection.moduleId} is not mandatory in PO $currentPO"
         } else if !recommendedSemesters.contains(selection.selectedSemester) then {
@@ -131,24 +176,34 @@ private[artifact] object ModuleCatalogService {
       }
     }
 
-    studyPlan.genericModuleOccurrences.foreach { occurrence =>
-      moduleById.get(occurrence.moduleId).foreach { module =>
-        val recommendedSemesters = recommendedSemestersForStudyPlan(module, currentPO)
-        if !module.metadata.isGeneric then {
-          errors += s"genericModuleOccurrences module ${occurrence.moduleId} is not a generic module"
-        }
-        if mandatoryRelations(module, currentPO).isEmpty then {
-          errors += s"genericModuleOccurrences module ${occurrence.moduleId} is not mandatory in PO $currentPO"
-        }
-        if recommendedSemesters.isEmpty then {
-          errors += s"genericModuleOccurrences module ${occurrence.moduleId} has no recommended semesters"
-        } else if !recommendedSemesters.contains(occurrence.semester) then {
-          errors +=
-            s"genericModuleOccurrences module ${occurrence.moduleId} uses semester ${occurrence.semester}, expected one of ${recommendedSemesters.mkString(", ")}"
-        }
-        if occurrence.count <= 0 then {
-          errors += s"genericModuleOccurrences module ${occurrence.moduleId} must have a positive count"
-        }
+    validateOccurrences(
+      studyPlan.genericModuleOccurrences,
+      "genericModuleOccurrences",
+      _.recommendedSemester,
+      "has no recommended semesters"
+    )
+    validateOccurrences(
+      studyPlan.alternativeGenericModuleOccurrences,
+      "alternative.genericModuleOccurrences",
+      _.recommendedSemesterPartTime,
+      "has no part-time recommended semester",
+      restrictToRecommended = false
+    )
+
+    studyPlan.alternativeModuleDistributions.foreach { distribution =>
+      moduleById.get(distribution.moduleId).foreach { module =>
+        if module.metadata.isGeneric then
+          errors += s"alternative.moduleDistributions module ${distribution.moduleId} is a generic module"
+        if mandatoryRelations(module, currentPO).isEmpty then
+          errors += s"alternative.moduleDistributions module ${distribution.moduleId} is not mandatory in PO $currentPO"
+        if recommendedSemestersForStudyPlan(module, currentPO, _.recommendedSemesterPartTime).isEmpty then
+          errors += s"alternative.moduleDistributions module ${distribution.moduleId} has no part-time recommended semester"
+        if distribution.semesters.size < 2 then
+          errors += s"alternative.moduleDistributions module ${distribution.moduleId} needs at least two semesters"
+        else if distribution.semesters.distinct.size != distribution.semesters.size then
+          errors += s"alternative.moduleDistributions module ${distribution.moduleId} contains duplicate semesters"
+        if distribution.semesters.exists(_ <= 0) then
+          errors += s"alternative.moduleDistributions module ${distribution.moduleId} must use positive semesters"
       }
     }
 
@@ -204,6 +259,7 @@ private[artifact] object ModuleCatalogService {
         moduleType = metadata.moduleType,
         recommendedSemesters =
           (mandatory.flatMap(_.recommendedSemester) ++ optional.flatMap(_.recommendedSemester)).distinct.sorted,
+        recommendedSemestersPartTime = mandatory.flatMap(_.recommendedSemesterPartTime).distinct.sorted,
         mandatory = mandatory.nonEmpty,
         optional = optional.nonEmpty,
         specializations = (mandatory.flatMap(_.specialization) ++ optional.flatMap(_.specialization)).distinct,
@@ -427,8 +483,10 @@ final class ModuleCatalogService @Inject() (
       NonEmptyList.fromList(config.sections),
       config.semesterSelections,
       config.genericModuleOccurrences,
+      config.alternativeGenericModuleOccurrences,
       specializations,
       isPreview,
-      messagesApi
+      messagesApi,
+      config.alternativeModuleDistributions
     )
 }

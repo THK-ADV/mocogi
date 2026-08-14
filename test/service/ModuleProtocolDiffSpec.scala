@@ -34,7 +34,7 @@ final class ModuleProtocolDiffSpec extends AnyWordSpec {
       NonEmptyList.one(ExamPhase.none.id),
       ModulePrerequisitesProtocol(None, None),
       ModulePOProtocol(
-        List(ModulePOMandatoryProtocol("po1", None, List(1))),
+        List(ModulePOMandatoryProtocol("po1", None, List(1), None)),
         Nil
       ),
       Nil,
@@ -131,7 +131,7 @@ final class ModuleProtocolDiffSpec extends AnyWordSpec {
         .focus(_.metadata.po.mandatory)
         .modify(
           _ ::: List(
-            ModulePOMandatoryProtocol("po2", Some("spec"), List(1, 2, 3))
+            ModulePOMandatoryProtocol("po2", Some("spec"), List(1, 2, 3), None)
           )
         )
         .focus(_.metadata.participants)
@@ -153,8 +153,8 @@ final class ModuleProtocolDiffSpec extends AnyWordSpec {
       assert(updated.metadata.moduleManagement == NonEmptyList.of("a", "b"))
       assert(
         updated.metadata.po.mandatory == List(
-          ModulePOMandatoryProtocol("po1", None, List(1)),
-          ModulePOMandatoryProtocol("po2", Some("spec"), List(1, 2, 3))
+          ModulePOMandatoryProtocol("po1", None, List(1), None),
+          ModulePOMandatoryProtocol("po2", Some("spec"), List(1, 2, 3), None)
         )
       )
       assert(updated.metadata.participants.contains(ModuleParticipants(0, 10)))

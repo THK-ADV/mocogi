@@ -86,7 +86,8 @@ final class ModuleCatalogServiceSpec extends AnyWordSpec with Matchers {
 
   "ModuleCatalogService.applyModuleSelection" should {
     "preserve all PO modules for an empty selection" in {
-      val first  = protocol(module1, "First", mandatory = List(ModulePOMandatoryProtocol(currentPO, None, List(1))))
+      val first =
+        protocol(module1, "First", mandatory = List(ModulePOMandatoryProtocol(currentPO, None, List(1), None)))
       val second = protocol(
         module2,
         "Second",
@@ -102,8 +103,10 @@ final class ModuleCatalogServiceSpec extends AnyWordSpec with Matchers {
     }
 
     "remove globally excluded modules" in {
-      val first  = protocol(module1, "First", mandatory = List(ModulePOMandatoryProtocol(currentPO, None, List(1))))
-      val second = protocol(module2, "Second", mandatory = List(ModulePOMandatoryProtocol(currentPO, None, List(2))))
+      val first =
+        protocol(module1, "First", mandatory = List(ModulePOMandatoryProtocol(currentPO, None, List(1), None)))
+      val second =
+        protocol(module2, "Second", mandatory = List(ModulePOMandatoryProtocol(currentPO, None, List(2), None)))
 
       val filtered = ModuleCatalogService.applyModuleSelection(
         currentPO,
@@ -165,7 +168,7 @@ final class ModuleCatalogServiceSpec extends AnyWordSpec with Matchers {
       val module = protocol(
         module1,
         "Default",
-        mandatory = List(ModulePOMandatoryProtocol(currentPO, None, List(1)))
+        mandatory = List(ModulePOMandatoryProtocol(currentPO, None, List(1), None))
       )
 
       noException should be thrownBy {
@@ -178,12 +181,12 @@ final class ModuleCatalogServiceSpec extends AnyWordSpec with Matchers {
         generic1,
         "Generic",
         moduleType = "generic_module",
-        mandatory = List(ModulePOMandatoryProtocol(currentPO, None, List(3)))
+        mandatory = List(ModulePOMandatoryProtocol(currentPO, None, List(3), None))
       )
       val mandatory = protocol(
         module1,
         "Mandatory",
-        mandatory = List(ModulePOMandatoryProtocol(currentPO, None, List(3, 5)))
+        mandatory = List(ModulePOMandatoryProtocol(currentPO, None, List(3, 5), None))
       )
       val option = protocol(
         module2,
@@ -234,12 +237,12 @@ final class ModuleCatalogServiceSpec extends AnyWordSpec with Matchers {
       val regular = protocol(
         module1,
         "Regular",
-        mandatory = List(ModulePOMandatoryProtocol(currentPO, None, List(1)))
+        mandatory = List(ModulePOMandatoryProtocol(currentPO, None, List(1), None))
       )
       val option = protocol(
         module2,
         "Option",
-        mandatory = List(ModulePOMandatoryProtocol(currentPO, None, List(1))),
+        mandatory = List(ModulePOMandatoryProtocol(currentPO, None, List(1), None)),
         optional = List(ModulePOOptionalProtocol("other-po", None, module1, partOfCatalog = true, List(1)))
       )
       val invalid = config(
@@ -261,7 +264,7 @@ final class ModuleCatalogServiceSpec extends AnyWordSpec with Matchers {
       val module = protocol(
         module1,
         "Duplicate",
-        mandatory = List(ModulePOMandatoryProtocol(currentPO, None, List(1, 2)))
+        mandatory = List(ModulePOMandatoryProtocol(currentPO, None, List(1, 2), None))
       )
       val invalid = config(
         studyPlan = ModuleCatalogStudyPlanConfig(
@@ -285,7 +288,7 @@ final class ModuleCatalogServiceSpec extends AnyWordSpec with Matchers {
       val module = protocol(
         module1,
         "Ambiguous",
-        mandatory = List(ModulePOMandatoryProtocol(currentPO, None, List(3, 5)))
+        mandatory = List(ModulePOMandatoryProtocol(currentPO, None, List(3, 5), None))
       )
       val invalid = config(
         studyPlan = ModuleCatalogStudyPlanConfig(
@@ -339,7 +342,7 @@ final class ModuleCatalogServiceSpec extends AnyWordSpec with Matchers {
       val module = protocol(
         module1,
         "Excluded",
-        mandatory = List(ModulePOMandatoryProtocol(currentPO, None, List(1)))
+        mandatory = List(ModulePOMandatoryProtocol(currentPO, None, List(1), None))
       )
       val invalid = config(
         moduleSelection = ModuleCatalogModuleSelectionConfig(List(module1), Nil),
@@ -361,7 +364,7 @@ final class ModuleCatalogServiceSpec extends AnyWordSpec with Matchers {
       val module = protocol(
         module1,
         "Regular",
-        mandatory = List(ModulePOMandatoryProtocol(currentPO, None, List(1)))
+        mandatory = List(ModulePOMandatoryProtocol(currentPO, None, List(1), None))
       )
       val invalid = config(
         studyPlan = ModuleCatalogStudyPlanConfig(
@@ -390,7 +393,7 @@ final class ModuleCatalogServiceSpec extends AnyWordSpec with Matchers {
         generic2,
         "Mandatory generic",
         moduleType = "generic_module",
-        mandatory = List(ModulePOMandatoryProtocol(currentPO, None, List(5)))
+        mandatory = List(ModulePOMandatoryProtocol(currentPO, None, List(5), None))
       )
       val invalid = config(
         studyPlan = ModuleCatalogStudyPlanConfig(
@@ -419,7 +422,7 @@ final class ModuleCatalogServiceSpec extends AnyWordSpec with Matchers {
         generic1,
         "Generic Pool",
         moduleType = "generic_module",
-        mandatory = List(ModulePOMandatoryProtocol(currentPO, None, List(5)))
+        mandatory = List(ModulePOMandatoryProtocol(currentPO, None, List(5), None))
       )
       val option = protocol(
         module1,

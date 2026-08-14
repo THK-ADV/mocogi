@@ -28,21 +28,23 @@ final class StudyPlanSnippetSpec extends AnyWordSpec with Matchers {
   private val messagesApi = new DefaultMessagesApi(
     Map(
       "de" -> Map(
-        "latex.module_catalog.study_plan.headline"               -> "Studienverlaufsplan",
-        "latex.module_catalog.study_plan.sections"               -> "Studienabschnitte",
-        "latex.module_catalog.study_plan.semester_assignment"    -> "Leistungspunkte und Semesterzuordnung",
-        "latex.module_catalog.study_plan.column.module"          -> "Module",
-        "latex.module_catalog.study_plan.column.pv"              -> "PV",
-        "latex.module_catalog.study_plan.column.cp"              -> "CP",
-        "latex.module_catalog.study_plan.pv.yes"                 -> "TN",
-        "latex.module_catalog.study_plan.pv.no"                  -> "-",
-        "latex.module_catalog.study_plan.footer.total"           -> "Summe Leistungspunkte",
-        "latex.module_catalog.study_plan.header.continuation"    -> "Studienverlaufsplan (fortgesetzt)",
-        "latex.module_catalog.study_plan.unassigned"             -> "Nicht zugeordnet",
-        "latex.module_catalog.study_plan.unassigned.explanation" -> "Diesen Modulen wurde kein Semester zugeordnet",
-        "latex.module_catalog.study_plan.section.unassigned"     -> "Weitere Module",
-        "latex.module_catalog.study_plan.base"                   -> "Basisstudium",
-        "latex.module_catalog.study_plan.specialization"         -> "Schwerpunkt {0}"
+        "latex.module_catalog.study_plan.headline"                        -> "Studienverlaufsplan",
+        "latex.module_catalog.study_plan.alternative.headline"            -> "Alternativer Studienverlaufsplan",
+        "latex.module_catalog.study_plan.sections"                        -> "Studienabschnitte",
+        "latex.module_catalog.study_plan.semester_assignment"             -> "Leistungspunkte und Semesterzuordnung",
+        "latex.module_catalog.study_plan.column.module"                   -> "Module",
+        "latex.module_catalog.study_plan.column.pv"                       -> "PV",
+        "latex.module_catalog.study_plan.column.cp"                       -> "CP",
+        "latex.module_catalog.study_plan.pv.yes"                          -> "TN",
+        "latex.module_catalog.study_plan.pv.no"                           -> "-",
+        "latex.module_catalog.study_plan.footer.total"                    -> "Summe Leistungspunkte",
+        "latex.module_catalog.study_plan.header.continuation"             -> "Studienverlaufsplan (fortgesetzt)",
+        "latex.module_catalog.study_plan.alternative.header.continuation" -> "Alternativer Studienverlaufsplan (fortgesetzt)",
+        "latex.module_catalog.study_plan.unassigned"                      -> "Nicht zugeordnet",
+        "latex.module_catalog.study_plan.unassigned.explanation"          -> "Diesen Modulen wurde kein Semester zugeordnet",
+        "latex.module_catalog.study_plan.section.unassigned"              -> "Weitere Module",
+        "latex.module_catalog.study_plan.base"                            -> "Basisstudium",
+        "latex.module_catalog.study_plan.specialization"                  -> "Schwerpunkt {0}"
       )
     )
   )
@@ -97,6 +99,7 @@ final class StudyPlanSnippetSpec extends AnyWordSpec with Matchers {
       NonEmptyList.fromList(config.sections),
       config.semesterSelections,
       config.genericModuleOccurrences,
+      config.alternativeGenericModuleOccurrences,
       specializations,
       isPreview,
       messagesApi
@@ -116,7 +119,7 @@ final class StudyPlanSnippetSpec extends AnyWordSpec with Matchers {
       val module = protocol(
         module1,
         "Ambiguous Module",
-        mandatory = List(ModulePOMandatoryProtocol(currentPO, None, List(3, 5)))
+        mandatory = List(ModulePOMandatoryProtocol(currentPO, None, List(3, 5), None))
       )
 
       val (output, warnings) = render(
@@ -133,7 +136,7 @@ final class StudyPlanSnippetSpec extends AnyWordSpec with Matchers {
       val module = protocol(
         module1,
         "Ambiguous Module",
-        mandatory = List(ModulePOMandatoryProtocol(currentPO, None, List(3, 5)))
+        mandatory = List(ModulePOMandatoryProtocol(currentPO, None, List(3, 5), None))
       )
 
       val (_, warnings) = render(Vector(module))
@@ -146,7 +149,7 @@ final class StudyPlanSnippetSpec extends AnyWordSpec with Matchers {
         generic1,
         "Generic Module",
         moduleType = "generic_module",
-        mandatory = List(ModulePOMandatoryProtocol(currentPO, None, List(5)))
+        mandatory = List(ModulePOMandatoryProtocol(currentPO, None, List(5), None))
       )
 
       val (output, warnings) = render(
@@ -158,7 +161,7 @@ final class StudyPlanSnippetSpec extends AnyWordSpec with Matchers {
         )
       )
 
-      occurrencesOf(output, s"\\hyperref[sec:${generic1.toString}]") shouldBe 2
+      occurrencesOf(output, s"\\hyperref[sec:${generic1.toString}]") shouldBe 3
       warnings.map(_.code) should not contain "generic_module_default_occurrence"
     }
 
@@ -167,7 +170,7 @@ final class StudyPlanSnippetSpec extends AnyWordSpec with Matchers {
         generic1,
         "Generic Module",
         moduleType = "generic_module",
-        mandatory = List(ModulePOMandatoryProtocol(currentPO, None, List(5)))
+        mandatory = List(ModulePOMandatoryProtocol(currentPO, None, List(5), None))
       )
 
       val (_, warnings) = render(Vector(module))
@@ -179,12 +182,12 @@ final class StudyPlanSnippetSpec extends AnyWordSpec with Matchers {
       val base = protocol(
         module1,
         "Base Module",
-        mandatory = List(ModulePOMandatoryProtocol(currentPO, None, List(1)))
+        mandatory = List(ModulePOMandatoryProtocol(currentPO, None, List(1), None))
       )
       val specialization = protocol(
         module2,
         "Specialization Module",
-        mandatory = List(ModulePOMandatoryProtocol(currentPO, Some("po1_spec"), List(2)))
+        mandatory = List(ModulePOMandatoryProtocol(currentPO, Some("po1_spec"), List(2), None))
       )
 
       val (output, _) = render(
@@ -203,7 +206,7 @@ final class StudyPlanSnippetSpec extends AnyWordSpec with Matchers {
         generic1,
         "Generic Module",
         moduleType = "generic_module",
-        mandatory = List(ModulePOMandatoryProtocol(currentPO, None, List(1)))
+        mandatory = List(ModulePOMandatoryProtocol(currentPO, None, List(1), None))
       )
 
       val (output, _) = render(
@@ -215,7 +218,36 @@ final class StudyPlanSnippetSpec extends AnyWordSpec with Matchers {
         )
       )
 
-      occurrencesOf(output, s"\\hyperref[sec:${generic1.toString}]") shouldBe 2
+      occurrencesOf(output, s"\\hyperref[sec:${generic1.toString}]") shouldBe 3
+    }
+
+    "place modules by part-time semester in the alternative study plan" in {
+      val module = protocol(
+        module1,
+        "Part Time Module",
+        mandatory = List(ModulePOMandatoryProtocol(currentPO, None, List(1), Some(4)))
+      )
+
+      val (output, warnings) = render(Vector(module))
+
+      output should include("Studienverlaufsplan")
+      output should include("Alternativer Studienverlaufsplan")
+      output should include("Part Time Module")
+      warnings.map(_.code) should not contain "missing_recommended_semester_part_time"
+    }
+
+    "warn when part-time recommended semester is missing" in {
+      val module = protocol(
+        module1,
+        "Missing Part Time",
+        mandatory = List(ModulePOMandatoryProtocol(currentPO, None, List(1), None))
+      )
+
+      val (output, warnings) = render(Vector(module))
+
+      output should include("Alternativer Studienverlaufsplan")
+      output should include("Nicht zugeordnet")
+      warnings.map(_.code) should contain("missing_recommended_semester_part_time")
     }
   }
 }

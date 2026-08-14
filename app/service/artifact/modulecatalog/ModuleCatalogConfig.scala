@@ -23,7 +23,9 @@ final case class ModuleCatalogExcludedElectiveOption(genericModuleId: UUID, opti
 final case class ModuleCatalogStudyPlanConfig(
     sections: List[StudyPlanSection],
     semesterSelections: List[ModuleCatalogSemesterSelection],
-    genericModuleOccurrences: List[ModuleCatalogGenericModuleOccurrence]
+    genericModuleOccurrences: List[ModuleCatalogGenericModuleOccurrence],
+    alternativeGenericModuleOccurrences: List[ModuleCatalogGenericModuleOccurrence] = Nil,
+    alternativeModuleDistributions: List[ModuleCatalogModuleDistribution] = Nil
 )
 
 final case class StudyPlanSection(untilSemester: Int, headline: String)
@@ -31,6 +33,8 @@ final case class StudyPlanSection(untilSemester: Int, headline: String)
 final case class ModuleCatalogSemesterSelection(moduleId: UUID, selectedSemester: Int)
 
 final case class ModuleCatalogGenericModuleOccurrence(moduleId: UUID, semester: Int, count: Int)
+
+final case class ModuleCatalogModuleDistribution(moduleId: UUID, semesters: List[Int])
 
 object ModuleCatalogConfig {
   def empty: ModuleCatalogConfig = ModuleCatalogConfig(
@@ -79,7 +83,17 @@ object ModuleCatalogStudyPlanConfig {
         (JsPath \ "genericModuleOccurrences")
           .readNullable[List[ModuleCatalogGenericModuleOccurrence]]
           .map(_.getOrElse(Nil))
-      )(ModuleCatalogStudyPlanConfig.apply)
+      )
+      .and(
+        (JsPath \ "alternative" \ "genericModuleOccurrences")
+          .readNullable[List[ModuleCatalogGenericModuleOccurrence]]
+          .map(_.getOrElse(Nil))
+      )
+      .and(
+        (JsPath \ "alternative" \ "moduleDistributions")
+          .readNullable[List[ModuleCatalogModuleDistribution]]
+          .map(_.getOrElse(Nil))
+      )(ModuleCatalogStudyPlanConfig(_, _, _, _, _))
 }
 
 object StudyPlanSection {
@@ -92,4 +106,8 @@ object ModuleCatalogSemesterSelection {
 
 object ModuleCatalogGenericModuleOccurrence {
   given Reads[ModuleCatalogGenericModuleOccurrence] = Json.reads
+}
+
+object ModuleCatalogModuleDistribution {
+  given Reads[ModuleCatalogModuleDistribution] = Json.reads
 }

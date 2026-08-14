@@ -10,7 +10,8 @@ private[database] case class ModulePOMandatoryDbEntry(
     module: UUID,
     po: String,
     specialization: Option[String],
-    recommendedSemester: List[Int]
+    recommendedSemester: List[Int],
+    recommendedSemesterPartTime: Option[Int]
 )
 
 private[database] final class ModulePOMandatoryTable(tag: Tag)
@@ -28,6 +29,8 @@ private[database] final class ModulePOMandatoryTable(tag: Tag)
 
   def recommendedSemester = column[List[Int]]("recommended_semester")
 
+  def recommendedSemesterPartTime = column[Option[Int]]("recommended_semester_part_time")
+
   def specialization = column[Option[String]]("specialization")
 
   override def * = (
@@ -35,6 +38,7 @@ private[database] final class ModulePOMandatoryTable(tag: Tag)
     module,
     po,
     specialization,
-    recommendedSemester
+    recommendedSemester,
+    recommendedSemesterPartTime
   ) <> (ModulePOMandatoryDbEntry.apply, ModulePOMandatoryDbEntry.unapply)
 }
