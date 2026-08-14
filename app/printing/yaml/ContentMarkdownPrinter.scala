@@ -15,6 +15,8 @@ import printing.LocalizedStrings
 @Singleton
 private[printing] final class ContentMarkdownPrinter @Inject() (messages: MessagesApi) {
 
+  // Note(MD4C7A): Generated headings must match Note(MD4C7A) in
+  // ModuleContentParser, mocogi-rules.mjs, and the markdown message labels.
   private def abbrev(string: LocalizedStrings) =
     if string.isGerman then "de" else "en"
 

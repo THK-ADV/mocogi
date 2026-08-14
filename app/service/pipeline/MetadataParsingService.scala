@@ -30,8 +30,9 @@ private[pipeline] final class MetadataParsingService @Inject() (
     private val specializationService: SpecializationService,
     private implicit val ctx: ExecutionContext
 ) {
-  private type ParsingResult =
-    Future[Either[Seq[PipelineError], Seq[(Print, ParsedMetadata, ModuleContent, ModuleContent)]]]
+  private type ParsedPrint   = (Print, ParsedMetadata, ModuleContent, ModuleContent)
+  private type ParseFailure  = (Print, PipelineError)
+  private type ParsingResult = Future[Either[Seq[PipelineError], Seq[ParsedPrint]]]
 
   private def parser = {
     val locations         = locationService.all()
@@ -68,6 +69,11 @@ private[pipeline] final class MetadataParsingService @Inject() (
   }
 
   def parseMany(prints: Seq[Print]): ParsingResult =
+    parseAll(prints).map { (errors, parsed) =>
+      Either.cond(errors.isEmpty, parsed, errors.map(_._2))
+    }
+
+  private[pipeline] def parseAll(prints: Seq[Print]): Future[(Seq[ParseFailure], Seq[ParsedPrint])] =
     parser.map { p =>
       val (errs, parses) = prints.partitionMap { print =>
         val parseRes = p.parse(print.value)
@@ -75,17 +81,17 @@ private[pipeline] final class MetadataParsingService @Inject() (
         val rest     = Rest(parseRes._2)
         res match {
           case Left(err) =>
-            Left(PipelineError.parser(err, None))
+            Left(print -> PipelineError.parser(err, None))
           case Right((print, parsedMetadata)) =>
             ModuleContentParser.parse(rest.value)._1 match {
               case Left(err) =>
-                Left(PipelineError.parser(err, Some(parsedMetadata.id)))
+                Left(print -> PipelineError.parser(err, Some(parsedMetadata.id)))
               case Right((de, en)) =>
                 Right((print, parsedMetadata, de, en))
             }
         }
       }
-      Either.cond(errs.isEmpty, parses, errs)
+      (errs, parses)
     }
 
   def parse(print: Print): Future[Either[ParsingError, (ParsedMetadata, ModuleContent, ModuleContent)]] =

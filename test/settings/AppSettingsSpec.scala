@@ -25,6 +25,7 @@ final class AppSettingsSpec extends AnyFlatSpec with Matchers:
         |mail.editUrl = "https://example.com/edit"
         |keycloak.jwksUrl = "https://example.com/jwks"
         |keycloak.issuer = "https://example.com/realm"
+        |markdown.configPath = "markdownlint.jsonc"
         |git.repoUrl = "https://git.example/repo"
         |git.token = "a0eea988-04f6-4b51-80a0-345f520718a7"
         |git.localGitFolderPath = "/tmp/git"

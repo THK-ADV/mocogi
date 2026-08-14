@@ -30,6 +30,7 @@ import webhook.MergeEventHandler
 import webhook.PreviewPushEventHandler
 import auth.KeycloakConfig
 import cli.GitCLI
+import cli.MarkdownCLI
 
 class Module(@unused environment: Environment, @unused configuration: Configuration)
     extends AbstractModule
@@ -38,7 +39,9 @@ class Module(@unused environment: Environment, @unused configuration: Configurat
   override def configure(): Unit = {
     super.configure()
 
-    bind(classOf[AppSettings]).toInstance(AppSettings.load(configuration))
+    val settings = AppSettings.load(configuration)
+    bind(classOf[AppSettings]).toInstance(settings)
+    bind(classOf[MarkdownCLI]).toInstance(MarkdownCLI(settings.markdown))
 
     bind(classOf[GitCLI]).toProvider(classOf[GitCliGuiceProvider])
     bind(classOf[MailConfig]).toProvider(classOf[MailConfigGuiceProvider])

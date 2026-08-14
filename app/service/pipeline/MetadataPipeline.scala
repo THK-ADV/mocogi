@@ -8,6 +8,7 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 import cats.data.EitherT
+import cli.MarkdownCLI
 import models.*
 import ops.bimap
 import ops.mapErr
@@ -18,6 +19,7 @@ import parsing.types.Module
 import parsing.types.ModuleContent
 import parsing.types.ParsedMetadata
 import printing.yaml.ModuleYamlPrinter
+import printer.PrintingError
 import service.ModuleService
 import validation.ModuleRelationGraph
 
@@ -26,6 +28,7 @@ final class MetadataPipeline @Inject() (
     private val parser: MetadataParsingService,
     private val moduleService: ModuleService,
     private val moduleYamlPrinter: ModuleYamlPrinter,
+    private val markdownCLI: MarkdownCLI,
     implicit val ctx: ExecutionContext
 ) {
   private type ParsedModule = (ParsedMetadata, ModuleContent, ModuleContent)
@@ -50,6 +53,32 @@ final class MetadataPipeline @Inject() (
     }
   }
 
+  def fullCheck(prints: Seq[Print]): Future[Either[Seq[PipelineError], Seq[(Print, Module)]]] = {
+    val parse   = parser.parseAll(prints)
+    val context = validationContext()
+    for {
+      (parseFailures, parsed) <- parse
+      linted                  <- Future {
+        val failedInputs = parseFailures.map { (print, error) => error.metadata -> print.value }
+        val parsedInputs = parsed.map { (print, metadata, _, _) => Some(metadata.id) -> print.value }
+        markdownCLI.lint(failedInputs ++ parsedInputs)
+      }
+      context <- context
+    } yield {
+      val lintErrors = linted.fold(
+        error => Seq(PipelineError.printer(PrintingError("Markdown lint", error), None)),
+        _.map { (moduleId, error) =>
+          PipelineError.printer(PrintingError("Markdown lint", error), moduleId)
+        }
+      )
+      val validation       = MetadataValidationService.validateMany(context, parsed)
+      val validationErrors = validation.swap.getOrElse(Seq.empty)
+      val errors           = parseFailures.map(_._2) ++ lintErrors ++ validationErrors
+
+      Either.cond(errors.isEmpty, validation.getOrElse(Seq.empty), errors)
+    }
+  }
+
   def printParseValidate(
       protocol: ModuleProtocol,
       versionScheme: VersionScheme,
@@ -57,6 +86,7 @@ final class MetadataPipeline @Inject() (
   ): Future[Either[PipelineError, (Module, Print)]] =
     EitherT
       .fromEither[Future](print(protocol, versionScheme, moduleId))
+      .flatMap(print => EitherT(format(print, Some(moduleId))))
       .flatMap(print =>
         EitherT(parse(print, moduleId))
           .flatMap(parsed => EitherT(validate(parsed._1)).map(metadata => (print, parsed, metadata)))
@@ -86,6 +116,16 @@ final class MetadataPipeline @Inject() (
     moduleYamlPrinter
       .print(versionScheme, moduleId, protocol)
       .bimap(PipelineError.printer(_, Some(moduleId)), Print.apply)
+
+  private def format(print: Print, moduleId: Option[UUID]): Future[Either[PipelineError, Print]] =
+    Future {
+      markdownCLI
+        .format(print.value)
+        .bimap(
+          error => PipelineError.printer(PrintingError("formatted Markdown", error), moduleId),
+          Print.apply
+        )
+    }
 
   private def parse(
       print: Print,
