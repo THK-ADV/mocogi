@@ -24,13 +24,13 @@ import settings.GitCliGuiceProvider
 import settings.GitConfigProvider
 import settings.KeycloakConfigGuiceProvider
 import settings.MailConfigGuiceProvider
-import settings.MarkdownSettings
 import settings.ModuleKeysToReviewProvider
 import webhook.MainPushEventHandler
 import webhook.MergeEventHandler
 import webhook.PreviewPushEventHandler
 import auth.KeycloakConfig
 import cli.GitCLI
+import cli.MarkdownCLI
 
 class Module(@unused environment: Environment, @unused configuration: Configuration)
     extends AbstractModule
@@ -41,7 +41,7 @@ class Module(@unused environment: Environment, @unused configuration: Configurat
 
     val settings = AppSettings.load(configuration)
     bind(classOf[AppSettings]).toInstance(settings)
-    bind(classOf[MarkdownSettings]).toInstance(settings.markdown)
+    bind(classOf[MarkdownCLI]).toInstance(MarkdownCLI(settings.markdown))
 
     bind(classOf[GitCLI]).toProvider(classOf[GitCliGuiceProvider])
     bind(classOf[MailConfig]).toProvider(classOf[MailConfigGuiceProvider])

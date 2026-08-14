@@ -4,8 +4,6 @@ import java.io.ByteArrayInputStream
 import java.nio.charset.StandardCharsets.UTF_8
 import java.nio.file.Files
 import java.util.UUID
-import javax.inject.Inject
-import javax.inject.Singleton
 
 import scala.sys.process.Process
 import scala.sys.process.ProcessLogger
@@ -14,8 +12,7 @@ import scala.util.control.NonFatal
 import ops.FileOps.deleteDirectory
 import settings.MarkdownSettings
 
-@Singleton
-final class MarkdownCLI @Inject() (settings: MarkdownSettings) {
+final class MarkdownCLI(settings: MarkdownSettings) {
 
   private val MaxFormatPasses = 5
   private val command         = Seq("markdownlint-cli2", "--config", settings.configPath)
