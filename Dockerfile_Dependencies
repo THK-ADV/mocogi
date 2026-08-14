@@ -1,9 +1,15 @@
 # This Dockerfile provides all cli tools and dependencies for the mocogi backend.
 # It will be used as a base image in the production environment
+FROM node:24-bullseye-slim AS markdownlint
+RUN npm install --global markdownlint-cli2@0.23.2
+
 FROM eclipse-temurin:21.0.2_13-jre-jammy
 ARG PANDOC_PLATFORM_SUFFIX
 ARG GIT_REPO_URL
 ENV GIT_REPO_URL=${GIT_REPO_URL}
+COPY --from=markdownlint /usr/local/bin/node /usr/local/bin/node
+COPY --from=markdownlint /usr/local/lib/node_modules /usr/local/lib/node_modules
+RUN ln -s ../lib/node_modules/markdownlint-cli2/markdownlint-cli2-bin.mjs /usr/local/bin/markdownlint-cli2
 RUN apt-get update && apt-get install -y \
   latexmk \
   texlive-xetex \

@@ -285,14 +285,11 @@ final class MergeEventHandler @Inject() (
           if files.isEmpty then
             Future.successful(logger.infoC(s"module type check skipped mr=${mrId.value} reason=no_module_files"))
           else
-            modulePipeline.parseValidateMany(files.map(f => Print(f._1.value))).flatMap {
+            modulePipeline.fullCheck(files.map(f => Print(f._1.value))).flatMap {
               case Left(errs) =>
                 logger.warnC(s"module type check failed mr=${mrId.value} errorCount=${errs.size}")
-                Future.sequence(errs.map { err =>
-                  val body =
-                    s"❌ failed to type check module ${err.metadata.fold("???")(_.toString)}.\n\nreason:${err.getMessage}"
-                  mergeRequestApiService.comment(mrId, body)
-                })
+                val issues = errs.map(_.getMessage).mkString("\n\n")
+                mergeRequestApiService.comment(mrId, s"❌ failed to type check modules.\n\n$issues")
               case Right(_) =>
                 mergeRequestApiService
                   .comment(mrId, "✅ successfully type checked all modules")

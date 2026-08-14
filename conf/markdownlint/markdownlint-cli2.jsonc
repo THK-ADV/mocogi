@@ -1,0 +1,54 @@
+{
+  // Keep the ruleset deliberately small. Module files combine generated Markdown
+  // with user-authored content, so markdownlint's defaults create many false positives.
+  "config": {
+    "default": false,
+
+    // Tabs pasted from Word can turn list content into indented code blocks. Two
+    // spaces preserve common nested-list intent without creating a code block.
+    "MD010": { "code_blocks": false, "spaces_per_tab": 2 },
+
+    // Avoid large accidental gaps in user content.
+    "MD012": { "maximum": 1 },
+
+    // Keep headings separated from surrounding content.
+    "MD022": { "lines_above": 1, "lines_below": 1 },
+
+    // Use one space after list markers and surround lists with blank lines.
+    "MD030": {
+      "ul_single": 1,
+      "ol_single": 1,
+      "ul_multi": 1,
+      "ol_multi": 1
+    },
+    "MD032": true,
+
+    // Keep fenced code and tables separated from paragraphs without changing their content.
+    "MD031": true,
+    "MD058": true,
+
+    // Fix malformed link spacing and ensure a canonical file ending. The similar
+    // emphasis-spacing rule is intentionally disabled because formulas use * and _.
+    "MD039": true,
+    "MD047": true,
+
+    // User headings live below generated level-two headings and must start at level three.
+    "MOC001": true,
+
+    // Convert Word-style Unicode bullets into Markdown list markers.
+    "MOC002": true,
+
+    // Treat every unescaped asterisk directly between letters as gendering so it
+    // cannot become emphasis. Conventional "*italic*" syntax is unaffected.
+    // For example, "Student*Innen" becomes "Student\\*Innen".
+    "MOC003": true
+  },
+
+  // These rules understand generated module sections, Word paste artifacts,
+  // and Markdown-sensitive German gendering.
+  "customRules": ["./mocogi-rules.mjs"],
+
+  // Module metadata starts with a versioned delimiter such as "---v1.0s" instead
+  // of standard YAML front matter's plain "---". Ignore it during Markdown linting.
+  "frontMatter": "^---v[^\\r\\n]*(?:\\r\\n|\\r|\\n)[^]*?(?:\\r\\n|\\r|\\n)---[ \\t]*(?:\\r\\n|\\r|\\n|$)"
+}

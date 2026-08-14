@@ -102,6 +102,8 @@ module_review.rejection.notification.reason=Der dazugehörige Kommentar ist:{0}
 module_review.rejection.notification.closing=Automatisch gesendet von der Modulverwaltung THK-GM
 
 # Markdown
+# Note(MD4C7A): These labels must match Note(MD4C7A) in the content parser,
+# content printer, and mocogi-rules.mjs.
 markdown.content.learning_outcome=Angestrebte Lernergebnisse
 markdown.content.module=Modulinhalte
 markdown.content.teaching_methods=Lehr- und Lernmethoden (Medienformen)

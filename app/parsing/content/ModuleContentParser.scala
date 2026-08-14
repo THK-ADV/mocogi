@@ -14,6 +14,8 @@ object ModuleContentParser {
     (res, Rest(rest))
   }
 
+  // Note(MD4C7A): Parsed headings must match Note(MD4C7A) in
+  // ContentMarkdownPrinter, mocogi-rules.mjs, and the markdown message labels.
   def parser: Parser[(ModuleContent, ModuleContent)] =
     skipFirst(zeroOrMoreSpaces)
       .take(prefix("## (de)"))

@@ -42,9 +42,11 @@ final case class MailSettings(sender: String, reviewUrl: String, editUrl: String
 
 final case class KeycloakSettings(jwksUrl: String, issuer: String)
 
-final case class PlayPathsSettings(tmpDir: String)
+final case class PlayPathsSettings(tmpDir: String) extends AnyVal
 
-final case class ModuleKeysToReviewSettings(pavModuleKeys: Seq[String])
+final case class MarkdownSettings(configPath: String) extends AnyVal
+
+final case class ModuleKeysToReviewSettings(pavModuleKeys: Seq[String]) extends AnyVal
 
 /**
  * Single validated view of application.conf (fail-fast at load).
@@ -59,6 +61,7 @@ final case class AppSettings(
     mail: MailSettings,
     keycloak: KeycloakSettings,
     git: GitRepoSettings,
+    markdown: MarkdownSettings,
     moduleKeysToReview: ModuleKeysToReviewSettings
 )
 
@@ -85,6 +88,9 @@ object AppSettings {
       keycloak = KeycloakSettings(
         jwksUrl = nonEmptyString(configuration, "keycloak.jwksUrl"),
         issuer = nonEmptyString(configuration, "keycloak.issuer")
+      ),
+      markdown = MarkdownSettings(
+        configPath = nonEmptyString(configuration, "markdown.configPath")
       ),
       git = GitRepoSettings(
         repoUrl = nonEmptyString(configuration, "git.repoUrl"),

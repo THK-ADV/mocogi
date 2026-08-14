@@ -95,6 +95,8 @@ module_review.notification.body=???
 module_review.notification.closing=???
 
 # Markdown
+# Note(MD4C7A): These labels must match Note(MD4C7A) in the content parser,
+# content printer, and mocogi-rules.mjs.
 markdown.content.learning_outcome=Learning Outcome
 markdown.content.module=Module Content
 markdown.content.teaching_methods=Teaching and Learning Methods
