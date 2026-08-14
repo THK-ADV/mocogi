@@ -40,7 +40,7 @@ The implementation is an order-sensitive line parser rather than a general YAML 
 | `required_prerequisites` | No | Describes knowledge or modules that are formally required before taking this module. | `modules: module.<uuid>` | May contain `text`, `modules`, or both, in that order, and referenced modules must exist. |
 | `status` | Yes | Indicates whether the module is currently active. | `status.active` | Must be one of the [statuses](#statuses) currently present in `core.status`. |
 | `location` | Yes | Identifies the campus or delivery location. | `location.gm` | Must be one of the [locations](#locations) currently present in `core.location`. |
-| `po_mandatory` | No | Lists examination regulations in which the module is mandatory. | A `study_program: study_program.inf_mi5` entry | Each entry must satisfy the [mandatory PO rules](#mandatory-po-entries); omission represents an empty list. |
+| `po_mandatory` | No | Lists examination regulations in which the module is mandatory, including its full-time and optional part-time recommended semesters. | A `study_program: study_program.inf_mi5` entry with `recommended_semester` and optionally `recommended_semester_part_time` | Each entry must satisfy the [mandatory PO rules](#mandatory-po-entries); omission represents an empty list. |
 | `po_optional` | No | Lists examination regulations in which this module instantiates an optional generic module. | A `study_program: study_program.inf_mi5` entry with `instance_of` | Each entry must satisfy the [optional PO rules](#optional-po-entries); omission represents an empty list. |
 | `participants` | No | Defines the allowed participant-count range. | `min: 4` and `max: 20` | Both integers are required, both must be non-negative, and `min` must be strictly less than `max`. |
 | `taught_with` | No | Lists other modules taught together with this one. | `module.330bd356-e766-433b-ae2c-0a98d49ca49d` | Accepts one UUID reference or a dash list, and every referenced module must exist. |
@@ -146,7 +146,7 @@ po_mandatory:
 | --- | --- | --- | --- | --- |
 | `po_mandatory[].study_program` | Yes per entry | Identifies the PO, optionally narrowed to a specialization, in which the module is mandatory. | `study_program.inf_mi5` | The PO ID must be one of the [POs](#pos); an optional second suffix must be a [specialization ID](#specializations), although the current parser does not verify that the specialization belongs to the selected PO. |
 | `po_mandatory[].recommended_semester` | No | Lists the full-time semesters in which the module is normally taken. | `1` or a dash list containing `1` and `2` | Accepts one integer or a dash list of integers; no range, positivity, uniqueness, or ordering validation is applied. |
-| `po_mandatory[].recommended_semester_part_time` | No | Gives the semester used for the alternative part-time study plan. | `3` | Must be a single integer; no range or positivity validation is applied. |
+| `po_mandatory[].recommended_semester_part_time` | No | Gives the semester used for the alternative part-time study plan. | `3` | Must be a single integer and must follow `recommended_semester` when both keys are present; no range or positivity validation is applied. |
 
 ### Optional PO entries
 
