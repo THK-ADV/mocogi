@@ -335,8 +335,7 @@ final class ModuleCatalogLatexPrinter(
       .appendOpt(
         Option.when(isPreview)(
           s"""
-             |\\usepackage[colorspec=0.9,text=${strings.previewLabel}]{draftwatermark} % watermark
-             |\\usepackage[defaultcolor=orange]{changes} % highlights changes (https://ctan.org/pkg/changes?lang=en)""".stripMargin
+             |\\usepackage[colorspec=0.9,text=${strings.previewLabel}]{draftwatermark} % watermark""".stripMargin
         )
       )
 
@@ -433,60 +432,46 @@ final class ModuleCatalogLatexPrinter(
     val studyPrograms     = payload.studyPrograms
 
     def poRow = {
-      val mandatorySize = module.metadata.po.mandatory.size
-      val electiveSize  = module.metadata.po.optional.size
+      def missingPO(po: String) = {
+        logger.error(s"skipping unavailable po relation: module=${module.id.get} po=$po")
+        Option.empty[String]
+      }
 
-      // assumes that the current PO is definitely included in either of mandatory or optional
-      (mandatorySize, electiveSize) match {
-        case (1, 0) => strings.noneLabel
-        case (0, 1) => strings.noneLabel
-        case (0, 0) => strings.noneLabel
-        case _      =>
-          // remove ourselves for rendering
-          val mandatory = module.metadata.po.mandatory.filterNot(p => p.po == currentPO.id).sortBy(_.po)
-          val optional  = module.metadata.po.optional.filterNot(p => p.po == currentPO.id).sortBy(_.po)
-          val builder   = new StringBuilder()
-
-          for (po, i) <- mandatory.zipWithIndex yield {
-            val content = studyPrograms.find(_.fullPoId.id == po.fullPo) match {
-              case Some(studyProgram) =>
-                val spLabel = escape(strings.label(studyProgram, studyProgram.specialization))
-                var content = s"$spLabel PO-${studyProgram.po.version}"
-                if po.recommendedSemester.nonEmpty then {
-                  content += s" (Sem. ${fmtCommaSeparated(po.recommendedSemester.sorted)(_.toString())})"
-                }
-                content
-              case None =>
-                logger.error(s"expected po ${po.fullPo} to exists for module ${module.id.get}")
-                highlight(s"NOT FOUND: ${escape(po.po)}")
+      val mandatory = module.metadata.po.mandatory
+        .filterNot(_.po == currentPO.id)
+        .sortBy(_.po)
+        .flatMap { po =>
+          studyPrograms
+            .find(_.fullPoId.id == po.fullPo)
+            .map { studyProgram =>
+              val spLabel   = escape(strings.label(studyProgram, studyProgram.specialization))
+              val semesters = Option
+                .when(po.recommendedSemester.nonEmpty)(
+                  s" (Sem. ${fmtCommaSeparated(po.recommendedSemester.sorted)(_.toString())})"
+                )
+                .getOrElse("")
+              s"$spLabel PO-${studyProgram.po.version}$semesters"
             }
-            builder.append(content)
-            if i < mandatory.size - 1 then {
-              builder.append("\\newline ")
+            .orElse(missingPO(po.fullPo))
+        }
+      val optional = module.metadata.po.optional
+        .filterNot(_.po == currentPO.id)
+        .sortBy(_.po)
+        .flatMap { po =>
+          studyPrograms
+            .find(_.fullPoId.id == po.fullPo)
+            .map { studyProgram =>
+              val spLabel = escape(strings.label(studyProgram, studyProgram.specialization))
+              s"$spLabel PO-${studyProgram.po.version} (Wahlmodul)"
             }
-          }
+            .orElse(missingPO(po.fullPo))
+        }
 
-          if mandatory.nonEmpty && optional.nonEmpty then {
-            // rule at roughly baseline height which takes up 30 % of the line width
-            builder.append("\\newline \\rule[0.6ex]{.3\\linewidth}{0.1pt} \\newline ")
-          }
-
-          for (po, i) <- optional.zipWithIndex yield {
-            val content = studyPrograms.find(_.po.id == po.po) match {
-              case Some(studyProgram) =>
-                val spLabel = escape(strings.label(studyProgram, studyProgram.specialization))
-                s"$spLabel PO-${studyProgram.po.version} (Wahlmodul)"
-              case None =>
-                logger.error(s"expected po ${po.fullPo} to exists for module ${module.id.get}")
-                highlight(s"NOT FOUND: ${escape(po.po)}")
-            }
-            builder.append(content)
-            if i < optional.size - 1 then {
-              builder.append("\\newline ")
-            }
-          }
-
-          if builder.isEmpty then strings.noneLabel else builder.toString()
+      (mandatory ++ Option.when(mandatory.nonEmpty && optional.nonEmpty)(
+        "\\rule[0.6ex]{.3\\linewidth}{0.1pt}"
+      ) ++ optional).mkString("\\newline ") match {
+        case ""    => strings.noneLabel
+        case value => value
       }
     }
 
@@ -721,6 +706,4 @@ final class ModuleCatalogLatexPrinter(
         if isChild then builder.append(s"\\subsection{$title}\n") else builder.append(s"\\section{$title}\n")
   }
 
-  private def highlight(str: String) =
-    s"\\highlight{$str}"
 }
