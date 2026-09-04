@@ -1,0 +1,158 @@
+Die Tabellen enthalten bewusst sehr einfache Werte. Sie prüfen normale Zellen, vertikale und horizontale Verbindungen sowie eine kombinierte Verbindung beim Export von DOCX nach LaTeX.
+
+\section{Test 1 Normale Tabelle 2 mal 4}\label{test-1-normale-tabelle-2-mal-4}
+
+Zwei Zeilen und vier Spalten ohne verbundene Zellen.
+
+{\def\LTcaptype{none} % do not increment counter
+\begin{longtable}[]{@{}
+  >{\centering\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2500}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\centering
+A1
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+B1
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+C1
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+D1
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+A2 & B2 & C2 & D2 \\
+\end{longtable}
+}
+
+\section{Test 2 Multirow Tabelle 5 mal 4}\label{test-2-multirow-tabelle-5-mal-4}
+
+Fünf Zeilen und vier Spalten. A umfasst drei Zeilen und X umfasst zwei Zeilen.
+
+{\def\LTcaptype{none} % do not increment counter
+\begin{longtable}[]{@{}
+  >{\centering\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2500}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\centering
+\textbf{Spalte 1}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{Spalte 2}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{Spalte 3}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{Spalte 4}
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+\multirow{3}{=}{\centering\arraybackslash \begin{minipage}[t]{\linewidth}\centering
+\textbf{A\\
+3 Zeilen}\strut
+\end{minipage}} & B1 & C1 & D1 \\
+& B2 & C2 & D2 \\
+& B3 & \multirow{2}{=}{\begin{minipage}[t]{\linewidth}\centering
+\textbf{X\\
+2 Zeilen}\strut
+\end{minipage}} & D3 \\
+B & B4 & & D4 \\
+\end{longtable}
+}
+
+\section{Test 3 Multicolumn Tabelle}\label{test-3-multicolumn-tabelle}
+
+Horizontale Verbindungen als Gegenprobe für LaTeX multicolumn.
+
+{\def\LTcaptype{none} % do not increment counter
+\begin{longtable}[]{@{}
+  >{\centering\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2500}}
+  >{\centering\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2500}}@{}}
+\toprule\noalign{}
+\multicolumn{2}{@{}>{\centering\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.5000} + 2\tabcolsep}}{%
+\begin{minipage}[b]{\linewidth}\centering
+\textbf{AB 2 Spalten}
+\end{minipage}} & \multicolumn{2}{>{\centering\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.5000} + 2\tabcolsep}@{}}{%
+\begin{minipage}[b]{\linewidth}\centering
+\textbf{CD 2 Spalten}
+\end{minipage}} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+A2 & B2 & C2 & D2 \\
+A3 & B3 & C3 & D3 \\
+A4 & B4 & C4 & D4 \\
+\end{longtable}
+}
+
+\section{Test 4 Kombinierter Block}\label{test-4-kombinierter-block}
+
+Eine Zelle umfasst gleichzeitig zwei Zeilen und zwei Spalten.
+
+{\def\LTcaptype{none} % do not increment counter
+\begin{longtable}[]{@{}
+  >{\centering\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2500}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\centering
+\textbf{Spalte 1}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{Spalte 2}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{Spalte 3}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{Spalte 4}
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+\multicolumn{2}{@{}>{\centering\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.5000} + 2\tabcolsep}}{%
+\multirow{2}{=}{\centering\arraybackslash \begin{minipage}[t]{\linewidth}\centering
+\textbf{Block\\
+2 mal 2}\strut
+\end{minipage}}} & C2 & D2 \\
+& & C3 & D3 \\
+A4 & B4 & C4 & D4 \\
+\end{longtable}
+}
+
+\section{Test 5 Multirow am Tabellenrand}\label{test-5-multirow-am-tabellenrand}
+
+Die letzte Spalte umfasst die letzten drei Zeilen und enthält einen manuellen Zeilenumbruch.
+
+{\def\LTcaptype{none} % do not increment counter
+\begin{longtable}[]{@{}
+  >{\centering\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\centering
+\textbf{Spalte 1}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{Spalte 2}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{Spalte 3}
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+A1 & B1 & \multirow{3}{=}{\begin{minipage}[t]{\linewidth}\centering
+\textbf{Rand\\
+3 Zeilen}\strut
+\end{minipage}} \\
+A2 & B2 \\
+A3 & B3 \\
+\end{longtable}
+}
