@@ -7,7 +7,6 @@ import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-import database.repo.Repository
 import database.table.core.POTable
 import models.core.PO
 import ops.single
@@ -20,29 +19,22 @@ final class PORepository @Inject() (
     val dbConfigProvider: DatabaseConfigProvider,
     implicit val ctx: ExecutionContext
 ) extends HasDatabaseConfigProvider[JdbcProfile]
-    with Repository[PO, PO, POTable] {
+    with TableCrudRepository[PO, POTable] {
   import profile.api.*
 
   protected val tableQuery = TableQuery[POTable]
 
-  def allIds(): Future[Seq[String]] =
-    db.run(tableQuery.map(_.id).result)
+  protected override def idOf(t: POTable) = t.id
 
   def allValid(date: LocalDate = LocalDate.now): Future[Seq[PO]] =
-    retrieve(tableQuery.filter(_.isValid(date)))
+    db.run(tableQuery.filter(_.isValid(date)).result)
 
   def allExpired(date: LocalDate = LocalDate.now): Future[Seq[PO]] =
-    retrieve(tableQuery.filter(_.isExpired(date)))
+    db.run(tableQuery.filter(_.isExpired(date)).result)
 
   def allWithIds(pos: List[String]): Future[Seq[PO]] =
-    retrieve(tableQuery.filter(_.id.inSet(pos)))
+    db.run(tableQuery.filter(_.id.inSet(pos)).result)
 
   def get(id: String): Future[PO] =
-    retrieve(tableQuery.filter(_.id === id)).single
-
-  protected override def retrieve(query: Query[POTable, PO, Seq]): Future[Seq[PO]] =
-    db.run(query.result)
-
-  def deleteMany(ids: Seq[String]) =
-    db.run(tableQuery.filter(_.id.inSet(ids)).delete)
+    db.run(tableQuery.filter(_.id === id).result).single
 }

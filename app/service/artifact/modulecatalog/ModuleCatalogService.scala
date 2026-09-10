@@ -25,7 +25,7 @@ import printing.latex.studyplan.StudyPlanSnippet
 import printing.latex.MarkdownLatexPrinter
 import printing.latex.ModuleCatalogLatexPrinter
 import printing.latex.Payload
-import service.core.IdentityService
+import database.repo.core.IdentityRepository
 import service.ModuleService
 import settings.AppSettings
 import cats.data.NonEmptyList
@@ -317,7 +317,7 @@ final class ModuleCatalogService @Inject() (
     moduleTypeRepository: ModuleTypeRepository,
     languageRepository: LanguageRepository,
     seasonRepository: SeasonRepository,
-    identityService: IdentityService,
+    identityRepo: IdentityRepository,
     assessmentMethodRepo: AssessmentMethodRepository,
     poRepository: PORepository,
     messagesApi: MessagesApi,
@@ -407,10 +407,10 @@ final class ModuleCatalogService @Inject() (
   ): Future[StringBuilder] = {
     val liveModules       = moduleService.allModuleCore()
     val createdModules    = moduleService.allNewlyCreated()
-    val moduleTypes       = moduleTypeRepository.all()
-    val languages         = languageRepository.all()
-    val seasons           = seasonRepository.all()
-    val people            = identityService.all()
+    val moduleTypes       = moduleTypeRepository.list()
+    val languages         = languageRepository.list()
+    val seasons           = seasonRepository.list()
+    val people            = identityRepo.list()
     val assessmentMethods = assessmentMethodRepo.all()
     val currentPO         = poRepository.get(poOnly.head.po.id)
 

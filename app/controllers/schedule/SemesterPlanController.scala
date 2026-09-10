@@ -12,6 +12,8 @@ import play.api.libs.json.Json
 import play.api.mvc.AbstractController
 import play.api.mvc.ControllerComponents
 import service.schedule.HolidayService
+import controllers.unlessNoCache
+import controllers.ResourceCache
 
 @Singleton
 final class SemesterPlanController @Inject() (
@@ -19,16 +21,17 @@ final class SemesterPlanController @Inject() (
     jsonRepository: JSONRepository,
     holidayService: HolidayService,
     cached: Cached,
+    cache: ResourceCache,
     implicit val ctx: ExecutionContext
 ) extends AbstractController(cc) {
 
   def allByNow() =
-    cached.status(r => r.method + r.uri, 200, 1.hour) {
+    cache("semesterplan", 1.hour) {
       Action.async(_ => jsonRepository.allByNow().map(Ok(_)))
     }
 
   def holidays() =
-    cached.status(r => r.method + r.uri, 200, 1.hour) {
+    cached.unlessNoCache(r => r.method + r.uri, 200, 1.hour) {
       Action.async(_ => holidayService.holidaysByNow().map(js => Ok(Json.toJson(js))))
     }
 }

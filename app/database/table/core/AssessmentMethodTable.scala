@@ -2,19 +2,13 @@ package database.table.core
 
 import database.table.IDLabelColumn
 import database.Schema
+import models.core.AssessmentMethodDefinition
 import models.AssessmentMethodSource
 import slick.jdbc.PostgresProfile.api.*
 
-private[database] case class AssessmentMethodDbEntry(
-    id: String,
-    deLabel: String,
-    enLabel: String,
-    source: AssessmentMethodSource
-)
-
 private[database] final class AssessmentMethodTable(tag: Tag)
-    extends Table[AssessmentMethodDbEntry](tag, Some(Schema.Core.name), "assessment_method")
-    with IDLabelColumn[AssessmentMethodDbEntry] {
+    extends Table[AssessmentMethodDefinition](tag, Some(Schema.Core.name), "assessment_method")
+    with IDLabelColumn[AssessmentMethodDefinition] {
 
   import database.table.given_BaseColumnType_AssessmentMethodSource
 
@@ -25,5 +19,5 @@ private[database] final class AssessmentMethodTable(tag: Tag)
     deLabel,
     enLabel,
     source
-  ) <> (AssessmentMethodDbEntry.apply, AssessmentMethodDbEntry.unapply)
+  ) <> (AssessmentMethodDefinition.apply, AssessmentMethodDefinition.unapply)
 }

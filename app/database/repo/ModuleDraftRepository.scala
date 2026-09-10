@@ -25,8 +25,7 @@ import slick.jdbc.JdbcProfile
 final class ModuleDraftRepository @Inject() (
     val dbConfigProvider: DatabaseConfigProvider,
     implicit val ctx: ExecutionContext
-) extends Repository[ModuleDraft, ModuleDraft, ModuleDraftTable]
-    with HasDatabaseConfigProvider[JdbcProfile] {
+) extends HasDatabaseConfigProvider[JdbcProfile] {
   import database.MyPostgresProfile.MyAPI.playJsonTypeMapper
   import profile.api.*
   import table.commitColumnType
@@ -35,10 +34,10 @@ final class ModuleDraftRepository @Inject() (
   import table.printColumnType
   import ModuleDraftTable.given_BaseColumnType_Set
 
-  protected val tableQuery = TableQuery[ModuleDraftTable]
+  private val tableQuery = TableQuery[ModuleDraftTable]
 
-  protected override def retrieve(query: Query[ModuleDraftTable, ModuleDraft, Seq]): Future[Seq[ModuleDraft]] =
-    db.run(query.result)
+  def create(input: ModuleDraft): Future[ModuleDraft] =
+    db.run(tableQuery.returning(tableQuery) += input)
 
   def getModuleTitle(module: UUID): Future[String] =
     db.run(tableQuery.filter(_.module === module).map(_.moduleTitle).result.single)

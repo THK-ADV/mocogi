@@ -1,7 +1,7 @@
 package models.core
 
+import play.api.libs.json.Format
 import play.api.libs.json.Json
-import play.api.libs.json.Writes
 
 case class Degree(
     id: String,
@@ -14,5 +14,5 @@ case class Degree(
 object Degree {
   implicit def ord: Ordering[Degree] = Ordering.by[Degree, String](_.id)
 
-  implicit def writes: Writes[Degree] = Json.writes
+  given Format[Degree] = Json.format
 }

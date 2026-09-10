@@ -7,7 +7,6 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 import database.repo.singleOpt
-import database.repo.Repository
 import database.table.core.SpecializationTable
 import models.core.Specialization
 import play.api.db.slick.DatabaseConfigProvider
@@ -18,22 +17,13 @@ import slick.jdbc.JdbcProfile
 final class SpecializationRepository @Inject() (
     val dbConfigProvider: DatabaseConfigProvider,
     implicit val ctx: ExecutionContext
-) extends Repository[Specialization, Specialization, SpecializationTable]
-    with HasDatabaseConfigProvider[JdbcProfile] {
+) extends HasDatabaseConfigProvider[JdbcProfile]
+    with TableCrudRepository[Specialization, SpecializationTable] {
   import profile.api._
 
   protected val tableQuery = TableQuery[SpecializationTable]
 
-  protected override def retrieve(
-      query: Query[SpecializationTable, Specialization, Seq]
-  ) =
-    db.run(query.result)
-
-  def allIds() =
-    db.run(tableQuery.map(_.id).result)
-
-  def deleteMany(ids: Seq[String]) =
-    db.run(tableQuery.filter(_.id.inSet(ids)).delete)
+  protected override def idOf(t: SpecializationTable) = t.id
 
   def get(id: String): Future[Option[Specialization]] =
     db.run(tableQuery.filter(_.id === id).result.singleOpt)

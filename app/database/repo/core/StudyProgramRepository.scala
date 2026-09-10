@@ -3,8 +3,6 @@ package database.repo.core
 import javax.inject.Inject
 import javax.inject.Singleton
 
-import scala.collection.mutable
-import scala.collection.mutable.ListBuffer
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
@@ -17,7 +15,6 @@ import models.core.StudyProgram
 import models.UniversityRole
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.db.slick.HasDatabaseConfigProvider
-import play.api.Logging
 import slick.jdbc.JdbcProfile
 
 @Singleton
@@ -25,98 +22,53 @@ class StudyProgramRepository @Inject() (
     val dbConfigProvider: DatabaseConfigProvider,
     implicit val ctx: ExecutionContext
 ) extends HasDatabaseConfigProvider[JdbcProfile]
-    with Logging {
+    with CrudRepository[StudyProgram] {
   import profile.api.*
 
   protected val tableQuery = TableQuery[StudyProgramTable]
 
   private val personAssocQuery = TableQuery[StudyProgramPersonTable]
 
-  def all(): Future[Seq[StudyProgram]] =
-    retrieve(tableQuery)
-
-  def allIds(): Future[Seq[String]] =
-    db.run(tableQuery.map(_.id).result)
-
-  def createOrUpdateMany(
-      xs: Seq[StudyProgram]
-  ): Future[Seq[StudyProgram]] = {
-    def directors(x: StudyProgram) = {
-      val directors = ListBuffer.empty[StudyProgramPersonDbEntry]
-      x.programDirectors.map(p => directors += StudyProgramPersonDbEntry(p, x.id, UniversityRole.SGL))
-      x.examDirectors.map(p => directors += StudyProgramPersonDbEntry(p, x.id, UniversityRole.PAV))
-      directors.toList
+  def list(): Future[Seq[StudyProgram]] =
+    db.run(tableQuery.joinLeft(personAssocQuery).on(_.id === _.studyProgram).result).map {
+      _.groupBy(_._1.id).values
+        .map { rows =>
+          val sp        = rows.head._1
+          val directors = rows.flatMap(_._2)
+          StudyProgram(
+            sp.id,
+            sp.deLabel,
+            sp.enLabel,
+            sp.abbreviation,
+            sp.degree,
+            NonEmptyList.fromListUnsafe(directors.filter(_.role == UniversityRole.SGL).map(_.person).toList.distinct),
+            NonEmptyList.fromListUnsafe(directors.filter(_.role == UniversityRole.PAV).map(_.person).toList.distinct)
+          )
+        }
+        .toSeq
     }
 
-    def update(x: StudyProgram) =
-      for {
-        _ <- personAssocQuery.filter(_.studyProgram === x.id).delete
-        _ <- tableQuery.filter(_.id === x.id).update(toDbEntry(x))
-        _ <- personAssocQuery ++= directors(x)
-      } yield ()
+  def create(input: StudyProgram): Future[StudyProgram] =
+    db.run(save(input)(tableQuery += toDbEntry(input)).transactionally).map(_ => input)
 
-    def create(x: StudyProgram) =
-      for {
-        _ <- tableQuery += toDbEntry(x)
-        _ <- personAssocQuery ++= directors(x)
-      } yield ()
+  def update(id: String, input: StudyProgram): Future[Int] =
+    db.run(save(input)(tableQuery.filter(_.id === id).update(toDbEntry(input))).transactionally)
 
-    db.run(
-      DBIO
-        .sequence(
-          xs.map { x =>
-            for {
-              exists <- tableQuery.filter(_.id === x.id).exists.result
-              res    <- if (exists) update(x) else create(x)
-            } yield res
-          }
-        )
-        .transactionally
-        .map(_ => xs)
-    )
-  }
-
-  def deleteMany(ids: Seq[String]) =
-    db.run(tableQuery.filter(_.id.inSet(ids)).delete)
-
-  private def retrieve(
-      query: Query[StudyProgramTable, StudyProgramDbEntry, Seq]
-  ) =
-    db.run(
-      query
-        .joinLeft(personAssocQuery)
-        .on(_.id === _.studyProgram)
-        .result
-        .map(
-          _.groupBy(_._1.id)
-            .map {
-              case (_, xs) =>
-                val directors     = mutable.HashSet[String]()
-                val examDirectors = mutable.HashSet[String]()
-                val sp            = xs.head._1
-                xs.foreach {
-                  case (_, Some(sgl)) if sgl.role == UniversityRole.SGL =>
-                    directors += sgl.person
-                  case (_, Some(pav)) if pav.role == UniversityRole.PAV =>
-                    examDirectors += pav.person
-                  case x =>
-                    logger.error(
-                      s"found a missing case while retrieving directors of a study program: $x"
-                    )
-                }
-                StudyProgram(
-                  sp.id,
-                  sp.deLabel,
-                  sp.enLabel,
-                  sp.abbreviation,
-                  sp.degree,
-                  NonEmptyList.fromListUnsafe(directors.toList),
-                  NonEmptyList.fromListUnsafe(examDirectors.toList)
-                )
-            }
-            .toSeq
-        )
-    )
+  private def save(input: StudyProgram)(write: DBIO[Int]): DBIO[Int] =
+    for {
+      n <- write
+      _ <-
+        if n == 0 then DBIO.successful(())
+        else {
+          val directors =
+            input.programDirectors.toList.map(StudyProgramPersonDbEntry(_, input.id, UniversityRole.SGL)) ++
+              input.examDirectors.toList.map(StudyProgramPersonDbEntry(_, input.id, UniversityRole.PAV))
+          for {
+            _ <- personAssocQuery.filter(_.studyProgram === input.id).delete
+            _ <- personAssocQuery ++= directors.distinct
+          } yield ()
+        }
+    } yield n
 
   private def toDbEntry(sp: StudyProgram): StudyProgramDbEntry =
     StudyProgramDbEntry(

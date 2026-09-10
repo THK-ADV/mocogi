@@ -13,7 +13,6 @@ import database.repo.JSONRepository
 import database.view.ModuleViewRepository
 import git.api.GitFileService
 import ops.or
-import play.api.cache.Cached
 import play.api.i18n.I18nSupport
 import play.api.libs.json.*
 import play.api.mvc.AbstractController
@@ -35,7 +34,7 @@ final class ModuleController @Inject() (
     pipeline: MetadataPipeline,
     jsonRepository: JSONRepository,
     moduleDetailsService: ModuleDetailsService,
-    cached: Cached,
+    cache: ResourceCache,
     err: ClientErrorResponse,
     val auth: AuthorizationAction,
     implicit val ctx: ExecutionContext
@@ -46,7 +45,7 @@ final class ModuleController @Inject() (
     case Live
     case All
 
-  private def caching = cached.status(r => r.method + r.uri, 200, 10.minutes)
+  private def caching = cache("modules", 10.minutes)
 
   def all() =
     caching {

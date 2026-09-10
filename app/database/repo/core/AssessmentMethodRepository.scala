@@ -7,8 +7,7 @@ import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-import database.repo.Repository
-import database.table.core.AssessmentMethodDbEntry
+import models.core.AssessmentMethodDefinition
 import database.table.core.AssessmentMethodTable
 import database.table.ModulePermittedAssessmentMethodTable
 import database.table.ModuleUsedAssessmentMethodTable
@@ -23,25 +22,24 @@ import slick.jdbc.JdbcProfile
 class AssessmentMethodRepository @Inject() (
     val dbConfigProvider: DatabaseConfigProvider,
     implicit val ctx: ExecutionContext
-) extends Repository[AssessmentMethodDbEntry, AssessmentMethod, AssessmentMethodTable]
-    with HasDatabaseConfigProvider[JdbcProfile] {
+) extends HasDatabaseConfigProvider[JdbcProfile]
+    with TableCrudRepository[AssessmentMethodDefinition, AssessmentMethodTable] {
   import database.table.given_BaseColumnType_AssessmentMethodSource
   import profile.api.*
 
   protected val tableQuery            = TableQuery[AssessmentMethodTable]
   private val permittedForModuleQuery = TableQuery[ModulePermittedAssessmentMethodTable]
 
-  def allIds(): Future[Seq[String]] =
-    db.run(tableQuery.map(_.id).result)
+  protected override def idOf(t: AssessmentMethodTable) = t.id
+
+  def all(): Future[Seq[AssessmentMethod]] =
+    retrieve(tableQuery)
 
   def allRPO(): Future[Seq[AssessmentMethod]] =
     allBySource(AssessmentMethodSource.RPO)
 
-  def deleteMany(ids: Seq[String]): Future[Int] =
-    db.run(tableQuery.filter(_.id.inSet(ids)).delete)
-
-  protected override def retrieve(
-      query: Query[AssessmentMethodTable, AssessmentMethodDbEntry, Seq]
+  private def retrieve(
+      query: Query[AssessmentMethodTable, AssessmentMethodDefinition, Seq]
   ): Future[Seq[AssessmentMethod]] =
     db.run(query.result.map(_.map(a => AssessmentMethod(a.id, a.deLabel, a.enLabel))))
 

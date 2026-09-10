@@ -2,7 +2,6 @@ import scala.annotation.unused
 
 import com.google.inject.AbstractModule
 import com.google.inject.TypeLiteral
-import git.publisher.CoreDataPublisher
 import git.publisher.ModulePublisher
 import git.subscriber.ModuleDatabaseActor
 import git.subscriber.ModuleSubscribers
@@ -65,7 +64,6 @@ class Module(@unused environment: Environment, @unused configuration: Configurat
     bindActor[PreviewPushEventHandler]("PreviewPushEventHandler")
     bindActor[MainPushEventHandler]("MainPushEventHandler")
     bindActor[PeopleImageUpdateActor]("PeopleImageUpdateActor")
-    bindActor[CoreDataPublisher]("CoreDataPublisher")
     bindActor[ModulePublisher]("ModulePublisher")
     bindActor[ModuleDatabaseActor]("ModuleDatabaseActor")
     bindActor[MergeEventHandler]("MergeEventHandler")

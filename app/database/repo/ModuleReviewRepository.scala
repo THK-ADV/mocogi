@@ -31,14 +31,13 @@ final class ModuleReviewRepository @Inject() (
     val dbConfigProvider: DatabaseConfigProvider,
     studyProgramPersonRepository: StudyProgramPersonRepository,
     implicit val ctx: ExecutionContext
-) extends Repository[ModuleReview.DB, ModuleReview.DB, ModuleReviewTable]
-    with HasDatabaseConfigProvider[JdbcProfile] {
+) extends HasDatabaseConfigProvider[JdbcProfile] {
 
   import database.table.moduleReviewStatusColumnType
   import database.table.universityRoleColumnType
   import profile.api.*
 
-  protected val tableQuery = TableQuery[ModuleReviewTable]
+  private val tableQuery = TableQuery[ModuleReviewTable]
 
   def delete(moduleId: UUID): Future[Int] =
     db.run(tableQuery.filter(_.moduleDraft === moduleId).delete)
@@ -212,8 +211,8 @@ final class ModuleReviewRepository @Inject() (
     db.run(query.result)
   }
 
-  protected override def retrieve(query: Query[ModuleReviewTable, ModuleReview.DB, Seq]): Future[Seq[ModuleReview.DB]] =
-    db.run(query.result)
+  def createMany(inputs: Seq[ModuleReview.DB]): Future[Seq[ModuleReview.DB]] =
+    db.run(DBIO.sequence(inputs.map(input => tableQuery.returning(tableQuery) += input)))
 }
 
 object ModuleReviewRepository {

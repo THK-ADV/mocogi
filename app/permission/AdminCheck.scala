@@ -15,12 +15,7 @@ trait AdminCheck extends UsesClientErrors {
     new ActionFilter[UserRequest] {
       protected override def filter[A](request: UserRequest[A]): Future[Option[Result]] =
         if request.permissions.isAdmin then Future.successful(None)
-        else
-          Future.successful(
-            Some(
-              forbiddenForUser(request, request.request.token.username)
-            )
-          )
+        else Future.successful(Some(forbiddenForUser(request, request.request.token.username)))
 
       protected override def executionContext: ExecutionContext = ctx
     }

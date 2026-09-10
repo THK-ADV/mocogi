@@ -1,16 +1,10 @@
 import java.io.File
-import java.time.format.DateTimeFormatter
-import java.time.LocalDate
 import java.util.UUID
 
 import scala.io.Source
 import scala.util.Try
 
 import cats.data.NonEmptyList
-import cats.implicits.*
-import io.circe.ACursor
-import io.circe.Decoder
-import io.circe.HCursor
 
 package object parsing {
   import parser.Parser
@@ -23,27 +17,6 @@ package object parsing {
         if (xs.isEmpty) never("one entry")
         else always(NonEmptyList.fromListUnsafe(xs))
       )
-  }
-
-  extension (self: ACursor) {
-    def getNonEmptyList(key: String): Decoder.Result[NonEmptyList[String]] = {
-      val field = self.downField(key)
-      if (field.downArray.succeeded) {
-        field.as[NonEmptyList[String]]
-      } else {
-        field.as[String].map(NonEmptyList.one)
-      }
-    }
-
-    def getList(key: String): Decoder.Result[List[String]] = {
-      val field = self.downField(key)
-      if (field.downArray.succeeded) {
-        // Parsing to List[String] results to an empty list. Thus, Seq[String] is used as a workaround
-        field.as[Seq[String]].map(_.toList)
-      } else {
-        field.as[String].map(List(_))
-      }
-    }
   }
 
   private def keyParser(key: String): Parser[Unit] =
@@ -182,16 +155,6 @@ package object parsing {
       singleLineStringForKey(key)
     )
 
-  given decoderList[A](using Decoder[A]): Decoder[List[A]] =
-    (c: HCursor) => {
-      c.keys match {
-        case Some(keys) =>
-          keys.toList.traverse(key => c.get[A](key))
-        case None =>
-          Right(List.empty[A])
-      }
-    }
-
   def withFile0[A](path: String)(input: String => A): A = {
     val s   = Source.fromFile(new File(path))
     val res = input(s.mkString)
@@ -246,14 +209,6 @@ package object parsing {
     keyParser(key)
       .take(single.map(a => List(a)).or(dashes))
   }
-
-  given localDateDecoder: Decoder[LocalDate] =
-    Decoder.decodeString.emap { str =>
-      Either
-        .catchNonFatal(LocalDate.parse(str, DateTimeFormatter.ofPattern("dd.MM.yyyy")))
-        .left
-        .map(_.getMessage)
-    }
 
   def uuidParser(string: String): Parser[UUID] =
     Try(UUID.fromString(string)).fold(_ => never("uuid"), always)

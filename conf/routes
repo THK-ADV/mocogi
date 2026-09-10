@@ -23,27 +23,29 @@ POST          /webhook/merge                                                    
 
 # Git
 
-POST          /git/coreFiles                                                              controllers.GitController.updateCoreFiles()
 POST          /git/moduleFiles                                                            controllers.GitController.updateModuleFiles()
 GET           /git/latestModuleUpdate                                                     controllers.GitController.latestModuleUpdate()
 
 # Core
 
-GET           /locations                                                                  controllers.LocationController.all()
-GET           /languages                                                                  controllers.LanguageController.all()
-GET           /status                                                                     controllers.StatusController.all()
+GET           /locations                                                                  controllers.CoreDataController.cachedAll(entity = "locations")
+GET           /languages                                                                  controllers.CoreDataController.cachedAll(entity = "languages")
+GET           /status                                                                     controllers.CoreDataController.cachedAll(entity = "status")
 GET           /assessmentMethods                                                          controllers.AssessmentMethodController.all()
 GET           /assessmentMethods/counts                                                   controllers.AssessmentMethodController.counts()
-GET           /moduleTypes                                                                controllers.ModuleTypeController.all()
-GET           /seasons                                                                    controllers.SeasonController.all()
+GET           /moduleTypes                                                                controllers.CoreDataController.cachedAll(entity = "moduletypes")
+GET           /seasons                                                                    controllers.CoreDataController.cachedAll(entity = "seasons")
 GET           /identities                                                                 controllers.IdentityController.all()
 GET           /pos                                                                        controllers.POController.all()
-GET           /degrees                                                                    controllers.DegreeController.all()
+GET           /degrees                                                                    controllers.CoreDataController.cachedAll(entity = "degrees")
 GET           /studyPrograms                                                              controllers.StudyProgramController.all()
-GET           /specializations                                                            controllers.SpecializationController.all()
+GET           /specializations                                                            controllers.CoreDataController.cachedAll(entity = "specializations")
 GET           /examPhases                                                                 controllers.ExamPhaseController.all()
 GET           /rooms                                                                      controllers.CoreDataController.rooms()
 GET           /teachingUnits                                                              controllers.CoreDataController.teachingUnits()
+GET           /core-data/:entity                                                          controllers.CoreDataController.all(entity: String)
+POST          /core-data/:entity                                                          controllers.CoreDataController.create(entity: String)
+PUT           /core-data/:entity/:id                                                      controllers.CoreDataController.update(entity: String, id: String)
 
 # Module
 

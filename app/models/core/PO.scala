@@ -3,8 +3,8 @@ package models.core
 import java.time.LocalDate
 
 import controllers.json.JsonNullWritable
+import play.api.libs.json.Format
 import play.api.libs.json.Json
-import play.api.libs.json.Writes
 
 case class PO(
     id: String,
@@ -16,5 +16,5 @@ case class PO(
 )
 
 object PO extends JsonNullWritable {
-  implicit def writes: Writes[PO] = Json.writes
+  given Format[PO] = Json.format
 }

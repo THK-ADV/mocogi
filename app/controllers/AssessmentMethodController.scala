@@ -16,7 +16,6 @@ import database.repo.PermissionRepository
 import models.core.AssessmentMethod
 import models.AssessmentMethodSource
 import permission.ModuleDraftCheck
-import play.api.cache.Cached
 import play.api.libs.json.Json
 import play.api.libs.json.Writes
 import play.api.mvc.AbstractController
@@ -28,7 +27,7 @@ import service.ModuleUpdatePermissionService
 final class AssessmentMethodController @Inject() (
     cc: ControllerComponents,
     repo: AssessmentMethodRepository,
-    cached: Cached,
+    cache: ResourceCache,
     val clientErrors: ClientErrorResponse,
     val moduleUpdatePermissionService: ModuleUpdatePermissionService,
     val permissionRepository: PermissionRepository,
@@ -40,7 +39,7 @@ final class AssessmentMethodController @Inject() (
     with UserResolveAction {
 
   def all() =
-    cached.status(r => r.method + r.uri, 200, 1.hour) {
+    cache("assessmentmethods", 1.hour) {
       Action.async { r =>
         r.queryString match
           case query if query.get("source").exists(_.contains(AssessmentMethodSource.RPO.id)) =>
@@ -58,7 +57,7 @@ final class AssessmentMethodController @Inject() (
     }
 
   def counts() =
-    cached.status(r => r.method + r.uri, 200, 1.hour) {
+    cache("assessmentmethods", 1.hour) {
       Action.async { r => repo.moduleCountPerMethod().map(xs => Ok(Json.toJson(xs))) }
     }
 
