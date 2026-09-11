@@ -58,7 +58,7 @@ private[controllers] trait UserResolveAction extends UsesClientErrors {
       }
 
       private def permissionsFromKeycloakServiceRoles(roles: Set[String]): Permissions =
-        if roles.contains(PermissionType.Admin.label) then Permissions(Map(PermissionType.Admin -> Set.empty))
+        if roles.contains(PermissionType.Admin.id) then Permissions(Map(PermissionType.Admin -> Set.empty))
         else Permissions(Map.empty)
 
       private def getByUsername[A](request: TokenRequest[A]) =

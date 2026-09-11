@@ -10,7 +10,6 @@ import auth.CampusId
 import database.table.core.IdentityTable
 import database.table.core.POTable
 import database.table.core.StudyProgramPersonTable
-import database.table.Permission
 import database.table.PermissionTable
 import models.core.Identity
 import models.UniversityRole
@@ -24,6 +23,9 @@ import permission.PermissionType.SchedulePlanning
 import permission.Permissions
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.db.slick.HasDatabaseConfigProvider
+import play.api.libs.json.JsNull
+import play.api.libs.json.JsValue
+import play.api.libs.json.Json
 import slick.jdbc.GetResult
 import slick.jdbc.JdbcProfile
 
@@ -33,10 +35,11 @@ final class PermissionRepository @Inject() (
     implicit val ctx: ExecutionContext
 ) extends HasDatabaseConfigProvider[JdbcProfile] {
   import database.table.universityRoleColumnType
+  import database.MyPostgresProfile.MyAPI.simpleStrListTypeMapper
   import profile.api.*
 
-  private type POs        = Set[String]
-  private type Permission = (PermissionType, POs)
+  private type POs  = Set[String]
+  private type Perm = (PermissionType, POs)
 
   private def tableQuery              = TableQuery[PermissionTable]
   private def identityQuery           = TableQuery[IdentityTable]
@@ -71,7 +74,7 @@ final class PermissionRepository @Inject() (
     )
 
   // Convert granted PAV permissions to module permissions of non-expired POs if the person is a PAV
-  private def getPAVModulePermissions(person: String): Future[Option[Permission]] =
+  private def getPAVModulePermissions(person: String): Future[Option[Perm]] =
     db.run(
       studyProgramPersonQuery
         .filter(s => s.isPAV && s.person === person)
@@ -84,8 +87,8 @@ final class PermissionRepository @Inject() (
     )
 
   // Convert granted PAV or SGL permissions to artifact permissions of non-expired POs
-  private def getArtifactPermissions(person: String): Future[Option[Seq[Permission]]] = {
-    def collect(xs: Seq[(UniversityRole, String)]): Seq[Permission] = {
+  private def getArtifactPermissions(person: String): Future[Option[Seq[Perm]]] = {
+    def collect(xs: Seq[(UniversityRole, String)]): Seq[Perm] = {
       val map = scala.collection.mutable.Map.empty[PermissionType, POs]
 
       def update(key: PermissionType, value: String) =
@@ -124,11 +127,11 @@ final class PermissionRepository @Inject() (
 
   // Returns one permission object with all non-expired POs if the person is an admin.
   // Otherwise, all permissions are returned with their POs properly resolved
-  private def getAllPermissions(person: String): Future[Seq[Permission] | Permission] =
+  private def getAllPermissions(person: String): Future[Seq[Perm] | Perm] =
     for {
       dbPerms: Seq[database.table.Permission] <- db.run(tableQuery.filter(_.person === person).result)
       perms                                   <- dbPerms.find(_.permType.isAdmin) match {
-        case Some(Permission(_, permType, _, _)) =>
+        case Some(database.table.Permission(_, permType, _, _)) =>
           // an admin role is combined into one which can perform all actions on all non-expired POs
           db.run(poTableQuery.map(_.id).result.map(pos => (permType, Set(pos*))))
         case None =>
@@ -164,9 +167,9 @@ final class PermissionRepository @Inject() (
     getPerson(campusId).flatMap {
       case Some(p) =>
         getAllPermissions(p.id).flatMap {
-          case admin: Permission =>
+          case admin: Perm =>
             Future.successful(Some((p, Permissions(Map(admin._1 -> admin._2)))))
-          case perms: Seq[Permission] =>
+          case perms: Seq[Perm] =>
             for {
               pavModulePerms <- getPAVModulePermissions(p.id)
               artifactPerms  <- getArtifactPermissions(p.id)
@@ -208,4 +211,36 @@ final class PermissionRepository @Inject() (
       )
     }
   }
+
+  def all(): Future[Seq[JsValue]] = {
+    val action = tableQuery
+      .join(identityQuery.filter(_.isPerson))
+      .on(_.person === _.id)
+      .result
+      .map(_.map {
+        case (perm, id) =>
+          val person = Json.obj(
+            "id"        -> id.id,
+            "firstname" -> id.firstname.getOrElse("???"),
+            "lastname"  -> id.lastname.getOrElse("???")
+          )
+          Json.obj(
+            "id"       -> perm.id,
+            "person"   -> person,
+            "permType" -> perm.permType,
+            "context"  -> perm.context.fold(JsNull)(Json.toJson(_))
+          )
+      })
+    db.run(action)
+  }
+
+  // A second permission of the same type for the person is rejected by the unique index on (person, type).
+  def create(perm: permission.Permission): Future[Unit] =
+    db.run(tableQuery += database.table.Permission(0, perm.permType, perm.person, perm.context)).map(_ => ())
+
+  def updateContext(id: Long, context: Option[List[String]]): Future[Int] =
+    db.run(tableQuery.filter(_.id === id).map(_.context).update(context))
+
+  def delete(id: Long): Future[Int] =
+    db.run(tableQuery.filter(_.id === id).delete)
 }
