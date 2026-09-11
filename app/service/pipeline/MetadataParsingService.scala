@@ -7,27 +7,26 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 import cats.syntax.either.*
-import database.repo.core.AssessmentMethodRepository
 import parser.ParsingError
 import parsing.content.ModuleContentParser
 import parsing.metadata.MetadataCompositeParser
 import parsing.types.ModuleContent
 import parsing.types.ParsedMetadata
 import parsing.types.Rest
-import service.core.*
+import database.repo.core.*
 
 @Singleton
 private[pipeline] final class MetadataParsingService @Inject() (
     private val metadataParser: MetadataCompositeParser,
-    private val locationService: LocationService,
-    private val languageService: LanguageService,
-    private val statusService: StatusService,
+    private val locationRepo: LocationRepository,
+    private val languageRepo: LanguageRepository,
+    private val statusRepo: StatusRepository,
     private val assessmentMethodRepo: AssessmentMethodRepository,
-    private val moduleTypeService: ModuleTypeService,
-    private val seasonService: SeasonService,
-    private val personService: IdentityService,
-    private val poService: POService,
-    private val specializationService: SpecializationService,
+    private val moduleTypeRepo: ModuleTypeRepository,
+    private val seasonRepo: SeasonRepository,
+    private val personRepo: IdentityRepository,
+    private val poRepo: PORepository,
+    private val specializationRepo: SpecializationRepository,
     private implicit val ctx: ExecutionContext
 ) {
   private type ParsedPrint   = (Print, ParsedMetadata, ModuleContent, ModuleContent)
@@ -35,15 +34,15 @@ private[pipeline] final class MetadataParsingService @Inject() (
   private type ParsingResult = Future[Either[Seq[PipelineError], Seq[ParsedPrint]]]
 
   private def parser = {
-    val locations         = locationService.all()
-    val languages         = languageService.all()
-    val status            = statusService.all()
+    val locations         = locationRepo.list()
+    val languages         = languageRepo.list()
+    val status            = statusRepo.list()
     val assessmentMethods = assessmentMethodRepo.all()
-    val moduleTypes       = moduleTypeService.all()
-    val seasons           = seasonService.all()
-    val persons           = personService.all()
-    val pos               = poService.all()
-    val specializations   = specializationService.all()
+    val moduleTypes       = moduleTypeRepo.list()
+    val seasons           = seasonRepo.list()
+    val persons           = personRepo.list()
+    val pos               = poRepo.list()
+    val specializations   = specializationRepo.list()
     for {
       locations         <- locations
       languages         <- languages

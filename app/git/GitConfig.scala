@@ -9,7 +9,6 @@ case class GitConfig(
     mainBranch: Branch,
     draftBranch: Branch,
     modulesFolder: String,
-    coreFolder: String,
     moduleCatalogsFolder: String,
     moduleCompanionFolder: String,
     autoApprovedLabel: String,

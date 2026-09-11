@@ -38,7 +38,7 @@ final class ServiceController @Inject() (
 
   def updateImages() =
     auth.andThen(hasRole(Role.UpdateImages)).apply { (r: TokenRequest[AnyContent]) =>
-      imageUpdater ! PeopleImageUpdateActor.Update
+      imageUpdater ! PeopleImageUpdateActor.UpdateAll
       NoContent
     }
 }

@@ -1,7 +1,7 @@
 package models.core
 
 import play.api.libs.json.Json
-import play.api.libs.json.OWrites
+import play.api.libs.json.OFormat
 
 trait IDLabel extends Label {
   def id: String
@@ -23,11 +23,18 @@ object IDLabel {
       override def enLabel: String = _enLabel
     }
 
-  implicit def writes: OWrites[IDLabel] =
+  given OFormat[IDLabel] = OFormat(
+    js =>
+      for {
+        id      <- js.\("id").validate[String]
+        deLabel <- js.\("deLabel").validate[String]
+        enLabel <- js.\("enLabel").validate[String]
+      } yield IDLabel(id, deLabel, enLabel),
     o =>
       Json.obj(
         "id"      -> o.id,
         "deLabel" -> o.deLabel,
         "enLabel" -> o.enLabel
       )
+  )
 }

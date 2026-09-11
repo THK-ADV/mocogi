@@ -19,8 +19,6 @@ object GitFilePath {
 
   private def moduleFileExt = ".md"
 
-  private def coreFileExt = ".yaml"
-
   private def catalogFileExt = ".tex"
 
   def apply(path: String): GitFilePath =
@@ -36,12 +34,6 @@ object GitFilePath {
     apply(s"${gitConfig.moduleCompanionFolder}/${moduleId.toString}_$po$moduleFileExt")
 
   implicit class Ops(private val self: GitFilePath) extends AnyVal {
-    def fileName =
-      self.value.slice(
-        self.value.lastIndexOf("/") + 1,
-        self.value.lastIndexOf(".")
-      )
-
     def moduleId(implicit gitConfig: GitConfig): Option[UUID] = {
       val prefix = modulePrefix
       val suffix = moduleFileExt
@@ -65,24 +57,18 @@ object GitFilePath {
         moduleFileExt
       )
 
-    def isCore(implicit gitConfig: GitConfig): Boolean =
-      self.value.startsWith(gitConfig.coreFolder) && self.value.endsWith(
-        coreFileExt
-      )
-
     def isModuleCatalog(implicit gitConfig: GitConfig): Boolean =
       self.value.startsWith(gitConfig.moduleCatalogsFolder) && self.value
         .endsWith(catalogFileExt)
 
-    def fold[A](module: UUID => A, core: => A, catalog: => A, other: => A)(
+    def fold[A](module: UUID => A, catalog: => A, other: => A)(
         implicit gitConfig: GitConfig
     ): A =
       self.moduleId match {
         case Some(id) =>
           module(id)
         case None =>
-          if (self.isCore) core
-          else if (self.isModuleCatalog) catalog
+          if (self.isModuleCatalog) catalog
           else other
       }
   }

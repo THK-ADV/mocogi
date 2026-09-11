@@ -35,7 +35,6 @@ final class AppSettingsSpec extends AnyFlatSpec with Matchers:
         |git.mainBranch = "main"
         |git.draftBranch = "draft"
         |git.modulesFolder = "modules"
-        |git.coreFolder = "core"
         |git.moduleCatalogsFolder = "catalogs"
         |git.moduleCompanionFolder = "companions"
         |git.autoApprovedLabel = "auto"

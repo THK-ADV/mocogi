@@ -3,10 +3,11 @@ package models.core
 import auth.CampusId
 import database.table.core.IdentityDbEntry
 import models.EmploymentType
-import monocle.Lens
+import play.api.libs.json.JsError
 import play.api.libs.json.JsObject
 import play.api.libs.json.JsString
 import play.api.libs.json.Json
+import play.api.libs.json.Reads
 import play.api.libs.json.Writes
 
 sealed trait Identity {
@@ -17,6 +18,9 @@ sealed trait Identity {
 }
 
 object Identity {
+  final class KindChangeNotAllowed
+      extends IllegalArgumentException("Die Art einer Identität darf nicht geändert werden")
+
   val PersonKind  = "person"
   val GroupKind   = "group"
   val UnknownKind = "unknown"
@@ -162,10 +166,13 @@ object Identity {
       unknownWrites.writes(unknown)
   }
 
-  def idLens =
-    Lens[Identity, String](_.id)(id => {
-      case p: Identity.Person  => p.copy(id = id)
-      case g: Identity.Group   => g.copy(id = id)
-      case u: Identity.Unknown => u.copy(id = id)
-    })
+  given Reads[Identity] = Reads { json =>
+    (json \ "kind").validate[String].flatMap {
+      case PersonKind  => json.validate[Person](Json.reads[Person])
+      case GroupKind   => json.validate[Group](Json.reads[Group])
+      case UnknownKind => json.validate[Unknown](Json.reads[Unknown])
+      case _           => JsError("kind must be person, group or unknown")
+    }
+  }
+
 }

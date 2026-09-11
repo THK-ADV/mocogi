@@ -8,13 +8,10 @@ import scala.concurrent.ExecutionContext
 
 import controllers.POController.ids
 import controllers.POController.validAttribute
-import models.core.PO
-import play.api.cache.Cached
 import play.api.libs.json.Json
-import play.api.libs.json.Writes
 import play.api.mvc.AbstractController
 import play.api.mvc.ControllerComponents
-import service.core.POService
+import database.repo.core.PORepository
 
 object POController {
   val validAttribute = "valid"
@@ -24,23 +21,23 @@ object POController {
 @Singleton
 final class POController @Inject() (
     cc: ControllerComponents,
-    service: POService,
-    cached: Cached,
+    repo: PORepository,
+    cache: ResourceCache,
     implicit val ctx: ExecutionContext
 ) extends AbstractController(cc) {
 
   def all() =
-    cached.status(r => r.method + r.uri, 200, 1.hour) {
+    cache("pos", 1.hour) {
       Action.async { request =>
         val validOnly = request
           .getQueryString(validAttribute)
           .flatMap(_.toBooleanOption)
           .getOrElse(true)
         val res =
-          if (validOnly) service.allValid()
+          if (validOnly) repo.allValid()
           else {
             val poIds = request.getQueryString(ids).map(_.split(',').toList)
-            poIds.fold(service.all())(service.allWithIds)
+            poIds.fold(repo.list())(repo.allWithIds)
           }
         res.map(xs => Ok(Json.toJson(xs)))
       }

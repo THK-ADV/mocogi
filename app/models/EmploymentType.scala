@@ -1,6 +1,6 @@
 package models
 
-import play.api.libs.json.Format
+import play.api.libs.json.*
 
 enum EmploymentType(val id: String) {
   case Professor       extends EmploymentType("prof")
@@ -10,12 +10,20 @@ enum EmploymentType(val id: String) {
 }
 
 object EmploymentType {
-  given Format[EmploymentType] = Format.of[String].bimap(apply, _.id)
+  given Format[EmploymentType] = Format(
+    Reads
+      .of[String]
+      .flatMapResult(id =>
+        values.find(_.id == id).fold[JsResult[EmploymentType]](JsError("Unknown EmploymentType: " + id))(JsSuccess(_))
+      ),
+    Writes(value => JsString(value.id))
+  )
 
   def apply(id: String) =
-    id match
+    id match {
       case "prof"             => Professor
       case "wma"              => WMA
       case "adjunct_lecturer" => AdjunctLecturer
       case _                  => Unknown
+    }
 }

@@ -13,7 +13,6 @@ import scala.util.Success
 import git.*
 import git.api.GitCommitService
 import git.api.GitFileService
-import git.publisher.CoreDataPublisher
 import git.publisher.ModulePublisher
 import logging.errorC
 import logging.infoC
@@ -28,7 +27,6 @@ final class MainPushEventHandler @Inject() (
     downloadService: GitFileService,
     commitService: GitCommitService,
     @Named("ModulePublisher") modulePublisher: ActorRef,
-    @Named("CoreDataPublisher") coreDataPublisher: ActorRef,
     implicit val gitConfig: GitConfig,
     implicit val ctx: ExecutionContext
 ) extends Actor
@@ -91,7 +89,6 @@ final class MainPushEventHandler @Inject() (
       val status = GitFileStatus.Added
       builder += path.fold(
         GitFile.ModuleFile(path, _, status, timestamp),
-        GitFile.CoreFile(path, status),
         GitFile.ModuleCatalogFile(path, status),
         GitFile.Other(path, status)
       )
@@ -100,7 +97,6 @@ final class MainPushEventHandler @Inject() (
       val status = GitFileStatus.Modified
       builder += path.fold(
         GitFile.ModuleFile(path, _, status, timestamp),
-        GitFile.CoreFile(path, status),
         GitFile.ModuleCatalogFile(path, status),
         GitFile.Other(path, status)
       )
@@ -109,7 +105,6 @@ final class MainPushEventHandler @Inject() (
       val status = GitFileStatus.Removed
       builder += path.fold(
         GitFile.ModuleFile(path, _, status, timestamp),
-        GitFile.CoreFile(path, status),
         GitFile.ModuleCatalogFile(path, status),
         GitFile.Other(path, status)
       )
@@ -117,49 +112,23 @@ final class MainPushEventHandler @Inject() (
     builder.toList
   }
 
-  // Proceed with created or modified files. Deleted files are ignored
-  private def filesToDownload(files: List[GitFile]) = {
-    val moduleFiles = ListBuffer.empty[GitFile.ModuleFile]
-    val coreFiles   = ListBuffer.empty[GitFile.CoreFile]
-    files.foreach {
-      case module: GitFile.ModuleFile if !module.status.isRemoved =>
-        moduleFiles += module
-      case core: GitFile.CoreFile if !core.status.isRemoved =>
-        coreFiles += core
-      case _ => ()
-    }
-    (moduleFiles.toList, coreFiles.toList)
-  }
+  private def filesToDownload(files: List[GitFile]): List[GitFile.ModuleFile] =
+    files.collect { case module: GitFile.ModuleFile if !module.status.isRemoved => module }
 
   private def downloadGitFiles(
       branch: Branch,
-      moduleFiles: List[GitFile.ModuleFile],
-      coreFiles: List[GitFile.CoreFile]
-  ): Future[(List[(GitFile.ModuleFile, GitFileContent)], List[(GitFile.CoreFile, GitFileContent)])] = {
-    val downloadedModuleFiles = Future.sequence(
-      moduleFiles.map { file =>
-        val f = for
-          content      <- downloadService.downloadFileContent(file.path, branch)
-          lastModified <- commitService.getCommitDate(file.path, gitConfig.draftBranch)
-        yield (content, lastModified)
-        f.collect {
-          case (Some(content), Some(lastModified)) => (file.copy(lastModified = lastModified), content)
-          case (Some(content), None)               => (file, content)
-        }
+      moduleFiles: List[GitFile.ModuleFile]
+  ): Future[List[(GitFile.ModuleFile, GitFileContent)]] =
+    Future.sequence(moduleFiles.map { file =>
+      val downloaded = for {
+        content      <- downloadService.downloadFileContent(file.path, branch)
+        lastModified <- commitService.getCommitDate(file.path, gitConfig.draftBranch)
+      } yield (content, lastModified)
+      downloaded.collect {
+        case (Some(content), Some(lastModified)) => (file.copy(lastModified = lastModified), content)
+        case (Some(content), None)               => (file, content)
       }
-    )
-    val downloadedCoreFiles = Future.sequence(
-      coreFiles.map(file =>
-        downloadService
-          .downloadFileContent(file.path, branch)
-          .collect { case Some(content) => (file, content) }
-      )
-    )
-    for {
-      downloadedModuleFiles <- downloadedModuleFiles
-      downloadedCoreFiles   <- downloadedCoreFiles
-    } yield (downloadedModuleFiles, downloadedCoreFiles)
-  }
+    })
 
   override def receive: Receive = {
     case HandleEvent(json, incomingCorrelationId) =>
@@ -169,16 +138,15 @@ final class MainPushEventHandler @Inject() (
           if (!branch.isMainBranch) {
             logger.infoC(s"main push skipped branch=${branch.value} reason=not_main_branch")
           } else {
-            val (moduleFiles, coreFiles) = filesToDownload(gitChanges.entries)
-            if (moduleFiles.isEmpty && coreFiles.isEmpty) {
+            val moduleFiles = filesToDownload(gitChanges.entries)
+            if (moduleFiles.isEmpty) {
               logger.infoC(s"main push skipped branch=${branch.value} reason=empty_changes")
             } else {
-              downloadGitFiles(branch, moduleFiles, coreFiles).onComplete {
-                case Success((moduleFiles, coreFiles)) =>
+              downloadGitFiles(branch, moduleFiles).onComplete {
+                case Success(moduleFiles) =>
                   modulePublisher ! ModulePublisher.NotifySubscribers(moduleFiles, incomingCorrelationId)
-                  coreDataPublisher ! CoreDataPublisher.Handle(coreFiles, incomingCorrelationId)
                   logger.infoC(
-                    s"main push ok branch=${branch.value} moduleFiles=${moduleFiles.size} coreFiles=${coreFiles.size}"
+                    s"main push ok branch=${branch.value} moduleFiles=${moduleFiles.size}"
                   )
                 case Failure(e) =>
                   logger.errorC(s"main push failed branch=${branch.value}", e)

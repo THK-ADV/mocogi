@@ -20,6 +20,7 @@ case class UserRequest[A](
     request: TokenRequest[A]
 ) extends WrappedRequest[A](request) {
 
+  // TODO: check if this is still needed
   def accreditationPOs: Option[List[String]] = {
     def parse(role: String): Option[List[String]] = {
       if (!role.startsWith("[") || !role.endsWith("]")) return None

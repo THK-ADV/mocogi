@@ -24,7 +24,7 @@ import play.api.i18n.MessagesApi
 import play.api.Logging
 import printing.latex
 import printing.latex.ExamListsLatexPrinter
-import service.core.IdentityService
+import database.repo.core.IdentityRepository
 import service.ModuleService
 
 @Singleton
@@ -33,7 +33,7 @@ final class ExamListService @Inject() (
     studyProgramViewRepo: StudyProgramViewRepository,
     specializationRepository: SpecializationRepository,
     assessmentMethodRepo: AssessmentMethodRepository,
-    identityService: IdentityService,
+    identityRepo: IdentityRepository,
     messagesApi: MessagesApi,
     gitCli: GitCLI,
     implicit val ctx: ExecutionContext
@@ -53,7 +53,7 @@ final class ExamListService @Inject() (
         Future.failed(new Exception("exam list generation is only supported for pos without specialization"))
       else {
         val assessmentMethods = assessmentMethodRepo.all()
-        val people            = identityService.all()
+        val people            = identityRepo.list()
         val specializations   = specializationRepository.allByPO(po)
         val lang              = Lang(Locale.GERMANY)
 

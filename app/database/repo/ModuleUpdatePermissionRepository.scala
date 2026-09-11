@@ -22,27 +22,18 @@ import slick.jdbc.JdbcProfile
 final class ModuleUpdatePermissionRepository @Inject() (
     val dbConfigProvider: DatabaseConfigProvider,
     implicit val ctx: ExecutionContext
-) extends Repository[
-      (UUID, CampusId, ModuleUpdatePermissionType),
-      (UUID, CampusId, ModuleUpdatePermissionType),
-      ModuleUpdatePermissionTable
-    ]
-    with HasDatabaseConfigProvider[JdbcProfile] {
+) extends HasDatabaseConfigProvider[JdbcProfile] {
 
   import database.table.campusIdColumnType
   import database.table.moduleUpdatePermissionTypeColumnType
   import profile.api.*
 
-  protected val tableQuery = TableQuery[ModuleUpdatePermissionTable]
+  private val tableQuery = TableQuery[ModuleUpdatePermissionTable]
 
-  protected override def retrieve(
-      query: Query[
-        ModuleUpdatePermissionTable,
-        (UUID, CampusId, ModuleUpdatePermissionType),
-        Seq
-      ]
-  ) =
-    db.run(query.result)
+  def createMany(
+      inputs: Seq[(UUID, CampusId, ModuleUpdatePermissionType)]
+  ): Future[Seq[(UUID, CampusId, ModuleUpdatePermissionType)]] =
+    db.run(DBIO.sequence(inputs.map(input => tableQuery.returning(tableQuery) += input)))
 
   def delete(
       module: UUID,

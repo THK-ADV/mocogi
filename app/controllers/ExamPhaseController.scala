@@ -21,7 +21,7 @@ final class ExamPhaseController @Inject() (
     with I18nSupport
     with NelWrites {
   def all() =
-    cached.status(r => r.method + r.uri, 200, 1.hour) {
+    cached.unlessNoCache(r => r.method + r.uri, 200, 1.hour) {
       Action { r =>
         val messages = r.messages
         Ok(

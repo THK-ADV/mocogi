@@ -56,6 +56,7 @@ final class PermissionRepository @Inject() (
         false,
         false,
         false,
+        false,
         false
       )
     )
@@ -200,6 +201,7 @@ final class PermissionRepository @Inject() (
         hasModulesToEdit = hasModulesToEdit,
         fastForwardApprovalPOs = fastForwardApprovalPOs,
         hasExtendedModuleEditPermissions = permissions.isAdmin,
+        hasCoreDataEditPrivileges = permissions.isAdmin,
         hasSchedulePlanningPrivileges = hasSchedulePlanningPrivileges,
         hasExamPlanningPrivileges = false,
         hasSchedulePlanningViewPrivileges = hasModulesToEdit || hasSchedulePlanningPrivileges

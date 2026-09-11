@@ -79,14 +79,7 @@ package object table {
       )
 
   given BaseColumnType[AssessmentMethodSource] =
-    MappedColumnType.base[AssessmentMethodSource, String](
-      _.id,
-      {
-        case "unknown" => AssessmentMethodSource.Unknown
-        case "rpo"     => AssessmentMethodSource.RPO
-        case other     => AssessmentMethodSource.PO(FullPoId(other))
-      }
-    )
+    MappedColumnType.base[AssessmentMethodSource, String](_.id, AssessmentMethodSource.apply)
 
   given BaseColumnType[PlanDraftKind] =
     MappedColumnType.base[PlanDraftKind, String](_.id, PlanDraftKind.apply)

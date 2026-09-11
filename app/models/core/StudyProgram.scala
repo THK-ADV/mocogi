@@ -2,8 +2,8 @@ package models.core
 
 import cats.data.NonEmptyList
 import controllers.json.NelWrites
+import play.api.libs.json.Format
 import play.api.libs.json.Json
-import play.api.libs.json.Writes
 
 case class StudyProgram(
     id: String,
@@ -16,5 +16,5 @@ case class StudyProgram(
 )
 
 object StudyProgram extends NelWrites {
-  implicit def writes: Writes[StudyProgram] = Json.writes
+  given Format[StudyProgram] = Json.format
 }

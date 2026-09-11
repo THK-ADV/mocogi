@@ -7,7 +7,6 @@ import scala.concurrent.duration.*
 import scala.concurrent.ExecutionContext
 
 import database.view.StudyProgramViewRepository
-import play.api.cache.Cached
 import play.api.libs.json.Json
 import play.api.mvc.AbstractController
 import play.api.mvc.AnyContent
@@ -23,7 +22,7 @@ private enum StudyProgramFilter {
 final class StudyProgramController @Inject() (
     cc: ControllerComponents,
     studyProgramViewRepo: StudyProgramViewRepository,
-    cached: Cached,
+    cache: ResourceCache,
     implicit val ctx: ExecutionContext
 ) extends AbstractController(cc) {
 
@@ -37,7 +36,7 @@ final class StudyProgramController @Inject() (
     }
 
   def all() =
-    cached.status(r => r.method + r.uri, 200, 1.hour) {
+    cache("studyprograms", 1.hour) {
       Action.async { request =>
         val res = parseFilter(request) match {
           case NotExpired      => studyProgramViewRepo.notExpired()

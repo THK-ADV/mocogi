@@ -16,7 +16,6 @@ import database.repo.PermissionRepository
 import git.api.GitCommitService
 import git.api.GitFileService
 import git.api.GitRepositoryService
-import git.publisher.CoreDataPublisher
 import git.publisher.ModulePublisher
 import git.GitConfig
 import git.GitFile
@@ -41,7 +40,6 @@ final class GitController @Inject() (
     gitRepositoryApiService: GitRepositoryService,
     gitCommitService: GitCommitService,
     @Named("ModulePublisher") modulePublisher: ActorRef,
-    @Named("CoreDataPublisher") coreDataPublisher: ActorRef,
     auth: AuthorizationAction,
     gitConfig: GitConfig,
     cached: Cached,
@@ -54,36 +52,13 @@ final class GitController @Inject() (
     with Logging {
 
   def latestModuleUpdate() =
-    cached.status(r => r.method + r.uri, 200, 30.minutes) {
+    cached.unlessNoCache(r => r.method + r.uri, 200, 30.minutes) {
       Action.async(_ =>
         gitCommitService
           .getLatestCommitDateOfModulesFolder()
           .map(d => Ok(d.fold(JsNull)(Json.toJson)))
           .recover { case NonFatal(_) => Ok(JsNull) }
       )
-    }
-
-  def updateCoreFiles() =
-    auth.andThen(resolveUser).andThen(isAdmin).async { _ =>
-      given CorrelationId = CorrelationId.random()
-      (for {
-        paths    <- gitRepositoryApiService.listCoreFiles(gitConfig.mainBranch)
-        contents <- Future.sequence(
-          paths.map(path =>
-            downloadService
-              .downloadFileContent(path, gitConfig.mainBranch)
-              .collect { case Some(content) => (GitFile.CoreFile(path, GitFileStatus.Modified), content) }
-          )
-        )
-      } yield {
-        coreDataPublisher ! CoreDataPublisher.Handle(contents, summon[CorrelationId])
-        logger.infoC(s"admin sync core files ok paths=${paths.size} contents=${contents.size}")
-        NoContent
-      }).recoverWith {
-        case NonFatal(e) =>
-          logger.errorC("admin sync core files failed", e)
-          Future.failed(e)
-      }
     }
 
   def updateModuleFiles() =

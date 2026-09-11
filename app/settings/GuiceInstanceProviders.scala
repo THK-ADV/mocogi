@@ -40,7 +40,6 @@ final class GitConfigProvider @Inject() (settings: AppSettings) extends Provider
       Branch(settings.git.mainBranch),
       Branch(settings.git.draftBranch),
       settings.git.modulesFolder,
-      settings.git.coreFolder,
       settings.git.moduleCatalogsFolder,
       settings.git.moduleCompanionFolder,
       settings.git.autoApprovedLabel,
