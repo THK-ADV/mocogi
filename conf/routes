@@ -105,6 +105,13 @@ GET           /moduleReviewKeys                                                 
 GET           /moduleUpdatePermissions/:moduleId                                          controllers.ModuleUpdatePermissionController.allByModule(moduleId: java.util.UUID)
 POST          /moduleUpdatePermissions/:moduleId                                          controllers.ModuleUpdatePermissionController.replace(moduleId: java.util.UUID)
 
+# Permissions
+
+GET           /permissions                                                                controllers.PermissionController.all()
+POST          /permissions                                                                controllers.PermissionController.create()
+PUT           /permissions/:id                                                            controllers.PermissionController.update(id: Long)
+DELETE        /permissions/:id                                                            controllers.PermissionController.delete(id: Long)
+
 # Permitted assessment methods, owned by a module
 
 GET           /modules/:moduleId/assessmentMethods                                        controllers.AssessmentMethodController.allPermittedForModule(moduleId: java.util.UUID)

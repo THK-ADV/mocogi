@@ -3,8 +3,11 @@ package permission
 import permission.PermissionType.Admin
 import permission.PermissionType.ArtifactsCreate
 import permission.PermissionType.ArtifactsPreview
+import play.api.libs.json.Format
+import play.api.libs.json.Json
+import play.api.libs.json.Reads
 
-enum PermissionType(val label: String) {
+enum PermissionType(val id: String) {
   case Module              extends PermissionType("module")
   case ApprovalFastForward extends PermissionType("approval-fast-forward")
   case Admin               extends PermissionType("admin")
@@ -25,6 +28,21 @@ object PermissionType {
       case "artifacts-create"      => ArtifactsCreate
       case "schedule-planning"     => SchedulePlanning
     }
+
+  given Format[PermissionType] = Format(
+    js => js.\("id").validate[String].map(apply),
+    p => {
+      val label = p match {
+        case PermissionType.Module              => "Module der PO bearbeiten"
+        case PermissionType.ApprovalFastForward => "Review überspringen"
+        case PermissionType.Admin               => "Admin"
+        case PermissionType.ArtifactsPreview    => "Artefakte anzeigen"
+        case PermissionType.ArtifactsCreate     => "Artefakte erstellen"
+        case PermissionType.SchedulePlanning    => "Stundenplanung"
+      }
+      Json.obj("id" -> p.id, "label" -> label)
+    }
+  )
 }
 
 case class Permissions(private val permissions: Map[PermissionType, Set[String]]) extends AnyVal {
@@ -51,4 +69,10 @@ case class Permissions(private val permissions: Map[PermissionType, Set[String]]
     permissions.get(ArtifactsCreate).foreach(pos.addAll)
     pos.toSet
   }
+}
+
+case class Permission(permType: PermissionType, context: Option[List[String]], person: String)
+
+object Permission {
+  given Reads[Permission] = Json.reads[Permission]
 }
