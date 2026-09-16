@@ -126,6 +126,13 @@ GET           /holidays                                                         
 
 GET           /semesters                                                                  controllers.schedule.ScheduleEntryController.semesters()
 
+GET           /bookings                                                                   controllers.schedule.BookingController.all()
+POST          /bookings                                                                   controllers.schedule.BookingController.create()
+PUT           /bookings/:id/series                                                        controllers.schedule.BookingController.updateSeries(id: java.util.UUID)
+GET           /bookings/series/:seriesId/occurrences                                      controllers.schedule.BookingController.getSeriesOccurrences(seriesId: java.util.UUID)
+PUT           /bookings/:id                                                               controllers.schedule.BookingController.update(id: java.util.UUID)
+DELETE        /bookings/:id                                                               controllers.schedule.BookingController.delete(id: java.util.UUID)
+
 # Schedule
 
 GET           /scheduleEntries                                                            controllers.schedule.ScheduleEntryController.all()

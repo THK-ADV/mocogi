@@ -34,10 +34,8 @@ final class JSONRepository @Inject() (
     db.run(query)
   }
 
-  def allByNow(now: LocalDate = LocalDate.now): Future[String] = {
-    val month = now.getMonthValue
-    val year  = now.getYear
-    val query = sql"select schedule.semester_plan_by_now($month, $year)".as[String].head
+  def semesterPlan(from: LocalDate, to: LocalDate): Future[String] = {
+    val query = sql"select schedule.get_semester_plan(${from.toString}::date, ${to.toString}::date)".as[String].head
     db.run(query)
   }
 

@@ -1136,3 +1136,236 @@ ORDER BY
   id,
   src_rank) sub;
 $$;
+
+-- Semester boundaries are supplied by Semester, including leap years.
+CREATE OR REPLACE FUNCTION schedule.get_semester_plan(p_start date, p_end date)
+  RETURNS jsonb
+  LANGUAGE sql
+  STABLE
+  AS $$
+  SELECT
+    coalesce(jsonb_agg(to_jsonb(t)), '[]'::jsonb)
+  FROM(
+    SELECT
+      sp.id,
+      sp."start",
+      sp."end",
+      sp.type,
+      tu.id AS "teachingUnit",
+      tu.label AS "teachingUnitLabel",
+      sp.semester_index AS "semesterIndex",
+      sp.phase
+    FROM
+      schedule.semester_plan sp
+    LEFT JOIN core.teaching_unit tu ON tu.id = sp.teaching_unit
+  WHERE
+    sp."start" >= p_start
+    AND sp."start" < p_end) t
+$$;
+
+-- Booking enrichment stays in SQL. Keep both overloads in sync.
+CREATE OR REPLACE FUNCTION schedule.get_bookings(p_ids uuid[])
+  RETURNS jsonb
+  LANGUAGE sql
+  STABLE
+  AS $$
+  WITH entries AS(
+    SELECT
+      se.id,
+      se.kind,
+      se.title,
+      se.note,
+      se.created_by,
+      se.updated_at,
+      se.series_id,
+      se."start",
+      se."end",
+      se.course_type,
+      se.module,
+      se.rooms,
+      se.lecturer,
+      se.po
+    FROM
+      schedule.booking se
+    WHERE
+      se.id = ANY(p_ids)
+),
+module_core AS(
+  SELECT
+    m.id,
+    m.title,
+    m.abbrev,
+    coalesce(jsonb_agg(jsonb_build_object('id', i.id, 'kind', i.kind, 'label', CASE WHEN i.kind = 'person' THEN
+            i.lastname
+          ELSE
+            i.title
+          END, 'abbreviation', CASE WHEN i.kind = 'person' THEN
+            i.abbreviation
+          ELSE
+            i.id
+          END)) FILTER(WHERE i.id IS NOT NULL), '[]'::jsonb) AS module_management
+  FROM( SELECT DISTINCT
+      module
+    FROM
+      entries) em
+    JOIN modules.module m ON m.id = em.module
+    LEFT JOIN modules.module_responsibility mr ON m.id = mr.module
+      AND mr.responsibility_type = 'module_management'
+    LEFT JOIN core.identity i ON mr.identity = i.id
+  GROUP BY
+    m.id
+),
+rooms_by_entry AS(
+  SELECT
+    e.id,
+    coalesce(jsonb_agg(jsonb_build_object('id', r.id, 'abbrev', r.abbrev)) FILTER(WHERE r.id IS NOT NULL), '[]'::jsonb) AS room_agg
+  FROM
+    entries e
+    CROSS JOIN LATERAL unnest(e.rooms) AS room_id(id)
+    LEFT JOIN schedule.room r ON r.id = room_id.id
+  GROUP BY
+    e.id
+),
+lecturers_by_entry AS(
+  SELECT
+    e.id,
+    coalesce(jsonb_agg(jsonb_build_object('id', i.id, 'kind', i.kind, 'label', CASE WHEN i.kind = 'person' THEN
+            i.lastname
+          ELSE
+            i.title
+          END, 'abbreviation', CASE WHEN i.kind = 'person' THEN
+            i.abbreviation
+          ELSE
+            i.id
+          END)) FILTER(WHERE i.id IS NOT NULL), '[]'::jsonb) AS lecturer_agg
+  FROM
+    entries e
+    CROSS JOIN LATERAL unnest(e.lecturer) AS lecturer_id(id)
+    LEFT JOIN core.identity i ON i.id = lecturer_id.id
+  GROUP BY
+    e.id
+)
+SELECT
+  coalesce(jsonb_agg(jsonb_build_object('id', s.id, 'seriesId', s.series_id, 'start', s."start", 'end', s."end", 'kind', s.kind, 'title', s.title, 'note', s.note, 'createdBy', jsonb_build_object('id', s.created_by, 'label', coalesce(nullif(
+              CASE WHEN creator.kind = 'person' THEN
+                concat_ws(' ', creator.firstname, creator.lastname)
+              ELSE
+                creator.title
+              END, ''), s.created_by)), 'updatedAt', s.updated_at, 'rooms', rooms.room_agg, 'lecturer', lecturers.lecturer_agg) || CASE WHEN s.kind = 'teaching' THEN
+        jsonb_build_object('courseType', s.course_type, 'module', mc.id, 'moduleTitle', mc.title, 'moduleAbbrev', mc.abbrev, 'moduleManagement', mc.module_management, 'teachingUnits', coalesce(to_jsonb(mtu.teaching_units), '[]'::jsonb), 'po', s.po)
+      ELSE
+        '{}'::jsonb
+      END), '[]'::jsonb)
+FROM
+  entries s
+  LEFT JOIN core.identity creator ON creator.id = s.created_by
+  LEFT JOIN module_core mc ON mc.id = s.module
+  LEFT JOIN schedule.module_teaching_unit mtu ON mtu.module = mc.id
+  LEFT JOIN rooms_by_entry rooms ON rooms.id = s.id
+  LEFT JOIN lecturers_by_entry lecturers ON lecturers.id = s.id
+$$;
+
+CREATE OR REPLACE FUNCTION schedule.get_bookings(p_kind text, p_start timestamptz, p_end timestamptz)
+  RETURNS jsonb
+  LANGUAGE sql
+  STABLE
+  AS $$
+  WITH entries AS(
+    SELECT
+      se.id,
+      se.kind,
+      se.title,
+      se.note,
+      se.created_by,
+      se.updated_at,
+      se.series_id,
+      se."start",
+      se."end",
+      se.course_type,
+      se.module,
+      se.rooms,
+      se.lecturer,
+      se.po
+    FROM
+      schedule.booking se
+    WHERE
+      se.kind = p_kind
+      AND se."start" >= p_start
+      AND se."start" < p_end
+      AND se."end" <= p_end
+),
+module_core AS(
+  SELECT
+    m.id,
+    m.title,
+    m.abbrev,
+    coalesce(jsonb_agg(jsonb_build_object('id', i.id, 'kind', i.kind, 'label', CASE WHEN i.kind = 'person' THEN
+            i.lastname
+          ELSE
+            i.title
+          END, 'abbreviation', CASE WHEN i.kind = 'person' THEN
+            i.abbreviation
+          ELSE
+            i.id
+          END)) FILTER(WHERE i.id IS NOT NULL), '[]'::jsonb) AS module_management
+  FROM( SELECT DISTINCT
+      module
+    FROM
+      entries) em
+    JOIN modules.module m ON m.id = em.module
+    LEFT JOIN modules.module_responsibility mr ON m.id = mr.module
+      AND mr.responsibility_type = 'module_management'
+    LEFT JOIN core.identity i ON mr.identity = i.id
+  GROUP BY
+    m.id
+),
+rooms_by_entry AS(
+  SELECT
+    e.id,
+    coalesce(jsonb_agg(jsonb_build_object('id', r.id, 'abbrev', r.abbrev)) FILTER(WHERE r.id IS NOT NULL), '[]'::jsonb) AS room_agg
+  FROM
+    entries e
+    CROSS JOIN LATERAL unnest(e.rooms) AS room_id(id)
+    LEFT JOIN schedule.room r ON r.id = room_id.id
+  GROUP BY
+    e.id
+),
+lecturers_by_entry AS(
+  SELECT
+    e.id,
+    coalesce(jsonb_agg(jsonb_build_object('id', i.id, 'kind', i.kind, 'label', CASE WHEN i.kind = 'person' THEN
+            i.lastname
+          ELSE
+            i.title
+          END, 'abbreviation', CASE WHEN i.kind = 'person' THEN
+            i.abbreviation
+          ELSE
+            i.id
+          END)) FILTER(WHERE i.id IS NOT NULL), '[]'::jsonb) AS lecturer_agg
+  FROM
+    entries e
+    CROSS JOIN LATERAL unnest(e.lecturer) AS lecturer_id(id)
+    LEFT JOIN core.identity i ON i.id = lecturer_id.id
+  GROUP BY
+    e.id
+)
+SELECT
+  coalesce(jsonb_agg(jsonb_build_object('id', s.id, 'seriesId', s.series_id, 'start', s."start", 'end', s."end", 'kind', s.kind, 'title', s.title, 'note', s.note, 'createdBy', jsonb_build_object('id', s.created_by, 'label', coalesce(nullif(
+              CASE WHEN creator.kind = 'person' THEN
+                concat_ws(' ', creator.firstname, creator.lastname)
+              ELSE
+                creator.title
+              END, ''), s.created_by)), 'updatedAt', s.updated_at, 'rooms', rooms.room_agg, 'lecturer', lecturers.lecturer_agg) || CASE WHEN s.kind = 'teaching' THEN
+        jsonb_build_object('courseType', s.course_type, 'module', mc.id, 'moduleTitle', mc.title, 'moduleAbbrev', mc.abbrev, 'moduleManagement', mc.module_management, 'teachingUnits', coalesce(to_jsonb(mtu.teaching_units), '[]'::jsonb), 'po', s.po)
+      ELSE
+        '{}'::jsonb
+      END), '[]'::jsonb)
+FROM
+  entries s
+  LEFT JOIN core.identity creator ON creator.id = s.created_by
+  LEFT JOIN module_core mc ON mc.id = s.module
+  LEFT JOIN schedule.module_teaching_unit mtu ON mtu.module = mc.id
+  LEFT JOIN rooms_by_entry rooms ON rooms.id = s.id
+  LEFT JOIN lecturers_by_entry lecturers ON lecturers.id = s.id
+$$;
+
