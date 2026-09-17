@@ -28,8 +28,8 @@ final class ResourceCache @Inject() (cached: Cached)(implicit ctx: ExecutionCont
     val resource           = entity.toLowerCase
     val dependentResources = resource match {
       case "degrees" | "pos" | "studyprograms" | "specializations" => Set("studyprograms", "modules")
-      case "identities"                                            => Set("modules", "scheduleentries")
-      case "rooms"                                                 => Set("scheduleentries")
+      case "identities"                                            => Set("modules", "scheduleentries", "bookings")
+      case "rooms"                                                 => Set("scheduleentries", "bookings")
       case "teachingunits"                                         => Set("semesterplan")
       case _                                                       => Set.empty[String]
     }

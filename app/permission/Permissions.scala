@@ -14,6 +14,7 @@ enum PermissionType(val id: String) {
   case ArtifactsPreview    extends PermissionType("artifacts-preview")
   case ArtifactsCreate     extends PermissionType("artifacts-create")
   case SchedulePlanning    extends PermissionType("schedule-planning")
+  case ScheduleBooking     extends PermissionType("schedule-booking")
 
   def isAdmin: Boolean = this == Admin
 }
@@ -27,6 +28,7 @@ object PermissionType {
       case "artifacts-preview"     => ArtifactsPreview
       case "artifacts-create"      => ArtifactsCreate
       case "schedule-planning"     => SchedulePlanning
+      case "schedule-booking"      => ScheduleBooking
     }
 
   given Format[PermissionType] = Format(
@@ -39,6 +41,7 @@ object PermissionType {
         case PermissionType.ArtifactsPreview    => "Artefakte anzeigen"
         case PermissionType.ArtifactsCreate     => "Artefakte erstellen"
         case PermissionType.SchedulePlanning    => "Stundenplanung"
+        case PermissionType.ScheduleBooking     => "Einzelbuchung"
       }
       Json.obj("id" -> p.id, "label" -> label)
     }
@@ -59,6 +62,9 @@ case class Permissions(private val permissions: Map[PermissionType, Set[String]]
 
   def hasAnyPermission(perms: PermissionType*): Boolean =
     permissions.contains(Admin) || perms.exists(permissions.contains)
+
+  def hasScheduleBooking: Boolean =
+    hasAnyPermission(PermissionType.SchedulePlanning, PermissionType.ScheduleBooking)
 
   def artifactsCreatePermissions: Set[String] =
     permissions.getOrElse(ArtifactsCreate, Set.empty)

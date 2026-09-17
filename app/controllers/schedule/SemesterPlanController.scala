@@ -1,12 +1,17 @@
 package controllers.schedule
 
+import java.time.LocalDate
+import java.time.ZoneId
 import javax.inject.Inject
 import javax.inject.Singleton
 
 import scala.concurrent.duration.*
 import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+import scala.util.Try
 
 import database.repo.JSONRepository
+import models.Semester
 import play.api.cache.Cached
 import play.api.libs.json.Json
 import play.api.mvc.AbstractController
@@ -27,7 +32,22 @@ final class SemesterPlanController @Inject() (
 
   def allByNow() =
     cache("semesterplan", 1.hour) {
-      Action.async(_ => jsonRepository.allByNow().map(Ok(_)))
+      Action.async { request =>
+        val range = Try {
+          request.getQueryString("semester") match {
+            case Some(id) =>
+              val (from, to) = Semester.dateRange(id)
+              (from.toLocalDate, to.toLocalDate)
+            case None =>
+              val today = LocalDate.now(ZoneId.of("Europe/Berlin"))
+              (Semester.of(today).start, Semester.next(today).end)
+          }
+        }
+        range.toEither match {
+          case Right((from, to)) => jsonRepository.semesterPlan(from, to).map(Ok(_))
+          case Left(_)           => Future.successful(BadRequest("Invalid semester"))
+        }
+      }
     }
 
   def holidays() =

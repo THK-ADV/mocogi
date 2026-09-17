@@ -13,6 +13,7 @@ case class UserInfo(
     fastForwardApprovalPOs: Option[Set[String]],
     hasExtendedModuleEditPermissions: Boolean,
     hasSchedulePlanningPrivileges: Boolean,
+    hasScheduleBookingPrivileges: Boolean,
     hasExamPlanningPrivileges: Boolean,
     hasSchedulePlanningViewPrivileges: Boolean,
     hasCoreDataEditPrivileges: Boolean

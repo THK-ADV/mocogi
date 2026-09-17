@@ -8,6 +8,7 @@ import git.CommitId
 import git.MergeRequestId
 import git.MergeRequestStatus
 import models.*
+import models.schedule.BookingKind
 import models.schedule.CourseType
 import models.schedule.ScheduleEntrySeriesId
 import service.pipeline.Print
@@ -86,4 +87,7 @@ package object table {
 
   given BaseColumnType[CourseType] =
     MappedColumnType.base[CourseType, String](_.id, CourseType.apply)
+
+  given BaseColumnType[BookingKind] =
+    MappedColumnType.base[BookingKind, String](_.id, BookingKind.apply)
 }
