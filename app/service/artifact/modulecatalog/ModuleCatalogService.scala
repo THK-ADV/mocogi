@@ -360,14 +360,17 @@ final class ModuleCatalogService @Inject() (
   ): CatalogPreparation = {
     ModuleCatalogService.validateConfig(po, poModules.modules.map(_._1), poOnly, config)
     val modules   = ModuleCatalogService.applyModuleSelection(po, poModules.modules, config.moduleSelection)
-    val studyPlan = studyPlanSnippet(po, modules, isPreview, config.studyPlan, poOnly.flatMap(_.specialization).toList)
-    if !isPreview then logWarnings(po, studyPlan.warnings)
+    val studyPlan = Option.when(config.renderStudyPlan)(
+      studyPlanSnippet(po, modules, isPreview, config.studyPlan, poOnly.flatMap(_.specialization).toList)
+    )
+    val warnings = studyPlan.toList.flatMap(_.warnings)
+    if !isPreview then logWarnings(po, warnings)
     CatalogPreparation(
       modules,
       // children follow their parent: excluding a parent excludes its children as well
       poModules.childrenOf(modules.map(_._1)),
-      introSnippet(workingDir, po).toList.appended(studyPlan),
-      ModuleCatalogService.diagnosticsSnippets(isPreview, studyPlan.warnings)
+      introSnippet(workingDir, po).toList ++ studyPlan.toList,
+      ModuleCatalogService.diagnosticsSnippets(isPreview, warnings)
     )
   }
 
