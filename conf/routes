@@ -62,6 +62,8 @@ GET           /modules/:id/history                                              
 
 # Module Catalog
 
+GET           /moduleCatalogs                                                             controllers.ModuleCatalogController.getAll()
+GET           /moduleCatalogs/file/:filename                                              controllers.ModuleCatalogController.getFile(filename: java.lang.String)
 GET           /moduleCatalogs/:po/genericModules                                          controllers.ModuleCatalogController.allGenericModulesForPO(po: java.lang.String)
 GET           /moduleCatalogs/:po/configOptions                                           controllers.ModuleCatalogController.configOptions(po: java.lang.String)
 POST          /moduleCatalogs/:po                                                         controllers.ModuleCatalogController.generate(po: java.lang.String)

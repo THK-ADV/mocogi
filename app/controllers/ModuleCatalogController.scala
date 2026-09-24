@@ -1,6 +1,7 @@
 package controllers
 
 import java.nio.file.Files
+import java.nio.file.Path
 import java.nio.file.Paths
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -12,11 +13,13 @@ import scala.jdk.CollectionConverters.*
 import scala.util.control.NonFatal
 import scala.util.Failure
 import scala.util.Success
+import scala.util.Try
 
 import auth.AuthorizationAction
 import controllers.actions.UserRequest
 import controllers.actions.UserResolveAction
 import database.repo.JSONRepository
+import database.repo.ModuleCatalogRepository
 import database.repo.PermissionRepository
 import models.Semester
 import ops.FileOps
@@ -41,6 +44,7 @@ final class ModuleCatalogController @Inject() (
     catalogService: ModuleCatalogService,
     auth: AuthorizationAction,
     jsonRepo: JSONRepository,
+    moduleCatalogRepo: ModuleCatalogRepository,
     appSettings: AppSettings,
     studyProgramPrivilegesService: StudyProgramPrivilegesService,
     val permissionRepository: PermissionRepository,
@@ -50,9 +54,46 @@ final class ModuleCatalogController @Inject() (
     with ArtifactCheck
     with UserResolveAction {
 
-  private def tmpDir: String      = appSettings.play.tmpDir
-  private def wordCmd: String     = appSettings.pandoc.wordCmd
-  private def mcIntroPath: String = appSettings.pandoc.mcIntroPath
+  private def tmpDir: String              = appSettings.play.tmpDir
+  private def wordCmd: String             = appSettings.pandoc.wordCmd
+  private def mcIntroPath: String         = appSettings.pandoc.mcIntroPath
+  private def moduleCatalogFolder: String = appSettings.pandoc.moduleCatalogOutputFolderPath
+
+  /**
+   * Publicly lists the current published module catalog for each non-expired base PO.
+   *
+   * @return JSON array of catalog metadata, empty when no catalogs are published
+   */
+  def getAll(): Action[AnyContent] =
+    Action.async { (_: Request[AnyContent]) =>
+      moduleCatalogRepo.all().map(xs => Ok(Json.toJson(xs)))
+    }
+
+  /**
+   * Publicly downloads a published or archived PDF from the configured catalog folder.
+   * Only regular files whose resolved paths remain inside that folder are served.
+   *
+   * @param filename a simple PDF filename without path components
+   * @return the PDF download, or 404 for an invalid filename or unavailable file
+   */
+  def getFile(filename: String): Action[AnyContent] =
+    Action { (_: Request[AnyContent]) =>
+      resolveModuleCatalogFile(filename) match
+        case Some(path) =>
+          Ok.sendFile(content = path.toFile, inline = false, fileName = _ => Some(filename)).as(MimeTypes.PDF)
+        case _ => NotFound
+    }
+
+  private def resolveModuleCatalogFile(filename: String): Option[Path] =
+    if filename.isEmpty || filename != filename.trim || !filename.endsWith(".pdf") ||
+      filename.exists(c => c == '/' || c == '\\' || c == '\u0000')
+    then None
+    else
+      Try {
+        val base     = Paths.get(moduleCatalogFolder).toAbsolutePath.normalize().toRealPath()
+        val resolved = base.resolve(filename).normalize().toRealPath()
+        Option.when(resolved.startsWith(base) && Files.isRegularFile(resolved))(resolved)
+      }.toOption.flatten
 
   /**
    * Returns the generic modules available for the PO.
