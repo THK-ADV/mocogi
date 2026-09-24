@@ -29,8 +29,8 @@ private enum RenderingContext {
 }
 
 object ModuleCatalogLatexPrinter {
-  def chapter(name: String)(implicit builder: StringBuilder) =
-    builder.append(s"\\chapter{$name}\n")
+  def section(name: String)(implicit builder: StringBuilder) =
+    builder.append(s"\\section{$name}\n")
 
   def newPage(implicit builder: StringBuilder) =
     builder.append("\\newpage\n")
@@ -56,9 +56,9 @@ final class ModuleCatalogLatexPrinter(
 )(using lang: Lang)
     extends Logging {
 
-  import ModuleCatalogLatexPrinter.chapter
   import ModuleCatalogLatexPrinter.nameRef
   import ModuleCatalogLatexPrinter.newPage
+  import ModuleCatalogLatexPrinter.section
 
   private given builder: StringBuilder = new StringBuilder()
 
@@ -128,9 +128,10 @@ final class ModuleCatalogLatexPrinter(
       })
 
   def print(): StringBuilder = {
-    builder.append("\\documentclass[11pt, oneside]{book}")
+    builder.append("\\documentclass[11pt, oneside]{article}")
     packages()
     commands()
+    headlineFormats
     builder.append(s"""
                       |\\begin{document}
                       |\\selectlanguage{${strings.languagePackage}}""".stripMargin)
@@ -142,7 +143,6 @@ final class ModuleCatalogLatexPrinter(
     newPage
     builder.append("\\tableofcontents\n")
     newPage
-    headlineFormats
     latexSnippets.foreach(_.print(using lang, builder))
     printBaseModules()
     printSpecializationModules()
@@ -231,11 +231,11 @@ final class ModuleCatalogLatexPrinter(
         if recommendedSemester.isEmpty then (Int.MaxValue, title) else (recommendedSemester.min, title)
       }
 
-  /** Prints the chapter only if it has modules, otherwise the catalog would contain an empty chapter. */
-  private def printModules(chapterTitle: String, mods: Vector[(ModuleProtocol, LocalDate)]) =
+  /** Start each nonempty module group on a new page, with its first module directly below the heading. */
+  private def printModules(sectionTitle: String, mods: Vector[(ModuleProtocol, LocalDate)]) =
     if mods.nonEmpty then {
-      chapter(chapterTitle)
       newPage
+      section(sectionTitle)
       mods.foreach {
         case (m, lm) =>
           m.metadata.moduleRelation match {
@@ -325,6 +325,7 @@ final class ModuleCatalogLatexPrinter(
                 |  \noindent\rule{\linewidth}{\lightrulewidth}%
                 |  \vspace{-1.0em}
                 |}
+                |\usepackage[titles]{tocloft} % configure TOC columns while keeping the existing title style
                 |\usepackage{hyperref} % support for hyperlinks
                 |\usepackage{xurl} % line breaking in urls
                 |\usepackage{titlesec}
@@ -341,27 +342,32 @@ final class ModuleCatalogLatexPrinter(
 
   private def headlineFormats(implicit builder: StringBuilder) =
     builder
-      .append("""% define the chapter format
-                |\titleformat{\chapter}[display]
-                |{\normalfont\Huge\bfseries} % font attributes
-                |{\vspace*{\fill}} % vertical space before the chapter title
-                |{0pt} % horizontal space between the chapter title and the left margin
-                |{\Huge\centering} % font size of the chapter title
-                |[\vspace*{\fill}] % vertical space after the chapter title
+      .append("""% compact headings; module content remains on separate lines even at deeper levels
+                |\titleformat{\section}[hang]{\normalfont\LARGE\bfseries}{\thesection}{1em}{}
+                |\titlespacing*{\section}{0pt}{2ex}{1.5ex}
+                |\titleformat{\paragraph}[hang]{\normalfont\normalsize\bfseries}{\theparagraph}{1em}{}
+                |\titlespacing*{\paragraph}{0pt}{3.25ex plus 1ex minus .2ex}{1.5ex plus .2ex}
+                |\titleformat{\subparagraph}[hang]{\normalfont\normalsize\bfseries}{\thesubparagraph}{1em}{}
+                |\titlespacing*{\subparagraph}{0pt}{3.25ex plus 1ex minus .2ex}{1.5ex plus .2ex}
                 |""".stripMargin)
-//      .append("% define the subsection format\n")
-//      .append("\\titleformat{name=\\subsection}\n")
-//      .append("{\\normalfont\\large\\bfseries} % default font attributes\n")
-//      .append("{} % remove numbers\n")
-//      .append("{0pt} % no space between subsection and left margin\n")
-//      .append("{} % nothing after subsection\n")
 
   private def commands() =
     builder
       .append(
         """
           |% commands and settings
-          |\setcounter{tocdepth}{2} % set tocdepth to 2 (includes chapters, sections (printModules) and subsections (child printModules))
+          |\setcounter{tocdepth}{3} % include module groups, modules and child modules
+          |\setcounter{secnumdepth}{3} % number sections, subsections and subsubsections
+          |% Compact TOC: titles advance by 1.7em per level; number columns fit 99.99.99.
+          |\cftsetindents{section}{0em}{1.8em}
+          |\cftsetindents{subsection}{0.5em}{3em}
+          |\cftsetindents{subsubsection}{1em}{4.2em}
+          |\renewcommand{\cftsecpresnum}{\hfill}
+          |\renewcommand{\cftsecaftersnum}{\enspace}
+          |\renewcommand{\cftsubsecpresnum}{\hfill}
+          |\renewcommand{\cftsubsecaftersnum}{\enspace}
+          |\renewcommand{\cftsubsubsecpresnum}{\hfill}
+          |\renewcommand{\cftsubsubsecaftersnum}{\enspace}
           |\providecommand{\tightlist}{\setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
           |% customize the page style
           |\pagestyle{fancy}
@@ -374,26 +380,26 @@ final class ModuleCatalogLatexPrinter(
           |\setlength{\marginparsep}{0pt} % no margin notes""".stripMargin
       )
 
-  // replace \subsection{title} with \subsection*{title} and add a divider
-  private def rewriteSubsections(origin: String) = {
-    val pattern = """\\subsection\{([^}]*)\}""".r
+  // Content headings stay unnumbered and out of the TOC, below the module or child-module heading.
+  private def rewriteContentHeadings(origin: String) = {
+    val pattern = """(?m)^\\(subsubsection|paragraph|subparagraph)\{([^}]*)\}""".r
     val result  = new StringBuilder()
     var lastEnd = 0
 
     for (m <- pattern.findAllMatchIn(origin)) {
-      val subsectionName = m.group(1)
+      val headingName = m.group(2)
       result.append(origin.substring(lastEnd, m.start))
-      if subsectionName == strings.learningOutcomeModuleCatalogLabel then {
+      if headingName == strings.learningOutcomeModuleCatalogLabel then {
         // reduce the gap between the bottom rule of the upper table and the “Learning Outcome” heading
         result.append("\\vspace{-2em}\n")
-      } else if subsectionName == strings.moduleContentModuleCatalogLabel ||
-        subsectionName == strings.teachingAndLearningMethodsModuleCatalogLabel ||
-        subsectionName == strings.recommendedReadingModuleCatalogLabel
+      } else if headingName == strings.moduleContentModuleCatalogLabel ||
+        headingName == strings.teachingAndLearningMethodsModuleCatalogLabel ||
+        headingName == strings.recommendedReadingModuleCatalogLabel
       then {
         // insert a horizontal line before each subsequent subsection
         result.append("\\subsectiondivider\n")
       }
-      result.append(s"\\subsection*{$subsectionName}")
+      result.append(s"\\${m.group(1)}*{$headingName}")
       lastEnd = m.end
     }
 
@@ -581,6 +587,7 @@ final class ModuleCatalogLatexPrinter(
       module.metadata.language,
       module.deContent,
       module.enContent,
+      parent.nonEmpty,
       List(
         (strings.learningOutcomeModuleCatalogLabel, GenLens[ModuleContent](_.learningOutcome)),
         (strings.moduleContentModuleCatalogLabel, GenLens[ModuleContent](_.content)),
@@ -621,7 +628,8 @@ final class ModuleCatalogLatexPrinter(
             module.id.get,
             module.metadata.language,
             module.deContent.particularities,
-            module.enContent.particularities
+            module.enContent.particularities,
+            parent.nonEmpty
           )
         )
         printTableRow(
@@ -646,11 +654,12 @@ final class ModuleCatalogLatexPrinter(
       id: UUID,
       language: String,
       deContent: => String,
-      enContent: => String
+      enContent: => String,
+      isChild: Boolean
   ): String = {
     val content = contentForLanguage(language, deContent, enContent)
     if content.nonEmpty && !content.forall(_.isWhitespace) then {
-      printer.toLatex(content) match {
+      printer.toLatex(content, headingShift = if isChild then 2 else 1).map(rewriteContentHeadings) match {
         case Left((e, stdErr)) =>
           logger.error(
             s"""content conversation from markdown to latex failed on $id:
@@ -671,6 +680,7 @@ final class ModuleCatalogLatexPrinter(
       language: String,
       deContent: ModuleContent,
       enContent: ModuleContent,
+      isChild: Boolean,
       entries: List[(String, Lens[ModuleContent, String])]
   ): Unit = {
     val markdownContent = new StringBuilder()
@@ -683,7 +693,9 @@ final class ModuleCatalogLatexPrinter(
           markdownContent.append("\n\n")
         }
     }
-    printer.toLatex(markdownContent.toString()).map(rewriteSubsections) match {
+    printer
+      .toLatex(markdownContent.toString(), headingShift = if isChild then 2 else 1)
+      .map(rewriteContentHeadings) match {
       case Left((e, stdErr)) =>
         logger.error(
           s"""content conversation from markdown to latex failed on $id:
@@ -701,9 +713,10 @@ final class ModuleCatalogLatexPrinter(
     id match
       case Some(id) =>
         val ref = s"\\label{sec:${id.toString}}"
-        if isChild then builder.append(s"\\subsection{$title}$ref\n") else builder.append(s"\\section{$title}$ref\n")
+        if isChild then builder.append(s"\\subsubsection{$title}$ref\n")
+        else builder.append(s"\\subsection{$title}$ref\n")
       case None =>
-        if isChild then builder.append(s"\\subsection{$title}\n") else builder.append(s"\\section{$title}\n")
+        if isChild then builder.append(s"\\subsubsection{$title}\n") else builder.append(s"\\subsection{$title}\n")
   }
 
 }
