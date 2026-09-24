@@ -12,7 +12,7 @@ private[database] final class ExamListTable(tag: Tag)
 
   def po = column[String]("po", O.PrimaryKey)
 
-  def semester = column[String]("semester", O.PrimaryKey)
+  def semester = column[String]("semester")
 
   def date = column[LocalDate]("date")
 

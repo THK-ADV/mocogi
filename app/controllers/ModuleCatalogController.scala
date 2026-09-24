@@ -1,42 +1,27 @@
 package controllers
 
-import java.nio.file.Files
-import java.nio.file.Path
-import java.nio.file.Paths
 import javax.inject.Inject
 import javax.inject.Singleton
 
-import scala.collection.mutable.ListBuffer
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
-import scala.jdk.CollectionConverters.*
 import scala.util.control.NonFatal
 import scala.util.Failure
 import scala.util.Success
-import scala.util.Try
 
 import auth.AuthorizationAction
-import controllers.actions.UserRequest
 import controllers.actions.UserResolveAction
 import database.repo.JSONRepository
-import database.repo.ModuleCatalogRepository
 import database.repo.PermissionRepository
-import models.Semester
-import ops.FileOps
-import ops.FileOps.deleteDirectory
 import permission.ArtifactCheck
 import play.api.libs.json.*
 import play.api.libs.Files.TemporaryFile
 import play.api.mvc.*
 import play.mvc.Http.HeaderNames
-import printing.latex.TextIntroRewriter
-import printing.latex.WordLatexPrinter
 import security.ClientErrorResponse
-import settings.AppSettings
 import service.artifact.modulecatalog.ModuleCatalogConfig
 import service.artifact.modulecatalog.ModuleCatalogConfigException
 import service.artifact.modulecatalog.ModuleCatalogService
-import service.StudyProgramPrivilegesService
 
 @Singleton
 final class ModuleCatalogController @Inject() (
@@ -44,9 +29,6 @@ final class ModuleCatalogController @Inject() (
     catalogService: ModuleCatalogService,
     auth: AuthorizationAction,
     jsonRepo: JSONRepository,
-    moduleCatalogRepo: ModuleCatalogRepository,
-    appSettings: AppSettings,
-    studyProgramPrivilegesService: StudyProgramPrivilegesService,
     val permissionRepository: PermissionRepository,
     val clientErrors: ClientErrorResponse,
     implicit val ctx: ExecutionContext
@@ -54,20 +36,13 @@ final class ModuleCatalogController @Inject() (
     with ArtifactCheck
     with UserResolveAction {
 
-  private def tmpDir: String              = appSettings.play.tmpDir
-  private def wordCmd: String             = appSettings.pandoc.wordCmd
-  private def mcIntroPath: String         = appSettings.pandoc.mcIntroPath
-  private def moduleCatalogFolder: String = appSettings.pandoc.moduleCatalogOutputFolderPath
-
   /**
    * Publicly lists the current published module catalog for each non-expired base PO.
    *
    * @return JSON array of catalog metadata, empty when no catalogs are published
    */
   def getAll(): Action[AnyContent] =
-    Action.async { (_: Request[AnyContent]) =>
-      moduleCatalogRepo.all().map(xs => Ok(Json.toJson(xs)))
-    }
+    Action.async(_ => catalogService.listPublished().map(xs => Ok(Json.toJson(xs))))
 
   /**
    * Publicly downloads a published or archived PDF from the configured catalog folder.
@@ -77,23 +52,12 @@ final class ModuleCatalogController @Inject() (
    * @return the PDF download, or 404 for an invalid filename or unavailable file
    */
   def getFile(filename: String): Action[AnyContent] =
-    Action { (_: Request[AnyContent]) =>
-      resolveModuleCatalogFile(filename) match
+    Action { _ =>
+      catalogService.findPublishedFile(filename) match
         case Some(path) =>
-          Ok.sendFile(content = path.toFile, inline = false, fileName = _ => Some(filename)).as(MimeTypes.PDF)
+          Ok.sendFile(content = path.toFile, inline = true, fileName = _ => Some(filename)).as(MimeTypes.PDF)
         case _ => NotFound
     }
-
-  private def resolveModuleCatalogFile(filename: String): Option[Path] =
-    if filename.isEmpty || filename != filename.trim || !filename.endsWith(".pdf") ||
-      filename.exists(c => c == '/' || c == '\\' || c == '\u0000')
-    then None
-    else
-      Try {
-        val base     = Paths.get(moduleCatalogFolder).toAbsolutePath.normalize().toRealPath()
-        val resolved = base.resolve(filename).normalize().toRealPath()
-        Option.when(resolved.startsWith(base) && Files.isRegularFile(resolved))(resolved)
-      }.toOption.flatten
 
   /**
    * Returns the generic modules available for the PO.
@@ -108,46 +72,38 @@ final class ModuleCatalogController @Inject() (
       .async(_ => jsonRepo.getGenericModulesForPO(po).map(Ok(_)))
 
   /**
-   * Generates a PDF module catalog for the PO using the configuration in the request body.
-   * The optional `preview` query parameter defaults to `true`; `false` generates the current semester's final catalog.
+   * Generates a temporary PDF preview using the configuration in the request body.
    *
    * @param po for which the module catalog is created
-   * @return the generated PDF file
+   * @return the generated PDF preview
    */
-  def generate(po: String): Action[ModuleCatalogConfig] =
+  def getPreview(po: String): Action[ModuleCatalogConfig] =
     auth(parse.json[ModuleCatalogConfig])
       .andThen(resolveUser)
       .andThen(canPreviewArtifact(po))
-      .async { (r: Request[ModuleCatalogConfig]) =>
+      .async { r =>
         r.headers.get(HeaderNames.ACCEPT) match {
           case Some(MimeTypes.PDF) =>
-            val isPreview = r.getQueryString("preview").flatMap(_.toBooleanOption).getOrElse(true)
-            val filename  = s"module_catalog_$po"
-            val file      = FileOps.createLatexFile(filename, tmpDir)
-            val path      =
-              if isPreview then catalogService.preview(po, file, r.body)
-              else catalogService.create(po, file, Semester.of(), r.body)
-            path
-              .map(path =>
-                Ok.sendPath(
-                  path,
-                  onClose = () => file.getParent.deleteDirectory()
-                ).as(MimeTypes.PDF)
-              )
+            catalogService
+              .preview(po, r.body)
+              .map(pdf => Ok.sendPath(pdf.path, onClose = () => pdf.close()).as(MimeTypes.PDF))
               .recover {
-                case NonFatal(e) =>
-                  file.getParent.deleteDirectory()
-                  e match {
-                    case e: ModuleCatalogConfigException => clientErrors.badRequest(r, e)
-                    case e                               => clientErrors.internalServerError(r, e)
-                  }
+                case e: ModuleCatalogConfigException => clientErrors.badRequest(r, e)
+                case NonFatal(e)                     => clientErrors.internalServerError(r, e)
               }
-          case _ =>
-            Future.successful(
-              UnsupportedMediaType(
-                s"expected media type: ${MimeTypes.PDF}"
-              )
-            )
+          case _ => Future.successful(UnsupportedMediaType(s"expected media type: ${MimeTypes.PDF}"))
+        }
+      }
+
+  /** Publishes the current semester's catalog and replaces the PO's current database entry. */
+  def publish(po: String): Action[ModuleCatalogConfig] =
+    auth(parse.json[ModuleCatalogConfig])
+      .andThen(resolveUser)
+      .andThen(canCreateArtifact(po))
+      .async { r =>
+        catalogService.publish(po, r.body).map(_ => NoContent).recover {
+          case e: ModuleCatalogConfigException => clientErrors.badRequest(r, e)
+          case NonFatal(e)                     => clientErrors.internalServerError(r, e)
         }
       }
 
@@ -161,9 +117,7 @@ final class ModuleCatalogController @Inject() (
     auth
       .andThen(resolveUser)
       .andThen(canPreviewArtifact(po))
-      .async { _ =>
-        catalogService.configOptions(po).map(options => Ok(Json.toJson(options)))
-      }
+      .async(_ => catalogService.configOptions(po).map(options => Ok(Json.toJson(options))))
 
   /**
    * Returns metadata for introductory-file directories of POs for which the user can create artifacts.
@@ -171,32 +125,11 @@ final class ModuleCatalogController @Inject() (
    * @return JSON array containing each PO ID and its directory's last-modified timestamp
    */
   def getAllIntroFiles(): Action[AnyContent] =
-    auth
-      .andThen(resolveUser)
-      .async { (r: UserRequest[AnyContent]) =>
-        studyProgramPrivilegesService
-          .getStudyProgramPrivileges(r.person.id, r.permissions)
-          .map { privileges =>
-            val studyPrograms = privileges.filter(_.canCreate)
-            val intros        = ListBuffer[JsValue]()
-            for (p <- Files.list(Paths.get(mcIntroPath)).iterator().asScala if Files.isDirectory(p)) {
-              studyPrograms.find(_.studyProgram.po.id == p.getFileName.toString) match {
-                case Some(sp) =>
-                  val lastModified = Files
-                    .getLastModifiedTime(p)
-                    .toInstant
-                    .atZone(java.time.ZoneId.systemDefault())
-                    .toLocalDateTime
-                  intros += Json.obj(
-                    "po"           -> Json.toJson(sp.studyProgram.po.id),
-                    "lastModified" -> Json.toJson(lastModified)
-                  )
-                case None =>
-              }
-            }
-            Ok(JsArray(intros))
-          }
+    auth.andThen(resolveUser).async { r =>
+      catalogService.listIntroFiles(r.person.id, r.permissions).map { intros =>
+        Ok(JsArray(intros.map(info => Json.obj("po" -> info.po, "lastModified" -> info.lastModified))))
       }
+    }
 
   /**
    * Converts an uploaded Word introductory file to LaTeX and stores it for the PO.
@@ -208,24 +141,16 @@ final class ModuleCatalogController @Inject() (
     auth
       .andThen(resolveUser)
       .andThen(canPreviewArtifact(po))
-      .apply(parse.temporaryFile) { (r: Request[TemporaryFile]) =>
-        r.contentType match {
-          case Some(MimeTypes.WORD) =>
-            val printer  = WordLatexPrinter(wordCmd, mcIntroPath)
-            val rewriter = TextIntroRewriter()
-            printer.toLatex(r.body.path, po).flatMap(rewriter.rewrite) match {
-              case Failure(e) =>
-                r.body.delete()
-                clientErrors.badRequest(r, e)
-              case Success(_) =>
-                r.body.delete()
-                NoContent
-            }
-          case other =>
-            clientErrors.badRequest(
-              r,
-              s"expected content-type to be ${MimeTypes.WORD}, but was $other"
-            )
-        }
+      .apply(parse.temporaryFile) { r =>
+        try
+          r.contentType match {
+            case Some(MimeTypes.WORD) =>
+              catalogService.uploadIntroFile(po, r.body.path) match {
+                case Failure(e) => clientErrors.badRequest(r, e)
+                case Success(_) => NoContent
+              }
+            case other => clientErrors.badRequest(r, s"expected content-type to be ${MimeTypes.WORD}, but was $other")
+          }
+        finally r.body.delete()
       }
 }

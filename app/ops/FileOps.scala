@@ -8,15 +8,35 @@ import java.util.Comparator
 
 import scala.jdk.CollectionConverters.*
 import scala.util.control.NonFatal
+import scala.util.Try
+import scala.util.Using
 
 object FileOps {
 
+  /** Resolves a simple PDF filename inside a configured folder, including symlink checks. */
+  def resolvePdfFile(filename: String, rootFolderPath: String): Option[Path] =
+    if filename.isEmpty || filename != filename.trim || !filename.endsWith(".pdf") ||
+      filename.exists(c => c == '/' || c == '\\' || c == '\u0000')
+    then None
+    else
+      Try {
+        val base     = Paths.get(rootFolderPath).toAbsolutePath.normalize().toRealPath()
+        val resolved = base.resolve(filename).normalize().toRealPath()
+        Option.when(resolved.startsWith(base) && Files.isRegularFile(resolved))(resolved)
+      }.toOption.flatten
+
   /**
-   * Creates a new temporary tex file with the specified filename in a new a folder
+   * Creates a new temporary tex file with the specified filename in its own folder.
    */
   def createLatexFile(filename: String, rootFolderPath: String): Path = {
-    val newDir = Files.createDirectories(Paths.get(rootFolderPath).resolve(System.currentTimeMillis().toString))
-    Files.createFile(newDir.resolve(s"$filename.tex"))
+    val root = Files.createDirectories(Paths.get(rootFolderPath))
+    val dir  = Files.createTempDirectory(root, "latex-")
+    try Files.createFile(dir.resolve(s"$filename.tex"))
+    catch {
+      case NonFatal(error) =>
+        Files.deleteIfExists(dir)
+        throw error
+    }
   }
 
   /**
@@ -62,10 +82,9 @@ object FileOps {
       }
 
     def deleteDirectory(): Unit =
-      Files
-        .walk(self)
-        .sorted(Comparator.reverseOrder())
-        .forEach(p => Files.deleteIfExists(p))
+      Using.resource(Files.walk(self)) { paths =>
+        paths.sorted(Comparator.reverseOrder()).forEach(p => Files.deleteIfExists(p))
+      }
 
     def deleteContentsOfDirectory(): Unit =
       if (Files.isDirectory(self))

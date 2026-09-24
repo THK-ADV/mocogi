@@ -10,9 +10,8 @@ import scala.concurrent.Future
 import database.table.ExamListDbEntry
 import database.table.ExamListTable
 import database.view.StudyProgramViewRepository
-import models.ExamList
+import models.artifact.PublishedDocument
 import models.Semester
-import models.StudyProgramView
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.db.slick.HasDatabaseConfigProvider
 import slick.jdbc.JdbcProfile
@@ -27,27 +26,16 @@ final class ExamListRepository @Inject() (
 
   private val tableQuery = TableQuery[ExamListTable]
 
-  /**
-   * TODO: this implementation is very inefficient, because the filtering happens in scala.
-   * TODO: A native psql function should be better
-   */
-  def eachLatest(): Future[Seq[ExamList]] = {
+  def all(): Future[Seq[PublishedDocument]] = {
     val studyProgramView = studyProgramViewRepository.tableQuery.filter(_.specializationId.isEmpty)
-    val now              = LocalDate.now
-    val current          = Semester.of(now).id
     val query            = tableQuery
       .join(studyProgramView)
       .on(_.po === _.poId)
       .result
-      .map(
-        _.groupBy(_._1.po)
-          .map {
-            case (po, xs) =>
-              val (examList, studyProgram) = xs.maxBy(e => Semester(e._1.semester))
-              ExamList(studyProgram, Semester(examList.semester), examList.date, examList.url)
-          }
-          .toSeq
-      )
+      .map(_.map {
+        case (examList, studyProgram) =>
+          PublishedDocument(studyProgram, Semester(examList.semester), examList.date, examList.url)
+      })
     db.run(query)
   }
 
