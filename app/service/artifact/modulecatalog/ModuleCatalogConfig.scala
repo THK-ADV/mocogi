@@ -3,14 +3,20 @@ package service.artifact.modulecatalog
 import java.util.UUID
 
 import play.api.libs.functional.syntax.*
+import play.api.libs.json.JsDefined
+import play.api.libs.json.JsError
+import play.api.libs.json.JsNull
+import play.api.libs.json.JsObject
 import play.api.libs.json.JsPath
+import play.api.libs.json.JsSuccess
 import play.api.libs.json.Json
 import play.api.libs.json.Reads
 import service.artifact.*
 
 final case class ModuleCatalogConfig(
     moduleSelection: ModuleCatalogModuleSelectionConfig,
-    studyPlan: ModuleCatalogStudyPlanConfig
+    studyPlan: ModuleCatalogStudyPlanConfig,
+    renderStudyPlan: Boolean = true
 )
 
 final case class ModuleCatalogModuleSelectionConfig(
@@ -42,15 +48,23 @@ object ModuleCatalogConfig {
     ModuleCatalogStudyPlanConfig.empty
   )
 
-  given Reads[ModuleCatalogConfig] =
-    (JsPath \ "moduleSelection")
-      .readNullable[ModuleCatalogModuleSelectionConfig]
-      .map(_.getOrElse(ModuleCatalogModuleSelectionConfig.empty))
-      .and(
-        (JsPath \ "studyPlan")
-          .readNullable[ModuleCatalogStudyPlanConfig]
-          .map(_.getOrElse(ModuleCatalogStudyPlanConfig.empty))
-      )(ModuleCatalogConfig.apply)
+  given Reads[ModuleCatalogConfig] = Reads { json =>
+    for {
+      moduleSelection <- (JsPath \ "moduleSelection")
+        .readNullable[ModuleCatalogModuleSelectionConfig]
+        .reads(json)
+      studyPlan <- (json \ "studyPlan") match {
+        case JsDefined(JsNull)          => JsSuccess(None)
+        case JsDefined(value: JsObject) => value.validate[ModuleCatalogStudyPlanConfig].map(Some(_))
+        case JsDefined(_)               => JsError("studyPlan must be null or an object")
+        case _                          => JsError("studyPlan is required")
+      }
+    } yield ModuleCatalogConfig(
+      moduleSelection.getOrElse(ModuleCatalogModuleSelectionConfig.empty),
+      studyPlan.getOrElse(ModuleCatalogStudyPlanConfig.empty),
+      studyPlan.isDefined
+    )
+  }
 }
 
 object ModuleCatalogModuleSelectionConfig {
@@ -76,14 +90,9 @@ object ModuleCatalogStudyPlanConfig {
 
   given Reads[ModuleCatalogStudyPlanConfig] =
     (JsPath \ "sections")
-      .readNullable[List[StudyPlanSection]]
-      .map(_.getOrElse(Nil))
-      .and((JsPath \ "semesterSelections").readNullable[List[ModuleCatalogSemesterSelection]].map(_.getOrElse(Nil)))
-      .and(
-        (JsPath \ "genericModuleOccurrences")
-          .readNullable[List[ModuleCatalogGenericModuleOccurrence]]
-          .map(_.getOrElse(Nil))
-      )
+      .read[List[StudyPlanSection]]
+      .and((JsPath \ "semesterSelections").read[List[ModuleCatalogSemesterSelection]])
+      .and((JsPath \ "genericModuleOccurrences").read[List[ModuleCatalogGenericModuleOccurrence]])
       .and(
         (JsPath \ "alternative" \ "genericModuleOccurrences")
           .readNullable[List[ModuleCatalogGenericModuleOccurrence]]

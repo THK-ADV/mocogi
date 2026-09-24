@@ -7,7 +7,7 @@ import service.artifact.modulecatalog.ModuleCatalogWarning
 final class DiagnosticsContentSnippet(warnings: List[ModuleCatalogWarning]) extends LatexContentSnippet {
   override def print(using lang: Lang, builder: StringBuilder): Unit = {
     if warnings.nonEmpty then {
-      builder.append("\\chapter*{Hinweise zur Vorschau}\n")
+      builder.append("\\section*{Hinweise zur Vorschau}\n")
       builder.append("\\begin{itemize}\n")
       warnings.foreach { warning =>
         val module = warning.moduleId.fold("")(id => s" (${id.toString})")

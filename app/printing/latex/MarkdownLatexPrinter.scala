@@ -8,11 +8,12 @@ import scala.util.control.NonFatal
 
 final class MarkdownLatexPrinter(texCmd: String) {
 
-  def toLatex(input: String): Either[(Throwable, String), String] = {
+  def toLatex(input: String, headingShift: Int = 0): Either[(Throwable, String), String] = {
     val inputStream = toStream(input)
     // replaces backslashes with the appropriate \textbackslash{} command
     val sedCmd  = "sed s/\\\\/\\\\textbackslash{}/g"
-    val process = sedCmd #| texCmd #< inputStream
+    val command = if headingShift == 0 then texCmd else s"$texCmd --shift-heading-level-by=$headingShift"
+    val process = sedCmd #| command #< inputStream
     val sdtErr  = new StringBuilder()
     val logger  = ProcessLogger(_ => {}, sdtErr.append)
     try {
