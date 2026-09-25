@@ -167,6 +167,7 @@ latex.module_catalog.season=Each {0}
 
 # Latex Exam Lists
 latex.exam_lists.title=Exam List
+latex.exam_lists.legend.chapter=Legend
 latex.exam_lists.validity_statement=This Exam list was adopted by the examination committee on {0}. This document is valid without a signature.
 latex.exam_lists.modules.chapter=Modules
 latex.exam_lists.module_matrix.chapter=Module Matrix

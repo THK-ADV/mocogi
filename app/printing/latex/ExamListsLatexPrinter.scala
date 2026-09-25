@@ -122,6 +122,7 @@ final class ExamListsLatexPrinter(
     title()
     tableColors()
     if specializations.isEmpty then defaultPrint() else specializationsPrint()
+    legend()
     builder.append("\\end{document}")
     builder
   }
@@ -339,10 +340,8 @@ final class ExamListsLatexPrinter(
   }
 
   private def moduleMatrix(titleLabel: String) = {
-    val remainingWidth     = 0.9 - moduleTitleWidthValue
-    val cols: Seq[POShort] = specializations
-      .map(s => (s.id, s.label, s.abbreviation))
-      .prepended((studyProgram.po.id, strings.label(studyProgram), studyProgram.abbreviation))
+    val remainingWidth          = 0.9 - moduleTitleWidthValue
+    val cols: Seq[POShort]      = matrixColumns
     val width                   = Math.max(remainingWidth / cols.size, 0.08)
     val colWidth                = cols.map(_ => s"||Cp{$width\\linewidth}").mkString("\n")
     val colHeader               = cols.map(po => s"& \\textbf{${escape(po._3)}}").mkString("\n")
@@ -388,21 +387,36 @@ final class ExamListsLatexPrinter(
     builder.append("""\hline
                      |\end{longtable}
                      |\end{landscape}
-                     |\newpage""".stripMargin)
-    legend(cols)
+                     |""".stripMargin)
   }
 
-  private def legend(cols: Seq[POShort]) = {
-    builder.append("""\section*{Legende}
-                     |\begin{itemize}""".stripMargin)
-    cols.foreach {
-      case (_, label, abbrev) =>
-        builder.append(escape(s"\n\\item $abbrev: $label"))
+  private def matrixColumns: Seq[POShort] =
+    specializations
+      .map(s => (s.id, s.label, s.abbreviation))
+      .prepended((studyProgram.po.id, strings.label(studyProgram), studyProgram.abbreviation))
+
+  private def legend() = {
+    builder.append(s"\\newpage\n\\section*{${messages("latex.exam_lists.legend.chapter")}}")
+    builder.append(s"\n\\subsection*{${messages("latex.exam_lists.table.header.examPhases")}}\n\\begin{itemize}")
+    ExamPhase.all.toList.filterNot(_ == ExamPhase.none).foreach { phase =>
+      val id = phase.id
+      builder.append(
+        s"\n\\item ${escape(messages(s"exam_phase.short.$id"))}: ${escape(messages(s"exam_phase.label.$id"))}"
+      )
     }
-    if usedP then builder.append(s"\n\\item P: ${messages("latex.exam_lists.module_matrix.mandatory_module.label")}")
-    if usedW then builder.append(s"\n\\item W: ${messages("latex.exam_lists.module_matrix.elective_module.label")}")
-    genericModuleLegend.foreach(m => builder.append(s"\n\\item ${m.abbrev}: ${m.title}"))
     builder.append("\n\\end{itemize}")
+
+    if specializations.nonEmpty && modules.nonEmpty then {
+      builder.append(s"\n\\subsection*{${messages("latex.exam_lists.module_matrix.chapter")}}\n\\begin{itemize}")
+      matrixColumns.foreach {
+        case (_, label, abbrev) =>
+          builder.append(escape(s"\n\\item $abbrev: $label"))
+      }
+      if usedP then builder.append(s"\n\\item P: ${messages("latex.exam_lists.module_matrix.mandatory_module.label")}")
+      if usedW then builder.append(s"\n\\item W: ${messages("latex.exam_lists.module_matrix.elective_module.label")}")
+      genericModuleLegend.foreach(m => builder.append(s"\n\\item ${m.abbrev}: ${m.title}"))
+      builder.append("\n\\end{itemize}")
+    }
   }
 
   private def title() = {
