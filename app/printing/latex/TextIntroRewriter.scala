@@ -31,13 +31,14 @@ final class TextIntroRewriter {
     case line if line.startsWith("\\begin{figure}") => "\\begin{figure}[H]"
   }
 
-  /** Normalize image width and reject unsupported .emf files */
+  /** Fit images into the text area (leaving room for the caption) and reject unsupported .emf files */
   private def fixImage: PartialFunction[String, String] = {
     case line if line.startsWith("\\includegraphics") =>
       if line.contains(".emf") then "\\textbf{unable to include .emf image file}"
       else {
-        val img = line.dropWhile(_ != ']')
-        s"\\includegraphics[width=1.0\\textwidth$img"
+        val rest = line.stripPrefix("\\includegraphics")
+        val img  = if rest.startsWith("[") then rest.dropWhile(_ != ']').drop(1) else rest
+        s"\\includegraphics[width=\\textwidth,height=0.85\\textheight,keepaspectratio]$img"
       }
   }
 
