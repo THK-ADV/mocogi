@@ -94,17 +94,19 @@ final class ExamListsLatexPrinter(
 
   private val strings = new LocalizedStrings(messages)(using lang)
 
+  private val assessmentMethodsById = assessmentMethods.iterator.map(m => m.id -> m).toMap
+
   private val rowWidth = "Lp{.02\\linewidth}"
 
   private val moduleTitleWidthValue = .255
 
   private val moduleTitleWidth = s"Lp{$moduleTitleWidthValue\\linewidth}"
 
-  private val assessmentTitleWidth = "Lp{.25\\linewidth}"
+  private val assessmentTitleWidth = "Lp{.225\\linewidth}"
 
   private val examinerWidth = "Lp{.125\\linewidth}"
 
-  private val examPhasesWidth = "Lp{.125\\linewidth}"
+  private val examPhasesWidth = "Lp{.15\\linewidth}"
 
   private val genericModuleLegend = scala.collection.mutable.Set[ModuleCore]()
 
@@ -153,12 +155,14 @@ final class ExamListsLatexPrinter(
     if xs.isEmpty then messages("latex.exam_lists.no-assessment.label")
     else
       xs
-        .sortBy(_.method)
-        .map { m =>
-          val label = strings.label(assessmentMethods.find(_.id == m.method))
-          escape(m.percentage.fold(label)(d => s"$label (${fmtDouble(d)} %)"))
+        .map(m => (m, assessmentMethodsById.get(m.method)))
+        .sortBy { case (m, method) => method.fold(m.method)(_.deLabel) }
+        .map {
+          case (m, method) =>
+            val label = escape(strings.label(method))
+            m.percentage.fold(label)(d => s"$label~\\mbox{(${fmtDouble(d)} \\%)}")
         }
-        .mkString(", ")
+        .mkString("\\newline ")
 
   private def examinerRow(id: String) =
     escape(
