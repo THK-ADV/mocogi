@@ -4,6 +4,8 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.ZoneId
 import java.util.Locale
 import java.util.UUID
 import javax.inject.Inject
@@ -12,33 +14,46 @@ import javax.inject.Singleton
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
+import scala.jdk.CollectionConverters.*
 import scala.util.control.NonFatal
+import scala.util.Try
+import scala.util.Using
 
+import cats.data.NonEmptyList
+import cli.GitCLI
+import cli.LatexCompiler.compile
+import cli.LatexCompiler.getPdf
 import database.repo.core.*
+import database.repo.ModuleCatalogRepository
 import database.view.StudyProgramViewRepository
 import models.*
+import models.artifact.PublishedDocument
 import ops.toFuture
+import ops.FileOps
 import ops.FileOps.copy
 import ops.FileOps.foreachFileOfDirectory
+import permission.Permissions
+import play.api.i18n.Lang
+import play.api.i18n.MessagesApi
+import play.api.Logging
 import printing.latex.snippet.*
 import printing.latex.studyplan.StudyPlanSnippet
 import printing.latex.MarkdownLatexPrinter
 import printing.latex.ModuleCatalogLatexPrinter
 import printing.latex.Payload
-import database.repo.core.IdentityRepository
-import service.ModuleService
-import settings.AppSettings
-import cats.data.NonEmptyList
-import cli.GitCLI
-import cli.LatexCompiler.compile
-import cli.LatexCompiler.getPdf
-import play.api.i18n.Lang
-import play.api.i18n.MessagesApi
-import play.api.Logging
+import printing.latex.TextIntroRewriter
+import printing.latex.WordLatexPrinter
+import service.artifact.GeneratedPdf
 import service.artifact.ModulePreview
 import service.artifact.POModules
+import service.artifact.TemporaryPdf
+import service.ModuleService
+import service.StudyProgramPrivilegesService
+import settings.ModuleCatalogSettings
 
 final class ModuleCatalogConfigException(message: String) extends IllegalArgumentException(message)
+
+final case class IntroFileInfo(po: String, lastModified: LocalDateTime)
 
 private final case class CatalogPreparation(
     modules: Vector[(ModuleProtocol, LocalDate)],
@@ -322,22 +337,59 @@ final class ModuleCatalogService @Inject() (
     poRepository: PORepository,
     messagesApi: MessagesApi,
     gitCLI: GitCLI,
-    appSettings: AppSettings,
+    moduleCatalogRepo: ModuleCatalogRepository,
+    studyProgramPrivilegesService: StudyProgramPrivilegesService,
+    settings: ModuleCatalogSettings,
     implicit val ctx: ExecutionContext
 ) extends Logging {
-  private def mcIntroPath: String  = appSettings.pandoc.mcIntroPath
-  private def mcAssetsPath: String = appSettings.pandoc.mcAssetsPath
-  private def texCommand: String   = appSettings.pandoc.texCmd
 
-  def create(po: String, latexFile: Path, semester: Semester, config: ModuleCatalogConfig): Future[Path] = {
-    logger.info(s"creating module catalog for po $po")
-    generateCatalog(po, latexFile, Some(semester), config)
+  def listPublished(): Future[Seq[PublishedDocument]] =
+    moduleCatalogRepo.all()
+
+  def findPublishedFile(filename: String): Option[Path] =
+    FileOps.resolvePdfFile(filename, settings.publishedPdfDir)
+
+  def publish(po: String, config: ModuleCatalogConfig): Future[Unit] = {
+    logger.info(s"publishing module catalog for po $po")
+    val date     = LocalDate.now(ZoneId.of("Europe/Berlin"))
+    val semester = Semester.of(date)
+    for {
+      pdf <- TemporaryPdf.generate(s"module_catalog_$po", settings.tmpDir) { latexFile =>
+        generateCatalog(po, latexFile, Some(semester), config)
+      }
+      filename = pdf.publish(s"module_catalog_${semester.id}_$po", settings.publishedPdfDir)
+      _ <- moduleCatalogRepo.createOrUpdate(po, semester.id, date, filename)
+    } yield ()
   }
 
-  def preview(po: String, latexFile: Path, config: ModuleCatalogConfig): Future[Path] = {
+  def preview(po: String, config: ModuleCatalogConfig): Future[TemporaryPdf] = {
     logger.info(s"creating module catalog preview for po $po")
-    generateCatalog(po, latexFile, None, config)
+    TemporaryPdf.generate(s"module_catalog_$po", settings.tmpDir)(latexFile =>
+      generateCatalog(po, latexFile, None, config)
+    )
   }
+
+  def listIntroFiles(person: String, permissions: Permissions): Future[Vector[IntroFileInfo]] =
+    studyProgramPrivilegesService.getStudyProgramPrivileges(person, permissions).map { privileges =>
+      val allowed = privileges.filter(_.canCreate).map(_.studyProgram.po.id).toSet
+      Using.resource(Files.list(Paths.get(settings.introDir))) { files =>
+        files
+          .iterator()
+          .asScala
+          .filter(path => Files.isDirectory(path) && allowed.contains(path.getFileName.toString))
+          .map { path =>
+            val lastModified = Files.getLastModifiedTime(path).toInstant.atZone(ZoneId.systemDefault()).toLocalDateTime
+            IntroFileInfo(path.getFileName.toString, lastModified)
+          }
+          .toVector
+      }
+    }
+
+  def uploadIntroFile(po: String, wordPath: Path): Try[Unit] =
+    WordLatexPrinter(settings.wordCommand, settings.introDir)
+      .toLatex(wordPath, po)
+      .flatMap(TextIntroRewriter().rewrite)
+      .map(_ => ())
 
   /** Loads the preview-backed configuration options for a PO. */
   def configOptions(po: String): Future[ModuleCatalogConfigOptions] =
@@ -386,7 +438,7 @@ final class ModuleCatalogService @Inject() (
       content <- print(poOnly, prep, all, lang, semester)
       path = Files.writeString(latexFile, content.toString)
       pdf <- compile(path).flatMap(_ => getPdf(path)).toFuture
-    } yield pdf
+    } yield GeneratedPdf(pdf)
   }
 
   /**
@@ -437,7 +489,7 @@ final class ModuleCatalogService @Inject() (
         liveModules ++ createdModules
       )
       new ModuleCatalogLatexPrinter(
-        new MarkdownLatexPrinter(texCommand),
+        new MarkdownLatexPrinter(settings.texCommand),
         messagesApi,
         semester,
         poOnly,
@@ -454,7 +506,7 @@ final class ModuleCatalogService @Inject() (
   // TODO: same for prod catalog
   private def copyAssets(parentDir: Path): Unit =
     try {
-      Paths.get(mcAssetsPath).foreachFileOfDirectory { path =>
+      Paths.get(settings.assetsDir).foreachFileOfDirectory { path =>
         path.copy(parentDir).match {
           case Left(err) => throw Exception(s"failed to copy assets into media folder: $err")
           case Right(_)  =>
@@ -465,7 +517,7 @@ final class ModuleCatalogService @Inject() (
     }
 
   private def introSnippet(dir: Path, po: String): Option[LatexContentSnippet] =
-    IntroContentProvider(dir, po, mcIntroPath).createIntroContent()
+    IntroContentProvider(dir, po, settings.introDir).createIntroContent()
 
   private def logWarnings(po: String, warnings: List[ModuleCatalogWarning]): Unit =
     warnings.foreach { warning =>

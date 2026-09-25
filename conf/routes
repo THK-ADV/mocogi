@@ -62,9 +62,12 @@ GET           /modules/:id/history                                              
 
 # Module Catalog
 
+GET           /moduleCatalogs                                                             controllers.ModuleCatalogController.getAll()
+GET           /moduleCatalogs/file/:filename                                              controllers.ModuleCatalogController.getFile(filename: java.lang.String)
 GET           /moduleCatalogs/:po/genericModules                                          controllers.ModuleCatalogController.allGenericModulesForPO(po: java.lang.String)
 GET           /moduleCatalogs/:po/configOptions                                           controllers.ModuleCatalogController.configOptions(po: java.lang.String)
-POST          /moduleCatalogs/:po                                                         controllers.ModuleCatalogController.generate(po: java.lang.String)
+POST          /moduleCatalogs/preview/:po                                                 controllers.ModuleCatalogController.getPreview(po: java.lang.String)
+PUT           /moduleCatalogs/:po                                                         controllers.ModuleCatalogController.publish(po: java.lang.String)
 
 GET           /moduleCatalogIntros                                                        controllers.ModuleCatalogController.getAllIntroFiles()
 POST          /moduleCatalogIntros/:po                                                    controllers.ModuleCatalogController.uploadIntroFile(po: java.lang.String)
@@ -74,7 +77,7 @@ POST          /moduleCatalogIntros/:po                                          
 GET           /examLists/preview/:po                                                      controllers.ExamListsController.getPreview(po: java.lang.String)
 GET           /examLists/file/:filename                                                   controllers.ExamListsController.getFile(filename: java.lang.String)
 GET           /examLists                                                                  controllers.ExamListsController.getAll()
-PUT           /examLists/:po                                                              controllers.ExamListsController.replace(po: java.lang.String)
+PUT           /examLists/:po                                                              controllers.ExamListsController.publish(po: java.lang.String)
 GET           /examLists/semesters                                                        controllers.ExamListsController.currentSemesters()
 
 # Exam Load

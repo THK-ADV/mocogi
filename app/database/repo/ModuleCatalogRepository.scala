@@ -7,8 +7,8 @@ import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-import database.table.ExamListDbEntry
-import database.table.ExamListTable
+import database.table.ModuleCatalogDbEntry
+import database.table.ModuleCatalogTable
 import database.view.StudyProgramViewRepository
 import models.artifact.PublishedDocument
 import models.Semester
@@ -17,14 +17,14 @@ import play.api.db.slick.HasDatabaseConfigProvider
 import slick.jdbc.JdbcProfile
 
 @Singleton
-final class ExamListRepository @Inject() (
+final class ModuleCatalogRepository @Inject() (
     val dbConfigProvider: DatabaseConfigProvider,
-    val studyProgramViewRepository: StudyProgramViewRepository,
+    studyProgramViewRepository: StudyProgramViewRepository,
     private implicit val ctx: ExecutionContext
 ) extends HasDatabaseConfigProvider[JdbcProfile] {
   import profile.api.*
 
-  private val tableQuery = TableQuery[ExamListTable]
+  private val tableQuery = TableQuery[ModuleCatalogTable]
 
   def all(): Future[Seq[PublishedDocument]] = {
     val studyProgramView = studyProgramViewRepository.tableQuery.filter(_.specializationId.isEmpty)
@@ -33,12 +33,12 @@ final class ExamListRepository @Inject() (
       .on(_.po === _.poId)
       .result
       .map(_.map {
-        case (examList, studyProgram) =>
-          PublishedDocument(studyProgram, Semester(examList.semester), examList.date, examList.url)
+        case (catalog, studyProgram) =>
+          PublishedDocument(studyProgram, Semester(catalog.semester), catalog.date, catalog.url)
       })
     db.run(query)
   }
 
-  def createOrUpdate(po: String, semester: String, date: LocalDate, url: String) =
-    db.run(tableQuery.insertOrUpdate(ExamListDbEntry(po, semester, date, url)))
+  def createOrUpdate(po: String, semester: String, date: LocalDate, url: String): Future[Int] =
+    db.run(tableQuery.insertOrUpdate(ModuleCatalogDbEntry(po, semester, date, url)))
 }

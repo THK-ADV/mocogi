@@ -174,6 +174,7 @@ latex.module_catalog.season=Jedes {0}
 
 # Latex Exam Lists
 latex.exam_lists.title=Prüfungsliste
+latex.exam_lists.legend.chapter=Legende
 latex.exam_lists.validity_statement=Diese Prüfungsliste wurde am {0} vom Prüfungsausschuss verabschiedet. Dieses Dokument ist ohne Unterschrift gültig.
 latex.exam_lists.modules.chapter=Module
 latex.exam_lists.module_matrix.chapter=Modulmatrix
