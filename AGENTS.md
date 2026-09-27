@@ -1,3 +1,17 @@
 - Use the least code necessary to fully achieve a goal
 - Prefer simple, concise implementations; avoid unnecessary abstractions
 - Do not write tests unless explicitly requested
+
+## Cursor Cloud specific instructions
+
+mocogi is a Scala 3 / Play (sbt) backend REST API (module handbooks) backed by PostgreSQL. Standard commands live in `README.md` and `build.sbt`. The base VM snapshot already has JDK 21, sbt 1.10.1 (`/opt/sbt`), PostgreSQL 16, pandoc, and LaTeX/XeTeX installed. The update script runs `sbt update`.
+
+Non-obvious caveats:
+
+- `nebulak` dependency without a token: `build.sbt` pulls `de.th-koeln.inf.adv:nebulak` from a private GitHub Packages registry needing `GITHUB_TOKEN`. To avoid that secret, `nebulak` (a public repo) is built from source and published to `~/.ivy2/local` (persisted in the snapshot), so `sbt`/`sbt update` resolve it locally with no token. If it ever goes missing, rebuild: `git clone https://github.com/THK-ADV/nebulak /tmp/nebulak && (cd /tmp/nebulak && sbt publishLocal)`. Alternatively, set a `GITHUB_TOKEN` secret (scope `read:packages`).
+- PostgreSQL is NOT auto-started. Start it each session: `sudo pg_ctlcluster 16 main start`. It listens on `localhost:5432` with `postgres`/empty-password (`127.0.0.1` is `trust` in `pg_hba.conf`). Dev DB `mocogi` and test DB `mocogi_test` already exist.
+- `conf/application.conf` is gitignored (not committed). A local dev config already exists in the snapshot. It points Slick at `jdbc:postgresql://localhost:5432/mocogi`, enables evolutions auto-apply, and uses dev placeholders for git/keycloak/mail (those external services are not wired up locally). If recreated, note the Slick profile must be `database.MyPostgresProfile$`.
+- Run the app in dev mode with `sbt run` (port 9000). `GET /` returns `{"msg":"it works",...}`; core read endpoints (`/locations`, `/languages`, `/status`, `/pos`, ...) are public. These responses are cached (`play.api.cache.Cached`, 1h TTL), so after inserting/refreshing data you must restart `sbt run` (or wait out the TTL) to see changes.
+- Fresh-DB bootstrap quirk: applying evolutions to a brand-new empty DB fails at evolution 9, which does `ALTER MATERIALIZED VIEW public.study_program_view SET SCHEMA core` for views that only exist in production dumps. The snapshot DB is already fully bootstrapped, so this only matters when building a DB from scratch. Canonical data comes from a prod dump via `scripts/sync-test-db-from-prod.sh`. If bootstrapping fresh: let evolutions 1-8 apply, create placeholder view objects (`study_program_view`, `study_program_view_not_expired`, `study_program_view_currently_active`, `module_view`, `module_core`) in `public`, run the remaining evolution-9 `ALTER ... SET SCHEMA` statements, mark evolution 9 `applied` in `play_evolutions`, restart to apply 10-13, then run `conf/sql/views.sql` and `conf/sql/functions.sql` (which drop/recreate the real definitions).
+- Tests: `sbt test` (338 unit/parser tests, no DB needed). `sbt it:test` are DB snapshot suites that require a populated `mocogi_test` DB (restored from prod) and gitignored goldens under `test/resources/database/expected/`; they will not pass against an empty DB.
+- Formatting/lint: `sbt format` (alias for `scalafixAll; scalafmtAll`).
