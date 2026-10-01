@@ -45,14 +45,11 @@ final class ExamListService @Inject() (
     implicit val ctx: ExecutionContext
 ) extends Logging {
 
-  def currentSemesters(): List[Semester] =
-    Semester.currentAndNext()
+  def currentSemesters(): List[Semester] = Semester.currentAndNext()
 
-  def listPublished(): Future[Seq[PublishedDocument]] =
-    examListRepo.all()
+  def listPublished(): Future[Seq[PublishedDocument]] = examListRepo.all()
 
-  def findPublishedFile(filename: String): Option[Path] =
-    FileOps.resolvePdfFile(filename, paths.publishedPdfDir)
+  def findPublishedFile(filename: String): Option[Path] = FileOps.resolvePdfFile(filename, paths.publishedPdfDir)
 
   def publish(po: String, semester: Semester, date: LocalDate): Future[Unit] = {
     logger.info(s"publishing exam list for po $po")

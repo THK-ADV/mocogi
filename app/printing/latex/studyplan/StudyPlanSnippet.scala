@@ -113,8 +113,7 @@ final class StudyPlanSnippet(
     if potentialPOs.size == 1 then Some(potentialPOs.head) else None
   }
 
-  private def hasPrecondition(m: MetadataProtocol): Boolean =
-    m.assessmentPrerequisite.exists(_.modules.nonEmpty)
+  private def hasPrecondition(m: MetadataProtocol): Boolean = m.assessmentPrerequisite.exists(_.modules.nonEmpty)
 
   private def warning(code: String, message: String, moduleId: UUID): ModuleCatalogWarning =
     ModuleCatalogWarning(code, message, Some(moduleId))
@@ -250,8 +249,7 @@ final class StudyPlanSnippet(
       }
       ._1
 
-  private def semesterRange(firstSemester: Int, lastSemester: Int): Range =
-    firstSemester to lastSemester
+  private def semesterRange(firstSemester: Int, lastSemester: Int): Range = firstSemester to lastSemester
 
   private def studyPlanColumnSpec(firstSemester: Int, lastSemester: Int, partTime: Boolean): String = {
     val semesterCount = semesterRange(firstSemester, lastSemester).size

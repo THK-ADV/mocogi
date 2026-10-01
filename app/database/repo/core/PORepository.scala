@@ -26,15 +26,11 @@ final class PORepository @Inject() (
 
   protected override def idOf(t: POTable) = t.id
 
-  def allValid(date: LocalDate = LocalDate.now): Future[Seq[PO]] =
-    db.run(tableQuery.filter(_.isValid(date)).result)
+  def allValid(date: LocalDate = LocalDate.now): Future[Seq[PO]] = db.run(tableQuery.filter(_.isValid(date)).result)
 
-  def allExpired(date: LocalDate = LocalDate.now): Future[Seq[PO]] =
-    db.run(tableQuery.filter(_.isExpired(date)).result)
+  def allExpired(date: LocalDate = LocalDate.now): Future[Seq[PO]] = db.run(tableQuery.filter(_.isExpired(date)).result)
 
-  def allWithIds(pos: List[String]): Future[Seq[PO]] =
-    db.run(tableQuery.filter(_.id.inSet(pos)).result)
+  def allWithIds(pos: List[String]): Future[Seq[PO]] = db.run(tableQuery.filter(_.id.inSet(pos)).result)
 
-  def get(id: String): Future[PO] =
-    db.run(tableQuery.filter(_.id === id).result).single
+  def get(id: String): Future[PO] = db.run(tableQuery.filter(_.id === id).result).single
 }

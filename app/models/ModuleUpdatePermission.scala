@@ -15,6 +15,5 @@ case class ModuleUpdatePermission(
 )
 
 object ModuleUpdatePermission {
-  implicit def writes: Writes[ModuleUpdatePermission] =
-    Json.writes[ModuleUpdatePermission]
+  implicit def writes: Writes[ModuleUpdatePermission] = Json.writes[ModuleUpdatePermission]
 }

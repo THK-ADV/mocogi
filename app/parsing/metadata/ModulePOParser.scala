@@ -74,8 +74,7 @@ object ModulePOParser {
       _.getOrElse(Nil)
     )
 
-  private def recommendedSemesterPartTimeParser =
-    intForKey(recommendedSemesterPartTimeKey).option
+  private def recommendedSemesterPartTimeParser = intForKey(recommendedSemesterPartTimeKey).option
 
   private def instanceOfParser =
     prefix(s"$instanceOfKey:")

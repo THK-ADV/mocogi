@@ -7,8 +7,7 @@ sealed trait PersonStatus {
   def enLabel: String
   def id: String = enLabel
 
-  def isActive: Boolean =
-    this == PersonStatus.Active
+  def isActive: Boolean = this == PersonStatus.Active
 
   override def toString = id
 }
@@ -36,6 +35,5 @@ object PersonStatus {
       case _          => Unknown
     }
 
-  implicit def writes: Writes[PersonStatus] =
-    Writes.of[String].contramap(_.id)
+  implicit def writes: Writes[PersonStatus] = Writes.of[String].contramap(_.id)
 }

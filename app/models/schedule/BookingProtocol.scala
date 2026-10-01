@@ -24,16 +24,17 @@ case class BookingProtocol(
 object BookingProtocol {
   private val zone = ZoneId.of("Europe/Berlin")
 
-  private def validPO(value: JsValue): Boolean = value match {
-    case JsArray(entries) =>
-      entries.nonEmpty && entries.forall { entry =>
-        (entry \ "po").validate[String].isSuccess &&
-        (entry \ "specialization").validateOpt[String].isSuccess &&
-        (entry \ "recommendedSemester").validate[List[Int]].isSuccess &&
-        (entry \ "mandatory").validate[Boolean].isSuccess
-      }
-    case _ => false
-  }
+  private def validPO(value: JsValue): Boolean =
+    value match {
+      case JsArray(entries) =>
+        entries.nonEmpty && entries.forall { entry =>
+          (entry \ "po").validate[String].isSuccess &&
+          (entry \ "specialization").validateOpt[String].isSuccess &&
+          (entry \ "recommendedSemester").validate[List[Int]].isSuccess &&
+          (entry \ "mandatory").validate[Boolean].isSuccess
+        }
+      case _ => false
+    }
 
   def validTimes(start: Instant, end: Instant): Boolean =
     end.isAfter(start) && start.atZone(zone).toLocalDate == end.atZone(zone).toLocalDate

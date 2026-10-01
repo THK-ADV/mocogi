@@ -20,11 +20,9 @@ final class TextIntroRewriter {
   private val multicolumn    = """\\multicolumn\{(\d+)\}""".r
   private val minipage       = """\\(begin|end)\{minipage\}""".r
 
-  def rewrite(texFile: Path): Try[Path] =
-    Try(rename(rewriteTexFile(texFile)))
+  def rewrite(texFile: Path): Try[Path] = Try(rename(rewriteTexFile(texFile)))
 
-  private def rename(path: Path): Path =
-    path.rename(prefix + path.getFileName.toString)
+  private def rename(path: Path): Path = path.rename(prefix + path.getFileName.toString)
 
   /** Force figures to render at their defined position */
   private def figureFloat: PartialFunction[String, String] = {
@@ -54,8 +52,7 @@ final class TextIntroRewriter {
   /** Pass through unmatched lines unchanged */
   private def identity: PartialFunction[String, String] = { case line => line }
 
-  private def rewriteLine: String => String =
-    figureFloat.orElse(fixImage).orElse(stripCaptionPrefix).orElse(identity)
+  private def rewriteLine: String => String = figureFloat.orElse(fixImage).orElse(stripCaptionPrefix).orElse(identity)
 
   private def rewriteTexFile(path: Path): Path = {
     val rewrite = Files.readString(path).linesIterator.map(rewriteLine).mkString("\n")
@@ -150,8 +147,7 @@ final class TextIntroRewriter {
     depth
   }
 
-  private def columnSpan(cell: String): Int =
-    multicolumn.findFirstMatchIn(cell).fold(1)(_.group(1).toInt)
+  private def columnSpan(cell: String): Int = multicolumn.findFirstMatchIn(cell).fold(1)(_.group(1).toInt)
 
   private def partialRules(activeSpans: Array[Int]): String =
     activeSpans.indices

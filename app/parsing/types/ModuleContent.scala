@@ -12,15 +12,16 @@ case class ModuleContent(
     recommendedReading: String,
     particularities: String
 ) {
-  private def trimAllProperties = Traversal
-    .applyN(
-      GenLens[ModuleContent](_.learningOutcome),
-      GenLens[ModuleContent](_.content),
-      GenLens[ModuleContent](_.teachingAndLearningMethods),
-      GenLens[ModuleContent](_.recommendedReading),
-      GenLens[ModuleContent](_.particularities)
-    )
-    .modify(_.trim)
+  private def trimAllProperties =
+    Traversal
+      .applyN(
+        GenLens[ModuleContent](_.learningOutcome),
+        GenLens[ModuleContent](_.content),
+        GenLens[ModuleContent](_.teachingAndLearningMethods),
+        GenLens[ModuleContent](_.recommendedReading),
+        GenLens[ModuleContent](_.particularities)
+      )
+      .modify(_.trim)
 
   def normalized(): ModuleContent = trimAllProperties.apply(this)
 }

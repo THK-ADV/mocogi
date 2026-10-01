@@ -11,8 +11,7 @@ import play.api.Logger
 package object webhook {
   case class HandleEvent(json: JsValue, correlationId: CorrelationId)
 
-  def mkString[A](xs: Seq[A]): String =
-    xs.mkString("\n\t- ", "\n\t- ", "")
+  def mkString[A](xs: Seq[A]): String = xs.mkString("\n\t- ", "\n\t- ", "")
 
   def parseBranch(json: JsValue): JsResult[Branch] =
     json

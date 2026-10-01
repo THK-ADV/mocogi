@@ -26,13 +26,14 @@ object ScheduleEntrySeriesId {
     def toUUID: UUID = id.value
   }
 
-  given Format[ScheduleEntrySeriesId] = new Format[ScheduleEntrySeriesId] {
-    def reads(json: JsValue): JsResult[ScheduleEntrySeriesId] =
-      json.validate[String].flatMap { value =>
-        try JsSuccess(apply(UUID.fromString(value)))
-        catch { case _: IllegalArgumentException => JsError("error.expected.uuid") }
-      }
+  given Format[ScheduleEntrySeriesId] =
+    new Format[ScheduleEntrySeriesId] {
+      def reads(json: JsValue): JsResult[ScheduleEntrySeriesId] =
+        json.validate[String].flatMap { value =>
+          try JsSuccess(apply(UUID.fromString(value)))
+          catch { case _: IllegalArgumentException => JsError("error.expected.uuid") }
+        }
 
-    def writes(id: ScheduleEntrySeriesId): JsValue = JsString(id.toUUID.toString)
-  }
+      def writes(id: ScheduleEntrySeriesId): JsValue = JsString(id.toUUID.toString)
+    }
 }

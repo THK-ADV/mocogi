@@ -17,6 +17,5 @@ object ModuleSeasonParser extends SingleValueParser[Season] {
     )
   }
 
-  private[parsing] def raw: Parser[String] =
-    singleValueRawParser(key, prefix)
+  private[parsing] def raw: Parser[String] = singleValueRawParser(key, prefix)
 }

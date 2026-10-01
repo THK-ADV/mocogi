@@ -31,12 +31,13 @@ private[database] final class POTable(tag: Tag) extends Table[PO](tag, Some(Sche
       _.id
     )
 
-  override def * = (
-    id,
-    version,
-    studyProgram,
-    dateFrom,
-    dateTo,
-    ectsFactor
-  ) <> (PO.apply.tupled, PO.unapply)
+  override def * =
+    (
+      id,
+      version,
+      studyProgram,
+      dateFrom,
+      dateTo,
+      ectsFactor
+    ) <> (PO.apply.tupled, PO.unapply)
 }

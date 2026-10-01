@@ -20,12 +20,9 @@ private[repo] trait TableCrudRepository[A, T <: slick.jdbc.PostgresProfile.api.T
 
   protected def idOf(t: T): Rep[String]
 
-  def list(): Future[Seq[A]] =
-    db.run(tableQuery.result)
+  def list(): Future[Seq[A]] = db.run(tableQuery.result)
 
-  def create(input: A): Future[A] =
-    db.run(tableQuery.returning(tableQuery) += input)
+  def create(input: A): Future[A] = db.run(tableQuery.returning(tableQuery) += input)
 
-  def update(id: String, a: A): Future[Int] =
-    db.run(tableQuery.filter(idOf(_) === id).update(a))
+  def update(id: String, a: A): Future[Int] = db.run(tableQuery.filter(idOf(_) === id).update(a))
 }

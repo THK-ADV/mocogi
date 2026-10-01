@@ -48,14 +48,11 @@ final class ModuleUpdatePermissionService @Inject() (
       _ <- repo.createMany(campusIds.distinct.map(c => (module, c, kind)))
     } yield ()
 
-  def hasPermissionFor(module: UUID, campusId: CampusId) =
-    repo.hasPermission(campusId, module)
+  def hasPermissionFor(module: UUID, campusId: CampusId) = repo.hasPermission(campusId, module)
 
-  def isAuthorOf(moduleId: UUID, personId: String) =
-    repo.isAuthorOf(moduleId, personId)
+  def isAuthorOf(moduleId: UUID, personId: String) = repo.isAuthorOf(moduleId, personId)
 
-  def allGrantedFromModule(moduleId: UUID): Future[String] =
-    repo.allGrantedFromModule(moduleId)
+  def allGrantedFromModule(moduleId: UUID): Future[String] = repo.allGrantedFromModule(moduleId)
 
   /**
    * Fetch all modules that can be edited by the user through inherited (MV) or granted permission.

@@ -11,14 +11,15 @@ import validation.ValidationError
 sealed trait PipelineError extends Throwable {
   def metadata: Option[UUID]
 
-  override def getMessage = this match {
-    case PipelineError.Parser(error, id) =>
-      s"id: $id\nmessage:${error.getMessage}"
-    case PipelineError.Printer(error, id) =>
-      s"id: $id\nmessage:${error.getMessage}"
-    case PipelineError.Validator(error, id) =>
-      s"id: $id\nmessage:${error.getMessage}"
-  }
+  override def getMessage =
+    this match {
+      case PipelineError.Parser(error, id) =>
+        s"id: $id\nmessage:${error.getMessage}"
+      case PipelineError.Printer(error, id) =>
+        s"id: $id\nmessage:${error.getMessage}"
+      case PipelineError.Validator(error, id) =>
+        s"id: $id\nmessage:${error.getMessage}"
+    }
 }
 
 object PipelineError {
@@ -26,14 +27,11 @@ object PipelineError {
   case class Printer(error: PrintingError, metadata: Option[UUID])     extends PipelineError
   case class Validator(error: ValidationError, metadata: Option[UUID]) extends PipelineError
 
-  def parser(error: ParsingError, metadata: Option[UUID]): PipelineError =
-    Parser(error, metadata)
+  def parser(error: ParsingError, metadata: Option[UUID]): PipelineError = Parser(error, metadata)
 
-  def printer(error: PrintingError, metadata: Option[UUID]): PipelineError =
-    Printer(error, metadata)
+  def printer(error: PrintingError, metadata: Option[UUID]): PipelineError = Printer(error, metadata)
 
-  def validator(error: ValidationError, metadata: Option[UUID]): PipelineError =
-    Validator(error, metadata)
+  def validator(error: ValidationError, metadata: Option[UUID]): PipelineError = Validator(error, metadata)
 
   def validator(errs: Seq[String], metadata: Option[UUID]): PipelineError =
     Validator(ValidationError(errs.toList), metadata)

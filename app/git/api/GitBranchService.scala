@@ -35,8 +35,7 @@ final class GitBranchService @Inject() (
     deleteBranch(branch)
   }
 
-  private def createBranch(module: UUID): Branch =
-    Branch(module.toString)
+  private def createBranch(module: UUID): Branch = Branch(module.toString)
 
   private def createBranch(branch: Branch, source: Branch): Future[Unit] = {
     ws
@@ -63,6 +62,5 @@ final class GitBranchService @Inject() (
         else Future.failed(parseErrorMessage(res))
       }
 
-  private def branchUrl() =
-    s"${repositoryUrl()}/branches"
+  private def branchUrl() = s"${repositoryUrl()}/branches"
 }

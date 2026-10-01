@@ -51,16 +51,17 @@ private[database] final class ScheduleEntryDraftTable(tag: Tag)
 
   def po = column[JsValue]("po")
 
-  override def * = (
-    id,
-    planDraft,
-    seriesId,
-    module,
-    courseType,
-    rooms,
-    lecturer,
-    start,
-    end,
-    po,
-  ) <> (ScheduleEntryDraftDbEntry.apply.tupled, ScheduleEntryDraftDbEntry.unapply)
+  override def * =
+    (
+      id,
+      planDraft,
+      seriesId,
+      module,
+      courseType,
+      rooms,
+      lecturer,
+      start,
+      end,
+      po,
+    ) <> (ScheduleEntryDraftDbEntry.apply.tupled, ScheduleEntryDraftDbEntry.unapply)
 }

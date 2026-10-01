@@ -70,8 +70,7 @@ final class MergeEventHandler @Inject() (
   private object MergeRetryPolicy {
     val maxAttempts: Int = 10
 
-    def delayFor(attempt: Int) =
-      Math.pow(2, attempt).seconds + 3.seconds
+    def delayFor(attempt: Int) = Math.pow(2, attempt).seconds + 3.seconds
   }
 
   private val draftMergeLabels =

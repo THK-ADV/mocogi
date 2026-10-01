@@ -73,8 +73,7 @@ final class ExamLoadCSVPrinterSpec extends AnyWordSpec with Matchers {
       moduleId: UUID,
       moduleMetadata: MetadataProtocol = metadata(),
       semesters: List[Int] = List(1)
-  ) =
-    ExamLoadModule(moduleId, moduleMetadata, semesters)
+  ) = ExamLoadModule(moduleId, moduleMetadata, semesters)
 
   private def childModule(moduleId: UUID, moduleMetadata: MetadataProtocol) =
     moduleId -> ModuleProtocol(Some(moduleId), moduleMetadata, emptyContent, emptyContent)
@@ -84,11 +83,9 @@ final class ExamLoadCSVPrinterSpec extends AnyWordSpec with Matchers {
       childrenById: Map[UUID, ModuleProtocol] = Map.empty,
       assessmentMethods: Map[UUID, Seq[AssessmentMethod]] = Map.empty,
       electiveGroups: Vector[ElectiveGroup] = Vector.empty
-  ) =
-    new ExamLoadCSVPrinter(modules, childrenById, assessmentMethods, electiveGroups).print()
+  ) = new ExamLoadCSVPrinter(modules, childrenById, assessmentMethods, electiveGroups).print()
 
-  private def dataRows(csv: String) =
-    csv.linesIterator.drop(1).map(_.split(";", -1).toVector).toVector
+  private def dataRows(csv: String) = csv.linesIterator.drop(1).map(_.split(";", -1).toVector).toVector
 
   private def onlyDataRow(csv: String) = {
     val rows = dataRows(csv)

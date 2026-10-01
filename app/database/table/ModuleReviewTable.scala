@@ -32,11 +32,9 @@ private[database] final class ModuleReviewTable(tag: Tag)
 
   def respondedAt = column[Option[LocalDateTime]]("responded_at")
 
-  def isApproved: Rep[Boolean] =
-    this.status === ModuleReviewStatus.Approved
+  def isApproved: Rep[Boolean] = this.status === ModuleReviewStatus.Approved
 
-  def isPending: Rep[Boolean] =
-    this.status === ModuleReviewStatus.Pending
+  def isPending: Rep[Boolean] = this.status === ModuleReviewStatus.Pending
 
   override def * =
     (

@@ -21,25 +21,20 @@ final class MetadataValidatorSpec extends AnyWordSpec with EitherValues with Opt
   private lazy val ld = LocalDate.of(1998, 5, 9)
   private lazy val sp = PO("", 0, "", ld, None, 30)
 
-  private def method(percentage: Option[Double]) =
-    ModuleAssessmentMethodEntry(am, percentage, Nil)
+  private def method(percentage: Option[Double]) = ModuleAssessmentMethodEntry(am, percentage, Nil)
 
-  private def prerequisiteEntry(modules: List[UUID]) =
-    ParsedPrerequisiteEntry("", modules)
+  private def prerequisiteEntry(modules: List[UUID]) = ParsedPrerequisiteEntry("", modules)
 
-  private def poOpt(module: UUID) =
-    ParsedPOOptional(sp, None, module, partOfCatalog = false, Nil)
+  private def poOpt(module: UUID) = ParsedPOOptional(sp, None, module, partOfCatalog = false, Nil)
 
   val m1      = ModuleCore(UUID.randomUUID, "t1", "m1")
   val m2      = ModuleCore(UUID.randomUUID, "t1", "m2")
   val m3      = ModuleCore(UUID.randomUUID, "t1", "m3")
   val modules = List(m1, m2, m3)
 
-  def lookup(module: UUID): Option[ModuleCore] =
-    modules.find(_.id == module)
+  def lookup(module: UUID): Option[ModuleCore] = modules.find(_.id == module)
 
-  private def relationGraph(relations: (UUID, Set[UUID])*): ModuleRelationGraph =
-    ModuleRelationGraph(relations.toMap)
+  private def relationGraph(relations: (UUID, Set[UUID])*): ModuleRelationGraph = ModuleRelationGraph(relations.toMap)
 
   private def parsedModule(
       id: UUID,
@@ -75,8 +70,7 @@ final class MetadataValidatorSpec extends AnyWordSpec with EitherValues with Opt
 
   "A Metadata Validator" when {
     "flatMap a validator" in {
-      def posInt: Validator[Int, PosInt] =
-        Validator(int => Either.cond(int > 0, PosInt(int), List("must be pos")))
+      def posInt: Validator[Int, PosInt]             = Validator(int => Either.cond(int > 0, PosInt(int), List("must be pos")))
       def grade(int: PosInt): Validator[Int, String] =
         Validator { _ =>
           int.value match {

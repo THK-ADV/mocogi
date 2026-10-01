@@ -31,12 +31,13 @@ private[database] final class PlanDraftTable(tag: Tag)
    */
   def publishedAt = column[Option[LocalDateTime]]("published_at")
 
-  override def * = (
-    id,
-    kind,
-    semester,
-    createdAt,
-    updatedAt,
-    publishedAt,
-  ) <> (PlanDraft.apply.tupled, PlanDraft.unapply)
+  override def * =
+    (
+      id,
+      kind,
+      semester,
+      createdAt,
+      updatedAt,
+      publishedAt,
+    ) <> (PlanDraft.apply.tupled, PlanDraft.unapply)
 }

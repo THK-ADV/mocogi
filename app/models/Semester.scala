@@ -21,45 +21,48 @@ object Semester {
   private val wiseId = "wise"
   private val soseId = "sose"
 
-  given Ordering[Semester] = (lhs, rhs) => {
-    val yearRes = lhs.year.compareTo(rhs.year)
-    if yearRes == 0 then {
-      // wise is always the latest semester if the year is the same
-      (lhs.abbrev, rhs.abbrev) match {
-        case ("wise", "sose") => 1
-        case ("sose", "wise") => -1
-        case _                => 0
-      }
-    } else yearRes
-  }
+  given Ordering[Semester] =
+    (lhs, rhs) => {
+      val yearRes = lhs.year.compareTo(rhs.year)
+      if yearRes == 0 then {
+        // wise is always the latest semester if the year is the same
+        (lhs.abbrev, rhs.abbrev) match {
+          case ("wise", "sose") => 1
+          case ("sose", "wise") => -1
+          case _                => 0
+        }
+      } else yearRes
+    }
 
-  def winter(_year: Int): Semester = new Semester {
-    override def year: Int = _year
+  def winter(_year: Int): Semester =
+    new Semester {
+      override def year: Int = _year
 
-    def abbrev: String = wiseId
+      def abbrev: String = wiseId
 
-    def deLabel: String = "Wintersemester"
+      def deLabel: String = "Wintersemester"
 
-    def enLabel: String = "Winter semester"
+      def enLabel: String = "Winter semester"
 
-    def start: LocalDate = LocalDate.of(year, Month.SEPTEMBER, 1)
+      def start: LocalDate = LocalDate.of(year, Month.SEPTEMBER, 1)
 
-    def end: LocalDate = LocalDate.of(year + 1, Month.MARCH, 1)
-  }
+      def end: LocalDate = LocalDate.of(year + 1, Month.MARCH, 1)
+    }
 
-  def summer(_year: Int): Semester = new Semester {
-    override def year: Int = _year
+  def summer(_year: Int): Semester =
+    new Semester {
+      override def year: Int = _year
 
-    def abbrev: String = soseId
+      def abbrev: String = soseId
 
-    def deLabel: String = "Sommersemester"
+      def deLabel: String = "Sommersemester"
 
-    def enLabel: String = "Summer semester"
+      def enLabel: String = "Summer semester"
 
-    def start: LocalDate = LocalDate.of(year, Month.MARCH, 1)
+      def start: LocalDate = LocalDate.of(year, Month.MARCH, 1)
 
-    def end: LocalDate = LocalDate.of(year, Month.SEPTEMBER, 1)
-  }
+      def end: LocalDate = LocalDate.of(year, Month.SEPTEMBER, 1)
+    }
 
   private def soSeStart = Month.MARCH.getValue
   private def soSeEnd   = Month.AUGUST.getValue
@@ -109,8 +112,7 @@ object Semester {
     else summer(date.getYear)
   }
 
-  def currentAndNext(date: LocalDate = LocalDate.now): List[Semester] =
-    List(of(date), next(date))
+  def currentAndNext(date: LocalDate = LocalDate.now): List[Semester] = List(of(date), next(date))
 
   implicit def writes: Writes[Semester] =
     s =>

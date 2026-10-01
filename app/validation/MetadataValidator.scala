@@ -59,27 +59,20 @@ object MetadataValidator {
         else Right(workload)
     }
 
-  def moduleValidator(
-      label: String,
-      lookup: Lookup
-  ): Validator[List[UUID], List[ModuleCore]] =
+  def moduleValidator(label: String, lookup: Lookup): Validator[List[UUID], List[ModuleCore]] =
     Validator { modules =>
       val (errs, res) =
         modules.partitionMap(m => lookup(m).toRight(s"module in '$label' not found: $m"))
       Either.cond(errs.isEmpty, res, errs)
     }
 
-  def taughtWithValidator(
-      lookup: Lookup
-  ): Validator[List[UUID], List[ModuleCore]] =
+  def taughtWithValidator(lookup: Lookup): Validator[List[UUID], List[ModuleCore]] =
     moduleValidator("taught with", lookup)
 
   def prerequisitesEntryValidator(
       label: String,
       lookup: Lookup
-  ): Validator[Option[ParsedPrerequisiteEntry], Option[
-    ModulePrerequisiteEntry
-  ]] =
+  ): Validator[Option[ParsedPrerequisiteEntry], Option[ModulePrerequisiteEntry]] =
     moduleValidator(label, lookup)
       .pullback[Option[ParsedPrerequisiteEntry]](
         _.map(_.modules).getOrElse(Nil)
@@ -97,9 +90,7 @@ object MetadataValidator {
       )
       .map((_, p) => ModulePrerequisites.apply.tupled(p))
 
-  def poOptionalValidator(
-      lookup: Lookup
-  ): Validator[List[ParsedPOOptional], List[ModulePOOptional]] =
+  def poOptionalValidator(lookup: Lookup): Validator[List[ParsedPOOptional], List[ModulePOOptional]] =
     moduleValidator("po optional", lookup)
       .pullback[List[ParsedPOOptional]](_.map(_.instanceOf))
       .map(_.zip(_).map {
@@ -178,18 +169,15 @@ object MetadataValidator {
   def participantsValidatorAdapter: Validator[ParsedMetadata, Option[ModuleParticipants]] =
     participantsValidator.pullback(_.participants)
 
-  def ectsValidatorAdapter: Validator[ParsedMetadata, ModuleECTS] =
-    ectsValidator.pullback(_.credits)
+  def ectsValidatorAdapter: Validator[ParsedMetadata, ModuleECTS] = ectsValidator.pullback(_.credits)
 
   def prerequisitesValidatorAdapter(
       lookup: Lookup
-  ): Validator[ParsedMetadata, ModulePrerequisites] =
-    prerequisitesValidator(lookup).pullback(_.prerequisites)
+  ): Validator[ParsedMetadata, ModulePrerequisites] = prerequisitesValidator(lookup).pullback(_.prerequisites)
 
   def taughtWithValidatorAdapter(
       lookup: Lookup
-  ): Validator[ParsedMetadata, List[ModuleCore]] =
-    taughtWithValidator(lookup).pullback(_.taughtWith)
+  ): Validator[ParsedMetadata, List[ModuleCore]] = taughtWithValidator(lookup).pullback(_.taughtWith)
 
   def workloadValidatorAdapter: Validator[ParsedMetadata, ModuleWorkload] =
     workloadValidator.pullback(a =>
@@ -198,8 +186,7 @@ object MetadataValidator {
 
   def posValidatorAdapter(
       lookup: Lookup
-  ): Validator[ParsedMetadata, ModulePOs] =
-    posValidator(lookup).pullback(_.pos)
+  ): Validator[ParsedMetadata, ModulePOs] = posValidator(lookup).pullback(_.pos)
 
   def moduleRelationValidatorAdapter(
       lookup: Lookup,
@@ -270,6 +257,5 @@ object MetadataValidator {
   def validate(
       lookup: Lookup,
       graph: ModuleRelationGraph
-  )(metadata: ParsedMetadata): Validation[Metadata] =
-    validations(lookup, graph).validate(metadata)
+  )(metadata: ParsedMetadata): Validation[Metadata] = validations(lookup, graph).validate(metadata)
 }

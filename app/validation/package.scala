@@ -23,8 +23,7 @@ package object validation {
           Left(errs.toList)
       }
 
-    def map[C](f: (A, B) => C): Validator[A, C] =
-      Validator(a => this.validate(a).map(f(a, _)))
+    def map[C](f: (A, B) => C): Validator[A, C] = Validator(a => this.validate(a).map(f(a, _)))
 
     def flatMap[C](f: (A, B) => Validator[A, C]): Validator[A, C] =
       Validator(a => this.validate(a).flatMap(b => f(a, b).validate(a)))

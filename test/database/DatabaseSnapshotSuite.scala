@@ -25,11 +25,9 @@ abstract class DatabaseSnapshotSuite extends AnyFunSuite, Matchers, BeforeAndAft
 
   def fakeUUID = "00000000-0000-0000-0000-000000000001"
 
-  override def beforeAll(): Unit =
-    TestDb.start()
+  override def beforeAll(): Unit = TestDb.start()
 
-  protected def norm(s: String): String =
-    s.trim.replace("\r\n", "\n")
+  protected def norm(s: String): String = s.trim.replace("\r\n", "\n")
 
   /** @param rel path under `test/resources`, e.g. `database/expected/get_module_details/generic.txt` */
   protected def assertSnapshot(rel: String)(io: => DBIO[String]): Unit = {

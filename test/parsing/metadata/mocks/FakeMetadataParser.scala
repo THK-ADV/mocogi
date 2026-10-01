@@ -25,33 +25,34 @@ class FakeMetadataParser extends MetadataParser {
       identities: Seq[Identity],
       pos: Seq[PO],
       specializations: Seq[Specialization]
-  ) = always(
-    ParsedMetadata(
-      UUID.randomUUID(),
-      "",
-      "",
-      ModuleType("", "", ""),
-      None,
-      0,
-      ModuleLanguage("", "", ""),
-      0,
-      Season("", "", ""),
-      ModuleResponsibilities(
-        NonEmptyList.one(Identity.Unknown("id", "label")),
-        NonEmptyList.one(Identity.Unknown("id", "label"))
-      ),
-      ModuleAssessmentMethods(Nil),
-      Examiner(Identity.NN, Identity.NN),
-      ExamPhase.all,
-      ModuleWorkload(0, 0, 0, 0, 0, 0),
-      ParsedPrerequisites(None, None),
-      ModuleStatus("", "", ""),
-      ModuleLocation("", "", ""),
-      ParsedPOs(Nil, Nil),
-      None,
-      Nil,
-      None,
-      None
+  ) =
+    always(
+      ParsedMetadata(
+        UUID.randomUUID(),
+        "",
+        "",
+        ModuleType("", "", ""),
+        None,
+        0,
+        ModuleLanguage("", "", ""),
+        0,
+        Season("", "", ""),
+        ModuleResponsibilities(
+          NonEmptyList.one(Identity.Unknown("id", "label")),
+          NonEmptyList.one(Identity.Unknown("id", "label"))
+        ),
+        ModuleAssessmentMethods(Nil),
+        Examiner(Identity.NN, Identity.NN),
+        ExamPhase.all,
+        ModuleWorkload(0, 0, 0, 0, 0, 0),
+        ParsedPrerequisites(None, None),
+        ModuleStatus("", "", ""),
+        ModuleLocation("", "", ""),
+        ParsedPOs(Nil, Nil),
+        None,
+        Nil,
+        None,
+        None
+      )
     )
-  )
 }

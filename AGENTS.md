@@ -1,3 +1,4 @@
 - Use the least code necessary to fully achieve a goal
 - Prefer simple, concise implementations; avoid unnecessary abstractions
 - Do not write tests unless explicitly requested
+- Reach for slim and performant code in space and time. Consider appropriate data structures and algorithms

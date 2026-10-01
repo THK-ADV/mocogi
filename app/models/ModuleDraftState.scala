@@ -11,8 +11,7 @@ sealed trait ModuleDraftState extends IDLabel
 
 object ModuleDraftState {
 
-  implicit def writes: Writes[ModuleDraftState] =
-    Writes.of[IDLabel].contramap(identity)
+  implicit def writes: Writes[ModuleDraftState] = Writes.of[IDLabel].contramap(identity)
 
   case object Published extends ModuleDraftState {
     override def id: String      = "published"

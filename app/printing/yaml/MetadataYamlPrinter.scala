@@ -22,8 +22,7 @@ final class MetadataYamlPrinter(identLevel: Int) {
 
   implicit val showInt: Int => String = _.toString
 
-  implicit def toCatsOrder[A](implicit ord: Ordering[A]): cats.Order[A] =
-    cats.Order.fromOrdering(ord)
+  implicit def toCatsOrder[A](implicit ord: Ordering[A]): cats.Order[A] = cats.Order.fromOrdering(ord)
 
   implicit val ameOrd: Ordering[ModuleAssessmentMethodEntryProtocol] =
     Ordering.by[ModuleAssessmentMethodEntryProtocol, String](_.method)
@@ -79,19 +78,16 @@ final class MetadataYamlPrinter(identLevel: Int) {
           .print((), input)
     }
 
-  private def entry(key: String, value: String) =
-    prefix(s"$key: $value").skip(newline)
+  private def entry(key: String, value: String) = prefix(s"$key: $value").skip(newline)
 
   def opener(versionScheme: VersionScheme) =
     prefix("---")
       .skip(this.versionScheme(versionScheme))
       .skip(newline)
 
-  def closer() =
-    prefix("---")
+  def closer() = prefix("---")
 
-  def versionScheme(versionScheme: VersionScheme) =
-    prefix(s"v${versionScheme.number}${versionScheme.label}")
+  def versionScheme(versionScheme: VersionScheme) = prefix(s"v${versionScheme.number}${versionScheme.label}")
 
   def moduleRelation(r: ModuleRelationProtocol) =
     prefix("relation:")
@@ -147,29 +143,21 @@ final class MetadataYamlPrinter(identLevel: Int) {
       0
     )
 
-  def moduleType(moduleType: String) =
-    entry(ModuleTypeParser.key, ModuleTypeParser.prefix + moduleType)
+  def moduleType(moduleType: String) = entry(ModuleTypeParser.key, ModuleTypeParser.prefix + moduleType)
 
-  def abbreviation(abbrev: String) =
-    entry(THKV1Parser.abbreviationKey, abbrev)
+  def abbreviation(abbrev: String) = entry(THKV1Parser.abbreviationKey, abbrev)
 
-  def title(title: String) =
-    entry(THKV1Parser.titleKey, title)
+  def title(title: String) = entry(THKV1Parser.titleKey, title)
 
-  def id(value: UUID) =
-    entry(THKV1Parser.idKey, value.toString)
+  def id(value: UUID) = entry(THKV1Parser.idKey, value.toString)
 
-  def ects(value: Double) =
-    entry(ModuleECTSParser.key, value.toString)
+  def ects(value: Double) = entry(ModuleECTSParser.key, value.toString)
 
-  def language(value: String) =
-    entry(ModuleLanguageParser.key, ModuleLanguageParser.prefix + value)
+  def language(value: String) = entry(ModuleLanguageParser.key, ModuleLanguageParser.prefix + value)
 
-  def duration(value: Int) =
-    entry(THKV1Parser.durationKey, value.toString)
+  def duration(value: Int) = entry(THKV1Parser.durationKey, value.toString)
 
-  def frequency(value: String) =
-    entry(ModuleSeasonParser.key, ModuleSeasonParser.prefix + value)
+  def frequency(value: String) = entry(ModuleSeasonParser.key, ModuleSeasonParser.prefix + value)
 
   def responsibilities(
       moduleManagement: NonEmptyList[String],
@@ -352,11 +340,9 @@ final class MetadataYamlPrinter(identLevel: Int) {
   def requiredPrerequisites(value: ModulePrerequisiteEntryProtocol) =
     prerequisites(prefix(s"${ModulePrerequisitesParser.requiredKey}:"), value)
 
-  def status(value: String) =
-    entry(ModuleStatusParser.key, ModuleStatusParser.prefix + value)
+  def status(value: String) = entry(ModuleStatusParser.key, ModuleStatusParser.prefix + value)
 
-  def location(value: String) =
-    entry(ModuleLocationParser.key, ModuleLocationParser.prefix + value)
+  def location(value: String) = entry(ModuleLocationParser.key, ModuleLocationParser.prefix + value)
 
   def participants(value: ModuleParticipants) =
     prefix(s"${ModuleParticipantsParser.key}:")

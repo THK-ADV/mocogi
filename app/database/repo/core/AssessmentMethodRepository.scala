@@ -32,16 +32,13 @@ class AssessmentMethodRepository @Inject() (
 
   protected override def idOf(t: AssessmentMethodTable) = t.id
 
-  def all(): Future[Seq[AssessmentMethod]] =
-    retrieve(tableQuery)
+  def all(): Future[Seq[AssessmentMethod]] = retrieve(tableQuery)
 
-  def allRPO(): Future[Seq[AssessmentMethod]] =
-    allBySource(AssessmentMethodSource.RPO)
+  def allRPO(): Future[Seq[AssessmentMethod]] = allBySource(AssessmentMethodSource.RPO)
 
   private def retrieve(
       query: Query[AssessmentMethodTable, AssessmentMethodDefinition, Seq]
-  ): Future[Seq[AssessmentMethod]] =
-    db.run(query.result.map(_.map(a => AssessmentMethod(a.id, a.deLabel, a.enLabel))))
+  ): Future[Seq[AssessmentMethod]] = db.run(query.result.map(_.map(a => AssessmentMethod(a.id, a.deLabel, a.enLabel))))
 
   /**
    * Counts how many distinct modules use each assessment method, restricted to

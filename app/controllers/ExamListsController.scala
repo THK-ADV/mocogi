@@ -33,11 +33,9 @@ final class ExamListsController @Inject() (
     with ArtifactCheck
     with UserResolveAction {
 
-  def currentSemesters(): Action[AnyContent] =
-    Action(_ => Ok(Json.toJson(service.currentSemesters())))
+  def currentSemesters(): Action[AnyContent] = Action(_ => Ok(Json.toJson(service.currentSemesters())))
 
-  def getAll(): Action[AnyContent] =
-    Action.async(_ => service.listPublished().map(xs => Ok(Json.toJson(xs))))
+  def getAll(): Action[AnyContent] = Action.async(_ => service.listPublished().map(xs => Ok(Json.toJson(xs))))
 
   def getPreview(po: String): Action[AnyContent] =
     auth.andThen(resolveUser).andThen(canPreviewArtifact(po)).async { r =>
@@ -68,9 +66,10 @@ final class ExamListsController @Inject() (
       .andThen(canCreateArtifact(po))
       .async(r => service.publish(po, r.body._1, r.body._2).map(_ => NoContent))
 
-  private def publishReads: Reads[(Semester, LocalDate)] = js =>
-    for {
-      semester <- js.\("semester").validate[String]
-      date     <- js.\("date").validate[LocalDateTime].map(_.toLocalDate)
-    } yield (Semester(semester), date)
+  private def publishReads: Reads[(Semester, LocalDate)] =
+    js =>
+      for {
+        semester <- js.\("semester").validate[String]
+        date     <- js.\("date").validate[LocalDateTime].map(_.toLocalDate)
+      } yield (Semester(semester), date)
 }

@@ -17,8 +17,7 @@ private[printing] final class ContentMarkdownPrinter @Inject() (messages: Messag
 
   // Note(MD4C7A): Generated headings must match Note(MD4C7A) in
   // ModuleContentParser, mocogi-rules.mjs, and the markdown message labels.
-  private def abbrev(string: LocalizedStrings) =
-    if string.isGerman then "de" else "en"
+  private def abbrev(string: LocalizedStrings) = if string.isGerman then "de" else "en"
 
   private def learningOutcomeHeader(string: LocalizedStrings) =
     prefix(s"## (${abbrev(string)}) ${string.learningOutcomeMarkdownLabel}:")
@@ -47,20 +46,16 @@ private[printing] final class ContentMarkdownPrinter @Inject() (messages: Messag
         .skip(newline)
     }
 
-  def learningOutcome(string: LocalizedStrings, text: String) =
-    content(learningOutcomeHeader(string), text)
+  def learningOutcome(string: LocalizedStrings, text: String) = content(learningOutcomeHeader(string), text)
 
-  def moduleContent(string: LocalizedStrings, text: String) =
-    content(moduleContentHeader(string), text)
+  def moduleContent(string: LocalizedStrings, text: String) = content(moduleContentHeader(string), text)
 
   def teachingAndLearningMethods(string: LocalizedStrings, text: String) =
     content(teachingAndLearningMethodsHeader(string), text)
 
-  def recommendedReading(string: LocalizedStrings, text: String) =
-    content(recommendedReadingHeader(string), text)
+  def recommendedReading(string: LocalizedStrings, text: String) = content(recommendedReadingHeader(string), text)
 
-  def particularities(string: LocalizedStrings, text: String) =
-    content(particularitiesHeader(string), text)
+  def particularities(string: LocalizedStrings, text: String) = content(particularitiesHeader(string), text)
 
   def printer(): Printer[(ModuleContent, ModuleContent)] =
     Printer {

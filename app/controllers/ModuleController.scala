@@ -104,8 +104,7 @@ final class ModuleController @Inject() (
       }
     }
 
-  def allGenericOptions(id: UUID) =
-    Action.async(_ => jsonRepository.allGenericModuleOptions(id).map(Ok(_)))
+  def allGenericOptions(id: UUID) = Action.async(_ => jsonRepository.allGenericModuleOptions(id).map(Ok(_)))
 
   // GET by ID
 
@@ -145,6 +144,5 @@ final class ModuleController @Inject() (
       pipeline.parseValidate(Print(r.body)).map(m => Ok(Json.toJson(m)))
     )
 
-  private def getFromPreview(moduleId: UUID) =
-    gitFileDownloadService.downloadModuleFromPreviewBranch(moduleId)
+  private def getFromPreview(moduleId: UUID) = gitFileDownloadService.downloadModuleFromPreviewBranch(moduleId)
 }

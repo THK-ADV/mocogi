@@ -16,6 +16,5 @@ object ModuleLanguageParser extends SingleValueParser[ModuleLanguage] {
       x => s"$prefix${x.id}"
     )
 
-  private[parsing] def raw: Parser[String] =
-    singleValueRawParser(key, prefix)
+  private[parsing] def raw: Parser[String] = singleValueRawParser(key, prefix)
 }

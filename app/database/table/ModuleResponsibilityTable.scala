@@ -19,8 +19,7 @@ private[database] final class ModuleResponsibilityTable(tag: Tag)
 
   def identity = column[String]("identity", O.PrimaryKey)
 
-  def responsibilityType =
-    column[ResponsibilityType]("responsibility_type", O.PrimaryKey)
+  def responsibilityType = column[ResponsibilityType]("responsibility_type", O.PrimaryKey)
 
   def isModuleManager = {
     val moduleManger: ResponsibilityType = ResponsibilityType.ModuleManagement
@@ -32,12 +31,12 @@ private[database] final class ModuleResponsibilityTable(tag: Tag)
     this.responsibilityType === lecturer
   }
 
-  def isIdentity(identity: String) =
-    this.identity.toLowerCase === identity.toLowerCase
+  def isIdentity(identity: String) = this.identity.toLowerCase === identity.toLowerCase
 
-  override def * = (
-    module,
-    identity,
-    responsibilityType
-  ) <> (ModuleResponsibilityDbEntry.apply, ModuleResponsibilityDbEntry.unapply)
+  override def * =
+    (
+      module,
+      identity,
+      responsibilityType
+    ) <> (ModuleResponsibilityDbEntry.apply, ModuleResponsibilityDbEntry.unapply)
 }

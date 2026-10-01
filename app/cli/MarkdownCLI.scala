@@ -21,8 +21,7 @@ final class MarkdownCLI(settings: MarkdownSettings) {
   def format(input: String): Either[String, String] =
     format(input, MaxFormatPasses).flatMap(formatted => lint(formatted).map(_ => formatted))
 
-  def lint(input: String): Either[String, Unit] =
-    run(Some(input), "-").map(_ => ())
+  def lint(input: String): Either[String, Unit] = run(Some(input), "-").map(_ => ())
 
   def lint(inputs: Seq[(Option[UUID], String)]): Either[String, Seq[(Option[UUID], String)]] =
     if inputs.isEmpty then Right(Seq.empty)

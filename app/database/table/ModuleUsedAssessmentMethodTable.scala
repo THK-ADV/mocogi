@@ -31,11 +31,12 @@ private[database] final class ModuleUsedAssessmentMethodTable(tag: Tag)
 
   def assessmentMethodFk = foreignKey("foreignKey", assessmentMethod, TableQuery[AssessmentMethodTable])(_.id)
 
-  override def * = (
-    id,
-    module,
-    assessmentMethod,
-    percentage,
-    precondition
-  ) <> (ModuleUsedAssessmentMethodDbEntry.apply, ModuleUsedAssessmentMethodDbEntry.unapply)
+  override def * =
+    (
+      id,
+      module,
+      assessmentMethod,
+      percentage,
+      precondition
+    ) <> (ModuleUsedAssessmentMethodDbEntry.apply, ModuleUsedAssessmentMethodDbEntry.unapply)
 }

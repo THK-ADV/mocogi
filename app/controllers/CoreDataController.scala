@@ -63,8 +63,7 @@ final class CoreDataController @Inject() (
     with UserResolveAction {
 
   private final class Resource[A: Reads: Writes](repo: CrudRepository[A], generatedId: Boolean = false) {
-    def all(): Future[Result] =
-      repo.list().map(xs => Ok(Json.toJson(xs)))
+    def all(): Future[Result] = repo.list().map(xs => Ok(Json.toJson(xs)))
 
     private val idReads: Reads[String] =
       if generatedId then Reads.of[UUID].map(_.toString)
@@ -147,8 +146,7 @@ final class CoreDataController @Inject() (
       _ <- moduleViewRepository.refreshView()
     } yield ()
 
-  def all(entity: String): Action[AnyContent] =
-    Action.async(_ => withResource(entity)(_.all()))
+  def all(entity: String): Action[AnyContent] = Action.async(_ => withResource(entity)(_.all()))
 
   private def write(entity: String, request: RequestHeader)(f: Resource[?] => Future[Result]): Future[Result] =
     withResource(entity)(f)
@@ -159,8 +157,7 @@ final class CoreDataController @Inject() (
       }
       .recover { case NonFatal(e) => clientErrors.internalServerError(request, e) }
 
-  def cachedAll(entity: String): EssentialAction =
-    cache(entity, 1.hour)(all(entity))
+  def cachedAll(entity: String): EssentialAction = cache(entity, 1.hour)(all(entity))
 
   def create(entity: String): Action[JsObject] =
     admin.async(parse.json[JsObject])(r => write(entity, r)(_.create(r.body)))

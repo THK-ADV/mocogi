@@ -219,8 +219,7 @@ final class GitCommitService @Inject() (
   }
 
   private def getCommitDiff(sha: String): Future[List[CommitDiff]] = {
-    def parseJson(js: JsValue): List[CommitDiff] =
-      js.validate[List[CommitDiff]].fold(_ => List.empty, identity)
+    def parseJson(js: JsValue): List[CommitDiff] = js.validate[List[CommitDiff]].fold(_ => List.empty, identity)
 
     def go(url: String): Future[List[CommitDiff]] =
       ws.url(url)
@@ -246,9 +245,7 @@ final class GitCommitService @Inject() (
       )
     else Future.failed(parseErrorMessage(res))
 
-  private def commitUrl() =
-    s"${repositoryUrl()}/commits"
+  private def commitUrl() = s"${repositoryUrl()}/commits"
 
-  private def contentTypeJson() =
-    (HeaderNames.CONTENT_TYPE, ContentTypes.JSON)
+  private def contentTypeJson() = (HeaderNames.CONTENT_TYPE, ContentTypes.JSON)
 }

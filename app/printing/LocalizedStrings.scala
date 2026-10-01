@@ -91,20 +91,15 @@ final class LocalizedStrings(messages: MessagesApi)(using lang: Lang) {
 
   def particularitiesMarkdownLabel = messages("markdown.content.particularities")
 
-  def frequencyLabel(season: Season): String =
-    messages("latex.module_catalog.season", label(season))
+  def frequencyLabel(season: Season): String = messages("latex.module_catalog.season", label(season))
 
-  def label(l: Label): String =
-    if isGerman then l.deLabel else l.enLabel
+  def label(l: Label): String = if isGerman then l.deLabel else l.enLabel
 
-  def label(l: Option[Label]): String =
-    l.fold("???")(label)
+  def label(l: Option[Label]): String = l.fold("???")(label)
 
-  def description(l: IDLabelDesc): String =
-    if isGerman then l.deDesc else l.enDesc
+  def description(l: IDLabelDesc): String = if isGerman then l.deDesc else l.enDesc
 
-  def label(l: Label, spec: Option[Label]): String =
-    spec.fold(label(l))(s => s"${label(l)} (${label(s)})")
+  def label(l: Label, spec: Option[Label]): String = spec.fold(label(l))(s => s"${label(l)} (${label(s)})")
 
   def workloadLabels(
       wl: ModuleWorkload,
@@ -127,8 +122,7 @@ final class LocalizedStrings(messages: MessagesApi)(using lang: Lang) {
       else s"$contactHours h ($parts)"
     }
 
-    def selfStudyValue(selfStudy: Int) =
-      if (selfStudy == 0) noneLabel else s"$selfStudy h"
+    def selfStudyValue(selfStudy: Int) = if (selfStudy == 0) noneLabel else s"$selfStudy h"
 
     val total     = (ects * ectsFactor).toInt
     val selfStudy = wl.selfStudy(total)

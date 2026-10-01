@@ -51,17 +51,17 @@ object TestDb {
   }
 
   /** Verifies connectivity once per JVM. */
-  def start(): Unit = startLock.synchronized {
-    if (!started) {
-      Using.resource(dataSource.getConnection)(c =>
-        Using.resource(c.createStatement())(_.executeQuery("SELECT 1").next())
-      )
-      started = true
+  def start(): Unit =
+    startLock.synchronized {
+      if (!started) {
+        Using.resource(dataSource.getConnection)(c =>
+          Using.resource(c.createStatement())(_.executeQuery("SELECT 1").next())
+        )
+        started = true
+      }
     }
-  }
 
-  def run[R](action: DBIO[R]): Future[R] =
-    db.run(action)
+  def run[R](action: DBIO[R]): Future[R] = db.run(action)
 
   def runSync[R](action: DBIO[R]): R = {
     import scala.concurrent.duration.*

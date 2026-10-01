@@ -15,10 +15,11 @@ private[database] final class SpecializationTable(tag: Tag)
 
   def po = column[String]("po")
 
-  override def * = (
-    id,
-    label,
-    abbreviation,
-    po
-  ) <> (Specialization.apply.tupled, Specialization.unapply)
+  override def * =
+    (
+      id,
+      label,
+      abbreviation,
+      po
+    ) <> (Specialization.apply.tupled, Specialization.unapply)
 }

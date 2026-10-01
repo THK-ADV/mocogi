@@ -23,8 +23,7 @@ final class ModuleCompanionRepository @Inject() (
 
   private val tableQuery = TableQuery[ModuleCompanionTable]
 
-  def createMany(xs: Seq[ModuleCompanion]): Future[Unit] =
-    db.run(tableQuery ++= xs).map(_ => ())
+  def createMany(xs: Seq[ModuleCompanion]): Future[Unit] = db.run(tableQuery ++= xs).map(_ => ())
 
   def allFromModules(modules: Seq[UUID]): Future[Seq[ModuleCompanion]] =
     db.run(tableQuery.filter(_.module.inSet(modules)).result)

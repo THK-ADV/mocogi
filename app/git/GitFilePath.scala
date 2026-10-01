@@ -14,18 +14,15 @@ sealed trait GitFilePath extends Any {
 object GitFilePath {
   private case class GitFilePathImpl(value: String) extends AnyVal with GitFilePath
 
-  private def modulePrefix(implicit gitConfig: GitConfig) =
-    s"${gitConfig.modulesFolder}/"
+  private def modulePrefix(implicit gitConfig: GitConfig) = s"${gitConfig.modulesFolder}/"
 
   private def moduleFileExt = ".md"
 
   private def catalogFileExt = ".tex"
 
-  def apply(path: String): GitFilePath =
-    GitFilePathImpl(path)
+  def apply(path: String): GitFilePath = GitFilePathImpl(path)
 
-  def apply(draft: ModuleDraft)(implicit gitConfig: GitConfig): GitFilePath =
-    apply(draft.module)
+  def apply(draft: ModuleDraft)(implicit gitConfig: GitConfig): GitFilePath = apply(draft.module)
 
   def apply(moduleId: UUID)(implicit gitConfig: GitConfig): GitFilePath =
     apply(s"$modulePrefix${moduleId.toString}$moduleFileExt")

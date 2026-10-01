@@ -78,11 +78,11 @@ final class ModuleDetailRepositorySpec extends AnyFunSuite with Matchers with Gu
     )
   }
 
-  private def sorted(value: JsValue): JsValue = value match {
-    case JsArray(values) => JsArray(values.sortBy(Json.stringify))
-    case value           => value
-  }
+  private def sorted(value: JsValue): JsValue =
+    value match {
+      case JsArray(values) => JsArray(values.sortBy(Json.stringify))
+      case value           => value
+    }
 
-  private def await[A](future: scala.concurrent.Future[A]): A =
-    Await.result(future, 120.seconds)
+  private def await[A](future: scala.concurrent.Future[A]): A = Await.result(future, 120.seconds)
 }

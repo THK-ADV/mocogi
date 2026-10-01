@@ -44,11 +44,9 @@ case class ModuleDraft(
       case JsError(errors)     => throw JsonParseException(errors)
     }
 
-  def mergeRequestId: Option[MergeRequestId] =
-    this.mergeRequest.map(_._1)
+  def mergeRequestId: Option[MergeRequestId] = this.mergeRequest.map(_._1)
 
-  def mergeRequestStatus: Option[MergeRequestStatus] =
-    this.mergeRequest.map(_._2)
+  def mergeRequestStatus: Option[MergeRequestStatus] = this.mergeRequest.map(_._2)
 
   // changes to the module draft state calculation have to be synchronized with the "get_modules_for_user" function in functions.sql
 
@@ -83,6 +81,5 @@ case class ModuleDraft(
 }
 
 extension (self: Option[ModuleDraft]) {
-  def state() =
-    self.fold[ModuleDraftState](Published)(_.state())
+  def state() = self.fold[ModuleDraftState](Published)(_.state())
 }

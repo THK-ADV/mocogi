@@ -70,8 +70,7 @@ private[artifact] object ModuleCatalogService {
       module: ModuleProtocol,
       currentPO: String,
       of: ModulePOMandatoryProtocol => IterableOnce[Int]
-  ): List[Int] =
-    mandatoryRelations(module, currentPO).flatMap(of).distinct.sorted
+  ): List[Int] = mandatoryRelations(module, currentPO).flatMap(of).distinct.sorted
 
   private def duplicateIds(ids: List[UUID]): List[UUID] =
     ids.groupBy(identity).collect { case (id, values) if values.size > 1 => id }.toList
@@ -343,11 +342,9 @@ final class ModuleCatalogService @Inject() (
     implicit val ctx: ExecutionContext
 ) extends Logging {
 
-  def listPublished(): Future[Seq[PublishedDocument]] =
-    moduleCatalogRepo.all()
+  def listPublished(): Future[Seq[PublishedDocument]] = moduleCatalogRepo.all()
 
-  def findPublishedFile(filename: String): Option[Path] =
-    FileOps.resolvePdfFile(filename, settings.publishedPdfDir)
+  def findPublishedFile(filename: String): Option[Path] = FileOps.resolvePdfFile(filename, settings.publishedPdfDir)
 
   def publish(po: String, config: ModuleCatalogConfig): Future[Unit] = {
     logger.info(s"publishing module catalog for po $po")
@@ -399,8 +396,7 @@ final class ModuleCatalogService @Inject() (
       }
     )
 
-  private def modulesFromPreview(po: String): Future[POModules] =
-    Future.fromTry(new ModulePreview(gitCLI).getByPO(po))
+  private def modulesFromPreview(po: String): Future[POModules] = Future.fromTry(new ModulePreview(gitCLI).getByPO(po))
 
   private def prepare(
       po: String,

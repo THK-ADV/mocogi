@@ -20,8 +20,7 @@ private[database] final class StudyProgramTable(tag: Tag)
 
   def abbreviation = column[String]("abbreviation")
 
-  def degreeFk =
-    foreignKey("degree", degree, TableQuery[DegreeTable])(_.id)
+  def degreeFk = foreignKey("degree", degree, TableQuery[DegreeTable])(_.id)
 
   override def * =
     (

@@ -10,14 +10,15 @@ enum EmploymentType(val id: String) {
 }
 
 object EmploymentType {
-  given Format[EmploymentType] = Format(
-    Reads
-      .of[String]
-      .flatMapResult(id =>
-        values.find(_.id == id).fold[JsResult[EmploymentType]](JsError("Unknown EmploymentType: " + id))(JsSuccess(_))
-      ),
-    Writes(value => JsString(value.id))
-  )
+  given Format[EmploymentType] =
+    Format(
+      Reads
+        .of[String]
+        .flatMapResult(id =>
+          values.find(_.id == id).fold[JsResult[EmploymentType]](JsError("Unknown EmploymentType: " + id))(JsSuccess(_))
+        ),
+      Writes(value => JsString(value.id))
+    )
 
   def apply(id: String) =
     id match {

@@ -166,13 +166,14 @@ object Identity {
       unknownWrites.writes(unknown)
   }
 
-  given Reads[Identity] = Reads { json =>
-    (json \ "kind").validate[String].flatMap {
-      case PersonKind  => json.validate[Person](Json.reads[Person])
-      case GroupKind   => json.validate[Group](Json.reads[Group])
-      case UnknownKind => json.validate[Unknown](Json.reads[Unknown])
-      case _           => JsError("kind must be person, group or unknown")
+  given Reads[Identity] =
+    Reads { json =>
+      (json \ "kind").validate[String].flatMap {
+        case PersonKind  => json.validate[Person](Json.reads[Person])
+        case GroupKind   => json.validate[Group](Json.reads[Group])
+        case UnknownKind => json.validate[Unknown](Json.reads[Unknown])
+        case _           => JsError("kind must be person, group or unknown")
+      }
     }
-  }
 
 }

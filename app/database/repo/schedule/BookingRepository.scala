@@ -123,8 +123,7 @@ final class BookingRepository @Inject() (
       case entries                      => entries.map((id, start, end) => SeriesOccurrence(id, start, end))
     }
 
-  def delete(id: UUID): Future[Boolean] =
-    db.run(tableQuery.filter(_.id === id).delete).map(_ == 1)
+  def delete(id: UUID): Future[Boolean] = db.run(tableQuery.filter(_.id === id).delete).map(_ == 1)
 
   private def toDbEntry(
       id: UUID,

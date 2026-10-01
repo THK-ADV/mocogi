@@ -39,6 +39,5 @@ object ModuleResponsibilitiesParser {
     inner(IdentityParser.parser)
       .map(ModuleResponsibilities.apply.tupled)
 
-  private[parsing] def raw: Parser[(NonEmptyList[String], NonEmptyList[String])] =
-    inner(IdentityParser.raw)
+  private[parsing] def raw: Parser[(NonEmptyList[String], NonEmptyList[String])] = inner(IdentityParser.raw)
 }

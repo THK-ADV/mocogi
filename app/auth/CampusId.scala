@@ -9,6 +9,5 @@ case class CampusId(value: String) extends AnyVal {
 }
 
 object CampusId {
-  implicit def format: Format[CampusId] =
-    Format.of[String].bimap(CampusId.apply, _.value)
+  implicit def format: Format[CampusId] = Format.of[String].bimap(CampusId.apply, _.value)
 }

@@ -17,38 +17,41 @@ case class ModuleProtocol(
 
   import monocle.syntax.all.*
 
-  private def string = Traversal
-    .applyN(
-      GenLens[ModuleProtocol](_.metadata.title),
-      GenLens[ModuleProtocol](_.metadata.abbrev)
-    )
-    .modify(_.trim)
+  private def string =
+    Traversal
+      .applyN(
+        GenLens[ModuleProtocol](_.metadata.title),
+        GenLens[ModuleProtocol](_.metadata.abbrev)
+      )
+      .modify(_.trim)
 
-  private def prerequisites = Traversal
-    .applyN(
-      GenLens[ModuleProtocol](
-        _.metadata.prerequisites.recommended
-      ),
-      GenLens[ModuleProtocol](
-        _.metadata.prerequisites.required
+  private def prerequisites =
+    Traversal
+      .applyN(
+        GenLens[ModuleProtocol](
+          _.metadata.prerequisites.recommended
+        ),
+        GenLens[ModuleProtocol](
+          _.metadata.prerequisites.required
+        )
       )
-    )
-    .modify(
-      _.map(
-        _.focus(_.text)
-          .modify(_.trim)
-          .focus(_.modules)
-          .modify(_.sorted)
+      .modify(
+        _.map(
+          _.focus(_.text)
+            .modify(_.trim)
+            .focus(_.modules)
+            .modify(_.sorted)
+        )
       )
-    )
 
-  private def assessmentMethods = Traversal
-    .applyN(
-      GenLens[ModuleProtocol](
-        _.metadata.assessmentMethods.mandatory
+  private def assessmentMethods =
+    Traversal
+      .applyN(
+        GenLens[ModuleProtocol](
+          _.metadata.assessmentMethods.mandatory
+        )
       )
-    )
-    .modify(_.map(_.focus(_.precondition).modify(_.sorted)).sortBy(_.method))
+      .modify(_.map(_.focus(_.precondition).modify(_.sorted)).sortBy(_.method))
 
   private def poMandatory =
     GenLens[ModuleProtocol](_.metadata.po.mandatory)
@@ -68,33 +71,35 @@ case class ModuleProtocol(
         ).sortBy(_.po)
       )
 
-  private def nels = Traversal
-    .applyN(
-      GenLens[ModuleProtocol](_.metadata.moduleManagement),
-      GenLens[ModuleProtocol](_.metadata.lecturers),
-      GenLens[ModuleProtocol](_.metadata.examPhases)
-    )
-    .modify(_.sorted)
+  private def nels =
+    Traversal
+      .applyN(
+        GenLens[ModuleProtocol](_.metadata.moduleManagement),
+        GenLens[ModuleProtocol](_.metadata.lecturers),
+        GenLens[ModuleProtocol](_.metadata.examPhases)
+      )
+      .modify(_.sorted)
 
-  private def ids =
-    GenLens[ModuleProtocol](_.metadata.taughtWith).modify(_.sorted)
+  private def ids = GenLens[ModuleProtocol](_.metadata.taughtWith).modify(_.sorted)
 
-  private def content = Traversal
-    .applyN(
-      GenLens[ModuleProtocol](_.deContent),
-      GenLens[ModuleProtocol](_.enContent)
-    )
-    .modify(_.normalized())
+  private def content =
+    Traversal
+      .applyN(
+        GenLens[ModuleProtocol](_.deContent),
+        GenLens[ModuleProtocol](_.enContent)
+      )
+      .modify(_.normalized())
 
-  def normalize() = string
-    .andThen(prerequisites)
-    .andThen(nels)
-    .andThen(assessmentMethods)
-    .andThen(poMandatory)
-    .andThen(poOptional)
-    .andThen(ids)
-    .andThen(content)
-    .apply(this)
+  def normalize() =
+    string
+      .andThen(prerequisites)
+      .andThen(nels)
+      .andThen(assessmentMethods)
+      .andThen(poMandatory)
+      .andThen(poOptional)
+      .andThen(ids)
+      .andThen(content)
+      .apply(this)
 }
 
 object ModuleProtocol {

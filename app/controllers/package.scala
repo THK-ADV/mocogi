@@ -32,20 +32,21 @@ package object controllers {
     }
   }
 
-  implicit def listReads[A](implicit reads: Reads[A]): Reads[List[A]] =
-    Reads.list(reads)
+  implicit def listReads[A](implicit reads: Reads[A]): Reads[List[A]] = Reads.list(reads)
 
-  given Writes[Throwable] = t =>
-    Json.obj(
-      "type"    -> "exception",
-      "message" -> t.getMessage
-    )
+  given Writes[Throwable] =
+    t =>
+      Json.obj(
+        "type"    -> "exception",
+        "message" -> t.getMessage
+      )
 
-  given Writes[Exception] = e =>
-    Json.obj(
-      "type"    -> "exception",
-      "message" -> e.getMessage
-    )
+  given Writes[Exception] =
+    e =>
+      Json.obj(
+        "type"    -> "exception",
+        "message" -> e.getMessage
+      )
 
   extension (self: RequestHeader) {
     def isExtended: Boolean =

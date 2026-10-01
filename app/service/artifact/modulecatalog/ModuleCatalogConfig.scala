@@ -43,28 +43,30 @@ final case class ModuleCatalogGenericModuleOccurrence(moduleId: UUID, semester: 
 final case class ModuleCatalogModuleDistribution(moduleId: UUID, semesters: List[Int])
 
 object ModuleCatalogConfig {
-  def empty: ModuleCatalogConfig = ModuleCatalogConfig(
-    ModuleCatalogModuleSelectionConfig.empty,
-    ModuleCatalogStudyPlanConfig.empty
-  )
-
-  given Reads[ModuleCatalogConfig] = Reads { json =>
-    for {
-      moduleSelection <- (JsPath \ "moduleSelection")
-        .readNullable[ModuleCatalogModuleSelectionConfig]
-        .reads(json)
-      studyPlan <- (json \ "studyPlan") match {
-        case JsDefined(JsNull)          => JsSuccess(None)
-        case JsDefined(value: JsObject) => value.validate[ModuleCatalogStudyPlanConfig].map(Some(_))
-        case JsDefined(_)               => JsError("studyPlan must be null or an object")
-        case _                          => JsError("studyPlan is required")
-      }
-    } yield ModuleCatalogConfig(
-      moduleSelection.getOrElse(ModuleCatalogModuleSelectionConfig.empty),
-      studyPlan.getOrElse(ModuleCatalogStudyPlanConfig.empty),
-      studyPlan.isDefined
+  def empty: ModuleCatalogConfig =
+    ModuleCatalogConfig(
+      ModuleCatalogModuleSelectionConfig.empty,
+      ModuleCatalogStudyPlanConfig.empty
     )
-  }
+
+  given Reads[ModuleCatalogConfig] =
+    Reads { json =>
+      for {
+        moduleSelection <- (JsPath \ "moduleSelection")
+          .readNullable[ModuleCatalogModuleSelectionConfig]
+          .reads(json)
+        studyPlan <- (json \ "studyPlan") match {
+          case JsDefined(JsNull)          => JsSuccess(None)
+          case JsDefined(value: JsObject) => value.validate[ModuleCatalogStudyPlanConfig].map(Some(_))
+          case JsDefined(_)               => JsError("studyPlan must be null or an object")
+          case _                          => JsError("studyPlan is required")
+        }
+      } yield ModuleCatalogConfig(
+        moduleSelection.getOrElse(ModuleCatalogModuleSelectionConfig.empty),
+        studyPlan.getOrElse(ModuleCatalogStudyPlanConfig.empty),
+        studyPlan.isDefined
+      )
+    }
 }
 
 object ModuleCatalogModuleSelectionConfig {

@@ -54,17 +54,18 @@ private[database] final class ScheduleEntryTable(tag: Tag)
 
   def sourceScheduleEntryDraft = column[Option[UUID]]("source_schedule_entry_draft")
 
-  override def * = (
-    id,
-    seriesId,
-    module,
-    courseType,
-    rooms,
-    lecturer,
-    start,
-    end,
-    po,
-    sourcePlanDraft,
-    sourceScheduleEntryDraft,
-  ) <> (ScheduleEntryDbEntry.apply.tupled, ScheduleEntryDbEntry.unapply)
+  override def * =
+    (
+      id,
+      seriesId,
+      module,
+      courseType,
+      rooms,
+      lecturer,
+      start,
+      end,
+      po,
+      sourcePlanDraft,
+      sourceScheduleEntryDraft,
+    ) <> (ScheduleEntryDbEntry.apply.tupled, ScheduleEntryDbEntry.unapply)
 }

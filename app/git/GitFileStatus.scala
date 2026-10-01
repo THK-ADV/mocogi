@@ -1,8 +1,7 @@
 package git
 
 sealed trait GitFileStatus {
-  def isRemoved: Boolean =
-    this == GitFileStatus.Removed
+  def isRemoved: Boolean = this == GitFileStatus.Removed
 }
 
 object GitFileStatus {
