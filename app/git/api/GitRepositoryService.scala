@@ -20,8 +20,7 @@ final class GitRepositoryService @Inject() (
     private implicit val ctx: ExecutionContext
 ) extends GitService {
 
-  def listModuleFiles(branch: Branch): Future[List[GitFilePath]] =
-    listFileNames(treeUrl(config.modulesFolder, branch))
+  def listModuleFiles(branch: Branch): Future[List[GitFilePath]] = listFileNames(treeUrl(config.modulesFolder, branch))
 
   private def listFileNames(url: String): Future[List[GitFilePath]] =
     ws

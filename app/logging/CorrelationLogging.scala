@@ -17,15 +17,11 @@ object CorrelationId {
 }
 
 extension (logger: Logger) {
-  def infoC(msg: String)(using CorrelationId): Unit =
-    logger.info(s"[${summon[CorrelationId]}] $msg")
+  def infoC(msg: String)(using CorrelationId): Unit = logger.info(s"[${summon[CorrelationId]}] $msg")
 
-  def warnC(msg: String)(using CorrelationId): Unit =
-    logger.warn(s"[${summon[CorrelationId]}] $msg")
+  def warnC(msg: String)(using CorrelationId): Unit = logger.warn(s"[${summon[CorrelationId]}] $msg")
 
-  def errorC(msg: String)(using CorrelationId): Unit =
-    logger.error(s"[${summon[CorrelationId]}] $msg")
+  def errorC(msg: String)(using CorrelationId): Unit = logger.error(s"[${summon[CorrelationId]}] $msg")
 
-  def errorC(msg: String, t: Throwable)(using CorrelationId): Unit =
-    logger.error(s"[${summon[CorrelationId]}] $msg", t)
+  def errorC(msg: String, t: Throwable)(using CorrelationId): Unit = logger.error(s"[${summon[CorrelationId]}] $msg", t)
 }

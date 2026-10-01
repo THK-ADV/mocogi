@@ -161,8 +161,7 @@ final class ScheduleEntryRepository @Inject() (
    *
    * @param id the ID of the schedule entry to delete
    */
-  def delete(id: UUID): Future[Boolean] =
-    db.run(tableQuery.filter(_.id === id).delete).map(_ == 1)
+  def delete(id: UUID): Future[Boolean] = db.run(tableQuery.filter(_.id === id).delete).map(_ == 1)
 
   /** Explicit creation sets sourcePlanDraft and sourceScheduleEntryDraft to None. */
   private def toDbEntry(p: ScheduleEntryProtocol): ScheduleEntryDbEntry =

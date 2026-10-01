@@ -23,8 +23,7 @@ private[database] final class StudyProgramPersonTable(tag: Tag)
 
   def isPAV: Rep[Boolean] = role === UniversityRole.PAV
 
-  def personFk =
-    foreignKey("person", person, TableQuery[IdentityTable])(_.id)
+  def personFk = foreignKey("person", person, TableQuery[IdentityTable])(_.id)
 
   def studyProgramFk =
     foreignKey("studyProgram", studyProgram, TableQuery[StudyProgramTable])(

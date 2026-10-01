@@ -41,8 +41,7 @@ final class ExamLoadCSVPrinter(
     if value.exists(c => c == ';' || c == '"' || c == '\n' || c == '\r') then s""""${value.replace("\"", "\"\"")}""""
     else value
 
-  private def printHeader(sb: StringBuilder) =
-    sb.append(header.mkString(";"))
+  private def printHeader(sb: StringBuilder) = sb.append(header.mkString(";"))
 
   private def createRows(module: ExamLoadModule, isElective: Boolean): List[Row] = {
     def moduleTypeLabel(p: MetadataProtocol) = if isElective || p.isGeneric then "WPF" else "PF"
@@ -75,8 +74,7 @@ final class ExamLoadCSVPrinter(
       if labels.isEmpty then "-" else labels.mkString(" und/oder ")
     }
 
-    def assessmentMethodsCountLabel(id: UUID) =
-      assessmentMethodLabels(id).size.toString
+    def assessmentMethodsCountLabel(id: UUID) = assessmentMethodLabels(id).size.toString
 
     def createRow(id: UUID, module: MetadataProtocol, semesterLabel: String): Row = {
       val (attReq, attReqText, attReqReason) = attendanceRequirementLabel(module.attendanceRequirement)

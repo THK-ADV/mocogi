@@ -34,9 +34,10 @@ enum ModuleVersionContent {
 }
 
 object ModuleVersionContent {
-  given Writes[ModuleVersionContent] = Writes {
-    case Parsed(m, c)    => Json.obj("type" -> "parsed", "module" -> Json.toJson(m), "fileContent" -> c.value)
-    case Deleted         => Json.obj("type" -> "deleted")
-    case ParseError(msg) => Json.obj("type" -> "parseError", "message" -> msg)
-  }
+  given Writes[ModuleVersionContent] =
+    Writes {
+      case Parsed(m, c)    => Json.obj("type" -> "parsed", "module" -> Json.toJson(m), "fileContent" -> c.value)
+      case Deleted         => Json.obj("type" -> "deleted")
+      case ParseError(msg) => Json.obj("type" -> "parseError", "message" -> msg)
+    }
 }

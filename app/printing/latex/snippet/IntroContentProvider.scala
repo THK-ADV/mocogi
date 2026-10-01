@@ -13,8 +13,7 @@ import play.api.Logging
 
 final class IntroContentProvider(dir: Path, po: String, mcIntroPath: String) extends Logging {
 
-  def createIntroContent(): Option[LatexContentSnippet] =
-    copyIntoDir().map(IntroContentSnippet(_))
+  def createIntroContent(): Option[LatexContentSnippet] = copyIntoDir().map(IntroContentSnippet(_))
 
   private def copyIntoDir(): Option[Path] =
     getTexFile.map { texPath =>

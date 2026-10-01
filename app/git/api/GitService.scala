@@ -13,14 +13,11 @@ private[api] trait GitService {
 
   def config: GitConfig
 
-  def projectsUrl() =
-    s"${config.baseUrl}/projects/${config.projectId}"
+  def projectsUrl() = s"${config.baseUrl}/projects/${config.projectId}"
 
-  def repositoryUrl() =
-    s"${projectsUrl()}/repository"
+  def repositoryUrl() = s"${projectsUrl()}/repository"
 
-  def tokenHeader() =
-    ("PRIVATE-TOKEN", config.accessToken)
+  def tokenHeader() = ("PRIVATE-TOKEN", config.accessToken)
 
   def parseErrorMessage(res: WSResponse) =
     res.json
@@ -34,8 +31,7 @@ private[api] trait GitService {
   def parseNextPaginationUrl(r: WSResponse): Option[String] =
     r.header("Link").flatMap(nextLinkParser.parse(_)._1.fold(_ => None, identity))
 
-  def urlEncoded(path: GitFilePath) =
-    URLEncoder.encode(path.value, StandardCharsets.UTF_8)
+  def urlEncoded(path: GitFilePath) = URLEncoder.encode(path.value, StandardCharsets.UTF_8)
 }
 
 object GitService {
@@ -51,6 +47,5 @@ object GitService {
       .zip(prefixTo("\""))
       .many(prefix(",").or(end))
 
-  def nextLinkParser =
-    linkParser.map(_.find(_._2 == "next").map(_._1))
+  def nextLinkParser = linkParser.map(_.find(_._2 == "next").map(_._1))
 }

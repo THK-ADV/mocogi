@@ -24,19 +24,20 @@ final class ResourceCache @Inject() (cached: Cached)(implicit ctx: ExecutionCont
    * Call after a successful write and any required view refresh. Advances resource and dependent cache versions;
    * old entries remain until expiry. Add dependencies here when a response embeds another editable resource.
    */
-  def invalidate(entity: String): Unit = synchronized {
-    val resource           = entity.toLowerCase
-    val dependentResources = resource match {
-      case "degrees" | "pos" | "studyprograms" | "specializations" => Set("studyprograms", "modules")
-      case "identities"                                            => Set("modules", "scheduleentries", "bookings")
-      case "rooms"                                                 => Set("scheduleentries", "bookings")
-      case "teachingunits"                                         => Set("semesterplan")
-      case _                                                       => Set.empty[String]
+  def invalidate(entity: String): Unit =
+    synchronized {
+      val resource           = entity.toLowerCase
+      val dependentResources = resource match {
+        case "degrees" | "pos" | "studyprograms" | "specializations" => Set("studyprograms", "modules")
+        case "identities"                                            => Set("modules", "scheduleentries", "bookings")
+        case "rooms"                                                 => Set("scheduleentries", "bookings")
+        case "teachingunits"                                         => Set("semesterplan")
+        case _                                                       => Set.empty[String]
+      }
+      (dependentResources + resource).foreach { name =>
+        versions = versions.updated(name, versions.getOrElse(name, 0L) + 1)
+      }
     }
-    (dependentResources + resource).foreach { name =>
-      versions = versions.updated(name, versions.getOrElse(name, 0L) + 1)
-    }
-  }
 
   /**
    * Caches 200 responses by resource version, HTTP method and full URI (including query parameters).

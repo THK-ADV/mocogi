@@ -33,8 +33,7 @@ final class TemporaryPdf private[artifact] (val path: Path) extends AutoCloseabl
 }
 
 object TemporaryPdf {
-  private def publishedFilenameTimestamp =
-    DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss'Z'").withZone(ZoneOffset.UTC)
+  private def publishedFilenameTimestamp = DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss'Z'").withZone(ZoneOffset.UTC)
 
   /** Generates a PDF in its own directory and cleans up on failure; callers must close or publish successful results. */
   def generate(filename: String, tmpDir: String)(

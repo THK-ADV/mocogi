@@ -17,8 +17,9 @@ private[database] final class ModuleTaughtWithTable(tag: Tag)
 
   def moduleTaught = column[UUID]("module_taught", O.PrimaryKey)
 
-  override def * = (
-    module,
-    moduleTaught
-  ) <> (ModuleTaughtWithDbEntry.apply, ModuleTaughtWithDbEntry.unapply)
+  override def * =
+    (
+      module,
+      moduleTaught
+    ) <> (ModuleTaughtWithDbEntry.apply, ModuleTaughtWithDbEntry.unapply)
 }

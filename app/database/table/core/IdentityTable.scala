@@ -26,8 +26,7 @@ private[database] final class IdentityTable(tag: Tag)
 
   import database.MyPostgresProfile.MyAPI.simpleStrListTypeMapper
 
-  given BaseColumnType[EmploymentType] =
-    MappedColumnType.base[EmploymentType, String](_.id, EmploymentType.apply)
+  given BaseColumnType[EmploymentType] = MappedColumnType.base[EmploymentType, String](_.id, EmploymentType.apply)
 
   def id = column[String]("id", O.PrimaryKey)
 
@@ -51,20 +50,20 @@ private[database] final class IdentityTable(tag: Tag)
 
   def websiteUrl = column[Option[String]]("website_url")
 
-  def isPerson: Rep[Boolean] =
-    this.kind === Identity.PersonKind
+  def isPerson: Rep[Boolean] = this.kind === Identity.PersonKind
 
-  override def * = (
-    id,
-    lastname,
-    firstname,
-    title,
-    faculties,
-    abbreviation,
-    campusId,
-    isActive,
-    kind,
-    employmentType,
-    websiteUrl
-  ) <> (IdentityDbEntry.apply, IdentityDbEntry.unapply)
+  override def * =
+    (
+      id,
+      lastname,
+      firstname,
+      title,
+      faculties,
+      abbreviation,
+      campusId,
+      isActive,
+      kind,
+      employmentType,
+      websiteUrl
+    ) <> (IdentityDbEntry.apply, IdentityDbEntry.unapply)
 }

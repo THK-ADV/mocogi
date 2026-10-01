@@ -8,16 +8,17 @@ enum AssessmentMethodSource(val id: String) {
 }
 
 object AssessmentMethodSource {
-  given Format[AssessmentMethodSource] = Format(
-    Reads
-      .of[String]
-      .flatMapResult(id =>
-        values
-          .find(_.id == id)
-          .fold[JsResult[AssessmentMethodSource]](JsError("Unknown AssessmentMethodSource: " + id))(JsSuccess(_))
-      ),
-    Writes(value => JsString(value.id))
-  )
+  given Format[AssessmentMethodSource] =
+    Format(
+      Reads
+        .of[String]
+        .flatMapResult(id =>
+          values
+            .find(_.id == id)
+            .fold[JsResult[AssessmentMethodSource]](JsError("Unknown AssessmentMethodSource: " + id))(JsSuccess(_))
+        ),
+      Writes(value => JsString(value.id))
+    )
 
   def apply(id: String): AssessmentMethodSource =
     id match {

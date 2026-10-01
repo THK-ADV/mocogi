@@ -25,8 +25,7 @@ object UniversityRole {
       case "pav" => PAV
     }
 
-  implicit def writes: Writes[UniversityRole] =
-    Writes.of[IDLabel].contramap(identity)
+  implicit def writes: Writes[UniversityRole] = Writes.of[IDLabel].contramap(identity)
 
   def all() = Set(SGL, PAV)
 }

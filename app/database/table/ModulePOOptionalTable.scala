@@ -36,13 +36,14 @@ private[database] final class ModulePOOptionalTable(tag: Tag)
 
   def specialization = column[Option[String]]("specialization")
 
-  override def * = (
-    id,
-    module,
-    po,
-    specialization,
-    instanceOf,
-    partOfCatalog,
-    recommendedSemester
-  ) <> (ModulePOOptionalDbEntry.apply, ModulePOOptionalDbEntry.unapply)
+  override def * =
+    (
+      id,
+      module,
+      po,
+      specialization,
+      instanceOf,
+      partOfCatalog,
+      recommendedSemester
+    ) <> (ModulePOOptionalDbEntry.apply, ModulePOOptionalDbEntry.unapply)
 }

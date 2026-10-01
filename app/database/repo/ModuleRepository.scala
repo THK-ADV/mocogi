@@ -71,20 +71,19 @@ final class ModuleRepository @Inject() (
   }
 
   def createOrUpdateMany(modules: Seq[(Module, LocalDateTime)]) = {
-    def upsertActions = modules.map {
-      case (module, lastModified) =>
-        val db = toDbEntry(module, lastModified)
-        for {
-          exists <- existsAction(module.metadata.id)
-          _      <-
-            if exists then tableQuery.filter(_.id === module.metadata.id).update(db) else tableQuery += db
-        } yield ()
-    }
-    def deleteDependencyActions =
-      modules.map { case (module, _) => deleteDependencies(module.metadata.id) }
+    def upsertActions =
+      modules.map {
+        case (module, lastModified) =>
+          val db = toDbEntry(module, lastModified)
+          for {
+            exists <- existsAction(module.metadata.id)
+            _      <-
+              if exists then tableQuery.filter(_.id === module.metadata.id).update(db) else tableQuery += db
+          } yield ()
+      }
+    def deleteDependencyActions = modules.map { case (module, _) => deleteDependencies(module.metadata.id) }
 
-    def createDependencyActions =
-      modules.map { case (module, _) => createDependencies(module.metadata) }
+    def createDependencyActions = modules.map { case (module, _) => createDependencies(module.metadata) }
 
     // all dependencies are deleted before any is created, so that a child module can move to
     // another parent of the same batch without violating the unique constraint on module_relation
@@ -98,8 +97,7 @@ final class ModuleRepository @Inject() (
     db.run(actions)
   }
 
-  def all(filter: Map[String, Seq[String]]) =
-    retrieve(allWithFilter(filter))
+  def all(filter: Map[String, Seq[String]]) = retrieve(allWithFilter(filter))
 
   def getLecturers(id: UUID) =
     db.run(moduleResponsibilityTable.filter(a => a.module === id && a.isLecturer).map(_.identity).result)
@@ -244,8 +242,7 @@ final class ModuleRepository @Inject() (
     } yield ()
   }
 
-  def exists(module: UUID): Future[Boolean] =
-    db.run(existsAction(module))
+  def exists(module: UUID): Future[Boolean] = db.run(existsAction(module))
 
   private def toDbEntry(module: Module, timestamp: LocalDateTime) =
     ModuleDbEntry(
@@ -350,8 +347,7 @@ final class ModuleRepository @Inject() (
     metadataAssessmentMethods.toList
   }
 
-  private def existsAction(module: UUID) =
-    tableQuery.filter(_.id === module).exists.result
+  private def existsAction(module: UUID) = tableQuery.filter(_.id === module).exists.result
 
   private def retrieve(query: Query[ModuleTable, ModuleDbEntry, Seq]): Future[Seq[(ModuleProtocol, LocalDateTime)]] = {
     val action = query.result.flatMap { modules =>

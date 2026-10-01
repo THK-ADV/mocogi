@@ -59,14 +59,12 @@ final class ModuleCatalogServiceSpec extends AnyWordSpec with Matchers {
       emptyContent
     )
 
-  private def preview(module: ModuleProtocol): (ModuleProtocol, LocalDate) =
-    module -> LocalDate.of(2026, 1, 1)
+  private def preview(module: ModuleProtocol): (ModuleProtocol, LocalDate) = module -> LocalDate.of(2026, 1, 1)
 
   private def config(
       moduleSelection: ModuleCatalogModuleSelectionConfig = ModuleCatalogModuleSelectionConfig.empty,
       studyPlan: ModuleCatalogStudyPlanConfig = ModuleCatalogStudyPlanConfig.empty
-  ): ModuleCatalogConfig =
-    ModuleCatalogConfig(moduleSelection, studyPlan)
+  ): ModuleCatalogConfig = ModuleCatalogConfig(moduleSelection, studyPlan)
 
   private val poOnly = Seq(
     StudyProgramView(

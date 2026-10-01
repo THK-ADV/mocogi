@@ -24,6 +24,5 @@ final class MarkdownLatexPrinter(texCmd: String) {
     }
   }
 
-  private def toStream(input: String) =
-    new ByteArrayInputStream(input.getBytes(StandardCharsets.UTF_8))
+  private def toStream(input: String) = new ByteArrayInputStream(input.getBytes(StandardCharsets.UTF_8))
 }

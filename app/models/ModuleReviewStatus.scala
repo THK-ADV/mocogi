@@ -9,8 +9,7 @@ sealed trait ModuleReviewStatus extends IDLabel {
 
 object ModuleReviewStatus {
 
-  implicit def writes: Writes[ModuleReviewStatus] =
-    Writes.of[IDLabel].contramap(identity)
+  implicit def writes: Writes[ModuleReviewStatus] = Writes.of[IDLabel].contramap(identity)
 
   case object Approved extends ModuleReviewStatus {
     override def id: String = "approved"

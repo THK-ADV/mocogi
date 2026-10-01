@@ -17,6 +17,5 @@ object ModuleStatusParser extends SingleValueParser[ModuleStatus] {
     )
   }
 
-  private[parsing] def raw: Parser[String] =
-    singleValueRawParser(key, prefix)
+  private[parsing] def raw: Parser[String] = singleValueRawParser(key, prefix)
 }

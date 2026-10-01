@@ -14,10 +14,11 @@ private[database] final class AssessmentMethodTable(tag: Tag)
 
   def source = column[AssessmentMethodSource]("source")
 
-  override def * = (
-    id,
-    deLabel,
-    enLabel,
-    source
-  ) <> (AssessmentMethodDefinition.apply, AssessmentMethodDefinition.unapply)
+  override def * =
+    (
+      id,
+      deLabel,
+      enLabel,
+      source
+    ) <> (AssessmentMethodDefinition.apply, AssessmentMethodDefinition.unapply)
 }

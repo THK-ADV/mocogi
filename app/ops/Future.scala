@@ -3,8 +3,7 @@ package ops
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-private def abort[A](msg: String): Future[A] =
-  Future.failed(new Exception(msg))
+private def abort[A](msg: String): Future[A] = Future.failed(new Exception(msg))
 
 extension (self: Future[Boolean]) {
   infix def ||(other: => Future[Boolean])(using ExecutionContext): Future[Boolean] =
@@ -18,8 +17,7 @@ extension [A](self: Future[A]) {
   def continueIf(pred: A => Boolean, msg: => String)(using ExecutionContext): Future[A] =
     self.abortIf(a => !pred(a), msg)
 
-  def measure(tag: String)(using ExecutionContext): Future[A] =
-    new FutureTimeTracker[A](self).track(tag)
+  def measure(tag: String)(using ExecutionContext): Future[A] = new FutureTimeTracker[A](self).track(tag)
 }
 
 extension [A](self: Future[Seq[A]]) {
@@ -40,8 +38,7 @@ extension [A](self: Future[Option[A]]) {
   def or(f: => Future[Option[A]])(using ExecutionContext): Future[Option[A]] =
     self.flatMap(_.fold(f)(a => Future.successful(Some(a))))
 
-  def orElse(f: => Future[A])(using ExecutionContext): Future[A] =
-    self.flatMap(_.fold(f)(a => Future.successful(a)))
+  def orElse(f: => Future[A])(using ExecutionContext): Future[A] = self.flatMap(_.fold(f)(a => Future.successful(a)))
 }
 
 extension [A](self: Future[Either[Throwable, A]]) {

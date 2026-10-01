@@ -210,6 +210,5 @@ package object parsing {
       .take(single.map(a => List(a)).or(dashes))
   }
 
-  def uuidParser(string: String): Parser[UUID] =
-    Try(UUID.fromString(string)).fold(_ => never("uuid"), always)
+  def uuidParser(string: String): Parser[UUID] = Try(UUID.fromString(string)).fold(_ => never("uuid"), always)
 }

@@ -22,8 +22,7 @@ object THKV1Parser {
 
   def durationKey = "duration"
 
-  def idParser: Parser[UUID] =
-    singleLineStringForKey(idKey).flatMap(uuidParser)
+  def idParser: Parser[UUID] = singleLineStringForKey(idKey).flatMap(uuidParser)
 
   def titleParser = singleLineStringForKey(titleKey)
 

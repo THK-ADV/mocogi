@@ -82,12 +82,9 @@ package object table {
   given BaseColumnType[AssessmentMethodSource] =
     MappedColumnType.base[AssessmentMethodSource, String](_.id, AssessmentMethodSource.apply)
 
-  given BaseColumnType[PlanDraftKind] =
-    MappedColumnType.base[PlanDraftKind, String](_.id, PlanDraftKind.apply)
+  given BaseColumnType[PlanDraftKind] = MappedColumnType.base[PlanDraftKind, String](_.id, PlanDraftKind.apply)
 
-  given BaseColumnType[CourseType] =
-    MappedColumnType.base[CourseType, String](_.id, CourseType.apply)
+  given BaseColumnType[CourseType] = MappedColumnType.base[CourseType, String](_.id, CourseType.apply)
 
-  given BaseColumnType[BookingKind] =
-    MappedColumnType.base[BookingKind, String](_.id, BookingKind.apply)
+  given BaseColumnType[BookingKind] = MappedColumnType.base[BookingKind, String](_.id, BookingKind.apply)
 }

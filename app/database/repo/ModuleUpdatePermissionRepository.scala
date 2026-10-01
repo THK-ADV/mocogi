@@ -56,11 +56,9 @@ final class ModuleUpdatePermissionRepository @Inject() (
         .delete
     )
 
-  def deleteInherited(module: UUID) =
-    db.run(tableQuery.filter(a => a.module === module && a.isInherited).delete)
+  def deleteInherited(module: UUID) = db.run(tableQuery.filter(a => a.module === module && a.isInherited).delete)
 
-  def deleteGranted(module: UUID) =
-    db.run(tableQuery.filter(a => a.module === module && a.isGranted).delete)
+  def deleteGranted(module: UUID) = db.run(tableQuery.filter(a => a.module === module && a.isGranted).delete)
 
   def allPeopleWithPermissionForModule(module: UUID): Future[Seq[(Identity.Person, ModuleUpdatePermissionType)]] =
     db.run(

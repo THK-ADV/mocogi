@@ -123,8 +123,7 @@ final class PermissionRepository @Inject() (
     )
   }
 
-  private def isTeachingUnit(str: String): Boolean =
-    !str.contains('_') && (str == "inf" || str == "ing")
+  private def isTeachingUnit(str: String): Boolean = !str.contains('_') && (str == "inf" || str == "ing")
 
   // Returns one permission object with all non-expired POs if the person is an admin.
   // Otherwise, all permissions are returned with their POs properly resolved
@@ -243,6 +242,5 @@ final class PermissionRepository @Inject() (
   def updateContext(id: Long, context: Option[List[String]]): Future[Int] =
     db.run(tableQuery.filter(_.id === id).map(_.context).update(context))
 
-  def delete(id: Long): Future[Int] =
-    db.run(tableQuery.filter(_.id === id).delete)
+  def delete(id: Long): Future[Int] = db.run(tableQuery.filter(_.id === id).delete)
 }

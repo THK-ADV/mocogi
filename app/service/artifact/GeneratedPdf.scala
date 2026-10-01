@@ -17,7 +17,6 @@ object GeneratedPdf {
       try Right(GeneratedPdf(Files.move(pdf, destination.resolve(filename))))
       catch case NonFatal(error) => Left(error.getMessage)
 
-    def rename(filename: String): Either[String, GeneratedPdf] =
-      moveTo(pdf.getParent, filename)
+    def rename(filename: String): Either[String, GeneratedPdf] = moveTo(pdf.getParent, filename)
   }
 }

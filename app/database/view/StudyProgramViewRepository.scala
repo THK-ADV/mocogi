@@ -46,8 +46,7 @@ final class StudyProgramViewRepository @Inject() (
    *
    * @return Future sequence of study programs where PO date_to is null or >= now()
    */
-  def notExpired(): Future[Seq[StudyProgramView]] =
-    db.run(notExpiredTableQuery.result)
+  def notExpired(): Future[Seq[StudyProgramView]] = db.run(notExpiredTableQuery.result)
 
   /**
    * Retrieves study programs with currently active POs only.
@@ -55,8 +54,7 @@ final class StudyProgramViewRepository @Inject() (
    *
    * @return Future sequence of study programs where PO date_from <= now() <= date_to (or date_to is null)
    */
-  def currentlyActive(): Future[Seq[StudyProgramView]] =
-    db.run(currentlyActiveTableQuery.result)
+  def currentlyActive(): Future[Seq[StudyProgramView]] = db.run(currentlyActiveTableQuery.result)
 
   def getByPo(fullPoId: FullPoId): Future[StudyProgramView] =
     db.run(notExpiredTableQuery.filter(_.fullPo === fullPoId.id).result.single)
@@ -92,21 +90,22 @@ final class StudyProgramViewRepository @Inject() (
 
     def specializationLabel = column[Option[String]]("spec_label")
 
-    override def * = (
-      poId,
-      poVersion,
-      studyProgramId,
-      studyProgramDeLabel,
-      studyProgramEnLabel,
-      studyProgramAbbreviation,
-      degreeId,
-      degreeDeLabel,
-      degreeEnLabel,
-      degreeDeDesc,
-      degreeEnDesc,
-      specializationId,
-      specializationLabel
-    ) <> (mapRow, unmapRow)
+    override def * =
+      (
+        poId,
+        poVersion,
+        studyProgramId,
+        studyProgramDeLabel,
+        studyProgramEnLabel,
+        studyProgramAbbreviation,
+        degreeId,
+        degreeDeLabel,
+        degreeEnLabel,
+        degreeDeDesc,
+        degreeEnDesc,
+        specializationId,
+        specializationLabel
+      ) <> (mapRow, unmapRow)
 
     private def mapRow: (
         (

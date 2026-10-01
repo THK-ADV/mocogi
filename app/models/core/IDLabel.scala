@@ -23,18 +23,19 @@ object IDLabel {
       override def enLabel: String = _enLabel
     }
 
-  given OFormat[IDLabel] = OFormat(
-    js =>
-      for {
-        id      <- js.\("id").validate[String]
-        deLabel <- js.\("deLabel").validate[String]
-        enLabel <- js.\("enLabel").validate[String]
-      } yield IDLabel(id, deLabel, enLabel),
-    o =>
-      Json.obj(
-        "id"      -> o.id,
-        "deLabel" -> o.deLabel,
-        "enLabel" -> o.enLabel
-      )
-  )
+  given OFormat[IDLabel] =
+    OFormat(
+      js =>
+        for {
+          id      <- js.\("id").validate[String]
+          deLabel <- js.\("deLabel").validate[String]
+          enLabel <- js.\("enLabel").validate[String]
+        } yield IDLabel(id, deLabel, enLabel),
+      o =>
+        Json.obj(
+          "id"      -> o.id,
+          "deLabel" -> o.deLabel,
+          "enLabel" -> o.enLabel
+        )
+    )
 }

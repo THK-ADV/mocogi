@@ -197,8 +197,7 @@ final class ExamListsLatexPrinter(
     sb.result()
   }
 
-  private def titleRow(title: String) =
-    escape(title)
+  private def titleRow(title: String) = escape(title)
 
   private def moduleRow(
       row: Int,

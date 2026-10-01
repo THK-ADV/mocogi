@@ -49,11 +49,9 @@ final class ModuleDraftService @Inject() (
     private implicit val ctx: ExecutionContext
 ) extends Logging {
 
-  def getMergeRequestId(module: UUID): Future[Option[MergeRequestId]] =
-    repo.getMergeRequestId(module)
+  def getMergeRequestId(module: UUID): Future[Option[MergeRequestId]] = repo.getMergeRequestId(module)
 
-  def getByModuleOpt(moduleId: UUID): Future[Option[ModuleDraft]] =
-    repo.getByModuleOpt(moduleId)
+  def getByModuleOpt(moduleId: UUID): Future[Option[ModuleDraft]] = repo.getByModuleOpt(moduleId)
 
   def createNew(
       protocol: ModuleProtocol,
@@ -119,8 +117,7 @@ final class ModuleDraftService @Inject() (
           }
       }
 
-  private def getFromStaging(id: UUID) =
-    gitFileDownloadService.downloadModuleFromPreviewBranch(id)
+  private def getFromStaging(id: UUID) = gitFileDownloadService.downloadModuleFromPreviewBranch(id)
 
   private def createFromExistingModule(request: ModuleUpdateRequest): Future[Either[PipelineError, Unit]] =
     for {
@@ -195,14 +192,11 @@ final class ModuleDraftService @Inject() (
           } yield res
     } yield res
 
-  private def commitMessage(updatedKeys: Set[String]) =
-    s"updated keys: ${updatedKeys.mkString(", ")}"
+  private def commitMessage(updatedKeys: Set[String]) = s"updated keys: ${updatedKeys.mkString(", ")}"
 
-  private def toJson(module: Module) =
-    Json.toJson(module.normalized())
+  private def toJson(module: Module) = Json.toJson(module.normalized())
 
-  private def toJson(protocol: ModuleProtocol) =
-    Json.toJson(protocol.normalize())
+  private def toJson(protocol: ModuleProtocol) = Json.toJson(protocol.normalize())
 
   private def create(
       protocol: ModuleProtocol,
@@ -247,8 +241,7 @@ final class ModuleDraftService @Inject() (
         } yield Right(created)
     }
 
-  private def keysToBeReviewed(updatedKeys: Set[String]): Set[String] =
-    updatedKeys.filter(keysToReview.contains)
+  private def keysToBeReviewed(updatedKeys: Set[String]): Set[String] = updatedKeys.filter(keysToReview.contains)
 
   private def canEdit(state: ModuleDraftState, canApproveModule: Boolean): Boolean = {
     val canEditByState = state match {
@@ -261,6 +254,5 @@ final class ModuleDraftService @Inject() (
     canEditByState || (state == ModuleDraftState.WaitingForReview && canApproveModule)
   }
 
-  private def shouldClearMergeRequest(state: ModuleDraftState): Boolean =
-    state == ModuleDraftState.WaitingForChanges
+  private def shouldClearMergeRequest(state: ModuleDraftState): Boolean = state == ModuleDraftState.WaitingForChanges
 }

@@ -235,8 +235,7 @@ final class ModuleReviewService @Inject() (
     }
   }
 
-  def allByModule(moduleId: UUID): Future[Seq[ModuleReview.Atomic]] =
-    reviewRepo.getAtomicByModule(moduleId)
+  def allByModule(moduleId: UUID): Future[Seq[ModuleReview.Atomic]] = reviewRepo.getAtomicByModule(moduleId)
 
   /**
    * Returns all reviews with a corresponding review status and whether the
@@ -387,16 +386,14 @@ final class ModuleReviewService @Inject() (
   private def mrTitle(author: Identity.Person, metadata: MetadataProtocol) =
     s"${author.fullName}: ${metadata.title} (${metadata.abbrev})"
 
-  private def mrDescAutoAccepted(modifiedKeys: Set[String]) =
-    mrDesc(modifiedKeys, Set.empty, Nil)
+  private def mrDescAutoAccepted(modifiedKeys: Set[String]) = mrDesc(modifiedKeys, Set.empty, Nil)
 
   private def mrDesc(
       modifiedKeys: Set[String],
       keysToBeReviewed: Set[String],
       reviewer: Iterable[String]
   ) = {
-    def go(as: List[String]): String =
-      as.sorted.foldLeft("") { case (acc, a) => s"$acc\n- $a" }
+    def go(as: List[String]): String = as.sorted.foldLeft("") { case (acc, a) => s"$acc\n- $a" }
 
     if (keysToBeReviewed.isEmpty && reviewer.isEmpty)
       s"""modified keys:

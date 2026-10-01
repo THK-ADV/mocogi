@@ -21,8 +21,9 @@ private[database] final class ModuleRelationTable(tag: Tag)
 
   def child = column[UUID]("child", O.PrimaryKey)
 
-  override def * = (
-    parent,
-    child
-  ) <> (ModuleRelationDbEntry.apply, ModuleRelationDbEntry.unapply)
+  override def * =
+    (
+      parent,
+      child
+    ) <> (ModuleRelationDbEntry.apply, ModuleRelationDbEntry.unapply)
 }

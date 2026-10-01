@@ -16,8 +16,7 @@ private[database] final class PermissionTable(tag: Tag)
 
   import database.MyPostgresProfile.MyAPI.simpleStrListTypeMapper
 
-  given BaseColumnType[PermissionType] =
-    MappedColumnType.base[PermissionType, String](_.id, PermissionType.apply)
+  given BaseColumnType[PermissionType] = MappedColumnType.base[PermissionType, String](_.id, PermissionType.apply)
 
   def id = column[Long]("id", O.PrimaryKey, O.AutoInc)
 

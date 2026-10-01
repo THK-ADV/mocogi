@@ -174,9 +174,7 @@ final class GitMergeRequestService @Inject() (
         else Future.failed(parseErrorMessage(res))
       }
 
-  private def mergeRequestUrl =
-    s"${projectsUrl()}/merge_requests"
+  private def mergeRequestUrl = s"${projectsUrl()}/merge_requests"
 
-  private def closeUrl(id: MergeRequestId) =
-    s"$mergeRequestUrl/${id.value}"
+  private def closeUrl(id: MergeRequestId) = s"$mergeRequestUrl/${id.value}"
 }

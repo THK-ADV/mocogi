@@ -25,11 +25,9 @@ final class CreatedModuleRepository @Inject() (
 
   private val tableQuery = TableQuery[CreatedModuleTable]
 
-  def insertOrUpdate(module: CreatedModule): Future[Unit] =
-    db.run(tableQuery.insertOrUpdate(module)).map(_ => ())
+  def insertOrUpdate(module: CreatedModule): Future[Unit] = db.run(tableQuery.insertOrUpdate(module)).map(_ => ())
 
-  def delete(modules: Seq[UUID]): Future[Int] =
-    db.run(tableQuery.filter(_.module.inSet(modules)).delete)
+  def delete(modules: Seq[UUID]): Future[Int] = db.run(tableQuery.filter(_.module.inSet(modules)).delete)
 
   def allAsModuleCore(): Future[Seq[ModuleCore]] =
     db.run(tableQuery.map(a => (a.module, a.moduleTitle, a.moduleAbbrev)).result.map(_.map(ModuleCore.apply.tupled)))

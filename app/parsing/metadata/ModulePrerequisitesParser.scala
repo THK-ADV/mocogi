@@ -47,11 +47,9 @@ object ModulePrerequisitesParser {
       .zip(modulesParser)
       .map(ModulePrerequisiteEntryProtocol.apply.tupled)
 
-  private[parsing] def recommendedPrerequisitesParser: Parser[ParsedPrerequisiteEntry] =
-    parser(recommendedKey)
+  private[parsing] def recommendedPrerequisitesParser: Parser[ParsedPrerequisiteEntry] = parser(recommendedKey)
 
-  private[parsing] def requiredPrerequisitesParser: Parser[ParsedPrerequisiteEntry] =
-    parser(requiredKey)
+  private[parsing] def requiredPrerequisitesParser: Parser[ParsedPrerequisiteEntry] = parser(requiredKey)
 
   private[parsing] def parser =
     recommendedPrerequisitesParser.option
@@ -60,11 +58,9 @@ object ModulePrerequisitesParser {
       .skip(zeroOrMoreSpaces)
       .map(ParsedPrerequisites.apply)
 
-  private[parsing] def recommendedPrerequisitesParserRaw: Parser[ModulePrerequisiteEntryProtocol] =
-    raw(recommendedKey)
+  private[parsing] def recommendedPrerequisitesParserRaw: Parser[ModulePrerequisiteEntryProtocol] = raw(recommendedKey)
 
-  private[parsing] def requiredPrerequisitesParserRaw: Parser[ModulePrerequisiteEntryProtocol] =
-    raw(requiredKey)
+  private[parsing] def requiredPrerequisitesParserRaw: Parser[ModulePrerequisiteEntryProtocol] = raw(requiredKey)
 
   private[parsing] def raw =
     recommendedPrerequisitesParserRaw.option

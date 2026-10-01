@@ -27,6 +27,5 @@ private[database] trait Filterable[Input, T <: slick.jdbc.PostgresProfile.api.Ta
     xs.reduceLeftOption[Pred]((lhs, rhs) => t => lhs(t) && rhs(t))
       .getOrElse(_ => true)
 
-  final def allWithFilter(filter: Filter): Query[T, Input, Seq] =
-    tableQuery.filter(combinePreds(parseFilter(filter)))
+  final def allWithFilter(filter: Filter): Query[T, Input, Seq] = tableQuery.filter(combinePreds(parseFilter(filter)))
 }

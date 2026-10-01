@@ -31,8 +31,7 @@ final class PermissionController @Inject() (
 
   private def admin = auth.andThen(resolveUser).andThen(isAdmin)
 
-  def all() =
-    admin.async(_ => permissionRepository.all().map(xs => Ok(Json.toJson(xs))))
+  def all() = admin.async(_ => permissionRepository.all().map(xs => Ok(Json.toJson(xs))))
 
   def create() =
     admin.async(parse.json[Permission]) { r =>

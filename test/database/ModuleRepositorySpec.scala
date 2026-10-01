@@ -29,8 +29,7 @@ final class ModuleRepositorySpec extends AnyFunSuite with Matchers with OptionVa
 
   private lazy val repository = ModuleRepository(databaseConfigProvider, summon[ExecutionContext])
 
-  override def beforeAll(): Unit =
-    TestDb.start()
+  override def beforeAll(): Unit = TestDb.start()
 
   test("retrieve assembles module dependencies without duplicates") {
     val result = await(repository.all(Map("id" -> Seq(parentId.toString))))
@@ -77,12 +76,10 @@ final class ModuleRepositorySpec extends AnyFunSuite with Matchers with OptionVa
     childIds.subsetOf(ids) shouldBe true
   }
 
-  private def await[A](future: scala.concurrent.Future[A]): A =
-    Await.result(future, 30.seconds)
+  private def await[A](future: scala.concurrent.Future[A]): A = Await.result(future, 30.seconds)
 
   private lazy val databaseConfigProvider = new DatabaseConfigProvider {
-    override def get[P <: BasicProfile]: DatabaseConfig[P] =
-      databaseConfig.asInstanceOf[DatabaseConfig[P]]
+    override def get[P <: BasicProfile]: DatabaseConfig[P] = databaseConfig.asInstanceOf[DatabaseConfig[P]]
   }
 
   private lazy val databaseConfig = new DatabaseConfig[MyPostgresProfile.type] {

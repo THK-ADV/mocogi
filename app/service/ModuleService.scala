@@ -26,14 +26,11 @@ final class ModuleService @Inject() (
     private implicit val ctx: ExecutionContext
 ) {
 
-  def createOrUpdateMany(modules: Seq[(Module, LocalDateTime)]): Future[Unit] =
-    repo.createOrUpdateMany(modules)
+  def createOrUpdateMany(modules: Seq[(Module, LocalDateTime)]): Future[Unit] = repo.createOrUpdateMany(modules)
 
-  def get(id: UUID): Future[ModuleProtocol] =
-    repo.all(Map("id" -> Seq(id.toString))).single.map(_._1)
+  def get(id: UUID): Future[ModuleProtocol] = repo.all(Map("id" -> Seq(id.toString))).single.map(_._1)
 
-  def getLecturers(id: UUID): Future[Seq[String]] =
-    repo.getLecturers(id)
+  def getLecturers(id: UUID): Future[Seq[String]] = repo.getLecturers(id)
 
   def getPOs(id: UUID): Future[JsValue] = {
     def toJson(m: ModulePOMandatoryProtocol, isMandatory: Boolean) =
@@ -48,20 +45,16 @@ final class ModuleService @Inject() (
       .map((m, o) => JsArray(m.map(toJson(_, isMandatory = true)) ++ o.map(toJson(_, isMandatory = false))))
   }
 
-  def allModuleCore(): Future[Seq[ModuleCore]] =
-    repo.allModuleCore()
+  def allModuleCore(): Future[Seq[ModuleCore]] = repo.allModuleCore()
 
-  def allModuleCoreWithRelations(): Future[(Seq[ModuleCore], Map[UUID, Set[UUID]])] =
-    repo.allModuleCoreWithRelations()
+  def allModuleCoreWithRelations(): Future[(Seq[ModuleCore], Map[UUID, Set[UUID]])] = repo.allModuleCoreWithRelations()
 
-  def allNewlyCreated(): Future[Seq[ModuleCore]] =
-    moduleCreationService.allAsModuleCore()
+  def allNewlyCreated(): Future[Seq[ModuleCore]] = moduleCreationService.allAsModuleCore()
 
   def allMetadata(): Future[Seq[(Option[UUID], MetadataProtocol)]] =
     repo.all(Map.empty).map(_.map { case (module, _) => (module.id, module.metadata) })
 
-  def allGenericModulesWithPOs(): Future[Seq[(ModuleCore, Seq[String])]] =
-    repo.allGenericModulesWithPOs()
+  def allGenericModulesWithPOs(): Future[Seq[(ModuleCore, Seq[String])]] = repo.allGenericModulesWithPOs()
 
   def allNewlyCreatedGenericModulesWithPOs(): Future[Seq[(ModuleCore, Seq[String])]] =
     moduleCreationService.allGenericWithPOsAsModuleCore()

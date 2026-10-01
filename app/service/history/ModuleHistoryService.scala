@@ -23,8 +23,7 @@ final class ModuleHistoryService @Inject() (
     private implicit val ctx: ExecutionContext
 ) {
 
-  private def getSemester(committedAt: LocalDateTime): Semester =
-    Semester.of(committedAt.toLocalDate)
+  private def getSemester(committedAt: LocalDateTime): Semester = Semester.of(committedAt.toLocalDate)
 
   /**
    * Maps each FileVersion to a ModuleVersion, classifying the content as Parsed,

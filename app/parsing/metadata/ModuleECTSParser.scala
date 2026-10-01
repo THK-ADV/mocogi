@@ -7,9 +7,7 @@ object ModuleECTSParser {
 
   def key = "ects"
 
-  private[parsing] def raw: Parser[Double] =
-    parser
+  private[parsing] def raw: Parser[Double] = parser
 
-  private[parsing] def parser: Parser[Double] =
-    doubleForKey(key)
+  private[parsing] def parser: Parser[Double] = doubleForKey(key)
 }

@@ -32,6 +32,5 @@ object ModuleUpdatePermissionType {
       case "granted"   => Granted
     }
 
-  implicit def writes: Writes[ModuleUpdatePermissionType] =
-    Writes.of[IDLabel].contramap(identity)
+  implicit def writes: Writes[ModuleUpdatePermissionType] = Writes.of[IDLabel].contramap(identity)
 }

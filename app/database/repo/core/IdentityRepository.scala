@@ -35,8 +35,7 @@ class IdentityRepository @Inject() (
   protected val tableQuery      = TableQuery[IdentityTable]
   private val peopleImagesQuery = TableQuery[PeopleImagesTable]
 
-  def list(): Future[Seq[Identity]] =
-    db.run(tableQuery.result).map(_.map(Identity.fromDbEntry))
+  def list(): Future[Seq[Identity]] = db.run(tableQuery.result).map(_.map(Identity.fromDbEntry))
 
   // Inserts into identity table and updates the person's image
   def create(input: Identity): Future[Identity] =

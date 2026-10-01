@@ -62,8 +62,7 @@ final class ScheduleEntryController @Inject() (
    *   - `from` and `to`: when both are present (as epoch millisecond timestamps), filters
    *                      schedule entries within that date range.
    */
-  def all(): EssentialAction =
-    cache("scheduleentries", 15.minutes)(allAction)
+  def all(): EssentialAction = cache("scheduleentries", 15.minutes)(allAction)
 
   /** Creates new schedule entries from the JSON payload and returns the created entries as JSON. */
   def create() =

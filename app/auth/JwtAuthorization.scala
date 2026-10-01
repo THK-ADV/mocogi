@@ -84,12 +84,10 @@ final class JwtAuthorization @Inject() (
     }
 
   /** Returns the cached JWKS or fetches it from Keycloak if not cached. */
-  private def getJwks(): Future[JsValue] =
-    cache.getOrElseUpdate(cacheKey, cacheTtl)(fetchJwks())
+  private def getJwks(): Future[JsValue] = cache.getOrElseUpdate(cacheKey, cacheTtl)(fetchJwks())
 
   /** Fetches the JWKS from Keycloak's well-known endpoint. */
-  private def fetchJwks(): Future[JsValue] =
-    ws.url(jwksUrl).get().map(_.json)
+  private def fetchJwks(): Future[JsValue] = ws.url(jwksUrl).get().map(_.json)
 
   /** Converts Base64URL-encoded RSA components into a Java PublicKey. */
   private def buildRsaPublicKey(n: String, e: String): PublicKey = {

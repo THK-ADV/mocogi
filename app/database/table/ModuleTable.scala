@@ -107,36 +107,35 @@ private[database] final class ModuleTable(tag: Tag)
 
   def particularitiesEn = column[String]("particularities_en")
 
-  def isActive(): Rep[Boolean] =
-    this.status === ModuleStatus.activeId
+  def isActive(): Rep[Boolean] = this.status === ModuleStatus.activeId
 
-  def isGeneric: Rep[Boolean] =
-    this.moduleType === ModuleType.genericId
+  def isGeneric: Rep[Boolean] = this.moduleType === ModuleType.genericId
 
-  override def * = (
-    id,
-    lastModified,
-    title,
-    abbrev,
-    moduleType,
-    ects,
-    language,
-    duration,
-    season,
-    workload,
-    status,
-    location,
-    (firstExaminer, secondExaminer),
-    examPhases,
-    participants,
-    (recommendedPrerequisites, requiredPrerequisites),
-    (attendanceRequirement, assessmentPrerequisite),
-    (learningOutcomeDe, learningOutcomeEn),
-    (moduleContentDe, moduleContentEn),
-    (learningMethodsDe, learningMethodsEn),
-    (literatureDe, literatureEn),
-    (particularitiesDe, particularitiesEn),
-  ) <> (mapRow, unmapRow)
+  override def * =
+    (
+      id,
+      lastModified,
+      title,
+      abbrev,
+      moduleType,
+      ects,
+      language,
+      duration,
+      season,
+      workload,
+      status,
+      location,
+      (firstExaminer, secondExaminer),
+      examPhases,
+      participants,
+      (recommendedPrerequisites, requiredPrerequisites),
+      (attendanceRequirement, assessmentPrerequisite),
+      (learningOutcomeDe, learningOutcomeEn),
+      (moduleContentDe, moduleContentEn),
+      (learningMethodsDe, learningMethodsEn),
+      (literatureDe, literatureEn),
+      (particularitiesDe, particularitiesEn),
+    ) <> (mapRow, unmapRow)
 
   def mapRow: (
       (

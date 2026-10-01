@@ -22,15 +22,16 @@ private[controllers] final class VersionSchemeAction(key: String)(
     writes: Writes[ParsingError]
 ) extends ActionRefiner[UserRequest, VersionSchemeRequest] {
 
-  def refine[A](input: UserRequest[A]) = Future.successful {
-    input.headers.get(key) match {
-      case Some(str) =>
-        VersionSchemeParser.parser.parse(str)._1 match {
-          case Left(err)    => Left(BadRequest(Json.toJson(err)))
-          case Right(value) => Right(VersionSchemeRequest(value, input))
-        }
-      case None =>
-        Left(BadRequest(Json.obj("message" -> s"expected header $key")))
+  def refine[A](input: UserRequest[A]) =
+    Future.successful {
+      input.headers.get(key) match {
+        case Some(str) =>
+          VersionSchemeParser.parser.parse(str)._1 match {
+            case Left(err)    => Left(BadRequest(Json.toJson(err)))
+            case Right(value) => Right(VersionSchemeRequest(value, input))
+          }
+        case None =>
+          Left(BadRequest(Json.obj("message" -> s"expected header $key")))
+      }
     }
-  }
 }

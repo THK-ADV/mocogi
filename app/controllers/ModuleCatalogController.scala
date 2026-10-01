@@ -41,8 +41,7 @@ final class ModuleCatalogController @Inject() (
    *
    * @return JSON array of catalog metadata, empty when no catalogs are published
    */
-  def getAll(): Action[AnyContent] =
-    Action.async(_ => catalogService.listPublished().map(xs => Ok(Json.toJson(xs))))
+  def getAll(): Action[AnyContent] = Action.async(_ => catalogService.listPublished().map(xs => Ok(Json.toJson(xs))))
 
   /**
    * Publicly downloads a published or archived PDF from the configured catalog folder.

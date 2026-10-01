@@ -41,8 +41,7 @@ final class BookingController @Inject() (
     with ScheduleBookingCheck
     with Logging {
 
-  private def canSeeFacultyBookings(token: Token): Boolean =
-    token.roles.contains("employee")
+  private def canSeeFacultyBookings(token: Token): Boolean = token.roles.contains("employee")
 
   private def read(kind: BookingKind, request: RequestHeader): Future[Result] =
     Try(ScheduleDateRange.resolve(request)).toEither match {
@@ -51,26 +50,27 @@ final class BookingController @Inject() (
       case Right(Right((from, to))) => repo.bookingsByRange(kind, from, to).map(Ok(_).as(JSON))
     }
 
-  def all(): EssentialAction = EssentialAction { request =>
-    val kind = request.queryString
-      .get("kind")
-      .collect { case Seq(value) => value }
-      .flatMap(value => BookingKind.values.find(_.id == value))
-    kind match {
-      case Some(BookingKind.Faculty) =>
-        // This response depends on Authorization: never pass it through ResourceCache/Cached.
-        auth.async { r =>
-          val result =
-            if canSeeFacultyBookings(r.token) then read(BookingKind.Faculty, r)
-            else Future.successful(Forbidden)
-          result.map(_.withHeaders(CACHE_CONTROL -> "no-store"))
-        }(request)
-      case Some(kind) =>
-        cache("bookings", 15.minutes)(Action.async(r => read(kind, r)))(request)
-      case _ =>
-        Action(BadRequest("Exactly one kind query parameter is required: teaching, campus or faculty"))(request)
+  def all(): EssentialAction =
+    EssentialAction { request =>
+      val kind = request.queryString
+        .get("kind")
+        .collect { case Seq(value) => value }
+        .flatMap(value => BookingKind.values.find(_.id == value))
+      kind match {
+        case Some(BookingKind.Faculty) =>
+          // This response depends on Authorization: never pass it through ResourceCache/Cached.
+          auth.async { r =>
+            val result =
+              if canSeeFacultyBookings(r.token) then read(BookingKind.Faculty, r)
+              else Future.successful(Forbidden)
+            result.map(_.withHeaders(CACHE_CONTROL -> "no-store"))
+          }(request)
+        case Some(kind) =>
+          cache("bookings", 15.minutes)(Action.async(r => read(kind, r)))(request)
+        case _ =>
+          Action(BadRequest("Exactly one kind query parameter is required: teaching, campus or faculty"))(request)
+      }
     }
-  }
 
   /** Accepts a JSON array; occurrences in one series share seriesId and kind. */
   def create() =

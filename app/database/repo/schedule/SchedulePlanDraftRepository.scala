@@ -306,8 +306,7 @@ final class SchedulePlanDraftRepository @Inject() (
   /**
    * Ensures that the plan draft is an active schedule draft.
    */
-  private def ensureActiveScheduleDraft(planDraft: UUID): DBIO[Unit] =
-    getActiveScheduleDraft(planDraft).map(_ => ())
+  private def ensureActiveScheduleDraft(planDraft: UUID): DBIO[Unit] = getActiveScheduleDraft(planDraft).map(_ => ())
 
   private def getActiveScheduleDraft(planDraft: UUID): DBIO[PlanDraft] =
     planDrafts.filter(_.id === planDraft).forUpdate.result.headOption.flatMap {

@@ -22,8 +22,9 @@ private[database] final class ModulePermittedAssessmentMethodTable(tag: Tag)
 
   def permittedMethodIdsUnnest() = assessmentMethods.unnest()
 
-  override def * : ProvenShape[ModulePermittedAssessmentMethod] = (module, assessmentMethods) <> (
-    ModulePermittedAssessmentMethod.apply,
-    ModulePermittedAssessmentMethod.unapply
-  )
+  override def * : ProvenShape[ModulePermittedAssessmentMethod] =
+    (module, assessmentMethods) <> (
+      ModulePermittedAssessmentMethod.apply,
+      ModulePermittedAssessmentMethod.unapply
+    )
 }

@@ -86,9 +86,10 @@ case class MetadataJson(
 object ModuleJson {
   private val defaultReads: Reads[ModuleJson] = Json.reads
 
-  implicit def reads: Reads[ModuleJson] = Reads { json =>
-    defaultReads.reads(ignoreLegacyChildRelation(json))
-  }
+  implicit def reads: Reads[ModuleJson] =
+    Reads { json =>
+      defaultReads.reads(ignoreLegacyChildRelation(json))
+    }
 
   private def ignoreLegacyChildRelation(json: JsValue): JsValue =
     json match {

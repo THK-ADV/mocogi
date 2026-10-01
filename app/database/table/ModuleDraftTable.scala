@@ -62,8 +62,7 @@ private[database] final class ModuleDraftTable(tag: Tag)
 
   def mergeRequestId = column[Option[MergeRequestId]]("merge_request_id")
 
-  def mergeRequestStatus =
-    column[Option[MergeRequestStatus]]("merge_request_status")
+  def mergeRequestStatus = column[Option[MergeRequestStatus]]("merge_request_status")
 
   def lastModified = column[LocalDateTime]("last_modified")
 
@@ -163,24 +162,25 @@ private[database] final class ModuleDraftTable(tag: Tag)
         Option[MergeRequestStatus],
         LocalDateTime
     )
-  ] = d =>
-    Option(
-      (
-        d.module,
-        d.moduleTitle,
-        d.moduleAbbrev,
-        d.author,
-        d.branch,
-        d.source,
-        d.moduleJson,
-        d.moduleJsonValidated,
-        d.print,
-        d.keysToBeReviewed,
-        d.modifiedKeys,
-        d.lastCommit,
-        d.mergeRequest.map(_._1),
-        d.mergeRequest.map(_._2),
-        d.lastModified
+  ] =
+    d =>
+      Option(
+        (
+          d.module,
+          d.moduleTitle,
+          d.moduleAbbrev,
+          d.author,
+          d.branch,
+          d.source,
+          d.moduleJson,
+          d.moduleJsonValidated,
+          d.print,
+          d.keysToBeReviewed,
+          d.modifiedKeys,
+          d.lastCommit,
+          d.mergeRequest.map(_._1),
+          d.mergeRequest.map(_._2),
+          d.lastModified
+        )
       )
-    )
 }

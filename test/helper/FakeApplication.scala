@@ -36,8 +36,9 @@ trait FakeApplication {
   // import play.api.inject.bind
   protected def bindings: Seq[GuiceableModule] = Seq.empty
 
-  override def fakeApplication() = new GuiceApplicationBuilder()
-    .configure(fakeConfig)
-    .overrides(bindings*)
-    .build()
+  override def fakeApplication() =
+    new GuiceApplicationBuilder()
+      .configure(fakeConfig)
+      .overrides(bindings*)
+      .build()
 }

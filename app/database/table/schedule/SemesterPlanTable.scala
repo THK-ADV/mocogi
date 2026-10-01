@@ -13,8 +13,7 @@ private[database] final class SemesterPlanTable(tag: Tag)
 
   import database.MyPostgresProfile.MyAPI.simpleIntListTypeMapper
 
-  given BaseColumnType[SemesterPlanType] =
-    MappedColumnType.base[SemesterPlanType, String](_.id, SemesterPlanType.apply)
+  given BaseColumnType[SemesterPlanType] = MappedColumnType.base[SemesterPlanType, String](_.id, SemesterPlanType.apply)
 
   def id = column[UUID]("id", O.PrimaryKey)
 
@@ -30,13 +29,14 @@ private[database] final class SemesterPlanTable(tag: Tag)
 
   def phase = column[Option[String]]("phase")
 
-  override def * = (
-    id,
-    start,
-    end,
-    kind,
-    teachingUnit,
-    semesterIndex,
-    phase,
-  ) <> (SemesterPlan.apply.tupled, SemesterPlan.unapply)
+  override def * =
+    (
+      id,
+      start,
+      end,
+      kind,
+      teachingUnit,
+      semesterIndex,
+      phase,
+    ) <> (SemesterPlan.apply.tupled, SemesterPlan.unapply)
 }

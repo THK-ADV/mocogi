@@ -127,15 +127,10 @@ final class MetadataPipeline @Inject() (
         )
     }
 
-  private def parse(
-      print: Print,
-      moduleId: UUID
-  ): Future[Either[PipelineError, ParsedModule]] =
+  private def parse(print: Print, moduleId: UUID): Future[Either[PipelineError, ParsedModule]] =
     parser.parse(print).map(_.bimap(PipelineError.parser(_, Some(moduleId)), identity))
 
-  private def validate(
-      metadata: ParsedMetadata
-  ): Future[Either[PipelineError, Metadata]] =
+  private def validate(metadata: ParsedMetadata): Future[Either[PipelineError, Metadata]] =
     validationContext().map(context => validate(context, metadata))
 
   private def validate(

@@ -111,8 +111,7 @@ final class StudyPlanSnippetSpec extends AnyWordSpec with Matchers {
     builder.toString -> snippet.warnings
   }
 
-  private def occurrencesOf(value: String, needle: String): Int =
-    value.sliding(needle.length).count(_ == needle)
+  private def occurrencesOf(value: String, needle: String): Int = value.sliding(needle.length).count(_ == needle)
 
   "StudyPlanSnippet" should {
     "use configured semester selections without fallback warnings" in {

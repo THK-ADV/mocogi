@@ -29,14 +29,11 @@ private enum RenderingContext {
 }
 
 object ModuleCatalogLatexPrinter {
-  def section(name: String)(implicit builder: StringBuilder) =
-    builder.append(s"\\section{$name}\n")
+  def section(name: String)(implicit builder: StringBuilder) = builder.append(s"\\section{$name}\n")
 
-  def newPage(implicit builder: StringBuilder) =
-    builder.append("\\newpage\n")
+  def newPage(implicit builder: StringBuilder) = builder.append("\\newpage\n")
 
-  def nameRef(module: UUID) =
-    s"\\nameref{sec:${module.toString}}"
+  def nameRef(module: UUID) = s"\\nameref{sec:${module.toString}}"
 }
 
 /**
@@ -168,8 +165,7 @@ final class ModuleCatalogLatexPrinter(
       printModules(s"Module im Schwerpunkt ``${specialization.deLabel}''", specializationModules(specialization.id))
     }
 
-  private def consume(id: UUID): Unit =
-    consumedModules += id
+  private def consume(id: UUID): Unit = consumedModules += id
 
   private def assumeConsumption(): Unit = {
     val errs = printedModules.flatMap(_._1.id).filterNot(consumedModules.contains)
