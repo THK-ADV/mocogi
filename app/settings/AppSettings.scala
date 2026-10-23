@@ -2,13 +2,11 @@ package settings
 
 import java.time.format.DateTimeParseException
 import java.time.LocalDate
-import java.util.UUID
 
 import play.api.Configuration
 
 final case class GitRepoSettings(
     repoUrl: String,
-    webhookToken: UUID,
     localGitFolderPath: String,
     accessToken: SecretString,
     baseUrl: String,
@@ -93,7 +91,6 @@ object AppSettings {
       ),
       git = GitRepoSettings(
         repoUrl = nonEmptyString(configuration, "git.repoUrl"),
-        webhookToken = parseUuid(configuration, "git.token"),
         localGitFolderPath = nonEmptyString(configuration, "git.localGitFolderPath"),
         accessToken = SecretString.unsafe(nonEmptyString(configuration, "git.accessToken")),
         baseUrl = nonEmptyString(configuration, "git.baseUrl"),
@@ -125,15 +122,6 @@ object AppSettings {
       case Some(value) if value.nonEmpty => value
       case other                         => throw Exception(s"expected a non empty string for key $key, but found $other")
     }
-
-  private def parseUuid(c: Configuration, key: String): UUID = {
-    val raw = nonEmptyString(c, key)
-    try UUID.fromString(raw)
-    catch {
-      case _: IllegalArgumentException =>
-        throw IllegalArgumentException(s"key $key must be a valid UUID, got: $raw")
-    }
-  }
 
   private def parseProjectIdFromString(raw: String): Int =
     scala.util.Try(raw.toInt).getOrElse(throw IllegalArgumentException(s"git.projectId must be an integer, got: $raw"))

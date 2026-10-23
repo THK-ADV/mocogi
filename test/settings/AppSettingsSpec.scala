@@ -1,7 +1,6 @@
 package settings
 
 import java.time.LocalDate
-import java.util.UUID
 
 import com.typesafe.config.ConfigFactory
 import org.scalatest.flatspec.AnyFlatSpec
@@ -27,7 +26,6 @@ final class AppSettingsSpec extends AnyFlatSpec with Matchers:
         |keycloak.issuer = "https://example.com/realm"
         |markdown.configPath = "markdownlint.jsonc"
         |git.repoUrl = "https://git.example/repo"
-        |git.token = "a0eea988-04f6-4b51-80a0-345f520718a7"
         |git.localGitFolderPath = "/tmp/git"
         |git.accessToken = "secret-token"
         |git.baseUrl = "https://api.example"
@@ -52,7 +50,6 @@ final class AppSettingsSpec extends AnyFlatSpec with Matchers:
   "AppSettings.load" should "parse a valid configuration" in {
     val s = AppSettings.load(conf())
     s.git.repoUrl shouldBe "https://git.example/repo"
-    s.git.webhookToken shouldBe UUID.fromString("a0eea988-04f6-4b51-80a0-345f520718a7")
     SecretString.unwrap(s.git.accessToken) shouldBe "secret-token"
     s.git.projectId shouldBe 2124
     s.moduleKeysToReview.pavModuleKeys shouldBe Seq("a", "b")
@@ -63,12 +60,6 @@ final class AppSettingsSpec extends AnyFlatSpec with Matchers:
   it should "accept git.projectId as a numeric string" in {
     val s = AppSettings.load(conf("git.projectId = \"99\"\n"))
     s.git.projectId shouldBe 99
-  }
-
-  it should "reject an invalid git.token UUID" in {
-    assertThrows[IllegalArgumentException] {
-      AppSettings.load(conf("git.token = \"not-a-uuid\"\n"))
-    }
   }
 
   it should "fail when a required key is missing" in {

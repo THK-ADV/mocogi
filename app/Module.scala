@@ -31,6 +31,7 @@ import settings.SecretString
 import webhook.MainPushEventHandler
 import webhook.MergeEventHandler
 import webhook.PreviewPushEventHandler
+import webhook.WebhookConfig
 
 class Module(@unused environment: Environment, configuration: Configuration)
     extends AbstractModule
@@ -64,6 +65,7 @@ class Module(@unused environment: Environment, configuration: Configuration)
   private def bindSettings(): Unit = {
     val settings = AppSettings.load(configuration)
     bind(classOf[AppSettings]).toInstance(settings)
+    bind(classOf[WebhookConfig]).toInstance(WebhookConfig.load(configuration))
     bind(classOf[ExamListPathsSettings]).toInstance(
       ExamListPathsSettings(settings.play.tmpDir, settings.pandoc.examListOutputFolderPath)
     )
