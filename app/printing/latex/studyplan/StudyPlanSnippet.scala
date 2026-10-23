@@ -25,11 +25,11 @@ final class StudyPlanSnippet(
     sections: Option[NonEmptyList[StudyPlanSection]],
     semesterSelections: List[ModuleCatalogSemesterSelection],
     genericModuleOccurrences: List[ModuleCatalogGenericModuleOccurrence],
-    alternativeGenericModuleOccurrences: List[ModuleCatalogGenericModuleOccurrence],
+    partTimeGenericModuleOccurrences: List[ModuleCatalogGenericModuleOccurrence],
     specializations: List[IDLabel],
     isPreview: Boolean,
     messages: MessagesApi,
-    alternativeModuleDistributions: List[ModuleCatalogModuleDistribution] = Nil,
+    partTimeModuleDistributions: List[ModuleCatalogModuleDistribution] = Nil,
 ) extends LatexContentSnippet
     with Logging {
 
@@ -88,8 +88,8 @@ final class StudyPlanSnippet(
     continuationKey = "latex.module_catalog.study_plan.alternative.header.continuation",
     sections = None,
     selectedSemesters = Map.empty,
-    occurrencesByModule = alternativeGenericModuleOccurrences.groupBy(_.moduleId),
-    distributionsByModule = alternativeModuleDistributions.map(d => d.moduleId -> d.semesters).toMap
+    occurrencesByModule = partTimeGenericModuleOccurrences.groupBy(_.moduleId),
+    distributionsByModule = partTimeModuleDistributions.map(d => d.moduleId -> d.semesters).toMap
   )
 
   private val defaultTables     = tablesOf(defaultContext)
@@ -236,16 +236,16 @@ final class StudyPlanSnippet(
       sections: NonEmptyList[StudyPlanSection]
   ): List[(StudyPlanSection, Vector[StudyPlanModule])] =
     sections
-      .sortBy(_.untilSemester)
+      .sortBy(_.lastSemester)
       .foldLeft((List.empty[(StudyPlanSection, Vector[StudyPlanModule])], 0)) {
-        case ((acc, previousUntilSemester), section) =>
+        case ((acc, previousLastSemester), section) =>
           val sectionEntries = entries.filter(entry =>
-            previousUntilSemester < entry.recommendedSemester && entry.recommendedSemester <= section.untilSemester
+            previousLastSemester < entry.recommendedSemester && entry.recommendedSemester <= section.lastSemester
           )
           val nextAcc =
             if sectionEntries.nonEmpty then acc.appended((section, sectionEntries))
             else acc
-          (nextAcc, section.untilSemester)
+          (nextAcc, section.lastSemester)
       }
       ._1
 

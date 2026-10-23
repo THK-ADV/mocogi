@@ -14,7 +14,7 @@ sealed trait GitFilePath extends Any {
 object GitFilePath {
   private case class GitFilePathImpl(value: String) extends AnyVal with GitFilePath
 
-  private def modulePrefix(implicit gitConfig: GitConfig) = s"${gitConfig.modulesFolder}/"
+  private def modulePrefix(implicit config: GitRepositoryConfig) = s"${config.modulesPath}/"
 
   private def moduleFileExt = ".md"
 
@@ -22,16 +22,16 @@ object GitFilePath {
 
   def apply(path: String): GitFilePath = GitFilePathImpl(path)
 
-  def apply(draft: ModuleDraft)(implicit gitConfig: GitConfig): GitFilePath = apply(draft.module)
+  def apply(draft: ModuleDraft)(implicit config: GitRepositoryConfig): GitFilePath = apply(draft.module)
 
-  def apply(moduleId: UUID)(implicit gitConfig: GitConfig): GitFilePath =
+  def apply(moduleId: UUID)(implicit config: GitRepositoryConfig): GitFilePath =
     apply(s"$modulePrefix${moduleId.toString}$moduleFileExt")
 
-  def moduleCompanionPath(moduleId: UUID, po: String)(implicit gitConfig: GitConfig): GitFilePath =
-    apply(s"${gitConfig.moduleCompanionFolder}/${moduleId.toString}_$po$moduleFileExt")
+  def moduleCompanionPath(moduleId: UUID, po: String)(implicit config: GitRepositoryConfig): GitFilePath =
+    apply(s"${config.moduleCompanionsPath}/${moduleId.toString}_$po$moduleFileExt")
 
   implicit class Ops(private val self: GitFilePath) extends AnyVal {
-    def moduleId(implicit gitConfig: GitConfig): Option[UUID] = {
+    def moduleId(implicit config: GitRepositoryConfig): Option[UUID] = {
       val prefix = modulePrefix
       val suffix = moduleFileExt
       if (self.value.startsWith(prefix) && self.value.endsWith(suffix)) {
@@ -49,17 +49,17 @@ object GitFilePath {
       }
     }
 
-    def isModule(implicit gitConfig: GitConfig): Boolean =
-      self.value.startsWith(gitConfig.modulesFolder) && self.value.endsWith(
+    def isModule(implicit config: GitRepositoryConfig): Boolean =
+      self.value.startsWith(config.modulesPath) && self.value.endsWith(
         moduleFileExt
       )
 
-    def isModuleCatalog(implicit gitConfig: GitConfig): Boolean =
-      self.value.startsWith(gitConfig.moduleCatalogsFolder) && self.value
+    def isModuleCatalog(implicit config: GitRepositoryConfig): Boolean =
+      self.value.startsWith(config.moduleCatalogsPath) && self.value
         .endsWith(catalogFileExt)
 
     def fold[A](module: UUID => A, catalog: => A, other: => A)(
-        implicit gitConfig: GitConfig
+        implicit config: GitRepositoryConfig
     ): A =
       self.moduleId match {
         case Some(id) =>

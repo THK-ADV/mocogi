@@ -28,7 +28,6 @@ import play.api.i18n.MessagesApi
 import play.api.Logging
 import printing.latex
 import printing.latex.ExamListsLatexPrinter
-import settings.ExamListPathsSettings
 import service.ModuleService
 
 @Singleton
@@ -41,7 +40,7 @@ final class ExamListService @Inject() (
     messagesApi: MessagesApi,
     gitCli: GitCLI,
     examListRepo: ExamListRepository,
-    paths: ExamListPathsSettings,
+    pdfConfig: ExamListPdfConfig,
     implicit val ctx: ExecutionContext
 ) extends Logging {
 
@@ -49,22 +48,22 @@ final class ExamListService @Inject() (
 
   def listPublished(): Future[Seq[PublishedDocument]] = examListRepo.all()
 
-  def findPublishedFile(filename: String): Option[Path] = FileOps.resolvePdfFile(filename, paths.publishedPdfDir)
+  def findPublishedFile(filename: String): Option[Path] = FileOps.resolvePdfFile(filename, pdfConfig.publishedPdfDir)
 
   def publish(po: String, semester: Semester, date: LocalDate): Future[Unit] = {
     logger.info(s"publishing exam list for po $po")
     for {
-      pdf <- TemporaryPdf.generate(s"exam_lists_$po", paths.tmpDir) { latexFile =>
+      pdf <- TemporaryPdf.generate(s"exam_lists_$po", pdfConfig.tmpDir) { latexFile =>
         generateExamList(po, latexFile, Some((semester, date)))
       }
-      filename = pdf.publish(s"exam_list_${semester.id}_$po", paths.publishedPdfDir)
+      filename = pdf.publish(s"exam_list_${semester.id}_$po", pdfConfig.publishedPdfDir)
       _ <- examListRepo.createOrUpdate(po, semester.id, date, filename)
     } yield ()
   }
 
   def preview(po: String): Future[TemporaryPdf] = {
     logger.info(s"creating exam list preview for po $po")
-    TemporaryPdf.generate(s"exam_lists_$po", paths.tmpDir)(latexFile => generateExamList(po, latexFile, None))
+    TemporaryPdf.generate(s"exam_lists_$po", pdfConfig.tmpDir)(latexFile => generateExamList(po, latexFile, None))
   }
 
   private def generateExamList(po: String, latexFile: Path, semester: Option[(Semester, LocalDate)]) =

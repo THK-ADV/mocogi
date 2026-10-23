@@ -22,7 +22,6 @@ import play.api.i18n.Lang
 import play.api.i18n.MessagesApi
 import play.api.Logging
 import service.mail.MailActor.SendMail
-import settings.AppSettings
 
 @Singleton
 final class ReviewRejectionNotifier @Inject() (
@@ -31,7 +30,7 @@ final class ReviewRejectionNotifier @Inject() (
     moduleUpdatePermissionRepository: ModuleUpdatePermissionRepository,
     messages: MessagesApi,
     @Named("MailActor") mailActor: ActorRef,
-    appSettings: AppSettings,
+    config: ReviewNotificationConfig,
     implicit val ctx: ExecutionContext
 ) extends Logging {
   given Lang(Locale.GERMANY)
@@ -55,7 +54,7 @@ final class ReviewRejectionNotifier @Inject() (
           "module_review.rejection.notification.opening",
           moduleTitle,
           rejected.respondedBy.fold("???")(_.fullName),
-          appSettings.mail.editUrl.replace("$moduleid", module.toString)
+          config.moduleEditUrlTemplate.replace("$moduleid", module.toString)
         )
       )
       rejected.comment.foreach { comment =>

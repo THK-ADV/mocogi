@@ -36,7 +36,8 @@ import service.pipeline.Print
 import service.ModuleCreationService
 
 final class MergeEventHandler @Inject() (
-    gitConfig: GitConfig,
+    repositoryConfig: GitRepositoryConfig,
+    reviewConfig: GitReviewConfig,
     moduleReviewRepository: ModuleReviewRepository,
     moduleDraftRepository: ModuleDraftRepository,
     moduleCreationService: ModuleCreationService,
@@ -74,7 +75,7 @@ final class MergeEventHandler @Inject() (
   }
 
   private val draftMergeLabels =
-    Set(gitConfig.autoApprovedLabel, gitConfig.reviewRequiredLabel, gitConfig.fastForwardLabel)
+    Set(reviewConfig.autoApprovedLabel, reviewConfig.reviewRequiredLabel, reviewConfig.reviewBypassLabel)
 
   override def receive: Receive = {
     case HandleEvent(json, correlationId) =>
@@ -87,31 +88,32 @@ final class MergeEventHandler @Inject() (
             body
           }
           (event.sourceBranch, event.targetBranch, event.action) match {
-            // Case 1: opened MR from $module_branch into draft branch [AUTO APPROVED]
+            // Case 1: opened MR from $module_branch into preview branch [AUTO APPROVED]
             // => schedule merge
-            case (moduleBranch, gitConfig.draftBranch, "open") if event.labels.contains(gitConfig.autoApprovedLabel) =>
+            case (moduleBranch, repositoryConfig.previewBranch, "open")
+                if event.labels.contains(reviewConfig.autoApprovedLabel) =>
               handled(scheduleFreshMerge(moduleBranch))
 
-            // Case 2: merged MR from $module_branch into draft branch [AUTO APPROVED, REVIEW REQUIRED or FAST FORWARD]
+            // Case 2: merged MR from $module_branch into preview branch [AUTO APPROVED, REVIEW REQUIRED or FAST FORWARD]
             // => delete module draft, update permissions and create module if it's new
-            case (moduleBranch, gitConfig.draftBranch, "merge") if event.labels.exists(draftMergeLabels) =>
+            case (moduleBranch, repositoryConfig.previewBranch, "merge") if event.labels.exists(draftMergeLabels) =>
               handled(withUUID(moduleBranch)(moduleId => handleModuleMerged(moduleId, parseMergeCommitSha(json))))
 
-            // Case 3: merged MR from any branch into draft branch
+            // Case 3: merged MR from any branch into preview branch
             // => for each module, update permissions and create module if it's new
-            case (_, gitConfig.draftBranch, "merge") =>
+            case (_, repositoryConfig.previewBranch, "merge") =>
               handled(handleModuleBulkUpdate(parseMergeCommitSha(json)))
 
-            // Case 4: closed MR from $module_branch into draft branch [REVIEW REQUIRED]
+            // Case 4: closed MR from $module_branch into preview branch [REVIEW REQUIRED]
             // => handle review reject
-            case (moduleBranch, gitConfig.draftBranch, "close")
-                if event.labels.contains(gitConfig.reviewRequiredLabel) =>
+            case (moduleBranch, repositoryConfig.previewBranch, "close")
+                if event.labels.contains(reviewConfig.reviewRequiredLabel) =>
               handled(withUUID(moduleBranch)(handleReviewReject))
 
-            // Case 5: approved MR from $module_branch into draft branch [REVIEW REQUIRED]
+            // Case 5: approved MR from $module_branch into preview branch [REVIEW REQUIRED]
             // => schedule merge
-            case (moduleBranch, gitConfig.draftBranch, "approved")
-                if event.labels.contains(gitConfig.reviewRequiredLabel) =>
+            case (moduleBranch, repositoryConfig.previewBranch, "approved")
+                if event.labels.contains(reviewConfig.reviewRequiredLabel) =>
               handled(scheduleFreshMerge(moduleBranch))
 
             // Case 6: opened MR from any branch into any branch without labels
@@ -228,9 +230,11 @@ final class MergeEventHandler @Inject() (
   private def handleModuleMerged(moduleId: UUID, sha: String)(using CorrelationId): Unit =
     logOnFailure(s"module merge apply failed module=$moduleId") {
       for {
-        (module, diff) <- gitCommitService.getLatestModuleFromCommit(sha, gitConfig.draftBranch, moduleId).collect {
-          case Some((content, diff)) => (parseCreatedModuleInformation(content, moduleId), diff)
-        }
+        (module, diff) <- gitCommitService
+          .getLatestModuleFromCommit(sha, repositoryConfig.previewBranch, moduleId)
+          .collect {
+            case Some((content, diff)) => (parseCreatedModuleInformation(content, moduleId), diff)
+          }
         _ <- syncModuleFromMerge(module, diff)
         _ <- deleteModuleDraft(moduleId)
       } yield ()
@@ -263,9 +267,9 @@ final class MergeEventHandler @Inject() (
   private def handleModuleBulkUpdate(sha: String)(using CorrelationId): Unit =
     logOnFailure("module bulk update from merge failed") {
       for
-        downloads <- gitCommitService.getAllModulesFromCommit(sha, gitConfig.draftBranch)
+        downloads <- gitCommitService.getAllModulesFromCommit(sha, repositoryConfig.previewBranch)
         _         <- Future.sequence(downloads.map { (content, diff) =>
-          val module = parseCreatedModuleInformation(content, diff.newPath.moduleId(gitConfig).get)
+          val module = parseCreatedModuleInformation(content, diff.newPath.moduleId(repositoryConfig).get)
           syncModuleFromMerge(module, diff)
         })
       yield ()
@@ -277,7 +281,7 @@ final class MergeEventHandler @Inject() (
       for
         changes   <- mergeRequestApiService.getChanges(mrId)
         downloads <- Future.sequence(changes.collect {
-          case d if d.path.isModule(gitConfig) => fileService.download(d.path, branch)
+          case d if d.path.isModule(repositoryConfig) => fileService.download(d.path, branch)
         })
         files = downloads.flatten
         _ <-

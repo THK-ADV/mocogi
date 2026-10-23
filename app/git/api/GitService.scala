@@ -3,23 +3,23 @@ package git.api
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 
-import git.GitConfig
 import git.GitFilePath
 import parser.ParserOps.P0
 import play.api.libs.ws.WSResponse
+import settings.SecretString
 
 private[api] trait GitService {
   import GitService.nextLinkParser
 
-  def config: GitConfig
+  protected def apiConfig: GitApiConfig
 
-  def projectsUrl() = s"${config.baseUrl}/projects/${config.projectId}"
+  protected def projectsUrl() = s"${apiConfig.baseUrl}/projects/${apiConfig.projectId}"
 
-  def repositoryUrl() = s"${projectsUrl()}/repository"
+  protected def repositoryUrl() = s"${projectsUrl()}/repository"
 
-  def tokenHeader() = ("PRIVATE-TOKEN", config.accessToken)
+  protected def tokenHeader() = ("PRIVATE-TOKEN", SecretString.unwrap(apiConfig.accessToken))
 
-  def parseErrorMessage(res: WSResponse) =
+  protected def parseErrorMessage(res: WSResponse) =
     res.json
       .\("message")
       .validate[String]
@@ -28,10 +28,10 @@ private[api] trait GitService {
         msg => new Exception(msg)
       )
 
-  def parseNextPaginationUrl(r: WSResponse): Option[String] =
+  protected def parseNextPaginationUrl(r: WSResponse): Option[String] =
     r.header("Link").flatMap(nextLinkParser.parse(_)._1.fold(_ => None, identity))
 
-  def urlEncoded(path: GitFilePath) = URLEncoder.encode(path.value, StandardCharsets.UTF_8)
+  protected def urlEncoded(path: GitFilePath) = URLEncoder.encode(path.value, StandardCharsets.UTF_8)
 }
 
 object GitService {

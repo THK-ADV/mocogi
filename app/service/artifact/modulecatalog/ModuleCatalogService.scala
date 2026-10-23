@@ -49,7 +49,6 @@ import service.artifact.POModules
 import service.artifact.TemporaryPdf
 import service.ModuleService
 import service.StudyProgramPrivilegesService
-import settings.ModuleCatalogSettings
 
 final class ModuleCatalogConfigException(message: String) extends IllegalArgumentException(message)
 
@@ -132,18 +131,18 @@ private[artifact] object ModuleCatalogService {
     requireKnown(studyPlan.semesterSelections.map(_.moduleId), "semesterSelections")
     requireKnown(studyPlan.genericModuleOccurrences.map(_.moduleId), "genericModuleOccurrences")
     requireKnown(
-      studyPlan.alternativeGenericModuleOccurrences.map(_.moduleId),
+      studyPlan.partTimeGenericModuleOccurrences.map(_.moduleId),
       "alternative.genericModuleOccurrences"
     )
-    requireKnown(studyPlan.alternativeModuleDistributions.map(_.moduleId), "alternative.moduleDistributions")
+    requireKnown(studyPlan.partTimeModuleDistributions.map(_.moduleId), "alternative.moduleDistributions")
 
     val excludedModuleIds           = moduleSelection.excludedModuleIds.toSet
     val excludedStudyPlanReferences =
       (
         studyPlan.semesterSelections.map(_.moduleId) ++
           studyPlan.genericModuleOccurrences.map(_.moduleId) ++
-          studyPlan.alternativeGenericModuleOccurrences.map(_.moduleId) ++
-          studyPlan.alternativeModuleDistributions.map(_.moduleId)
+          studyPlan.partTimeGenericModuleOccurrences.map(_.moduleId) ++
+          studyPlan.partTimeModuleDistributions.map(_.moduleId)
       ).filter(excludedModuleIds.contains).distinct
     if excludedStudyPlanReferences.nonEmpty then {
       errors +=
@@ -153,7 +152,7 @@ private[artifact] object ModuleCatalogService {
     duplicateIds(studyPlan.semesterSelections.map(_.moduleId)).foreach { id =>
       errors += s"semesterSelections contains duplicate module id $id"
     }
-    duplicateIds(studyPlan.alternativeModuleDistributions.map(_.moduleId)).foreach { id =>
+    duplicateIds(studyPlan.partTimeModuleDistributions.map(_.moduleId)).foreach { id =>
       errors += s"alternative.moduleDistributions contains duplicate module id $id"
     }
 
@@ -197,14 +196,14 @@ private[artifact] object ModuleCatalogService {
       "has no recommended semesters"
     )
     validateOccurrences(
-      studyPlan.alternativeGenericModuleOccurrences,
+      studyPlan.partTimeGenericModuleOccurrences,
       "alternative.genericModuleOccurrences",
       _.recommendedSemesterPartTime,
       "has no part-time recommended semester",
       restrictToRecommended = false
     )
 
-    studyPlan.alternativeModuleDistributions.foreach { distribution =>
+    studyPlan.partTimeModuleDistributions.foreach { distribution =>
       moduleById.get(distribution.moduleId).foreach { module =>
         if module.metadata.isGeneric then
           errors += s"alternative.moduleDistributions module ${distribution.moduleId} is a generic module"
@@ -338,30 +337,30 @@ final class ModuleCatalogService @Inject() (
     gitCLI: GitCLI,
     moduleCatalogRepo: ModuleCatalogRepository,
     studyProgramPrivilegesService: StudyProgramPrivilegesService,
-    settings: ModuleCatalogSettings,
+    pdfConfig: ModuleCatalogPdfConfig,
     implicit val ctx: ExecutionContext
 ) extends Logging {
 
   def listPublished(): Future[Seq[PublishedDocument]] = moduleCatalogRepo.all()
 
-  def findPublishedFile(filename: String): Option[Path] = FileOps.resolvePdfFile(filename, settings.publishedPdfDir)
+  def findPublishedFile(filename: String): Option[Path] = FileOps.resolvePdfFile(filename, pdfConfig.publishedPdfDir)
 
   def publish(po: String, config: ModuleCatalogConfig): Future[Unit] = {
     logger.info(s"publishing module catalog for po $po")
     val date     = LocalDate.now(ZoneId.of("Europe/Berlin"))
     val semester = Semester.of(date)
     for {
-      pdf <- TemporaryPdf.generate(s"module_catalog_$po", settings.tmpDir) { latexFile =>
+      pdf <- TemporaryPdf.generate(s"module_catalog_$po", pdfConfig.tmpDir) { latexFile =>
         generateCatalog(po, latexFile, Some(semester), config)
       }
-      filename = pdf.publish(s"module_catalog_${semester.id}_$po", settings.publishedPdfDir)
+      filename = pdf.publish(s"module_catalog_${semester.id}_$po", pdfConfig.publishedPdfDir)
       _ <- moduleCatalogRepo.createOrUpdate(po, semester.id, date, filename)
     } yield ()
   }
 
   def preview(po: String, config: ModuleCatalogConfig): Future[TemporaryPdf] = {
     logger.info(s"creating module catalog preview for po $po")
-    TemporaryPdf.generate(s"module_catalog_$po", settings.tmpDir)(latexFile =>
+    TemporaryPdf.generate(s"module_catalog_$po", pdfConfig.tmpDir)(latexFile =>
       generateCatalog(po, latexFile, None, config)
     )
   }
@@ -369,7 +368,7 @@ final class ModuleCatalogService @Inject() (
   def listIntroFiles(person: String, permissions: Permissions): Future[Vector[IntroFileInfo]] =
     studyProgramPrivilegesService.getStudyProgramPrivileges(person, permissions).map { privileges =>
       val allowed = privileges.filter(_.canCreate).map(_.studyProgram.po.id).toSet
-      Using.resource(Files.list(Paths.get(settings.introDir))) { files =>
+      Using.resource(Files.list(Paths.get(pdfConfig.introDir))) { files =>
         files
           .iterator()
           .asScala
@@ -383,7 +382,7 @@ final class ModuleCatalogService @Inject() (
     }
 
   def uploadIntroFile(po: String, wordPath: Path): Try[Unit] =
-    WordLatexPrinter(settings.wordCommand, settings.introDir)
+    WordLatexPrinter(pdfConfig.docxToLatexCommand, pdfConfig.introDir)
       .toLatex(wordPath, po)
       .flatMap(TextIntroRewriter().rewrite)
       .map(_ => ())
@@ -485,7 +484,7 @@ final class ModuleCatalogService @Inject() (
         liveModules ++ createdModules
       )
       new ModuleCatalogLatexPrinter(
-        new MarkdownLatexPrinter(settings.texCommand),
+        new MarkdownLatexPrinter(pdfConfig.markdownToLatexCommand),
         messagesApi,
         semester,
         poOnly,
@@ -502,7 +501,7 @@ final class ModuleCatalogService @Inject() (
   // TODO: same for prod catalog
   private def copyAssets(parentDir: Path): Unit =
     try {
-      Paths.get(settings.assetsDir).foreachFileOfDirectory { path =>
+      Paths.get(pdfConfig.assetsDir).foreachFileOfDirectory { path =>
         path.copy(parentDir).match {
           case Left(err) => throw Exception(s"failed to copy assets into media folder: $err")
           case Right(_)  =>
@@ -513,7 +512,7 @@ final class ModuleCatalogService @Inject() (
     }
 
   private def introSnippet(dir: Path, po: String): Option[LatexContentSnippet] =
-    IntroContentProvider(dir, po, settings.introDir).createIntroContent()
+    IntroContentProvider(dir, po, pdfConfig.introDir).createIntroContent()
 
   private def logWarnings(po: String, warnings: List[ModuleCatalogWarning]): Unit =
     warnings.foreach { warning =>
@@ -534,10 +533,10 @@ final class ModuleCatalogService @Inject() (
       NonEmptyList.fromList(config.sections),
       config.semesterSelections,
       config.genericModuleOccurrences,
-      config.alternativeGenericModuleOccurrences,
+      config.partTimeGenericModuleOccurrences,
       specializations,
       isPreview,
       messagesApi,
-      config.alternativeModuleDistributions
+      config.partTimeModuleDistributions
     )
 }

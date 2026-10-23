@@ -20,7 +20,7 @@ import play.api.mvc.AnyContent
 import play.api.mvc.Codec
 import play.api.mvc.ControllerComponents
 import security.ClientErrorResponse
-import settings.AppSettings
+import service.artifact.ExamLoadConfig
 import service.artifact.ExamLoadService
 
 @Singleton
@@ -28,7 +28,7 @@ final class ExamLoadController @Inject() (
     cc: ControllerComponents,
     auth: AuthorizationAction,
     examLoadService: ExamLoadService,
-    appSettings: AppSettings,
+    config: ExamLoadConfig,
     val permissionRepository: PermissionRepository,
     val clientErrors: ClientErrorResponse,
     implicit val ctx: ExecutionContext
@@ -36,14 +36,12 @@ final class ExamLoadController @Inject() (
     with ArtifactCheck
     with UserResolveAction {
 
-  private def tmpDir: String = appSettings.play.tmpDir
-
   def generateExamLoad(po: String): Action[AnyContent] =
     auth
       .andThen(resolveUser)
       .andThen(canPreviewArtifact(po))
       .async { _ =>
-        val file = FileOps.createRandomFile(tmpDir)
+        val file = FileOps.createRandomFile(config.tmpDir)
         examLoadService
           .createLatestExamLoad(po)
           .map { csv =>

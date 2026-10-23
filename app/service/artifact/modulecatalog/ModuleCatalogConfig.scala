@@ -30,11 +30,11 @@ final case class ModuleCatalogStudyPlanConfig(
     sections: List[StudyPlanSection],
     semesterSelections: List[ModuleCatalogSemesterSelection],
     genericModuleOccurrences: List[ModuleCatalogGenericModuleOccurrence],
-    alternativeGenericModuleOccurrences: List[ModuleCatalogGenericModuleOccurrence] = Nil,
-    alternativeModuleDistributions: List[ModuleCatalogModuleDistribution] = Nil
+    partTimeGenericModuleOccurrences: List[ModuleCatalogGenericModuleOccurrence] = Nil,
+    partTimeModuleDistributions: List[ModuleCatalogModuleDistribution] = Nil
 )
 
-final case class StudyPlanSection(untilSemester: Int, headline: String)
+final case class StudyPlanSection(lastSemester: Int, headline: String)
 
 final case class ModuleCatalogSemesterSelection(moduleId: UUID, selectedSemester: Int)
 
@@ -108,7 +108,8 @@ object ModuleCatalogStudyPlanConfig {
 }
 
 object StudyPlanSection {
-  given Reads[StudyPlanSection] = Json.reads[StudyPlanSection]
+  given Reads[StudyPlanSection] =
+    (JsPath \ "untilSemester").read[Int].and((JsPath \ "headline").read[String])(StudyPlanSection.apply)
 }
 
 object ModuleCatalogSemesterSelection {

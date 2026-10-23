@@ -7,13 +7,14 @@ import javax.crypto.spec.SecretKeySpec
 import play.api.Configuration
 
 final case class WebhookConfig(
+    projectId: Int,
     signingKeys: Map[WebhookEndpoint, SecretKeySpec],
     timestampTolerance: Duration,
     maxBodyBytes: Long,
-    retention: Duration
+    inboxRetention: Duration
 ) {
   require(
-    retention.toDays >= 2,
+    inboxRetention.toDays >= 2,
     "webhook retention must cover GitLab's two-day window for finding and resending deliveries"
   )
 }
@@ -29,10 +30,11 @@ object WebhookConfig {
       endpoint -> new SecretKeySpec(key, "HmacSHA256")
     }.toMap
     WebhookConfig(
+      projectId = configuration.get[Int]("git.projectId"),
       signingKeys = signingKeys,
       timestampTolerance = configuration.get[Duration]("git.webhook.timestampTolerance"),
       maxBodyBytes = configuration.get[Long]("git.webhook.maxBodyBytes"),
-      retention = configuration.get[Duration]("git.webhook.retention")
+      inboxRetention = configuration.get[Duration]("git.webhook.retention")
     )
   }
 }

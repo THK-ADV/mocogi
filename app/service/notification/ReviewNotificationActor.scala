@@ -20,7 +20,6 @@ import service.mail.MailActor
 import service.mail.MailActor.SendMail
 import service.notification.ReviewNotificationActor.DryRun
 import service.notification.ReviewNotificationActor.NotifyAllPendingReviews
-import settings.AppSettings
 
 object ReviewNotificationActor {
   case object NotifyAllPendingReviews
@@ -31,13 +30,11 @@ final class ReviewNotificationActor @Inject() (
     repo: ModuleReviewRepository,
     messages: MessagesApi,
     @Named("MailActor") mailActor: ActorRef,
-    appSettings: AppSettings,
+    config: ReviewNotificationConfig,
     private implicit val ctx: ExecutionContext
 ) extends Actor
     with Logging {
   given Lang(Locale.GERMANY)
-
-  private def moduleReviewUrl: String = appSettings.mail.reviewUrl
 
   override def receive = {
     case NotifyAllPendingReviews => go(dryRun = false)
@@ -83,7 +80,7 @@ final class ReviewNotificationActor @Inject() (
               )
           }
           body.append("\n\n")
-          body.append(messages("module_review.notification.action", moduleReviewUrl))
+          body.append(messages("module_review.notification.action", config.pendingReviewsUrl))
           body.append("\n\n")
           body.append(messages("module_review.notification.closing"))
 

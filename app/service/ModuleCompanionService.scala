@@ -10,6 +10,7 @@ import scala.concurrent.Future
 import database.repo.ModuleCompanionRepository
 import git.api.GitFileService
 import git.GitFilePath
+import git.GitRepositoryConfig
 import io.circe.Json
 import models.ModuleCompanion
 import play.api.libs.json.*
@@ -19,6 +20,7 @@ import play.api.Logging
 final class ModuleCompanionService @Inject() (
     repo: ModuleCompanionRepository,
     fileService: GitFileService,
+    private implicit val repositoryConfig: GitRepositoryConfig,
     implicit val ctx: ExecutionContext
 ) extends Logging {
   def allFromModules(modules: Seq[UUID]) = {
@@ -34,13 +36,12 @@ final class ModuleCompanionService @Inject() (
         case Right(js) =>
           Some(circeToPlay(js))
     }
-    val config = fileService.config
     for
       companions     <- repo.allFromModules(modules)
       companionFiles <- Future.sequence(
         companions.map(companion =>
           fileService
-            .download(GitFilePath.moduleCompanionPath(companion.module, companion.po)(config), config.draftBranch)
+            .download(GitFilePath.moduleCompanionPath(companion.module, companion.po), repositoryConfig.previewBranch)
             .map(content => companion -> content.flatMap { (c, _) => parseFrontMatter(c.value, companion) })
         )
       )

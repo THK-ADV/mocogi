@@ -99,7 +99,7 @@ final class StudyPlanSnippetSpec extends AnyWordSpec with Matchers {
       NonEmptyList.fromList(config.sections),
       config.semesterSelections,
       config.genericModuleOccurrences,
-      config.alternativeGenericModuleOccurrences,
+      config.partTimeGenericModuleOccurrences,
       specializations,
       isPreview,
       messagesApi

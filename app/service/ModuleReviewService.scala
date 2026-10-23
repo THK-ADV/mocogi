@@ -14,6 +14,8 @@ import database.repo.core.StudyProgramDirectorsRepository.StudyProgramDirector
 import database.repo.ModuleDraftRepository
 import database.repo.ModuleReviewRepository
 import git.api.GitMergeRequestService
+import git.GitRepositoryConfig
+import git.GitReviewConfig
 import git.MergeRequestId
 import git.MergeRequestStatus
 import logging.errorC
@@ -38,6 +40,8 @@ final class ModuleReviewService @Inject() (
     private val reviewRepo: ModuleReviewRepository, // CREATE READ UPDATE DELETE
     private val directorsRepository: StudyProgramDirectorsRepository,
     private val api: GitMergeRequestService,
+    private val repositoryConfig: GitRepositoryConfig,
+    private val reviewConfig: GitReviewConfig,
     private val keysToReview: ModuleKeysToReview,
     private implicit val ctx: ExecutionContext
 ) extends Logging {
@@ -340,7 +344,7 @@ final class ModuleReviewService @Inject() (
         mrTitle(author, protocol.metadata),
         mrDesc(draft.modifiedKeys, draft.keysToBeReviewed, reviewer(directors)),
         needsApproval = true,
-        List(api.config.reviewRequiredLabel)
+        List(reviewConfig.reviewRequiredLabel)
       )
     } yield mergeRequest
   }
@@ -352,7 +356,7 @@ final class ModuleReviewService @Inject() (
         mrTitle(author, draft.protocol().metadata),
         mrDescAutoAccepted(draft.modifiedKeys),
         needsApproval = false,
-        List(api.config.autoApprovedLabel)
+        List(reviewConfig.autoApprovedLabel)
       )
     } yield (mergeRequestId, status)
 
@@ -363,7 +367,7 @@ final class ModuleReviewService @Inject() (
         mrTitle(author, draft.protocol().metadata),
         mrDescAutoAccepted(draft.modifiedKeys),
         needsApproval = false,
-        List(api.config.autoApprovedLabel, api.config.fastForwardLabel)
+        List(reviewConfig.autoApprovedLabel, reviewConfig.reviewBypassLabel)
       )
     } yield (mergeRequestId, status)
 
@@ -376,7 +380,7 @@ final class ModuleReviewService @Inject() (
   ): Future[MergeRequest] =
     api.create(
       draft.branch,
-      api.config.draftBranch,
+      repositoryConfig.previewBranch,
       title,
       description,
       needsApproval,

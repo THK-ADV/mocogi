@@ -17,9 +17,9 @@ import git.api.GitCommitService
 import git.api.GitFileService
 import git.api.GitRepositoryService
 import git.publisher.ModulePublisher
-import git.GitConfig
 import git.GitFile
 import git.GitFileStatus
+import git.GitRepositoryConfig
 import logging.errorC
 import logging.infoC
 import logging.CorrelationId
@@ -41,7 +41,7 @@ final class GitController @Inject() (
     gitCommitService: GitCommitService,
     @Named("ModulePublisher") modulePublisher: ActorRef,
     auth: AuthorizationAction,
-    gitConfig: GitConfig,
+    repositoryConfig: GitRepositoryConfig,
     cached: Cached,
     val permissionRepository: PermissionRepository,
     val clientErrors: ClientErrorResponse,
@@ -65,12 +65,12 @@ final class GitController @Inject() (
     auth.andThen(resolveUser).andThen(isAdmin).async { _ =>
       given CorrelationId = CorrelationId.random()
       (for {
-        paths   <- gitRepositoryApiService.listModuleFiles(gitConfig.mainBranch)
+        paths   <- gitRepositoryApiService.listModuleFiles(repositoryConfig.mainBranch)
         modules <- Future.sequence(
           paths.par.collect {
-            case path if path.isModule(gitConfig) =>
+            case path if path.isModule(repositoryConfig) =>
               downloadService
-                .download(path, gitConfig.mainBranch)
+                .download(path, repositoryConfig.mainBranch)
                 .flatMap {
                   case Some((content, Some(commit))) =>
                     gitCommitService.getCommitDate(commit.value).map(d => Some(content, d))
@@ -78,12 +78,12 @@ final class GitController @Inject() (
                 }
                 .collect {
                   case Some((content, lastModified)) =>
-                    val moduleId = path.moduleId(gitConfig)
+                    val moduleId = path.moduleId(repositoryConfig)
                     assume(moduleId.isDefined, s"expected module id for ${path.value}")
                     (
                       GitFile.ModuleFile(
                         path,
-                        path.moduleId(gitConfig).get,
+                        path.moduleId(repositoryConfig).get,
                         GitFileStatus.Modified,
                         lastModified
                       ),

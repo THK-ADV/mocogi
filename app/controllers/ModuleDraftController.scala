@@ -13,6 +13,7 @@ import controllers.json.JsonNullWritable
 import controllers.json.ModuleJson
 import controllers.ModuleDraftController.VersionSchemeHeader
 import database.repo.PermissionRepository
+import git.GitWebConfig
 import models.*
 import permission.ModuleDraftCheck
 import play.api.i18n.I18nSupport
@@ -25,7 +26,6 @@ import play.api.Logging
 import security.ClientErrorResponse
 import service.*
 import service.pipeline.PipelineError.parsingErrorWrites
-import settings.AppSettings
 
 @Singleton
 final class ModuleDraftController @Inject() (
@@ -36,7 +36,7 @@ final class ModuleDraftController @Inject() (
     val auth: AuthorizationAction,
     val moduleUpdatePermissionService: ModuleUpdatePermissionService,
     val permissionRepository: PermissionRepository,
-    appSettings: AppSettings,
+    gitWebConfig: GitWebConfig,
     val clientErrors: ClientErrorResponse,
     implicit val ctx: ExecutionContext
 ) extends AbstractController(cc)
@@ -45,8 +45,6 @@ final class ModuleDraftController @Inject() (
     with JsonNullWritable
     with I18nSupport
     with Logging {
-
-  def repoUrl: String = appSettings.git.repoUrl
 
   // /my-modules
   def moduleDrafts() =
@@ -94,7 +92,7 @@ final class ModuleDraftController @Inject() (
       moduleDraftService
         .getMergeRequestId(moduleId)
         .map {
-          case Some(id) => Ok(JsString(repoUrl + s"/-/merge_requests/${id.value}/diffs?view=parallel"))
+          case Some(id) => Ok(JsString(s"${gitWebConfig.repoUrl}/-/merge_requests/${id.value}/diffs?view=parallel"))
           case None     => NotFound
         }
     }

@@ -19,7 +19,7 @@ import play.mvc.Http.Status
 @Singleton
 final class GitMergeRequestService @Inject() (
     private val ws: WSClient,
-    val config: GitConfig,
+    protected val apiConfig: GitApiConfig,
     private implicit val ctx: ExecutionContext
 ) extends GitService {
 
