@@ -5,6 +5,7 @@ import java.nio.file.Path
 import java.time.LocalDate
 import java.util.UUID
 import javax.inject.Inject
+import javax.inject.Singleton
 
 import scala.sys.process.Process
 import scala.sys.process.ProcessLogger
@@ -19,14 +20,11 @@ import parser.ParsingError
 import parsing.RawModuleParser
 import play.api.Logging
 
-/**
- * Represents a Git command-line interface module, providing functionality
- * to manage and fetch data from a Git repository related to a specific branch.
- *
- * @param draftBranch The name of the draft branch in the Git repository to be used for operations.
- * @param gitFolder   The local path of the Git repository folder where operations will be performed.
- */
-final class GitCLI @Inject() (val draftBranch: Branch, gitFolder: Path) extends Logging {
+/** Reads and synchronizes the local module repository's preview branch. */
+@Singleton
+final class GitCLI @Inject() (config: GitCliConfig) extends Logging {
+
+  def previewBranch: Branch = config.previewBranch
 
   /**
    * Retrieves all modules from the preview branch of the Git repository.
@@ -41,9 +39,9 @@ final class GitCLI @Inject() (val draftBranch: Branch, gitFolder: Path) extends 
   def getAllModulesFromPreview(): Try[(Vector[(ParsingError, String)], Vector[(ModuleProtocol, LocalDate)])] =
     Try {
       if updatePreviewBranch() != 0 then
-        throw new IllegalStateException(s"Could not update Git preview branch ${draftBranch.value}")
+        throw new IllegalStateException(s"Could not update Git preview branch ${previewBranch.value}")
 
-      gitFolder
+      config.modulesDir
         .getFilesOfDirectory(_.getFileName.toString.endsWith(".md")) { (f: Path) =>
           val lastModified = Files
             .getLastModifiedTime(f)
@@ -61,7 +59,7 @@ final class GitCLI @Inject() (val draftBranch: Branch, gitFolder: Path) extends 
    */
   def getFromPreview(module: UUID): Try[MetadataProtocol] =
     for {
-      fileContent <- Try(Files.readString(gitFolder.resolve(s"$module.md")))
+      fileContent <- Try(Files.readString(config.modulesDir.resolve(s"$module.md")))
       (_, module) <- RawModuleParser.metadataParser.parse(fileContent)._1.toTry
     } yield module
 
@@ -72,14 +70,14 @@ final class GitCLI @Inject() (val draftBranch: Branch, gitFolder: Path) extends 
    *         A value of 0 indicates success, while any other value represents an error.
    */
   def updatePreviewBranch(): Int = {
-    val context = gitFolder.toFile
+    val context = config.modulesDir.toFile
 
     val fetchLatestChanges =
-      Process(Seq("git", "fetch", "origin", draftBranch.value), context)
+      Process(Seq("git", "fetch", "origin", previewBranch.value), context)
     val switchToBranch =
-      Process(Seq("git", "switch", draftBranch.value), context)
+      Process(Seq("git", "switch", previewBranch.value), context)
     val resetToRemote =
-      Process(Seq("git", "reset", "--hard", s"origin/${draftBranch.value}"), context)
+      Process(Seq("git", "reset", "--hard", s"origin/${previewBranch.value}"), context)
     val log = ProcessLogger(logger.debug(_))
 
     (fetchLatestChanges #&& switchToBranch #&& resetToRemote).!(log)

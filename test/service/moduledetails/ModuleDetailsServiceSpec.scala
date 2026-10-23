@@ -12,6 +12,7 @@ import database.repo.ModuleDetailRepository
 import git.api.GitCommitService
 import git.api.GitFileService
 import git.Branch
+import git.GitRepositoryConfig
 import models.ModuleDraft
 import models.ModuleDraftSource
 import org.mockito.Mockito.*
@@ -66,9 +67,9 @@ final class ModuleDetailsServiceSpec extends AnyFunSuite with Matchers with Mock
       gitCommitService,
       draftService,
       pipeline,
+      GitRepositoryConfig(Branch("main"), Branch("draft"), "modules", "catalogs", "companions"),
       summon[ExecutionContext]
     )
-    clearInvocations(gitFileService)
 
     Await.result(service.latest(moduleId), 5.seconds) shouldBe Some(details)
     verifyNoInteractions(gitFileService, gitCommitService)

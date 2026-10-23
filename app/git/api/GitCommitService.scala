@@ -26,7 +26,9 @@ import play.api.libs.ws.WSRequest
 final class GitCommitService @Inject() (
     private val ws: WSClient,
     private val fileService: GitFileService,
-    implicit val config: GitConfig,
+    protected val apiConfig: GitApiConfig,
+    private val commitConfig: GitCommitConfig,
+    private implicit val repositoryConfig: GitRepositoryConfig,
     implicit val ctx: ExecutionContext
 ) extends GitService {
 
@@ -40,7 +42,7 @@ final class GitCommitService @Inject() (
       moduleId: UUID,
       print: Print
   ): Future[CommitId] = {
-    val filePath = GitFilePath(moduleId)(config)
+    val filePath = GitFilePath(moduleId)
     val action   = fileService
       .fileExists(filePath, branch)
       .map(exists =>
@@ -55,7 +57,7 @@ final class GitCommitService @Inject() (
       action <- action
       res    <- commit(
         branch,
-        author.email.getOrElse(config.defaultEmail),
+        author.email.getOrElse(commitConfig.fallbackAuthorEmail),
         author.fullName,
         message,
         Seq(action)
@@ -94,7 +96,7 @@ final class GitCommitService @Inject() (
    * Returns the last commit date of a path in a branch
    */
   def getLatestCommitDateOfModulesFolder(): Future[Option[LocalDateTime]] =
-    getCommitDate(GitFilePath(config.modulesFolder), config.mainBranch)
+    getCommitDate(GitFilePath(repositoryConfig.modulesPath), repositoryConfig.mainBranch)
 
   /**
    * Retrieves the date and time of the most recent commit for a specific file path in a given branch.

@@ -7,8 +7,8 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 import git.Branch
-import git.GitConfig
 import git.GitFilePath
+import git.GitRepositoryConfig
 import play.api.libs.json.JsValue
 import play.api.libs.ws.WSClient
 import play.mvc.Http.Status
@@ -16,11 +16,13 @@ import play.mvc.Http.Status
 @Singleton
 final class GitRepositoryService @Inject() (
     private val ws: WSClient,
-    val config: GitConfig,
+    protected val apiConfig: GitApiConfig,
+    private val repositoryConfig: GitRepositoryConfig,
     private implicit val ctx: ExecutionContext
 ) extends GitService {
 
-  def listModuleFiles(branch: Branch): Future[List[GitFilePath]] = listFileNames(treeUrl(config.modulesFolder, branch))
+  def listModuleFiles(branch: Branch): Future[List[GitFilePath]] =
+    listFileNames(treeUrl(repositoryConfig.modulesPath, branch))
 
   private def listFileNames(url: String): Future[List[GitFilePath]] =
     ws

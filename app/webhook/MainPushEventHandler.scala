@@ -27,7 +27,7 @@ final class MainPushEventHandler @Inject() (
     downloadService: GitFileService,
     commitService: GitCommitService,
     @Named("ModulePublisher") modulePublisher: ActorRef,
-    implicit val gitConfig: GitConfig,
+    private implicit val repositoryConfig: GitRepositoryConfig,
     implicit val ctx: ExecutionContext
 ) extends Actor
     with Logging {
@@ -67,7 +67,7 @@ final class MainPushEventHandler @Inject() (
       }
     } yield mergeCommit
 
-  private def parse(json: JsValue)(implicit gitConfig: GitConfig) =
+  private def parse(json: JsValue)(implicit repositoryConfig: GitRepositoryConfig) =
     for {
       branch                                <- parseBranch(json)
       afterCommit                           <- parseCommit(json, "after")
@@ -83,7 +83,7 @@ final class MainPushEventHandler @Inject() (
       modified: List[GitFilePath],
       deleted: List[GitFilePath],
       timestamp: LocalDateTime
-  )(implicit gitConfig: GitConfig): List[GitFile] = {
+  )(implicit repositoryConfig: GitRepositoryConfig): List[GitFile] = {
     val builder = ListBuffer.empty[GitFile]
     added.foreach { path =>
       val status = GitFileStatus.Added
@@ -122,7 +122,7 @@ final class MainPushEventHandler @Inject() (
     Future.sequence(moduleFiles.map { file =>
       val downloaded = for {
         content      <- downloadService.downloadFileContent(file.path, branch)
-        lastModified <- commitService.getCommitDate(file.path, gitConfig.draftBranch)
+        lastModified <- commitService.getCommitDate(file.path, repositoryConfig.previewBranch)
       } yield (content, lastModified)
       downloaded.collect {
         case (Some(content), Some(lastModified)) => (file.copy(lastModified = lastModified), content)
@@ -135,7 +135,7 @@ final class MainPushEventHandler @Inject() (
       given CorrelationId = incomingCorrelationId
       parse(json) match {
         case JsSuccess((branch, gitChanges), _) =>
-          if (!branch.isMainBranch) {
+          if (branch != repositoryConfig.mainBranch) {
             logger.infoC(s"main push skipped branch=${branch.value} reason=not_main_branch")
           } else {
             val moduleFiles = filesToDownload(gitChanges.entries)

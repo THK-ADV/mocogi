@@ -11,8 +11,8 @@ import controllers.actions.UserResolveAction
 import database.repo.ModuleDeletionRepository
 import database.repo.PermissionRepository
 import git.api.GitFileService
-import git.GitConfig
 import git.GitFilePath
+import git.GitRepositoryConfig
 import models.CreatedModule
 import parsing.RawModuleParser
 import permission.AdminCheck
@@ -33,7 +33,7 @@ final class AdminController @Inject() (
     val permissionRepository: PermissionRepository,
     val scheduleEntryBootstrapRepo: ScheduleEntryBootstrapRepository,
     val clientErrors: ClientErrorResponse,
-    implicit val gitConfig: GitConfig,
+    private implicit val repositoryConfig: GitRepositoryConfig,
     implicit val ctx: ExecutionContext
 ) extends AbstractController(cc)
     with AdminCheck
@@ -52,9 +52,11 @@ final class AdminController @Inject() (
       for
         modulesToCreate <- Future.sequence(
           moduleIds.map(id =>
-            downloadService.downloadFileContent(GitFilePath(UUID.fromString(id)), gitConfig.draftBranch).collect {
-              case Some(c) => RawModuleParser.parseCreatedModuleInformation(c.value)
-            }
+            downloadService
+              .downloadFileContent(GitFilePath(UUID.fromString(id)), repositoryConfig.previewBranch)
+              .collect {
+                case Some(c) => RawModuleParser.parseCreatedModuleInformation(c.value)
+              }
           )
         )
         _ <- moduleCreationService.createManyWithPermissions(modulesToCreate)

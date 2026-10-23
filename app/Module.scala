@@ -1,17 +1,18 @@
-import java.nio.file.Paths
-
 import scala.annotation.unused
 
 import auth.KeycloakConfig
-import cli.GitCLI
-import cli.MarkdownCLI
+import cli.GitCliConfig
+import cli.MarkdownConfig
 import com.google.inject.AbstractModule
 import com.google.inject.TypeLiteral
+import git.api.GitApiConfig
+import git.api.GitCommitConfig
 import git.publisher.ModulePublisher
 import git.subscriber.ModuleDatabaseActor
 import git.subscriber.ModuleSubscribers
-import git.Branch
-import git.GitConfig
+import git.GitRepositoryConfig
+import git.GitReviewConfig
+import git.GitWebConfig
 import models.ModuleKeysToReview
 import parsing.metadata.MetadataParser
 import parsing.metadata.THKV1Parser
@@ -20,14 +21,15 @@ import play.api.Configuration
 import play.api.Environment
 import printing.yaml.MetadataYamlPrinter
 import providers.ModuleSubscribersProvider
+import service.artifact.modulecatalog.ModuleCatalogPdfConfig
+import service.artifact.ExamListPdfConfig
+import service.artifact.ExamLoadConfig
+import service.history.ModuleHistoryConfig
 import service.image.PeopleImageUpdateActor
 import service.mail.MailActor
 import service.mail.MailConfig
 import service.notification.ReviewNotificationActor
-import settings.AppSettings
-import settings.ExamListPathsSettings
-import settings.ModuleCatalogSettings
-import settings.SecretString
+import service.notification.ReviewNotificationConfig
 import webhook.MainPushEventHandler
 import webhook.MergeEventHandler
 import webhook.PreviewPushEventHandler
@@ -40,7 +42,7 @@ class Module(@unused environment: Environment, configuration: Configuration)
   override def configure(): Unit = {
     super.configure()
 
-    bindSettings()
+    bindConfigs()
 
     bind(classOf[MetadataYamlPrinter]).toInstance(new MetadataYamlPrinter(2))
     bind(classOf[ModuleSubscribers])
@@ -62,49 +64,22 @@ class Module(@unused environment: Environment, configuration: Configuration)
     bindActor[MergeEventHandler]("MergeEventHandler")
   }
 
-  private def bindSettings(): Unit = {
-    val settings = AppSettings.load(configuration)
-    bind(classOf[AppSettings]).toInstance(settings)
+  private def bindConfigs(): Unit = {
     bind(classOf[WebhookConfig]).toInstance(WebhookConfig.load(configuration))
-    bind(classOf[ExamListPathsSettings]).toInstance(
-      ExamListPathsSettings(settings.play.tmpDir, settings.pandoc.examListOutputFolderPath)
-    )
-    bind(classOf[ModuleCatalogSettings]).toInstance(
-      ModuleCatalogSettings(
-        tmpDir = settings.play.tmpDir,
-        publishedPdfDir = settings.pandoc.moduleCatalogOutputFolderPath,
-        introDir = settings.pandoc.mcIntroPath,
-        assetsDir = settings.pandoc.mcAssetsPath,
-        texCommand = settings.pandoc.texCmd,
-        wordCommand = settings.pandoc.wordCmd
-      )
-    )
-    bind(classOf[MarkdownCLI]).toInstance(MarkdownCLI(settings.markdown))
-
-    bind(classOf[GitCLI]).toInstance(
-      GitCLI(Branch(settings.git.draftBranch), Paths.get(settings.git.localGitFolderPath))
-    )
-    bind(classOf[MailConfig]).toInstance(MailConfig(settings.mail.sender, 5))
-    bind(classOf[KeycloakConfig]).toInstance(KeycloakConfig(settings.keycloak.jwksUrl, settings.keycloak.issuer))
-
-    bind(classOf[GitConfig]).toInstance(
-      GitConfig(
-        SecretString.unwrap(settings.git.accessToken),
-        settings.git.baseUrl,
-        settings.git.projectId,
-        Branch(settings.git.mainBranch),
-        Branch(settings.git.draftBranch),
-        settings.git.modulesFolder,
-        settings.git.moduleCatalogsFolder,
-        settings.git.moduleCompanionFolder,
-        settings.git.autoApprovedLabel,
-        settings.git.reviewRequiredLabel,
-        settings.git.fastForwardLabel,
-        settings.git.defaultEmail,
-        settings.git.defaultUser,
-        settings.git.historySince
-      )
-    )
-    bind(classOf[ModuleKeysToReview]).toInstance(ModuleKeysToReview(settings.moduleKeysToReview.pavModuleKeys.toSet))
+    bind(classOf[ExamLoadConfig]).toInstance(ExamLoadConfig.load(configuration))
+    bind(classOf[ExamListPdfConfig]).toInstance(ExamListPdfConfig.load(configuration))
+    bind(classOf[ModuleCatalogPdfConfig]).toInstance(ModuleCatalogPdfConfig.load(configuration))
+    bind(classOf[MarkdownConfig]).toInstance(MarkdownConfig.load(configuration))
+    bind(classOf[GitCliConfig]).toInstance(GitCliConfig.load(configuration))
+    bind(classOf[MailConfig]).toInstance(MailConfig.load(configuration))
+    bind(classOf[KeycloakConfig]).toInstance(KeycloakConfig.load(configuration))
+    bind(classOf[ReviewNotificationConfig]).toInstance(ReviewNotificationConfig.load(configuration))
+    bind(classOf[GitApiConfig]).toInstance(GitApiConfig.load(configuration))
+    bind(classOf[GitRepositoryConfig]).toInstance(GitRepositoryConfig.load(configuration))
+    bind(classOf[GitReviewConfig]).toInstance(GitReviewConfig.load(configuration))
+    bind(classOf[GitCommitConfig]).toInstance(GitCommitConfig.load(configuration))
+    bind(classOf[GitWebConfig]).toInstance(GitWebConfig.load(configuration))
+    bind(classOf[ModuleHistoryConfig]).toInstance(ModuleHistoryConfig.load(configuration))
+    bind(classOf[ModuleKeysToReview]).toInstance(ModuleKeysToReview.load(configuration))
   }
 }

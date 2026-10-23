@@ -8,7 +8,7 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 import git.Branch
-import git.GitConfig
+import git.GitRepositoryConfig
 import play.api.libs.ws.writeableOf_WsBody
 import play.api.libs.ws.EmptyBody
 import play.api.libs.ws.WSClient
@@ -21,13 +21,14 @@ import play.mvc.Http.Status
 @Singleton
 final class GitBranchService @Inject() (
     private val ws: WSClient,
-    val config: GitConfig,
+    protected val apiConfig: GitApiConfig,
+    private val repositoryConfig: GitRepositoryConfig,
     implicit val ctx: ExecutionContext
 ) extends GitService {
 
   def createModuleBranch(moduleId: UUID): Future[Branch] = {
     val branch = createBranch(moduleId)
-    createBranch(branch, config.draftBranch).map(_ => branch)
+    createBranch(branch, repositoryConfig.previewBranch).map(_ => branch)
   }
 
   def deleteModuleBranch(moduleId: UUID): Future[Unit] = {

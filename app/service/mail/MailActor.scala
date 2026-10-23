@@ -24,7 +24,7 @@ final class MailActor @Inject() (
 ) extends Actor
     with Logging {
 
-  private case class Go(id: UUID, mail: Email, retryCounter: Int)
+  private case class Go(id: UUID, mail: Email, remainingAttempts: Int)
   private case class Finish(id: UUID)
 
   override def receive = {
@@ -37,8 +37,8 @@ final class MailActor @Inject() (
         bodyText = Some(bodyText),
         cc = cc
       )
-      self ! Go(id, mail, retryCounter = config.retries)
-    case Go(id, mail, retryCounter) if retryCounter > 0 =>
+      self ! Go(id, mail, remainingAttempts = config.maxAttempts)
+    case Go(id, mail, remainingAttempts) if remainingAttempts > 0 =>
       logger.info(s"[$id] trying to send mail...")
       try {
         mailerClient.send(mail)
@@ -47,16 +47,16 @@ final class MailActor @Inject() (
       } catch
         case e: Exception =>
           logger.info(s"[$id] failed to send mail", e)
-          scheduleRetry(id, mail, retryCounter)
-    case Go(id, _, retryCounter) if retryCounter == 0 =>
-      logger.info(s"[$id] no more retries left")
+          scheduleRetry(id, mail, remainingAttempts)
+    case Go(id, _, remainingAttempts) if remainingAttempts == 0 =>
+      logger.info(s"[$id] no attempts left")
     case Finish(id) =>
       logger.info(s"[$id] finished")
   }
 
-  private def scheduleRetry(id: UUID, mail: Email, retryCounter: Int) = {
-    val delay = Math.pow(2, config.retries - retryCounter + 1).minutes
+  private def scheduleRetry(id: UUID, mail: Email, remainingAttempts: Int) = {
+    val delay = Math.pow(2, config.maxAttempts - remainingAttempts + 1).minutes
     logger.info(s"[$id] retrying in $delay")
-    context.system.scheduler.scheduleOnce(delay, self, Go(id, mail, retryCounter - 1))
+    context.system.scheduler.scheduleOnce(delay, self, Go(id, mail, remainingAttempts - 1))
   }
 }

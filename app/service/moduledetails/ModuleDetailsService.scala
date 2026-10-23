@@ -12,6 +12,7 @@ import database.repo.ModuleDetailRepository
 import git.api.GitCommitService
 import git.api.GitFileService
 import git.GitFilePath
+import git.GitRepositoryConfig
 import ops.or
 import service.pipeline.MetadataPipeline
 import service.pipeline.Print
@@ -24,10 +25,9 @@ final class ModuleDetailsService @Inject() (
     gitCommitService: GitCommitService,
     draftService: ModuleDraftService,
     pipeline: MetadataPipeline,
+    private implicit val repositoryConfig: GitRepositoryConfig,
     implicit val ctx: ExecutionContext
 ) {
-
-  private val gitConfig = gitFileService.config
 
   def published(id: UUID) = repository.getModuleDetails(id)
 
@@ -45,15 +45,15 @@ final class ModuleDetailsService @Inject() (
       .or(getFromPreview(moduleId))
 
   private def getFromPreview(moduleId: UUID): Future[Option[(Print, LocalDateTime)]] = {
-    val path = GitFilePath(moduleId)(gitConfig)
-    gitFileService.download(path, gitConfig.draftBranch).flatMap {
+    val path = GitFilePath(moduleId)
+    gitFileService.download(path, repositoryConfig.previewBranch).flatMap {
       case Some((content, Some(commit))) =>
         gitCommitService
           .getCommitDate(commit.value)
           .map(lastModified => Some(Print(content.value) -> lastModified))
       case Some((content, None)) =>
         gitCommitService
-          .getCommitDate(path, gitConfig.draftBranch)
+          .getCommitDate(path, repositoryConfig.previewBranch)
           .map(_.map(lastModified => Print(content.value) -> lastModified))
       case None => Future.successful(None)
     }

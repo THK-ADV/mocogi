@@ -16,7 +16,8 @@ import play.api.libs.ws.WSClient
 @Singleton
 final class GitFileService @Inject() (
     private val ws: WSClient,
-    implicit val config: GitConfig,
+    protected val apiConfig: GitApiConfig,
+    private implicit val repositoryConfig: GitRepositoryConfig,
     implicit val ctx: ExecutionContext
 ) extends GitService {
 
@@ -25,7 +26,7 @@ final class GitFileService @Inject() (
    */
   def downloadModuleFromPreviewBranch(id: UUID): Future[Option[ModuleProtocol]] =
     for {
-      content <- downloadFileContent(GitFilePath(id), config.draftBranch)
+      content <- downloadFileContent(GitFilePath(id), repositoryConfig.previewBranch)
       res     <- content match {
         case Some(content) => RawModuleParser.parser.parse(content.value)._1.map(Some.apply).toFuture
         case None          => Future.successful(None)
@@ -87,6 +88,6 @@ final class GitFileService @Inject() (
       case branch: Branch     => branch.value
       case commitId: CommitId => commitId.value
     }
-    s"${config.baseUrl}/projects/${config.projectId}/repository/files/${urlEncoded(path)}/raw?ref=${refValue}"
+    s"${repositoryUrl()}/files/${urlEncoded(path)}/raw?ref=$refValue"
   }
 }

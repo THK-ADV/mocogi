@@ -20,7 +20,7 @@ final class PreviewPushEventHandler @Inject() (cli: GitCLI) extends Actor with L
     case HandleEvent(json, incomingCorrelationId) =>
       given CorrelationId = incomingCorrelationId
       parseBranch(json) match {
-        case JsSuccess(branch, _) if branch.value == cli.draftBranch.value =>
+        case JsSuccess(branch, _) if branch.value == cli.previewBranch.value =>
           val exitCode = cli.updatePreviewBranch()
           if exitCode == 0 then logger.infoC(s"preview branch updated branch=${branch.value}")
           else logger.errorC(s"preview branch update failed branch=${branch.value} exitCode=$exitCode")

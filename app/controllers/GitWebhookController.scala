@@ -28,12 +28,10 @@ import play.api.libs.json.*
 import play.api.mvc.*
 import play.api.Logging
 import security.ClientErrorResponse
-import settings.AppSettings
 
 @Singleton
 final class GitWebhookController @Inject() (
     cc: ControllerComponents,
-    appSettings: AppSettings,
     config: WebhookConfig,
     inbox: WebhookInboxRepository,
     auth: AuthorizationAction,
@@ -112,7 +110,7 @@ final class GitWebhookController @Inject() (
   def deleteExpired() =
     auth.andThen(hasRole(Role.DeleteExpiredWebhooks)).async { _ =>
       given CorrelationId = CorrelationId.random()
-      inbox.deleteExpired(config.retention).map { deleted =>
+      inbox.deleteExpired(config.inboxRetention).map { deleted =>
         logger.infoC(s"expired webhooks deleted count=$deleted")
         NoContent
       }
@@ -124,7 +122,7 @@ final class GitWebhookController @Inject() (
    */
   private def matchesEndpoint(event: WebhookEvent): Boolean =
     (event.payload \ "object_kind").asOpt[String].contains(event.endpoint.objectKind) &&
-      (event.payload \ "project" \ "id").asOpt[Int].contains(appSettings.git.projectId)
+      (event.payload \ "project" \ "id").asOpt[Int].contains(config.projectId)
 
   private def dispatch(event: WebhookEvent)(using CorrelationId): Unit = {
     val handler = event.endpoint match {

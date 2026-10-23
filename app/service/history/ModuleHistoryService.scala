@@ -10,8 +10,8 @@ import scala.concurrent.Future
 
 import git.api.FileVersion
 import git.api.GitCommitService
-import git.GitConfig
 import git.GitFilePath
+import git.GitRepositoryConfig
 import parsing.RawModuleParser
 import models.ModuleCore
 import models.Semester
@@ -19,7 +19,8 @@ import models.Semester
 @Singleton
 final class ModuleHistoryService @Inject() (
     private val gitCommitService: GitCommitService,
-    private implicit val config: GitConfig,
+    private val config: ModuleHistoryConfig,
+    private implicit val repositoryConfig: GitRepositoryConfig,
     private implicit val ctx: ExecutionContext
 ) {
 
@@ -52,7 +53,7 @@ final class ModuleHistoryService @Inject() (
   def getModuleHistory(module: UUID): Future[List[ModuleVersion]] = {
     val filePath = GitFilePath(module)
     gitCommitService
-      .getAllVersionsOfFile(filePath, config.mainBranch, config.historySince)
+      .getAllVersionsOfFile(filePath, repositoryConfig.mainBranch, config.historySince)
       .map(parseModules)
   }
 }
