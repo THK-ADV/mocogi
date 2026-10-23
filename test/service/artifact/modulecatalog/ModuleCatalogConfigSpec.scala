@@ -12,8 +12,9 @@ final class ModuleCatalogConfigSpec extends AnyWordSpec with Matchers {
   private val optionId = UUID.fromString("00000000-0000-0000-0000-000000000002")
 
   "ModuleCatalogConfig JSON reads" should {
-    "default missing objects and arrays to empty values" in {
-      Json.parse("{}").as[ModuleCatalogConfig] shouldBe ModuleCatalogConfig.empty
+    "default a missing moduleSelection and a null studyPlan to empty values without rendering the study plan" in {
+      Json.parse("""{ "studyPlan": null }""").as[ModuleCatalogConfig] shouldBe
+        ModuleCatalogConfig.empty.copy(renderStudyPlan = false)
     }
 
     "read the nested config shape" in {
@@ -30,6 +31,9 @@ final class ModuleCatalogConfigSpec extends AnyWordSpec with Matchers {
              |    ]
              |  },
              |  "studyPlan": {
+             |    "sections": [
+             |      { "untilSemester": 3, "headline": "Grundstudium" }
+             |    ],
              |    "semesterSelections": [
              |      { "moduleId": "$moduleId", "selectedSemester": 5 }
              |    ],
@@ -45,6 +49,8 @@ final class ModuleCatalogConfigSpec extends AnyWordSpec with Matchers {
       config.moduleSelection.excludedElectiveOptions shouldBe List(
         ModuleCatalogExcludedElectiveOption(moduleId, optionId)
       )
+      config.renderStudyPlan shouldBe true
+      config.studyPlan.sections shouldBe List(StudyPlanSection(3, "Grundstudium"))
       config.studyPlan.semesterSelections shouldBe List(ModuleCatalogSemesterSelection(moduleId, 5))
       config.studyPlan.genericModuleOccurrences shouldBe List(ModuleCatalogGenericModuleOccurrence(moduleId, 5, 2))
     }

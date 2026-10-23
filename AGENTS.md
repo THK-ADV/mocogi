@@ -2,3 +2,8 @@
 - Prefer simple, concise implementations; avoid unnecessary abstractions
 - Do not write tests unless explicitly requested
 - Reach for slim and performant code in space and time. Consider appropriate data structures and algorithms
+- The development language is english, although some words are kept in german for domain knowledge
+- Do not wirte docs unless explicitly stated
+- Avoid pointless transformations between wrapper types (e.g. `Try` -> `Option` -> `Either`, or `Option` -> `throw`) just to check a condition or rethrow. Stay in one effect type, use `try`/`catch` or `require` directly, and let code that may fail fast (e.g. config loading at startup) throw instead of wrapping and unwrapping
+- Write comments as Scaladoc. State what the code does and, only if not evident, why. Keep them short and precise. Add `@param`/`@return` only when names and types do not convey the semantics
+- When the Scala standard library falls short for monadic code, use cats instead of hand-rolled workarounds (e.g. `Either.raiseUnless` instead of `Either.cond(_, (), _)`, `Either.catchOnly` instead of `Try(...).toEither.left.map(...)`)

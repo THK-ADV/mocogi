@@ -7,6 +7,7 @@ GET           /                                                                 
 
 GET           /service/notifyReviewer                                                     controllers.ServiceController.notifyReviewer()
 GET           /service/updateImages                                                       controllers.ServiceController.updateImages()
+GET           /service/deleteExpiredWebhooks                                              controllers.GitWebhookController.deleteExpired()
 
 DELETE        /admin/modules/:id                                                          controllers.AdminController.deleteModule(id: java.util.UUID)
 POST          /admin/modules                                                              controllers.AdminController.createNewModulesFromDraftBranch()
@@ -20,6 +21,7 @@ GET           /user-privileges                                                  
 POST          /webhook/push/main                                                          controllers.GitWebhookController.onPushMain()
 POST          /webhook/push/preview                                                       controllers.GitWebhookController.onPushPreview()
 POST          /webhook/merge                                                              controllers.GitWebhookController.onMerge()
+POST          /admin/webhooks/:eventId/replay                                             controllers.GitWebhookController.replay(eventId: java.util.UUID)
 
 # Git
 

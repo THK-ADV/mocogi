@@ -7,86 +7,134 @@ import javax.inject.Singleton
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
-import scala.util.Failure
-import scala.util.Success
-import scala.util.Try
 
-import _root_.webhook.HandleEvent
-import controllers.GitWebhookController.GitlabTokenHeader
+import webhook.HandleEvent
+import webhook.WebhookAuthenticator
+import webhook.WebhookConfig
+import webhook.WebhookEndpoint
+import webhook.WebhookEvent
+import auth.AuthorizationAction
+import com.fasterxml.jackson.core.JsonProcessingException
+import controllers.actions.UserResolveAction
+import database.repo.PermissionRepository
+import database.repo.WebhookInboxRepository
 import logging.infoC
-import logging.warnC
 import logging.CorrelationId
 import org.apache.pekko.actor.ActorRef
+import permission.AdminCheck
+import permission.Role
+import permission.ServiceAccountCheck
 import play.api.libs.json.*
 import play.api.mvc.*
 import play.api.Logging
+import security.ClientErrorResponse
 import settings.AppSettings
 
-object GitWebhookController {
-  val GitlabTokenHeader = "X-Gitlab-Token"
-
-  final case class CorrelatedRequest[A](correlationId: CorrelationId, request: Request[A])
-      extends WrappedRequest[A](request)
-}
-
 @Singleton
-class GitWebhookController @Inject() (
+final class GitWebhookController @Inject() (
     cc: ControllerComponents,
     appSettings: AppSettings,
+    config: WebhookConfig,
+    inbox: WebhookInboxRepository,
+    auth: AuthorizationAction,
     @Named("MergeEventHandler") mergeHandler: ActorRef,
     @Named("PreviewPushEventHandler") previewPushHandler: ActorRef,
     @Named("MainPushEventHandler") mainPushHandler: ActorRef,
+    val permissionRepository: PermissionRepository,
+    val clientErrors: ClientErrorResponse,
     implicit val ctx: ExecutionContext
 ) extends AbstractController(cc)
+    with AdminCheck
+    with ServiceAccountCheck
+    with UserResolveAction
     with Logging {
-  private def token: UUID = appSettings.git.webhookToken
+  private val authenticator = WebhookAuthenticator(config)
 
-  def onPushMain() =
-    isAuthenticated(parse.json) { r =>
-      given CorrelationId = r.correlationId
-      mainPushHandler ! HandleEvent(r.body, r.correlationId)
-      logger.infoC("webhook dispatched type=push_main")
-      Future.successful(NoContent)
-    }
+  def onPushMain() = receive(WebhookEndpoint.PushMain)
 
-  def onPushPreview() =
-    isAuthenticated(parse.json) { r =>
-      given CorrelationId = r.correlationId
-      previewPushHandler ! HandleEvent(r.body, r.correlationId)
-      logger.infoC("webhook dispatched type=push_preview")
-      Future.successful(NoContent)
-    }
+  def onPushPreview() = receive(WebhookEndpoint.PushPreview)
 
-  def onMerge() =
-    isAuthenticated(parse.json) { r =>
-      given CorrelationId = r.correlationId
-      mergeHandler ! HandleEvent(r.body, r.correlationId)
-      logger.infoC("webhook dispatched type=merge")
-      Future.successful(NoContent)
-    }
+  def onMerge() = receive(WebhookEndpoint.Merge)
 
-  private def isAuthenticated[A](parser: BodyParser[A])(
-      action: GitWebhookController.CorrelatedRequest[A] => Future[Result]
-  ): Action[A] = {
-    def parseGitToken(implicit r: Request[?]): Try[UUID] =
-      r.headers.get(GitlabTokenHeader) match {
-        case Some(s) => Try(UUID.fromString(s))
-        case None    => Failure(new Exception(s"expected $GitlabTokenHeader header"))
-      }
-
-    Action.async(parser) { r =>
+  private def receive(endpoint: WebhookEndpoint) =
+    Action.async(parse.byteString(config.maxBodyBytes)) { r =>
       given CorrelationId = CorrelationId.random()
-      parseGitToken(r) match {
-        case Success(t) =>
-          if token == t then action(GitWebhookController.CorrelatedRequest(summon[CorrelationId], r))
-          else {
-            logger.warnC("webhook auth failed reason=invalid_token")
-            Future.successful(Unauthorized(Json.toJson(new Exception(s"invalid $GitlabTokenHeader"))))
-          }
-        case Failure(e) =>
-          logger.warnC("webhook auth failed reason=missing_or_invalid_header")
-          Future.successful(BadRequest(Json.toJson(e)))
+      authenticator.verify(endpoint, r.headers, r.body) match {
+        case Left(rejection) =>
+          Future.successful(
+            clientErrors.clientStatusError(r, UNAUTHORIZED, s"webhook rejected type=${endpoint.id} reason=$rejection")
+          )
+        case Right(eventId) =>
+          def reject(reason: String) =
+            Future.successful(
+              clientErrors.badRequest(r, s"webhook rejected ${fields(endpoint, eventId)} reason=$reason")
+            )
+          if (!r.contentType.contains("application/json")) reject("unsupported_content_type")
+          else
+            try {
+              val event = WebhookEvent(eventId, endpoint, Json.parse(r.body.toArray))
+              if (matchesEndpoint(event)) accept(event) else reject("unexpected_project_or_event_type")
+            } catch { case _: JsonProcessingException => reject("invalid_json") }
       }
     }
+
+  private def accept(event: WebhookEvent)(using CorrelationId) =
+    inbox.accept(event).map { accepted =>
+      if (accepted) dispatch(event)
+      else logger.infoC(s"webhook duplicate skipped ${fields(event.endpoint, event.id)}")
+      NoContent
+    }
+
+  /**
+   * Dispatches the stored event of `eventId` again.
+   *
+   * GitLab's "Resend Request" keeps the `webhook-id` and is therefore skipped as duplicate.
+   */
+  def replay(eventId: UUID) =
+    auth.andThen(resolveUser).andThen(isAdmin).async(parse.empty) { r =>
+      given CorrelationId = CorrelationId.random()
+      inbox.find(eventId).map {
+        case Some(event) =>
+          logger.infoC(
+            s"webhook replay requested ${fields(event.endpoint, eventId)} username=${r.request.token.username}"
+          )
+          dispatch(event)
+          Accepted(Json.obj("correlationId" -> summon[CorrelationId].value.toString))
+        case None =>
+          clientErrors.clientStatusError(
+            r,
+            NOT_FOUND,
+            s"webhook event_id=$eventId was never accepted, use GitLab's Resend Request instead"
+          )
+      }
+    }
+
+  def deleteExpired() =
+    auth.andThen(hasRole(Role.DeleteExpiredWebhooks)).async { _ =>
+      given CorrelationId = CorrelationId.random()
+      inbox.deleteExpired(config.retention).map { deleted =>
+        logger.infoC(s"expired webhooks deleted count=$deleted")
+        NoContent
+      }
+    }
+
+  /**
+   * Checks the project and event type. Branches are left to the handlers, since they skip
+   * irrelevant branches themselves and the merge handler also type-checks MRs into other branches.
+   */
+  private def matchesEndpoint(event: WebhookEvent): Boolean =
+    (event.payload \ "object_kind").asOpt[String].contains(event.endpoint.objectKind) &&
+      (event.payload \ "project" \ "id").asOpt[Int].contains(appSettings.git.projectId)
+
+  private def dispatch(event: WebhookEvent)(using CorrelationId): Unit = {
+    val handler = event.endpoint match {
+      case WebhookEndpoint.Merge       => mergeHandler
+      case WebhookEndpoint.PushMain    => mainPushHandler
+      case WebhookEndpoint.PushPreview => previewPushHandler
+    }
+    handler ! HandleEvent(event.payload, summon[CorrelationId])
+    logger.infoC(s"webhook dispatched ${fields(event.endpoint, event.id)}")
   }
+
+  private def fields(endpoint: WebhookEndpoint, eventId: UUID) = s"type=${endpoint.id} event_id=$eventId"
 }
