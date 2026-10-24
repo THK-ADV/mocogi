@@ -16,6 +16,24 @@ trait ModuleDraftCheck extends UsesClientErrors {
   protected def moduleUpdatePermissionService: ModuleUpdatePermissionService
   protected implicit def ctx: ExecutionContext
 
+  def canCheckBranchConsistency =
+    new ActionFilter[UserRequest] {
+      protected override def filter[A](request: UserRequest[A]): Future[Option[Result]] =
+        if request.permissions.isAdmin then Future.successful(None)
+        else
+          Future.successful(
+            Some(
+              forbiddenForUser(
+                request,
+                request.request.token.username,
+                Some("to check module draft branch consistency")
+              )
+            )
+          )
+
+      protected override def executionContext: ExecutionContext = ctx
+    }
+
   /**
    * This method checks if the user is allowed to edit the module. The verification process is three-stage:
    * 1. Checks if the user is admin

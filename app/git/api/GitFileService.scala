@@ -25,8 +25,12 @@ final class GitFileService @Inject() (
    * Downloads the module description from the preview branch of the Git repository.
    */
   def downloadModuleFromPreviewBranch(id: UUID): Future[Option[ModuleProtocol]] =
+    downloadModule(id, repositoryConfig.previewBranch)
+
+  /** Downloads and parses a module description from the given branch. */
+  def downloadModule(id: UUID, branch: Branch): Future[Option[ModuleProtocol]] =
     for {
-      content <- downloadFileContent(GitFilePath(id), repositoryConfig.previewBranch)
+      content <- downloadFileContent(GitFilePath(id), branch)
       res     <- content match {
         case Some(content) => RawModuleParser.parser.parse(content.value)._1.map(Some.apply).toFuture
         case None          => Future.successful(None)

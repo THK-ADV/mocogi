@@ -89,6 +89,7 @@ GET           /examLoad/:po                                                     
 # Module Draft
 
 GET           /moduleDrafts                                                               controllers.ModuleDraftController.moduleDrafts()
+GET           /moduleDrafts/branch-consistency                                            controllers.ModuleDraftController.checkModuleDraftBranchConsistency()
 GET           /moduleDrafts/:id                                                           controllers.ModuleDraftController.getModuleDraft(id: java.util.UUID)
 PUT           /moduleDrafts/:id                                                           controllers.ModuleDraftController.createOrUpdateModuleDraft(id: java.util.UUID)
 POST          /moduleDrafts                                                               controllers.ModuleDraftController.create()
