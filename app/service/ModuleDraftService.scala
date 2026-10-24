@@ -1,5 +1,6 @@
 package service
 
+import java.time.Instant
 import java.time.LocalDateTime
 import java.util.UUID
 import javax.inject.Inject
@@ -7,6 +8,7 @@ import javax.inject.Singleton
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
+import scala.util.control.NonFatal
 import scala.util.Failure
 import scala.util.Success
 
@@ -14,6 +16,7 @@ import database.repo.ModuleDraftRepository
 import git.api.GitBranchService
 import git.api.GitCommitService
 import git.api.GitFileService
+import git.GitWebConfig
 import git.MergeRequestId
 import logging.errorC
 import logging.infoC
@@ -46,12 +49,52 @@ final class ModuleDraftService @Inject() (
     private val keysToReview: ModuleKeysToReview,
     private val gitFileDownloadService: GitFileService,
     private val pipeline: MetadataPipeline,
+    private val gitWebConfig: GitWebConfig,
     private implicit val ctx: ExecutionContext
 ) extends Logging {
 
   def getMergeRequestId(module: UUID): Future[Option[MergeRequestId]] = repo.getMergeRequestId(module)
 
   def getByModuleOpt(moduleId: UUID): Future[Option[ModuleDraft]] = repo.getByModuleOpt(moduleId)
+
+  def checkBranchConsistency(): Future[JsObject] =
+    for {
+      (drafts, branches) <- repo.getModuleSummaries().zip(gitBranchService.listModuleBranches())
+      draftIds         = drafts.iterator.map(_._1).toSet
+      branchesByModule = branches.map(branch => UUID.fromString(branch.value) -> branch)
+      branchIds        = branchesByModule.iterator.map(_._1).toSet
+      orphanedBranches = branchesByModule.filterNot((id, _) => draftIds.contains(id))
+      branchesWithoutDraft <- Future.traverse(orphanedBranches) { (id, branch) =>
+        gitFileDownloadService
+          .downloadModule(id, branch)
+          .recover {
+            case NonFatal(error) =>
+              logger.warn(s"Could not load module metadata from branch ${branch.value}", error)
+              None
+          }
+          .map { module =>
+            Json.obj(
+              "moduleId"   -> id,
+              "title"      -> module.map(_.metadata.title),
+              "ects"       -> module.map(_.metadata.ects),
+              "branchName" -> branch.value,
+              "branchUrl"  -> s"${gitWebConfig.repoUrl}/-/tree/${branch.value}"
+            )
+          }
+      }
+    } yield {
+      val draftsWithoutBranch = drafts.filterNot((id, _, _) => branchIds.contains(id)).map { (id, title, ects) =>
+        Json.obj("moduleId" -> id, "title" -> title, "ects" -> ects)
+      }
+      Json.obj(
+        "isConsistent"         -> (branchesWithoutDraft.isEmpty && draftsWithoutBranch.isEmpty),
+        "checkedAt"            -> Instant.now().toString,
+        "moduleDraftCount"     -> drafts.size,
+        "moduleBranchCount"    -> branches.size,
+        "branchesWithoutDraft" -> branchesWithoutDraft,
+        "draftsWithoutBranch"  -> draftsWithoutBranch
+      )
+    }
 
   def createNew(
       protocol: ModuleProtocol,

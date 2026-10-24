@@ -46,6 +46,11 @@ final class ModuleDraftController @Inject() (
     with I18nSupport
     with Logging {
 
+  def checkModuleDraftBranchConsistency() =
+    auth.andThen(resolveUser).andThen(canCheckBranchConsistency).async { _ =>
+      moduleDraftService.checkBranchConsistency().map(Ok(_))
+    }
+
   // /my-modules
   def moduleDrafts() =
     auth.andThen(resolveUser).async { (r: UserRequest[AnyContent]) =>

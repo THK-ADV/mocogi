@@ -9,9 +9,11 @@ import scala.concurrent.Future
 
 import git.Branch
 import git.GitRepositoryConfig
+import play.api.libs.json.JsObject
 import play.api.libs.ws.writeableOf_WsBody
 import play.api.libs.ws.EmptyBody
 import play.api.libs.ws.WSClient
+import play.api.libs.ws.WSRequest
 import play.mvc.Http.Status
 
 /**
@@ -26,11 +28,36 @@ final class GitBranchService @Inject() (
     implicit val ctx: ExecutionContext
 ) extends GitService {
 
+  /** Fetches existing UUID-named GitLab branches across all pages, regardless of merge status. */
+  def listModuleBranches(): Future[List[Branch]] = {
+    def go(request: WSRequest): Future[List[Branch]] =
+      request
+        .withHttpHeaders(tokenHeader())
+        .get()
+        .flatMap { res =>
+          if res.status != Status.OK then Future.failed(parseErrorMessage(res))
+          else
+            val branches = res.json.as[List[JsObject]].map(js => Branch((js \ "name").as[String]))
+            parseNextPaginationUrl(res) match
+              case Some(nextUrl) => go(ws.url(nextUrl)).map(branches ::: _)
+              case None          => Future.successful(branches)
+        }
+
+    go(
+      ws.url(branchUrl())
+        .withQueryStringParameters(
+          "regex"    -> "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+          "per_page" -> "100"
+        )
+    )
+  }
+
   def createModuleBranch(moduleId: UUID): Future[Branch] = {
     val branch = createBranch(moduleId)
     createBranch(branch, repositoryConfig.previewBranch).map(_ => branch)
   }
 
+  /** Deletes the module branch. A missing branch counts as deleted. */
   def deleteModuleBranch(moduleId: UUID): Future[Unit] = {
     val branch = createBranch(moduleId)
     deleteBranch(branch)
@@ -59,7 +86,7 @@ final class GitBranchService @Inject() (
       .withHttpHeaders(tokenHeader())
       .delete()
       .flatMap { res =>
-        if (res.status == Status.NO_CONTENT) Future.unit
+        if (res.status == Status.NO_CONTENT || res.status == Status.NOT_FOUND) Future.unit
         else Future.failed(parseErrorMessage(res))
       }
 

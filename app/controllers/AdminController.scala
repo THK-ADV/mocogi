@@ -8,20 +8,18 @@ import scala.concurrent.Future
 
 import auth.AuthorizationAction
 import controllers.actions.UserResolveAction
+import database.repo.schedule.ScheduleEntryBootstrapRepository
 import database.repo.ModuleDeletionRepository
 import database.repo.PermissionRepository
 import git.api.GitFileService
 import git.GitFilePath
 import git.GitRepositoryConfig
-import models.CreatedModule
 import parsing.RawModuleParser
 import permission.AdminCheck
-import play.api.libs.json.Reads
 import play.api.mvc.AbstractController
 import play.api.mvc.ControllerComponents
 import play.api.Logging
 import service.ModuleCreationService
-import database.repo.schedule.ScheduleEntryBootstrapRepository
 import security.ClientErrorResponse
 
 final class AdminController @Inject() (

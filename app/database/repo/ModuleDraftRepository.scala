@@ -38,6 +38,15 @@ final class ModuleDraftRepository @Inject() (
 
   def create(input: ModuleDraft): Future[ModuleDraft] = db.run(tableQuery.returning(tableQuery) += input)
 
+  def getModuleSummaries(): Future[Seq[(UUID, String, Option[Double])]] = {
+    import database.MyPostgresProfile.MyAPI.playJsonColumnExtensionMethods
+    db.run(
+      tableQuery
+        .map(d => (d.module, d.moduleTitle, ((d.moduleJson +> "metadata") +>> "ects").asColumnOf[Option[Double]]))
+        .result
+    )
+  }
+
   def getModuleTitle(module: UUID): Future[String] =
     db.run(tableQuery.filter(_.module === module).map(_.moduleTitle).result.single)
 
