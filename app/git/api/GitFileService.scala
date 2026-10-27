@@ -59,15 +59,7 @@ final class GitFileService @Inject() (
             )
           case 404 =>
             Future.successful(None)
-          case _ =>
-            Future.failed(
-              new Exception(
-                r.json
-                  .\("message")
-                  .validate[String]
-                  .getOrElse("unknown response message")
-              )
-            )
+          case _ => Future.failed(parseErrorMessage(r))
         }
       }
 

@@ -138,7 +138,10 @@ final class GitMergeRequestService @Inject() (
       .url(s"${this.mergeRequestUrl}/${mergeRequestId.value}")
       .withHttpHeaders(tokenHeader())
       .get()
-      .map(a => (a.status, a.json))
+      .flatMap { res =>
+        if res.status == Status.OK then Future.successful((res.status, res.json))
+        else Future.failed(parseErrorMessage(res))
+      }
 
   def getLatestMergeDate(source: Branch, target: Branch): Future[Option[LocalDate]] = {
     def parse(js: JsValue) =
