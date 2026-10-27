@@ -142,23 +142,29 @@ CREATE OR REPLACE FUNCTION modules.resolve_po_relationships(module_id uuid)
         jsonb_agg(jsonb_build_object('poId', po.id, 'poVersion', po.version, 'poECTSFactor', po.ects_factor, 'studyProgramLabel', sp.de_label, 'studyProgramAbbreviation', sp.abbreviation, 'degree', deg.de_label, 'specializationLabel', spec.label, 'specializationAbbrev', spec.abbreviation, 'recommendedSemester', mpm.recommended_semester, 'studyProgramId', sp.id))
       FROM modules.module_po_mandatory AS mpm
       JOIN core.po ON po.id = mpm.po
-      JOIN core.study_program AS sp ON sp.id = po.study_program
-      JOIN core.degree AS deg ON deg.id = sp.degree
-      LEFT JOIN core.specialization AS spec ON spec.id = mpm.specialization
-      WHERE
-        mpm.module = module_id), '[]'::jsonb) AS po_mandatory,
+        AND po.date_from <= now()
+      AND(po.date_to IS NULL
+        OR po.date_to >= now())
+  JOIN core.study_program AS sp ON sp.id = po.study_program
+  JOIN core.degree AS deg ON deg.id = sp.degree
+  LEFT JOIN core.specialization AS spec ON spec.id = mpm.specialization
+  WHERE
+    mpm.module = module_id), '[]'::jsonb) AS po_mandatory,
     -- PO Optional
     coalesce((
       SELECT
         jsonb_agg(jsonb_build_object('poId', po.id, 'poVersion', po.version, 'poECTSFactor', po.ects_factor, 'studyProgramLabel', sp.de_label, 'studyProgramAbbreviation', sp.abbreviation, 'degree', deg.de_label, 'specializationLabel', spec.label, 'specializationAbbrev', spec.abbreviation, 'recommendedSemester', mpo.recommended_semester, 'instanceOf', modules.module_to_json_short(inst_mod), 'studyProgramId', sp.id))
       FROM modules.module_po_optional AS mpo
       JOIN core.po ON po.id = mpo.po
-      JOIN core.study_program AS sp ON sp.id = po.study_program
-      JOIN core.degree AS deg ON deg.id = sp.degree
-      LEFT JOIN core.specialization AS spec ON spec.id = mpo.specialization
-      JOIN modules.module AS inst_mod ON inst_mod.id = mpo.instance_of
-      WHERE
-        mpo.module = module_id), '[]'::jsonb) AS po_optional;
+        AND po.date_from <= now()
+      AND(po.date_to IS NULL
+        OR po.date_to >= now())
+  JOIN core.study_program AS sp ON sp.id = po.study_program
+  JOIN core.degree AS deg ON deg.id = sp.degree
+  LEFT JOIN core.specialization AS spec ON spec.id = mpo.specialization
+  JOIN modules.module AS inst_mod ON inst_mod.id = mpo.instance_of
+  WHERE
+    mpo.module = module_id), '[]'::jsonb) AS po_optional;
 $$;
 
 -- Returns the modules that are taught together with the given module as compact
