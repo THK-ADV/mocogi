@@ -5,6 +5,8 @@ import javax.inject.Singleton
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
+import scala.util.Failure
+import scala.util.Success
 
 import play.api.mvc.*
 import security.ClientErrorResponse
@@ -23,9 +25,8 @@ case class AuthorizationAction @Inject() (
   ): Future[Result] =
     auth
       .authorize(request.headers.get(Authorization.AuthorizationHeader))
-      .flatMap(token => block(TokenRequest(request, token)))
-      .recover {
-        case e: Throwable =>
-          clientErrors.unauthorized(request, e)
+      .transformWith {
+        case Success(token) => block(TokenRequest(request, token))
+        case Failure(error) => Future.successful(clientErrors.unauthorized(request, error))
       }
 }

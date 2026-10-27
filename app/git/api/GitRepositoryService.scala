@@ -30,7 +30,7 @@ final class GitRepositoryService @Inject() (
       .withHttpHeaders(tokenHeader())
       .get()
       .flatMap { r =>
-        if r.status != Status.OK then Future.failed(new Exception(r.toString))
+        if r.status != Status.OK then Future.failed(parseErrorMessage(r))
         else
           val files = parseFiles(r.json)
           parseNextPaginationUrl(r) match
