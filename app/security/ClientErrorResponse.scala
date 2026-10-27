@@ -4,6 +4,7 @@ import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
 
+import git.api.GitApiException
 import org.slf4j.LoggerFactory
 import play.api.libs.json.Json
 import play.api.mvc.RequestHeader
@@ -57,15 +58,24 @@ final class ClientErrorResponse @Inject() (env: Environment) {
   }
 
   def internalServerError(request: RequestHeader, throwable: Throwable): Result = {
-    val id = nextId
-    log.error(s"[$id] Server error ${request.method} ${request.uri}", throwable)
-    val t   = if throwable.getCause != null then throwable.getCause else throwable
+    val id                      = nextId
+    val t                       = if throwable.getCause != null then throwable.getCause else throwable
+    val (statusCode, errorType) = t match {
+      case error: GitApiException =>
+        val status = error.statusCode match {
+          case 503 | 504 => error.statusCode
+          case _         => 502
+        }
+        (status, "gitlab_error")
+      case _ => (500, "server_error")
+    }
+    log.error(s"[$id] HTTP $statusCode ${request.method} ${request.uri}", throwable)
     val msg = Option(t.getMessage).getOrElse(t.getClass.getSimpleName)
-    if production then InternalServerError(Json.obj("type" -> "server_error", "message" -> id))
+    if production then Status(statusCode)(Json.obj("type" -> errorType, "message" -> id))
     else
-      InternalServerError(
+      Status(statusCode)(
         Json.obj(
-          "type"    -> "server error",
+          "type"    -> (if errorType == "server_error" then "server error" else errorType),
           "request" -> request.toString,
           "message" -> msg
         )
