@@ -50,5 +50,5 @@
 
   // Module metadata starts with a versioned delimiter such as "---v1.0s" instead
   // of standard YAML front matter's plain "---". Ignore it during Markdown linting.
-  "frontMatter": "^---v[^\\r\\n]*(?:\\r\\n|\\r|\\n)[^]*?(?:\\r\\n|\\r|\\n)---[ \\t]*(?:\\r\\n|\\r|\\n|$)"
+  "frontMatter": "^---v[^\\r\\n]*(?:\\r\\n|\\r|\\n)[\\s\\S]*?(?:\\r\\n|\\r|\\n)---[ \\t]*(?:\\r\\n|\\r|\\n|$)"
 }
