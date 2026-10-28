@@ -178,12 +178,30 @@ final class GitCommitService @Inject() (
     go(initial).flatMap(downloadFiles)
   }
 
+  /** Creates `branch` from the revision `start` with a single commit. Fails if `branch` already exists. */
+  def commitToNewBranch(
+      branch: Branch,
+      start: CommitId,
+      author: Identity.Person,
+      message: String,
+      actions: Seq[GitCommitAction]
+  ): Future[CommitId] =
+    commit(
+      branch,
+      author.email.getOrElse(commitConfig.fallbackAuthorEmail),
+      author.fullName,
+      message,
+      actions,
+      Some(start)
+    )
+
   private def commit(
       branch: Branch,
       authorEmail: String,
       authorName: String,
       message: String,
-      actions: Seq[GitCommitAction]
+      actions: Seq[GitCommitAction],
+      start: Option[CommitId] = None
   ): Future[CommitId] = {
     def body(): JsValue =
       Json.obj(
@@ -212,7 +230,7 @@ final class GitCommitService @Inject() (
               )
           }
         }
-      )
+      ) ++ start.fold(Json.obj())(c => Json.obj("start_sha" -> c.value))
 
     ws
       .url(this.commitUrl())

@@ -8,6 +8,7 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 import git.Branch
+import git.CommitId
 import git.GitRepositoryConfig
 import play.api.libs.json.JsObject
 import play.api.libs.ws.writeableOf_WsBody
@@ -27,6 +28,16 @@ final class GitBranchService @Inject() (
     private val repositoryConfig: GitRepositoryConfig,
     implicit val ctx: ExecutionContext
 ) extends GitService {
+
+  /** Returns the latest commit of `branch`. A missing branch fails with a [[GitApiException]] with status 404. */
+  def head(branch: Branch): Future[CommitId] =
+    ws.url(s"${branchUrl()}/${branch.value}")
+      .withHttpHeaders(tokenHeader())
+      .get()
+      .flatMap { res =>
+        if res.status == Status.OK then Future.successful(CommitId((res.json \ "commit" \ "id").as[String]))
+        else Future.failed(parseErrorMessage(res))
+      }
 
   /** Fetches existing UUID-named GitLab branches across all pages, regardless of merge status. */
   def listModuleBranches(): Future[List[Branch]] = {
@@ -80,7 +91,7 @@ final class GitBranchService @Inject() (
       }
   }
 
-  private def deleteBranch(branch: Branch): Future[Unit] =
+  def deleteBranch(branch: Branch): Future[Unit] =
     ws
       .url(s"${this.branchUrl()}/${branch.value}")
       .withHttpHeaders(tokenHeader())

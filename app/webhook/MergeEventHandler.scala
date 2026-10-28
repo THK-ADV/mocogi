@@ -15,6 +15,7 @@ import database.repo.ModuleDraftRepository
 import database.repo.ModuleRepository
 import database.repo.ModuleReviewRepository
 import git.*
+import git.api.GitBranchService
 import git.api.GitCommitService
 import git.api.GitFileService
 import git.api.GitMergeRequestService
@@ -34,6 +35,7 @@ import service.notification.ReviewRejectionNotifier
 import service.pipeline.MetadataPipeline
 import service.pipeline.Print
 import service.ModuleCreationService
+import service.SoftBigBangService
 
 final class MergeEventHandler @Inject() (
     repositoryConfig: GitRepositoryConfig,
@@ -42,6 +44,7 @@ final class MergeEventHandler @Inject() (
     moduleDraftRepository: ModuleDraftRepository,
     moduleCreationService: ModuleCreationService,
     mergeRequestApiService: GitMergeRequestService,
+    branchService: GitBranchService,
     moduleRepository: ModuleRepository,
     gitCommitService: GitCommitService,
     fileService: GitFileService,
@@ -59,13 +62,30 @@ final class MergeEventHandler @Inject() (
       labels: Seq[String]
   )
 
-  private case class MergeModule(correlationId: CorrelationId, mrId: MergeRequestId, moduleId: UUID)
+  /**
+   * Merges a module draft MR or a soft big bang MR.
+   *
+   * @param moduleId
+   *   the module of a draft MR, whose merge request status is updated after merging. `None` for a soft big bang, as
+   *   its MR spans several modules and has no draft.
+   * @param sha
+   *   the commit of the source branch that passed the check. GitLab only merges if the source branch still points to
+   *   it, so commits pushed after the check are never merged unchecked. Set for a soft big bang; `None` for draft MRs,
+   *   which are merged in their current state.
+   */
+  private case class MergeModule(
+      correlationId: CorrelationId,
+      mrId: MergeRequestId,
+      moduleId: Option[UUID],
+      sha: Option[CommitId]
+  )
 
   private case class CheckMrStatus(
       correlationId: CorrelationId,
       mrId: MergeRequestId,
-      moduleId: UUID,
-      attempt: Int
+      moduleId: Option[UUID],
+      attempt: Int,
+      sha: Option[CommitId]
   )
 
   private object MergeRetryPolicy {
@@ -116,10 +136,18 @@ final class MergeEventHandler @Inject() (
                 if event.labels.contains(reviewConfig.reviewRequiredLabel) =>
               handled(scheduleFreshMerge(moduleBranch))
 
-            // Case 6: opened MR from any branch into any branch without labels
+            // Case 6: opened MR from sbb branch into main branch [SBB]
+            // => type-check all modules in this MR, then merge it or close it and delete its branch
+            case (SoftBigBangService.branch, repositoryConfig.mainBranch, "open")
+                if event.labels.contains(SoftBigBangService.label) =>
+              handled(checkSoftBigBang())
+
+            // Case 7: opened MR from any branch into any branch without labels
             // => type-check all modules in this MR and comment with its results
             case (_, _, "open") if event.labels.isEmpty =>
-              handled(typeCheckModules(event.sourceBranch)(using correlationId, event.mrId))
+              handled(logOnFailure(s"module type check failed mr=${event.mrId.value}") {
+                typeCheckModules(event.sourceBranch)(using correlationId, event.mrId)
+              })
 
             // unknown action => skip
             case _ =>
@@ -129,18 +157,18 @@ final class MergeEventHandler @Inject() (
           logUnhandedEvent(logger, errors)
       }
 
-    // Merge module MR and update merge request status of the module. This will eventually trigger case 2
-    case MergeModule(correlationId, mrId, moduleId) =>
+    // Merge MR and update merge request status of the module. For modules, this will eventually trigger case 2
+    case MergeModule(correlationId, mrId, moduleId, sha) =>
       given CorrelationId = correlationId
-      logOnFailure(s"merge request failed mr=${mrId.value} module=$moduleId") {
+      logOnFailure(s"merge request failed mr=${mrId.value} module=${moduleId.getOrElse("-")}") {
         for {
-          mrStatus <- mergeRequestApiService.merge(mrId)
-          _        <- moduleDraftRepository.updateMergeRequestStatus(moduleId, mrStatus)
-        } yield logger.infoC(s"merge request ok mr=${mrId.value} module=$moduleId")
+          mrStatus <- mergeRequestApiService.merge(mrId, sha)
+          _        <- moduleId.fold(Future.unit)(moduleDraftRepository.updateMergeRequestStatus(_, mrStatus))
+        } yield logger.infoC(s"merge request ok mr=${mrId.value} module=${moduleId.getOrElse("-")}")
       }
 
-    // Check if the merge request is mergeable. If so, merge the module (case 2). Otherwise, schedule a new attempt with logarithmic backoff
-    case CheckMrStatus(correlationId, mrId, moduleId, attempt) =>
+    // Check if the merge request is mergeable. If so, merge it. Otherwise, schedule a new attempt with logarithmic backoff
+    case CheckMrStatus(correlationId, mrId, moduleId, attempt, sha) =>
       given CorrelationId = correlationId
       if (attempt < MergeRetryPolicy.maxAttempts) {
         mergeRequestApiService.get(mrId).onComplete {
@@ -148,14 +176,14 @@ final class MergeEventHandler @Inject() (
             val detailedMergeStatus = json.\("detailed_merge_status").validate[String].get
             val mergeStatus         = json.\("merge_status").validate[String].get
             if (detailedMergeStatus == "mergeable" && mergeStatus == "can_be_merged") {
-              self ! MergeModule(correlationId, mrId, moduleId)
+              self ! MergeModule(correlationId, mrId, moduleId, sha)
             } else {
               val nextAttempt = attempt + 1
               val delay       = MergeRetryPolicy.delayFor(nextAttempt)
               logger.infoC(
                 s"merge not ready mr=${mrId.value} attempt=$attempt status=$mergeStatus/$detailedMergeStatus retryIn=$delay"
               )
-              scheduleMerge(moduleId, nextAttempt)(using correlationId, mrId)
+              scheduleMerge(moduleId, nextAttempt, sha)(using correlationId, mrId)
             }
           case Failure(e) =>
             logger.errorC(s"merge status check failed mr=${mrId.value} attempt=$attempt", e)
@@ -186,13 +214,18 @@ final class MergeEventHandler @Inject() (
   private def scheduleFreshMerge(
       moduleBranch: Branch
   )(using correlationId: CorrelationId, event: ParsedMergeEvent): Unit =
-    withUUID(moduleBranch)(moduleId => scheduleMerge(moduleId, 0)(using correlationId, event.mrId))
+    withUUID(moduleBranch)(moduleId => scheduleMerge(Some(moduleId), 0)(using correlationId, event.mrId))
 
-  private def scheduleMerge(moduleId: UUID, attempt: Int)(using correlationId: CorrelationId, mrId: MergeRequestId) =
+  /** Keeps the checked SBB revision across retries; module draft merges do not require a revision. */
+  private def scheduleMerge(
+      moduleId: Option[UUID],
+      attempt: Int,
+      sha: Option[CommitId] = None
+  )(using correlationId: CorrelationId, mrId: MergeRequestId) =
     context.system.scheduler.scheduleOnce(
       MergeRetryPolicy.delayFor(attempt),
       self,
-      CheckMrStatus(correlationId, mrId, moduleId, attempt)
+      CheckMrStatus(correlationId, mrId, moduleId, attempt, sha)
     )
 
   private def withUUID(branch: Branch)(k: UUID => Unit)(using CorrelationId, ParsedMergeEvent): Unit =
@@ -275,30 +308,63 @@ final class MergeEventHandler @Inject() (
       yield ()
     }
 
-  private def typeCheckModules(branch: Branch)(using CorrelationId, MergeRequestId): Unit = {
+  /**
+   * Type-checks all modules of the MR and comments with its results. Returns whether the check passed. A publication
+   * only accepts references to published modules, see [[MetadataPipeline.publicationCheck]]. A commit ref pins both
+   * the changed file list and downloads, so they cannot refer to different revisions after a push.
+   */
+  private def typeCheckModules(ref: Branch | CommitId, publication: Boolean = false)(
+      using CorrelationId,
+      MergeRequestId
+  ): Future[Boolean] = {
     val mrId = summon[MergeRequestId]
-    logOnFailure(s"module type check failed mr=${mrId.value}") {
-      for
-        changes   <- mergeRequestApiService.getChanges(mrId)
-        downloads <- Future.sequence(changes.collect {
-          case d if d.path.isModule(repositoryConfig) => fileService.download(d.path, branch)
-        })
-        files = downloads.flatten
-        _ <-
-          if files.isEmpty then
-            Future.successful(logger.infoC(s"module type check skipped mr=${mrId.value} reason=no_module_files"))
+    val sha  = ref match {
+      case commit: CommitId => Some(commit)
+      case _: Branch        => None
+    }
+    for
+      changes   <- mergeRequestApiService.getChanges(mrId, sha)
+      downloads <- Future.traverse(changes.map(_.path).filter(_.isModule(repositoryConfig)))(path =>
+        fileService.download(path, ref).map(path -> _)
+      )
+      files   = downloads.flatMap(_._2).map(f => Print(f._1.value))
+      deleted = downloads.collect { case (path, None) => path.moduleId(using repositoryConfig) }.flatten.toSet
+      ok <-
+        if files.isEmpty then
+          logger.infoC(s"module type check skipped mr=${mrId.value} reason=no_module_files")
+          Future.successful(true)
+        else
+          (if publication then modulePipeline.publicationCheck(files, deleted)
+           else modulePipeline.fullCheck(files)).flatMap {
+            case Left(errs) =>
+              logger.warnC(s"module type check failed mr=${mrId.value} errorCount=${errs.size}")
+              val issues = errs.map(_.getMessage).mkString("\n\n")
+              mergeRequestApiService.comment(mrId, s"❌ failed to type check modules.\n\n$issues").map(_ => false)
+            case Right(_) =>
+              logger.infoC(s"module type check ok mr=${mrId.value}")
+              mergeRequestApiService.comment(mrId, "✅ successfully type checked all modules").map(_ => true)
+          }
+    yield ok
+  }
+
+  /**
+   * Checks the current SBB commit and schedules a merge of exactly that revision. Invalid modules close the MR and
+   * delete its branch; API errors or a changed revision leave it open for inspection.
+   */
+  private def checkSoftBigBang()(using correlationId: CorrelationId, event: ParsedMergeEvent): Unit = {
+    given MergeRequestId = event.mrId
+    logOnFailure(s"soft big bang check failed mr=${event.mrId.value}") {
+      for {
+        sha <- branchService.head(event.sourceBranch)
+        ok  <- typeCheckModules(sha, publication = true)
+        _   <-
+          if ok then Future.successful(scheduleMerge(None, 0, Some(sha)))
           else
-            modulePipeline.fullCheck(files.map(f => Print(f._1.value))).flatMap {
-              case Left(errs) =>
-                logger.warnC(s"module type check failed mr=${mrId.value} errorCount=${errs.size}")
-                val issues = errs.map(_.getMessage).mkString("\n\n")
-                mergeRequestApiService.comment(mrId, s"❌ failed to type check modules.\n\n$issues")
-              case Right(_) =>
-                mergeRequestApiService
-                  .comment(mrId, "✅ successfully type checked all modules")
-                  .map(_ => logger.infoC(s"module type check ok mr=${mrId.value}"))
-            }
-      yield ()
+            for {
+              _ <- mergeRequestApiService.close(event.mrId)
+              _ <- branchService.deleteBranch(event.sourceBranch)
+            } yield logger.infoC(s"soft big bang closed mr=${event.mrId.value} reason=type_check_failed")
+      } yield ()
     }
   }
 
