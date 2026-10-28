@@ -131,9 +131,9 @@ final class GitCommitService @Inject() (
     }
 
   /**
-   * Returns all versions of a file on a given branch since the passed cut-off date,
-   * along with their commit id and commit date. The content is None if the file could not be
-   * downloaded for that revision (e.g. deleted).
+   * Returns file versions along the branch's first-parent history since the cut-off date.
+   * Merge commits represent publication dates rather than the dates of merged changes.
+   * Missing content represents a deleted file.
    */
   def getAllVersionsOfFile(path: GitFilePath, branch: Branch, since: LocalDate): Future[List[FileVersion]] = {
     def parseCommit(js: JsValue): JsResult[(CommitId, LocalDateTime)] =
@@ -168,21 +168,40 @@ final class GitCommitService @Inject() (
     val initial = ws
       .url(this.commitUrl())
       .withQueryStringParameters(
-        "path"     -> path.value,
-        "ref_name" -> branch.value,
-        "since"    -> since.toString,
-        "per_page" -> "100"
+        "path"         -> path.value,
+        "ref_name"     -> branch.value,
+        "first_parent" -> "true",
+        "since"        -> since.toString,
+        "per_page"     -> "100"
       )
 
     go(initial).flatMap(downloadFiles)
   }
+
+  /** Creates `branch` from the revision `start` with a single commit. Fails if `branch` already exists. */
+  def commitToNewBranch(
+      branch: Branch,
+      start: CommitId,
+      author: Identity.Person,
+      message: String,
+      actions: Seq[GitCommitAction]
+  ): Future[CommitId] =
+    commit(
+      branch,
+      author.email.getOrElse(commitConfig.fallbackAuthorEmail),
+      author.fullName,
+      message,
+      actions,
+      Some(start)
+    )
 
   private def commit(
       branch: Branch,
       authorEmail: String,
       authorName: String,
       message: String,
-      actions: Seq[GitCommitAction]
+      actions: Seq[GitCommitAction],
+      start: Option[CommitId] = None
   ): Future[CommitId] = {
     def body(): JsValue =
       Json.obj(
@@ -211,7 +230,7 @@ final class GitCommitService @Inject() (
               )
           }
         }
-      )
+      ) ++ start.fold(Json.obj())(c => Json.obj("start_sha" -> c.value))
 
     ws
       .url(this.commitUrl())

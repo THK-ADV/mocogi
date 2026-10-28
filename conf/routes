@@ -28,6 +28,10 @@ POST          /admin/webhooks/:eventId/replay                                   
 POST          /git/moduleFiles                                                            controllers.GitController.updateModuleFiles()
 GET           /git/latestModuleUpdate                                                     controllers.GitController.latestModuleUpdate()
 
+GET           /admin/softBigBang                                                          controllers.SoftBigBangController.changes()
+GET           /admin/softBigBang/title                                                    controllers.SoftBigBangController.title()
+POST          /admin/softBigBang                                                          controllers.SoftBigBangController.create()
+
 # Core
 
 GET           /locations                                                                  controllers.CoreDataController.cachedAll(entity = "locations")

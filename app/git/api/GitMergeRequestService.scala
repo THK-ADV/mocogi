@@ -10,6 +10,7 @@ import scala.concurrent.Future
 
 import git.*
 import play.api.libs.json.JsArray
+import play.api.libs.json.JsObject
 import play.api.libs.json.JsValue
 import play.api.libs.ws.writeableOf_WsBody
 import play.api.libs.ws.EmptyBody
@@ -22,6 +23,26 @@ final class GitMergeRequestService @Inject() (
     protected val apiConfig: GitApiConfig,
     private implicit val ctx: ExecutionContext
 ) extends GitService {
+
+  /** Returns the five most recently created matching MR titles for the source branch, regardless of state. */
+  def latestTitles(sourceBranch: Branch, search: String): Future[List[String]] =
+    ws.url(mergeRequestUrl)
+      .withHttpHeaders(tokenHeader())
+      .withQueryStringParameters(
+        "source_branch" -> sourceBranch.value,
+        "state"         -> "all",
+        "scope"         -> "all",
+        "search"        -> search,
+        "in"            -> "title",
+        "order_by"      -> "created_at",
+        "sort"          -> "desc",
+        "per_page"      -> "5"
+      )
+      .get()
+      .flatMap { res =>
+        if res.status != Status.OK then Future.failed(parseErrorMessage(res))
+        else Future.successful(res.json.as[List[JsObject]].map(js => (js \ "title").as[String]))
+      }
 
   def create(
       sourceBranch: Branch,
@@ -91,12 +112,12 @@ final class GitMergeRequestService @Inject() (
         else Future.failed(parseErrorMessage(res))
       }
 
-  def merge(id: MergeRequestId): Future[MergeRequestStatus] =
+  /** With `sha`, GitLab only merges if the source branch still points to the checked commit. */
+  def merge(id: MergeRequestId, sha: Option[CommitId] = None): Future[MergeRequestStatus] =
     ws.url(s"$mergeRequestUrl/${id.value}/merge")
       .withHttpHeaders(tokenHeader())
       .withQueryStringParameters(
-        "squash"                      -> true.toString,
-        "should_remove_source_branch" -> true.toString
+        (Seq("squash" -> "true", "should_remove_source_branch" -> "true") ++ sha.map("sha" -> _.value))*
       )
       .put(EmptyBody)
       .flatMap { res =>
@@ -167,14 +188,30 @@ final class GitMergeRequestService @Inject() (
       }
   }
 
-  def getChanges(mergeRequestId: MergeRequestId) =
+  /**
+   * Returns the changed files of the MR. Fails on truncated or invalid diffs, as checks would miss files.
+   * With `sha`, also requires the diff version to match the commit used for downloads and merging.
+   */
+  def getChanges(mergeRequestId: MergeRequestId, sha: Option[CommitId] = None) =
     ws
       .url(s"${this.mergeRequestUrl}/${mergeRequestId.value}/changes")
       .withHttpHeaders(tokenHeader())
       .get()
       .flatMap { res =>
-        if (res.status == Status.OK) Future.successful(res.json.\("changes").validate[List[Diff]].getOrElse(Nil))
-        else Future.failed(parseErrorMessage(res))
+        if res.status != Status.OK then Future.failed(parseErrorMessage(res))
+        else if (res.json \ "overflow").asOpt[Boolean].contains(true) then
+          Future.failed(IllegalStateException(s"Changes of MR ${mergeRequestId.value} exceed GitLab's diff limits"))
+        else {
+          val json = res.json
+          sha.foreach { expected =>
+            val actual = (json \ "diff_refs" \ "head_sha").as[String]
+            require(
+              actual == expected.value,
+              s"Changes of MR ${mergeRequestId.value} belong to commit $actual, expected ${expected.value}"
+            )
+          }
+          Future.successful((json \ "changes").as[List[Diff]])
+        }
       }
 
   private def mergeRequestUrl = s"${projectsUrl()}/merge_requests"

@@ -53,9 +53,35 @@ final class MetadataPipeline @Inject() (
     }
   }
 
-  def fullCheck(prints: Seq[Print]): Future[Either[Seq[PipelineError], Seq[(Print, Module)]]] = {
-    val parse   = parser.parseAll(prints)
-    val context = validationContext()
+  /**
+   * Parses, lints and validates all prints, collecting all errors. Modules may reference published modules and modules
+   * that are newly created on preview but not yet published.
+   */
+  def fullCheck(prints: Seq[Print]): Future[Either[Seq[PipelineError], Seq[(Print, Module)]]] =
+    check(prints, validationContext())
+
+  /**
+   * Like [[fullCheck]], but for publishing modules to main: modules may only reference published modules (except the
+   * `deleted` ones) or each other, because unpublished modules are unknown to main and its database import.
+   */
+  def publicationCheck(
+      prints: Seq[Print],
+      deleted: Set[UUID]
+  ): Future[Either[Seq[PipelineError], Seq[(Print, Module)]]] =
+    check(
+      prints,
+      moduleService.allModuleCoreWithRelations().map { (modules, relations) =>
+        val published = modules.collect { case m if !deleted.contains(m.id) => m.id -> m }.toMap
+        ValidationContext(published, ModuleRelationGraph(relations -- deleted))
+      }
+    )
+
+  /** Parses, lints and validates all prints against `context`, collecting all errors. */
+  private def check(
+      prints: Seq[Print],
+      context: Future[ValidationContext]
+  ): Future[Either[Seq[PipelineError], Seq[(Print, Module)]]] = {
+    val parse = parser.parseAll(prints)
     for {
       (parseFailures, parsed) <- parse
       linted                  <- Future {
