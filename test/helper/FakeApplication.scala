@@ -23,6 +23,9 @@ trait FakeApplication {
       )
     } else {
       Seq(
+        "slick.dbs.default.db.url"             -> "jdbc:disabled:tests",
+        "slick.dbs.default.db.user"            -> "",
+        "slick.dbs.default.db.password"        -> "",
         "slick.dbs.default.db.connectionPool"  -> "disabled",
         "play.evolutions.db.default.enabled"   -> "false",
         "play.evolutions.db.default.autoApply" -> "false"
