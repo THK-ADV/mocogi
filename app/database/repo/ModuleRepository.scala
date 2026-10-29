@@ -51,6 +51,9 @@ final class ModuleRepository @Inject() (
   private val moduleTaughtWithTable =
     TableQuery[ModuleTaughtWithTable]
 
+  private val moduleExamTable =
+    TableQuery[ModuleExamTable]
+
   protected val makeFilter: PartialFunction[(String, String), ModuleTable => Rep[
     Boolean
   ]] = {
@@ -85,16 +88,38 @@ final class ModuleRepository @Inject() (
 
     def createDependencyActions = modules.map { case (module, _) => createDependencies(module.metadata) }
 
+    val ids         = modules.map(_._1.metadata.id)
+    val newChildren = modules.flatMap((module, _) => moduleRelations(module.metadata).map(_.child))
+
     // all dependencies are deleted before any is created, so that a child module can move to
     // another parent of the same batch without violating the unique constraint on module_relation
-    val actions = DBIO
-      .seq(
-        DBIO.sequence(upsertActions),
-        DBIO.sequence(deleteDependencyActions),
-        DBIO.sequence(createDependencyActions)
-      )
-      .transactionally
-    db.run(actions)
+    val actions = for {
+      oldChildren <- moduleRelationTable.filter(_.parent.inSet(ids)).map(_.child).result
+      _           <- DBIO.sequence(upsertActions)
+      _           <- DBIO.sequence(deleteDependencyActions)
+      _           <- DBIO.sequence(createDependencyActions)
+      _           <- reconcileExams(ids ++ oldChildren ++ newChildren)
+    } yield ()
+    db.run(actions.transactionally)
+  }
+
+  /**
+   * Adjusts the stored exams of the given live modules after their type or relations changed. Whether a module has
+   * own exams depends on both, which only change when module metadata is synced from main or a module is deleted, so
+   * exam updates alone cannot keep the stored exams consistent. Modules that became child or generic modules lose
+   * their exams, modules that gained own exams without any stored exams get the default exam, and maintained exam names
+   * stay untouched. The module rows are locked first to serialize with concurrent exam updates.
+   */
+  def reconcileExams(modules: Iterable[UUID]): DBIO[Unit] = {
+    val affected = tableQuery.filter(_.id.inSet(modules))
+    val defaults = affected
+      .filter(m => m.hasOwnExams && !moduleExamTable.filter(_.module === m.id).exists)
+      .map(m => (m.id, LiteralColumn(Option.empty[String])))
+    for {
+      _ <- affected.sortBy(_.id).map(_.id).forUpdate.result
+      _ <- moduleExamTable.filter(_.module.in(affected.filterNot(_.hasOwnExams).map(_.id))).delete
+      _ <- moduleExamTable.forceInsertQuery(defaults)
+    } yield ()
   }
 
   def all(filter: Map[String, Seq[String]]) = retrieve(allWithFilter(filter))

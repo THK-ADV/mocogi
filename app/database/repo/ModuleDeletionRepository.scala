@@ -11,6 +11,7 @@ import database.table.CreatedModuleTable
 import database.table.ModuleCompanionTable
 import database.table.ModuleDraftTable
 import database.table.ModulePermittedAssessmentMethodTable
+import database.table.ModuleRelationTable
 import database.table.ModuleReviewTable
 import database.table.ModuleUpdatePermissionTable
 import database.view.ModuleViewRepository
@@ -35,9 +36,10 @@ final class ModuleDeletionRepository @Inject() (
    */
   def delete(module: UUID): Future[Unit] = {
     val action = for
-      _ <- moduleRepository.deleteRelations(module)
-      _ <- moduleRepository.deleteDependencies(module)
-      _ <- moduleRepository.tableQuery.filter(_.id === module).delete
+      children <- TableQuery[ModuleRelationTable].filter(_.parent === module).map(_.child).result
+      _        <- moduleRepository.deleteRelations(module)
+      _        <- moduleRepository.deleteDependencies(module)
+      _        <- moduleRepository.tableQuery.filter(_.id === module).delete
       moduleDraftQuery = TableQuery[ModuleDraftTable].filter(_.module === module)
       _ <- TableQuery[ModuleReviewTable].filter(_.moduleDraft.in(moduleDraftQuery.map(_.module))).delete
       _ <- moduleDraftQuery.delete
@@ -45,6 +47,7 @@ final class ModuleDeletionRepository @Inject() (
       _ <- TableQuery[ModulePermittedAssessmentMethodTable].filter(_.module === module).delete
       _ <- TableQuery[ModuleCompanionTable].filter(_.module === module).delete
       _ <- TableQuery[CreatedModuleTable].filter(_.module === module).delete
+      _ <- moduleRepository.reconcileExams(children)
     yield ()
     for
       _ <- db.run(action.transactionally)

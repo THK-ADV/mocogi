@@ -115,6 +115,11 @@ GET           /moduleReviewKeys                                                 
 GET           /moduleUpdatePermissions/:moduleId                                          controllers.ModuleUpdatePermissionController.allByModule(moduleId: java.util.UUID)
 POST          /moduleUpdatePermissions/:moduleId                                          controllers.ModuleUpdatePermissionController.replace(moduleId: java.util.UUID)
 
+# Module Exams
+
+GET           /moduleExams/:module                                                        controllers.ModuleExamController.get(module: java.util.UUID)
+PUT           /moduleExams/:module                                                        controllers.ModuleExamController.replace(module: java.util.UUID)
+
 # Permissions
 
 GET           /permissions                                                                controllers.PermissionController.all()
