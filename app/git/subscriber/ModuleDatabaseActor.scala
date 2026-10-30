@@ -9,6 +9,7 @@ import scala.util.Failure
 import scala.util.Success
 
 import database.repo.schedule.ModuleTeachingUnitRepository
+import database.repo.ExamListRepository
 import database.view.ModuleViewRepository
 import git.subscriber.ModuleSubscribers.Handle
 import logging.errorC
@@ -27,6 +28,7 @@ final class ModuleDatabaseActor @Inject() (
     moduleUpdatePermissionService: ModuleUpdatePermissionService,
     moduleCreationService: ModuleCreationService,
     moduleTeachingUnitRepository: ModuleTeachingUnitRepository,
+    examListRepository: ExamListRepository,
     implicit val ctx: ExecutionContext
 ) extends Actor
     with Logging {
@@ -46,6 +48,7 @@ final class ModuleDatabaseActor @Inject() (
   private def update(modules: Seq[(Module, LocalDateTime)]) =
     for {
       _ <- moduleService.createOrUpdateMany(modules)
+      _ <- examListRepository.removeUnrelatedModules(modules.map(_._1.metadata.id))
       _ <- moduleViewRepository.refreshView()
       _ <- moduleUpdatePermissionService.overrideInherited(
         modules.map {

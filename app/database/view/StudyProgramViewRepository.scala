@@ -6,11 +6,9 @@ import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-import database.repo.single
 import database.Schema
 import models.core.Degree
 import models.core.IDLabel
-import models.FullPoId
 import models.POCore
 import models.StudyProgramView
 import play.api.db.slick.DatabaseConfigProvider
@@ -55,9 +53,6 @@ final class StudyProgramViewRepository @Inject() (
    * @return Future sequence of study programs where PO date_from <= now() <= date_to (or date_to is null)
    */
   def currentlyActive(): Future[Seq[StudyProgramView]] = db.run(currentlyActiveTableQuery.result)
-
-  def getByPo(fullPoId: FullPoId): Future[StudyProgramView] =
-    db.run(notExpiredTableQuery.filter(_.fullPo === fullPoId.id).result.single)
 
   final class StudyProgramViewTable(tag: Tag, schema: String, tableName: String)
       extends Table[StudyProgramView](tag, Some(schema), tableName) {

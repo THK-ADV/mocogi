@@ -23,6 +23,7 @@ import slick.jdbc.JdbcProfile
 final class ModuleDeletionRepository @Inject() (
     moduleRepository: ModuleRepository,
     moduleViewRepository: ModuleViewRepository,
+    examListRepository: ExamListRepository,
     val dbConfigProvider: DatabaseConfigProvider,
     implicit val ctx: ExecutionContext
 ) extends HasDatabaseConfigProvider[JdbcProfile] {
@@ -52,6 +53,7 @@ final class ModuleDeletionRepository @Inject() (
     for
       _ <- db.run(action.transactionally)
       _ <- moduleViewRepository.refreshView()
+      _ <- examListRepository.removeUnrelatedModules(List(module))
     yield ()
   }
 }

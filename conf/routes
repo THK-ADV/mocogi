@@ -80,11 +80,15 @@ POST          /moduleCatalogIntros/:po                                          
 
 # Exam Lists
 
-GET           /examLists/preview/:po                                                      controllers.ExamListsController.getPreview(po: java.lang.String)
+GET           /examLists                                                                  controllers.ExamListsController.getAll(po: Option[String], semester: Option[String], latestOnly: Boolean ?= true)
+GET           /examLists/semesters                                                        controllers.ExamListsController.semesters()
 GET           /examLists/file/:filename                                                   controllers.ExamListsController.getFile(filename: java.lang.String)
-GET           /examLists                                                                  controllers.ExamListsController.getAll()
+GET           /examLists/configOptions/:po                                                controllers.ExamListsController.configOptions(po: java.lang.String)
+GET           /examLists/config/:po                                                       controllers.ExamListsController.getConfig(po: java.lang.String)
+PUT           /examLists/config/:po                                                       controllers.ExamListsController.saveConfig(po: java.lang.String)
+POST          /examLists/preview/:po                                                      controllers.ExamListsController.getPreview(po: java.lang.String)
+GET           /examLists/:id/entries                                                      controllers.ExamListsController.entries(id: java.util.UUID)
 PUT           /examLists/:po                                                              controllers.ExamListsController.publish(po: java.lang.String)
-GET           /examLists/semesters                                                        controllers.ExamListsController.currentSemesters()
 
 # Exam Load
 

@@ -36,6 +36,8 @@ DROP FUNCTION IF EXISTS generic_modules_for_po;
 
 DROP FUNCTION IF EXISTS schedule.semester_plan_by_now;
 
+DROP FUNCTION IF EXISTS exams.exam_list_options;
+
 DROP VIEW IF EXISTS modules.module_core_raw;
 
 DROP VIEW IF EXISTS modules.module_core;
@@ -1373,5 +1375,76 @@ FROM
   LEFT JOIN schedule.module_teaching_unit mtu ON mtu.module = mc.id
   LEFT JOIN rooms_by_entry rooms ON rooms.id = s.id
   LEFT JOIN lecturers_by_entry lecturers ON lecturers.id = s.id
+$$;
+
+-- Returns the active exam list candidates of a PO sorted by title. Child modules
+-- are never candidates; their PO relationships count for their parent module.
+-- The semester is the smallest recommended semester of these relationships or
+-- the maximum integer without any.
+CREATE OR REPLACE FUNCTION exams.exam_list_options(po_id text)
+  RETURNS jsonb
+  LANGUAGE sql
+  STABLE
+  AS $$
+  WITH rel AS(
+    SELECT
+      module,
+      specialization,
+      recommended_semester,
+      TRUE AS mandatory,
+      NULL::uuid AS instance_of
+    FROM
+      modules.module_po_mandatory
+    WHERE
+      po = po_id
+    UNION ALL
+    SELECT
+      module,
+      specialization,
+      recommended_semester,
+      FALSE,
+      instance_of
+    FROM
+      modules.module_po_optional
+    WHERE
+      po = po_id
+),
+candidate AS(
+  SELECT
+    coalesce(r.parent, rel.module) AS id,
+    jsonb_agg(DISTINCT jsonb_build_object('po', po_id, 'specialization', rel.specialization, 'recommendedSemester', rel.recommended_semester, 'mandatory', rel.mandatory, 'instanceOf', rel.instance_of)) AS po,
+    bool_or(rel.mandatory) AS mandatory,
+    coalesce(min(s.semester), 2147483647) AS semester
+  FROM
+    rel
+    LEFT JOIN modules.module_relation r ON r.child = rel.module
+    LEFT JOIN LATERAL unnest(rel.recommended_semester) AS s(semester) ON TRUE
+  GROUP BY
+    1
+)
+SELECT
+  coalesce(jsonb_agg(jsonb_build_object('id', m.id, 'title', m.title, 'abbrev', m.abbrev, 'isGeneric', m.module_type = 'generic_module', 'mandatory', c.mandatory, 'semester', c.semester, 'po', c.po, 'assessmentMethods',(
+          SELECT
+            coalesce(jsonb_agg(jsonb_build_object('method', a.assessment_method, 'percentage', a.percentage)
+            ORDER BY a.assessment_method), '[]')
+          FROM modules.module_assessment_method a
+          WHERE
+            a.module = m.id), 'firstExaminer', m.first_examiner, 'secondExaminer', m.second_examiner, 'examPhases', m.exam_phases, 'examNames', CASE WHEN m.module_type = 'generic_module' THEN
+            '[]'
+          ELSE
+(
+              SELECT
+                jsonb_agg(e.name ORDER BY e.name)
+              FROM exams.module_exam e
+              WHERE
+                e.module = m.id
+                AND e.name IS NOT NULL)
+          END)
+      ORDER BY m.title), '[]')
+FROM
+  candidate c
+  JOIN modules.module m ON m.id = c.id
+WHERE
+  m.status = 'active'
 $$;
 

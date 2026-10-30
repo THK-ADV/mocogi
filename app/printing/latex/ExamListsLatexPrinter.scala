@@ -2,90 +2,28 @@ package printing.latex
 
 import java.time.format.DateTimeFormatter
 import java.time.LocalDate
-import java.util.UUID
 
-import scala.collection.mutable.ListBuffer
+import scala.collection.mutable
 
-import cats.data.NonEmptyList
 import models.*
-import models.core.AssessmentMethod
-import models.core.ExamPhases
 import models.core.ExamPhases.ExamPhase
 import models.core.Identity
-import models.core.Specialization
+import service.artifact.examlist.*
 import ops.appendOpt
 import play.api.i18n.Lang
 import play.api.i18n.MessagesApi
-import play.api.Logging
 import printing.fmtDouble
 import printing.LocalizedStrings
 
-object ExamListsLatexPrinter {
-  def default(
-      modules: Seq[ModuleProtocol],
-      childrenById: Map[UUID, ModuleProtocol],
-      studyProgram: StudyProgramView,
-      assessmentMethods: Seq[AssessmentMethod],
-      people: Seq[Identity],
-      specializations: Seq[Specialization],
-      genericModules: Seq[ModuleCore],
-      semester: Semester,
-      timestamp: LocalDate,
-      messages: MessagesApi,
-      lang: Lang
-  ): ExamListsLatexPrinter =
-    new ExamListsLatexPrinter(
-      modules,
-      childrenById,
-      studyProgram,
-      assessmentMethods,
-      people,
-      specializations,
-      genericModules,
-      Some(semester, timestamp),
-      messages
-    )(
-      using lang
-    )
-
-  def preview(
-      modules: Seq[ModuleProtocol],
-      childrenById: Map[UUID, ModuleProtocol],
-      studyProgram: StudyProgramView,
-      assessmentMethods: Seq[AssessmentMethod],
-      people: Seq[Identity],
-      specializations: Seq[Specialization],
-      genericModules: Seq[ModuleCore],
-      messages: MessagesApi,
-      lang: Lang
-  ): ExamListsLatexPrinter =
-    new ExamListsLatexPrinter(
-      modules,
-      childrenById,
-      studyProgram,
-      assessmentMethods,
-      people,
-      specializations,
-      genericModules,
-      None,
-      messages
-    )(
-      using lang
-    )
-}
-
+/** Renders prepared exam list entries. Named exams get their own indented rows below the module. */
 final class ExamListsLatexPrinter(
-    modules: Seq[ModuleProtocol],
-    childrenById: Map[UUID, ModuleProtocol],
-    studyProgram: StudyProgramView,
-    assessmentMethods: Seq[AssessmentMethod],
-    people: Seq[Identity],
-    specializations: Seq[Specialization],
-    genericModules: Seq[ModuleCore],
-    semester: Option[(Semester, LocalDate)],
-    messages: MessagesApi,
-)(using lang: Lang)
-    extends Logging {
+    entries: List[PreparedExamListEntry],
+    data: ExamListData,
+    semester: Semester,
+    date: Option[LocalDate],
+    isPreview: Boolean,
+    messages: MessagesApi
+)(using lang: Lang) {
 
   // (ID, Label, Abbreviation)
   opaque type POShort = (String, String, String)
@@ -94,21 +32,33 @@ final class ExamListsLatexPrinter(
 
   private val strings = new LocalizedStrings(messages)(using lang)
 
-  private val assessmentMethodsById = assessmentMethods.iterator.map(m => m.id -> m).toMap
+  private val dateFormat = DateTimeFormatter.ofPattern("dd.MM.yyyy")
 
-  private val rowWidth = "Lp{.02\\linewidth}"
+  private val assessmentMethodsById = data.assessmentMethods.map(m => m.id -> m).toMap
 
-  private val moduleTitleWidthValue = .255
+  private val peopleById = data.identities.map(p => p.id -> p).toMap
+
+  private val genericModulesById = data.genericModules.map(m => m.id -> m).toMap
+
+  private val studyProgram = data.studyProgram
+
+  private val rowWidth = "Lp{.025\\linewidth}"
+
+  private val moduleTitleWidthValue = .14
 
   private val moduleTitleWidth = s"Lp{$moduleTitleWidthValue\\linewidth}"
 
-  private val assessmentTitleWidth = "Lp{.225\\linewidth}"
+  private val moduleExamWidth = "Lp{.24\\linewidth}"
 
-  private val examinerWidth = "Lp{.125\\linewidth}"
+  private val assessmentTitleWidth = "Lp{.17\\linewidth}"
 
-  private val examPhasesWidth = "Lp{.15\\linewidth}"
+  private val examinerWidth = "Lp{.13\\linewidth}"
 
-  private val genericModuleLegend = scala.collection.mutable.Set[ModuleCore]()
+  private val examPhasesWidth = "Lp{.12\\linewidth}"
+
+  private val registrationPeriodWidth = "Lp{.14\\linewidth}"
+
+  private val genericModuleLegend = mutable.LinkedHashSet[ModuleCore]()
 
   private var usedP = false
 
@@ -123,14 +73,14 @@ final class ExamListsLatexPrinter(
                       |""".stripMargin)
     title()
     tableColors()
-    if specializations.isEmpty then defaultPrint() else specializationsPrint()
+    if data.specializations.isEmpty then defaultPrint() else specializationsPrint()
     legend()
     builder.append("\\end{document}")
     builder
   }
 
   private def defaultPrint(): Unit = {
-    val (mandatory, elective) = splitModules()
+    val (mandatory, elective) = entries.partition(_.module.mandatory)
     if mandatory.nonEmpty then {
       examLists(mandatory, messages("latex.exam_lists.mandatory_modules.chapter"))
     }
@@ -146,13 +96,13 @@ final class ExamListsLatexPrinter(
   }
 
   private def specializationsPrint(): Unit = {
-    if modules.isEmpty then return
-    examLists(modules, messages("latex.exam_lists.modules.chapter"))
+    if entries.isEmpty then return
+    examLists(entries, messages("latex.exam_lists.modules.chapter"))
     moduleMatrix(messages("latex.exam_lists.module_matrix.chapter"))
   }
 
-  private def assessmentRow(xs: List[ModuleAssessmentMethodEntryProtocol]) =
-    if xs.isEmpty then messages("latex.exam_lists.no-assessment.label")
+  private def assessmentRow(xs: List[ExamListAssessmentMethod]) =
+    if xs.isEmpty then "—"
     else
       xs
         .map(m => (m, assessmentMethodsById.get(m.method)))
@@ -164,131 +114,74 @@ final class ExamListsLatexPrinter(
         }
         .mkString("\\newline ")
 
-  private def examinerRow(id: String) =
+  private def examinerName(id: String) =
     escape(
-      people.find(_.id == id).get match
-        case Identity.Person(_, lastname, firstname, _, _, _, _, _, _, _) => s"${firstname.head}. $lastname"
-        case Identity.Group(_, label)                                     => label
-        case Identity.Unknown(_, label)                                   => label
+      peopleById(id) match
+        case p: Identity.Person         => p.lastname
+        case Identity.Group(_, label)   => label
+        case Identity.Unknown(_, label) => label
     )
 
-  private def examPhasesRow(xs: NonEmptyList[String]) = {
-    val sb         = new StringBuilder()
-    val examPhases = ListBuffer.from(xs.toList)
-    examPhases.find(_ == ExamPhase.sose1.id).zip(examPhases.find(_ == ExamPhase.sose2.id)).foreach {
-      case (sose1, sose2) =>
-        sb.append(escape(s"${messages("exam_phase.short.sose")} 1 & 2"))
-        examPhases.subtractOne(sose1)
-        examPhases.subtractOne(sose2)
-    }
-    examPhases.find(_ == ExamPhase.offSose.id).zip(examPhases.find(_ == ExamPhase.offWise.id)).foreach {
-      case (offSose, offWise) =>
-        val str = escape(
-          s"${messages("exam_phase.short.off")} ${messages("exam_phase.short.sose")} & ${messages("exam_phase.short.wise")}"
-        )
-        if sb.isEmpty then sb.append(str) else sb.append(s", $str")
-        examPhases.subtractOne(offSose)
-        examPhases.subtractOne(offWise)
-    }
-    examPhases.foreach { id =>
-      val str = escape(messages(s"exam_phase.short.$id"))
-      if sb.isEmpty then sb.append(str) else sb.append(s", $str")
-    }
-    sb.result()
-  }
+  /** Lists the first examiner above the second one. */
+  private def examinerRow(m: ExamListModuleOption) =
+    s"${examinerName(m.firstExaminer)}\\newline ${examinerName(m.secondExaminer)}"
 
-  private def titleRow(title: String) = escape(title)
+  /** Lists one phase per line, followed by an empty line if its registration period takes two lines. */
+  private def examPhasesRow(xs: List[String], withPeriods: Boolean) =
+    xs.map(id => escape(messages(s"exam_phase.short.$id")))
+      .mkString(if withPeriods then "\\newline\\mbox{}\\newline " else "\\newline ")
 
-  private def moduleRow(
-      row: Int,
-      title: String,
-      assessmentMethods: List[ModuleAssessmentMethodEntryProtocol],
-      examPhases: NonEmptyList[String],
-      examiner: Examiner.ID
-  ) = {
-    builder.append(s"$row")
-    builder.append(s" & ${this.titleRow(title)}")
-    builder.append(s" & ${this.assessmentRow(assessmentMethods)}")
-    builder.append(s" & ${this.examinerRow(examiner.first)}")
-    builder.append(s" & ${this.examinerRow(examiner.second)}")
-    builder.append(s" & ${this.examPhasesRow(examPhases)}")
-    builder.append("\\\\\n")
-  }
+  /** Renders the period of each phase on two lines: start and end. */
+  private def registrationPeriodsRow(phases: List[String], exam: ExamListExam) =
+    phases
+      .map { phase =>
+        val p = exam.registrationPeriods(phase)
+        s"${p.start.format(dateFormat)}~–\\newline ${p.end.format(dateFormat)}"
+      }
+      .mkString("\\newline ")
 
-  private def parentModuleRow(row: Int, title: String) = {
-    builder.append(s"$row")
-    builder.append(s" & ${this.titleRow(title)}")
-    builder.append(" &")
-    builder.append(" &")
-    builder.append(" &")
-    builder.append(" &")
-    builder.append("\\\\\n")
-  }
-
-  private def childModuleRow(
-      title: String,
-      assessmentMethods: List[ModuleAssessmentMethodEntryProtocol],
-      examPhases: NonEmptyList[String],
-      examiner: Examiner.ID
-  ) = {
-    builder.append(s" & ${this.titleRow(title)}")
-    builder.append(s" & ${this.assessmentRow(assessmentMethods)}")
-    builder.append(s" & ${this.examinerRow(examiner.first)}")
-    builder.append(s" & ${this.examinerRow(examiner.second)}")
-    builder.append(s" & ${this.examPhasesRow(examPhases)}")
-    builder.append("\\\\\n")
-  }
-
-  private def moduleNotFoundRow(id: UUID) = {
-    builder.append(s" & ${escape(id.toString)}")
-    builder.append(" & & & &")
-    builder.append("\\\\\n")
-  }
-
-  private def moduleMatrixRow(title: String, po: ModulePOProtocol, cols: Seq[String], moduleId: => UUID) = {
-    builder.append(this.titleRow(title))
+  private def moduleMatrixRow(entry: PreparedExamListEntry, cols: Seq[String]) = {
+    builder.append(escape(entry.module.title))
     cols.foreach { poId =>
-      var value           = ""
-      val mandatoryExists = po.mandatory.exists(_.fullPo == poId)
-      val electiveExists  = po.optional.find(_.fullPo == poId)
-      if mandatoryExists && electiveExists.isDefined then
-        logger.error(
-          s"module $moduleId should have either a mandatory or elective po relationship to $poId, but has both"
-        )
-      if mandatoryExists then {
-        value += "P"
-        usedP = true
-      }
-      electiveExists.foreach { p =>
-        genericModules.find(_.id == p.instanceOf) match
-          case Some(gm) =>
-            value += gm.abbrev
-            genericModuleLegend += gm
-          case None =>
-            logger.error(s"expected generic module ${p.instanceOf} to exists")
-            value += "W"
-            usedW = true
-      }
-      if value.isEmpty then builder.append(" & ") else builder.append(s" & $value")
+      val relations = entry.module.po.filter(p => p.specialization.getOrElse(p.po) == poId)
+      val value     =
+        if relations.exists(_.mandatory) then {
+          usedP = true
+          "P"
+        } else
+          relations.headOption.fold("") { p =>
+            p.instanceOf.flatMap(genericModulesById.get) match
+              case Some(gm) =>
+                genericModuleLegend += gm
+                escape(gm.abbrev)
+              case None =>
+                usedW = true
+                "W"
+          }
+      builder.append(s" & $value")
     }
     builder.append("\\\\\n")
   }
 
-  private def examLists(modules: Seq[ModuleProtocol], titleLabel: String): Unit = {
+  /**
+   * Renders one row per module. Named exams follow in indented rows, so that a module and its exams form one block in
+   * one color without a page break inside.
+   */
+  private def examLists(entries: List[PreparedExamListEntry], titleLabel: String): Unit = {
     val continuationHeaderLabel = messages("latex.exam_lists.table.header.continuation")
     val continuationFooterLabel = messages("latex.exam_lists.table.footer.continuation")
 
     builder
       .append(s"""\\begin{landscape}
-                 |\\rowcolors{1}{lightgray}{}
                  |\\section*{$titleLabel}
+                 |\\small
                  |\\begin{longtable}{|
                  |$rowWidth
-                 |$moduleTitleWidth
+                 |$moduleExamWidth
                  |$assessmentTitleWidth
                  |$examinerWidth
-                 |$examinerWidth
-                 |$examPhasesWidth|}
+                 |$examPhasesWidth
+                 |$registrationPeriodWidth|}
                  |% First page header
                  |\\tablehead
                  |\\endfirsthead
@@ -302,40 +195,28 @@ final class ExamListsLatexPrinter(
                  |\\endlastfoot
                  |% table data
                  |""".stripMargin)
-    var row = 1
-    modules
-      .sortBy(_.metadata.title)
-      .foreach { m =>
-        m.metadata.moduleRelation match {
-          case Some(relation) =>
-            parentModuleRow(row, m.metadata.title)
-            row += 1
-            relation.children.toList
-              .map(id => childrenById.get(id).toRight(id))
-              .sortBy(_.fold(_.toString, _.metadata.title))
-              .foreach {
-                case Right(m) =>
-                  childModuleRow(
-                    m.metadata.title,
-                    m.metadata.assessmentMethods.mandatory,
-                    m.metadata.examPhases,
-                    m.metadata.examiner
-                  )
-                case Left(id) =>
-                  logger.error(s"expected child module $id to exists")
-                  moduleNotFoundRow(id)
-              }
-          case None =>
-            moduleRow(
-              row,
-              m.metadata.title,
-              m.metadata.assessmentMethods.mandatory,
-              m.metadata.examPhases,
-              m.metadata.examiner
+    entries.zipWithIndex.foreach { (entry, i) =>
+      val m      = entry.module
+      val module = List(s"${i + 1}", escape(m.title), assessmentRow(m.assessmentMethods), examinerRow(m))
+      val phases = examPhasesRow(entry.examPhases, withPeriods = !m.isGeneric)
+      val rows   = entry.exams match {
+        case List(ExamListExam(None, _)) | Nil =>
+          List(module ++ List(phases, entry.exams.headOption.fold("")(registrationPeriodsRow(entry.examPhases, _))))
+        case exams =>
+          (module ++ List("", "")) :: exams.map(e =>
+            List(
+              "",
+              s"\\leftskip=1em\\relax ${escape(e.name.getOrElse(m.title))}",
+              "",
+              "",
+              phases,
+              registrationPeriodsRow(entry.examPhases, e)
             )
-            row += 1
-        }
+          )
       }
+      val color = if i % 2 == 1 then "\\rowcolor{lightgray}" else ""
+      builder.append(rows.map(color + _.mkString(" & ")).mkString("\\\\*\n")).append("\\\\\n")
+    }
     builder.append("""\hline
                      |\end{longtable}
                      |\end{landscape}
@@ -356,6 +237,7 @@ final class ExamListsLatexPrinter(
         s"""\\begin{landscape}
            |\\rowcolors{1}{lightgray}{}
            |\\section*{$titleLabel}
+           |\\small
            |\\begin{longtable}{|\n$moduleTitleWidth\n$colWidth|}
            |\\hline
            |\\textbf{${messages("latex.exam_lists.table.header.moduleName")}}
@@ -366,27 +248,7 @@ final class ExamListsLatexPrinter(
            |\\endlastfoot
            |""".stripMargin
       )
-    modules
-      .sortBy(_.metadata.title)
-      .foreach { m =>
-        m.metadata.moduleRelation match {
-          case Some(relation) =>
-            relation.children.toList
-              .map { id =>
-                val child = childrenById.get(id)
-                if child.isEmpty then
-                  logger.error(s"error while printing parent module ${m.id.get}: unable to find child module $id")
-                child
-              }
-              .collect { case Some(m) => m }
-              .sortBy(_.metadata.title)
-              .foreach { m =>
-                moduleMatrixRow(m.metadata.title, m.metadata.po, colIds, m.id.get)
-              }
-          case None =>
-            moduleMatrixRow(m.metadata.title, m.metadata.po, colIds, m.id.get)
-        }
-      }
+    entries.foreach(moduleMatrixRow(_, colIds))
     builder.append("""\hline
                      |\end{longtable}
                      |\end{landscape}
@@ -394,7 +256,7 @@ final class ExamListsLatexPrinter(
   }
 
   private def matrixColumns: Seq[POShort] =
-    specializations
+    data.specializations
       .map(s => (s.id, s.label, s.abbreviation))
       .prepended((studyProgram.po.id, strings.label(studyProgram), studyProgram.abbreviation))
 
@@ -409,7 +271,7 @@ final class ExamListsLatexPrinter(
     }
     builder.append("\n\\end{itemize}")
 
-    if specializations.nonEmpty && modules.nonEmpty then {
+    if data.specializations.nonEmpty && entries.nonEmpty then {
       builder.append(s"\n\\subsection*{${messages("latex.exam_lists.module_matrix.chapter")}}\n\\begin{itemize}")
       matrixColumns.foreach {
         case (_, label, abbrev) =>
@@ -417,23 +279,18 @@ final class ExamListsLatexPrinter(
       }
       if usedP then builder.append(s"\n\\item P: ${messages("latex.exam_lists.module_matrix.mandatory_module.label")}")
       if usedW then builder.append(s"\n\\item W: ${messages("latex.exam_lists.module_matrix.elective_module.label")}")
-      genericModuleLegend.foreach(m => builder.append(s"\n\\item ${m.abbrev}: ${m.title}"))
+      genericModuleLegend.foreach(m => builder.append(s"\n\\item ${escape(m.abbrev)}: ${escape(m.title)}"))
       builder.append("\n\\end{itemize}")
     }
   }
 
   private def title() = {
-    val (semesterLabel, validityStatementDate) = semester match {
-      case Some((s, d)) =>
-        val df = DateTimeFormatter.ofPattern("dd.MM.yyyy")
-        (s"\\LARGE ${strings.label(s)} ${s.year}", d.format(df))
-      case None =>
-        (strings.previewLabel, "\\rule{4cm}{0.4pt}")
-    }
+    val semesterLabel     = s"\\LARGE ${strings.label(semester)} ${semester.year}"
+    val validityDate      = date.fold("\\rule{4cm}{0.4pt}")(_.format(dateFormat))
     val titleLabel        = messages("latex.exam_lists.title")
     val studyProgramLabel = s"${escape(strings.label(studyProgram))} PO ${studyProgram.po.version}"
     val degreeLabel       = strings.description(studyProgram.degree)
-    val validityStatement = messages("latex.exam_lists.validity_statement", validityStatementDate)
+    val validityStatement = messages("latex.exam_lists.validity_statement", validityDate)
     builder.append(
       s"""\\begin{titlepage}
          |\\vspace*{\\fill}
@@ -441,7 +298,7 @@ final class ExamListsLatexPrinter(
          |\\Huge $titleLabel \\\\ [1.5ex]
          |\\LARGE $studyProgramLabel \\\\ [1ex]
          |\\LARGE $degreeLabel \\\\ [1ex]
-         |\\LARGE $semesterLabel \\\\ [4.5ex]
+         |$semesterLabel \\\\ [4.5ex]
          |\\large Fakultät für Informatik und Ingenieurwissenschaften \\\\ [1.5ex]
          |\\large \\today
          |\\end{center}
@@ -463,7 +320,7 @@ final class ExamListsLatexPrinter(
                 |\usepackage{pdflscape} % automatically rotates pdf page where lscape is used
                 |""".stripMargin)
       .appendOpt(
-        Option.when(semester.isEmpty)(
+        Option.when(isPreview)(
           s"\\usepackage[colorspec=0.9,text=${strings.previewLabel}]{draftwatermark}\n"
         )
       )
@@ -487,39 +344,15 @@ final class ExamListsLatexPrinter(
                      |""".stripMargin)
     builder.append(s"""\\newcommand{\\tablehead}{%
                       |\\hline
+                      |\\rowcolor{lightgray}
                       |\\textbf{Nr.}
-                      |& \\textbf{${messages("latex.exam_lists.table.header.moduleName")}}
+                      |& \\textbf{${messages("latex.exam_lists.table.header.moduleExam")}}
                       |& \\textbf{${messages("latex.exam_lists.table.header.assessmentMethod")}}
-                      |& \\textbf{${messages("latex.exam_lists.table.header.firstExaminer")}}
-                      |& \\textbf{${messages("latex.exam_lists.table.header.secondExaminer")}}
+                      |& \\textbf{${messages("latex.exam_lists.table.header.examiner")}}
                       |& \\textbf{${messages("latex.exam_lists.table.header.examPhases")}}
+                      |& \\textbf{${messages("latex.exam_lists.table.header.registrationPeriod")}}
                       |\\\\ \\hline
                       |}
                       |""".stripMargin)
   }
-
-  private def splitModules(): (Seq[ModuleProtocol], Seq[ModuleProtocol]) =
-    modules.partition { m =>
-      val mandatory = m.metadata.po.mandatory.exists { a =>
-        a.po == studyProgram.po.id && a.specialization
-          .zip(studyProgram.specialization)
-          .fold(true)(a => a._1 == a._2.id)
-      }
-      val elective = m.metadata.po.optional.exists { a =>
-        a.po == studyProgram.po.id && a.specialization
-          .zip(studyProgram.specialization)
-          .fold(true)(a => a._1 == a._2.id)
-      }
-      (mandatory, elective) match {
-        case (true, false)  => true
-        case (false, true)  => false
-        case (false, false) =>
-          assert(false, s"module ${m.id.fold(m.metadata.title)(_.toString)} needs to be either mandatory or elective")
-        case (true, true) =>
-          assert(
-            false,
-            s"module ${m.id.fold(m.metadata.title)(_.toString)} must be either mandatory or elective but not both"
-          )
-      }
-    }
 }

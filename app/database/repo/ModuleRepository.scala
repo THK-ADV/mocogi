@@ -180,9 +180,6 @@ final class ModuleRepository @Inject() (
     db.run(action.transactionally.withTransactionIsolation(TransactionIsolation.RepeatableRead))
   }
 
-  def allGeneric(): Future[Seq[ModuleCore]] =
-    db.run(tableQuery.filter(_.isGeneric).map(a => (a.id, a.title, a.abbrev)).result.map(_.map(ModuleCore.apply)))
-
   def allGenericModulesWithPOs(): Future[Seq[(ModuleCore, Seq[String])]] =
     db.run(
       tableQuery

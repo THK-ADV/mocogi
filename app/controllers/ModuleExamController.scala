@@ -36,9 +36,11 @@ final class ModuleExamController @Inject() (
 
   def get(module: UUID) =
     auth.andThen(resolveUser).andThen(canEditModule(module)).async { _ =>
-      repo.get(module).map(_.fold(notFound(module)) { (title, exams) =>
-        Ok(Json.obj("title" -> title, "examNames" -> exams.examNames))
-      })
+      repo
+        .get(module)
+        .map(_.fold(notFound(module)) { (title, exams) =>
+          Ok(Json.obj("title" -> title, "examNames" -> exams.examNames))
+        })
     }
 
   def replace(module: UUID) =
