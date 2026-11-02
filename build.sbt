@@ -11,6 +11,7 @@ lazy val `mocogi` = (project in file("."))
     semanticdbEnabled := true,
     scalacOptions += "-Wunused:imports",
     libraryDependencies ++= play,
+    libraryDependencies ++= jackson,
     libraryDependencies ++= guiceDeps,
     libraryDependencies ++= test,
     libraryDependencies ++= database,
@@ -51,8 +52,17 @@ lazy val `mocogi` = (project in file("."))
 lazy val play = Seq(
   specs2 % Test,
   ws,
-  ehcache,
-  "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.17.2"
+  ehcache
+)
+
+val jacksonVersion = "2.22.4"
+
+lazy val jackson = Seq(
+  "com.fasterxml.jackson.module"    %% "jackson-module-scala"           % jacksonVersion,
+  "com.fasterxml.jackson.module"     % "jackson-module-parameter-names" % jacksonVersion,
+  "com.fasterxml.jackson.datatype"   % "jackson-datatype-jdk8"          % jacksonVersion,
+  "com.fasterxml.jackson.datatype"   % "jackson-datatype-jsr310"        % jacksonVersion,
+  "com.fasterxml.jackson.dataformat" % "jackson-dataformat-cbor"        % jacksonVersion
 )
 
 lazy val test = Seq(
