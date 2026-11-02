@@ -43,7 +43,7 @@ lazy val `mocogi` = (project in file("."))
           f.getName.endsWith(".scala")
       )
     },
-    IntegrationTest / scalaSource       := (Test / scalaSource).value,
+    IntegrationTest / scalaSource      := (Test / scalaSource).value,
     IntegrationTest / unmanagedSources := {
       val dir = baseDirectory.value / "test" / "database"
       (dir ** "*.scala").get.filter(_.isFile).toSeq.sortBy(_.getAbsolutePath)
