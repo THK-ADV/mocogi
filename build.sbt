@@ -10,8 +10,6 @@ lazy val `mocogi` = (project in file("."))
     scalaVersion      := "3.4.2",
     semanticdbEnabled := true,
     scalacOptions += "-Wunused:imports",
-    resolvers += "Akka Snapshot Repository".at("https://repo.akka.io/snapshots/"),
-    resolvers ++= Resolver.sonatypeOssRepos("snapshots"),
     libraryDependencies ++= play,
     libraryDependencies ++= guiceDeps,
     libraryDependencies ++= test,
@@ -58,10 +56,10 @@ lazy val play = Seq(
 )
 
 lazy val test = Seq(
-  "org.scalactic"          %% "scalactic"          % "3.2.19" % "test,it",
-  "org.scalatest"          %% "scalatest"          % "3.2.19" % "test,it",
-  "org.scalatestplus.play" %% "scalatestplus-play" % "7.0.2"  % "test,it",
-  "org.apache.pekko"       %% "pekko-testkit"      % "1.0.3"  % Test
+  "org.scalactic"          %% "scalactic"          % "3.2.19"                                  % "test,it",
+  "org.scalatest"          %% "scalatest"          % "3.2.19"                                  % "test,it",
+  "org.scalatestplus.play" %% "scalatestplus-play" % "7.0.2"                                   % "test,it",
+  "org.apache.pekko"       %% "pekko-testkit"      % _root_.play.core.PlayVersion.pekkoVersion % Test
 )
 
 lazy val parser = "de.th-koeln.inf.adv" %% "nebulak" % "0.14"
