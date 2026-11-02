@@ -66,8 +66,8 @@ lazy val jackson = Seq(
 )
 
 lazy val test = Seq(
-  "org.scalactic"          %% "scalactic"          % "3.2.19"                                  % "test,it",
-  "org.scalatest"          %% "scalatest"          % "3.2.19"                                  % "test,it",
+  "org.scalactic"          %% "scalactic"          % "3.2.20"                                  % "test,it",
+  "org.scalatest"          %% "scalatest"          % "3.2.20"                                  % "test,it",
   "org.scalatestplus.play" %% "scalatestplus-play" % "7.0.2"                                   % "test,it",
   "org.apache.pekko"       %% "pekko-testkit"      % _root_.play.core.PlayVersion.pekkoVersion % Test
 )
@@ -82,10 +82,10 @@ lazy val database = Seq(
   "com.github.tminglei" %% "slick-pg_play-json"    % "0.23.1",
 )
 
-lazy val circle = "io.circe" %% "circe-yaml" % "0.16.0"
+lazy val circle = "io.circe" %% "circe-yaml" % "0.16.1"
 
 lazy val parallelCollections =
-  "org.scala-lang.modules" %% "scala-parallel-collections" % "1.2.0"
+  "org.scala-lang.modules" %% "scala-parallel-collections" % "1.3.0"
 
 lazy val guiceDeps = Seq(
   guice,
@@ -107,4 +107,4 @@ val mail = Seq(
   "org.playframework" %% "play-mailer-guice" % "10.1.0"
 )
 
-val scalaScraper = "net.ruippeixotog" %% "scala-scraper" % "3.2.0"
+val scalaScraper = "net.ruippeixotog" %% "scala-scraper" % "3.3.0"
