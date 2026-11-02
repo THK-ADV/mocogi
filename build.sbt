@@ -77,7 +77,7 @@ lazy val parser = "de.th-koeln.inf.adv" %% "nebulak" % "0.14"
 lazy val database = Seq(
   "org.playframework"   %% "play-slick"            % "6.2.0",
   "org.playframework"   %% "play-slick-evolutions" % "6.2.0",
-  "org.postgresql"       % "postgresql"            % "42.7.8",
+  "org.postgresql"       % "postgresql"            % "42.7.14",
   "com.github.tminglei" %% "slick-pg"              % "0.23.1",
   "com.github.tminglei" %% "slick-pg_play-json"    % "0.23.1",
 )
