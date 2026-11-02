@@ -94,7 +94,7 @@ lazy val guiceDeps = Seq(
 )
 
 val authorization = Seq(
-  "com.github.jwt-scala" %% "jwt-play-json" % "11.0.3"
+  "com.github.jwt-scala" %% "jwt-play-json" % "12.0.0"
 )
 
 val optics = Seq(
