@@ -1,4 +1,4 @@
-FROM sbtscala/scala-sbt:eclipse-temurin-jammy-21.0.2_13_1.10.1_3.3.3 as sbt
+FROM sbtscala/scala-sbt:eclipse-temurin-21.0.13_9_1.13.1_3.9.0 AS sbt
 ARG GITHUB_TOKEN
 ENV GITHUB_TOKEN=$GITHUB_TOKEN
 WORKDIR /mocogi
