@@ -26,7 +26,6 @@ import ops.FileOps
 import play.api.i18n.Lang
 import play.api.i18n.MessagesApi
 import play.api.Logging
-import printing.latex
 import printing.latex.ExamListsLatexPrinter
 import service.ModuleService
 

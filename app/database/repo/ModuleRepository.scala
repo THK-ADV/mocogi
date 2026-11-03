@@ -14,7 +14,6 @@ import database.*
 import database.table.*
 import models.*
 import models.core.Specialization
-import parsing.types.*
 import parsing.types.Module
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.db.slick.HasDatabaseConfigProvider

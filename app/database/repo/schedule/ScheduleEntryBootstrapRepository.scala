@@ -10,7 +10,6 @@ import play.api.db.slick.DatabaseConfigProvider
 import play.api.db.slick.HasDatabaseConfigProvider
 import slick.jdbc.JdbcProfile
 import service.ModuleService
-import models.MetadataProtocol
 
 @Singleton
 final class ScheduleEntryBootstrapRepository @Inject() (
