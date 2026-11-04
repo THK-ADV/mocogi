@@ -188,8 +188,6 @@ latex.exam_lists.table.header.moduleExam=Modulprüfung
 latex.exam_lists.table.header.examiner=Prüfer
 latex.exam_lists.table.header.examPhases=Prüfungsphasen
 latex.exam_lists.table.header.registrationPeriod=Anmeldezeitraum
-latex.exam_lists.table.exam=Prüfung
-latex.exam_lists.table.exam_count={0,choice,1#1 Prüfung|1<{0} Prüfungen}
 latex.exam_lists.table.header.continuation=Fortsetzung der Module…
 latex.exam_lists.table.footer.continuation=Fortsetzung auf der nächsten Seite
 

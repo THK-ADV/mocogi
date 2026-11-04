@@ -42,7 +42,7 @@ final class ExamListsLatexPrinter(
 
   private val studyProgram = data.studyProgram
 
-  private val rowWidth = "Lp{.025\\linewidth}"
+  private val rowWidth = "Lp{.035\\linewidth}"
 
   private val moduleTitleWidthValue = .14
 
@@ -100,8 +100,6 @@ final class ExamListsLatexPrinter(
     examLists(entries, messages("latex.exam_lists.modules.chapter"))
     moduleMatrix(messages("latex.exam_lists.module_matrix.chapter"))
   }
-
-  private val examLabel = messages("latex.exam_lists.table.exam")
 
   private def assessmentRow(xs: List[ExamListAssessmentMethod]) =
     if xs.isEmpty then "—"
@@ -166,8 +164,8 @@ final class ExamListsLatexPrinter(
   }
 
   /**
-   * Renders one row per module. Named exams follow in indented rows, so that a module and its exams form one block in
-   * one color without a page break inside.
+   * Renders one row per module. Named exams follow in indented rows numbered after the module (e.g. 10.1), so that a
+   * module and its exams form one block in one color without a page break inside.
    */
   private def examLists(entries: List[PreparedExamListEntry], titleLabel: String): Unit = {
     val continuationHeaderLabel = messages("latex.exam_lists.table.header.continuation")
@@ -205,12 +203,10 @@ final class ExamListsLatexPrinter(
         case List(ExamListExam(None, _)) | Nil =>
           List(module ++ List(phases, entry.exams.headOption.fold("")(registrationPeriodsRow(entry.examPhases, _))))
         case exams =>
-          val count = messages("latex.exam_lists.table.exam_count", exams.size)
-          val title = s"${module(1)}\\newline \\textcolor{gray}{$count}"
-          (module.updated(1, title) ++ List("", "")) :: exams.map(e =>
+          (module ++ List("", "")) :: exams.zipWithIndex.map((e, j) =>
             List(
-              "",
-              s"\\leftskip=1em\\relax \\textcolor{gray}{$examLabel} ${escape(e.name.getOrElse(m.title))}",
+              s"${i + 1}.${j + 1}",
+              s"\\leftskip=1em\\relax ${escape(e.name.getOrElse(m.title))}",
               "",
               "",
               phases,
