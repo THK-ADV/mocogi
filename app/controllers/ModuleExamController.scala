@@ -1,5 +1,6 @@
 package controllers
 
+import java.util.Locale
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -60,14 +61,15 @@ final class ModuleExamController @Inject() (
 
   private def notFound(module: UUID) = NotFound(Json.obj("message" -> s"module $module not found"))
 
-  /** Trims explicit names and requires a non-empty list of non-empty, single-line and unique names. */
+  /** Trims explicit names and requires a non-empty list of non-empty, single-line and case-insensitively unique names. */
   private def normalize(names: Option[List[String]]): Either[String, Option[List[String]]] =
     names.traverse { names =>
       val trimmed = names.map(_.trim)
       if trimmed.isEmpty then Left("exam names must not be empty")
       else if trimmed.exists(n => n.isEmpty || n.exists(c => c == '\n' || c == '\r')) then
         Left("exam names must be non-empty single-line strings")
-      else if trimmed.distinct.size != trimmed.size then Left("exam names must be unique")
+      else if trimmed.map(_.toLowerCase(Locale.ROOT)).distinct.size != trimmed.size then
+        Left("exam names must be unique")
       else Right(trimmed)
     }
 }

@@ -1380,8 +1380,8 @@ FROM
 $$;
 
 -- Returns the active exam list candidates of a PO sorted by title and id. Child modules
--- are never candidates; their PO relationships count for their parent module, and the
--- missing exam phases of the active ones follow those of the parent in alphabetical order.
+-- are never candidates; the PO relationships of active ones count for their parent module,
+-- and their missing exam phases follow those of the parent in alphabetical order.
 -- The semester is the smallest recommended semester of these relationships or
 -- the maximum integer without any.
 CREATE OR REPLACE FUNCTION exams.exam_list_options(po_id text)
@@ -1426,6 +1426,10 @@ candidate AS(
   FROM
     rel
     LEFT JOIN modules.module_relation relation ON relation.child = rel.module
+    LEFT JOIN modules.module child ON child.id = relation.child
+  WHERE
+    relation.child IS NULL
+    OR child.status = 'active'
   GROUP BY
     1
 ),
@@ -1453,7 +1457,6 @@ SELECT
           CROSS JOIN unnest(child.exam_phases) AS phase
         WHERE
           child.id = ANY(candidate.children)
-          AND child.status = 'active'
           AND phase <> ALL(module.exam_phases)
         ORDER BY phase)
         END, 'examNames', CASE WHEN module.module_type = 'generic_module' THEN
@@ -1528,7 +1531,8 @@ updated AS(
   UPDATE
     exams.exam_list_config c
   SET
-    config = c.config || jsonb_build_object('excludedModuleIds', jsonb_path_query_array(c.config -> 'excludedModuleIds', '$[*] ? (!(@ == $ids[*]))', removed.vars), 'excludedExams', jsonb_path_query_array(c.config -> 'excludedExams', '$[*] ? (!(@.module == $ids[*]))', removed.vars), 'registrationOverrides', jsonb_path_query_array(c.config -> 'registrationOverrides', '$[*] ? (!(@.module == $ids[*]))', removed.vars))
+    -- paths on the whole config yield [] instead of null for a missing array
+    config = c.config || jsonb_build_object('excludedModuleIds', jsonb_path_query_array(c.config, '$.excludedModuleIds[*] ? (!(@ == $ids[*]))', removed.vars), 'excludedExams', jsonb_path_query_array(c.config, '$.excludedExams[*] ? (!(@.module == $ids[*]))', removed.vars), 'registrationOverrides', jsonb_path_query_array(c.config, '$.registrationOverrides[*] ? (!(@.module == $ids[*]))', removed.vars))
   FROM
     removed
   WHERE
