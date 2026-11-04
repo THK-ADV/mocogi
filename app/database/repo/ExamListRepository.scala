@@ -96,29 +96,13 @@ final class ExamListRepository @Inject() (
 
   /**
    * Removes the modules from the configurations of POs they are no longer related to, e.g. after a module sync or
-   * deletion. Like for the candidates, the relations of child modules count for their parent module.
+   * deletion. See `exams.remove_unrelated_exam_list_modules` in `functions.sql`.
+   *
+   * @return the number of changed configurations
    */
   def removeUnrelatedModules(modules: Seq[UUID]): Future[Int] = {
     import database.MyPostgresProfile.MyAPI.setUUIDArray
-    db.run(sqlu"""
-      UPDATE exams.exam_list_config c
-      SET config = config || jsonb_build_object(
-        'excludedModuleIds', jsonb_path_query_array(config -> 'excludedModuleIds', '$$[*] ? (!(@ == $$ids[*]))', r.vars),
-        'excludedExams', jsonb_path_query_array(config -> 'excludedExams', '$$[*] ? (!(@.module == $$ids[*]))', r.vars),
-        'registrationOverrides',
-        jsonb_path_query_array(config -> 'registrationOverrides', '$$[*] ? (!(@.module == $$ids[*]))', r.vars))
-      FROM (
-        SELECT c.po, jsonb_build_object('ids', jsonb_agg(m)) AS vars
-        FROM exams.exam_list_config c, unnest(${modules.toList}::uuid[]) m
-        WHERE jsonb_path_exists(c.config, '$$.** ? (@ == $$m)', jsonb_build_object('m', m))
-          AND m NOT IN (
-            SELECT coalesce(r.parent, p.module)
-            FROM (SELECT module FROM modules.module_po_mandatory WHERE po = c.po
-                  UNION ALL SELECT module FROM modules.module_po_optional WHERE po = c.po) p
-            LEFT JOIN modules.module_relation r ON r.child = p.module)
-        GROUP BY c.po
-      ) r
-      WHERE r.po = c.po""")
+    db.run(sql"SELECT exams.remove_unrelated_exam_list_modules(${modules.toList})".as[Int].head)
   }
 
   /** Returns the candidates of the PO, or `None` if there is no current study program of the PO. */
