@@ -1380,7 +1380,8 @@ FROM
 $$;
 
 -- Returns the active exam list candidates of a PO sorted by title and id. Child modules
--- are never candidates; their PO relationships count for their parent module.
+-- are never candidates; their PO relationships count for their parent module, and the
+-- missing exam phases of the active ones follow those of the parent in alphabetical order.
 -- The semester is the smallest recommended semester of these relationships or
 -- the maximum integer without any.
 CREATE OR REPLACE FUNCTION exams.exam_list_options(po_id text)
@@ -1413,48 +1414,66 @@ CREATE OR REPLACE FUNCTION exams.exam_list_options(po_id text)
 ),
 candidate AS(
   SELECT
-    coalesce(r.parent, rel.module) AS id,
+    coalesce(relation.parent, rel.module) AS id,
     jsonb_agg(DISTINCT jsonb_build_object('po', po_id, 'specialization', rel.specialization, 'recommendedSemester', rel.recommended_semester, 'mandatory', rel.mandatory, 'instanceOf', rel.instance_of)) AS po,
     bool_or(rel.mandatory) AS mandatory,
-    coalesce(min(s.semester), 2147483647) AS semester
+    -- a scalar subquery instead of a lateral unnest, whose row estimate inflates the following joins
+    coalesce(min((
+        SELECT
+          min(semester)
+        FROM unnest(rel.recommended_semester) AS semester)), 2147483647) AS semester,
+    array_agg(relation.child) FILTER(WHERE relation.child IS NOT NULL) AS children
   FROM
     rel
-    LEFT JOIN modules.module_relation r ON r.child = rel.module
-    LEFT JOIN LATERAL unnest(rel.recommended_semester) AS s(semester) ON TRUE
+    LEFT JOIN modules.module_relation relation ON relation.child = rel.module
   GROUP BY
     1
 ),
 -- aggregated once for all candidates instead of once per candidate
 method AS(
   SELECT
-    a.module,
-    jsonb_agg(jsonb_build_object('method', a.assessment_method, 'percentage', a.percentage)
-    ORDER BY a.assessment_method) AS methods
+    assessment.module,
+    jsonb_agg(jsonb_build_object('method', assessment.assessment_method, 'percentage', assessment.percentage)
+    ORDER BY assessment.assessment_method) AS methods
   FROM
-    modules.module_assessment_method a
-    JOIN candidate c ON c.id = a.module
+    modules.module_assessment_method assessment
+    JOIN candidate ON candidate.id = assessment.module
   GROUP BY
-    a.module
+    assessment.module
 )
 SELECT
-  coalesce(jsonb_agg(jsonb_build_object('id', m.id, 'title', m.title, 'abbrev', m.abbrev, 'isGeneric', m.module_type = 'generic_module', 'mandatory', c.mandatory, 'semester', c.semester, 'po', c.po, 'assessmentMethods', coalesce(am.methods, '[]'), 'firstExaminer', m.first_examiner, 'secondExaminer', m.second_examiner, 'examPhases', m.exam_phases, 'examNames', CASE WHEN m.module_type = 'generic_module' THEN
+  coalesce(jsonb_agg(jsonb_build_object('id', module.id, 'title', module.title, 'abbrev', module.abbrev, 'isGeneric', module.module_type = 'generic_module', 'mandatory', candidate.mandatory, 'semester', candidate.semester, 'po', candidate.po, 'assessmentMethods', coalesce(method.methods, '[]'), 'firstExaminer', module.first_examiner, 'secondExaminer', module.second_examiner,
+        -- CASE skips the lookup for the majority of candidates without children
+        'examPhases', CASE WHEN candidate.children IS NULL THEN
+          module.exam_phases
+        ELSE
+          module.exam_phases || ARRAY( SELECT DISTINCT
+              phase
+            FROM modules.module child
+          CROSS JOIN unnest(child.exam_phases) AS phase
+        WHERE
+          child.id = ANY(candidate.children)
+          AND child.status = 'active'
+          AND phase <> ALL(module.exam_phases)
+        ORDER BY phase)
+        END, 'examNames', CASE WHEN module.module_type = 'generic_module' THEN
           '[]'
         ELSE
 (
             SELECT
-              jsonb_agg(e.name ORDER BY e.name)
-            FROM exams.module_exam e
+              jsonb_agg(exam.name ORDER BY exam.name)
+            FROM exams.module_exam exam
             WHERE
-              e.module = m.id
-              AND e.name IS NOT NULL)
+              exam.module = module.id
+              AND exam.name IS NOT NULL)
         END)
-    ORDER BY m.title, m.id), '[]')
+    ORDER BY module.title, module.id), '[]')
 FROM
-  candidate c
-  JOIN modules.module m ON m.id = c.id
-  LEFT JOIN method am ON am.module = m.id
+  candidate
+  JOIN modules.module module ON module.id = candidate.id
+  LEFT JOIN method ON method.module = module.id
 WHERE
-  m.status = 'active'
+  module.status = 'active'
 $$;
 
 -- Removes the given modules from the exam list configurations of POs that

@@ -181,6 +181,8 @@ latex.exam_lists.table.header.moduleExam=Module exam
 latex.exam_lists.table.header.examiner=Examiners
 latex.exam_lists.table.header.examPhases=Exam phases
 latex.exam_lists.table.header.registrationPeriod=Registration period
+latex.exam_lists.table.exam=Exam
+latex.exam_lists.table.exam_count={0,choice,1#1 exam|1<{0} exams}
 latex.exam_lists.table.header.continuation=Continuation of Modules…
 latex.exam_lists.table.footer.continuation=Continued on next page
 

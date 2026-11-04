@@ -101,6 +101,8 @@ final class ExamListsLatexPrinter(
     moduleMatrix(messages("latex.exam_lists.module_matrix.chapter"))
   }
 
+  private val examLabel = messages("latex.exam_lists.table.exam")
+
   private def assessmentRow(xs: List[ExamListAssessmentMethod]) =
     if xs.isEmpty then "—"
     else
@@ -203,10 +205,12 @@ final class ExamListsLatexPrinter(
         case List(ExamListExam(None, _)) | Nil =>
           List(module ++ List(phases, entry.exams.headOption.fold("")(registrationPeriodsRow(entry.examPhases, _))))
         case exams =>
-          (module ++ List("", "")) :: exams.map(e =>
+          val count = messages("latex.exam_lists.table.exam_count", exams.size)
+          val title = s"${module(1)}\\newline \\textcolor{gray}{$count}"
+          (module.updated(1, title) ++ List("", "")) :: exams.map(e =>
             List(
               "",
-              s"\\leftskip=1em\\relax ${escape(e.name.getOrElse(m.title))}",
+              s"\\leftskip=1em\\relax \\textcolor{gray}{$examLabel} ${escape(e.name.getOrElse(m.title))}",
               "",
               "",
               phases,

@@ -42,11 +42,12 @@ ALTER TABLE exams.exam_list
   ADD UNIQUE (po, semester);
 
 -- one row per module of the published exam list, the module data is copied at publication
+-- module has no foreign key, so published entries outlive the module
 -- exams: [{ name, registrationPeriods: { phase: { start, end } } }] where name = NULL refers to module_title
 CREATE TABLE exams.exam_list_entry(
   id uuid PRIMARY KEY,
   exam_list uuid NOT NULL REFERENCES exams.exam_list(id) ON DELETE CASCADE,
-  module uuid NOT NULL REFERENCES modules.module(id) ON DELETE CASCADE,
+  module uuid NOT NULL,
   module_title text NOT NULL,
   module_abbrev text NOT NULL,
   mandatory boolean NOT NULL,
