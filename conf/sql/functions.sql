@@ -283,7 +283,7 @@ CREATE OR REPLACE FUNCTION modules.build_module_info_json(inherited_perm bool, m
   AS $$
   SELECT
     -- coalesce with module drafts first (md), because they represent the latest data
-    json_build_object('isModuleManager', inherited_perm, 'isNewModule', cm.module IS NOT NULL, 'module', json_build_object('id', coalesce(md.module, cm.module, m.id), 'title', coalesce(md.module_title, cm.module_title, m.title), 'abbreviation', coalesce(md.module_abbrev, cm.module_abbrev, m.abbrev)), 'ects', coalesce((md.module_json -> 'metadata' -> 'ects')::numeric, cm.module_ects, m.ects), 'mandatoryPOs', po_mandatory, 'optionalPOs', po_optional, 'moduleDraftState', modules.calculate_module_draft_state(md), 'moduleDraft', CASE WHEN md.module IS NOT NULL THEN
+    json_build_object('isModuleManager', inherited_perm, 'isNewModule', cm.module IS NOT NULL, 'module', json_build_object('id', coalesce(md.module, cm.module, m.id), 'title', coalesce(md.module_title, cm.module_title, m.title), 'abbreviation', coalesce(md.module_abbrev, cm.module_abbrev, m.abbrev)), 'ects', coalesce((md.module_json -> 'metadata' -> 'ects')::numeric, cm.module_ects, m.ects), 'status', coalesce(md.module_json -> 'metadata' ->> 'status', m.status), 'mandatoryPOs', po_mandatory, 'optionalPOs', po_optional, 'moduleDraftState', modules.calculate_module_draft_state(md), 'moduleDraft', CASE WHEN md.module IS NOT NULL THEN
       json_build_object('id', md.module, 'title', md.module_title, 'abbreviation', md.module_abbrev, 'modifiedKeys', md.modified_keys, 'keysToBeReviewed', md.keys_to_be_reviewed)
     END)::jsonb
 $$;
