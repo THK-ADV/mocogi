@@ -15,6 +15,7 @@ enum PermissionType(val id: String) {
   case ArtifactsCreate     extends PermissionType("artifacts-create")
   case SchedulePlanning    extends PermissionType("schedule-planning")
   case ScheduleBooking     extends PermissionType("schedule-booking")
+  case ExamPlanning        extends PermissionType("exam-planning")
 
   def isAdmin: Boolean = this == Admin
 }
@@ -29,6 +30,7 @@ object PermissionType {
       case "artifacts-create"      => ArtifactsCreate
       case "schedule-planning"     => SchedulePlanning
       case "schedule-booking"      => ScheduleBooking
+      case "exam-planning"         => ExamPlanning
     }
 
   given Format[PermissionType] =
@@ -43,6 +45,7 @@ object PermissionType {
           case PermissionType.ArtifactsCreate     => "Artefakte erstellen"
           case PermissionType.SchedulePlanning    => "Stundenplanung"
           case PermissionType.ScheduleBooking     => "Einzelbuchung"
+          case PermissionType.ExamPlanning        => "Prüfungsplanung"
         }
         Json.obj("id" -> p.id, "label" -> label)
       }

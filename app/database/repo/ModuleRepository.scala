@@ -51,9 +51,6 @@ final class ModuleRepository @Inject() (
   private val moduleTaughtWithTable =
     TableQuery[ModuleTaughtWithTable]
 
-  private val moduleExamTable =
-    TableQuery[ModuleExamTable]
-
   protected val makeFilter: PartialFunction[(String, String), ModuleTable => Rep[
     Boolean
   ]] = {
@@ -95,31 +92,29 @@ final class ModuleRepository @Inject() (
     // another parent of the same batch without violating the unique constraint on module_relation
     val actions = for {
       oldChildren <- moduleRelationTable.filter(_.parent.inSet(ids)).map(_.child).result
-      _           <- DBIO.sequence(upsertActions)
-      _           <- DBIO.sequence(deleteDependencyActions)
-      _           <- DBIO.sequence(createDependencyActions)
-      _           <- reconcileExams(ids ++ oldChildren ++ newChildren)
+      _           <- reconcilingExams(ids ++ oldChildren ++ newChildren)(
+        DBIO.sequence(upsertActions) >> DBIO.sequence(deleteDependencyActions) >> DBIO.sequence(createDependencyActions)
+      )
     } yield ()
     db.run(actions.transactionally)
   }
 
   /**
-   * Adjusts the stored exams of the given live modules after their type or relations changed. Whether a module has
-   * own exams depends on both, which only change when module metadata is synced from main or a module is deleted, so
-   * exam updates alone cannot keep the stored exams consistent. Modules that became child or generic modules lose
-   * their exams, modules that gained own exams without any stored exams get the default exam, and maintained exam names
-   * stay untouched. The module rows are locked first to serialize with concurrent exam updates.
+   * Runs the module sync or deletion `sync` and then reconciles the exam assignments of the given modules, see
+   * `exams.reconcile_module_exams`. Whether a module has own exams depends on its type and relations, which only syncs
+   * and deletions change. The module rows are locked first, which serializes with exam writes, before the modules with
+   * own exams are read.
    */
-  def reconcileExams(modules: Iterable[UUID]): DBIO[Unit] = {
+  def reconcilingExams[A](modules: Seq[UUID])(sync: DBIO[A]): DBIO[A] = {
+    import database.MyPostgresProfile.MyAPI.setUUIDArray
     val affected = tableQuery.filter(_.id.inSet(modules))
-    val defaults = affected
-      .filter(m => m.hasOwnExams && !moduleExamTable.filter(_.module === m.id).exists)
-      .map(m => (m.id, LiteralColumn(Option.empty[String])))
     for {
-      _ <- affected.sortBy(_.id).map(_.id).forUpdate.result
-      _ <- moduleExamTable.filter(_.module.in(affected.filterNot(_.hasOwnExams).map(_.id))).delete
-      _ <- moduleExamTable.forceInsertQuery(defaults)
-    } yield ()
+      _      <- affected.sortBy(_.id).map(_.id).forUpdate.result
+      owning <- affected.filter(_.hasOwnExams).map(_.id).result
+      result <- sync
+      _      <- sql"SELECT exams.reconcile_module_exams(${modules.toList}::uuid[], ${owning.toList}::uuid[])"
+        .as[Option[String]]
+    } yield result
   }
 
   def all(filter: Map[String, Seq[String]]) = retrieve(allWithFilter(filter))

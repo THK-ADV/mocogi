@@ -20,4 +20,14 @@ final class RoomRepository @Inject() (
   protected val tableQuery = TableQuery[RoomTable]
 
   protected override def idOf(t: RoomTable) = t.id.asColumnOf[String]
+
+  override def list() = list(examCapacityOnly = false)
+
+  def list(examCapacityOnly: Boolean) =
+    db.run(
+      tableQuery
+        .filterIf(examCapacityOnly)(r => r.examCapacityOpt.isDefined || r.examCapacityMax.isDefined)
+        .sortBy(r => (r.abbrev, r.id))
+        .result
+    )
 }

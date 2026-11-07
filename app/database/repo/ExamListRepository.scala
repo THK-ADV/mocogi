@@ -147,34 +147,45 @@ final class ExamListRepository @Inject() (
   }
 
   /**
-   * Replaces the list of the PO and semester by the prepared entries. The list and the entries of retained modules keep
-   * their ids. Upserting the list locks its row, which serializes concurrent publications.
+   * Replaces the list of the PO and semester by the prepared entries, see `exams.replace_exam_list_entries`. The list
+   * and the entries of retained modules keep their ids. Upserting the list locks its row, which serializes concurrent
+   * publications. The listed exams are locked against merges and deletions first, so the entries cannot keep ids of
+   * exams merged or deleted since the entries were prepared. Such a publication fails instead.
    */
   def replace(po: String, semester: String, date: LocalDate, url: String, entries: Seq[PreparedExamListEntry]) = {
+    import database.MyPostgresProfile.MyAPI.setUUIDArray
+    val exams = entries.flatMap(_.exams.map(_.exam)).distinct.toList
+    val rows  = entries.map { e =>
+      val m = e.module
+      Json.obj(
+        "module"            -> m.id,
+        "moduleTitle"       -> m.title,
+        "moduleAbbrev"      -> m.abbrev,
+        "mandatory"         -> m.mandatory,
+        "po"                -> m.po,
+        "assessmentMethods" -> m.assessmentMethods.map(_.method),
+        "firstExaminer"     -> m.firstExaminer,
+        "secondExaminer"    -> m.secondExaminer,
+        "examPhases"        -> e.examPhases,
+        "exams"             -> e.exams
+      )
+    }
     val action = for {
+      locked <- sql"SELECT id::text FROM exams.exam WHERE id = ANY ($exams) ORDER BY id FOR KEY SHARE"
+        .as[String]
+        .map(_.map(UUID.fromString))
+      gone = exams.filterNot(locked.toSet)
+      _ <-
+        if gone.isEmpty then DBIO.unit
+        else
+          DBIO.failed(
+            ExamListConfigException(s"exams merged or deleted meanwhile, publish again: ${gone.mkString(", ")}")
+          )
       id <-
         sql"""INSERT INTO exams.exam_list (po, semester, date, url) VALUES ($po, $semester, $date, $url)
                   ON CONFLICT (po, semester) DO UPDATE SET date = excluded.date, url = excluded.url
-                  RETURNING id::text""".as[String].head.map(UUID.fromString)
-      ids <- entryQuery.filter(_.examList === id).map(e => (e.module, e.id)).result.map(_.toMap)
-      _   <- entryQuery.filter(_.examList === id).delete
-      _   <- entryQuery ++= entries.map { e =>
-        val m = e.module
-        ExamListEntry(
-          ids.getOrElse(m.id, UUID.randomUUID()),
-          id,
-          m.id,
-          m.title,
-          m.abbrev,
-          m.mandatory,
-          Json.toJson(m.po),
-          m.assessmentMethods.map(_.method),
-          m.firstExaminer,
-          m.secondExaminer,
-          e.examPhases,
-          Json.toJson(e.exams)
-        )
-      }
+                  RETURNING id::text""".as[String].head
+      _ <- sql"SELECT exams.replace_exam_list_entries($id::uuid, ${Json.toJson(rows)})".as[Option[String]]
     } yield ()
     db.run(action.transactionally)
   }

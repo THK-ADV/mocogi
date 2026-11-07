@@ -119,11 +119,6 @@ GET           /moduleReviewKeys                                                 
 GET           /moduleUpdatePermissions/:moduleId                                          controllers.ModuleUpdatePermissionController.allByModule(moduleId: java.util.UUID)
 POST          /moduleUpdatePermissions/:moduleId                                          controllers.ModuleUpdatePermissionController.replace(moduleId: java.util.UUID)
 
-# Module Exams
-
-GET           /moduleExams/:module                                                        controllers.ModuleExamController.get(module: java.util.UUID)
-PUT           /moduleExams/:module                                                        controllers.ModuleExamController.replace(module: java.util.UUID)
-
 # Permissions
 
 GET           /permissions                                                                controllers.PermissionController.all()
@@ -160,6 +155,33 @@ PUT           /scheduleEntries/:id/series                                       
 GET           /scheduleEntries/series/:seriesId/occurrences                               controllers.schedule.ScheduleEntryController.getSeriesOccurrences(seriesId: java.util.UUID)
 PUT           /scheduleEntries/:id                                                        controllers.schedule.ScheduleEntryController.update(id: java.util.UUID)
 DELETE        /scheduleEntries/:id                                                        controllers.schedule.ScheduleEntryController.delete(id: java.util.UUID)
+
+# Exams
+
+GET           /exams                                                                      controllers.ExamController.all()
+GET           /modules/:module/exams                                                      controllers.ExamController.forModule(module: java.util.UUID)
+POST          /exams                                                                      controllers.ExamController.create()
+POST          /exams/merge                                                                controllers.ExamController.merge()
+PUT           /exams/:id                                                                  controllers.ExamController.update(id: java.util.UUID)
+DELETE        /exams/:id                                                                  controllers.ExamController.delete(id: java.util.UUID)
+
+# Exam Planning
+
+GET           /examPool                                                                   controllers.schedule.ExamPlanController.pool()
+GET           /examEntries                                                                controllers.schedule.ExamPlanController.published()
+GET           /examPlans                                                                  controllers.schedule.ExamPlanController.all()
+GET           /examPlans/:id                                                              controllers.schedule.ExamPlanController.get(id: java.util.UUID)
+POST          /examPlans                                                                  controllers.schedule.ExamPlanController.create()
+DELETE        /examPlans/:id                                                              controllers.schedule.ExamPlanController.delete(id: java.util.UUID)
+GET           /examPlans/:id/examPoolConfig                                               controllers.schedule.ExamPlanController.poolConfig(id: java.util.UUID)
+PUT           /examPlans/:id/examPoolConfig                                               controllers.schedule.ExamPlanController.updatePoolConfig(id: java.util.UUID)
+GET           /examPlans/:id/examEntries                                                  controllers.schedule.ExamPlanController.entries(id: java.util.UUID)
+POST          /examPlans/:id/examEntries                                                  controllers.schedule.ExamPlanController.createEntries(id: java.util.UUID)
+PUT           /examPlans/:id/examEntries/:entryId                                         controllers.schedule.ExamPlanController.updateEntry(id: java.util.UUID, entryId: java.util.UUID)
+PUT           /examPlans/:id/examEntries/:entryId/rooms                                   controllers.schedule.ExamPlanController.updateRooms(id: java.util.UUID, entryId: java.util.UUID)
+DELETE        /examPlans/:id/examEntries/:entryId                                         controllers.schedule.ExamPlanController.deleteEntry(id: java.util.UUID, entryId: java.util.UUID)
+POST          /examPlans/:id/assignInvigilators                                           controllers.schedule.ExamPlanController.assignInvigilators(id: java.util.UUID)
+POST          /examPlans/:id/publish                                                      controllers.schedule.ExamPlanController.publish(id: java.util.UUID)
 
 # Schedule Plan Drafts
 

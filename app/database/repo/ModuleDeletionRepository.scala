@@ -36,20 +36,22 @@ final class ModuleDeletionRepository @Inject() (
    * - the associated merge request is closed
    */
   def delete(module: UUID): Future[Unit] = {
-    val action = for
-      children <- TableQuery[ModuleRelationTable].filter(_.parent === module).map(_.child).result
-      _        <- moduleRepository.deleteRelations(module)
-      _        <- moduleRepository.deleteDependencies(module)
-      _        <- moduleRepository.tableQuery.filter(_.id === module).delete
-      moduleDraftQuery = TableQuery[ModuleDraftTable].filter(_.module === module)
-      _ <- TableQuery[ModuleReviewTable].filter(_.moduleDraft.in(moduleDraftQuery.map(_.module))).delete
-      _ <- moduleDraftQuery.delete
-      _ <- TableQuery[ModuleUpdatePermissionTable].filter(_.module === module).delete
-      _ <- TableQuery[ModulePermittedAssessmentMethodTable].filter(_.module === module).delete
-      _ <- TableQuery[ModuleCompanionTable].filter(_.module === module).delete
-      _ <- TableQuery[CreatedModuleTable].filter(_.module === module).delete
-      _ <- moduleRepository.reconcileExams(children)
-    yield ()
+    val moduleDraftQuery = TableQuery[ModuleDraftTable].filter(_.module === module)
+    val action           = TableQuery[ModuleRelationTable].filter(_.parent === module).map(_.child).result.flatMap { children =>
+      moduleRepository.reconcilingExams(children)(
+        DBIO.seq(
+          moduleRepository.deleteRelations(module),
+          moduleRepository.deleteDependencies(module),
+          moduleRepository.tableQuery.filter(_.id === module).delete,
+          TableQuery[ModuleReviewTable].filter(_.moduleDraft.in(moduleDraftQuery.map(_.module))).delete,
+          moduleDraftQuery.delete,
+          TableQuery[ModuleUpdatePermissionTable].filter(_.module === module).delete,
+          TableQuery[ModulePermittedAssessmentMethodTable].filter(_.module === module).delete,
+          TableQuery[ModuleCompanionTable].filter(_.module === module).delete,
+          TableQuery[CreatedModuleTable].filter(_.module === module).delete
+        )
+      )
+    }
     for
       _ <- db.run(action.transactionally)
       _ <- moduleViewRepository.refreshView()

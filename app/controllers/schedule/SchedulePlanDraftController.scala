@@ -13,7 +13,6 @@ import controllers.actions.UserRequest
 import controllers.actions.UserResolveAction
 import database.repo.schedule.SchedulePlanDraftRepository
 import database.repo.PermissionRepository
-import models.schedule.PlanDraftKind
 import models.schedule.PlanDraftProtocol
 import models.schedule.ScheduleEntryProtocol
 import models.schedule.ScheduleEntrySeriesId
@@ -38,33 +37,31 @@ final class SchedulePlanDraftController @Inject() (
     with SchedulePlanningViewCheck {
 
   /**
-   * Returns all plan drafts, filtered by semester, kind or active status.
+   * Returns all schedule plan drafts, filtered by semester or active status.
    *
    * Query parameters:
    *   - `semester`: the semester to filter by (for example `"wise_2025"`)
-   *   - `kind`: the kind of plan draft to filter by (for example `"schedule"`)
    *   - `activeOnly`: whether to filter by active status only (for example `"true"`)
    */
   def all() =
     auth.andThen(resolveUser).andThen(canViewPlanDraft).async { (r: UserRequest[AnyContent]) =>
       val result = for {
         semester   <- parseSemester(r.getQueryString("semester"))
-        kind       <- parseKind(r.getQueryString("kind"))
         activeOnly <- parseActive(r.getQueryString("activeOnly"))
-      } yield repo.all(kind, semester, activeOnly).map(drafts => Ok(Json.toJson(drafts)))
+      } yield repo.all(semester, activeOnly).map(drafts => Ok(Json.toJson(drafts)))
 
       result.fold(Future.successful, _.recover(clientError))
     }
 
   def get(id: UUID) =
-    auth.andThen(resolveUser).andThen(canViewPlanDraft).async { r =>
-      val result = for {
-        kind <- parseKind(r.getQueryString("kind"))
-      } yield repo.get(id, kind).map {
-        case Some((d, s)) => Ok(Json.obj("planDraft" -> d, "semester" -> s))
-        case None         => NotFound
-      }
-      result.fold(Future.successful, _.recover(clientError))
+    auth.andThen(resolveUser).andThen(canViewPlanDraft).async { (_: UserRequest[AnyContent]) =>
+      repo
+        .get(id)
+        .map {
+          case Some((d, s)) => Ok(Json.obj("planDraft" -> d, "semester" -> s))
+          case None         => NotFound
+        }
+        .recover(clientError)
     }
 
   def create() =
@@ -160,14 +157,6 @@ final class SchedulePlanDraftController @Inject() (
         try Right(Some(Semester.apply(value).id))
         catch case NonFatal(_) => Left(BadRequest(Json.obj("message" -> s"invalid semester: $value")))
       case None => Right(None)
-    }
-
-  private def parseKind(raw: Option[String]): Either[Result, PlanDraftKind] =
-    raw match {
-      case Some(value) =>
-        try Right(PlanDraftKind(value))
-        catch case NonFatal(_) => Left(BadRequest(Json.obj("message" -> s"invalid kind: $value")))
-      case None => Left(BadRequest(Json.obj("message" -> "kind query parameter is required")))
     }
 
   private def parseActive(raw: Option[String]): Either[Result, Boolean] =

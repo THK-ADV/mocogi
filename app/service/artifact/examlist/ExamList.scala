@@ -22,12 +22,12 @@ private val nullable = Json.configured(JsonConfiguration(optionHandlers = Option
 /** Inclusive date range whose bounds may be missing while the configuration is edited. */
 final case class DateRange(start: Option[LocalDate], end: Option[LocalDate])
 
-/** References an exam of a module. `None` denotes the default exam. */
-final case class ExamRef(module: UUID, exam: Option[String])
+/** References an exam of a module. An exam assigned to several modules has one reference per module. */
+final case class ExamRef(module: UUID, exam: UUID)
 
 final case class RegistrationOverride(
     module: UUID,
-    exam: Option[String],
+    exam: UUID,
     phase: String,
     start: Option[LocalDate],
     end: Option[LocalDate]
@@ -58,7 +58,7 @@ object ExamListConfig {
     def reversed(range: String, start: Option[LocalDate], end: Option[LocalDate]) =
       start.zip(end).collect { case (s, e) if s.isAfter(e) => s"$range starts after it ends" }
     def overrideLabel(o: RegistrationOverride) =
-      s"registration override for module ${o.module}, exam ${o.exam.getOrElse("default")}, phase ${o.phase}"
+      s"registration override for module ${o.module}, exam ${o.exam}, phase ${o.phase}"
 
     Option.unless(c.semester.matches("(sose|wise)_\\d{4}"))(s"invalid semester ${c.semester}").toList ++
       c.examPhases.filterNot(phases).map(p => s"unknown exam phase $p") ++
@@ -87,6 +87,8 @@ object ExamListPO {
 
 final case class ExamListAssessmentMethod(method: String, percentage: Option[Double])
 
+final case class ExamListModuleExam(id: UUID, name: String)
+
 /**
  * Active candidate module of an exam list with its relations united over its child modules. `semester` is the smallest
  * recommended semester of these relations, or `Int.MaxValue` without any.
@@ -103,22 +105,23 @@ final case class ExamListModuleOption(
     firstExaminer: String,
     secondExaminer: String,
     examPhases: List[String],
-    examNames: Option[List[String]]
+    exams: List[ExamListModuleExam]
 )
 
 object ExamListModuleOption {
   given Format[ExamListAssessmentMethod] = nullable.format
+  given Format[ExamListModuleExam]       = Json.format
   given Format[ExamListModuleOption]     = nullable.format
 }
 
 final case class ExamListPeriod(start: LocalDate, end: LocalDate)
 
-/** Exam of an exam list entry. `None` refers to the module title of the entry. */
-final case class ExamListExam(name: Option[String], registrationPeriods: Map[String, ExamListPeriod])
+/** Exam of an exam list entry with its name at publication. */
+final case class ExamListExam(exam: UUID, name: String, registrationPeriods: Map[String, ExamListPeriod])
 
 object ExamListExam {
   given Writes[ExamListPeriod] = Json.writes
-  given Writes[ExamListExam]   = nullable.writes
+  given Writes[ExamListExam]   = Json.writes
 }
 
 /** Module included in an exam list with its considered phases and exams, as rendered and stored on publication. */

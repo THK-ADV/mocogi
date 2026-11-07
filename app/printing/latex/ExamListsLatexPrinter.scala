@@ -15,7 +15,7 @@ import play.api.i18n.MessagesApi
 import printing.fmtDouble
 import printing.LocalizedStrings
 
-/** Renders prepared exam list entries. Named exams get their own indented rows below the module. */
+/** Renders prepared exam list entries. */
 final class ExamListsLatexPrinter(
     entries: List[PreparedExamListEntry],
     data: ExamListData,
@@ -164,8 +164,9 @@ final class ExamListsLatexPrinter(
   }
 
   /**
-   * Renders one row per module. Named exams follow in indented rows numbered after the module (e.g. 10.1), so that a
-   * module and its exams form one block in one color without a page break inside.
+   * Renders one row per module. Exams other than a single one named like the module follow in indented rows numbered
+   * after the module (e.g. 10.1), so that a module and its exams form one block in one color without a page break
+   * inside.
    */
   private def examLists(entries: List[PreparedExamListEntry], titleLabel: String): Unit = {
     val continuationHeaderLabel = messages("latex.exam_lists.table.header.continuation")
@@ -200,13 +201,13 @@ final class ExamListsLatexPrinter(
       val module = List(s"${i + 1}", escape(m.title), assessmentRow(m.assessmentMethods), examinerRow(m))
       val phases = examPhasesRow(entry.examPhases, withPeriods = !m.isGeneric)
       val rows   = entry.exams match {
-        case List(ExamListExam(None, _)) | Nil =>
+        case Nil | List(ExamListExam(_, m.title, _)) =>
           List(module ++ List(phases, entry.exams.headOption.fold("")(registrationPeriodsRow(entry.examPhases, _))))
         case exams =>
           (module ++ List("", "")) :: exams.zipWithIndex.map((e, j) =>
             List(
               s"${i + 1}.${j + 1}",
-              s"\\leftskip=1em\\relax ${escape(e.name.getOrElse(m.title))}",
+              s"\\leftskip=1em\\relax ${escape(e.name)}",
               "",
               "",
               phases,

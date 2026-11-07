@@ -51,23 +51,21 @@ object ExamListService {
     val overrides       =
       config.registrationOverrides.map(o => (o.module, o.exam, o.phase) -> DateRange(o.start, o.end)).toMap
 
-    def period(m: ExamListModuleOption, exam: Option[String], phase: String) =
+    def period(m: ExamListModuleOption, exam: ExamListModuleExam, phase: String) =
       overrides
-        .get((m.id, exam, phase))
+        .get((m.id, exam.id, phase))
         .orElse(config.registrationPeriods.get(phase))
         .collect { case DateRange(Some(start), Some(end)) => phase -> ExamListPeriod(start, end) }
-        .toRightNel(
-          s"missing registration period for module ${m.title} (${m.id}), exam ${exam.getOrElse(m.title)}, phase $phase"
-        )
+        .toRightNel(s"missing registration period for module ${m.title} (${m.id}), exam ${exam.name}, phase $phase")
 
     def entry(m: ExamListModuleOption): Option[EitherNel[String, PreparedExamListEntry]] =
       if m.isGeneric then Some(Right(PreparedExamListEntry(m, m.examPhases.filterNot(_ == ExamPhase.none.id), Nil)))
       else {
         val phases = m.examPhases.filter(config.examPhases.contains)
-        val exams  = m.examNames.fold(List(None))(_.map(Some(_))).filterNot(e => excludedExams(ExamRef(m.id, e)))
+        val exams  = m.exams.filterNot(e => excludedExams(ExamRef(m.id, e.id)))
         Option.when(phases.nonEmpty && exams.nonEmpty)(
           exams
-            .parTraverse(e => phases.parTraverse(period(m, e, _)).map(ps => ExamListExam(e, ps.toMap)))
+            .parTraverse(e => phases.parTraverse(period(m, e, _)).map(ps => ExamListExam(e.id, e.name, ps.toMap)))
             .map(PreparedExamListEntry(m, phases, _))
         )
       }
