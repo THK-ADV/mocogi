@@ -149,8 +149,8 @@ final class ExamListRepository @Inject() (
   /**
    * Replaces the list of the PO and semester by the prepared entries, see `exams.replace_exam_list_entries`. The list
    * and the entries of retained modules keep their ids. Upserting the list locks its row, which serializes concurrent
-   * publications. The listed exams are locked against merges and deletions first, so the entries cannot keep ids of
-   * exams merged or deleted since the entries were prepared. Such a publication fails instead.
+   * publications. The listed exams are locked against merges and deletions first, and the publication fails if one was
+   * merged or deleted since the entries were prepared.
    */
   def replace(po: String, semester: String, date: LocalDate, url: String, entries: Seq[PreparedExamListEntry]) = {
     import database.MyPostgresProfile.MyAPI.setUUIDArray

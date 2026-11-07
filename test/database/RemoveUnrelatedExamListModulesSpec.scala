@@ -26,10 +26,10 @@ final class RemoveUnrelatedExamListModulesSpec extends ExamFixtures {
   private val child    = id(4)
   private val notGiven = id(5) // unrelated, but not passed to the function
 
-  private def excludedExam(module: UUID) = Json.obj("module" -> module, "exam" -> JsNull)
+  private def excludedExam(module: UUID) = Json.obj("module" -> module, "exam" -> module)
 
   private def registrationOverride(module: UUID) =
-    Json.obj("module" -> module, "exam" -> JsNull, "phase" -> "wise_1", "start" -> "2027-01-04", "end" -> "2027-01-08")
+    Json.obj("module" -> module, "exam" -> module, "phase" -> "wise_1", "start" -> "2027-01-04", "end" -> "2027-01-08")
 
   private def config(modules: List[UUID]) =
     Json.obj(

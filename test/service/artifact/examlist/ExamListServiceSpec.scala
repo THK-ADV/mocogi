@@ -35,10 +35,13 @@ final class ExamListServiceSpec extends AnyFunSuite with Matchers {
     registrationOverrides = Nil
   )
 
+  private def examId(module: UUID, name: String) = UUID.nameUUIDFromBytes(s"$module$name".getBytes)
+
+  /** Candidate whose exams have the given names, a single exam named like the module without any. */
   private def module(
       id: UUID,
       phases: List[String] = List("wise_1"),
-      names: Option[List[String]] = None,
+      names: List[String] = Nil,
       isGeneric: Boolean = false
   ) =
     ExamListModuleOption(
@@ -53,57 +56,59 @@ final class ExamListServiceSpec extends AnyFunSuite with Matchers {
       "first",
       "second",
       phases,
-      names
+      (if names.isEmpty then List(s"Module $id") else names).map(n => ExamListModuleExam(examId(id, n), n))
     )
+
+  private def exam(m: ExamListModuleOption, name: String, periods: (String, ExamListPeriod)*) =
+    ExamListExam(examId(m.id, name), name, periods.toMap)
 
   private def prepared(options: ExamListModuleOption*)(c: ExamListConfig = config) =
     ExamListService.prepare(c, options).fold(e => fail(e), identity)
 
-  test("a module without exam names yields one default exam, named exams yield one exam each in candidate order") {
+  test("each exam of a module yields one exam in candidate order") {
     val a = module(moduleA)
-    val b = module(moduleB, names = Some(List("Klausur", "Praktikum")))
+    val b = module(moduleB, names = List("Klausur", "Praktikum"))
 
     prepared(a, b)() shouldBe List(
-      PreparedExamListEntry(a, List("wise_1"), List(ExamListExam(None, Map("wise_1" -> wise)))),
+      PreparedExamListEntry(a, List("wise_1"), List(exam(a, a.title, "wise_1" -> wise))),
       PreparedExamListEntry(
         b,
         List("wise_1"),
-        List(
-          ExamListExam(Some("Klausur"), Map("wise_1" -> wise)),
-          ExamListExam(Some("Praktikum"), Map("wise_1" -> wise))
-        )
+        List(exam(b, "Klausur", "wise_1" -> wise), exam(b, "Praktikum", "wise_1" -> wise))
       )
     )
   }
 
   test("an override of exam and phase beats the global period without leaking to other exams or phases") {
     val period = ExamListPeriod(LocalDate.of(2026, 10, 1), LocalDate.of(2026, 10, 5))
-    val m      = module(moduleA, List("wise_1", "off_wise"), Some(List("Klausur", "Praktikum")))
+    val m      = module(moduleA, List("wise_1", "off_wise"), List("Klausur", "Praktikum"))
     val c      = config.copy(registrationOverrides =
-      List(RegistrationOverride(moduleA, Some("Klausur"), "wise_1", Some(period.start), Some(period.end)))
+      List(RegistrationOverride(moduleA, examId(moduleA, "Klausur"), "wise_1", Some(period.start), Some(period.end)))
     )
 
     prepared(m)(c).flatMap(_.exams) shouldBe List(
-      ExamListExam(Some("Klausur"), Map("wise_1" -> period, "off_wise" -> off)),
-      ExamListExam(Some("Praktikum"), Map("wise_1" -> wise, "off_wise" -> off))
+      exam(m, "Klausur", "wise_1"   -> period, "off_wise" -> off),
+      exam(m, "Praktikum", "wise_1" -> wise, "off_wise"   -> off)
     )
   }
 
-  test("an override of the default exam applies to it, but not to the same phase of another module") {
+  test("an override of an exam applies to it, but not to the same exam and phase of another module") {
     val period = ExamListPeriod(LocalDate.of(2026, 10, 1), LocalDate.of(2026, 10, 5))
+    val shared = ExamListModuleExam(examId(moduleA, "Shared"), "Shared")
+    val (a, b) = (module(moduleA).copy(exams = List(shared)), module(moduleB).copy(exams = List(shared)))
     val c      = config.copy(registrationOverrides =
-      List(RegistrationOverride(moduleA, None, "wise_1", Some(period.start), Some(period.end)))
+      List(RegistrationOverride(moduleA, shared.id, "wise_1", Some(period.start), Some(period.end)))
     )
 
-    prepared(module(moduleA), module(moduleB))(c).map(_.exams) shouldBe List(
-      List(ExamListExam(None, Map("wise_1" -> period))),
-      List(ExamListExam(None, Map("wise_1" -> wise)))
+    prepared(a, b)(c).map(_.exams) shouldBe List(
+      List(ExamListExam(shared.id, "Shared", Map("wise_1" -> period))),
+      List(ExamListExam(shared.id, "Shared", Map("wise_1" -> wise)))
     )
   }
 
   test("incomplete and absent periods are all reported together across modules, exams and phases") {
     val c = config.copy(registrationPeriods = Map("wise_1" -> DateRange(Some(wiseStart), None)))
-    val a = module(moduleA, List("wise_1", "off_wise"), Some(List("Klausur", "Praktikum")))
+    val a = module(moduleA, List("wise_1", "off_wise"), List("Klausur", "Praktikum"))
     val b = module(moduleB, List("off_wise"))
     val d = module(moduleC, List("wise_1"))
 
@@ -127,33 +132,37 @@ final class ExamListServiceSpec extends AnyFunSuite with Matchers {
       PreparedExamListEntry(
         a,
         List("off_wise", "wise_1"),
-        List(ExamListExam(None, Map("off_wise" -> off, "wise_1" -> wise)))
+        List(exam(a, a.title, "off_wise" -> off, "wise_1" -> wise))
       )
     )
   }
 
-  test("excluded exams are removed, including the default exam, and modules without remaining exams are dropped") {
-    val a = module(moduleA, names = Some(List("Klausur", "Praktikum")))
+  test("excluded exams are removed and modules without remaining or any exams are dropped") {
+    val a = module(moduleA, names = List("Klausur", "Praktikum"))
     val b = module(moduleB)
-    val d = module(moduleC, names = Some(List("Klausur")))
+    val d = module(moduleC, names = List("Klausur"))
     val c = config.copy(
-      excludedExams =
-        List(ExamRef(moduleA, Some("Klausur")), ExamRef(moduleB, None), ExamRef(moduleC, Some("Klausur"))),
+      excludedExams = List(
+        ExamRef(moduleA, examId(moduleA, "Klausur")),
+        ExamRef(moduleB, examId(moduleB, b.title)),
+        ExamRef(moduleC, examId(moduleC, "Klausur"))
+      ),
       registrationPeriods = Map.empty,
       registrationOverrides =
-        List(RegistrationOverride(moduleA, Some("Praktikum"), "wise_1", Some(wiseStart), Some(wiseEnd)))
+        List(RegistrationOverride(moduleA, examId(moduleA, "Praktikum"), "wise_1", Some(wiseStart), Some(wiseEnd)))
     )
 
-    prepared(a, b, d)(c) shouldBe List(
-      PreparedExamListEntry(a, List("wise_1"), List(ExamListExam(Some("Praktikum"), Map("wise_1" -> wise))))
+    prepared(a, b, d, module(generic).copy(exams = Nil))(c) shouldBe List(
+      PreparedExamListEntry(a, List("wise_1"), List(exam(a, "Praktikum", "wise_1" -> wise)))
     )
   }
 
-  test("a default exam exclusion does not match named exams of the same module") {
-    val a = module(moduleA, names = Some(List("Klausur")))
+  test("an exam exclusion does not match the same exam of another module") {
+    val shared = ExamListModuleExam(examId(moduleA, "Shared"), "Shared")
+    val (a, b) = (module(moduleA).copy(exams = List(shared)), module(moduleB).copy(exams = List(shared)))
 
-    prepared(a)(config.copy(excludedExams = List(ExamRef(moduleA, None)))).flatMap(_.exams.map(_.name)) shouldBe
-      List(Some("Klausur"))
+    prepared(a, b)(config.copy(excludedExams = List(ExamRef(moduleA, shared.id)))).map(_.module.id) shouldBe
+      List(moduleB)
   }
 
   test("excluded modules are dropped without requiring a registration period") {
@@ -164,7 +173,7 @@ final class ExamListServiceSpec extends AnyFunSuite with Matchers {
   }
 
   test("generic modules drop the phase none, have no exams and need no registration periods") {
-    val g = module(generic, List("none", "wise_1"), Some(List("Klausur")), isGeneric = true)
+    val g = module(generic, List("none", "wise_1"), List("Klausur"), isGeneric = true)
 
     prepared(g)(config.copy(registrationPeriods = Map.empty)) shouldBe
       List(PreparedExamListEntry(g, List("wise_1"), Nil))
@@ -179,8 +188,9 @@ final class ExamListServiceSpec extends AnyFunSuite with Matchers {
   test("orphaned exclusions and overrides of unknown modules are ignored") {
     val c = config.copy(
       excludedModuleIds = List(unknown),
-      excludedExams = List(ExamRef(unknown, None)),
-      registrationOverrides = List(RegistrationOverride(unknown, None, "wise_1", None, None))
+      excludedExams = List(ExamRef(unknown, examId(moduleA, s"Module $moduleA"))),
+      registrationOverrides =
+        List(RegistrationOverride(unknown, examId(moduleA, s"Module $moduleA"), "wise_1", None, None))
     )
 
     prepared(module(moduleA))(c) shouldBe prepared(module(moduleA))()

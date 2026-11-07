@@ -70,8 +70,15 @@ trait ExamFixtures extends AnyFunSuite, Matchers, BeforeAndAfterAll {
            VALUES (gen_random_uuid(), ${module.toString}::uuid, $po, ${instanceOf.toString}::uuid, FALSE,
                    ${semesterArray(semesters)}::int[])"""
 
-  protected def exam(module: UUID, name: Option[String]): DBIO[Int] =
-    sqlu"INSERT INTO exams.module_exam (module, name) VALUES (${module.toString}::uuid, $name)"
+  protected def exam(exam: UUID, name: String, modules: UUID*): DBIO[Int] =
+    sqlu"INSERT INTO exams.exam (id, name) VALUES (${exam.toString}::uuid, $name)" >>
+      DBIO
+        .sequence(
+          modules.map(m =>
+            sqlu"INSERT INTO exams.exam_module (exam, module) VALUES (${exam.toString}::uuid, ${m.toString}::uuid)"
+          )
+        )
+        .map(_.sum)
 
   protected def insertAssessmentMethod(method: String): DBIO[Int] =
     sqlu"""INSERT INTO core.assessment_method
@@ -83,4 +90,44 @@ trait ExamFixtures extends AnyFunSuite, Matchers, BeforeAndAfterAll {
 
   protected def insertConfig(po: String, config: JsValue): DBIO[Int] =
     sqlu"INSERT INTO exams.exam_list_config (po, config) VALUES ($po, ${config.toString}::jsonb)"
+
+  protected def examPlan(plan: UUID, semester: String): DBIO[Int] =
+    sqlu"""INSERT INTO schedule.plan_draft (id, kind, semester, created_at, updated_at)
+           VALUES (${plan.toString}::uuid, 'exam', $semester, LOCALTIMESTAMP, LOCALTIMESTAMP)"""
+
+  protected def insertRoom(room: UUID, abbrev: String): DBIO[Int] =
+    sqlu"""INSERT INTO schedule.room (id, label, abbrev, type, capacity)
+           VALUES (${room.toString}::uuid, $abbrev, $abbrev, 'lecture_hall', 100)"""
+
+  /** Appointment of the exam on 2 February 2026 from `from` to `to` o'clock UTC. */
+  protected def entryDraft(
+      entry: UUID,
+      plan: UUID,
+      exam: UUID,
+      from: Int,
+      to: Int,
+      method: Option[String] = None,
+      phase: String = "wise_1"
+  ): DBIO[Int] =
+    sqlu"""INSERT INTO schedule.exam_entry_draft (id, plan_draft, exam, phase, "start", "end", assessment_method)
+           VALUES (${entry.toString}::uuid, ${plan.toString}::uuid, ${exam.toString}::uuid, $phase,
+                   '2026-02-02T00:00:00Z'::timestamptz + make_interval(hours => $from),
+                   '2026-02-02T00:00:00Z'::timestamptz + make_interval(hours => $to), $method)"""
+
+  protected def roomDraft(
+      entry: UUID,
+      room: UUID,
+      invigilators: List[String] = Nil,
+      partition: Option[(String, String)] = None
+  ): DBIO[Int] =
+    sqlu"""INSERT INTO schedule.exam_room_draft
+             (exam_entry_draft, room, allocated_seats, required_invigilators, invigilators, partition_by, partition_value)
+           VALUES (${entry.toString}::uuid, ${room.toString}::uuid, 30, ${invigilators.size + 1},
+                   ${invigilators.mkString("{", ",", "}")}::text[], ${partition.map(_._1)}, ${partition.map(_._2)})"""
+
+  protected def publishExamPlan(plan: UUID): DBIO[Int] =
+    sql"SELECT schedule.publish_exam_plan(${plan.toString}::uuid)".as[Int].head
+
+  protected def hasUnpublishedChanges(plan: UUID): DBIO[Boolean] =
+    sql"SELECT schedule.exam_plan_has_unpublished_changes(${plan.toString}::uuid)".as[Boolean].head
 }

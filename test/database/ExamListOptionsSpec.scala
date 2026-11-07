@@ -133,24 +133,27 @@ final class ExamListOptionsSpec extends ExamFixtures {
     (option(optionalOnly) \ "po").as[List[JsValue]] shouldBe List(relation(mandatory = false, 2, Some(generic)))
   }
 
-  test("exam names are empty for generic modules, null without named exams and sorted by name otherwise") {
-    val (genericCandidate, default, none, named) = (id(1), id(2), id(3), id(4))
-    val result                                   = staged(
-      insertModule(genericCandidate, "Generic", generic = true) >> insertModule(default, "Default") >>
+  test("exams are empty for generic modules and modules without exams and sorted by name and id otherwise") {
+    val (genericCandidate, single, none, named) = (id(1), id(2), id(3), id(4))
+    val (project, klausur2, klausur1, stale)    = (id(101), id(103), id(102), id(104))
+    val result                                  = staged(
+      insertModule(genericCandidate, "Generic", generic = true) >> insertModule(single, "Single") >>
         insertModule(none, "None") >> insertModule(named, "Named") >>
-        exam(genericCandidate, Some("Stale")) >> exam(default, None) >>
-        exam(named, Some("Projekt")) >> exam(named, Some("Klausur")) >>
-        DBIO.seq(List(genericCandidate, default, none, named).map(mandatory(_, po, List(1)))*) >>
+        exam(stale, "Stale", genericCandidate) >> exam(project, "Projekt", named) >>
+        exam(klausur2, "Klausur", named, single) >> exam(klausur1, "Klausur", named) >>
+        DBIO.seq(List(genericCandidate, single, none, named).map(mandatory(_, po, List(1)))*) >>
         options(po)
     )
-    val option = byId(result)
+    val option              = byId(result)
+    def exams(module: UUID) =
+      (option(module) \ "exams").as[List[JsValue]].map(e => (e \ "id").as[UUID] -> (e \ "name").as[String])
 
     (option(genericCandidate) \ "isGeneric").as[Boolean] shouldBe true
-    (option(default) \ "isGeneric").as[Boolean] shouldBe false
-    (option(genericCandidate) \ "examNames").get shouldBe JsArray()
-    (option(default) \ "examNames").get shouldBe JsNull
-    (option(none) \ "examNames").get shouldBe JsNull
-    (option(named) \ "examNames").as[List[String]] shouldBe List("Klausur", "Projekt")
+    (option(single) \ "isGeneric").as[Boolean] shouldBe false
+    (option(genericCandidate) \ "exams").get shouldBe JsArray()
+    (option(none) \ "exams").get shouldBe JsArray()
+    exams(single) shouldBe List(klausur2 -> "Klausur")
+    exams(named) shouldBe List(klausur1 -> "Klausur", klausur2 -> "Klausur", project -> "Projekt")
   }
 
   test("assessment methods are sorted by method and empty without any") {
