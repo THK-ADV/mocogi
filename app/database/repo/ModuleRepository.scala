@@ -85,16 +85,36 @@ final class ModuleRepository @Inject() (
 
     def createDependencyActions = modules.map { case (module, _) => createDependencies(module.metadata) }
 
+    val ids         = modules.map(_._1.metadata.id)
+    val newChildren = modules.flatMap((module, _) => moduleRelations(module.metadata).map(_.child))
+
     // all dependencies are deleted before any is created, so that a child module can move to
     // another parent of the same batch without violating the unique constraint on module_relation
-    val actions = DBIO
-      .seq(
-        DBIO.sequence(upsertActions),
-        DBIO.sequence(deleteDependencyActions),
-        DBIO.sequence(createDependencyActions)
+    val actions = for {
+      oldChildren <- moduleRelationTable.filter(_.parent.inSet(ids)).map(_.child).result
+      _           <- reconcilingExams(ids ++ oldChildren ++ newChildren)(
+        DBIO.sequence(upsertActions) >> DBIO.sequence(deleteDependencyActions) >> DBIO.sequence(createDependencyActions)
       )
-      .transactionally
-    db.run(actions)
+    } yield ()
+    db.run(actions.transactionally)
+  }
+
+  /**
+   * Runs the module sync or deletion `sync` and then reconciles the exam assignments of the given modules, see
+   * `exams.reconcile_module_exams`. Whether a module has own exams depends on its type and relations, which only syncs
+   * and deletions change. The module rows are locked first, which serializes with exam writes, before the modules with
+   * own exams are read.
+   */
+  def reconcilingExams[A](modules: Seq[UUID])(sync: DBIO[A]): DBIO[A] = {
+    import database.MyPostgresProfile.MyAPI.setUUIDArray
+    val affected = tableQuery.filter(_.id.inSet(modules))
+    for {
+      _      <- affected.sortBy(_.id).map(_.id).forUpdate.result
+      owning <- affected.filter(_.hasOwnExams).map(_.id).result
+      result <- sync
+      _      <- sql"SELECT exams.reconcile_module_exams(${modules.toList}::uuid[], ${owning.toList}::uuid[])"
+        .as[Option[String]]
+    } yield result
   }
 
   def all(filter: Map[String, Seq[String]]) = retrieve(allWithFilter(filter))
@@ -154,9 +174,6 @@ final class ModuleRepository @Inject() (
     // repeatable read so that modules and relations describe the same snapshot
     db.run(action.transactionally.withTransactionIsolation(TransactionIsolation.RepeatableRead))
   }
-
-  def allGeneric(): Future[Seq[ModuleCore]] =
-    db.run(tableQuery.filter(_.isGeneric).map(a => (a.id, a.title, a.abbrev)).result.map(_.map(ModuleCore.apply)))
 
   def allGenericModulesWithPOs(): Future[Seq[(ModuleCore, Seq[String])]] =
     db.run(

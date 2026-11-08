@@ -46,12 +46,4 @@ final class JSONRepository @Inject() (
         .head
     db.run(query)
   }
-
-  def allRooms(): Future[String] = {
-    val query =
-      sql"select coalesce(jsonb_agg(jsonb_build_object('id', r.id, 'label', r.label, 'abbrev', r.abbrev) order by r.abbrev), '[]'::jsonb) from schedule.room r"
-        .as[String]
-        .head
-    db.run(query)
-  }
 }

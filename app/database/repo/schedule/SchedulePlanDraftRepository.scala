@@ -39,28 +39,28 @@ final class SchedulePlanDraftRepository @Inject() (
   private val scheduleDrafts     = TableQuery[ScheduleEntryDraftTable]
   private val scheduleEntryTable = TableQuery[ScheduleEntryTable]
 
-  def all(kind: PlanDraftKind, semester: Option[String], activeOnly: Boolean): Future[Seq[PlanDraft]] =
+  def all(semester: Option[String], activeOnly: Boolean): Future[Seq[PlanDraft]] =
     db.run(
       planDrafts.filter { d =>
         def semesterMatch: Rep[Boolean] = semester.map(s => d.semester === s).getOrElse(true)
         def activeMatch: Rep[Boolean]   = if activeOnly then d.publishedAt.isEmpty else true
-        d.kind === kind && semesterMatch && activeMatch
+        d.kind === PlanDraftKind.Schedule && semesterMatch && activeMatch
       }.result
     )
 
-  def get(id: UUID, kind: PlanDraftKind): Future[Option[(PlanDraft, Semester)]] =
+  def get(id: UUID): Future[Option[(PlanDraft, Semester)]] =
     db.run(
       planDrafts
-        .filter(d => d.id === id && d.kind === kind)
+        .filter(d => d.id === id && d.kind === PlanDraftKind.Schedule)
         .result
         .headOption
         .map(_.map(d => (d, Semester.apply(d.semester))))
     )
 
   def create(p: PlanDraftProtocol): Future[Unit] = {
-    def createDraft(kind: PlanDraftKind, semester: String) = {
+    def createDraft(semester: String) = {
       val now = LocalDateTime.now()
-      PlanDraft(UUID.randomUUID(), kind, semester, now, now, None)
+      PlanDraft(UUID.randomUUID(), PlanDraftKind.Schedule, semester, now, now, None)
     }
 
     val semesterId =
@@ -68,18 +68,23 @@ final class SchedulePlanDraftRepository @Inject() (
       catch case NonFatal(_) => throw new IllegalArgumentException(s"invalid semester: ${p.semester}")
 
     val query = for {
-      exists <- planDrafts.filter(a => a.kind === p.kind && a.semester === semesterId).exists.result
+      exists <- planDrafts.filter(a => a.kind === PlanDraftKind.Schedule && a.semester === semesterId).exists.result
       _      <-
         if exists then DBIO.failed(new IllegalArgumentException("schedule plan already exists for semester"))
         else DBIO.unit
-      _ <- planDrafts += createDraft(p.kind, semesterId)
+      _ <- planDrafts += createDraft(semesterId)
     } yield ()
 
     db.run(query.transactionally)
   }
 
   def deleteActive(id: UUID): Future[Boolean] =
-    db.run(planDrafts.filter(d => d.id === id && d.publishedAt.isEmpty).delete.map(_ == 1))
+    db.run(
+      planDrafts
+        .filter(d => d.id === id && d.kind === PlanDraftKind.Schedule && d.publishedAt.isEmpty)
+        .delete
+        .map(_ == 1)
+    )
 
   /**
    * Returns all schedule entry drafts for the given plan draft within the given time range.

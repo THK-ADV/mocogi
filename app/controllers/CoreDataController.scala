@@ -159,16 +159,19 @@ final class CoreDataController @Inject() (
 
   def cachedAll(entity: String): EssentialAction = cache(entity, 1.hour)(all(entity))
 
+  def rooms(): EssentialAction =
+    cache("rooms", 1.hour) {
+      Action.async { r =>
+        val examCapacityOnly = r.getQueryString("examCapacityOnly").flatMap(_.toBooleanOption).getOrElse(false)
+        roomRepository.list(examCapacityOnly).map(rs => Ok(Json.toJson(rs)))
+      }
+    }
+
   def create(entity: String): Action[JsObject] =
     admin.async(parse.json[JsObject])(r => write(entity, r)(_.create(r.body)))
 
   def update(entity: String, id: String): Action[JsObject] =
     admin.async(parse.json[JsObject])(r => write(entity, r)(_.update(id, r.body)))
-
-  def rooms(): EssentialAction =
-    cache("rooms", 1.hour) {
-      Action.async(_ => jsonRepository.allRooms().map(Ok(_)))
-    }
 
   def teachingUnits(): EssentialAction =
     cache("teachingunits", 1.hour) {

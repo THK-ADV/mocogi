@@ -93,34 +93,34 @@ final class ViewSpec extends DatabaseSnapshotSuite {
         expected AS (
           SELECT
             module_po_mandatory.module AS module_id,
-            study_program_view_not_expired.sp_id,
-            study_program_view_not_expired.po_id,
-            study_program_view_not_expired.po_version,
-            study_program_view_not_expired.spec_id,
+            study_program_view_currently_active.sp_id,
+            study_program_view_currently_active.po_id,
+            study_program_view_currently_active.po_version,
+            study_program_view_currently_active.spec_id,
             TRUE AS mandatory,
             to_jsonb(module_po_mandatory.recommended_semester) AS recommended_semester
           FROM
             modules.module_po_mandatory
-            JOIN core.study_program_view_not_expired ON study_program_view_not_expired.po_id = module_po_mandatory.po
+            JOIN core.study_program_view_currently_active ON study_program_view_currently_active.po_id = module_po_mandatory.po
               AND CASE WHEN module_po_mandatory.specialization IS NOT NULL THEN
-                study_program_view_not_expired.spec_id = module_po_mandatory.specialization
+                study_program_view_currently_active.spec_id = module_po_mandatory.specialization
               ELSE
                 TRUE
               END
           UNION
           SELECT
             module_po_optional.module AS module_id,
-            study_program_view_not_expired.sp_id,
-            study_program_view_not_expired.po_id,
-            study_program_view_not_expired.po_version,
-            study_program_view_not_expired.spec_id,
+            study_program_view_currently_active.sp_id,
+            study_program_view_currently_active.po_id,
+            study_program_view_currently_active.po_version,
+            study_program_view_currently_active.spec_id,
             FALSE AS mandatory,
             to_jsonb(module_po_optional.recommended_semester) AS recommended_semester
           FROM
             modules.module_po_optional
-            JOIN core.study_program_view_not_expired ON study_program_view_not_expired.po_id = module_po_optional.po
+            JOIN core.study_program_view_currently_active ON study_program_view_currently_active.po_id = module_po_optional.po
               AND CASE WHEN module_po_optional.specialization IS NOT NULL THEN
-                study_program_view_not_expired.spec_id = module_po_optional.specialization
+                study_program_view_currently_active.spec_id = module_po_optional.specialization
               ELSE
                 TRUE
               END
