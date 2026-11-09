@@ -21,12 +21,15 @@ case class IdentityDbEntry(
   def isPerson = this.kind == Identity.PersonKind
 }
 
+private[database] object IdentityTable {
+  given BaseColumnType[EmploymentType] = MappedColumnType.base[EmploymentType, String](_.id, EmploymentType.apply)
+}
+
 private[database] final class IdentityTable(tag: Tag)
     extends Table[IdentityDbEntry](tag, Some(Schema.Core.name), "identity") {
 
   import database.MyPostgresProfile.MyAPI.simpleStrListTypeMapper
-
-  given BaseColumnType[EmploymentType] = MappedColumnType.base[EmploymentType, String](_.id, EmploymentType.apply)
+  import IdentityTable.given
 
   def id = column[String]("id", O.PrimaryKey)
 

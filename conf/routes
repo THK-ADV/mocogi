@@ -122,6 +122,7 @@ POST          /moduleUpdatePermissions/:moduleId                                
 # Permissions
 
 GET           /permissions                                                                controllers.PermissionController.all()
+GET           /permissions/types                                                          controllers.PermissionController.types()
 POST          /permissions                                                                controllers.PermissionController.create()
 PUT           /permissions/:id                                                            controllers.PermissionController.update(id: Long)
 DELETE        /permissions/:id                                                            controllers.PermissionController.delete(id: Long)
