@@ -115,6 +115,16 @@ final class ExamPlanController @Inject() (
       } yield repo.published(s, i).map(Ok(_))).fold(Future.successful, identity)
     }
 
+  /**
+   * Returns a page of the published appointments, only those in which the `person` invigilates if given: the not yet
+   * ended ones or, if `past`, the ended ones, see `schedule.get_invigilations`.
+   */
+  def invigilations(person: Option[String], past: Boolean, limit: Option[Int], offset: Int) =
+    auth.andThen(resolveUser).async { (_: UserRequest[AnyContent]) =>
+      if limit.exists(_ < 0) || offset < 0 then Future.successful(badRequest("limit and offset must not be negative"))
+      else repo.invigilations(person, past, limit, offset).map(Ok(_).as(JSON))
+    }
+
   /** Returns the appointments of the exam plan draft, optionally only those overlapping `from` and `to`. */
   def entries(planDraft: UUID) =
     auth.andThen(resolveUser).andThen(canViewExamPlan).async { (r: UserRequest[AnyContent]) =>

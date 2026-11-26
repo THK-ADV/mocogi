@@ -170,6 +170,7 @@ DELETE        /exams/:id                                                        
 
 GET           /examPool                                                                   controllers.schedule.ExamPlanController.pool()
 GET           /examEntries                                                                controllers.schedule.ExamPlanController.published()
+GET           /invigilations                                                              controllers.schedule.ExamPlanController.invigilations(person: Option[String], past: Boolean ?= false, limit: Option[Int], offset: Int ?= 0)
 GET           /examPlans                                                                  controllers.schedule.ExamPlanController.all()
 GET           /examPlans/:id                                                              controllers.schedule.ExamPlanController.get(id: java.util.UUID)
 POST          /examPlans                                                                  controllers.schedule.ExamPlanController.create()

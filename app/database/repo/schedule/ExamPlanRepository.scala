@@ -122,6 +122,13 @@ final class ExamPlanRepository @Inject() (
     db.run(entries(None, semester, None, interval))
 
   /**
+   * Page of the published appointments with the publication times of their exam plans as JSON text, passed through
+   * unparsed, see `schedule.get_invigilations`.
+   */
+  def invigilations(person: Option[String], past: Boolean, limit: Option[Int], offset: Int): Future[String] =
+    db.run(sql"SELECT schedule.get_invigilations($person, $past, $limit, $offset)".as[String].head)
+
+  /**
    * Creates appointments of existing exams. The exams are locked against merges and deletions, which would otherwise
    * fail the insert on the foreign key.
    *
