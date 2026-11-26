@@ -1669,7 +1669,9 @@ $$;
 -- Serializes an identity into the compact reference used by schedule and exam
 -- payloads. Like the other builders of these payloads it returns json, which
 -- is nested by copying text, and the caller casts the whole payload to jsonb
--- once instead of re-encoding every nested jsonb value at each level.
+-- once instead of re-encoding every nested jsonb value at each level. The
+-- label is the lastname of a person, whose firstname comes separately, so
+-- that clients choose how to name them; other identities have no firstname.
 CREATE OR REPLACE FUNCTION schedule.identity_ref(i core.identity)
   RETURNS json
   LANGUAGE sql
@@ -1680,7 +1682,7 @@ CREATE OR REPLACE FUNCTION schedule.identity_ref(i core.identity)
         i.lastname
       ELSE
         i.title
-      END, 'abbreviation', CASE WHEN i.kind = 'person' THEN
+      END, 'firstname', i.firstname, 'abbreviation', CASE WHEN i.kind = 'person' THEN
         i.abbreviation
       ELSE
         i.id
@@ -2485,6 +2487,128 @@ FROM
   LEFT JOIN exam_teaching_units ON exam_teaching_units.exam = selected.exam
   LEFT JOIN exam_po ON exam_po.exam = selected.exam
   LEFT JOIN entry_rooms ON entry_rooms.exam_entry = selected.id
+$$;
+
+-- Returns the published exam appointments in which p_person invigilates at
+-- least one room, all if NULL. Selects the ended appointments, most recent
+-- first, if p_past, otherwise those not ended yet, earliest first, with the id
+-- breaking ties, and pages them by p_limit (NULL for all) and p_offset. Each
+-- appointment has all its rooms with their invigilator ids as stored and the
+-- exam's assigned active modules with their first examiner ids, which unlike
+-- schedule.get_exam_entries need no PO valid today, so that past appointments
+-- keep them. People are ids only, since the client resolves them itself.
+-- Returns them as entries next to publishedAt, the last publication time of
+-- the exam plan of each of their semesters with offset. published_at holds
+-- the wall time of the session time zone, which JDBC sets to the JVM's, so
+-- the cast in a session of the backend yields the instant of publication.
+CREATE OR REPLACE FUNCTION schedule.get_invigilations(p_person text, p_past boolean, p_limit integer, p_offset integer)
+  RETURNS json
+  LANGUAGE sql
+  STABLE
+  AS $$
+  WITH selected AS(
+    SELECT
+      live.id,
+      live.exam,
+      live.semester,
+      live.phase,
+      live."start",
+      live."end"
+    FROM
+      schedule.exam_entry live
+    WHERE(live."end" <= now()) = p_past
+    AND(p_person IS NULL
+      OR EXISTS(
+        SELECT
+        FROM
+          schedule.exam_room duty
+        WHERE
+          duty.exam_entry = live.id
+          AND p_person = ANY(duty.invigilators)))
+  -- the CASE keys sort ended appointments descending and are NULL for the others
+  ORDER BY
+    CASE WHEN p_past THEN live."start" END DESC,
+    CASE WHEN p_past THEN live.id END DESC,
+    live."start",
+    live.id
+  LIMIT p_limit OFFSET p_offset
+),
+exam_modules AS(
+  SELECT
+    assignment.exam,
+    json_agg(json_build_object(
+      'id', module.id,
+      'title', module.title,
+      'abbrev', module.abbrev,
+      'firstExaminer', module.first_examiner)
+    ORDER BY module.title, module.id) AS modules
+  FROM
+    exams.exam_module assignment
+    JOIN modules.module module ON module.id = assignment.module
+  WHERE
+    module.status = 'active'
+    AND assignment.exam IN(
+      SELECT
+        selected.exam
+      FROM
+        selected)
+  GROUP BY
+    assignment.exam
+),
+entry_rooms AS(
+  SELECT
+    allocated.exam_entry,
+    json_agg(json_build_object(
+      'abbrev', room.abbrev,
+      'label', room.label,
+      'partitionBy', allocated.partition_by,
+      'partitionValue', allocated.partition_value,
+      'invigilators', allocated.invigilators)
+    ORDER BY room.abbrev, room.id) AS rooms
+  FROM
+    selected
+    JOIN schedule.exam_room allocated ON allocated.exam_entry = selected.id
+    JOIN schedule.room room ON room.id = allocated.room
+  GROUP BY
+    allocated.exam_entry
+)
+SELECT
+  json_build_object(
+    'entries', coalesce((
+      SELECT
+        json_agg(json_build_object(
+          'id', selected.id,
+          'start', selected."start",
+          'end', selected."end",
+          'examName', exam.name,
+          'semester', selected.semester,
+          'phase', selected.phase,
+          'modules', coalesce(exam_modules.modules, '[]'),
+          'rooms', coalesce(entry_rooms.rooms, '[]'))
+        ORDER BY
+          CASE WHEN p_past THEN selected."start" END DESC,
+          CASE WHEN p_past THEN selected.id END DESC,
+          selected."start",
+          selected.id)
+      FROM
+        selected
+        JOIN exams.exam exam ON exam.id = selected.exam
+        LEFT JOIN exam_modules ON exam_modules.exam = selected.exam
+        LEFT JOIN entry_rooms ON entry_rooms.exam_entry = selected.id), '[]'),
+    -- a semester has one exam plan, which is published as a whole
+    'publishedAt', coalesce((
+      SELECT
+        json_object_agg(plan.semester, plan.published_at::timestamptz)
+      FROM
+        schedule.plan_draft plan
+      WHERE
+        plan.kind = 'exam'
+        AND plan.published_at IS NOT NULL
+        AND plan.semester IN(
+          SELECT
+            selected.semester
+          FROM
+            selected)), '{}'))
 $$;
 
 -- Returns whether the exam appointments of an exam plan draft or their room
