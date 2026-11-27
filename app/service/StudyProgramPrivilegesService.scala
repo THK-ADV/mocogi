@@ -8,7 +8,6 @@ import scala.concurrent.Future
 
 import database.repo.core.StudyProgramPersonRepository
 import models.StudyProgramPrivileges
-import permission.PermissionType
 import permission.PermissionType.ArtifactsCreate
 import permission.PermissionType.ArtifactsPreview
 import permission.Permissions

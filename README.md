@@ -3,7 +3,7 @@
 ## Tests
 
 - **Default (CI / quick local):** `sbt test` — unit and parser tests only; no Postgres snapshot suites.
-- **DB snapshot tests:** need a restored DB (e.g. `./scripts/sync-test-db-from-prod.sh`), then `sbt it:test`. Expected files live under `test/resources/database/expected/` (gitignored); refresh with `UPDATE_SNAPSHOTS=1 sbt it:test` after intentional SQL/output changes. Single suite: `sbt "it:testOnly database.YourSpec"`.
+- **DB snapshot tests:** need a restored DB (e.g. `./scripts/sync-test-db-from-prod.sh`), then `sbt it/test`. Expected files live under `test/resources/database/expected/` (gitignored); refresh with `UPDATE_SNAPSHOTS=1 sbt it/test` after intentional SQL/output changes. Single suite: `sbt "it/testOnly database.YourSpec"`.
 
 ## SQL Formatting
 

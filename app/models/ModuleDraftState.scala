@@ -1,8 +1,6 @@
 package models
 
 import models.core.IDLabel
-import models.ModuleDraftState.ValidForPublication
-import models.ModuleDraftState.ValidForReview
 import play.api.libs.json.Writes
 
 sealed trait ModuleDraftState extends IDLabel

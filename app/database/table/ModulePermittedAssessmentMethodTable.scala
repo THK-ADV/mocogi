@@ -20,7 +20,7 @@ private[database] final class ModulePermittedAssessmentMethodTable(tag: Tag)
   def module            = column[UUID]("module", O.PrimaryKey)
   def assessmentMethods = column[List[String]]("assessment_methods")
 
-  def permittedMethodIdsUnnest() = assessmentMethods.unnest()
+  def permittedMethodIdsUnnest() = assessmentMethods.unnest
 
   override def * : ProvenShape[ModulePermittedAssessmentMethod] =
     (module, assessmentMethods) <> (

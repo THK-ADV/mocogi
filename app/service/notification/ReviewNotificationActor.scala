@@ -16,7 +16,6 @@ import org.apache.pekko.actor.ActorRef
 import play.api.i18n.Lang
 import play.api.i18n.MessagesApi
 import play.api.Logging
-import service.mail.MailActor
 import service.mail.MailActor.SendMail
 import service.notification.ReviewNotificationActor.DryRun
 import service.notification.ReviewNotificationActor.NotifyAllPendingReviews

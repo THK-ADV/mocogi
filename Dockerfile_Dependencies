@@ -1,10 +1,16 @@
 # This Dockerfile provides all cli tools and dependencies for the mocogi backend.
 # It will be used as a base image in the production environment
-FROM node:24-bullseye-slim AS markdownlint
-RUN npm install --global markdownlint-cli2@0.23.2
+ARG TARGETARCH
 
-FROM eclipse-temurin:21.0.2_13-jre-jammy
-ARG PANDOC_PLATFORM_SUFFIX
+FROM node:24.22.2-bookworm-slim AS markdownlint
+RUN npm install --global markdownlint-cli2@0.24.0
+
+# 21.0.13.1 fixes CVE-2026-114938 (x86-64 only); arm64 is unaffected and has no 21.0.13.1 build
+FROM eclipse-temurin:21.0.13.1_2-jre-jammy AS jre-amd64
+FROM eclipse-temurin:21.0.13_9-jre-jammy AS jre-arm64
+
+FROM jre-${TARGETARCH}
+ARG TARGETARCH
 ARG GIT_REPO_URL
 ENV GIT_REPO_URL=${GIT_REPO_URL}
 COPY --from=markdownlint /usr/local/bin/node /usr/local/bin/node
@@ -17,6 +23,6 @@ RUN apt-get update && apt-get install -y \
   vim \
   wget \
   git
-  RUN wget https://github.com/jgm/pandoc/releases/download/3.9/pandoc-3.9-1-$PANDOC_PLATFORM_SUFFIX.deb  \
-  && dpkg -i pandoc-3.9-1-$PANDOC_PLATFORM_SUFFIX.deb  \
-  && rm pandoc-3.9-1-$PANDOC_PLATFORM_SUFFIX.deb
+  RUN wget https://github.com/jgm/pandoc/releases/download/3.13/pandoc-3.13-1-$TARGETARCH.deb  \
+  && dpkg -i pandoc-3.13-1-$TARGETARCH.deb  \
+  && rm pandoc-3.13-1-$TARGETARCH.deb
