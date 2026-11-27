@@ -1,15 +1,15 @@
 addCommandAlias("format", "scalafixAll; scalafmtAll")
 
+ThisBuild / scalaVersion      := "3.9.0"
+ThisBuild / semanticdbEnabled := true
+ThisBuild / scalacOptions += "-Wunused:imports"
+
 lazy val `mocogi` = (project in file("."))
   .enablePlugins(PlayScala)
-  .configs(IntegrationTest)
   .settings(
-    name              := "mocogi",
-    maintainer        := "Alexander Dobrynin <alexander.dobrynin@th-koeln.de>",
-    version           := "1.0",
-    scalaVersion      := "3.9.0",
-    semanticdbEnabled := true,
-    scalacOptions += "-Wunused:imports",
+    name       := "mocogi",
+    maintainer := "Alexander Dobrynin <alexander.dobrynin@th-koeln.de>",
+    version    := "1.0",
     libraryDependencies ++= play,
     libraryDependencies ++= jackson,
     libraryDependencies ++= guiceDeps,
@@ -34,19 +34,21 @@ lazy val `mocogi` = (project in file("."))
     (Universal / javaOptions) ++= Seq(
       "-Dpidfile.path=/dev/null"
     ),
-    // Postgres snapshot suites under test/database — local/CI step: `it:test` (not `test`).
-    Defaults.itSettings,
     Test / unmanagedSources / excludeFilter ~= { excl =>
       excl || new sbt.io.SimpleFileFilter(f =>
         f.getCanonicalPath.replace('\\', '/').contains("/test/database/") &&
           f.getName.endsWith(".scala")
       )
-    },
-    IntegrationTest / scalaSource      := (Test / scalaSource).value,
-    IntegrationTest / unmanagedSources := {
-      val dir = baseDirectory.value / "test" / "database"
-      (dir ** "*.scala").get.filter(_.isFile).toSeq.sortBy(_.getAbsolutePath)
     }
+  )
+
+/** Postgres snapshot suites under test/database, run via `it/test` (not part of `test`). */
+lazy val it = project
+  .dependsOn(mocogi)
+  .settings(
+    libraryDependencies ++= test,
+    Test / scalaSource := (mocogi / baseDirectory).value / "test" / "database",
+    publish / skip     := true
   )
 
 lazy val play = Seq(
@@ -66,9 +68,9 @@ lazy val jackson = Seq(
 )
 
 lazy val test = Seq(
-  "org.scalactic"          %% "scalactic"          % "3.2.20"                                  % "test,it",
-  "org.scalatest"          %% "scalatest"          % "3.2.20"                                  % "test,it",
-  "org.scalatestplus.play" %% "scalatestplus-play" % "7.0.2"                                   % "test,it",
+  "org.scalactic"          %% "scalactic"          % "3.2.20"                                  % Test,
+  "org.scalatest"          %% "scalatest"          % "3.2.20"                                  % Test,
+  "org.scalatestplus.play" %% "scalatestplus-play" % "7.0.2"                                   % Test,
   "org.apache.pekko"       %% "pekko-testkit"      % _root_.play.core.PlayVersion.pekkoVersion % Test
 )
 

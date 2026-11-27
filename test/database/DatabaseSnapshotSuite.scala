@@ -18,8 +18,8 @@ import database.MyPostgresProfile.api.*
  *
  * Workflow:
  *   1. `./scripts/sync-test-db-from-prod.sh`
- *   2. `sbt it:test` — or one suite from the shell: `sbt "it:testOnly database.YourSpec"`
- *   3. Refresh goldens: `UPDATE_SNAPSHOTS=1 sbt it:test`
+ *   2. `sbt it/test` — or one suite from the shell: `sbt "it/testOnly database.YourSpec"`
+ *   3. Refresh goldens: `UPDATE_SNAPSHOTS=1 sbt it/test`
  */
 abstract class DatabaseSnapshotSuite extends AnyFunSuite, Matchers, BeforeAndAfterAll {
 
@@ -51,7 +51,7 @@ abstract class DatabaseSnapshotSuite extends AnyFunSuite, Matchers, BeforeAndAft
           finally s.close()
         case None =>
           throw new IllegalStateException(
-            s"missing expected golden $fsPath — run UPDATE_SNAPSHOTS=1 sbt it:test after ./scripts/sync-test-db-from-prod.sh"
+            s"missing expected golden $fsPath — run UPDATE_SNAPSHOTS=1 sbt it/test after ./scripts/sync-test-db-from-prod.sh"
           )
 
   private def updateSnapshotsEnabled: Boolean =
