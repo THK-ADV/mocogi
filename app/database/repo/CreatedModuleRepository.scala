@@ -42,13 +42,4 @@ final class CreatedModuleRepository @Inject() (
         .map(_.map(m => (ModuleCore(m._1._1, m._1._2, m._1._3), m._2.toSeq)))
     )
   }
-
-  def allGeneric(): Future[Seq[ModuleCore]] =
-    db.run(
-      tableQuery
-        .filter(_.moduleType === ModuleType.genericId)
-        .map(a => (a.module, a.moduleTitle, a.moduleAbbrev))
-        .result
-        .map(_.map(ModuleCore.apply))
-    )
 }

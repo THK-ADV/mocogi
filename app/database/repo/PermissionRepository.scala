@@ -18,6 +18,7 @@ import permission.PermissionType
 import permission.PermissionType.ApprovalFastForward
 import permission.PermissionType.ArtifactsCreate
 import permission.PermissionType.ArtifactsPreview
+import permission.PermissionType.ExamPlanning
 import permission.PermissionType.Module
 import permission.PermissionType.SchedulePlanning
 import permission.Permissions
@@ -56,6 +57,7 @@ final class PermissionRepository @Inject() (
         r.nextInt(),
         r.nextInt(),
         None,
+        false,
         false,
         false,
         false,
@@ -198,6 +200,7 @@ final class PermissionRepository @Inject() (
       val fastForwardApprovalPOs = permissions.request(ApprovalFastForward)
       // Has direct grant, or Admin permission
       val hasSchedulePlanningPrivileges = permissions.hasAnyPermission(SchedulePlanning)
+      val hasExamPlanningPrivileges     = permissions.hasAnyPermission(ExamPlanning)
       userInfo.copy(
         hasDirectorPrivileges = hasDirectorPrivileges,
         hasModuleReviewPrivileges = hasModuleReviewPrivileges,
@@ -207,8 +210,9 @@ final class PermissionRepository @Inject() (
         hasCoreDataEditPrivileges = permissions.isAdmin,
         hasSchedulePlanningPrivileges = hasSchedulePlanningPrivileges,
         hasScheduleBookingPrivileges = permissions.hasScheduleBooking,
-        hasExamPlanningPrivileges = false,
-        hasSchedulePlanningViewPrivileges = hasModulesToEdit || hasSchedulePlanningPrivileges
+        hasExamPlanningPrivileges = hasExamPlanningPrivileges,
+        hasSchedulePlanningViewPrivileges = hasModulesToEdit || hasSchedulePlanningPrivileges,
+        hasExamPlanningViewPrivileges = hasModulesToEdit || hasExamPlanningPrivileges
       )
     }
   }

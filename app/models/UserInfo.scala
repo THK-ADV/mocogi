@@ -16,6 +16,7 @@ case class UserInfo(
     hasScheduleBookingPrivileges: Boolean,
     hasExamPlanningPrivileges: Boolean,
     hasSchedulePlanningViewPrivileges: Boolean,
+    hasExamPlanningViewPrivileges: Boolean,
     hasCoreDataEditPrivileges: Boolean
 )
 

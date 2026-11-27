@@ -1,16 +1,19 @@
 package database.table
 
 import java.time.LocalDate
+import java.util.UUID
 
 import database.Schema
 import slick.jdbc.PostgresProfile.api.*
 
-private[database] case class ExamListDbEntry(po: String, semester: String, date: LocalDate, url: String)
+private[database] case class ExamListDbEntry(id: UUID, po: String, semester: String, date: LocalDate, url: String)
 
 private[database] final class ExamListTable(tag: Tag)
-    extends Table[ExamListDbEntry](tag, Some(Schema.Modules.name), "exam_list") {
+    extends Table[ExamListDbEntry](tag, Some(Schema.Exams.name), "exam_list") {
 
-  def po = column[String]("po", O.PrimaryKey)
+  def id = column[UUID]("id", O.PrimaryKey)
+
+  def po = column[String]("po")
 
   def semester = column[String]("semester")
 
@@ -18,5 +21,5 @@ private[database] final class ExamListTable(tag: Tag)
 
   def url = column[String]("url")
 
-  override def * = (po, semester, date, url) <> (ExamListDbEntry.apply, ExamListDbEntry.unapply)
+  override def * = (id, po, semester, date, url) <> (ExamListDbEntry.apply, ExamListDbEntry.unapply)
 }

@@ -1,4 +1,4 @@
-package service.artifact
+package service.artifact.examlist
 
 import ops.ConfigurationOps.nonEmptyString
 import play.api.Configuration

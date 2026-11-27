@@ -21,8 +21,8 @@ import play.api.Configuration
 import play.api.Environment
 import printing.yaml.MetadataYamlPrinter
 import providers.ModuleSubscribersProvider
+import service.artifact.examlist.ExamListPdfConfig
 import service.artifact.modulecatalog.ModuleCatalogPdfConfig
-import service.artifact.ExamListPdfConfig
 import service.artifact.ExamLoadConfig
 import service.history.ModuleHistoryConfig
 import service.image.PeopleImageUpdateActor

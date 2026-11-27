@@ -184,12 +184,12 @@ latex.exam_lists.mandatory_modules.chapter=Pflichtmodule
 latex.exam_lists.elective_modules.chapter=Wahlmodule
 latex.exam_lists.table.header.moduleName=Modulname
 latex.exam_lists.table.header.assessmentMethod=Prüfungsleistung
-latex.exam_lists.table.header.firstExaminer=Erstprüfer
-latex.exam_lists.table.header.secondExaminer=Zweitprüfer
+latex.exam_lists.table.header.moduleExam=Modulprüfung
+latex.exam_lists.table.header.examiner=Prüfer
 latex.exam_lists.table.header.examPhases=Prüfungsphasen
+latex.exam_lists.table.header.registrationPeriod=Anmeldezeitraum
 latex.exam_lists.table.header.continuation=Fortsetzung der Module…
 latex.exam_lists.table.footer.continuation=Fortsetzung auf der nächsten Seite
-latex.exam_lists.no-assessment.label=Keine Angabe
 
 # Module Examination
 module.exam.written-exam.label=Klausurarbeit

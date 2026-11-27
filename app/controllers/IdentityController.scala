@@ -11,6 +11,7 @@ import play.api.mvc.AbstractController
 import play.api.mvc.ControllerComponents
 import database.repo.core.IdentityRepository
 import models.core.Identity
+import models.EmploymentType
 
 @Singleton
 final class IdentityController @Inject() (
@@ -22,9 +23,10 @@ final class IdentityController @Inject() (
   def all() =
     cache("identities", 1.hour) {
       Action.async { r =>
-        val withImages = r.getQueryString("images").flatMap(_.toBooleanOption).getOrElse(false)
+        val withImages     = r.getQueryString("images").flatMap(_.toBooleanOption).getOrElse(false)
+        val employmentType = r.getQueryString("employmentType").map(EmploymentType.apply)
         if withImages then
-          repo.allWithImages().map { entries =>
+          repo.allWithImages(employmentType).map { entries =>
             val json = entries.map {
               case (entry, image) =>
                 Json.toJson(Identity.fromDbEntry(entry)).as[JsObject] +
@@ -32,7 +34,7 @@ final class IdentityController @Inject() (
             }
             Ok(JsArray(json))
           }
-        else repo.list().map(xs => Ok(Json.toJson(xs)))
+        else repo.list(employmentType).map(xs => Ok(Json.toJson(xs)))
       }
     }
 }

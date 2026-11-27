@@ -17,10 +17,7 @@ case class PlanDraft(
     publishedAt: Option[LocalDateTime]
 )
 
-case class PlanDraftProtocol(
-    kind: PlanDraftKind,
-    semester: String
-)
+case class PlanDraftProtocol(semester: String)
 
 enum PlanDraftKind(val id: String) {
   case Schedule extends PlanDraftKind("schedule")
@@ -37,7 +34,6 @@ object PlanDraftProtocol {
 
 object PlanDraftKind {
   given Writes[PlanDraftKind] = Writes.of[String].contramap(_.id)
-  given Reads[PlanDraftKind]  = Reads.of[String].map(apply)
 
   def apply(id: String): PlanDraftKind =
     id match {

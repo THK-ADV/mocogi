@@ -11,6 +11,7 @@ import controllers.actions.UserResolveAction
 import database.repo.PermissionRepository
 import permission.AdminCheck
 import permission.Permission
+import permission.PermissionType
 import play.api.libs.json.Json
 import play.api.libs.json.Reads
 import play.api.mvc.AbstractController
@@ -32,6 +33,8 @@ final class PermissionController @Inject() (
   private def admin = auth.andThen(resolveUser).andThen(isAdmin)
 
   def all() = admin.async(_ => permissionRepository.all().map(xs => Ok(Json.toJson(xs))))
+
+  def types() = admin(Ok(Json.toJson(PermissionType.values)))
 
   def create() =
     admin.async(parse.json[Permission]) { r =>

@@ -111,6 +111,9 @@ private[database] final class ModuleTable(tag: Tag)
 
   def isGeneric: Rep[Boolean] = this.moduleType === ModuleType.genericId
 
+  /** Whether the module defines its own exams, i.e. it is neither generic nor a child module. */
+  def hasOwnExams: Rep[Boolean] = !isGeneric && !TableQuery[ModuleRelationTable].filter(_.child === id).exists
+
   override def * =
     (
       id,

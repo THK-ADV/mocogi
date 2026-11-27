@@ -13,6 +13,7 @@ import auth.CampusId
 import database.table.core.*
 import models.core.Identity
 import models.core.Identity.Person
+import models.EmploymentType
 import models.PeopleImage
 import org.apache.pekko.actor.ActorRef
 import org.apache.pekko.pattern.ask
@@ -35,7 +36,12 @@ class IdentityRepository @Inject() (
   protected val tableQuery      = TableQuery[IdentityTable]
   private val peopleImagesQuery = TableQuery[PeopleImagesTable]
 
-  def list(): Future[Seq[Identity]] = db.run(tableQuery.result).map(_.map(Identity.fromDbEntry))
+  import IdentityTable.given
+
+  def list(): Future[Seq[Identity]] = list(None)
+
+  def list(employmentType: Option[EmploymentType]): Future[Seq[Identity]] =
+    db.run(tableQuery.filterOpt(employmentType)(_.employmentType === _).result).map(_.map(Identity.fromDbEntry))
 
   // Inserts into identity table and updates the person's image
   def create(input: Identity): Future[Identity] =
@@ -88,8 +94,14 @@ class IdentityRepository @Inject() (
   def allPeople(): Future[Seq[Person]] =
     db.run(tableQuery.filter(_.isPerson).result.map(_.map(Identity.toPersonUnsafe)))
 
-  def allWithImages(): Future[Seq[(IdentityDbEntry, Option[PeopleImage])]] =
-    db.run(tableQuery.joinLeft(peopleImagesQuery).on(_.id === _.person).result)
+  def allWithImages(employmentType: Option[EmploymentType]): Future[Seq[(IdentityDbEntry, Option[PeopleImage])]] =
+    db.run(
+      tableQuery
+        .filterOpt(employmentType)(_.employmentType === _)
+        .joinLeft(peopleImagesQuery)
+        .on(_.id === _.person)
+        .result
+    )
 
   def replaceImages(entries: Seq[PeopleImage]): Future[Option[Int]] =
     db.run(
