@@ -28,6 +28,7 @@ final class ModuleRepository @Inject() (
 ) extends HasDatabaseConfigProvider[JdbcProfile]
     with Filterable[ModuleDbEntry, ModuleTable]
     with Logging {
+
   import profile.api.*
 
   val tableQuery = TableQuery[ModuleTable]
@@ -80,6 +81,7 @@ final class ModuleRepository @Inject() (
               if exists then tableQuery.filter(_.id === module.metadata.id).update(db) else tableQuery += db
           } yield ()
       }
+
     def deleteDependencyActions = modules.map { case (module, _) => deleteDependencies(module.metadata.id) }
 
     def createDependencyActions = modules.map { case (module, _) => createDependencies(module.metadata) }
@@ -274,30 +276,29 @@ final class ModuleRepository @Inject() (
   private def metadataTaughtWith(metadata: Metadata): List[ModuleTaughtWithDbEntry] =
     metadata.taughtWith.map(m => ModuleTaughtWithDbEntry(metadata.id, m.id))
 
-  private def pos(metadata: Metadata): (List[ModulePOMandatoryDbEntry], List[ModulePOOptionalDbEntry]) =
-    (
-      metadata.pos.mandatory.map(po =>
-        ModulePOMandatoryDbEntry(
-          UUID.randomUUID(),
-          metadata.id,
-          po.po.id,
-          po.specialization.map(_.id),
-          po.recommendedSemester,
-          po.recommendedSemesterPartTime
-        )
-      ),
-      metadata.pos.optional.map(po =>
-        ModulePOOptionalDbEntry(
-          UUID.randomUUID(),
-          metadata.id,
-          po.po.id,
-          po.specialization.map(_.id),
-          po.instanceOf.id,
-          po.partOfCatalog,
-          po.recommendedSemester
-        )
+  private def pos(metadata: Metadata): (List[ModulePOMandatoryDbEntry], List[ModulePOOptionalDbEntry]) = (
+    metadata.pos.mandatory.map(po =>
+      ModulePOMandatoryDbEntry(
+        UUID.randomUUID(),
+        metadata.id,
+        po.po.id,
+        po.specialization.map(_.id),
+        po.recommendedSemester,
+        po.recommendedSemesterPartTime
+      )
+    ),
+    metadata.pos.optional.map(po =>
+      ModulePOOptionalDbEntry(
+        UUID.randomUUID(),
+        metadata.id,
+        po.po.id,
+        po.specialization.map(_.id),
+        po.instanceOf.id,
+        po.partOfCatalog,
+        po.recommendedSemester
       )
     )
+  )
 
   private def moduleRelations(metadata: Metadata): List[ModuleRelationDbEntry] =
     metadata.relation match {
