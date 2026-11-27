@@ -10,7 +10,7 @@ FROM eclipse-temurin:21.0.13.1_2-jre-jammy AS jre-amd64
 FROM eclipse-temurin:21.0.13_9-jre-jammy AS jre-arm64
 
 FROM jre-${TARGETARCH}
-ARG PANDOC_PLATFORM_SUFFIX
+ARG TARGETARCH
 ARG GIT_REPO_URL
 ENV GIT_REPO_URL=${GIT_REPO_URL}
 COPY --from=markdownlint /usr/local/bin/node /usr/local/bin/node
@@ -23,6 +23,6 @@ RUN apt-get update && apt-get install -y \
   vim \
   wget \
   git
-  RUN wget https://github.com/jgm/pandoc/releases/download/3.13/pandoc-3.13-1-$PANDOC_PLATFORM_SUFFIX.deb  \
-  && dpkg -i pandoc-3.13-1-$PANDOC_PLATFORM_SUFFIX.deb  \
-  && rm pandoc-3.13-1-$PANDOC_PLATFORM_SUFFIX.deb
+  RUN wget https://github.com/jgm/pandoc/releases/download/3.13/pandoc-3.13-1-$TARGETARCH.deb  \
+  && dpkg -i pandoc-3.13-1-$TARGETARCH.deb  \
+  && rm pandoc-3.13-1-$TARGETARCH.deb
